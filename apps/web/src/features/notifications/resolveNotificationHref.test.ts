@@ -29,6 +29,25 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   ...overrides,
 });
 
+describe("resolveNotificationHref for outfit builds", () => {
+  it("opens the build, or My Builds when the build id is missing", () => {
+    for (const type of [
+      "OUTFIT_BOARD_ACTIVITY",
+      "OUTFIT_READY_TO_LOCK",
+      "OUTFIT_LOCKED",
+      "OUTFIT_INVITED",
+      "OUTFIT_SHARED",
+      "OUTFIT_MADE_PUBLIC",
+      "OUTFIT_ITEMS_SOLD_OUT",
+    ] as const) {
+      expect(
+        resolveNotificationHref(buildNotification({ type, entityId: "outfit-1" }), OWN_HANDLE),
+      ).toBe("/builds/outfit-1");
+      expect(resolveNotificationHref(buildNotification({ type }), OWN_HANDLE)).toBe("/builds");
+    }
+  });
+});
+
 describe("resolveNotificationHref", () => {
   it("deep-links likes and comments on your own look to that post on your profile", () => {
     const liked = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });

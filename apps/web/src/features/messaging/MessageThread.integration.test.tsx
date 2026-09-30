@@ -5,12 +5,14 @@ import {
   createQueryClientWrapper,
   createTestQueryClient,
 } from "@test/integration/queryClientWrapper";
+import { createTranslatedQueryWrapper } from "@test/integration/translationsWrapper";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
+import { buildBoard } from "@/features/outfit-build/testing/outfitFixtures";
 
 import { MessageThread } from "./MessageThread";
 
@@ -44,6 +46,7 @@ const buildMessage = (overrides: Partial<Message> = {}): Message => ({
   sender: { id: "user-2", name: "Jane Doe", handle: "jane", avatarUrl: null },
   kind: "USER",
   systemEvent: null,
+  outfitId: null,
   body: "Hey there!",
   attachments: [],
   createdAt: "2026-08-24T10:00:00.000Z",
@@ -293,6 +296,40 @@ describe("MessageThread in a group", () => {
     expect(await screen.findByText("Sita Rai added Ram Thapa")).toBeInTheDocument();
     expect(screen.getByText("Gold kurta?")).toBeInTheDocument();
     expect(screen.getAllByText("Sita Rai")).toHaveLength(1);
+  });
+
+  it("shows a build card for an outfit build message instead of a plain event line", async () => {
+    mockConversation(buildGroupConversation());
+    mockMessages([
+      buildMessage({
+        id: "message-1",
+        senderId: SITA.id,
+        sender: SITA,
+        kind: "OUTFIT_CARD",
+        body: null,
+        outfitId: "outfit-1",
+      }),
+    ]);
+    mockMarkRead();
+    mswServer.use(
+      http.get("/api/outfits/outfit-1", () =>
+        HttpResponse.json({
+          success: true,
+          message: "Outfit.",
+          data: { ...buildBoard(), kind: "board" },
+        }),
+      ),
+    );
+    const { Wrapper } = createTranslatedQueryWrapper();
+    render(<MessageThread conversationId={CONVERSATION_ID} onBack={() => {}} />, {
+      wrapper: Wrapper,
+    });
+
+    expect(await screen.findByText("Sita Rai started an outfit build")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /Dashain look/ })).toHaveAttribute(
+      "href",
+      "/builds/outfit-1",
+    );
   });
 
   it("explains when the viewer is no longer in the conversation", async () => {

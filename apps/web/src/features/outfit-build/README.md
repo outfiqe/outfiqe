@@ -1,0 +1,86 @@
+# outfit-build
+
+## Purpose
+
+The web side of Outfit Build: My Builds, the live build board, the build card inside chats, and
+the view of a locked build for the people it was shared with. Everything here is in English and
+Nepali (see `../../i18n`), prices are shown in lakh format (Rs 2,40,000) and times in Nepal time.
+The whole feature sits behind the `outfit_builder` flag on the API.
+
+## Structure
+
+- `api/outfitApi.ts`, `api/outfitSchemas.ts` — the `/api/outfits` client and zod schemas for every
+  response. Every write sends the build version it last saw (`If-Match`) and a fresh
+  `Idempotency-Key`.
+- `hooks/`
+  - `useOutfit` — the build (`["outfit", id]`), either the live board or the published version.
+  - `useOutfitWrites` — `runWrite(send, applyChange)`: writes go out one at a time, each applies
+    its change to the cached board straight away and rolls it back if the server refuses. A
+    version conflict refetches the board and says who changed it ("Board updated by Sita,
+    showing latest"); other refusals are explained by error code in the viewer's language.
+  - `useOutfitLiveSync` — joins the build's socket room, asks to catch up after every
+    (re)connect, refetches when `outfit:updated` announces a newer version, and reports
+    "Reconnecting…" and removal from the build.
+  - `useMyBuilds` / `useBuildsSharedWithMe`, `useSlotProductSearch` (product search filtered to a
+    slot's garment types and to items in stock).
+- `components/`
+  - `MyBuildsPage` — My builds / Shared with me tabs, New build, empty/loading/error states, and a
+    "coming soon" state while the flag is off.
+  - `BuildPage` — loads a build and shows `BuildBoard` or `PublishedBuildView`.
+  - `BuildBoard` — header, `BudgetBar`, the `SlotCard` grid, `BoardPeople`, `BoardActions`, and
+    the picker and modals. Wraps everything in a dnd-kit `DndContext`.
+  - `SlotCard` — one slot: its items (image, price, stock in words, who added it) and empty
+    places to tap. It is also the drop target when dragging.
+  - `ProductPickerModal` — tap a slot → search products of that slot's garment types → tap one.
+  - `ProductFinderPanel` — desktop-only sidebar of draggable search results.
+  - `InviteEditorsModal`, `VisibilityModal`, `BoardSettingsModal` — owner tools; people are picked
+    with the messaging `ContactPicker`.
+  - `BuildCardMessage` — the card a chat shows for a build started in it; it loads the build live.
+  - `AvailabilityLabel`, `BudgetBar`, `PersonAvatar`, `ReconnectingBanner`, `BuildSummaryCard`.
+- `utils/` — `outfitBoardRules.ts` (the shared slot rules from `@outfiqe/utils`, run before a
+  request is sent, and the instant local board changes), `outfitFormatting.ts` (lakh format,
+  Nepal time), `toOutfitProduct.ts`.
+
+Routes: `app/builds/page.tsx` (My Builds), `app/builds/[outfitId]/page.tsx` (a build). Both need a
+signed-in session and are not indexed.
+
+Ways in from the rest of the app:
+
+- The dashboard nav (`components/useDashboardNav.ts`) shows My Builds right after Overview, only
+  when `useFeatureFlag("outfit_builder")` (`shared/hooks/useFeatureFlag.ts`, backed by
+  `GET /api/feature-flags/mine`) says the feature is on for this person.
+- Chats render messages of kind `OUTFIT_CARD` with `BuildCardMessage` (`messaging/MessageThread`).
+  It imports the component file directly, not this feature's `index.ts`, because this feature
+  already imports `ContactPicker` from messaging.
+- The board's `lastLockedVersion` tells `VisibilityModal` whether the build has ever been locked,
+  so a board reopened after a lock can still be shared as the version that was locked.
+- Sold-out items: the board shows a banner counting them, and each one gets a visible "Swap"
+  button. Swapping opens `ProductPickerModal` with "Similar and in stock" suggestions from
+  `useReplacementSuggestions` (`GET /api/outfits/:id/slots/:slotKey/positions/:position/replacements`)
+  above the normal search. `useOutfitLiveSync` refetches the board on
+  `outfit:availability-changed`, so an item selling out shows up without a reload.
+- Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
+  (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
+
+## Funnel
+
+**User-facing**: from My Builds, tap New build. Tap an empty slot to pick a product (or drag one
+from the side panel on a computer), invite people, and everyone taps "I'm happy". The owner locks
+the build and chooses who can see it. Changes by others appear live; if two people change the
+board at once, the loser's change is undone and they're told who got there first.
+
+**Technical**: component → `useOutfitWrites` / `useOutfit` → `outfitApi` → `/api/outfits` →
+`apps/api/src/modules/outfits`. Live: socket `outfit:updated` / `outfit:sync-result` →
+`useOutfitLiveSync` → react-query invalidation → `outfitApi.get`.
+
+## Non-obvious rationale
+
+- **Writes are queued, not fired in parallel.** Each write carries the version it expects. Two
+  writes sent at once from the same screen would make the second one conflict with the first, so
+  the hook sends them one after another, each with the version the previous one returned.
+- **Live events only say "version N now".** The board refetches instead of patching itself from
+  the event, so a missed event can never leave a stale board on screen.
+- **Rules are checked twice.** The same slot rules the API enforces run in the browser first, so
+  "shoes don't go in Top" is explained instantly without a round trip; the server still decides.
+- **Tap first, drag second.** Every action works by tapping (and so by keyboard); dragging from
+  the desktop side panel is an extra, using dnd-kit's pointer and keyboard sensors.

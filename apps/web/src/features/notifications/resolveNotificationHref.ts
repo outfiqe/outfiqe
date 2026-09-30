@@ -19,6 +19,7 @@ import {
   creatorProfilePath,
   customerSupportTicketPath,
   orderDetailPath,
+  outfitBuildPath,
   productReviewPath,
   WEB_NOTIFICATION_ROUTES,
 } from "./notificationRoutes";
@@ -108,6 +109,14 @@ export const resolveNotificationHref = (
     case NotificationType.PRODUCT_TAG_SUBMITTED:
     case NotificationType.PRODUCT_TAG_REVIEW_REMINDER:
       return WEB_NOTIFICATION_ROUTES.tagReviews;
+    case NotificationType.OUTFIT_BOARD_ACTIVITY:
+    case NotificationType.OUTFIT_READY_TO_LOCK:
+    case NotificationType.OUTFIT_LOCKED:
+    case NotificationType.OUTFIT_INVITED:
+    case NotificationType.OUTFIT_SHARED:
+    case NotificationType.OUTFIT_MADE_PUBLIC:
+    case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
+      return entityId ? outfitBuildPath(entityId) : WEB_NOTIFICATION_ROUTES.buildsList;
     default:
       return null;
   }

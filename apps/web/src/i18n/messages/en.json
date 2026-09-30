@@ -1,0 +1,215 @@
+{
+  "language": {
+    "label": "Language",
+    "english": "EN",
+    "nepali": "नेपाली",
+    "englishName": "English",
+    "nepaliName": "नेपाली (Nepali)",
+    "settingsTitle": "Language",
+    "settingsDescription": "Choose the language for outfit builds. More of Outfiqe will follow."
+  },
+  "savedSizes": {
+    "title": "My sizes",
+    "description": "Save your size for each kind of clothing. Only you can see them. Outfit builds use them to show whether an item comes in your size.",
+    "sizeFor": "Your size for {type}",
+    "notSet": "Not saved",
+    "lastBought": "You last bought {size}.",
+    "saveLastBought": "Save {size}",
+    "clear": "Clear {type} size",
+    "saved": "Size saved.",
+    "cleared": "Size cleared.",
+    "saveFailed": "Couldn't save your size. Try again.",
+    "loadFailed": "Couldn't load your sizes. Try again.",
+    "retry": "Try again",
+    "empty": "There are no kinds of clothing to size yet."
+  },
+  "outfitBuild": {
+    "availability": {
+      "IN_STOCK": "In stock",
+      "LOW_STOCK": "Low stock",
+      "OUT_OF_STOCK": "Out of stock"
+    },
+    "budget": {
+      "sectionLabel": "Total and budget",
+      "rupees": "Rs {amount}",
+      "total": "Total: {total}",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
+      "fullyAvailable": "Fully available",
+      "someUnavailable": "Some items unavailable",
+      "progressLabel": "Budget used",
+      "overBy": "{amount} over budget",
+      "leftOf": "{left} left of {budget}"
+    },
+    "board": {
+      "reconnecting": "Reconnecting…",
+      "untitled": "Untitled build",
+      "status": {
+        "DRAFT": "Building",
+        "LOCKED": "Locked",
+        "ARCHIVED": "Archived"
+      },
+      "visibility": {
+        "PRIVATE": "Private",
+        "SHARED": "Shared",
+        "PUBLIC": "Public"
+      },
+      "openChat": "Build chat",
+      "saving": "Saving…",
+      "removedTitle": "You're no longer on this build",
+      "unavailableTitle": "This build isn't available",
+      "unavailableBody": "It may have been archived, or you may not have access to it.",
+      "backToMyBuilds": "Back to My Builds",
+      "soldOutBanner": "{count, plural, one {# item has sold out.} other {# items have sold out.}} Swap them to lock the build."
+    },
+    "slots": {
+      "filledOf": "{filled} of {max}",
+      "blocked": "Can't be filled while a slot it clashes with is filled.",
+      "addTo": "Add to {slot}",
+      "empty": "Empty",
+      "addedBy": "Added by {name}",
+      "swap": "Swap {product}",
+      "remove": "Remove {product}",
+      "yourSizeInStock": "Your size {size}: in stock",
+      "yourSizeSoldOut": "Your size {size}: sold out",
+      "notInYourSize": "Not made in your size ({size})",
+      "swapSoldOut": "Swap"
+    },
+    "picker": {
+      "title": "Add to {slot}",
+      "swapTitle": "Swap {product}",
+      "suggestionsTitle": "Similar and in stock",
+      "suggestionsLoadFailed": "Couldn't load suggestions. You can still search below.",
+      "noSuggestions": "No similar products in stock. Try searching below.",
+      "searchTitle": "Search all",
+      "searchPlaceholder": "Search products",
+      "searchLabel": "Search products",
+      "typeFilterLabel": "Kind of product",
+      "allTypes": "All kinds",
+      "loadFailed": "Couldn't load products. Try again.",
+      "noResults": "No products in stock match.",
+      "lowStock": "Low stock",
+      "loadMore": "Show more",
+      "finderTitle": "Find products",
+      "finderHint": "Drag a product onto a slot, or tap a slot to pick one.",
+      "dragLabel": "{product}. Drag onto a slot to add it."
+    },
+    "people": {
+      "title": "People",
+      "invite": "Invite",
+      "inviteTitle": "Invite people to build",
+      "inviteDescription": "{seats, plural, one {# more person can join.} other {# more people can join.}} They'll get a link and join the build's chat.",
+      "cancel": "Cancel",
+      "boardFull": "This build already has as many people as it can.",
+      "you": "{name} (you)",
+      "owner": "Owner",
+      "happy": "Happy",
+      "waiting": "Not yet",
+      "makeOwner": "Make owner",
+      "remove": "Remove"
+    },
+    "visibility": {
+      "title": "Who can see this build",
+      "cancel": "Cancel",
+      "save": "Save",
+      "options": {
+        "PRIVATE": {
+          "label": "Private",
+          "description": "Only the people building it."
+        },
+        "SHARED": {
+          "label": "Shared",
+          "description": "The people building it, plus people you send it to."
+        },
+        "PUBLIC": {
+          "label": "Public",
+          "description": "Anyone, in the Builds tab in Explore."
+        }
+      },
+      "lockFirst": "Lock the build before sharing it or making it public.",
+      "sendTo": "Send it to"
+    },
+    "settings": {
+      "title": "Build settings",
+      "cancel": "Cancel",
+      "save": "Save",
+      "buildName": "Build name",
+      "buildNamePlaceholder": "Dashain look",
+      "budget": "Budget (Rs)",
+      "noBudget": "No budget",
+      "perPerson": "Items each person can add",
+      "noLimit": "No limit",
+      "itemsEach": "{count, plural, one {# item each} other {# items each}}",
+      "perPersonHint": "Useful when several people are building together."
+    },
+    "actions": {
+      "sectionLabel": "Build actions",
+      "imHappy": "I'm happy",
+      "notHappyAnyMore": "Not happy yet",
+      "lock": "Lock build",
+      "unlock": "Unlock to change",
+      "whoCanSee": "Who can see it",
+      "settings": "Settings",
+      "leave": "Leave build",
+      "lockBlockers": {
+        "notEnoughItems": "Add at least {count} items to lock.",
+        "itemsSoldOut": "Swap the sold-out items to lock.",
+        "notEveryoneHappy": "Everyone needs to tap I'm happy to lock."
+      },
+      "archiveConfirm": "Archive this build? It will be hidden from My Builds.",
+      "archive": "Archive",
+      "cancel": "Cancel"
+    },
+    "writes": {
+      "conflictBy": "Board updated by {name}, showing latest.",
+      "conflictBySomeone": "The board was updated, showing latest.",
+      "refusals": {
+        "UNKNOWN_SLOT": "This build doesn't have that slot.",
+        "SLOT_FULL": "That slot is already full.",
+        "WRONG_SLOT_FOR_PRODUCT": "That kind of product doesn't go in this slot.",
+        "SLOT_BLOCKED": "Clear the slot this one clashes with first.",
+        "PRODUCT_ALREADY_ON_BOARD": "That product is already on this build.",
+        "BOARD_FULL": "This build already has as many items as it can hold.",
+        "MEMBER_ITEM_LIMIT_REACHED": "You've added as many items as the owner allows per person.",
+        "PRODUCT_UNAVAILABLE": "That product is sold out or no longer on sale.",
+        "NOT_ENOUGH_ITEMS": "Add more items before locking.",
+        "ITEMS_SOLD_OUT": "Swap the sold-out items before locking.",
+        "NOT_EVERYONE_HAPPY": "Everyone needs to tap I'm happy first.",
+        "TOO_MANY_EDITORS": "This build already has as many people as it can.",
+        "PEOPLE_UNAVAILABLE": "Some of these people can't be added right now.",
+        "OUTFIT_NEVER_LOCKED": "Lock the build before sharing it.",
+        "OWNER_MUST_HAND_OVER": "Make someone else the owner before leaving.",
+        "OUTFIT_NOT_EDITABLE": "This build can't be changed right now.",
+        "ALREADY_ON_BUILD": "They're already on this build.",
+        "RATE_LIMITED": "You're changing things very quickly. Wait a moment."
+      }
+    },
+    "published": {
+      "lockedOn": "Locked {date}",
+      "contributors": "Built by",
+      "pricesAtLock": "Prices shown are from when the build was locked."
+    },
+    "myBuilds": {
+      "title": "My Builds",
+      "subtitle": "Put an outfit together, on your own or with others.",
+      "comingSoon": "Outfit builds are coming soon.",
+      "newBuild": "New build",
+      "tabs": {
+        "mine": "My builds",
+        "shared": "Shared with me"
+      },
+      "emptyMine": "No builds yet. Start one and fill it with products from any brand.",
+      "emptyShared": "Nobody has shared a build with you yet.",
+      "emptyBuild": "No items yet",
+      "moreItems": "+{count} items",
+      "people": "{count, plural, one {# person} other {# people}}",
+      "loadFailed": "Couldn't load your builds. Try again.",
+      "loadMore": "Show more"
+    },
+    "card": {
+      "unavailable": "This build isn't available.",
+      "summary": "{count, plural, one {# item} other {# items}} · {total}",
+      "youStarted": "You started an outfit build",
+      "startedBy": "{name} started an outfit build"
+    }
+  }
+}

@@ -30,6 +30,7 @@
     "test:e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
     "@hookform/resolvers": "^5.7.1",
     "@outfiqe/client": "workspace:*",
     "@outfiqe/components": "workspace:*",
@@ -53,6 +54,7 @@
     "lucide-react": "^1.29.0",
     "motion": "^13.4.0",
     "next": "^16.3.0",
+    "next-intl": "^4.14.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.84.0",

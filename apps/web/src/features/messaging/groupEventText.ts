@@ -30,5 +30,19 @@ export const describeGroupEvent = (
       return `${actor} made ${event.member.name} an admin`;
     case "ADMIN_REMOVED":
       return `${actor} removed ${event.member.name} as an admin`;
+    case "OUTFIT_EDITORS_ADDED":
+      return `${actor} added ${joinNames(event.members)} to the build`;
+    case "OUTFIT_ITEM_ADDED":
+      return `${actor} added ${event.productName}`;
+    case "OUTFIT_ITEM_SWAPPED":
+      return `${actor} swapped in ${event.productName}`;
+    case "OUTFIT_ITEM_REMOVED":
+      return `${actor} removed ${event.productName}`;
+    case "OUTFIT_EVERYONE_HAPPY":
+      return "Everyone's happy. The build is ready to lock";
+    case "OUTFIT_LOCKED":
+      return `${actor} locked the build`;
+    case "OUTFIT_UNLOCKED":
+      return `${actor} unlocked the build`;
   }
 };

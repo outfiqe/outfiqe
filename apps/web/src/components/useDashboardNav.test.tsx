@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
 import { useDashboardNav } from "./useDashboardNav";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 vi.mock("@/shared/hooks/useTenantHost", () => ({ useTenantHost: vi.fn() }));
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: vi.fn() }));
 
 const mockAuth = (role: UserRole, isCreator = false) => {
   vi.mocked(useAuth).mockReturnValue({
@@ -18,8 +20,15 @@ const mockAuth = (role: UserRole, isCreator = false) => {
   } as ReturnType<typeof useAuth>);
 };
 
+const navIdsFor = (role: UserRole) => {
+  mockAuth(role);
+  const { result } = renderHook(() => useDashboardNav());
+  return result.current.navItems.map((item) => item.id);
+};
+
 beforeEach(() => {
   vi.mocked(useTenantHost).mockReturnValue(false);
+  vi.mocked(useFeatureFlag).mockReturnValue(false);
 });
 
 describe("useDashboardNav", () => {
@@ -33,10 +42,29 @@ describe("useDashboardNav", () => {
   });
 
   it("keeps the Addresses section for a shopper account", () => {
-    mockAuth(UserRole.CUSTOMER);
+    expect(navIdsFor(UserRole.CUSTOMER)).toContain("addresses");
+  });
 
-    const { result } = renderHook(() => useDashboardNav());
+  it("offers the Language settings to every kind of account", () => {
+    expect(navIdsFor(UserRole.CUSTOMER)).toContain("language");
+    expect(navIdsFor(UserRole.BRAND_OWNER)).toContain("language");
+  });
 
-    expect(result.current.navItems.map((item) => item.id)).toContain("addresses");
+  it("offers My sizes to shoppers and creators but not to brand accounts", () => {
+    expect(navIdsFor(UserRole.CUSTOMER)).toContain("sizes");
+    expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("sizes");
+  });
+
+  it("hides My Builds while Outfit Build is switched off for the person", () => {
+    expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("builds");
+  });
+
+  it("shows My Builds right after Overview once Outfit Build is on for the person", () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+
+    const [firstNavId, secondNavId] = navIdsFor(UserRole.CUSTOMER);
+
+    expect(useFeatureFlag).toHaveBeenCalledWith("outfit_builder");
+    expect([firstNavId, secondNavId]).toEqual(["overview", "builds"]);
   });
 });

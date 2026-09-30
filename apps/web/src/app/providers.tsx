@@ -28,6 +28,7 @@ import {
   ServiceWorkerProvider,
   shouldPersistQuery,
 } from "@/features/pwa";
+import { ClientTranslationsProvider } from "@/i18n/ClientTranslationsProvider";
 import { DeferredMount } from "@/shared/components/DeferredMount";
 
 const DEFAULT_STALE_TIME_MS = 30 * 1000;
@@ -50,26 +51,28 @@ export const Providers = ({ children }: { children: ReactNode }) => {
 
   const app = (
     <AuthProvider>
-      <ChatPanelProvider>
-        {children}
-        <OfflineBanner />
-        <OfflineActionSync />
-        <ServiceWorkerErrorReporter />
-        <PwaKillSwitchTeardown />
-        <Toaster />
-        <GamificationSocketListener />
-        <AccountSuspensionSocketListener />
-        <DeferredMount>
-          <AppUpdatePrompt />
-          <InstallPrompt />
-          <PushNotificationPrompt />
-          <PersistentStorageRequest />
-          <AppBadgeSync />
-          <BackgroundRefreshRegistration />
-          <FloatingChatLauncher />
-          <ChatPanel />
-        </DeferredMount>
-      </ChatPanelProvider>
+      <ClientTranslationsProvider>
+        <ChatPanelProvider>
+          {children}
+          <OfflineBanner />
+          <OfflineActionSync />
+          <ServiceWorkerErrorReporter />
+          <PwaKillSwitchTeardown />
+          <Toaster />
+          <GamificationSocketListener />
+          <AccountSuspensionSocketListener />
+          <DeferredMount>
+            <AppUpdatePrompt />
+            <InstallPrompt />
+            <PushNotificationPrompt />
+            <PersistentStorageRequest />
+            <AppBadgeSync />
+            <BackgroundRefreshRegistration />
+            <FloatingChatLauncher />
+            <ChatPanel />
+          </DeferredMount>
+        </ChatPanelProvider>
+      </ClientTranslationsProvider>
     </AuthProvider>
   );
 

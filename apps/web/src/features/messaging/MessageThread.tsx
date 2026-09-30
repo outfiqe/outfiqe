@@ -6,6 +6,7 @@ import type { Message } from "@outfiqe/types";
 import { ArrowLeft, Check, CheckCheck, Info } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { BuildCardMessage } from "@/features/outfit-build/components/BuildCardMessage";
 import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -27,6 +28,15 @@ type MessageThreadProps = {
 };
 
 const USER_MESSAGE_KIND = "USER";
+const OUTFIT_CARD_MESSAGE_KIND = "OUTFIT_CARD";
+
+const ThreadMessage = ({ message, senderLabel }: { message: Message; senderLabel?: string }) => {
+  if (message.kind === USER_MESSAGE_KIND) {
+    return <MessageBubble message={message} senderLabel={senderLabel} />;
+  }
+  if (message.kind === OUTFIT_CARD_MESSAGE_KIND) return <BuildCardMessage message={message} />;
+  return <SystemMessageLine message={message} />;
+};
 
 const MessageBubble = ({ message, senderLabel }: { message: Message; senderLabel?: string }) => (
   <div className={cn("flex flex-col", message.isMine ? "items-end" : "items-start")}>
@@ -309,11 +319,7 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
           return (
             <div key={message.id}>
               {showDateSeparator && <DateSeparator isoDate={message.createdAt} />}
-              {message.kind === USER_MESSAGE_KIND ? (
-                <MessageBubble message={message} senderLabel={senderLabel} />
-              ) : (
-                <SystemMessageLine message={message} />
-              )}
+              <ThreadMessage message={message} senderLabel={senderLabel} />
             </div>
           );
         })}

@@ -42,6 +42,7 @@ const buildMessage = (): Message => ({
   sender: { id: "user-2", name: "Jane Doe", handle: "jane", avatarUrl: null },
   kind: "USER",
   systemEvent: null,
+  outfitId: null,
   body: "Let us meet tomorrow.",
   attachments: [],
   createdAt: "2026-08-24T10:00:00.000Z",

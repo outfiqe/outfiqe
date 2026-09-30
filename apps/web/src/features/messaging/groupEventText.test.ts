@@ -38,4 +38,28 @@ describe("describeGroupEvent", () => {
       "You removed Ram as an admin",
     );
   });
+
+  it("describes what happens on an outfit build", () => {
+    expect(describeGroupEvent({ type: "OUTFIT_EDITORS_ADDED", members: [RAM] }, "Ada", false)).toBe(
+      "Ada added Ram to the build",
+    );
+    expect(
+      describeGroupEvent({ type: "OUTFIT_ITEM_ADDED", productName: "Maroon Kurta" }, "Ada", true),
+    ).toBe("You added Maroon Kurta");
+    expect(
+      describeGroupEvent({ type: "OUTFIT_ITEM_SWAPPED", productName: "Juttis" }, "Ada", false),
+    ).toBe("Ada swapped in Juttis");
+    expect(
+      describeGroupEvent({ type: "OUTFIT_ITEM_REMOVED", productName: "Shawl" }, "Ada", false),
+    ).toBe("Ada removed Shawl");
+    expect(describeGroupEvent({ type: "OUTFIT_EVERYONE_HAPPY" }, "Ada", false)).toBe(
+      "Everyone's happy. The build is ready to lock",
+    );
+    expect(describeGroupEvent({ type: "OUTFIT_LOCKED" }, "Ada", false)).toBe(
+      "Ada locked the build",
+    );
+    expect(describeGroupEvent({ type: "OUTFIT_UNLOCKED" }, "Ada", true)).toBe(
+      "You unlocked the build",
+    );
+  });
 });

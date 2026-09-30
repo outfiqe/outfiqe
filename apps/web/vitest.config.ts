@@ -257,6 +257,13 @@ export default defineConfig({
         "src/features/brands/api/serverBrands.ts",
         "src/features/brand-profile/api/getBrandProfileServerPublic.ts",
         "src/features/creator-profile/api/getCreatorProfileServerPublic.ts",
+        "src/features/outfit-build/utils/**/*.ts",
+        "src/features/outfit-build/components/BuildCardMessage.tsx",
+        "src/features/outfit-build/components/MyBuildsPage.tsx",
+        "src/features/outfit-build/components/SlotCard.tsx",
+        "src/features/saved-sizes/**/*.{ts,tsx}",
+        "src/shared/hooks/useFeatureFlag.ts",
+        "src/i18n/localeCookie.ts",
       ],
       thresholds: {
         lines: 80,
