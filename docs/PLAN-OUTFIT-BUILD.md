@@ -49,7 +49,7 @@ decide **how** it is built. Every rule in `CLAUDE.md` still applies on top of bo
 | Offers                       | The brand pays when sending the offer; we hold the money until the creator posts  | Neither side has to trust the other. Deadlines and a holding period stop a creator from posting and deleting straight away.                                                                                 |
 | Pathao                       | No integration                                                                    | Pathao stays a carrier name, as today. Parcels that come back are handled by a new admin "Returned / returned to origin" action.                                                                            |
 | Feature switches             | A new global feature-flag system with user and brand allow lists                  | The existing platform feature flags only work per CRM tenant. Creators are not tenants.                                                                                                                     |
-| Photos                       | A new object storage driver that works with both Cloudflare R2 and Amazon S3      | Storage is local disk today. Photos stay switched off until object storage is live.                                                                                                                         |
+| Photos                       | The existing image pipeline and the existing storage driver (local disk)          | No new object storage driver. Photos go through the same upload and storage path as Creator Look photos, so a later move to object storage covers them too.                                                 |
 
 ---
 
@@ -275,9 +275,8 @@ commission rate.
 
 ### Photos
 
-This step starts only once object storage is ready.
-
-- Add the object storage driver, which works with Cloudflare R2 and Amazon S3.
+- Use the existing storage driver (local disk today) and the existing image pipeline. No new
+  object storage driver is built in this version.
 - Upload through the existing flow and image pipeline, up to 10 MB each, with location data
   removed and the file type checked from its content.
 - Five photos per person and fifteen per board. The owner picks up to six cover photos. Without
@@ -348,7 +347,7 @@ Concurrency and stock tests run against a real database, never mocks.
    Explore is visible to them first. We collect feedback every week.
 4. **Everyone.** Turned on for all once it has been stable for two weeks.
 
-Photos and try-on photos have their own switches and turn on only after object storage is live.
+Photos and try-on photos have their own switches, so they can be turned on separately.
 Admin can turn the whole feature off at any time. Chat and existing Creator Looks keep working when
 it is off.
 
