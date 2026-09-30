@@ -8,6 +8,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/uuid/index.ts",
+        "src/email-logo/index.ts",
         "src/notifications/isExternalNotificationPath.ts",
         "src/post-layout/index.ts",
         "src/platform-access/index.ts",

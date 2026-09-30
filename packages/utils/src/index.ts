@@ -1,4 +1,5 @@
 export * from "./avatar";
+export * from "./email-logo";
 export * from "./format";
 export * from "./landing";
 export * from "./notifications/formatActorList";
