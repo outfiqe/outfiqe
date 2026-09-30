@@ -43,7 +43,10 @@ const buySize = async (
   buyer: OutfitTestUser,
   productTypeId: string,
   sizeLabel: string,
-  { paymentStatus = PaymentStatus.PAID, fulfilmentStatus = FulfilmentStatus.DELIVERED } = {},
+  {
+    paymentStatus = PaymentStatus.PAID,
+    fulfilmentStatus = FulfilmentStatus.DELIVERED,
+  }: { paymentStatus?: PaymentStatus; fulfilmentStatus?: FulfilmentStatus } = {},
 ) => {
   const brand = await prisma.brand.create({
     data: {
