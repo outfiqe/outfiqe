@@ -77,6 +77,7 @@ export default defineConfig({
         "src/features/users/hooks/useUpdateOwnProfile.ts",
         "src/features/notifications/SiteNotificationBell.tsx",
         "src/features/landing/components/ProductCard/index.tsx",
+        "src/features/wishlist/hooks/useToggleWishlist.ts",
         "src/features/product-reviews/components/RatingSummary.tsx",
         "src/features/product-reviews/components/ReviewCard.tsx",
         "src/features/brand-dashboard/api/brandOverviewApi.ts",
