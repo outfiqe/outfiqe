@@ -129,6 +129,26 @@ export type SizeFit = (typeof SIZE_FIT)[keyof typeof SIZE_FIT];
 
 const NO_SIZES_KNOWN = 0;
 
+export type BuyableBuildItem = {
+  productId: string;
+  productName: string;
+  sizes: { label: string; isInStock: boolean }[];
+  suggestedSizeLabel?: string;
+};
+
+export const toBuyableBuildItems = (
+  board: OutfitBoard,
+  mySizeByProductType: ReadonlyMap<string, string>,
+): BuyableBuildItem[] =>
+  board.slots.flatMap((slot) =>
+    slot.items.map(({ product }) => ({
+      productId: product.id,
+      productName: product.name,
+      sizes: product.sizes,
+      suggestedSizeLabel: mySizeByProductType.get(product.productTypeId),
+    })),
+  );
+
 export const describeSizeFit = (product: OutfitProduct, mySize: string): SizeFit | null => {
   if (product.sizes.length === NO_SIZES_KNOWN) return null;
   const matchingSize = product.sizes.find((size) => size.label === mySize);

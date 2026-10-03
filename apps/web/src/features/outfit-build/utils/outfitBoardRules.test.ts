@@ -7,6 +7,7 @@ import {
   findBoardRefusal,
   firstFreePosition,
   SIZE_FIT,
+  toBuyableBuildItems,
   withHappiness,
   withItemPlaced,
   withItemRemoved,
@@ -75,6 +76,32 @@ const placedItem = (productId: string, position = 0) => ({
   product: product(productId),
   addedBy: SITA,
   addedAt: "2026-09-30T10:00:00.000Z",
+});
+
+describe("toBuyableBuildItems", () => {
+  it("lists every item on the board with its sizes and my saved size for its type", () => {
+    const shirt = {
+      ...placedItem("shirt"),
+      product: { ...product("shirt"), sizes: [{ label: "M", isInStock: true }] },
+    };
+    const trousers = { ...placedItem("trousers"), product: product("trousers", "type-bottoms") };
+    const current = board([slot({ items: [shirt] }), slot({ key: "bottom", items: [trousers] })]);
+
+    expect(toBuyableBuildItems(current, new Map([["type-tops", "M"]]))).toEqual([
+      {
+        productId: "shirt",
+        productName: "Product shirt",
+        sizes: [{ label: "M", isInStock: true }],
+        suggestedSizeLabel: "M",
+      },
+      {
+        productId: "trousers",
+        productName: "Product trousers",
+        sizes: [],
+        suggestedSizeLabel: undefined,
+      },
+    ]);
+  });
 });
 
 describe("firstFreePosition", () => {

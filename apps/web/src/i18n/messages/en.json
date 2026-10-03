@@ -267,6 +267,29 @@
       "post": "Post look",
       "posted": "Look posted."
     },
+    "buy": {
+      "panelTitle": "Buy this look",
+      "description": "Pick your size for each item. Buy the whole set, or only the items you tick.",
+      "includeItem": "Add {product} to my bag",
+      "sizeFor": "Size of {product}",
+      "pickSize": "Pick a size",
+      "sizeSoldOut": "{size} (sold out)",
+      "buyFullSet": "Buy the full set",
+      "addPicked": "Add the ticked items",
+      "pickSomething": "Tick at least one item and pick its size.",
+      "added": "{count, plural, =0 {Nothing was added to your bag.} one {Added # item to your bag.} other {Added # items to your bag.}}",
+      "viewBag": "View bag",
+      "leftOutTitle": "Not added",
+      "signInToBuy": "Sign in to buy from this build",
+      "addFailed": "Couldn't add to your bag. Try again.",
+      "reason": {
+        "NOT_IN_BUILD": "Not part of this build",
+        "NO_LONGER_SOLD": "No longer sold",
+        "NO_SIZE_CHOSEN": "No size picked",
+        "SIZE_NOT_OFFERED": "That size isn't offered",
+        "SOLD_OUT": "Sold out in your size"
+      }
+    },
     "card": {
       "unavailable": "This build isn't available.",
       "summary": "{count, plural, one {# item} other {# items}} · {total}",

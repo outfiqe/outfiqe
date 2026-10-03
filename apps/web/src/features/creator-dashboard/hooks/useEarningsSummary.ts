@@ -6,12 +6,12 @@ import { useAuth } from "@/features/auth";
 
 import { commissionApi } from "../api/commissionApi";
 
-export const useEarningsSummary = () => {
+export const useEarningsSummary = (canEarn = true) => {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
     queryKey: ["commissions", "mine", "summary"],
     queryFn: commissionApi.getMySummary,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && canEarn,
   });
 };

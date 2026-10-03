@@ -47,6 +47,7 @@ const detail = (overrides: Partial<PublicBuildDetail> = {}): PublicBuildDetail =
       brandName: "Kathmandu Threads",
       unitPrice: 3_200,
       isInStock: true,
+      sizes: [{ label: "M", isInStock: true }],
     },
   ],
   lockedAt: "2026-10-01T09:00:00.000Z",

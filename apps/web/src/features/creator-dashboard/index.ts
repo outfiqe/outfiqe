@@ -2,6 +2,7 @@ export type { CreatorProfile, UpdateCreatorProfileInput } from "./api/creatorDas
 export {
   getBadgeCollectionServer,
   getChallengesServer,
+  getCommissionEligibilityServer,
   getEarningsSummaryServer,
   getXpProgressServer,
 } from "./api/dashboardServer";

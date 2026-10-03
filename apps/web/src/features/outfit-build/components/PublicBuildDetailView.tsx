@@ -15,6 +15,7 @@ import type { PublicBuildDetail } from "../api/outfitSocialSchemas";
 import { formatLakhAmount, formatNepalDateTime } from "../utils/outfitFormatting";
 import { BuildComments } from "./BuildComments";
 import { BuildReactionsBar } from "./BuildReactionsBar";
+import { BuyBuildPanel } from "./BuyBuildPanel";
 import { PersonAvatar } from "./PersonAvatar";
 
 type PublicBuildDetailViewProps = {
@@ -118,6 +119,15 @@ export const PublicBuildDetailView = ({
         {tBudget("total", { total: tBudget("rupees", { amount: formatLakhAmount(build.total) }) })}
       </p>
       <p className="text-xs text-muted-foreground">{tPublished("pricesAtLock")}</p>
+
+      <BuyBuildPanel
+        outfitId={build.id}
+        items={build.items.map(({ productId, productName, sizes }) => ({
+          productId,
+          productName,
+          sizes,
+        }))}
+      />
 
       <BuildComments outfitId={build.id} canComment={build.canComment} />
 

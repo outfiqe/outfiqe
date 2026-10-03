@@ -68,15 +68,36 @@ beforeEach(() => {
 });
 
 describe("EarningsSection", () => {
-  it("shows the creator status gate instead of earnings for a non-approved creator", () => {
-    render(<EarningsSection creatorStatus={CreatorStatus.PENDING} />);
+  it("shows the creator status gate instead of earnings to someone who can't earn yet", () => {
+    render(<EarningsSection creatorStatus={CreatorStatus.PENDING} canEarn={false} />);
 
     expect(screen.getByText("Status gate for PENDING")).toBeInTheDocument();
     expect(screen.queryByText("Earnings")).not.toBeInTheDocument();
+    expect(useMyEarnings).toHaveBeenCalledWith(false);
+  });
+
+  it("shows build earnings to a shopper who isn't a creator", () => {
+    mockEarnings({
+      data: {
+        pages: [
+          {
+            items: [{ ...buildCommission("b1"), source: CommissionSource.OUTFIT_BUILD }],
+            nextCursor: null,
+          },
+        ],
+        pageParams: [undefined],
+      },
+    });
+
+    render(<EarningsSection creatorStatus={CreatorStatus.NONE} canEarn />);
+
+    expect(screen.getByRole("heading", { name: "Earnings" })).toBeInTheDocument();
+    expect(screen.getByText("Product b1")).toBeInTheDocument();
+    expect(screen.getByText(/from a build you helped make/)).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no earnings yet", () => {
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
       screen.getByText("No earnings yet — tag products in your posts to start earning."),
@@ -94,7 +115,7 @@ describe("EarningsSection", () => {
       },
     });
 
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(screen.getByText("Product c1")).toBeInTheDocument();
     expect(screen.getByText("Product c2")).toBeInTheDocument();
@@ -103,7 +124,7 @@ describe("EarningsSection", () => {
   it("shows loading skeletons instead of the empty state while pending", () => {
     mockEarnings({ isPending: true });
 
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
       screen.queryByText("No earnings yet — tag products in your posts to start earning."),
@@ -119,7 +140,7 @@ describe("EarningsSection", () => {
       },
     });
     const user = userEvent.setup();
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     await user.click(screen.getByRole("button", { name: "Load more" }));
 
@@ -129,7 +150,7 @@ describe("EarningsSection", () => {
   it("passes the summary and its loading state through to the tiles", () => {
     mockSummary({ isPending: true, data: undefined });
 
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(screen.queryByText(/Rs\./)).not.toBeInTheDocument();
   });
@@ -137,7 +158,7 @@ describe("EarningsSection", () => {
   it("shows an error banner instead of an empty state when the ledger fails to load", () => {
     mockEarnings({ isError: true, isPending: false });
 
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
       screen.getByText("We couldn't load your earnings right now. Please try again."),
@@ -150,7 +171,7 @@ describe("EarningsSection", () => {
   it("shows an error banner instead of zeroed-out tiles when the summary fails to load", () => {
     mockSummary({ isError: true, isPending: false, data: undefined });
 
-    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
       screen.getByText("We couldn't load your earnings summary right now. Please try again."),

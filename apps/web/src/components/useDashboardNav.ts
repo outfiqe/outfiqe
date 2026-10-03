@@ -26,6 +26,7 @@ import {
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
+import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
@@ -103,6 +104,14 @@ const CREATOR_NAV: SidebarNavItem[] = [
 ];
 
 const APPROVED_CREATOR_ONLY_NAV_IDS = new Set(["share", "earnings", "withdraw"]);
+const EARNER_NAV_IDS = new Set(["earnings", "withdraw"]);
+
+const navItemsForShopper = (isCreator: boolean, canEarn: boolean): SidebarNavItem[] => {
+  if (isCreator) return CREATOR_NAV;
+  return CREATOR_NAV.filter(
+    ({ id }) => !APPROVED_CREATOR_ONLY_NAV_IDS.has(id) || (canEarn && EARNER_NAV_IDS.has(id)),
+  );
+};
 
 const BRAND_NAV: SidebarNavItem[] = [
   OVERVIEW_NAV_ITEM,
@@ -134,12 +143,10 @@ export const useDashboardNav = (): DashboardNav => {
   const { state, hasCrmAccess, isCreator } = useAuth();
   const isOnTenantHost = useTenantHost();
   const isOutfitBuildOn = useFeatureFlag("outfit_builder");
+  const { canEarn } = useCommissionEligibility();
 
   const isBrand = state.user?.role === UserRole.BRAND_OWNER;
-  const creatorNavItems = isCreator
-    ? CREATOR_NAV
-    : CREATOR_NAV.filter((item) => !APPROVED_CREATOR_ONLY_NAV_IDS.has(item.id));
-  const roleNavItems = isBrand ? BRAND_NAV : creatorNavItems;
+  const roleNavItems = isBrand ? BRAND_NAV : navItemsForShopper(isCreator, canEarn);
   const baseNavItems = isOutfitBuildOn
     ? roleNavItems.flatMap((item) =>
         item === OVERVIEW_NAV_ITEM ? [item, BUILDS_NAV_ITEM] : [item],

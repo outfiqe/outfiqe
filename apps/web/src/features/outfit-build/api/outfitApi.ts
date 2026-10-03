@@ -3,6 +3,8 @@ import { IDEMPOTENCY_HEADER } from "@outfiqe/client";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import {
+  type BuildCartResult,
+  buildCartResultSchema,
   type MyBuildLook,
   myBuildLookSchema,
   type OutfitBoard,
@@ -29,6 +31,11 @@ export type PublishLookInput = {
   imageAssetIds?: (string | null)[];
   caption?: string;
   sizesWorn: { productId: string; sizeWorn: string }[];
+};
+
+export type AddBuildToCartInput = {
+  isFullSet: boolean;
+  sizes: { productId: string; sizeLabel: string }[];
 };
 
 export type OutfitWrite = {
@@ -92,6 +99,11 @@ export const outfitApi = {
   async publishLook(outfitId: string, input: PublishLookInput): Promise<{ look: PublishedLook }> {
     const res = await apiClient.post(`/outfits/${outfitId}/look`, input);
     return { look: publishedLookSchema.parse(res.data) };
+  },
+
+  async addToCart(outfitId: string, input: AddBuildToCartInput): Promise<BuildCartResult> {
+    const res = await apiClient.post(`/outfits/${outfitId}/cart`, input);
+    return buildCartResultSchema.parse(res.data);
   },
 
   async listReplacements(

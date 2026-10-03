@@ -9,6 +9,7 @@ const summary: BrandPayoutSummary = {
   pending: 2_000,
   available: 7_000,
   withdrawn: 3_000,
+  buildCommissionEarnings: 450,
 };
 
 describe("WalletSummaryTiles", () => {
@@ -20,6 +21,8 @@ describe("WalletSummaryTiles", () => {
     expect(screen.getByText("Rs. 2,000")).toBeInTheDocument();
     expect(screen.getByText("Rs. 7,000")).toBeInTheDocument();
     expect(screen.getByText("Rs. 3,000")).toBeInTheDocument();
+    expect(screen.getByText("From builds")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 450")).toBeInTheDocument();
   });
 
   it("shows an error banner instead of fabricating zero figures when the summary fails to load", () => {

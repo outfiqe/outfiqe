@@ -38,6 +38,7 @@ export const publicBuildItemSchema = z.object({
   brandName: z.string(),
   unitPrice: z.number(),
   isInStock: z.boolean(),
+  sizes: z.array(z.object({ label: z.string(), isInStock: z.boolean() })).default([]),
 });
 
 export const publicBuildDetailSchema = publicBuildCardSchema.extend({

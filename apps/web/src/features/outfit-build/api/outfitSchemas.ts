@@ -122,6 +122,21 @@ export const myBuildLookSchema = z
 
 export const publishedLookSchema = z.object({ id: z.string() });
 
+export const BUILD_ITEM_LEFT_OUT_REASONS = [
+  "NOT_IN_BUILD",
+  "NO_LONGER_SOLD",
+  "NO_SIZE_CHOSEN",
+  "SIZE_NOT_OFFERED",
+  "SOLD_OUT",
+] as const;
+
+export const buildCartResultSchema = z.object({
+  addedProductIds: z.array(z.string()),
+  leftOut: z.array(
+    z.object({ productId: z.string(), reason: z.enum(BUILD_ITEM_LEFT_OUT_REASONS) }),
+  ),
+});
+
 export const outfitWriteResultSchema = z.object({
   version: z.number(),
   board: outfitBoardSchema.nullable(),
@@ -164,6 +179,7 @@ export type OutfitSlot = z.infer<typeof outfitSlotSchema>;
 export type OutfitProduct = z.infer<typeof outfitProductSchema>;
 export type MyBuildLook = z.infer<typeof myBuildLookSchema>;
 export type PublishedLook = z.infer<typeof publishedLookSchema>;
+export type BuildCartResult = z.infer<typeof buildCartResultSchema>;
 export type OutfitPublished = z.infer<typeof outfitPublishedSchema>;
 export type OutfitView = z.infer<typeof outfitViewSchema>;
 export type OutfitWriteResult = z.infer<typeof outfitWriteResultSchema>;

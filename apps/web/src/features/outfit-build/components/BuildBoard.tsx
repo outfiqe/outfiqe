@@ -31,6 +31,7 @@ import {
   countSoldOutItems,
   findBoardRefusal,
   firstFreePosition,
+  toBuyableBuildItems,
   withHappiness,
   withItemPlaced,
   withItemRemoved,
@@ -40,6 +41,7 @@ import { BoardActions } from "./BoardActions";
 import { BoardPeople } from "./BoardPeople";
 import { BoardSettingsModal } from "./BoardSettingsModal";
 import { BudgetBar } from "./BudgetBar";
+import { BuyBuildPanel } from "./BuyBuildPanel";
 import { InviteEditorsModal } from "./InviteEditorsModal";
 import { PostAsLookPanel } from "./PostAsLookPanel";
 import { ProductFinderPanel } from "./ProductFinderPanel";
@@ -258,6 +260,12 @@ export const BuildBoard = ({
               onOpenVisibility={() => setOpenModal("visibility")}
             />
             <PostAsLookPanel board={board} />
+            {board.status === "LOCKED" && (
+              <BuyBuildPanel
+                outfitId={board.id}
+                items={toBuyableBuildItems(board, mySizeByProductType)}
+              />
+            )}
           </aside>
         </div>
       </div>

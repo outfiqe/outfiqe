@@ -84,6 +84,14 @@ Ways in from the rest of the app:
   been locked since, it offers "Post the new version".
 - Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
   (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
+- Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes
+  prefilled from the person's saved sizes) and under a shared or public build
+  (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). Each item has a tick and a
+  size picker; sold-out sizes can't be picked. "Buy the full set" sends every item with a size,
+  "Add the ticked items" sends only the ticked ones (`hooks/useBuyFromBuild.ts` →
+  `POST /api/outfits/:id/cart`, then the bag query is refreshed). The panel then says how many
+  items were added, links to the bag, and lists anything left out with the reason. Signed-out
+  visitors get a sign-in link; brand and staff accounts don't see the panel.
 
 ## Funnel
 

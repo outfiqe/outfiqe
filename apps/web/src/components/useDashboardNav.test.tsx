@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
+import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
@@ -11,6 +12,9 @@ import { useDashboardNav } from "./useDashboardNav";
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 vi.mock("@/shared/hooks/useTenantHost", () => ({ useTenantHost: vi.fn() }));
 vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: vi.fn() }));
+vi.mock("@/features/creator-dashboard/hooks/useCommissionEligibility", () => ({
+  useCommissionEligibility: vi.fn(),
+}));
 
 const mockAuth = (role: UserRole, isCreator = false) => {
   vi.mocked(useAuth).mockReturnValue({
@@ -29,6 +33,7 @@ const navIdsFor = (role: UserRole) => {
 beforeEach(() => {
   vi.mocked(useTenantHost).mockReturnValue(false);
   vi.mocked(useFeatureFlag).mockReturnValue(false);
+  vi.mocked(useCommissionEligibility).mockReturnValue({ canEarn: false });
 });
 
 describe("useDashboardNav", () => {
@@ -66,5 +71,22 @@ describe("useDashboardNav", () => {
 
     expect(useFeatureFlag).toHaveBeenCalledWith("outfit_builder");
     expect([firstNavId, secondNavId]).toEqual(["overview", "builds"]);
+  });
+
+  it("keeps Earnings and Withdraw away from shoppers who haven't earned anything", () => {
+    const navIds = navIdsFor(UserRole.CUSTOMER);
+
+    expect(navIds).not.toContain("earnings");
+    expect(navIds).not.toContain("withdraw");
+  });
+
+  it("offers Earnings and Withdraw, but not Share, to a shopper who earned from a build", () => {
+    vi.mocked(useCommissionEligibility).mockReturnValue({ canEarn: true });
+
+    const navIds = navIdsFor(UserRole.CUSTOMER);
+
+    expect(navIds).toContain("earnings");
+    expect(navIds).toContain("withdraw");
+    expect(navIds).not.toContain("share");
   });
 });

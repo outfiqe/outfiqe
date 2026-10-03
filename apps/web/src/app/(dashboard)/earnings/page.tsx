@@ -2,11 +2,16 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { CreatorStatus, UserRole } from "@/features/auth/types";
-import { EarningsSection, getEarningsSummaryServer } from "@/features/creator-dashboard";
+import { UserRole } from "@/features/auth/types";
+import {
+  EarningsSection,
+  getCommissionEligibilityServer,
+  getEarningsSummaryServer,
+} from "@/features/creator-dashboard";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 
 import { requireDashboardSession } from "../requireDashboardSession";
+import { resolveCanEarn } from "../resolveCanEarn";
 
 export const metadata: Metadata = { title: "Earnings" };
 
@@ -14,8 +19,9 @@ const DashboardEarningsPage = async () => {
   const { user, accessToken } = await requireDashboardSession("/earnings");
   if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
+  const canEarn = await resolveCanEarn(user, () => getCommissionEligibilityServer(accessToken));
   const queryClient = getQueryClient();
-  if (user.creatorStatus === CreatorStatus.APPROVED) {
+  if (canEarn) {
     await queryClient.prefetchQuery({
       queryKey: ["commissions", "mine", "summary"],
       queryFn: () => getEarningsSummaryServer(accessToken),
@@ -24,7 +30,7 @@ const DashboardEarningsPage = async () => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <EarningsSection creatorStatus={user.creatorStatus} />
+      <EarningsSection creatorStatus={user.creatorStatus} canEarn={canEarn} />
     </HydrationBoundary>
   );
 };

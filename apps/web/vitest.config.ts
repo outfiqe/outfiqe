@@ -40,6 +40,8 @@ export default defineConfig({
         "src/components/useDashboardMobileNav.ts",
         "src/components/useNavPreferences.ts",
         "src/components/useDashboardNav.ts",
+        "src/features/outfit-build/components/BuyBuildPanel.tsx",
+        "src/features/creator-dashboard/components/EarningsSection.tsx",
         "src/components/SidebarPendingNavContext.tsx",
         "src/shared/components/CategoryTypeFilters.tsx",
         "src/shared/hooks/usePendingSelection.ts",

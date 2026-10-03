@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { CreatorStatus, UserRole } from "@/features/auth/types";
-import { CreatorStatusGate } from "@/features/creator-dashboard";
+import { UserRole } from "@/features/auth/types";
+import { CreatorStatusGate, getCommissionEligibilityServer } from "@/features/creator-dashboard";
 import { OwnerType, WithdrawSection } from "@/features/withdraw";
 
 import { requireDashboardSession } from "../requireDashboardSession";
+import { resolveCanEarn } from "../resolveCanEarn";
 
 export const metadata: Metadata = { title: "Withdraw" };
 
 const DashboardWithdrawPage = async () => {
-  const { user } = await requireDashboardSession("/withdraw");
+  const { user, accessToken } = await requireDashboardSession("/withdraw");
   if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
-  if (user.creatorStatus !== CreatorStatus.APPROVED) {
+  const canEarn = await resolveCanEarn(user, () => getCommissionEligibilityServer(accessToken));
+  if (!canEarn) {
     return (
       <CreatorStatusGate
         creatorStatus={user.creatorStatus}

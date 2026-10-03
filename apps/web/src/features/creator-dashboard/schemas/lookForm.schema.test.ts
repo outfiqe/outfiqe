@@ -56,10 +56,10 @@ describe("lookFormSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects more than six tagged products", () => {
+  it("rejects more tagged products than the largest limit an admin can set", () => {
     const result = lookFormSchema.safeParse({
       ...validInput,
-      taggedProducts: Array.from({ length: 7 }, (_, index) => ({
+      taggedProducts: Array.from({ length: 31 }, (_, index) => ({
         productId: `product-${index}`,
         sizeWorn: "M",
       })),
@@ -88,9 +88,9 @@ describe("editLookFormSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects more than six tagged products", () => {
+  it("rejects more tagged products than the largest limit an admin can set", () => {
     const result = editLookFormSchema.safeParse({
-      taggedProducts: Array.from({ length: 7 }, (_, index) => ({
+      taggedProducts: Array.from({ length: 31 }, (_, index) => ({
         productId: `product-${index}`,
         sizeWorn: "M",
       })),
