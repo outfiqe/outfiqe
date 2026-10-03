@@ -1,6 +1,7 @@
 import { Button, Modal } from "@outfiqe/design-system";
 import { useId, useState } from "react";
 
+import { TARGET_NOUN } from "./contentReportTarget";
 import type { ContentReport, ResolveContentReportInput } from "./schemas";
 
 type ResolveContentReportModalProps = {
@@ -21,7 +22,7 @@ export const ResolveContentReportModal = ({
   onCancel,
 }: ResolveContentReportModalProps) => {
   const noteId = useId();
-  const targetNoun = report.targetType === "CREATOR_LOOK" ? "post" : "comment";
+  const targetNoun = TARGET_NOUN[report.targetType];
   const contentIsLive = report.target !== null && !report.target.isRemoved;
   const [action, setAction] = useState<"REMOVE_CONTENT" | "DISMISS">(
     contentIsLive ? "REMOVE_CONTENT" : "DISMISS",

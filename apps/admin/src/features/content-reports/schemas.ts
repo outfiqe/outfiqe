@@ -1,7 +1,12 @@
 import type { ContentReportReason, ContentReportStatus, ContentReportTarget } from "@outfiqe/types";
 import { z } from "zod";
 
-const targetTypeValues = ["CREATOR_LOOK", "CREATOR_LOOK_COMMENT"] satisfies ContentReportTarget[];
+const targetTypeValues = [
+  "CREATOR_LOOK",
+  "CREATOR_LOOK_COMMENT",
+  "OUTFIT_BUILD",
+  "OUTFIT_BUILD_COMMENT",
+] satisfies ContentReportTarget[];
 const reasonValues = [
   "SPAM",
   "HARASSMENT_OR_BULLYING",
@@ -20,7 +25,8 @@ export const contentReportStatusSchema = z.enum(statusValues);
 export type ContentReportStatusValue = z.infer<typeof contentReportStatusSchema>;
 
 export const contentReportTargetPreviewSchema = z.object({
-  lookId: z.string(),
+  lookId: z.string().nullable(),
+  outfitId: z.string().nullable(),
   imageUrl: z.string().nullable(),
   snippet: z.string(),
   isRemoved: z.boolean(),
