@@ -559,7 +559,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       {
         kind: "section",
-        title: "Creator commissions",
+        title: "Commissions earned",
         blocks: [
           { kind: "filterTabs", labels: ["PENDING", "APPROVED", "AVAILABLE", "PAID", "VOIDED"] },
           { kind: "cardRows", count: ROW_COUNT, actionLabels: ["Approve", "Mark paid"] },

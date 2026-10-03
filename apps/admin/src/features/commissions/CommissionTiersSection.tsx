@@ -24,12 +24,16 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "./api";
-import type { CommissionTier } from "./schemas";
+import { commissionQueryKeys, tierChangeQueryKeys } from "./commissionQueryKeys";
+import { COMMISSION_SCOPE_COPY } from "./commissionScopeCopy";
+import type { CommissionScopeValue, CommissionTier } from "./schemas";
 import { EMPTY_TIER_FORM, tierFormSchema, type TierFormValues } from "./tierForm.schema";
 
-const TIERS_QUERY_KEY = ["admin-commission-tiers"];
-
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
+const NO_OVERLAPS = 0;
+
+const hasOverlap = ({ overlapsWithTierIds }: CommissionTier): boolean =>
+  overlapsWithTierIds.length > NO_OVERLAPS;
 
 const toTierInput = (values: TierFormValues): CreateTierInput => ({
   minPrice: Number(values.minPrice),
@@ -79,7 +83,13 @@ const TierFields = ({ form }: { form: UseFormReturn<TierFormValues> }) => {
   );
 };
 
-const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () => void }) => {
+type EditTierModalProps = {
+  scope: CommissionScopeValue;
+  tier: CommissionTier;
+  onClose: () => void;
+};
+
+const EditTierModal = ({ scope, tier, onClose }: EditTierModalProps) => {
   const form = useForm<TierFormValues>({
     resolver: zodResolver(tierFormSchema),
     defaultValues: formValuesForTier(tier),
@@ -87,8 +97,8 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
   });
 
   const update = useApiMutation({
-    mutationFn: (input: UpdateTierInput) => commissionsApi.updateTier(tier.id, input),
-    invalidateKeys: [TIERS_QUERY_KEY],
+    mutationFn: (input: UpdateTierInput) => commissionsApi.updateTier(scope, tier.id, input),
+    invalidateKeys: tierChangeQueryKeys(scope),
     successMessage: "Commission tier saved.",
     onSuccess: () => onClose(),
   });
@@ -110,13 +120,16 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
   );
 };
 
-export const CommissionTiersSection = () => {
+export const CommissionTiersSection = ({ scope }: { scope: CommissionScopeValue }) => {
   const { canUse } = usePlatformPermissions();
   const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
+  const { title, description } = COMMISSION_SCOPE_COPY[scope];
+  const tierChangeKeys = tierChangeQueryKeys(scope);
   const { data: tiers, isLoading } = useQuery({
-    queryKey: TIERS_QUERY_KEY,
-    queryFn: commissionsApi.listTiers,
+    queryKey: commissionQueryKeys.tiers(scope),
+    queryFn: () => commissionsApi.listTiers(scope),
   });
+  const isAnyTierOverlapping = tiers?.some(hasOverlap) ?? false;
 
   const form = useForm<TierFormValues>({
     resolver: zodResolver(tierFormSchema),
@@ -127,15 +140,15 @@ export const CommissionTiersSection = () => {
   const [deleteTarget, setDeleteTarget] = useState<CommissionTier | null>(null);
 
   const create = useApiMutation({
-    mutationFn: (values: TierFormValues) => commissionsApi.createTier(toTierInput(values)),
-    invalidateKeys: [TIERS_QUERY_KEY],
+    mutationFn: (values: TierFormValues) => commissionsApi.createTier(scope, toTierInput(values)),
+    invalidateKeys: tierChangeKeys,
     successMessage: "Commission tier added.",
     onSuccess: () => form.reset(EMPTY_TIER_FORM),
   });
 
   const remove = useApiMutation({
-    mutationFn: (id: string) => commissionsApi.deleteTier(id),
-    invalidateKeys: [TIERS_QUERY_KEY],
+    mutationFn: (id: string) => commissionsApi.deleteTier(scope, id),
+    invalidateKeys: tierChangeKeys,
     successMessage: "Commission tier deleted.",
     onSuccess: () => setDeleteTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -145,10 +158,15 @@ export const CommissionTiersSection = () => {
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-foreground">Commission tiers</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Fixed commission a creator earns per attributed sale, by the sold item&apos;s price band.
-      </p>
+      <h2 className="font-display text-lg font-bold text-foreground">{title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+
+      {isAnyTierOverlapping && (
+        <FormBanner className="mt-3">
+          Some price bands overlap. A price inside two bands uses the one with the higher minimum
+          price — fix the overlap so the commission is never a surprise.
+        </FormBanner>
+      )}
 
       {canManageCommissions && (
         <Form {...form}>
@@ -179,11 +197,18 @@ export const CommissionTiersSection = () => {
             key={tier.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
           >
-            <p className="text-sm text-foreground">
-              Rs. {tier.minPrice.toLocaleString()}
-              {tier.maxPrice === null ? "+" : ` – Rs. ${tier.maxPrice.toLocaleString()}`} → Rs.{" "}
-              {tier.amount.toLocaleString()} commission
-            </p>
+            <div>
+              <p className="text-sm text-foreground">
+                Rs. {tier.minPrice.toLocaleString()}
+                {tier.maxPrice === null ? "+" : ` – Rs. ${tier.maxPrice.toLocaleString()}`} → Rs.{" "}
+                {tier.amount.toLocaleString()} commission
+              </p>
+              {hasOverlap(tier) && (
+                <p className="mt-1 text-xs font-medium text-destructive">
+                  Overlaps another price band
+                </p>
+              )}
+            </div>
             {canManageCommissions && (
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setEditingTier(tier)}>
@@ -206,6 +231,7 @@ export const CommissionTiersSection = () => {
       {editingTier && (
         <EditTierModal
           key={editingTier.id}
+          scope={scope}
           tier={editingTier}
           onClose={() => setEditingTier(null)}
         />

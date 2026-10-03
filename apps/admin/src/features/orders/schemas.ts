@@ -7,6 +7,7 @@ const fulfilmentStatusValues = [
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
+  "RETURNED",
 ] satisfies FulfilmentStatus[];
 export const fulfilmentStatusSchema = z.enum(fulfilmentStatusValues);
 export type FulfilmentStatusValue = z.infer<typeof fulfilmentStatusSchema>;
@@ -70,6 +71,16 @@ export const adminOrderSchema = z.object({
   needsManualRefund: z.boolean(),
 });
 export type AdminOrder = z.infer<typeof adminOrderSchema>;
+
+export const orderReturnOutcomeSchema = z.object({
+  voidedCommissionCount: z.number(),
+  voidedPayoutCount: z.number(),
+  paidCommissionCount: z.number(),
+  withdrawnPayoutCount: z.number(),
+  needsClawback: z.boolean(),
+  refunded: z.boolean().nullable(),
+});
+export type OrderReturnOutcome = z.infer<typeof orderReturnOutcomeSchema>;
 
 export const adminOrderSummarySchema = adminOrderSchema
   .omit({ items: true, transactions: true, phone: true, address: true, city: true, landmark: true })
