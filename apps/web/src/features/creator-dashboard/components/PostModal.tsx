@@ -17,6 +17,7 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateLook } from "../hooks/useCreateLook";
+import { useMaxTaggedProducts } from "../hooks/useMaxTaggedProducts";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { type LookFormInput, lookFormSchema } from "../schemas/lookForm.schema";
 import {
@@ -29,7 +30,6 @@ import {
   DEFAULT_IMAGE_MIME_TYPE,
   DEFAULT_POST_LAYOUT,
   MAX_PHOTOS,
-  MAX_TAGGED_PRODUCTS,
   SEARCH_DEBOUNCE_MS,
 } from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
@@ -41,6 +41,7 @@ type PostModalProps = {
 };
 
 export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) => {
+  const maxTaggedProducts = useMaxTaggedProducts();
   const { state } = useAuth();
   const [productFilter, setProductFilter] = useState("");
   const [productCache, setProductCache] = useState<Record<string, PublicProduct>>({});
@@ -136,7 +137,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
       return;
     }
 
-    if (taggedProducts.length >= MAX_TAGGED_PRODUCTS) return;
+    if (taggedProducts.length >= maxTaggedProducts) return;
 
     setProductCache((cache) => ({ ...cache, [product.id]: product }));
     form.setValue("taggedProducts", [...taggedProducts, { productId: product.id, sizeWorn: "" }], {
@@ -239,7 +240,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
 
         <ProductTagPicker
           taggedProducts={taggedProducts}
-          maxTaggedProducts={MAX_TAGGED_PRODUCTS}
+          maxTaggedProducts={maxTaggedProducts}
           productCache={productCache}
           onToggleProduct={toggleProduct}
           onRemoveTag={removeTag}

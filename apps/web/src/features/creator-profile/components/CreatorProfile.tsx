@@ -23,6 +23,7 @@ import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook"
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { useChatPanel } from "@/features/messaging";
+import { ProfileBuildsTabs } from "@/features/outfit-build/components/ProfileBuildsTabs";
 import { shareOrCopyLink } from "@/features/pwa";
 import { useHandleAvailability } from "@/features/users/hooks/useHandleAvailability";
 import { uploadImagesThroughPipeline, uploadsApi } from "@/shared/api/uploadsApi";
@@ -445,28 +446,30 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         </div>
       </div>
 
-      {isLoading ? (
-        <CreatorPostGridSkeleton />
-      ) : posts.length === 0 ? (
-        <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
-      ) : (
-        <Masonry
-          breakpointCols={CREATOR_POST_GRID_BREAKPOINT_COLUMNS}
-          className="-ml-4 flex w-auto"
-          columnClassName="pl-4"
-        >
-          {posts.map((post) => (
-            <CreatorPostThumbnail
-              key={post.id}
-              post={post}
-              onClick={() => openPost(post.id)}
-              isOwnProfile={isOwnProfile}
-              onEdit={() => setEditingLookId(post.id)}
-              onDelete={() => setDeletingLookId(post.id)}
-            />
-          ))}
-        </Masonry>
-      )}
+      <ProfileBuildsTabs primaryLabel="Looks" buildFilters={{ contributorId: userId }}>
+        {isLoading ? (
+          <CreatorPostGridSkeleton />
+        ) : posts.length === 0 ? (
+          <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
+        ) : (
+          <Masonry
+            breakpointCols={CREATOR_POST_GRID_BREAKPOINT_COLUMNS}
+            className="-ml-4 flex w-auto"
+            columnClassName="pl-4"
+          >
+            {posts.map((post) => (
+              <CreatorPostThumbnail
+                key={post.id}
+                post={post}
+                onClick={() => openPost(post.id)}
+                isOwnProfile={isOwnProfile}
+                onEdit={() => setEditingLookId(post.id)}
+                onDelete={() => setDeletingLookId(post.id)}
+              />
+            ))}
+          </Masonry>
+        )}
+      </ProfileBuildsTabs>
 
       {detailPost && (
         <PostDetailModal post={detailPost} onClose={closePost} showCreatorHeader={false} />

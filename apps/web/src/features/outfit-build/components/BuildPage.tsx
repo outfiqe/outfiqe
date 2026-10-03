@@ -8,6 +8,7 @@ import { useOutfit } from "../hooks/useOutfit";
 import { useOutfitLiveSync } from "../hooks/useOutfitLiveSync";
 import { BuildBoard } from "./BuildBoard";
 import { PublishedBuildView } from "./PublishedBuildView";
+import { SocialBuildView } from "./SocialBuildView";
 
 const SKELETON_SLOT_COUNT = 6;
 const MY_BUILDS_PATH = "/builds";
@@ -32,7 +33,7 @@ export const BuildPage = ({ outfitId }: { outfitId: string }) => {
   }
 
   if (isError || !outfit) {
-    return (
+    const unavailable = (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="font-display text-xl font-bold text-foreground">
           {wasRemoved ? t("removedTitle") : t("unavailableTitle")}
@@ -46,11 +47,16 @@ export const BuildPage = ({ outfitId }: { outfitId: string }) => {
         </Link>
       </div>
     );
+    return wasRemoved ? (
+      unavailable
+    ) : (
+      <SocialBuildView outfitId={outfitId} fallback={unavailable} />
+    );
   }
 
   return outfit.kind === "board" ? (
     <BuildBoard board={outfit} isReconnecting={isReconnecting} />
   ) : (
-    <PublishedBuildView build={outfit} />
+    <SocialBuildView outfitId={outfitId} fallback={<PublishedBuildView build={outfit} />} />
   );
 };

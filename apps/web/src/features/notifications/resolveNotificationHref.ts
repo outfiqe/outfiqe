@@ -116,6 +116,7 @@ export const resolveNotificationHref = (
     case NotificationType.OUTFIT_SHARED:
     case NotificationType.OUTFIT_MADE_PUBLIC:
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
+    case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
       return entityId ? outfitBuildPath(entityId) : WEB_NOTIFICATION_ROUTES.buildsList;
     default:
       return null;

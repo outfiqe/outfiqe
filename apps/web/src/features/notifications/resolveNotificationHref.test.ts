@@ -39,6 +39,7 @@ describe("resolveNotificationHref for outfit builds", () => {
       "OUTFIT_SHARED",
       "OUTFIT_MADE_PUBLIC",
       "OUTFIT_ITEMS_SOLD_OUT",
+      "OUTFIT_NEW_VERSION_AVAILABLE",
     ] as const) {
       expect(
         resolveNotificationHref(buildNotification({ type, entityId: "outfit-1" }), OWN_HANDLE),

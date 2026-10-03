@@ -95,9 +95,22 @@ beforeEach(() => {
     state: { user: { id: "creator-1", name: "Ava Martinez" } },
   } as ReturnType<typeof useAuth>);
   mockPending([]);
+  mswServer.use(
+    http.get("/api/creator-looks/limits", () =>
+      HttpResponse.json({ success: true, message: "Look limits.", data: { maxTaggedProducts: 3 } }),
+    ),
+  );
 });
 
 describe("PostModal", () => {
+  it("shows the tag limit the server allows", async () => {
+    renderModal();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Tag a product" }));
+
+    expect(await screen.findByText("0/3 selected")).toBeInTheDocument();
+  });
+
   it("disables Post look until at least one photo is staged", () => {
     mockPending([]);
     renderModal();

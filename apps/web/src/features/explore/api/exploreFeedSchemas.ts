@@ -7,6 +7,8 @@ import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 const contentReportTargetValues = [
   "CREATOR_LOOK",
   "CREATOR_LOOK_COMMENT",
+  "OUTFIT_BUILD",
+  "OUTFIT_BUILD_COMMENT",
 ] satisfies ContentReportTarget[];
 const contentReportReasonValues = [
   "SPAM",

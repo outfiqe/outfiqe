@@ -2,9 +2,13 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+
 import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 import { FeedFilterTabs } from "./FeedFilterTabs";
+
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: vi.fn(() => false) }));
 
 vi.mock("../hooks/useTrendingTags", () => ({
   useTrendingTags: vi.fn(),
@@ -41,6 +45,18 @@ describe("FeedFilterTabs", () => {
 
     expect(screen.getByRole("button", { name: "For you" })).toBeInTheDocument();
     expect(container.querySelectorAll(".animate-pulse")).toHaveLength(4);
+  });
+
+  it("adds a Builds tab only while public builds are switched on", () => {
+    mockTrendingTags({ data: [] });
+    const { unmount } = renderTabs();
+    expect(screen.queryByRole("button", { name: "Builds" })).not.toBeInTheDocument();
+    unmount();
+
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+    renderTabs();
+    expect(screen.getByRole("button", { name: "Builds" })).toBeInTheDocument();
+    vi.mocked(useFeatureFlag).mockReturnValue(false);
   });
 
   it("renders a chip per trending tag once loaded", () => {

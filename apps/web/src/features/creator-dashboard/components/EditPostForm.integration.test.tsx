@@ -4,7 +4,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HeicConversionError } from "@/shared/lib/heicImage";
 
@@ -131,6 +131,14 @@ const renderForm = (detail: CreatorLookEditDetail, onClose = vi.fn()) => {
     ),
   };
 };
+
+beforeEach(() => {
+  mswServer.use(
+    http.get("/api/creator-looks/limits", () =>
+      HttpResponse.json({ success: true, message: "Look limits.", data: { maxTaggedProducts: 7 } }),
+    ),
+  );
+});
 
 describe("EditPostForm", () => {
   it("shows the existing photo count and caption", () => {

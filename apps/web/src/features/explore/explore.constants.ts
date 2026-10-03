@@ -1,4 +1,4 @@
-import { Home, LayoutGrid, Rows3, TrendingUp, Users } from "lucide-react";
+import { Home, LayoutGrid, Rows3, Shirt, TrendingUp, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
 export const EXPLORE_QUERY_PARAM = {
@@ -12,6 +12,7 @@ export const EXPLORE_TAB = {
   FOR_YOU: "for_you",
   FOLLOWING: "following",
   TRENDING: "trending",
+  BUILDS: "builds",
 } as const;
 
 export type ExploreTabValue = (typeof EXPLORE_TAB)[keyof typeof EXPLORE_TAB];
@@ -63,3 +64,9 @@ export const EXPLORE_GRID_BREAKPOINT_COLUMNS = { default: 3, 1279: 2 };
 export const SUGGESTED_CREATORS_MODAL_PAGE_SIZE = 12;
 
 export const COMMENT_REPLY_PREVIEW_COUNT = 2;
+
+export const BUILDS_EXPLORE_TAB: ExploreFixedTab = {
+  value: EXPLORE_TAB.BUILDS,
+  label: "Builds",
+  icon: Shirt,
+};

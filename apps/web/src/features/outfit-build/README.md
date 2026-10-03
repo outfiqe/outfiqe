@@ -41,8 +41,24 @@ The whole feature sits behind the `outfit_builder` flag on the API.
   request is sent, and the instant local board changes), `outfitFormatting.ts` (lakh format,
   Nepal time), `toOutfitProduct.ts`.
 
-Routes: `app/builds/page.tsx` (My Builds), `app/builds/[outfitId]/page.tsx` (a build). Both need a
-signed-in session and are not indexed.
+Routes: `app/builds/page.tsx` (My Builds, signed in only) and `app/builds/[outfitId]/page.tsx` (a
+build). The build page shows a signed-in person their board, or the locked version with likes,
+saves and comments (`SocialBuildView`). A signed-out visitor sees a public build server-rendered
+(`PublicBuildPage`, loaded by `api/getPublicBuildServer.ts`) with its own title, description and
+image for search engines and shared links. Anything else sends them to sign in. Only public builds
+are indexed.
+
+Builds in public (`api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`, `hooks/useBuildSocial.ts`):
+
+- `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: style, price range, everything in stock),
+  a grid of `PublicBuildCardView`s, infinite scroll, empty, loading and error states, and the
+  `BuildDetailModal` pop-up. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
+  Builds tab on creator profiles (builds they contributed to) and brand profiles (builds using
+  their products). Both only while `outfit_public_feed` is on for the viewer.
+- `PublicBuildDetailView` — the locked items with live stock, contributors linking to their
+  profiles, `BuildReactionsBar` (like and save, updated at once in every cached copy and rolled
+  back on failure), report, and `BuildComments` (one level of replies, delete your own, report
+  others'). Used by the pop-up, the public page and `SocialBuildView`.
 
 Ways in from the rest of the app:
 
@@ -59,6 +75,13 @@ Ways in from the rest of the app:
   `useReplacementSuggestions` (`GET /api/outfits/:id/slots/:slotKey/positions/:position/replacements`)
   above the normal search. `useOutfitLiveSync` refetches the board on
   `outfit:availability-changed`, so an item selling out shows up without a reload.
+- Posting as a look: on a locked build, `PostAsLookPanel` (in the board's side column) shows
+  creators who are on the build a "Post as a look" button. `PublishLookModal` reuses the creator
+  photo cropper and upload (`../creator-dashboard/components/PostModal.constants`,
+  `PhotoCropPane`, `usePendingPhotos`), prefills the caption with the build's name and each
+  item's size from `useMySizeByProductType`, and sends `POST /api/outfits/:id/look`
+  (`hooks/useBuildLook.ts`). Afterwards the panel links to the look; when a newer version has
+  been locked since, it offers "Post the new version".
 - Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
   (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
 

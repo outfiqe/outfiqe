@@ -111,6 +111,17 @@ export const outfitViewSchema = z.discriminatedUnion("kind", [
 
 export const outfitReplacementsSchema = z.object({ products: z.array(outfitProductSchema) });
 
+export const myBuildLookSchema = z
+  .object({
+    lookId: z.string(),
+    publishedVersion: z.number(),
+    lastLockedVersion: z.number().nullable(),
+    isOutdated: z.boolean(),
+  })
+  .nullable();
+
+export const publishedLookSchema = z.object({ id: z.string() });
+
 export const outfitWriteResultSchema = z.object({
   version: z.number(),
   board: outfitBoardSchema.nullable(),
@@ -151,6 +162,8 @@ export const outfitEventsPageSchema = z.object({
 export type OutfitBoard = z.infer<typeof outfitBoardSchema>;
 export type OutfitSlot = z.infer<typeof outfitSlotSchema>;
 export type OutfitProduct = z.infer<typeof outfitProductSchema>;
+export type MyBuildLook = z.infer<typeof myBuildLookSchema>;
+export type PublishedLook = z.infer<typeof publishedLookSchema>;
 export type OutfitPublished = z.infer<typeof outfitPublishedSchema>;
 export type OutfitView = z.infer<typeof outfitViewSchema>;
 export type OutfitWriteResult = z.infer<typeof outfitWriteResultSchema>;

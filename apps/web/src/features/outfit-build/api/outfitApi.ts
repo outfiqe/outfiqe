@@ -3,6 +3,8 @@ import { IDEMPOTENCY_HEADER } from "@outfiqe/client";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import {
+  type MyBuildLook,
+  myBuildLookSchema,
   type OutfitBoard,
   outfitBoardSchema,
   type OutfitEventsPage,
@@ -16,9 +18,18 @@ import {
   type OutfitVisibility,
   type OutfitWriteResult,
   outfitWriteResultSchema,
+  type PublishedLook,
+  publishedLookSchema,
 } from "./outfitSchemas";
 
 const IF_MATCH_HEADER = "If-Match";
+
+export type PublishLookInput = {
+  imageUrls: string[];
+  imageAssetIds?: (string | null)[];
+  caption?: string;
+  sizesWorn: { productId: string; sizeWorn: string }[];
+};
 
 export type OutfitWrite = {
   outfitId: string;
@@ -71,6 +82,16 @@ export const outfitApi = {
       params: { sinceVersion },
     });
     return outfitEventsPageSchema.parse(res.data);
+  },
+
+  async getMyLook(outfitId: string): Promise<MyBuildLook> {
+    const res = await apiClient.get(`/outfits/${outfitId}/look`);
+    return myBuildLookSchema.parse(res.data);
+  },
+
+  async publishLook(outfitId: string, input: PublishLookInput): Promise<{ look: PublishedLook }> {
+    const res = await apiClient.post(`/outfits/${outfitId}/look`, input);
+    return { look: publishedLookSchema.parse(res.data) };
   },
 
   async listReplacements(

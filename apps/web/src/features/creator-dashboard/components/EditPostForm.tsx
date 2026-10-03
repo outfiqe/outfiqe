@@ -22,6 +22,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
+import { useMaxTaggedProducts } from "../hooks/useMaxTaggedProducts";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { useUpdateLook } from "../hooks/useUpdateLook";
 import { type EditLookFormInput, editLookFormSchema } from "../schemas/lookForm.schema";
@@ -33,7 +34,6 @@ import {
   cropBoxStyleForAspect,
   DEFAULT_IMAGE_MIME_TYPE,
   MAX_PHOTOS,
-  MAX_TAGGED_PRODUCTS,
   SEARCH_DEBOUNCE_MS,
 } from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
@@ -56,6 +56,7 @@ type EditPostFormProps = {
 };
 
 export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => {
+  const maxTaggedProducts = useMaxTaggedProducts();
   const update = useUpdateLook();
   const photoAspect = POST_LAYOUT_ASPECT[detail.layout];
   const cropBoxStyle = cropBoxStyleForAspect(photoAspect);
@@ -187,7 +188,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
       return;
     }
 
-    if (taggedProducts.length >= MAX_TAGGED_PRODUCTS) return;
+    if (taggedProducts.length >= maxTaggedProducts) return;
 
     setSearchProductCache((cache) => ({ ...cache, [product.id]: product }));
     form.setValue("taggedProducts", [...taggedProducts, { productId: product.id, sizeWorn: "" }], {
@@ -380,7 +381,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
 
         <ProductTagPicker
           taggedProducts={taggedProducts}
-          maxTaggedProducts={MAX_TAGGED_PRODUCTS}
+          maxTaggedProducts={maxTaggedProducts}
           productCache={productCache}
           reviewByProductId={reviewByProductId}
           initialExpanded={hasUnresolvedTag}

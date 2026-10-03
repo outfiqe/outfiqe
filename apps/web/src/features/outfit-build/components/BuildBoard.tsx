@@ -41,6 +41,7 @@ import { BoardPeople } from "./BoardPeople";
 import { BoardSettingsModal } from "./BoardSettingsModal";
 import { BudgetBar } from "./BudgetBar";
 import { InviteEditorsModal } from "./InviteEditorsModal";
+import { PostAsLookPanel } from "./PostAsLookPanel";
 import { ProductFinderPanel } from "./ProductFinderPanel";
 import { ProductPickerModal } from "./ProductPickerModal";
 import { ReconnectingBanner } from "./ReconnectingBanner";
@@ -256,6 +257,7 @@ export const BuildBoard = ({
               onOpenSettings={() => setOpenModal("settings")}
               onOpenVisibility={() => setOpenModal("visibility")}
             />
+            <PostAsLookPanel board={board} />
           </aside>
         </div>
       </div>

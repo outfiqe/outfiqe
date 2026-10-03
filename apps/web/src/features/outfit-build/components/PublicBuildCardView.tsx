@@ -1,0 +1,80 @@
+"use client";
+
+import { Heart, MessageCircle, Shirt } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+import { AppImage } from "@/shared/components/AppImage";
+
+import type { PublicBuildCard } from "../api/outfitSocialSchemas";
+import { formatLakhAmount } from "../utils/outfitFormatting";
+
+const NO_PREVIEWS = 0;
+
+export const contributorNames = (card: PublicBuildCard): string =>
+  card.contributors.map(({ name }) => name).join(", ");
+
+export const PublicBuildCardView = ({
+  card,
+  onOpen,
+}: {
+  card: PublicBuildCard;
+  onOpen: (outfitId: string) => void;
+}) => {
+  const t = useTranslations("outfitBuild.public");
+  const tBudget = useTranslations("outfitBuild.budget");
+  const tBoard = useTranslations("outfitBuild.board");
+  const title = card.title ?? tBoard("untitled");
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => onOpen(card.id)}
+        aria-label={t("openBuild", { title })}
+        className="block w-full cursor-pointer text-left"
+      >
+        <div className="grid aspect-[4/3] grid-cols-3 gap-0.5 bg-muted">
+          {card.previewImageUrls.map((imageUrl) => (
+            <span key={imageUrl} className="relative">
+              <AppImage src={imageUrl} alt="" fill sizes="(min-width: 1024px) 110px, 33vw" />
+            </span>
+          ))}
+          {card.previewImageUrls.length === NO_PREVIEWS && (
+            <span className="col-span-3 flex items-center justify-center text-muted-foreground">
+              <Shirt className="size-8" aria-hidden />
+            </span>
+          )}
+        </div>
+        <div className="space-y-1 p-3">
+          <h3 className="truncate text-sm font-semibold text-foreground">{title}</h3>
+          <p className="truncate text-xs text-muted-foreground">
+            {t("by", { names: contributorNames(card) })}
+          </p>
+          <p className="text-xs text-foreground">
+            {tBudget("rupees", { amount: formatLakhAmount(card.total) })} ·{" "}
+            {t("itemCount", { count: card.itemCount })}
+          </p>
+          <p
+            className={
+              card.isFullyAvailable ? "text-xs text-muted-foreground" : "text-xs text-destructive"
+            }
+          >
+            {card.isFullyAvailable ? tBudget("fullyAvailable") : tBudget("someUnavailable")}
+          </p>
+          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Heart className="size-3.5" aria-hidden />
+              <span className="sr-only">{t("likes")}</span>
+              {card.likeCount}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <MessageCircle className="size-3.5" aria-hidden />
+              <span className="sr-only">{t("comments")}</span>
+              {card.commentCount}
+            </span>
+          </p>
+        </div>
+      </button>
+    </article>
+  );
+};
