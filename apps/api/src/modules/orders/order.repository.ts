@@ -1,6 +1,7 @@
 import { prisma } from "#db/prisma.js";
 import {
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentStatus,
   PaymentTransactionType,
 } from "#generated/prisma/enums.js";
@@ -130,6 +131,35 @@ export const orderRepository = {
       data: { fulfilmentStatus: FulfilmentStatus.CANCELLED },
     });
     return result.count > 0;
+  },
+
+  async markReturned(
+    client: DbClient,
+    orderId: string,
+    fromStatuses: FulfilmentStatus[],
+    { returnedAt, returnReason }: { returnedAt: Date; returnReason: string },
+  ): Promise<boolean> {
+    const result = await client.order.updateMany({
+      where: { id: orderId, fulfilmentStatus: { in: fromStatuses } },
+      data: {
+        fulfilmentStatus: FulfilmentStatus.RETURNED,
+        fulfilmentSummary: OrderFulfilmentSummary.RETURNED,
+        returnedAt,
+        returnReason,
+      },
+    });
+    return result.count > 0;
+  },
+
+  async returnFulfilmentGroupsForOrder(
+    client: DbClient,
+    orderId: string,
+    returnedAt: Date,
+  ): Promise<void> {
+    await client.orderFulfilmentGroup.updateMany({
+      where: { orderId, status: { not: FulfilmentStatus.CANCELLED } },
+      data: { status: FulfilmentStatus.RETURNED, returnedAt },
+    });
   },
 
   async markRefunded(client: DbClient, orderId: string): Promise<void> {

@@ -27,7 +27,11 @@ const FULFILMENT_PROGRESS: Record<FulfilmentStatus, number> = {
   [FulfilmentStatus.SHIPPED]: 2,
   [FulfilmentStatus.DELIVERED]: 3,
   [FulfilmentStatus.CANCELLED]: -1,
+  [FulfilmentStatus.RETURNED]: -1,
 };
+
+const isClosedStatus = (status: FulfilmentStatus): boolean =>
+  status === FulfilmentStatus.CANCELLED || status === FulfilmentStatus.RETURNED;
 
 const isShippedOrLater = (status: FulfilmentStatus): boolean =>
   FULFILMENT_PROGRESS[status] >= FULFILMENT_PROGRESS[FulfilmentStatus.SHIPPED];
@@ -57,14 +61,18 @@ export const deriveOrderFulfilment = (
     };
   }
 
-  const activeGroupStatuses = groupStatuses.filter(
-    (status) => status !== FulfilmentStatus.CANCELLED,
-  );
+  const activeGroupStatuses = groupStatuses.filter((status) => !isClosedStatus(status));
   if (activeGroupStatuses.length === 0) {
-    return {
-      fulfilmentStatus: FulfilmentStatus.CANCELLED,
-      fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
-    };
+    const wasAnyGroupReturned = groupStatuses.includes(FulfilmentStatus.RETURNED);
+    return wasAnyGroupReturned
+      ? {
+          fulfilmentStatus: FulfilmentStatus.RETURNED,
+          fulfilmentSummary: OrderFulfilmentSummary.RETURNED,
+        }
+      : {
+          fulfilmentStatus: FulfilmentStatus.CANCELLED,
+          fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+        };
   }
 
   const leastProgressedStatus = activeGroupStatuses.reduce((slowest, status) =>

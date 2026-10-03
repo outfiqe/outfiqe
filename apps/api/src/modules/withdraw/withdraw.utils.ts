@@ -1,5 +1,6 @@
 import type {
   AdminWithdrawRequestView,
+  BrandLedgerRow,
   WithdrawPolicyRecord,
   WithdrawPolicyView,
   WithdrawRequestRecord,
@@ -40,6 +41,25 @@ type AdminWithdrawRequestRow = WithdrawRequestRecord & {
   brand: { name: string } | null;
   bankAccount: { accountNumberLast4: string; qrCodeImageUrl: string | null } | null;
   brandBankAccount: { accountNumberLast4: string; qrCodeImageUrl: string | null } | null;
+};
+
+const EMPTY_TOTAL = 0;
+
+export const pickOldestRowsCoveringAmount = (
+  rows: readonly BrandLedgerRow[],
+  amount: number,
+): BrandLedgerRow[] | null => {
+  const oldestFirst = [...rows].sort(
+    (first, second) => first.createdAt.getTime() - second.createdAt.getTime(),
+  );
+  const picked: BrandLedgerRow[] = [];
+  let runningTotal = EMPTY_TOTAL;
+  for (const row of oldestFirst) {
+    if (runningTotal >= amount) break;
+    picked.push(row);
+    runningTotal += row.amount;
+  }
+  return runningTotal >= amount ? picked : null;
 };
 
 export const toAdminWithdrawRequestView = (

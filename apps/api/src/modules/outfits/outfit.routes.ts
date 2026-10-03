@@ -1,16 +1,19 @@
 import { type Request, type Response, Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { requireIdempotencyKey } from "#middlewares/require-idempotency-key.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { requireFeatureFlag } from "#modules/feature-flags/feature-flags.middleware.js";
 
 import { OUTFIT_RATE_LIMITS } from "./outfit.constants.js";
 import { outfitController } from "./outfit.controller.js";
 import {
+  addBuildToCartSchema,
   addEditorsSchema,
   addOutfitCommentSchema,
   createOutfitSchema,
@@ -67,6 +70,13 @@ const commentRateLimit = rateLimit({
   ...OUTFIT_RATE_LIMITS.COMMENTS,
   keyGenerator: perUserKey,
   message: "You're commenting very quickly. Wait a moment and try again.",
+});
+
+const buildCartRateLimit = rateLimit({
+  namespace: "outfit-cart-adds",
+  ...OUTFIT_RATE_LIMITS.CART_ADDS,
+  keyGenerator: perUserKey,
+  message: "You're adding to your bag very quickly. Wait a moment and try again.",
 });
 
 const outfitReadChain = [...requireActiveAuth, requireFeatureFlag("outfit_builder")];
@@ -190,6 +200,14 @@ outfitRoutes.post(
   lookPublishRateLimit,
   validate({ params: outfitIdParamSchema, body: publishLookSchema }),
   outfitController.publishLook,
+);
+outfitRoutes.post(
+  "/:id/cart",
+  ...requireActiveAuth,
+  requireRole(UserRole.CUSTOMER),
+  buildCartRateLimit,
+  validate({ params: outfitIdParamSchema, body: addBuildToCartSchema }),
+  outfitController.addToCart,
 );
 outfitRoutes.get(
   "/:id/slots/:slotKey/positions/:position/replacements",

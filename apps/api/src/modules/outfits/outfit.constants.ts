@@ -36,6 +36,15 @@ export const OUTFIT_RATE_LIMITS = {
   LOOK_PUBLISHES: { windowMs: minutesToMilliseconds(1), max: 10 },
   SOCIAL_REACTIONS: { windowMs: minutesToMilliseconds(1), max: 60 },
   COMMENTS: { windowMs: minutesToMilliseconds(1), max: 10 },
+  CART_ADDS: { windowMs: minutesToMilliseconds(1), max: 20 },
+} as const;
+
+export const BUILD_ITEM_LEFT_OUT_REASON = {
+  NOT_IN_BUILD: "NOT_IN_BUILD",
+  NO_LONGER_SOLD: "NO_LONGER_SOLD",
+  NO_SIZE_CHOSEN: "NO_SIZE_CHOSEN",
+  SIZE_NOT_OFFERED: "SIZE_NOT_OFFERED",
+  SOLD_OUT: "SOLD_OUT",
 } as const;
 
 export const OUTFIT_CHAT_FALLBACK_NAME = "Outfit build";

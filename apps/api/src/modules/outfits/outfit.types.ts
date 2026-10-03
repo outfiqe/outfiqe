@@ -4,10 +4,24 @@ import type {
   OutfitStatus,
   OutfitVisibility,
 } from "#generated/prisma/enums.js";
+import type { CartView } from "#modules/cart/cart.types.js";
 
-import type { OUTFIT_ITEM_AVAILABILITY, OUTFIT_VIEWER_ROLE } from "./outfit.constants.js";
+import type {
+  BUILD_ITEM_LEFT_OUT_REASON,
+  OUTFIT_ITEM_AVAILABILITY,
+  OUTFIT_VIEWER_ROLE,
+} from "./outfit.constants.js";
 
 export type OutfitViewerRole = (typeof OUTFIT_VIEWER_ROLE)[keyof typeof OUTFIT_VIEWER_ROLE];
+
+export type BuildItemLeftOutReason =
+  (typeof BUILD_ITEM_LEFT_OUT_REASON)[keyof typeof BUILD_ITEM_LEFT_OUT_REASON];
+
+export type BuildCartResult = {
+  cart: CartView;
+  addedProductIds: string[];
+  leftOut: { productId: string; reason: BuildItemLeftOutReason }[];
+};
 
 export type OutfitItemAvailability =
   (typeof OUTFIT_ITEM_AVAILABILITY)[keyof typeof OUTFIT_ITEM_AVAILABILITY];

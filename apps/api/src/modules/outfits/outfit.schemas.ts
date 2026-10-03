@@ -115,6 +115,27 @@ export const publishLookSchema = lookContentSchema
     { message: "Each item can only have one size.", path: ["sizesWorn"] },
   );
 
+const MAX_BUILD_CART_LINES = 30;
+const MAX_SIZE_LABEL_LENGTH = 20;
+
+export const addBuildToCartSchema = z
+  .object({
+    isFullSet: z.boolean(),
+    sizes: z
+      .array(
+        z.object({
+          productId: z.uuid(),
+          sizeLabel: z.string().trim().min(1).max(MAX_SIZE_LABEL_LENGTH),
+        }),
+      )
+      .max(MAX_BUILD_CART_LINES),
+  })
+  .strict()
+  .refine(({ sizes }) => new Set(sizes.map(({ productId }) => productId)).size === sizes.length, {
+    message: "Each item can only have one size.",
+    path: ["sizes"],
+  });
+
 export const outfitEventsQuerySchema = z.object({
   sinceVersion: z.coerce.number().int().min(MIN_VERSION),
 });
@@ -182,6 +203,7 @@ export type AddEditorsBody = z.infer<typeof addEditorsSchema>;
 export type TransferOwnershipBody = z.infer<typeof transferOwnershipSchema>;
 export type SetVisibilityBody = z.infer<typeof setVisibilitySchema>;
 export type PublishLookBody = z.infer<typeof publishLookSchema>;
+export type AddBuildToCartBody = z.infer<typeof addBuildToCartSchema>;
 export type PublicBuildsQuery = z.infer<typeof publicBuildsQuerySchema>;
 export type OutfitCommentParam = z.infer<typeof outfitCommentParamSchema>;
 export type AddOutfitCommentBody = z.infer<typeof addOutfitCommentSchema>;

@@ -6,11 +6,10 @@ import { Prisma } from "#generated/prisma/client.js";
 import {
   BrandPayoutStatus,
   CommissionStatus,
-  LedgerEntryKind,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
-import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
+import { requireCommissionEarner } from "#lib/creator-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isTransactionConflictError } from "#lib/prisma.utils.js";
@@ -22,6 +21,7 @@ import { brandRepository } from "#modules/brands/brand.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { BRAND_LEDGER_ROW_KIND } from "./withdraw.constants.js";
 import { withdrawRepository } from "./withdraw.repository.js";
 import type {
   ApproveWithdrawRequestBody,
@@ -32,6 +32,7 @@ import type {
 } from "./withdraw.schemas.js";
 import type {
   AdminWithdrawRequestView,
+  ClaimedLedgerRows,
   OwnerContext,
   WithdrawEligibilityView,
   WithdrawPolicyView,
@@ -39,6 +40,7 @@ import type {
   WithdrawRequestView,
 } from "./withdraw.types.js";
 import {
+  pickOldestRowsCoveringAmount,
   toAdminWithdrawRequestView,
   toWithdrawPolicyView,
   toWithdrawRequestView,
@@ -55,10 +57,7 @@ const resolveOwner = async (
   ownerType: OwnerContext["ownerType"],
 ): Promise<OwnerContext> => {
   if (ownerType === "CREATOR") {
-    await requireApprovedCreator(
-      userId,
-      "Only approved creators can withdraw commission earnings.",
-    );
+    await requireCommissionEarner(userId, "You don't have any commission earnings to withdraw.");
     return { ownerType, creatorId: userId };
   }
   const brandId = await requireBrandId(userId);
@@ -70,8 +69,14 @@ const getAvailableLedgerBalance = async (owner: OwnerContext): Promise<number> =
     const sums = await commissionRepository.sumByStatusForCreator(owner.creatorId);
     return sums[CommissionStatus.AVAILABLE] ?? 0;
   }
-  const sums = await brandPayoutRepository.sumByStatusForBrand(owner.brandId);
-  return sums[BrandPayoutStatus.AVAILABLE] ?? 0;
+  const [payoutSums, buildCommissionSums] = await Promise.all([
+    brandPayoutRepository.sumByStatusForBrand(owner.brandId),
+    commissionRepository.sumByStatusForBrand(owner.brandId),
+  ]);
+  return (
+    (payoutSums[BrandPayoutStatus.AVAILABLE] ?? 0) +
+    (buildCommissionSums[CommissionStatus.AVAILABLE] ?? 0)
+  );
 };
 
 const hasVerifiedBankAccount = async (
@@ -439,8 +444,8 @@ export const withdrawService = {
         );
       }
 
-      const claimedIds = await claimLedgerRows(tx, requestRecord);
-      if (claimedIds.length === 0) {
+      const claimedRows = await claimLedgerRows(tx, requestRecord);
+      if (!claimedRows) {
         throw new AppError(
           "INSUFFICIENT_LEDGER_ROWS",
           "Couldn't find enough available ledger rows to cover this amount — reject or adjust instead.",
@@ -448,14 +453,7 @@ export const withdrawService = {
         );
       }
 
-      await withdrawRepository.createLedgerEntries(
-        tx,
-        requestId,
-        requestRecord.ownerType === "CREATOR"
-          ? LedgerEntryKind.CREATOR_COMMISSION
-          : LedgerEntryKind.BRAND_PAYOUT,
-        claimedIds,
-      );
+      await withdrawRepository.createLedgerEntries(tx, requestId, claimedRows);
 
       const paid = await withdrawRepository.markPaid(requestId, adminId, referenceNote, tx);
       if (!paid) {
@@ -473,23 +471,63 @@ export const withdrawService = {
   },
 };
 
+const NO_CLAIMED_ROWS = 0;
+
+const claimBrandLedgerRows = async (
+  tx: Prisma.TransactionClient,
+  brandId: string,
+  amount: number,
+): Promise<ClaimedLedgerRows | null> => {
+  const [payoutRows, buildCommissionRows] = await Promise.all([
+    brandPayoutRepository.listAvailableForBrand(tx, brandId),
+    commissionRepository.listAvailableForBrand(tx, brandId),
+  ]);
+  const pickedRows = pickOldestRowsCoveringAmount(
+    [
+      ...payoutRows.map((row) => ({ ...row, kind: BRAND_LEDGER_ROW_KIND.PAYOUT })),
+      ...buildCommissionRows.map((row) => ({
+        ...row,
+        kind: BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION,
+      })),
+    ],
+    amount,
+  );
+  if (!pickedRows) return null;
+
+  const brandPayoutIds = pickedRows
+    .filter(({ kind }) => kind === BRAND_LEDGER_ROW_KIND.PAYOUT)
+    .map(({ id }) => id);
+  const creatorCommissionIds = pickedRows
+    .filter(({ kind }) => kind === BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION)
+    .map(({ id }) => id);
+
+  const [withdrawnPayoutCount, paidCommissionCount] = await Promise.all([
+    brandPayoutRepository.markAvailableAsWithdrawn(tx, brandPayoutIds),
+    commissionRepository.markAvailableAsPaid(tx, creatorCommissionIds),
+  ]);
+  const isEveryRowClaimed =
+    withdrawnPayoutCount === brandPayoutIds.length &&
+    paidCommissionCount === creatorCommissionIds.length;
+  return isEveryRowClaimed ? { brandPayoutIds, creatorCommissionIds } : null;
+};
+
 const claimLedgerRows = async (
   tx: Prisma.TransactionClient,
   requestRecord: WithdrawRequestRecord,
-): Promise<string[]> => {
-  if (requestRecord.ownerType === "CREATOR" && requestRecord.creatorId) {
-    return commissionRepository.claimAvailableForCreator(
+): Promise<ClaimedLedgerRows | null> => {
+  const { ownerType, creatorId, brandId, amount } = requestRecord;
+  if (ownerType === "CREATOR" && creatorId) {
+    const creatorCommissionIds = await commissionRepository.claimAvailableForCreator(
       tx,
-      requestRecord.creatorId,
-      requestRecord.amount,
+      creatorId,
+      amount,
     );
+    return creatorCommissionIds.length === NO_CLAIMED_ROWS
+      ? null
+      : { creatorCommissionIds, brandPayoutIds: [] };
   }
-  if (requestRecord.ownerType === "BUSINESS" && requestRecord.brandId) {
-    return brandPayoutRepository.claimAvailableForBrand(
-      tx,
-      requestRecord.brandId,
-      requestRecord.amount,
-    );
+  if (ownerType === "BUSINESS" && brandId) {
+    return claimBrandLedgerRows(tx, brandId, amount);
   }
-  return [];
+  return null;
 };

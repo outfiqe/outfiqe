@@ -21,6 +21,7 @@ import {
   listOrdersQuerySchema,
   orderIdParamSchema,
   requestGroupCancellationSchema,
+  returnOrderSchema,
 } from "./order.schemas.js";
 
 const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
@@ -91,6 +92,13 @@ orderRoutes.post(
   ...platformGuards.ordersManage,
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancel,
+);
+
+orderRoutes.post(
+  "/admin/:orderId/return",
+  ...platformGuards.ordersManage,
+  validate({ params: orderIdParamSchema, body: returnOrderSchema }),
+  orderController.markReturned,
 );
 
 orderRoutes.get(

@@ -47,11 +47,18 @@ import {
 } from "#modules/discounts/discount.utils.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
 import { paymentService } from "#modules/payments/payment.service.js";
+import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
+import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import { describeError } from "#redis/redis.utils.js";
 
-import { resolveAttribution } from "./order.attribution.utils.js";
+import {
+  resolveAttribution,
+  resolveCommissionShares,
+  toCommissionClickReference,
+} from "./order.attribution.utils.js";
 import { orderRepository } from "./order.repository.js";
 import type {
   AdvanceBrandFulfilmentGroupBody,
@@ -68,6 +75,7 @@ import type {
   CreateOrderItemInput,
   OrderAdminSummaryView,
   OrderAdminView,
+  OrderReturnOutcome,
 } from "./order.types.js";
 import { type OrderSummaryView, type OrderView } from "./order.types.js";
 import {
@@ -98,6 +106,14 @@ const CANCELLABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
   FulfilmentStatus.PACKED,
 ];
 
+const RETURNABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
+  FulfilmentStatus.SHIPPED,
+  FulfilmentStatus.DELIVERED,
+];
+
+const NOTHING_ALREADY_PAID = 0;
+const ORDER_AUDIT_TARGET_TYPE = "Order";
+
 const buildOrderConfirmationEmail = (userEmail: string, order: OrderView): void => {
   const { subject, html } = orderConfirmationTemplate({
     orderId: order.id,
@@ -118,6 +134,42 @@ const buildOrderConfirmationEmail = (userEmail: string, order: OrderView): void 
     body: `Order ${order.id} — Rs. ${order.total}.`,
     html: opsEmail.html,
   });
+};
+
+const alertOpsOfManualRefund = (orderId: string, total: number): void => {
+  const { subject, html } = refundFailedTemplate({ orderId, total });
+  void sendEmail({
+    to: env.OPS_NOTIFICATION_EMAIL,
+    subject,
+    body: `Order ${orderId} needs a manual refund — automatic refund failed.`,
+    html,
+  });
+};
+
+const refundReturnedOrder = async (
+  orderId: string,
+  paymentMethod: PaymentMethod,
+  payerPhone: string,
+  total: number,
+): Promise<boolean> => {
+  try {
+    const refundOutcome = await paymentService.refund(orderId, paymentMethod, payerPhone);
+    await prisma.$transaction(async (tx) => {
+      await paymentRepository.recordRefund(tx, orderId, paymentMethod, refundOutcome.rawResponse);
+      if (refundOutcome.succeeded) {
+        await orderRepository.markRefunded(tx, orderId);
+      } else {
+        await orderRepository.markNeedsManualRefund(tx, orderId);
+      }
+    });
+    if (!refundOutcome.succeeded) alertOpsOfManualRefund(orderId, total);
+    return refundOutcome.succeeded;
+  } catch (error) {
+    logger.error(`Refund for returned order ${orderId} failed: ${describeError(error)}`);
+    await orderRepository.markNeedsManualRefund(prisma, orderId);
+    alertOpsOfManualRefund(orderId, total);
+    return false;
+  }
 };
 
 const checkoutOnce = async (
@@ -254,17 +306,39 @@ const checkoutOnce = async (
     pricedLines.map((line) => resolveAttribution(userId, line.productId, orderPlacedAt)),
   );
   const tiers = await Promise.all(
-    pricedLines.map((line, index) =>
-      attributions[index]
-        ? commissionRepository.findTierForPrice(line.unitPrice, CommissionScope.CREATOR_LOOK)
-        : Promise.resolve(null),
-    ),
+    pricedLines.map((line, index) => {
+      const attribution = attributions[index];
+      if (!attribution) return Promise.resolve(null);
+      const scope =
+        attribution.source === CommissionSource.OUTFIT_BUILD
+          ? CommissionScope.OUTFIT_BUILD
+          : CommissionScope.CREATOR_LOOK;
+      return commissionRepository.findTierForPrice(line.unitPrice, scope);
+    }),
+  );
+  const commissionSharesByLine = await Promise.all(
+    attributions.map((attribution, index) => {
+      const tier = tiers[index];
+      return attribution && tier
+        ? resolveCommissionShares(attribution, tier, userId)
+        : Promise.resolve([]);
+    }),
   );
 
   const items: CreateOrderItemInput[] = pricedLines.map((line, index) => {
     const { brandId: _brandId, ...orderItemLine } = line;
     const attribution = attributions[index];
     if (!attribution) return { ...orderItemLine, attributionSource: undefined };
+
+    if (attribution.source === CommissionSource.OUTFIT_BUILD) {
+      const { outfitId, outfitVersion } = attribution;
+      return {
+        ...orderItemLine,
+        attributedOutfitId: outfitId,
+        attributedOutfitVersion: outfitVersion,
+        attributionSource: attribution.source,
+      };
+    }
 
     const { source, creatorId, referenceId } = attribution;
     const isTagClick = source === CommissionSource.TAG_CLICK;
@@ -426,20 +500,23 @@ const checkoutOnce = async (
       const tier = tiers[index];
       if (!attribution || !tier) continue;
 
-      const { source, creatorId, clickId } = attribution;
-      const { id: tierId, amount } = tier;
-      const isTagClick = source === CommissionSource.TAG_CLICK;
-
-      await commissionRepository.createPending(tx, {
-        creatorId,
-        orderItemId: orderItem.id,
-        source,
-        tagClickId: isTagClick ? clickId : undefined,
-        linkClickId: isTagClick ? undefined : clickId,
-        tierId,
-        amount,
-      });
-      createdCommissions.push({ creatorId, orderItemId: orderItem.id, amount });
+      const clickReference = toCommissionClickReference(attribution);
+      for (const share of commissionSharesByLine[index] ?? []) {
+        await commissionRepository.createPending(tx, {
+          ...share,
+          ...clickReference,
+          orderItemId: orderItem.id,
+          source: attribution.source,
+          tierId: tier.id,
+        });
+        if ("creatorId" in share) {
+          createdCommissions.push({
+            creatorId: share.creatorId,
+            orderItemId: orderItem.id,
+            amount: share.amount,
+          });
+        }
+      }
     }
 
     return createdOrder;
@@ -676,6 +753,90 @@ export const orderService = {
     const actorDescription =
       actor.type === "ADMIN" ? `admin ${actor.adminUserId}` : `buyer ${actor.userId}`;
     logger.info(`Order ${orderId} cancelled by ${actorDescription}: ${reason}`);
+  },
+
+  async markReturned(
+    orderId: string,
+    adminUserId: string,
+    reason: string,
+  ): Promise<OrderReturnOutcome> {
+    const order = await orderRepository.findForAdminAction(orderId);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!RETURNABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
+      throw new AppError(
+        "INVALID_TRANSITION",
+        "Only orders that have shipped or been delivered can be marked as returned.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const returnedAt = new Date();
+
+    const settlementOutcome = await prisma.$transaction(async (tx) => {
+      const isMarked = await orderRepository.markReturned(
+        tx,
+        orderId,
+        RETURNABLE_FULFILMENT_STATUSES,
+        { returnedAt, returnReason: reason },
+      );
+      if (!isMarked) return null;
+
+      await orderRepository.returnFulfilmentGroupsForOrder(tx, orderId, returnedAt);
+      await productService.restoreStockForItems(tx, order.items, {
+        kind: InventoryMovementKind.ORDER_RESTORE,
+        sourceType: InventoryMovementSource.ORDER,
+        sourceId: orderId,
+      });
+
+      const [voidedCommissionCount, voidedPayoutCount] = await Promise.all([
+        commissionRepository.voidForOrder(tx, orderId, reason),
+        brandPayoutRepository.voidUnwithdrawnForOrder(tx, orderId, reason),
+      ]);
+      const [paidCommissionCount, withdrawnPayoutCount] = await Promise.all([
+        commissionRepository.countPaidForOrder(tx, orderId),
+        brandPayoutRepository.countWithdrawnForOrder(tx, orderId),
+      ]);
+
+      return {
+        voidedCommissionCount,
+        voidedPayoutCount,
+        paidCommissionCount,
+        withdrawnPayoutCount,
+        needsClawback: paidCommissionCount + withdrawnPayoutCount > NOTHING_ALREADY_PAID,
+      };
+    });
+
+    if (!settlementOutcome) {
+      throw new AppError(
+        "INVALID_TRANSITION",
+        "This order's status changed — refresh and try again.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const refunded =
+      order.paymentStatus === PaymentStatus.PAID
+        ? await refundReturnedOrder(orderId, order.paymentMethod, order.phone, order.total)
+        : null;
+    const returnOutcome: OrderReturnOutcome = { ...settlementOutcome, refunded };
+
+    await platformAudit.record({
+      actorUserId: adminUserId,
+      action: PLATFORM_AUDIT_ACTION.ORDER_RETURNED_TO_ORIGIN,
+      summary: `Marked order ${orderId} as returned: ${reason}`,
+      onBehalfOfUserId: order.userId,
+      targetType: ORDER_AUDIT_TARGET_TYPE,
+      targetId: orderId,
+      metadata: { reason, fromStatus: order.fulfilmentStatus, ...returnOutcome },
+    });
+
+    await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
+      orderId,
+      userId: order.userId,
+      status: FulfilmentStatus.RETURNED,
+    });
+
+    return returnOutcome;
   },
 
   async listBrandFulfilmentGroups(

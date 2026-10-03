@@ -17,6 +17,7 @@ import type {
   ListOrdersQuery,
   OrderIdParam,
   RequestGroupCancellationBody,
+  ReturnOrderBody,
 } from "./order.schemas.js";
 import { orderService } from "./order.service.js";
 
@@ -75,6 +76,15 @@ export const orderController = {
 
     await orderService.cancel(orderId, { type: "ADMIN", adminUserId: userId }, reason);
     sendSuccess(res, null, "Order cancelled.");
+  },
+
+  async markReturned(_req: Request, res: Response) {
+    const { orderId } = validated.params<OrderIdParam>(res);
+    const { reason } = validated.body<ReturnOrderBody>(res);
+    const { userId } = requireAuthPrincipal(res);
+
+    const returnOutcome = await orderService.markReturned(orderId, userId, reason);
+    sendSuccess(res, returnOutcome, "Order marked as returned.");
   },
 
   async cancelMine(_req: Request, res: Response) {

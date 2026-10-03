@@ -8,6 +8,7 @@ import { validated } from "#middlewares/validate.js";
 
 import { outfitErrors } from "./outfit.errors.js";
 import type {
+  AddBuildToCartBody,
   AddEditorsBody,
   CreateOutfitBody,
   ListOutfitsQuery,
@@ -27,6 +28,7 @@ import type {
 import { outfitService } from "./outfit.service.js";
 import { parseVersionHeader, toETag } from "./outfit.utils.js";
 import type { OutfitWriteCall, OutfitWriteResult } from "./outfit.write.js";
+import { outfitCartService } from "./outfit-cart.service.js";
 import { outfitMemberService } from "./outfit-member.service.js";
 import { outfitPublishService } from "./outfit-publish.service.js";
 import { outfitReplacementService } from "./outfit-replacements.service.js";
@@ -77,6 +79,14 @@ export const outfitController = {
     const { id } = validated.params<OutfitIdParam>(res);
     const { sinceVersion } = validated.query<OutfitEventsQuery>(res);
     sendSuccess(res, await outfitService.listEvents(userId, id, sinceVersion), "Build history.");
+  },
+
+  async addToCart(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<OutfitIdParam>(res);
+    const body = validated.body<AddBuildToCartBody>(res);
+    const buildCartResult = await outfitCartService.addToCart(userId, id, body);
+    sendSuccess(res, buildCartResult, "Added to your bag.");
   },
 
   async publishLook(_req: Request, res: Response) {

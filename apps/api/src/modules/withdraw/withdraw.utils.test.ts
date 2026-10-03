@@ -6,12 +6,52 @@ import {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 
+import { BRAND_LEDGER_ROW_KIND } from "./withdraw.constants.js";
 import type { WithdrawPolicyRecord, WithdrawRequestRecord } from "./withdraw.types.js";
 import {
+  pickOldestRowsCoveringAmount,
   toAdminWithdrawRequestView,
   toWithdrawPolicyView,
   toWithdrawRequestView,
 } from "./withdraw.utils.js";
+
+describe("pickOldestRowsCoveringAmount", () => {
+  const payout = {
+    id: "payout-old",
+    kind: BRAND_LEDGER_ROW_KIND.PAYOUT,
+    amount: 1000,
+    createdAt: new Date("2026-09-01T00:00:00.000Z"),
+  };
+  const buildCommission = {
+    id: "commission-middle",
+    kind: BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION,
+    amount: 50,
+    createdAt: new Date("2026-09-05T00:00:00.000Z"),
+  };
+  const newerPayout = {
+    id: "payout-new",
+    kind: BRAND_LEDGER_ROW_KIND.PAYOUT,
+    amount: 800,
+    createdAt: new Date("2026-09-10T00:00:00.000Z"),
+  };
+
+  it("takes payouts and build commission together, oldest first, until the amount is covered", () => {
+    const picked = pickOldestRowsCoveringAmount([newerPayout, buildCommission, payout], 1040);
+
+    expect(picked?.map(({ id }) => id)).toEqual(["payout-old", "commission-middle"]);
+  });
+
+  it("stops as soon as the oldest rows cover the amount", () => {
+    expect(pickOldestRowsCoveringAmount([payout, newerPayout], 1000)?.map(({ id }) => id)).toEqual([
+      "payout-old",
+    ]);
+  });
+
+  it("returns null when every available row together still falls short", () => {
+    expect(pickOldestRowsCoveringAmount([payout, buildCommission], 5000)).toBeNull();
+    expect(pickOldestRowsCoveringAmount([], 1)).toBeNull();
+  });
+});
 
 const baseRequest: WithdrawRequestRecord = {
   id: "wr-1",

@@ -436,6 +436,7 @@ describe("GET /api/brand-payouts/me/summary", () => {
       pending: 500,
       available: 800,
       withdrawn: 300,
+      buildCommissionEarnings: 0,
     });
   });
 

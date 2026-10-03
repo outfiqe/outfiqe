@@ -53,6 +53,10 @@ export const platformAuditRepository = {
     if (filters.organizationId) where.organizationId = filters.organizationId;
     if (filters.actorUserId) where.actorUserId = filters.actorUserId;
     if (filters.action) where.action = filters.action;
+    if (filters.targetType) where.targetType = filters.targetType;
+    if (filters.metadataMatch) {
+      where.metadata = { path: [filters.metadataMatch.key], equals: filters.metadataMatch.value };
+    }
 
     const rows: ListRow[] = await prismaRead.platformAuditLog.findMany({
       where,

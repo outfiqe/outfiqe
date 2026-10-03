@@ -82,6 +82,10 @@ notifications. The web board and the rest of the feature are added on top (see
   (`GET`/`POST /:id/comments`, `GET /:id/comments/:commentId/replies`,
   `DELETE /:id/comments/:commentId`), and removal by a moderator (used by `../content-reports`).
   See "Builds in public" below.
+- `outfit-cart.service.ts` / `outfit-cart.repository.ts` — "Buy the full set" and "Pick your
+  own items" (`POST /:id/cart`): checks which version the shopper may buy from, adds the chosen
+  sizes through `cartService.addItems`, explains every item left out, and records an
+  `outfit_build_visits` row per added item for attribution. See "Buying from a build" below.
 - `outfit.errors.ts`, `outfit.schemas.ts`, `outfit.types.ts`, `outfit.constants.ts`.
 - Tests: `outfit.board.integration.test.ts` (starting, items, slot rules, versions, retries,
   simultaneous edits, who can see what), `outfit.lifecycle.integration.test.ts` (agreeing,
@@ -89,7 +93,8 @@ notifications. The web board and the rest of the feature are added on top (see
   chat lines, notifications), `outfit.constraints.integration.test.ts` (database rules),
   `outfit.stock.integration.test.ts` (sold-out alerts, replacements),
   `outfit.publish.integration.test.ts` (posting as a look), `outfit.social.integration.test.ts`
-  (the feed, filters, likes, saves, comments, reports), `outfit.utils.test.ts`,
+  (the feed, filters, likes, saves, comments, reports), `outfit.cart.integration.test.ts`
+  (buying from a build, Build commission split), `outfit.utils.test.ts`,
   `outfit.socket.test.ts`, `outfit.realtime.test.ts`.
 
 The tables (`apps/api/prisma/schema.prisma`, migration `20260929200000_add_outfit_build_data_model`):
@@ -114,6 +119,11 @@ Builds in public (migration `20261001090000_add_outfit_build_social`): `outfit_l
 (`like_count`, `save_count`, `comment_count`), `made_public_at` (feed order) and `removed_at` (set
 when a moderator takes the build down). A partial index on public, not-removed builds keeps the
 feed query cheap.
+
+Buying from a build (migration `20261003100000_add_outfit_build_commission`):
+`outfit_build_visits` (who added which product to their bag from which build version), and on the
+commission side `creator_commissions.recipient_brand_id` / `build_visit_id` and
+`order_items.attributed_outfit_id` / `attributed_outfit_version`.
 
 ## Funnel
 
@@ -183,6 +193,23 @@ Who can see and react:
 Anyone else gets 404. Comments are checked by the same content check. Reports of a build or a
 build comment go into the shared moderation queue (`../content-reports`), and removing one calls
 `outfitSocialService.removeBuild` / `removeComment` here, which audit the removal.
+
+**Buying from a build**: `POST /:id/cart` with `{ isFullSet, sizes: [{ productId, sizeLabel }] }`,
+shopper accounts only, rate limited.
+
+1. Members buy from the build's latest locked version (while `outfit_builder` is on for them);
+   everyone else buys from the version they can see, through the same access rules as the table
+   above. Anyone else gets 404.
+2. The full set takes every item in that version; "pick your own" takes only the items sent.
+   Each item is added in its chosen size, or listed in `leftOut` with a reason: not in the build,
+   no longer sold, no size chosen, size not offered, or sold out in that size.
+3. Added items go into the normal bag (`cartService.addItems`, clamped to stock like any add),
+   and one `outfit_build_visits` row is written per added item. At checkout that visit competes
+   with tag and link clicks for attribution, and a build sale pays Build commission split among
+   the build's contributors (see `../orders/README.md` and `../commissions/README.md`).
+
+`GET /:id/public` includes each item's buyable sizes so the web app can offer them; an item counts
+as in stock only if one of its buyable sizes is.
 
 ## Non-obvious rationale
 

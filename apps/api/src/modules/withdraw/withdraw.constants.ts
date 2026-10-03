@@ -10,6 +10,11 @@ type WithdrawPolicyDefaults = {
   processingNoteText: string;
 };
 
+export const BRAND_LEDGER_ROW_KIND = {
+  PAYOUT: "PAYOUT",
+  BUILD_COMMISSION: "BUILD_COMMISSION",
+} as const;
+
 export const DEFAULT_WITHDRAW_POLICY: Record<WithdrawOwnerType, WithdrawPolicyDefaults> = {
   [WithdrawOwnerType.CREATOR]: {
     minAmount: 500,

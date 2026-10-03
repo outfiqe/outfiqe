@@ -1,15 +1,17 @@
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 const FORBIDDEN_STATUS = 403;
 const DEFAULT_MESSAGE = "Only approved creators can do this.";
 
-export const requireApprovedCreator = async (
-  userId: string,
-  message = DEFAULT_MESSAGE,
-): Promise<void> => {
-  const user = await userRepository.findById(userId);
+type GuardedUser = Awaited<ReturnType<typeof userRepository.findById>>;
+
+const isApprovedCreator = (user: NonNullable<GuardedUser>): boolean =>
+  user.isCreator && user.creatorStatus === CreatorStatus.APPROVED;
+
+const rejectStaffAndBrandAccounts = (user: GuardedUser): void => {
   if (user && user.role !== UserRole.CUSTOMER) {
     throw new AppError(
       "STAFF_CANNOT_BE_CREATOR",
@@ -17,7 +19,32 @@ export const requireApprovedCreator = async (
       FORBIDDEN_STATUS,
     );
   }
-  if (!user || !user.isCreator || user.creatorStatus !== CreatorStatus.APPROVED) {
+};
+
+export const requireApprovedCreator = async (
+  userId: string,
+  message = DEFAULT_MESSAGE,
+): Promise<void> => {
+  const user = await userRepository.findById(userId);
+  rejectStaffAndBrandAccounts(user);
+  if (!user || !isApprovedCreator(user)) {
+    throw new AppError("NOT_A_CREATOR", message, FORBIDDEN_STATUS);
+  }
+};
+
+const canUserEarnCommission = async (user: GuardedUser): Promise<boolean> => {
+  if (!user || user.role !== UserRole.CUSTOMER) return false;
+  if (isApprovedCreator(user)) return true;
+  return commissionRepository.hasAnyForPerson(user.id);
+};
+
+export const isCommissionEarner = async (userId: string): Promise<boolean> =>
+  canUserEarnCommission(await userRepository.findById(userId));
+
+export const requireCommissionEarner = async (userId: string, message: string): Promise<void> => {
+  const user = await userRepository.findById(userId);
+  rejectStaffAndBrandAccounts(user);
+  if (!(await canUserEarnCommission(user))) {
     throw new AppError("NOT_A_CREATOR", message, FORBIDDEN_STATUS);
   }
 };

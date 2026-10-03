@@ -2,7 +2,10 @@ import type { UserRole } from "#generated/prisma/enums.js";
 
 import type { OutfitPersonView, OutfitSnapshotItem } from "./outfit.types.js";
 
-export type PublicBuildItem = OutfitSnapshotItem & { isInStock: boolean };
+export type PublicBuildItem = OutfitSnapshotItem & {
+  isInStock: boolean;
+  sizes: { label: string; isInStock: boolean }[];
+};
 
 export type PublicBuildCard = {
   id: string;

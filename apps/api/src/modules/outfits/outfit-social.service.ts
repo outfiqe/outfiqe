@@ -16,6 +16,7 @@ import { outfitErrors } from "./outfit.errors.js";
 import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitPersonView } from "./outfit.types.js";
 import { parseSnapshotItems } from "./outfit.utils.js";
+import { outfitCartRepository } from "./outfit-cart.repository.js";
 import {
   type OutfitCommentRow,
   outfitSocialRepository,
@@ -32,6 +33,7 @@ import type {
 } from "./outfit-social.types.js";
 
 const LOOKAHEAD_ROW = 1;
+const NO_STOCK = 0;
 const OUTFIT_AUDIT_TARGET_TYPE = "Outfit";
 const OUTFIT_COMMENT_AUDIT_TARGET_TYPE = "OutfitComment";
 
@@ -72,7 +74,7 @@ const resolveSocialAccess = async (
   return isBuildOn && (memberRole !== null || isRecipient) ? SOCIAL_ACCESS.AUDIENCE : null;
 };
 
-const requireSocialAccess = async (
+export const requireSocialAccess = async (
   outfitId: string,
   viewerId: string | null,
 ): Promise<SocialAccess> => {
@@ -212,13 +214,20 @@ export const outfitSocialService = {
     const snapshot = build.snapshots.find(({ version }) => version === build.publishedVersion);
     if (!snapshot) throw outfitErrors.notFound();
     const items = parseSnapshotItems(snapshot.items);
-    const inStockProductIds = await outfitSocialRepository.listProductStock(
+    const buyableSizes = await outfitCartRepository.listBuyableSizes(
       items.map(({ productId }) => productId),
     );
+    const sizesFor = (productId: string) =>
+      buyableSizes
+        .filter((size) => size.productId === productId)
+        .map(({ label, stock }) => ({ label, isInStock: stock > NO_STOCK }));
     return {
       ...card,
       visibility: build.visibility === OutfitVisibility.PUBLIC ? "PUBLIC" : "SHARED",
-      items: items.map((item) => ({ ...item, isInStock: inStockProductIds.has(item.productId) })),
+      items: items.map((item) => {
+        const sizes = sizesFor(item.productId);
+        return { ...item, sizes, isInStock: sizes.some(({ isInStock }) => isInStock) };
+      }),
       lockedAt: snapshot.createdAt.toISOString(),
       canComment: viewerId !== null,
     };

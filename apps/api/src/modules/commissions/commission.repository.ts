@@ -8,12 +8,44 @@ import {
 import type { DbClient } from "#types/db.types.js";
 
 import type {
-  CommissionTierAdminView,
+  AvailableLedgerRow,
   CommissionTierRecord,
+  CommissionTierRow,
   CreateCommissionTierInput,
   CreatePendingCommissionInput,
   UpdateCommissionTierInput,
 } from "./commission.types.js";
+
+const tierRowSelect = {
+  id: true,
+  scope: true,
+  minPrice: true,
+  maxPrice: true,
+  amount: true,
+  sortOrder: true,
+} as const;
+
+const ledgerRowInclude = {
+  orderItem: {
+    select: {
+      product: {
+        select: { name: true, imageUrl: true, brand: { select: { name: true } } },
+      },
+    },
+  },
+} as const;
+
+const NO_ROWS = 0;
+
+const sumAmountsByStatus = (
+  grouped: { status: CommissionStatus; _sum: { amount: number | null } }[],
+): Partial<Record<CommissionStatus, number>> => {
+  const sums: Partial<Record<CommissionStatus, number>> = {};
+  for (const { status, _sum } of grouped) {
+    sums[status] = _sum.amount ?? NO_ROWS;
+  }
+  return sums;
+};
 
 export const commissionRepository = {
   async findTierForPrice(
@@ -104,21 +136,29 @@ export const commissionRepository = {
     return result.count;
   },
 
+  async countPaidForOrder(client: DbClient, orderId: string): Promise<number> {
+    return client.creatorCommission.count({
+      where: { orderItem: { orderId }, status: CommissionStatus.PAID },
+    });
+  },
+
   async listForCreator(creatorId: string, params: { cursor?: string; limit: number }) {
     return prisma.creatorCommission.findMany({
       where: { creatorId },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: {
-        orderItem: {
-          select: {
-            product: {
-              select: { name: true, imageUrl: true, brand: { select: { name: true } } },
-            },
-          },
-        },
-      },
+      include: ledgerRowInclude,
+    });
+  },
+
+  async listForBrand(recipientBrandId: string, params: { cursor?: string; limit: number }) {
+    return prisma.creatorCommission.findMany({
+      where: { recipientBrandId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: ledgerRowInclude,
     });
   },
 
@@ -130,34 +170,69 @@ export const commissionRepository = {
       where: { creatorId },
       _sum: { amount: true },
     });
-
-    const sums: Partial<Record<CommissionStatus, number>> = {};
-    for (const { status, _sum } of grouped) {
-      sums[status] = _sum.amount ?? 0;
-    }
-    return sums;
+    return sumAmountsByStatus(grouped);
   },
 
-  async listTiers(scope: CommissionScope): Promise<CommissionTierAdminView[]> {
-    return prisma.commissionTier.findMany({
-      where: { scope },
-      orderBy: [{ sortOrder: "asc" }, { minPrice: "asc" }],
+  async sumByStatusForBrand(
+    recipientBrandId: string,
+  ): Promise<Partial<Record<CommissionStatus, number>>> {
+    const grouped = await prisma.creatorCommission.groupBy({
+      by: ["status"],
+      where: { recipientBrandId },
+      _sum: { amount: true },
+    });
+    return sumAmountsByStatus(grouped);
+  },
+
+  async hasAnyForPerson(creatorId: string): Promise<boolean> {
+    const commission = await prisma.creatorCommission.findFirst({
+      where: { creatorId },
+      select: { id: true },
+    });
+    return commission !== null;
+  },
+
+  async listAvailableForBrand(
+    client: DbClient,
+    recipientBrandId: string,
+  ): Promise<AvailableLedgerRow[]> {
+    return client.creatorCommission.findMany({
+      where: { recipientBrandId, status: CommissionStatus.AVAILABLE },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, amount: true, createdAt: true },
     });
   },
 
-  async findTierById(id: string, scope: CommissionScope): Promise<CommissionTierAdminView | null> {
-    return prisma.commissionTier.findFirst({ where: { id, scope } });
+  async markAvailableAsPaid(client: DbClient, ids: string[]): Promise<number> {
+    if (ids.length === NO_ROWS) return NO_ROWS;
+    const result = await client.creatorCommission.updateMany({
+      where: { id: { in: ids }, status: CommissionStatus.AVAILABLE },
+      data: { status: CommissionStatus.PAID, paidAt: new Date() },
+    });
+    return result.count;
+  },
+
+  async listTiers(scope: CommissionScope): Promise<CommissionTierRow[]> {
+    return prisma.commissionTier.findMany({
+      where: { scope },
+      orderBy: [{ sortOrder: "asc" }, { minPrice: "asc" }],
+      select: tierRowSelect,
+    });
+  },
+
+  async findTierById(id: string): Promise<CommissionTierRow | null> {
+    return prisma.commissionTier.findUnique({ where: { id }, select: tierRowSelect });
   },
 
   async createTier(
     input: CreateCommissionTierInput,
     scope: CommissionScope,
-  ): Promise<CommissionTierAdminView> {
-    return prisma.commissionTier.create({ data: { ...input, scope } });
+  ): Promise<CommissionTierRow> {
+    return prisma.commissionTier.create({ data: { ...input, scope }, select: tierRowSelect });
   },
 
-  async updateTier(id: string, input: UpdateCommissionTierInput): Promise<CommissionTierAdminView> {
-    return prisma.commissionTier.update({ where: { id }, data: input });
+  async updateTier(id: string, input: UpdateCommissionTierInput): Promise<CommissionTierRow> {
+    return prisma.commissionTier.update({ where: { id }, data: input, select: tierRowSelect });
   },
 
   async deleteTier(id: string): Promise<void> {
@@ -172,6 +247,7 @@ export const commissionRepository = {
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: {
         creator: { select: { name: true } },
+        recipientBrand: { select: { name: true } },
         orderItem: {
           select: { product: { select: { name: true, brand: { select: { name: true } } } } },
         },

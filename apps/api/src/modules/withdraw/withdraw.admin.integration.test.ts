@@ -8,8 +8,10 @@ import {
   BankType,
   BrandPayoutStatus,
   BrandRole,
+  CommissionScope,
   CommissionSource,
   CommissionStatus,
+  LedgerEntryKind,
   PaymentMethod,
   ProductStatus,
   UserRole,
@@ -511,10 +513,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
     expect(response.body.code).toBe("INVALID_TRANSITION");
   });
 
-  it("claims AVAILABLE brand payouts for a business request", async () => {
-    const { authHeader } = await createAdminSessionWithPlatformPermissions(
-      "platform:withdraw:manage",
-    );
+  const createBrandWithAvailablePayout = async () => {
     const admin = await createAdminSessionWithPlatformPermissions("platform:withdraw:manage");
     const policy = await createOpenPolicy(WithdrawOwnerType.BUSINESS);
     const brand = await prisma.brand.create({
@@ -596,20 +595,32 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
         gatewayFee: 0,
         netAmount: 1000,
         status: BrandPayoutStatus.AVAILABLE,
+        createdAt: new Date("2026-09-01T00:00:00.000Z"),
       },
     });
 
-    const withdrawRequest = await prisma.withdrawRequest.create({
-      data: {
-        ownerType: WithdrawOwnerType.BUSINESS,
-        brandId: brand.id,
-        requestedById: member.id,
-        brandBankAccountId: brandBankAccount.id,
-        policyId: policy.id,
-        amount: 1000,
-        status: WithdrawRequestStatus.APPROVED,
-      },
-    });
+    const createApprovedBusinessRequest = (amount: number) =>
+      prisma.withdrawRequest.create({
+        data: {
+          ownerType: WithdrawOwnerType.BUSINESS,
+          brandId: brand.id,
+          requestedById: member.id,
+          brandBankAccountId: brandBankAccount.id,
+          policyId: policy.id,
+          amount,
+          status: WithdrawRequestStatus.APPROVED,
+        },
+      });
+
+    return { brand, orderItemId, brandPayout, createApprovedBusinessRequest };
+  };
+
+  it("claims AVAILABLE brand payouts for a business request", async () => {
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
+    const { brandPayout, createApprovedBusinessRequest } = await createBrandWithAvailablePayout();
+    const withdrawRequest = await createApprovedBusinessRequest(1000);
 
     const response = await request(testApp)
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/mark-paid`)
@@ -621,6 +632,49 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       where: { id: brandPayout.id },
     });
     expect(updatedPayout.status).toBe(BrandPayoutStatus.WITHDRAWN);
+  });
+
+  it("claims a brand's build commission together with its payouts, oldest first", async () => {
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
+    const { brand, orderItemId, brandPayout, createApprovedBusinessRequest } =
+      await createBrandWithAvailablePayout();
+    const buildTier = await prisma.commissionTier.create({
+      data: { scope: CommissionScope.OUTFIT_BUILD, minPrice: 0, maxPrice: null, amount: 60 },
+    });
+    const buildCommission = await prisma.creatorCommission.create({
+      data: {
+        recipientBrandId: brand.id,
+        orderItemId,
+        source: CommissionSource.OUTFIT_BUILD,
+        tierId: buildTier.id,
+        amount: 60,
+        status: CommissionStatus.AVAILABLE,
+        createdAt: new Date("2026-09-02T00:00:00.000Z"),
+      },
+    });
+    const withdrawRequest = await createApprovedBusinessRequest(1060);
+
+    const response = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/mark-paid`)
+      .set("Authorization", authHeader)
+      .send({ referenceNote: "TXN789" });
+
+    expect(response.status).toBe(OK_STATUS);
+    const [updatedPayout, updatedCommission, ledgerEntries] = await Promise.all([
+      prisma.brandPayout.findUniqueOrThrow({ where: { id: brandPayout.id } }),
+      prisma.creatorCommission.findUniqueOrThrow({ where: { id: buildCommission.id } }),
+      prisma.withdrawRequestLedgerEntry.findMany({
+        where: { withdrawRequestId: withdrawRequest.id },
+      }),
+    ]);
+    expect(updatedPayout.status).toBe(BrandPayoutStatus.WITHDRAWN);
+    expect(updatedCommission.status).toBe(CommissionStatus.PAID);
+    expect(ledgerEntries.map(({ entryKind }) => entryKind).sort()).toEqual([
+      LedgerEntryKind.BRAND_PAYOUT,
+      LedgerEntryKind.CREATOR_COMMISSION,
+    ]);
   });
 });
 
