@@ -148,6 +148,7 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.OUTFIT_SHARED]: storefrontAccounts,
   [NotificationType.OUTFIT_MADE_PUBLIC]: storefrontAccounts,
   [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: storefrontAccounts,
+  [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: storefrontAccounts,
 };
 
 export const canReceiveNotificationType = (

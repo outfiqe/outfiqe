@@ -3,10 +3,11 @@ import { z } from "zod";
 import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { PostLayout } from "#generated/prisma/enums.js";
+import { PLATFORM_SETTING_REGISTRY } from "#modules/platform-settings/platform-settings.registry.js";
 
 const CAPTION_MAX = 280;
 const MIN_TAGGED_PRODUCTS = 0;
-const MAX_TAGGED_PRODUCTS = 6;
+const TAGGED_PRODUCTS_CEILING = PLATFORM_SETTING_REGISTRY["outfit.maxItemsPerBoard"].maximum;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
@@ -19,25 +20,34 @@ export const taggedProductInputSchema = z.object({
   sizeWorn: z.string().min(1).max(SIZE_WORN_MAX),
 });
 
-export const createCreatorLookSchema = z
-  .object({
-    imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
-    imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
-    caption: z.string().max(CAPTION_MAX).optional(),
-    layout: z.enum(PostLayout).optional(),
-    taggedProducts: z
-      .array(taggedProductInputSchema)
-      .min(MIN_TAGGED_PRODUCTS)
-      .max(MAX_TAGGED_PRODUCTS),
-  })
-  .refine(
-    (data) =>
-      data.imageAssetIds === undefined || data.imageAssetIds.length === data.imageUrls.length,
-    {
-      message: "imageAssetIds must line up one-to-one with imageUrls when provided.",
-      path: ["imageAssetIds"],
-    },
-  );
+export const lookContentSchema = z.object({
+  imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
+  imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
+  caption: z.string().max(CAPTION_MAX).optional(),
+  layout: z.enum(PostLayout).optional(),
+});
+
+export const taggedProductsSchema = z
+  .array(taggedProductInputSchema)
+  .min(MIN_TAGGED_PRODUCTS)
+  .max(TAGGED_PRODUCTS_CEILING);
+
+export const hasAlignedImageAssetIds = ({
+  imageUrls,
+  imageAssetIds,
+}: {
+  imageUrls: string[];
+  imageAssetIds?: (string | null)[];
+}): boolean => imageAssetIds === undefined || imageAssetIds.length === imageUrls.length;
+
+export const IMAGE_ASSET_ALIGNMENT_ISSUE = {
+  message: "imageAssetIds must line up one-to-one with imageUrls when provided.",
+  path: ["imageAssetIds"],
+};
+
+export const createCreatorLookSchema = lookContentSchema
+  .extend({ taggedProducts: taggedProductsSchema })
+  .refine(hasAlignedImageAssetIds, IMAGE_ASSET_ALIGNMENT_ISSUE);
 
 export const listCreatorLooksQuerySchema = z.object({
   cursor: z.string().optional(),

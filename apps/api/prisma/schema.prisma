@@ -102,6 +102,9 @@ model User {
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
   savedSizes                               SavedSize[]
+  outfitLikes                              OutfitLike[]                @relation("OutfitLikes")
+  outfitSaves                              OutfitSave[]                @relation("OutfitSaves")
+  outfitComments                           OutfitComment[]             @relation("OutfitComments")
   tourProgress                             UserTourProgress[]
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
@@ -975,6 +978,8 @@ model CreatorLookComment {
 enum ContentReportTarget {
   CREATOR_LOOK
   CREATOR_LOOK_COMMENT
+  OUTFIT_BUILD
+  OUTFIT_BUILD_COMMENT
 }
 
 enum ContentReportReason {
@@ -1971,6 +1976,7 @@ enum NotificationType {
   OUTFIT_SHARED
   OUTFIT_MADE_PUBLIC
   OUTFIT_ITEMS_SOLD_OUT
+  OUTFIT_NEW_VERSION_AVAILABLE
 }
 
 enum NotificationEntityType {
@@ -2641,9 +2647,17 @@ model Outfit {
   conversation         Conversation?    @relation("OutfitConversation", fields: [conversationId], references: [id], onDelete: SetNull)
   lockedAt             DateTime?        @map("locked_at")
   archivedAt           DateTime?        @map("archived_at")
+  likeCount            Int              @default(0) @map("like_count")
+  saveCount            Int              @default(0) @map("save_count")
+  commentCount         Int              @default(0) @map("comment_count")
+  madePublicAt         DateTime?        @map("made_public_at")
+  removedAt            DateTime?        @map("removed_at")
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")
 
+  likes            OutfitLike[]
+  saves            OutfitSave[]
+  comments         OutfitComment[]
   members          OutfitMember[]
   shares           OutfitShare[]
   slots            OutfitSlot[]
@@ -2657,6 +2671,48 @@ model Outfit {
   @@index([status, visibility, updatedAt])
   @@index([createdById])
   @@map("outfits")
+}
+
+model OutfitLike {
+  outfitId  String   @map("outfit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user      User     @relation("OutfitLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, userId])
+  @@index([userId, createdAt])
+  @@map("outfit_likes")
+}
+
+model OutfitSave {
+  outfitId  String   @map("outfit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user      User     @relation("OutfitSaves", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, userId])
+  @@index([userId, createdAt])
+  @@map("outfit_saves")
+}
+
+model OutfitComment {
+  id              String          @id @default(uuid()) @db.Uuid
+  outfitId        String          @map("outfit_id") @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
+  parentCommentId String?         @map("parent_comment_id") @db.Uuid
+  body            String
+  replyCount      Int             @default(0) @map("reply_count")
+  deletedAt       DateTime?       @map("deleted_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  outfit          Outfit          @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user            User            @relation("OutfitComments", fields: [userId], references: [id], onDelete: Cascade)
+  parentComment   OutfitComment?  @relation("OutfitCommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         OutfitComment[] @relation("OutfitCommentReplies")
+
+  @@index([parentCommentId, createdAt])
+  @@map("outfit_comments")
 }
 
 model OutfitMember {

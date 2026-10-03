@@ -4,6 +4,7 @@ import { env } from "#config/env.config.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
+import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
@@ -18,6 +19,7 @@ import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platfo
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
+import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import type { ProductRecord } from "#modules/products/product.types.js";
@@ -51,6 +53,7 @@ import type {
   CreatorLookSummary,
   CreatorMomentumEntry,
   FeedPage,
+  LookOutfitSource,
   LookSearchPage,
   PostSuggestion,
   PostTrendingEntry,
@@ -90,6 +93,20 @@ const requireOwnedLook = async (lookId: string, userId: string): Promise<Creator
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
   return look;
+};
+
+const readMaxTaggedProducts = (): Promise<number> =>
+  platformSettingsService.get("outfit.maxItemsPerBoard");
+
+const assertWithinTagLimit = async (taggedProductCount: number): Promise<void> => {
+  const maxTaggedProducts = await readMaxTaggedProducts();
+  if (taggedProductCount > maxTaggedProducts) {
+    throw new AppError(
+      "TOO_MANY_TAGGED_PRODUCTS",
+      `A look can tag up to ${maxTaggedProducts} products.`,
+      VALIDATION_STATUS,
+    );
+  }
 };
 
 const requireTopLevelComment = async (
@@ -171,11 +188,18 @@ const resolveTagReviewForProducts = async (
 };
 
 export const creatorLookService = {
+  async readLimits(): Promise<{ maxTaggedProducts: number }> {
+    return { maxTaggedProducts: await readMaxTaggedProducts() };
+  },
+
   async create(
     userId: string,
     { taggedProducts, imageUrls, imageAssetIds, caption, layout }: CreateCreatorLookBody,
+    outfitSource?: LookOutfitSource,
   ): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId, "Only approved creators can post looks.");
+    await assertWithinTagLimit(taggedProducts.length);
+    assertContentAllowed(caption);
     const productIds = taggedProducts.map((tag) => tag.productId);
     const productsById = await requireApprovedProducts(productIds);
     if (imageAssetIds?.length) {
@@ -191,6 +215,7 @@ export const creatorLookService = {
 
     const look = await creatorLookRepository.create({
       creatorId: userId,
+      outfitSource,
       imageUrls: [coverImageUrl, ...restImageUrls],
       imageAssetIds,
       caption,
@@ -253,6 +278,8 @@ export const creatorLookService = {
     body: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
     const existing = await requireOwnedLook(lookId, userId);
+    await assertWithinTagLimit(body.taggedProducts.length);
+    assertContentAllowed(body.caption);
     const incomingProductIds = body.taggedProducts.map((tag) => tag.productId);
     const productsById = await requireApprovedProducts(incomingProductIds);
     if (body.imageAssetIds?.length) {
@@ -632,6 +659,7 @@ export const creatorLookService = {
 
   async addComment(lookId: string, userId: string, body: string) {
     await assertCanEngage(userId);
+    assertContentAllowed(body);
     const look = await requireActiveLook(lookId);
     const comment = await creatorLookRepository.createComment(lookId, userId, body);
     await eventBus.publish(DomainEvents.LOOK_COMMENTED, {
@@ -655,6 +683,7 @@ export const creatorLookService = {
 
   async addReply(lookId: string, commentId: string, userId: string, body: string) {
     await assertCanEngage(userId);
+    assertContentAllowed(body);
     const look = await requireActiveLook(lookId);
     const parentComment = await requireTopLevelComment(lookId, commentId);
     const reply = await creatorLookRepository.createReply(lookId, commentId, userId, body);

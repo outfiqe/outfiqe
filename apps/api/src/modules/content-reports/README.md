@@ -3,10 +3,16 @@
 ## Purpose
 
 Trust & safety on the `/explore` feed: a public "report this" path for a viewer who spots spam,
-harassment, or worse on a creator's look or one of its comments, landing in one platform-staff
-review queue. Also the intake for the moderator-initiated takedown built into `../creator-looks`
-(`creatorLookService.remove`/`removeComment`) — resolving a report with `REMOVE_CONTENT` calls that
-same code path rather than re-implementing the takedown here.
+harassment, or worse on a creator's look, an outfit build, or a comment on either, landing in one
+platform-staff review queue. Also the intake for the moderator-initiated takedowns built into
+`../creator-looks` (`creatorLookService.remove`/`removeComment`) and `../outfits`
+(`outfitSocialService.removeBuild`/`removeComment`) — resolving a report with `REMOVE_CONTENT`
+calls those same code paths rather than re-implementing the takedown here.
+
+This README also documents the shared automatic content check
+(`src/shared/utils/content-check.utils.ts`, word lists in
+`src/shared/constants/content-check.constants.ts`), since it is the other half of trust & safety.
+See "Automatic content check" below.
 
 ## Structure
 
@@ -86,3 +92,35 @@ re-checks `findReportableTarget` before attempting a takedown; if the content is
 different moderator deleted it directly moments earlier), it marks the report `ACTIONED` with
 `contentRemoved: false` instead of throwing the `LOOK_NOT_FOUND`/`COMMENT_NOT_FOUND` that
 `creatorLookService` would otherwise raise.
+
+**Four target types, one queue.** `ContentReportTarget` covers `CREATOR_LOOK`,
+`CREATOR_LOOK_COMMENT`, `OUTFIT_BUILD` and `OUTFIT_BUILD_COMMENT`. `findReportableTarget` and the
+admin list's hydrate step branch on the type; each preview carries `lookId` or `outfitId` so the
+admin queue links to the right page. A build's "author" is its owner. Only shared or public,
+not-removed builds can be reported.
+
+## Automatic content check
+
+`assertContentAllowed(text)` refuses text with `422 CONTENT_NOT_ALLOWED` and a `reason` of:
+
+- `BLOCKED_TERM` — a word from `BLOCKED_TERMS` (English, and Nepali in both Devanagari and
+  romanised spelling), matched as whole words after lowercasing, stripping accents and undoing
+  look-alike characters (`sh!t`, `b1tch`), with plural endings.
+- `CONTACT_DETAILS` — a Nepali phone number or an email address.
+- `EXTERNAL_LINK` — a link to any site except Outfiqe.
+- `REPEATED_CHARACTERS` — the same character more than seven times in a row.
+
+It runs on look captions (create and edit), look comments and replies, build comments, and a
+build's title when the build is made public or renamed while public.
+
+**Why whole words, not substrings.** Substring matching blocks innocent words that happen to
+contain a blocked one. Matching whole words after normalising catches the common dodges without
+that. Words with an innocent everyday meaning (for example "bhalu", which also means bear) are
+left off the list for the same reason.
+
+**Why contact details and links are refused.** Sellers and scammers use comments and public
+titles to move buyers off the platform, where Outfiqe can't protect them. This applies to
+everyone, brands included.
+
+**It is a first filter, not moderation.** It only reads text; photos are not checked. Anything it
+misses is reported and reviewed through the queue above.

@@ -222,6 +222,10 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Something in your build sold out",
     body: (payload) => `Swap it in ${outfitNameFrom(payload)} before you lock`,
   },
+  [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: {
+    title: "A build you posted has changed",
+    body: (payload) => `Post the new version of ${outfitNameFrom(payload)} as a look`,
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {

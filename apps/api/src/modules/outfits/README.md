@@ -71,12 +71,25 @@ notifications. The web board and the rest of the feature are added on top (see
 - `outfit-replacements.service.ts` — `GET /:id/slots/:slotKey/positions/:position/replacements`:
   up to six in-stock products of the same product type that aren't on the board, from the same
   brand first, then closest in price. Owners and editors only; anyone else gets 404.
+- `outfit-publish.service.ts`, `outfit-publish.repository.ts` — posting a locked build as the
+  caller's own Creator Look (`POST /:id/look`) and telling them whether a newer version has been
+  locked since (`GET /:id/look`). See "Posting a build as a Creator Look" below.
+- `outfit-social.service.ts`, `outfit-social.repository.ts`, `outfit-social.controller.ts`,
+  `outfit-social.types.ts` — the public side of builds: the Builds feed (`GET /public`, with
+  `category`, `minPrice`, `maxPrice`, `inStockOnly`, `contributorId` and `brandId` filters),
+  saved builds (`GET /saved`), a build's public view (`GET /:id/public`), likes and saves
+  (`PUT`/`DELETE /:id/like`, `/:id/save`), comments with one level of replies
+  (`GET`/`POST /:id/comments`, `GET /:id/comments/:commentId/replies`,
+  `DELETE /:id/comments/:commentId`), and removal by a moderator (used by `../content-reports`).
+  See "Builds in public" below.
 - `outfit.errors.ts`, `outfit.schemas.ts`, `outfit.types.ts`, `outfit.constants.ts`.
 - Tests: `outfit.board.integration.test.ts` (starting, items, slot rules, versions, retries,
   simultaneous edits, who can see what), `outfit.lifecycle.integration.test.ts` (agreeing,
   locking, people, the build chat, sharing), `outfit.live.integration.test.ts` (the build card,
   chat lines, notifications), `outfit.constraints.integration.test.ts` (database rules),
-  `outfit.stock.integration.test.ts` (sold-out alerts, replacements), `outfit.utils.test.ts`,
+  `outfit.stock.integration.test.ts` (sold-out alerts, replacements),
+  `outfit.publish.integration.test.ts` (posting as a look), `outfit.social.integration.test.ts`
+  (the feed, filters, likes, saves, comments, reports), `outfit.utils.test.ts`,
   `outfit.socket.test.ts`, `outfit.realtime.test.ts`.
 
 The tables (`apps/api/prisma/schema.prisma`, migration `20260929200000_add_outfit_build_data_model`):
@@ -95,6 +108,12 @@ The tables (`apps/api/prisma/schema.prisma`, migration `20260929200000_add_outfi
 `creator_looks.source_outfit_id` / `source_outfit_version` link a Creator Look back to the build
 version it was published from, `messages.outfit_id` (kind `OUTFIT_CARD`) carries a build card in a
 chat, and `commission_tiers.scope` separates Build commission tiers from Creator Look ones.
+
+Builds in public (migration `20261001090000_add_outfit_build_social`): `outfit_likes`,
+`outfit_saves` and `outfit_comments` (with `parent_comment_id` for replies), counts on `outfits`
+(`like_count`, `save_count`, `comment_count`), `made_public_at` (feed order) and `removed_at` (set
+when a moderator takes the build down). A partial index on public, not-removed builds keeps the
+feed query cheap.
 
 ## Funnel
 
@@ -133,14 +152,58 @@ changed size ids (`products` module). `flagSoldOutBoardItems` then, in one trans
 The board already shows the item as out of stock, and locking already refuses while anything is
 sold out (`ITEMS_SOLD_OUT`). The web app offers the replacements endpoint from the sold-out item.
 
+**Posting a build as a Creator Look**: an owner or editor who is an approved creator can post the
+build's most recent locked version as their own look, with their own photos, caption and the
+size they wore of each item:
+
+1. `POST /:id/look` with `{ imageUrls, imageAssetIds?, caption?, layout?, sizesWorn }`. The build
+   must be locked right now (`409 OUTFIT_NOT_LOCKED`), and `sizesWorn` must name exactly the
+   products in the locked version (`422 SIZES_WORN_MISMATCH`).
+2. The look is made by `creatorLookService.create`, the same code as any other look, so tag
+   review, the tag limit, commission and feed events all behave the same. It is stamped with
+   `source_outfit_id` / `source_outfit_version`.
+3. The same creator posting the same version again gets the look they already have (`200`
+   instead of `201`), whether the second request came later or at the same moment.
+4. When the owner unlocks, changes and locks again, the `outfit.activity` handler sends
+   `OUTFIT_NEW_VERSION_AVAILABLE` to every creator whose latest look came from an older version.
+   `GET /:id/look` then answers `isOutdated: true`, and posting again makes a new look for the
+   new version. The old look stays as it was.
+
+**Builds in public**: making a build public runs the shared content check on its title
+(`#lib/content-check.utils.js`, see `../content-reports/README.md`) and stamps `made_public_at`.
+Who can see and react:
+
+| Build is | Can see it and its comments               | Can like, save and comment                    |
+| -------- | ----------------------------------------- | --------------------------------------------- |
+| Public   | Anyone, while `outfit_public_feed` is on  | Any signed-in person who isn't staff          |
+| Shared   | Its members and the people it was sent to | The same people, while `outfit_builder` is on |
+| Private  | Nobody here (members use the board)       | Nobody                                        |
+| Removed  | Nobody                                    | Nobody                                        |
+
+Anyone else gets 404. Comments are checked by the same content check. Reports of a build or a
+build comment go into the shared moderation queue (`../content-reports`), and removing one calls
+`outfitSocialService.removeBuild` / `removeComment` here, which audit the removal.
+
 ## Non-obvious rationale
 
+- **The feed shows the locked version, filtered in SQL.** Price, style, brand, contributor and
+  "everything in stock" filters all read the published snapshot (`jsonb_to_recordset` over its
+  items) in one query, so the card a viewer sees is exactly what was filtered. Stock is checked
+  live against `product_sizes`, since a locked build's items can sell out later.
+- **Removing a build hides it, it doesn't delete it.** `removed_at` takes it out of every public
+  view, but the owner still has the board, its history and any looks made from it.
+- **Deleting a top-level comment hides its replies too,** and the build's comment count drops by
+  all of them, so the count always matches what people can see.
 - **A sold-out item alerts once per sell-out, not once per stock change.** A flash sale can
   change the same product's stock hundreds of times a minute. The alert is claimed with a single
   `UPDATE … WHERE sold_out_alerted_at IS NULL`, so repeated or simultaneous stock events for the
   same item can't send a second alert, and several items selling out in one stock change become
   one notification per person. Live boards are only told when an item actually flips between
   sold out and in stock.
+- **One look per creator per locked version, enforced by the database.** The unique index on
+  `(creator_id, source_outfit_id, source_outfit_version)` is what makes posting safe to repeat. A
+  creator who deletes that look can't post the same version again, because the deleted row still
+  holds the slot (`409 LOOK_FROM_VERSION_DELETED`); a newly locked version can be posted.
 - **Availability changes don't bump the build version.** The version counts changes people make,
   and writes check it (`If-Match`). A sell-out isn't a change to the build, so bumping the version
   would make everyone's next edit fail with a conflict. The board learns about it from

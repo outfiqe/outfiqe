@@ -31,4 +31,6 @@ export const PLATFORM_AUDIT_ACTION = {
   OUTFIT_SLOT_TYPE_CREATED: "outfit-slot-type.created",
   OUTFIT_SLOT_TYPE_UPDATED: "outfit-slot-type.updated",
   OUTFIT_SLOT_TYPES_REORDERED: "outfit-slot-types.reordered",
+  OUTFIT_BUILD_REMOVED_BY_ADMIN: "outfit-build.removed-by-admin",
+  OUTFIT_BUILD_COMMENT_REMOVED_BY_ADMIN: "outfit-build-comment.removed-by-admin",
 } as const;

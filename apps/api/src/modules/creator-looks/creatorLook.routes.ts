@@ -60,6 +60,7 @@ creatorLookRoutes.get(
   creatorLookController.feed,
 );
 creatorLookRoutes.get("/tags/trending", creatorLookController.trendingTags);
+creatorLookRoutes.get("/limits", creatorLookController.limits);
 creatorLookRoutes.get(
   "/autocomplete",
   validate({ query: autocompleteQuerySchema }),

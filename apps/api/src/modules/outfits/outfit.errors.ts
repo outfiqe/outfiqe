@@ -159,4 +159,35 @@ export const outfitErrors = {
 
   shareNotFound: () =>
     new AppError("SHARE_NOT_FOUND", "This build wasn't sent to that person.", NOT_FOUND_STATUS),
+
+  commentNotFound: () =>
+    new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS),
+
+  replyToReply: () =>
+    new AppError(
+      "COMMENT_NOT_TOP_LEVEL",
+      "You can only reply to a top-level comment.",
+      UNPROCESSABLE_STATUS,
+    ),
+
+  notLocked: () =>
+    new AppError(
+      "OUTFIT_NOT_LOCKED",
+      "Lock the build before posting it as a look.",
+      CONFLICT_STATUS,
+    ),
+
+  sizesWornMismatch: () =>
+    new AppError(
+      "SIZES_WORN_MISMATCH",
+      "Give a size for each item in the locked build, and only those items.",
+      UNPROCESSABLE_STATUS,
+    ),
+
+  lookFromVersionDeleted: () =>
+    new AppError(
+      "LOOK_FROM_VERSION_DELETED",
+      "You deleted the look you made from this version. Lock a new version to post it again.",
+      CONFLICT_STATUS,
+    ),
 };

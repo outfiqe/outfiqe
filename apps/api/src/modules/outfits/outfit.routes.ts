@@ -1,5 +1,6 @@
 import { type Request, type Response, Router } from "express";
 
+import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
@@ -11,20 +12,25 @@ import { OUTFIT_RATE_LIMITS } from "./outfit.constants.js";
 import { outfitController } from "./outfit.controller.js";
 import {
   addEditorsSchema,
+  addOutfitCommentSchema,
   createOutfitSchema,
   listOutfitsQuerySchema,
+  outfitCommentParamSchema,
   outfitEventsQuerySchema,
   outfitIdParamSchema,
   outfitMemberParamSchema,
   outfitSlotParamSchema,
   outfitSlotPositionParamSchema,
   placeItemSchema,
+  publicBuildsQuerySchema,
+  publishLookSchema,
   reorderSlotSchema,
   setHappySchema,
   setVisibilitySchema,
   transferOwnershipSchema,
   updateOutfitSettingsSchema,
 } from "./outfit.schemas.js";
+import { outfitSocialController } from "./outfit-social.controller.js";
 
 const perUserKey = (_req: Request, res: Response) => getAuthPrincipal(res)?.userId;
 
@@ -40,6 +46,27 @@ const buildCreationRateLimit = rateLimit({
   ...OUTFIT_RATE_LIMITS.BUILD_CREATION,
   keyGenerator: perUserKey,
   message: "You've started a lot of builds recently. Try again later.",
+});
+
+const lookPublishRateLimit = rateLimit({
+  namespace: "outfit-look-publishes",
+  ...OUTFIT_RATE_LIMITS.LOOK_PUBLISHES,
+  keyGenerator: perUserKey,
+  message: "You're posting looks very quickly. Try again in a moment.",
+});
+
+const socialRateLimit = rateLimit({
+  namespace: "outfit-social-reactions",
+  ...OUTFIT_RATE_LIMITS.SOCIAL_REACTIONS,
+  keyGenerator: perUserKey,
+  message: "You're doing that very quickly. Wait a moment and try again.",
+});
+
+const commentRateLimit = rateLimit({
+  namespace: "outfit-comments",
+  ...OUTFIT_RATE_LIMITS.COMMENTS,
+  keyGenerator: perUserKey,
+  message: "You're commenting very quickly. Wait a moment and try again.",
 });
 
 const outfitReadChain = [...requireActiveAuth, requireFeatureFlag("outfit_builder")];
@@ -68,6 +95,78 @@ outfitRoutes.post(
   outfitController.create,
 );
 outfitRoutes.get(
+  "/public",
+  optionalAuth,
+  requireFeatureFlag("outfit_public_feed"),
+  validate({ query: publicBuildsQuerySchema }),
+  outfitSocialController.listPublic,
+);
+outfitRoutes.get(
+  "/saved",
+  ...requireActiveAuth,
+  validate({ query: listOutfitsQuerySchema }),
+  outfitSocialController.listSaved,
+);
+outfitRoutes.get(
+  "/:id/public",
+  optionalAuth,
+  validate({ params: outfitIdParamSchema }),
+  outfitSocialController.getPublic,
+);
+outfitRoutes.put(
+  "/:id/like",
+  ...requireActiveAuth,
+  socialRateLimit,
+  validate({ params: outfitIdParamSchema }),
+  outfitSocialController.like,
+);
+outfitRoutes.delete(
+  "/:id/like",
+  ...requireActiveAuth,
+  socialRateLimit,
+  validate({ params: outfitIdParamSchema }),
+  outfitSocialController.unlike,
+);
+outfitRoutes.put(
+  "/:id/save",
+  ...requireActiveAuth,
+  socialRateLimit,
+  validate({ params: outfitIdParamSchema }),
+  outfitSocialController.save,
+);
+outfitRoutes.delete(
+  "/:id/save",
+  ...requireActiveAuth,
+  socialRateLimit,
+  validate({ params: outfitIdParamSchema }),
+  outfitSocialController.unsave,
+);
+outfitRoutes.get(
+  "/:id/comments",
+  optionalAuth,
+  validate({ params: outfitIdParamSchema, query: listOutfitsQuerySchema }),
+  outfitSocialController.listComments,
+);
+outfitRoutes.get(
+  "/:id/comments/:commentId/replies",
+  optionalAuth,
+  validate({ params: outfitCommentParamSchema, query: listOutfitsQuerySchema }),
+  outfitSocialController.listReplies,
+);
+outfitRoutes.post(
+  "/:id/comments",
+  ...requireActiveAuth,
+  commentRateLimit,
+  validate({ params: outfitIdParamSchema, body: addOutfitCommentSchema }),
+  outfitSocialController.addComment,
+);
+outfitRoutes.delete(
+  "/:id/comments/:commentId",
+  ...requireActiveAuth,
+  validate({ params: outfitCommentParamSchema }),
+  outfitSocialController.removeComment,
+);
+outfitRoutes.get(
   "/:id",
   ...outfitReadChain,
   validate({ params: outfitIdParamSchema }),
@@ -78,6 +177,19 @@ outfitRoutes.get(
   ...outfitReadChain,
   validate({ params: outfitIdParamSchema, query: outfitEventsQuerySchema }),
   outfitController.listEvents,
+);
+outfitRoutes.get(
+  "/:id/look",
+  ...outfitReadChain,
+  validate({ params: outfitIdParamSchema }),
+  outfitController.getMyLook,
+);
+outfitRoutes.post(
+  "/:id/look",
+  ...outfitReadChain,
+  lookPublishRateLimit,
+  validate({ params: outfitIdParamSchema, body: publishLookSchema }),
+  outfitController.publishLook,
 );
 outfitRoutes.get(
   "/:id/slots/:slotKey/positions/:position/replacements",

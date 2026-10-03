@@ -24,6 +24,7 @@ import {
   readDetailStrings,
 } from "./outfit.announcement.js";
 import { outfitRepository } from "./outfit.repository.js";
+import { outfitPublishRepository } from "./outfit-publish.repository.js";
 
 export const OUTFIT_ACTIVITY_WINDOW_MS = secondsToMilliseconds(30);
 
@@ -63,6 +64,37 @@ const notifyPeople = async (
       metadata: { actor, outfitTitle },
       sourceEventId: outboxEventId,
     })),
+  );
+};
+
+const NEW_VERSION_SOURCE_SUFFIX = "new-version";
+
+const notifyCreatorsOfNewVersion = async ({
+  announcement,
+  outboxEventId,
+  actor,
+  outfitTitle,
+}: NotificationContext): Promise<void> => {
+  const { outfitId } = announcement;
+  const lockedVersion = await outfitRepository.findLatestSnapshotVersion(prisma, outfitId);
+  if (lockedVersion === null) return;
+
+  const creatorIds = await outfitPublishRepository.listCreatorsWithOlderLooks(
+    outfitId,
+    lockedVersion,
+  );
+  await notificationService.notifyManyIndividual(
+    creatorIds
+      .filter((creatorId) => creatorId !== actor.id)
+      .map((creatorId) => ({
+        recipientId: creatorId,
+        actorId: actor.id,
+        type: NotificationType.OUTFIT_NEW_VERSION_AVAILABLE,
+        entityType: NotificationEntityType.OUTFIT,
+        entityId: outfitId,
+        metadata: { actor, outfitTitle },
+        sourceEventId: `${outboxEventId}:${NEW_VERSION_SOURCE_SUFFIX}`,
+      })),
   );
 };
 
@@ -106,7 +138,8 @@ const notifyForChange = async (context: NotificationContext): Promise<void> => {
       }
       return;
     case OutfitEventType.LOCKED:
-      return notifyPeople(context, NotificationType.OUTFIT_LOCKED, memberIds);
+      await notifyPeople(context, NotificationType.OUTFIT_LOCKED, memberIds);
+      return notifyCreatorsOfNewVersion(context);
     case OutfitEventType.MEMBER_ADDED:
       return notifyPeople(
         context,

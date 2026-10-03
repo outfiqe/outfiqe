@@ -78,6 +78,7 @@ const outfitAccessSelect = {
   conversationId: true,
   publishedVersion: true,
   maxItemsPerMember: true,
+  removedAt: true,
 } as const satisfies Prisma.OutfitSelect;
 
 export type OutfitAccessRow = Prisma.OutfitGetPayload<{ select: typeof outfitAccessSelect }>;

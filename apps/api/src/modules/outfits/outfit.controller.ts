@@ -17,6 +17,7 @@ import type {
   OutfitSlotParam,
   OutfitSlotPositionParam,
   PlaceItemBody,
+  PublishLookBody,
   ReorderSlotBody,
   SetHappyBody,
   SetVisibilityBody,
@@ -27,9 +28,11 @@ import { outfitService } from "./outfit.service.js";
 import { parseVersionHeader, toETag } from "./outfit.utils.js";
 import type { OutfitWriteCall, OutfitWriteResult } from "./outfit.write.js";
 import { outfitMemberService } from "./outfit-member.service.js";
+import { outfitPublishService } from "./outfit-publish.service.js";
 import { outfitReplacementService } from "./outfit-replacements.service.js";
 import { outfitVisibilityService } from "./outfit-visibility.service.js";
 
+const OK_STATUS = 200;
 const CREATED_STATUS = 201;
 
 const readExpectedVersion = (req: Request): number => {
@@ -74,6 +77,25 @@ export const outfitController = {
     const { id } = validated.params<OutfitIdParam>(res);
     const { sinceVersion } = validated.query<OutfitEventsQuery>(res);
     sendSuccess(res, await outfitService.listEvents(userId, id, sinceVersion), "Build history.");
+  },
+
+  async publishLook(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<OutfitIdParam>(res);
+    const body = validated.body<PublishLookBody>(res);
+    const { look, isNew } = await outfitPublishService.publishAsLook(userId, id, body);
+    sendSuccess(
+      res,
+      look,
+      isNew ? "Look posted." : "Look already posted.",
+      isNew ? CREATED_STATUS : OK_STATUS,
+    );
+  },
+
+  async getMyLook(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<OutfitIdParam>(res);
+    sendSuccess(res, await outfitPublishService.findMyPublishedLook(userId, id), "Your look.");
   },
 
   async listReplacements(_req: Request, res: Response) {

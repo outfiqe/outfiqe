@@ -1,4 +1,5 @@
 import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
+import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
 import { OUTFIT_IDEMPOTENCY_ENDPOINT } from "./outfit.constants.js";
@@ -36,12 +37,15 @@ export const outfitVisibilityService = {
           ? outfit.publishedVersion
           : await outfitRepository.findLatestSnapshotVersion(tx, outfit.id);
         if (!isPrivate && publishedVersion === null) throw outfitErrors.neverLocked();
+        const isGoingPublic =
+          visibility === OutfitVisibility.PUBLIC && outfit.visibility !== OutfitVisibility.PUBLIC;
         if (visibility === OutfitVisibility.PUBLIC) {
           const isPublicFeedOn = await featureFlagsService.isEnabledForUser(
             "outfit_public_feed",
             actor.id,
           );
           if (!isPublicFeedOn) throw outfitErrors.publicFeedUnavailable();
+          assertContentAllowed(outfit.title);
         }
 
         const members = await outfitRepository.listMembers(tx, outfit.id);
@@ -53,7 +57,11 @@ export const outfitVisibilityService = {
           await outfitRepository.addShares(tx, outfit.id, newRecipientIds, actor.id);
         }
 
-        await outfitRepository.update(tx, outfit.id, { visibility, publishedVersion });
+        await outfitRepository.update(tx, outfit.id, {
+          visibility,
+          publishedVersion,
+          ...(isGoingPublic ? { madePublicAt: new Date() } : {}),
+        });
         return {
           eventType: isSendingToPeople
             ? OutfitEventType.SHARED

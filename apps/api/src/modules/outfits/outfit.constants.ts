@@ -33,6 +33,9 @@ export const OUTFIT_LIMITS = {
 export const OUTFIT_RATE_LIMITS = {
   BOARD_EDITS: { windowMs: minutesToMilliseconds(1), max: 30 },
   BUILD_CREATION: { windowMs: minutesToMilliseconds(60), max: 20 },
+  LOOK_PUBLISHES: { windowMs: minutesToMilliseconds(1), max: 10 },
+  SOCIAL_REACTIONS: { windowMs: minutesToMilliseconds(1), max: 60 },
+  COMMENTS: { windowMs: minutesToMilliseconds(1), max: 10 },
 } as const;
 
 export const OUTFIT_CHAT_FALLBACK_NAME = "Outfit build";

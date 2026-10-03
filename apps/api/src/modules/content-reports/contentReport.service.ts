@@ -6,6 +6,8 @@ import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+import { outfitSocialRepository } from "#modules/outfits/outfit-social.repository.js";
+import { outfitSocialService } from "#modules/outfits/outfit-social.service.js";
 import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 
@@ -33,14 +35,26 @@ const removeReportedContent = async (
   targetId: string,
   principal: { userId: string; role: UserRole },
 ): Promise<void> => {
-  if (targetType === ContentReportTarget.CREATOR_LOOK) {
-    await creatorLookService.remove(targetId, principal);
-    return;
+  switch (targetType) {
+    case ContentReportTarget.CREATOR_LOOK:
+      await creatorLookService.remove(targetId, principal);
+      return;
+    case ContentReportTarget.CREATOR_LOOK_COMMENT: {
+      const comment = await creatorLookRepository.findCommentById(targetId);
+      if (!comment) return;
+      await creatorLookService.removeComment(comment.creatorLookId, targetId, principal);
+      return;
+    }
+    case ContentReportTarget.OUTFIT_BUILD:
+      await outfitSocialService.removeBuild(principal, targetId);
+      return;
+    case ContentReportTarget.OUTFIT_BUILD_COMMENT: {
+      const comment = await outfitSocialRepository.findComment(targetId);
+      if (!comment) return;
+      await outfitSocialService.removeComment(principal, comment.outfitId, targetId);
+      return;
+    }
   }
-
-  const comment = await creatorLookRepository.findCommentById(targetId);
-  if (!comment) return;
-  await creatorLookService.removeComment(comment.creatorLookId, targetId, principal);
 };
 
 export const contentReportService = {

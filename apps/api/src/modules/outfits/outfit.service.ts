@@ -3,6 +3,7 @@ import { findPlacementRefusal, OUTFIT_PLACEMENT_REFUSAL } from "@outfiqe/utils";
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
+import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { withIdempotentTransaction } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { buildChatService } from "#modules/chat/build-chat.service.js";
@@ -115,6 +116,7 @@ const canSeePublishedVersion = async (
   outfit: NonNullable<Awaited<ReturnType<typeof outfitRepository.findAccess>>>,
   viewerId: string,
 ): Promise<boolean> => {
+  if (outfit.removedAt !== null) return false;
   if (outfit.visibility === OutfitVisibility.PUBLIC) return true;
   if (outfit.visibility !== OutfitVisibility.SHARED) return false;
   return outfitRepository.hasShare(prisma, outfit.id, viewerId);
@@ -382,8 +384,11 @@ export const outfitService = {
       access: OUTFIT_WRITE_ACCESS.OWNER_ONLY,
       allowedStatuses: NOT_ARCHIVED,
       apply: async ({ tx, outfit, actor }) => {
-        await outfitRepository.update(tx, outfit.id, changes);
         const isTitleChanged = changes.title !== undefined && changes.title !== outfit.title;
+        if (isTitleChanged && outfit.visibility === OutfitVisibility.PUBLIC) {
+          assertContentAllowed(changes.title);
+        }
+        await outfitRepository.update(tx, outfit.id, changes);
         if (isTitleChanged && outfit.conversationId) {
           await buildChatService.rename(
             tx,

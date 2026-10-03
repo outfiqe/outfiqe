@@ -47,6 +47,7 @@ export default defineConfig({
         "src/testing/integration/workerPool.ts",
         "src/testing/integration/uniqueValues.ts",
         "src/shared/utils/pagination.utils.ts",
+        "src/shared/utils/content-check.utils.ts",
         "src/shared/utils/password.utils.ts",
         "src/shared/utils/password-breach.utils.ts",
         "src/shared/utils/web-cache.utils.ts",

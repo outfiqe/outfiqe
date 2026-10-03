@@ -2,6 +2,12 @@ import { OUTFIT_ITEMS_PER_MEMBER_CHOICES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { OutfitVisibility } from "#generated/prisma/enums.js";
+import {
+  hasAlignedImageAssetIds,
+  IMAGE_ASSET_ALIGNMENT_ISSUE,
+  lookContentSchema,
+  taggedProductsSchema,
+} from "#modules/creator-looks/creatorLook.schemas.js";
 
 import { OUTFIT_LIMITS } from "./outfit.constants.js";
 
@@ -99,9 +105,59 @@ export const setVisibilitySchema = z
     path: ["shareWithUserIds"],
   });
 
+export const publishLookSchema = lookContentSchema
+  .extend({ sizesWorn: taggedProductsSchema })
+  .strict()
+  .refine(hasAlignedImageAssetIds, IMAGE_ASSET_ALIGNMENT_ISSUE)
+  .refine(
+    ({ sizesWorn }) =>
+      new Set(sizesWorn.map(({ productId }) => productId)).size === sizesWorn.length,
+    { message: "Each item can only have one size.", path: ["sizesWorn"] },
+  );
+
 export const outfitEventsQuerySchema = z.object({
   sinceVersion: z.coerce.number().int().min(MIN_VERSION),
 });
+
+const CATEGORY_SLUG_MAX_LENGTH = 80;
+const COMMENT_BODY_MAX_LENGTH = 1000;
+const MIN_PRICE = 0;
+const TRUE_TEXT = "true";
+const FALSE_TEXT = "false";
+
+export const publicBuildsQuerySchema = z
+  .object({
+    category: z.string().trim().min(MIN_TITLE_LENGTH).max(CATEGORY_SLUG_MAX_LENGTH).optional(),
+    minPrice: z.coerce.number().int().min(MIN_PRICE).optional(),
+    maxPrice: z.coerce.number().int().min(MIN_PRICE).optional(),
+    inStockOnly: z
+      .enum([TRUE_TEXT, FALSE_TEXT])
+      .optional()
+      .transform((value) => value === TRUE_TEXT),
+    contributorId: z.uuid().optional(),
+    brandId: z.uuid().optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(MIN_PAGE_SIZE)
+      .max(LIST_MAX_PAGE_SIZE)
+      .default(LIST_DEFAULT_PAGE_SIZE),
+  })
+  .refine(
+    ({ minPrice, maxPrice }) =>
+      minPrice === undefined || maxPrice === undefined || minPrice <= maxPrice,
+    { message: "The lowest price can't be above the highest.", path: ["minPrice"] },
+  );
+
+export const outfitCommentParamSchema = z.object({ id: z.uuid(), commentId: z.uuid() });
+
+export const addOutfitCommentSchema = z
+  .object({
+    body: z.string().trim().min(MIN_TITLE_LENGTH).max(COMMENT_BODY_MAX_LENGTH),
+    parentCommentId: z.uuid().optional(),
+  })
+  .strict();
 
 export const listOutfitsQuerySchema = z.object({
   cursor: z.string().optional(),
@@ -125,5 +181,9 @@ export type SetHappyBody = z.infer<typeof setHappySchema>;
 export type AddEditorsBody = z.infer<typeof addEditorsSchema>;
 export type TransferOwnershipBody = z.infer<typeof transferOwnershipSchema>;
 export type SetVisibilityBody = z.infer<typeof setVisibilitySchema>;
+export type PublishLookBody = z.infer<typeof publishLookSchema>;
+export type PublicBuildsQuery = z.infer<typeof publicBuildsQuerySchema>;
+export type OutfitCommentParam = z.infer<typeof outfitCommentParamSchema>;
+export type AddOutfitCommentBody = z.infer<typeof addOutfitCommentSchema>;
 export type OutfitEventsQuery = z.infer<typeof outfitEventsQuerySchema>;
 export type ListOutfitsQuery = z.infer<typeof listOutfitsQuerySchema>;
