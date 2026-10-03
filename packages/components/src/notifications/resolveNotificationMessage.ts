@@ -132,6 +132,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `${outfitName(notification)} is now public`;
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
       return soldOutMessage(notification);
+    case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
+      return `A new version of ${outfitName(notification)} is ready to post as a look`;
     default:
       return "You have a new notification";
   }

@@ -1,4 +1,5 @@
-export type ContentReportTarget = "CREATOR_LOOK" | "CREATOR_LOOK_COMMENT";
+export type ContentReportTarget =
+  "CREATOR_LOOK" | "CREATOR_LOOK_COMMENT" | "OUTFIT_BUILD" | "OUTFIT_BUILD_COMMENT";
 
 export type ContentReportReason =
   | "SPAM"

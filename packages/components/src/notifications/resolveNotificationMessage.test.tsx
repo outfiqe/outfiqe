@@ -74,6 +74,17 @@ describe("resolveNotificationMessage for outfit builds", () => {
     ).toBe('"Dashain look" is now public');
   });
 
+  it("says a newer version of a posted build is ready", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_NEW_VERSION_AVAILABLE",
+          metadata: { outfitTitle: "Dashain look" },
+        }),
+      ),
+    ).toBe('A new version of "Dashain look" is ready to post as a look');
+  });
+
   it("names the sold-out item, or counts them when several sold out together", () => {
     expect(
       resolveNotificationMessage(

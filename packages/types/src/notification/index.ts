@@ -42,6 +42,7 @@ export const NotificationType = {
   OUTFIT_SHARED: "OUTFIT_SHARED",
   OUTFIT_MADE_PUBLIC: "OUTFIT_MADE_PUBLIC",
   OUTFIT_ITEMS_SOLD_OUT: "OUTFIT_ITEMS_SOLD_OUT",
+  OUTFIT_NEW_VERSION_AVAILABLE: "OUTFIT_NEW_VERSION_AVAILABLE",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];

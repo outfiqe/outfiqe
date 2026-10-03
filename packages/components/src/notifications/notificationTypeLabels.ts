@@ -44,4 +44,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.OUTFIT_SHARED]: "Outfit builds shared with you",
   [NotificationType.OUTFIT_MADE_PUBLIC]: "Your outfit builds going public",
   [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: "Items selling out in your outfit builds",
+  [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: "New versions of builds you posted as looks",
 };
