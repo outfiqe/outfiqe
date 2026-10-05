@@ -24,6 +24,8 @@ export default defineConfig({
         "src/stat-card.tsx",
         "src/drawer.tsx",
         "src/filter-chip.tsx",
+        "src/filter-menu.tsx",
+        "src/scroll-row.tsx",
         "src/modal.tsx",
         "src/layers.ts",
         "src/table.tsx",

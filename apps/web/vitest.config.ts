@@ -46,6 +46,7 @@ export default defineConfig({
         "src/shared/components/CategoryTypeFilters.tsx",
         "src/shared/hooks/usePendingSelection.ts",
         "src/shared/hooks/useTabSearchParam.ts",
+        "src/shared/lib/replaceUrlSearchParams.ts",
         "src/shared/hooks/useOptimisticFollow.ts",
         "src/features/landing/lib/CategorySelectionContext.tsx",
         "src/features/landing/components/CategoryResults/index.tsx",

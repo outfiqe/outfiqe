@@ -2,6 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 
+import { replaceUrlSearchParams } from "@/shared/lib/replaceUrlSearchParams";
+
 import { usePendingSelection } from "./usePendingSelection";
 
 export const TAB_SEARCH_PARAM = "tab";
@@ -29,14 +31,7 @@ export const useTabSearchParam = <TabValue extends string>(
     const nextTab = findTab(tabValues, requestedTab);
     if (nextTab === undefined) return;
     markTabPending(nextTab);
-    const nextParams = new URLSearchParams(window.location.search);
-    nextParams.set(paramName, nextTab);
-    const { pathname, hash } = window.location;
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${pathname}?${nextParams.toString()}${hash}`,
-    );
+    replaceUrlSearchParams((params) => params.set(paramName, nextTab));
   };
 
   return { selectedTab, selectTab };

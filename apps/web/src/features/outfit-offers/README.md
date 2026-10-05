@@ -33,6 +33,8 @@ flow.
 - `testing/offerFixtures.ts` — a full `Offer` builder and the API envelope helper for tests.
 - `components/OfferPaymentScreen.tsx` — the page the gateway returns to
   (`app/offers/payment/[provider]/callback/[offerId]`, and `/failed`).
+  `components/OfferPaymentScreenSkeleton.tsx` is what shows while it loads: the route's
+  `loading.tsx` and the pages' `Suspense` fallback both use it, so the screen is never blank.
 
 ## Funnel
 

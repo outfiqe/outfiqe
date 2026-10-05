@@ -2,14 +2,21 @@
 
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { replaceUrlSearchParams } from "@/shared/lib/replaceUrlSearchParams";
 
 import type { PublicBuildFilters } from "../api/outfitSocialSchemas";
 import { usePublicBuilds } from "../hooks/useBuildSocial";
-import { clearNarrowingFilters, hasNarrowingFilters } from "../utils/publicBuildFilters";
+import {
+  clearNarrowingFilters,
+  hasNarrowingFilters,
+  readPublicBuildFilters,
+  writePublicBuildFilters,
+} from "../utils/publicBuildFilters";
 import { BuildDetailModal } from "./BuildDetailModal";
 import { PublicBuildCardView } from "./PublicBuildCardView";
 import { PublicBuildFiltersBar } from "./PublicBuildFiltersBar";
@@ -25,7 +32,14 @@ type PublicBuildsFeedProps = {
 
 export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBuildsFeedProps) => {
   const t = useTranslations("outfitBuild.public");
-  const [filters, setFilters] = useState<PublicBuildFilters>({});
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<PublicBuildFilters>(() =>
+    showFilters ? readPublicBuildFilters(searchParams) : {},
+  );
+  const changeFilters = (nextFilters: PublicBuildFilters) => {
+    setFilters(nextFilters);
+    replaceUrlSearchParams((params) => writePublicBuildFilters(params, nextFilters));
+  };
   const debouncedFilters = useDebouncedValue(filters, FILTER_DEBOUNCE_MS);
   const [openOutfitId, setOpenOutfitId] = useState<string | null>(null);
   const { data, isPending, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
@@ -39,7 +53,7 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
 
   return (
     <section aria-label={t("feedLabel")} className="space-y-4">
-      {showFilters && <PublicBuildFiltersBar filters={filters} onChange={setFilters} />}
+      {showFilters && <PublicBuildFiltersBar filters={filters} onChange={changeFilters} />}
 
       <div aria-live="polite" aria-busy={isPending}>
         {isPending && (
@@ -66,7 +80,7 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFilters(clearNarrowingFilters(filters))}
+                onClick={() => changeFilters(clearNarrowingFilters(filters))}
               >
                 {t("clearFilters")}
               </Button>

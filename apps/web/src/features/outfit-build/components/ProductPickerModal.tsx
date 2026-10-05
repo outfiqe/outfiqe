@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn, Input, Modal, Skeleton } from "@outfiqe/design-system";
+import { Button, FilterChip, Input, Modal, ScrollRow, Skeleton } from "@outfiqe/design-system";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -129,22 +129,27 @@ export const ProductPickerModal = ({
         />
 
         {(allowedTypes.length > SINGLE_TYPE || slot.acceptsAnyProductType) && (
-          <div role="group" aria-label={t("typeFilterLabel")} className="flex flex-wrap gap-2">
+          <ScrollRow
+            label={t("typeFilterLabel")}
+            scrollBackLabel={t("earlierTypes")}
+            scrollForwardLabel={t("moreTypes")}
+            surface="card"
+          >
             {slot.acceptsAnyProductType && (
-              <TypeChip isSelected={typeSlug === null} onSelect={() => setTypeSlug(null)}>
+              <FilterChip isSelected={typeSlug === null} onClick={() => setTypeSlug(null)}>
                 {t("allTypes")}
-              </TypeChip>
+              </FilterChip>
             )}
             {allowedTypes.map((productType) => (
-              <TypeChip
+              <FilterChip
                 key={productType.id}
                 isSelected={typeSlug === productType.slug}
-                onSelect={() => setTypeSlug(productType.slug)}
+                onClick={() => setTypeSlug(productType.slug)}
               >
                 {productType.label}
-              </TypeChip>
+              </FilterChip>
             ))}
-          </div>
+          </ScrollRow>
         )}
 
         <div
@@ -212,29 +217,5 @@ const ProductOption = ({
       <span className="block truncate text-sm font-medium text-foreground">{name}</span>
       <span className="block truncate text-xs text-muted-foreground">{details}</span>
     </span>
-  </button>
-);
-
-const TypeChip = ({
-  isSelected,
-  onSelect,
-  children,
-}: {
-  isSelected: boolean;
-  onSelect: () => void;
-  children: React.ReactNode;
-}) => (
-  <button
-    type="button"
-    aria-pressed={isSelected}
-    onClick={onSelect}
-    className={cn(
-      "cursor-pointer rounded-full border px-3 py-1 text-xs font-medium",
-      isSelected
-        ? "border-foreground bg-foreground text-background"
-        : "border-border text-muted-foreground hover:text-foreground",
-    )}
-  >
-    {children}
   </button>
 );
