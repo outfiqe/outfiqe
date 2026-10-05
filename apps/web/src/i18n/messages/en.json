@@ -159,6 +159,13 @@
       "whoCanSee": "Who can see it",
       "settings": "Settings",
       "leave": "Leave build",
+      "leaveConfirm": {
+        "title": "Leave this build?",
+        "body": "You'll leave the build and its group chat. Anything you added stays on the board for everyone else.",
+        "creditNote": "Your name will also come off this build wherever it's shared or public, and new sales won't send you a share any more. Anything you've already earned is still yours.",
+        "confirm": "Yes, leave",
+        "stay": "Stay"
+      },
       "lockBlockers": {
         "notEnoughItems": "Add at least {count} items to lock.",
         "itemsSoldOut": "Swap the sold-out items to lock.",
@@ -193,6 +200,7 @@
         "PEOPLE_UNAVAILABLE": "Some of these people can't be added right now.",
         "OUTFIT_NEVER_LOCKED": "Lock the build before sharing it.",
         "OWNER_MUST_HAND_OVER": "Make someone else the owner before leaving.",
+        "OPEN_OFFER_BLOCKS_LEAVE": "You've still got an offer open on this build. Settle it first (accept and post, or decline), then you're free to leave.",
         "OUTFIT_NOT_EDITABLE": "This build can't be changed right now.",
         "ALREADY_ON_BUILD": "They're already on this build.",
         "RATE_LIMITED": "You're changing things very quickly. Wait a moment."

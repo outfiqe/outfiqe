@@ -2,7 +2,12 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { FeatureFlagRollout, MessageKind } from "#generated/prisma/enums.js";
+import {
+  FeatureFlagRollout,
+  MessageKind,
+  OutfitOfferStatus,
+  PaymentMethod,
+} from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { redis } from "#redis/redis.client.js";
@@ -320,6 +325,87 @@ describe("people on a build", () => {
         where: { topic: OUTBOX_TOPIC.CHAT_MEMBER_REMOVED, aggregateId: conversationId },
       }),
     ).toBe(2);
+  });
+
+  it("takes someone who leaves off every locked version, but keeps someone the owner removed", async () => {
+    const owner = await createOutfitUser("Sita");
+    const [leaver, removedEditor] = await Promise.all([
+      createOutfitUser("Ram"),
+      createOutfitUser("Gita"),
+    ]);
+    const outfitId = await startBuildOrFail(owner);
+    await writeAtCurrentVersion(owner, "post", outfitId, "/members", {
+      userIds: [leaver.id, removedEditor.id],
+    });
+    const everyone = [owner.id, leaver.id, removedEditor.id];
+    await prisma.outfitSnapshot.createMany({
+      data: [1, 2].map((version) => ({
+        outfitId,
+        version,
+        items: [],
+        total: 0,
+        contributorIds: everyone,
+      })),
+    });
+
+    const left = await writeAtCurrentVersion(leaver, "post", outfitId, "/leave");
+    const removed = await writeAtCurrentVersion(
+      owner,
+      "delete",
+      outfitId,
+      `/members/${removedEditor.id}`,
+    );
+
+    expect(left.status).toBe(OK_STATUS);
+    expect(removed.status).toBe(OK_STATUS);
+    const snapshots = await prisma.outfitSnapshot.findMany({
+      where: { outfitId },
+      orderBy: { version: "asc" },
+      select: { contributorIds: true },
+    });
+    expect(snapshots.map(({ contributorIds }) => contributorIds)).toEqual([
+      [owner.id, removedEditor.id],
+      [owner.id, removedEditor.id],
+    ]);
+  });
+
+  it("asks a creator to settle an open offer on the build before leaving it", async () => {
+    const owner = await createOutfitUser("Sita");
+    const creator = await createOutfitUser("Ram");
+    const outfitId = await startBuildOrFail(owner);
+    await writeAtCurrentVersion(owner, "post", outfitId, "/members", { userIds: [creator.id] });
+    await prisma.outfitSnapshot.create({
+      data: { outfitId, version: 1, items: [], total: 0, contributorIds: [owner.id, creator.id] },
+    });
+    const { brandId } = await createOutfitProduct("tops");
+    const offer = await prisma.outfitOffer.create({
+      data: {
+        outfitId,
+        outfitVersion: 1,
+        brandId,
+        creatorId: creator.id,
+        amount: 2_000,
+        paymentMethod: PaymentMethod.ESEWA,
+        status: OutfitOfferStatus.ACCEPTED,
+      },
+    });
+
+    const blocked = await writeAtCurrentVersion(creator, "post", outfitId, "/leave");
+
+    expect(blocked.status).toBe(CONFLICT_STATUS);
+    expect(blocked.body.code).toBe("OPEN_OFFER_BLOCKS_LEAVE");
+    expect(await prisma.outfitMember.count({ where: { outfitId, userId: creator.id } })).toBe(1);
+    expect(
+      (await prisma.outfitSnapshot.findFirstOrThrow({ where: { outfitId } })).contributorIds,
+    ).toEqual([owner.id, creator.id]);
+
+    await prisma.outfitOffer.update({
+      where: { id: offer.id },
+      data: { status: OutfitOfferStatus.DECLINED },
+    });
+    const leftAfterSettling = await writeAtCurrentVersion(creator, "post", outfitId, "/leave");
+
+    expect(leftAfterSettling.status).toBe(OK_STATUS);
   });
 
   it("hands ownership over to an editor", async () => {

@@ -11,7 +11,7 @@ import {
 import { withActiveDiscount } from "#modules/products/product.repository.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { OUTFIT_LIMITS } from "./outfit.constants.js";
+import { OFFER_STATUSES_AWAITING_CREATOR, OUTFIT_LIMITS } from "./outfit.constants.js";
 import type { OutfitSnapshotItem } from "./outfit.types.js";
 
 const NO_ROWS = 0;
@@ -355,6 +355,30 @@ export const outfitRepository = {
     userId: string,
   ): Promise<void> {
     await tx.outfitMember.delete({ where: { outfitId_userId: { outfitId, userId } } });
+  },
+
+  async removeContributorFromSnapshots(
+    tx: Prisma.TransactionClient,
+    outfitId: string,
+    userId: string,
+  ): Promise<void> {
+    await tx.$executeRaw`
+      UPDATE outfit_snapshots
+      SET contributor_ids = array_remove(contributor_ids, ${userId}::uuid)
+      WHERE outfit_id = ${outfitId}::uuid AND ${userId}::uuid = ANY(contributor_ids)
+    `;
+  },
+
+  async hasOfferAwaitingCreator(
+    tx: Prisma.TransactionClient,
+    outfitId: string,
+    creatorId: string,
+  ): Promise<boolean> {
+    const openOffer = await tx.outfitOffer.findFirst({
+      where: { outfitId, creatorId, status: { in: [...OFFER_STATUSES_AWAITING_CREATOR] } },
+      select: { id: true },
+    });
+    return openOffer !== null;
   },
 
   async setMemberRole(
