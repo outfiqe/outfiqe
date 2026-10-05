@@ -9,6 +9,7 @@ export const TARGET_NOUN: Record<ContentReportTarget, string> = {
   CREATOR_LOOK_COMMENT: "comment",
   OUTFIT_BUILD: "build",
   OUTFIT_BUILD_COMMENT: "build comment",
+  OUTFIT_PHOTO: "build photo",
 };
 
 export const reportedContentHref = (
