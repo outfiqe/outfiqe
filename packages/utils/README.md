@@ -30,6 +30,9 @@ to any one app.
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
   each) and `POST_LAYOUT_LABEL` (the picker's display labels).
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
+- `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
+  orders (newest, most cheriqed, price low to high, price high to low). The API validates the
+  `sort` query against it and the web feed's sort menu offers exactly these.
 - `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
   types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only
   bootstraps the defaults: the six originals plus footwear, accessories, saree, kurta set and

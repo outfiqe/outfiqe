@@ -1,4 +1,10 @@
-import { findBlockedSlotKeys, type OutfitBoardItem, type OutfitSlotRule } from "@outfiqe/utils";
+import {
+  findBlockedSlotKeys,
+  type OutfitBoardItem,
+  type OutfitSlotRule,
+  PUBLIC_BUILD_SORT,
+  type PublicBuildSort,
+} from "@outfiqe/utils";
 import { z } from "zod";
 
 import {
@@ -33,6 +39,7 @@ import type {
   OutfitViewerRole,
 } from "./outfit.types.js";
 import type { OutfitCoverPhotoView } from "./outfit-photo.types.js";
+import type { PublicFeedRow } from "./outfit-social.repository.js";
 
 const NO_STOCK = 0;
 const EMPTY_TOTAL = 0;
@@ -232,3 +239,12 @@ export const parseVersionHeader = (headerValue: string): number | null => {
 };
 
 export const toVersionHeaderValue = (version: number): string => String(version);
+
+export const toPublicFeedCursorValue = (
+  { madePublicAt, likeCount, total }: PublicFeedRow,
+  sort: PublicBuildSort,
+): string => {
+  if (sort === PUBLIC_BUILD_SORT.NEWEST) return madePublicAt.toISOString();
+  if (sort === PUBLIC_BUILD_SORT.MOST_CHERIQED) return String(likeCount);
+  return String(total);
+};

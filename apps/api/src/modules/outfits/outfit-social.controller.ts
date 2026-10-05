@@ -20,8 +20,17 @@ const viewerIdFrom = (res: Response): string | null => getAuthPrincipal(res)?.us
 
 export const outfitSocialController = {
   async listPublic(_req: Request, res: Response) {
-    const { cursor, limit, category, minPrice, maxPrice, inStockOnly, contributorId, brandId } =
-      validated.query<PublicBuildsQuery>(res);
+    const {
+      cursor,
+      limit,
+      category,
+      minPrice,
+      maxPrice,
+      inStockOnly,
+      contributorId,
+      brandId,
+      sort,
+    } = validated.query<PublicBuildsQuery>(res);
     sendSuccess(
       res,
       await outfitSocialService.listPublicBuilds(
@@ -33,6 +42,7 @@ export const outfitSocialController = {
           isInStockOnly: inStockOnly,
           contributorId,
           brandId,
+          sort,
         },
         { cursor, limit },
       ),

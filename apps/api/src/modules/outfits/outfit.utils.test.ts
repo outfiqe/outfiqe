@@ -1,3 +1,4 @@
+import { PUBLIC_BUILD_SORT } from "@outfiqe/utils";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -15,6 +16,7 @@ import {
   parseVersionHeader,
   toItemAvailability,
   toLiveUnitPrice,
+  toPublicFeedCursorValue,
   toVersionHeaderValue,
   toViewerRole,
 } from "./outfit.utils.js";
@@ -125,5 +127,23 @@ describe("parseSnapshotItems", () => {
     expect(parseSnapshotItems([item])).toEqual([item]);
     expect(parseSnapshotItems([{ slotKey: "top" }])).toEqual([]);
     expect(parseSnapshotItems(null)).toEqual([]);
+  });
+});
+
+describe("toPublicFeedCursorValue", () => {
+  const feedRow = {
+    id: "outfit-1",
+    madePublicAt: new Date("2026-10-01T08:30:00.000Z"),
+    likeCount: 14,
+    total: 7_450,
+  };
+
+  it("keys each sort on the column it orders by", () => {
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.NEWEST)).toBe(
+      "2026-10-01T08:30:00.000Z",
+    );
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.MOST_CHERIQED)).toBe("14");
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.PRICE_LOW)).toBe("7450");
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.PRICE_HIGH)).toBe("7450");
   });
 });

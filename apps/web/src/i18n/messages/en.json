@@ -242,12 +242,26 @@
       "feedFailed": "Couldn't load builds. Try again.",
       "retry": "Try again",
       "emptyFeed": "No builds match yet.",
+      "emptyFilteredFeed": "No builds match these filters.",
+      "clearFilters": "Clear filters",
       "filtersLabel": "Filter builds",
       "category": "Style",
       "allCategories": "All styles",
-      "minPrice": "Lowest price (Rs)",
-      "maxPrice": "Highest price (Rs)",
+      "price": "Price",
+      "priceRanges": {
+        "any": "Any price",
+        "under5k": "Under Rs 5,000",
+        "from5kTo10k": "Rs 5,000–10,000",
+        "over10k": "Rs 10,000+"
+      },
       "inStockOnly": "Everything in stock",
+      "sortLabel": "Sort by",
+      "sorts": {
+        "newest": "Newest",
+        "mostCheriqed": "Most cheriqed",
+        "priceLow": "Price: low to high",
+        "priceHigh": "Price: high to low"
+      },
       "openBuild": "Open {title}",
       "by": "By {names}",
       "itemCount": "{count, plural, one {# item} other {# items}}",

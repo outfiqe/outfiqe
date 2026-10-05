@@ -23,6 +23,7 @@ export default defineConfig({
         "src/bar-series.tsx",
         "src/stat-card.tsx",
         "src/drawer.tsx",
+        "src/filter-chip.tsx",
         "src/modal.tsx",
         "src/layers.ts",
         "src/table.tsx",

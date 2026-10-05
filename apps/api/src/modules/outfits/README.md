@@ -76,7 +76,8 @@ notifications. The web board and the rest of the feature are added on top (see
   locked since (`GET /:id/look`). See "Posting a build as a Creator Look" below.
 - `outfit-social.service.ts`, `outfit-social.repository.ts`, `outfit-social.controller.ts`,
   `outfit-social.types.ts` — the public side of builds: the Builds feed (`GET /public`, with
-  `category`, `minPrice`, `maxPrice`, `inStockOnly`, `contributorId` and `brandId` filters),
+  `category`, `minPrice`, `maxPrice`, `inStockOnly`, `contributorId` and `brandId` filters, and a
+  `sort` of `newest` (the default), `most-cheriqed`, `price-low` or `price-high`),
   saved builds (`GET /saved`), a build's public view (`GET /:id/public`), likes and saves
   (`PUT`/`DELETE /:id/like`, `/:id/save`), comments with one level of replies
   (`GET`/`POST /:id/comments`, `GET /:id/comments/:commentId/replies`,
@@ -125,6 +126,18 @@ Builds in public (migration `20261001090000_add_outfit_build_social`): `outfit_l
 (`like_count`, `save_count`, `comment_count`), `made_public_at` (feed order) and `removed_at` (set
 when a moderator takes the build down). A partial index on public, not-removed builds keeps the
 feed query cheap.
+
+Feed sorting and paging: each sort orders by one value and breaks ties on the build id (newest:
+`made_public_at`; most cheriqed: `like_count`; the price sorts: the published snapshot's `total`).
+The cursor carries the sort it was made for, that value and the id, so the next page starts
+exactly after the last card even when many builds share a price or a cheriq count. A cursor made
+for a different sort, or one that fails validation, is ignored and the feed starts from the top
+rather than erroring, which is what happens when someone switches the sort menu mid-scroll. Only
+the newest order has a dedicated index. Most cheriqed and the price sorts sort the public,
+not-removed rows the partial index already narrows to, and the price sorts order by a joined
+snapshot column that no index on `outfits` could cover. That is cheap at the number of public
+builds this release expects. If the public set grows into the tens of thousands, the next step is
+copying the published total onto `outfits` and indexing it and `like_count` the same way.
 
 Buying from a build (migration `20261003100000_add_outfit_build_commission`):
 `outfit_build_visits` (who added which product to their bag from which build version), and on the
