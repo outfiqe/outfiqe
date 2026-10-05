@@ -28,7 +28,7 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
   const [filters, setFilters] = useState<PublicBuildFilters>({});
   const debouncedFilters = useDebouncedValue(filters, FILTER_DEBOUNCE_MS);
   const [openOutfitId, setOpenOutfitId] = useState<string | null>(null);
-  const { data, isLoading, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
     usePublicBuilds({ ...debouncedFilters, ...fixedFilters });
   const builds = data?.pages.flatMap((page) => page.items) ?? [];
   const isNarrowed = hasNarrowingFilters(debouncedFilters);
@@ -41,8 +41,8 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
     <section aria-label={t("feedLabel")} className="space-y-4">
       {showFilters && <PublicBuildFiltersBar filters={filters} onChange={setFilters} />}
 
-      <div aria-live="polite" aria-busy={isLoading}>
-        {isLoading && (
+      <div aria-live="polite" aria-busy={isPending}>
+        {isPending && (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
               <Skeleton key={index} className="aspect-[4/5] w-full rounded-xl" />
@@ -57,7 +57,7 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
             </Button>
           </div>
         )}
-        {!isLoading && !isError && builds.length === NO_BUILDS && (
+        {!isPending && !isError && builds.length === NO_BUILDS && (
           <div className="space-y-3 py-10 text-center">
             <p className="text-sm text-muted-foreground">
               {isNarrowed ? t("emptyFilteredFeed") : t("emptyFeed")}

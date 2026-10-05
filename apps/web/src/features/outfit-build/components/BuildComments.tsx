@@ -189,7 +189,7 @@ export const BuildComments = ({
   canComment: boolean;
 }) => {
   const t = useTranslations("outfitBuild.public");
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useBuildComments(outfitId);
   const comments = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -199,13 +199,13 @@ export const BuildComments = ({
         {t("commentsTitle")}
       </h2>
       {canComment && <CommentComposer outfitId={outfitId} />}
-      <div aria-live="polite" aria-busy={isLoading}>
-        {isLoading &&
+      <div aria-live="polite" aria-busy={isPending}>
+        {isPending &&
           Array.from({ length: SKELETON_COMMENT_COUNT }, (_, index) => (
             <Skeleton key={index} className="mb-2 h-10 w-full rounded-lg" />
           ))}
         {isError && <p className="text-sm text-destructive">{t("commentsFailed")}</p>}
-        {!isLoading && !isError && comments.length === NO_COMMENTS && (
+        {!isPending && !isError && comments.length === NO_COMMENTS && (
           <p className="text-sm text-muted-foreground">{t("noComments")}</p>
         )}
         <ul className="space-y-3">

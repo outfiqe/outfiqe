@@ -27,7 +27,7 @@ export const ProductFinderPanel = ({ productTypes }: ProductFinderPanelProps) =>
   const t = useTranslations("outfitBuild.picker");
   const [typeSlug, setTypeSlug] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useSlotProductSearch({ typeSlug, searchText, isEnabled: true });
   const products = data?.pages.flatMap((page) => page.products) ?? [];
 
@@ -61,8 +61,8 @@ export const ProductFinderPanel = ({ productTypes }: ProductFinderPanelProps) =>
         ))}
       </Select>
 
-      <ul aria-busy={isLoading} className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
-        {isLoading &&
+      <ul aria-busy={isPending} className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
+        {isPending &&
           Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
             <li key={index}>
               <Skeleton className="h-16 w-full rounded-lg" />
@@ -73,7 +73,7 @@ export const ProductFinderPanel = ({ productTypes }: ProductFinderPanelProps) =>
             {t("loadFailed")}
           </li>
         )}
-        {!isLoading && !isError && products.length === NO_RESULTS && (
+        {!isPending && !isError && products.length === NO_RESULTS && (
           <li className="py-4 text-center text-sm text-muted-foreground">{t("noResults")}</li>
         )}
         {products.map((product) => (

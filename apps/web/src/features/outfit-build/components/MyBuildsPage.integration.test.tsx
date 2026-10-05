@@ -4,12 +4,17 @@ import { createTranslatedQueryWrapper } from "@test/integration/translationsWrap
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildBoard, buildSummary } from "../testing/outfitFixtures";
 import { MyBuildsPage } from "./MyBuildsPage";
 
-vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
+beforeEach(() => window.history.replaceState(null, "", "/builds"));
 
 const ok = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
@@ -43,6 +48,20 @@ describe("MyBuildsPage", () => {
     expect(await screen.findByText(/No builds yet/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Shared with me" }));
     expect(await screen.findByText("Nobody has shared a build with you yet.")).toBeInTheDocument();
+    expect(window.location.search).toBe("?tab=shared");
+  });
+
+  it("opens the tab named in the link", async () => {
+    window.history.replaceState(null, "", "/builds?tab=shared");
+    serveLists([], [buildSummary({ title: "Ram's wedding look" })]);
+
+    renderPage();
+
+    expect(await screen.findByRole("link", { name: /Ram's wedding look/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Shared with me" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("starts a new build and opens it", async () => {

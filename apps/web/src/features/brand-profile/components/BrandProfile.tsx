@@ -193,7 +193,11 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
       </div>
 
       <div className="mt-10">
-        <ProfileBuildsTabs primaryLabel="Products" buildFilters={{ brandId: id }}>
+        <ProfileBuildsTabs
+          primaryTab="products"
+          primaryLabel="Products"
+          buildFilters={{ brandId: id }}
+        >
           {filters.length > 1 && (
             <div className="mt-10 flex flex-wrap justify-center gap-2">
               {filters.map(({ slug, label }) => {

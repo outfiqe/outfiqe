@@ -40,7 +40,7 @@ const ReplacementSuggestions = ({
 }) => {
   const t = useTranslations("outfitBuild.picker");
   const tBudget = useTranslations("outfitBuild.budget");
-  const { data: suggestions = [], isLoading, isError } = useReplacementSuggestions(target);
+  const { data: suggestions = [], isPending, isError } = useReplacementSuggestions(target);
 
   return (
     <section aria-labelledby="replacement-suggestions-title" className="space-y-2">
@@ -50,10 +50,10 @@ const ReplacementSuggestions = ({
       >
         {t("suggestionsTitle")}
       </h3>
-      <div aria-live="polite" aria-busy={isLoading} className="space-y-2">
-        {isLoading && <Skeleton className="h-16 w-full rounded-lg" />}
+      <div aria-live="polite" aria-busy={isPending} className="space-y-2">
+        {isPending && <Skeleton className="h-16 w-full rounded-lg" />}
         {isError && <p className="text-sm text-muted-foreground">{t("suggestionsLoadFailed")}</p>}
-        {!isLoading && !isError && suggestions.length === NO_PRODUCTS && (
+        {!isPending && !isError && suggestions.length === NO_PRODUCTS && (
           <p className="text-sm text-muted-foreground">{t("noSuggestions")}</p>
         )}
         {suggestions.map((suggestion) => (
@@ -92,7 +92,7 @@ export const ProductPickerModal = ({
     productTypes.map((productType) => [productType.slug, productType.id]),
   );
 
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useSlotProductSearch({ typeSlug, searchText, isEnabled: true });
   const products = data?.pages.flatMap((page) => page.products) ?? [];
 
@@ -149,10 +149,10 @@ export const ProductPickerModal = ({
 
         <div
           aria-live="polite"
-          aria-busy={isLoading}
+          aria-busy={isPending}
           className="max-h-[55vh] space-y-2 overflow-y-auto"
         >
-          {isLoading &&
+          {isPending &&
             Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
               <Skeleton key={index} className="h-16 w-full rounded-lg" />
             ))}
@@ -161,7 +161,7 @@ export const ProductPickerModal = ({
               {t("loadFailed")}
             </p>
           )}
-          {!isLoading && !isError && products.length === NO_PRODUCTS && (
+          {!isPending && !isError && products.length === NO_PRODUCTS && (
             <p className="py-6 text-center text-sm text-muted-foreground">{t("noResults")}</p>
           )}
           {products.map((product) => (

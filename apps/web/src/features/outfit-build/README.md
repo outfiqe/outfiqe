@@ -50,8 +50,11 @@ The whole feature sits behind the `outfit_builder` flag on the API.
   request is sent, and the instant local board changes), `outfitFormatting.ts` (lakh format,
   Nepal time), `toOutfitProduct.ts`.
 
-Routes: `app/builds/page.tsx` (My Builds, signed in only) and `app/builds/[outfitId]/page.tsx` (a
-build). The build page shows a signed-in person their board, or the locked version with likes,
+Routes: `app/(dashboard)/builds/page.tsx` (My Builds, signed in only) and
+`app/builds/[outfitId]/page.tsx` (a build), each with a `loading.tsx` skeleton. Every tab group in
+this feature keeps its tab in the URL as `?tab=` through `@/shared/hooks/useTabSearchParam`: My
+Builds (`mine`, `shared`), the board (`outfit`, `people`, `photos`, `buy-and-drop`) and the profile
+Builds tab (`drops` or `products`, and `builds`), so a link or a refresh opens the same tab. The build page shows a signed-in person their board, or the locked version with likes,
 saves and comments (`SocialBuildView`). A signed-out visitor sees a public build server-rendered
 (`PublicBuildPage`, loaded by `api/getPublicBuildServer.ts`) with its own title, description and
 image for search engines and shared links. Anything else sends them to sign in. Only public builds
@@ -129,12 +132,25 @@ board at once, the loser's change is undone and they're told who got there first
 
 ## Non-obvious rationale
 
-- **`/builds` uses the dashboard frame only for signed-in people.** `app/builds/layout.tsx` checks
-  the session: signed in, it renders `DashboardShell` (the same header, sidebar and mobile nav as
-  every other dashboard page); signed out, it renders the standalone public page. Builds can't
-  simply move into the `(dashboard)` route group, because `/builds/<id>` is also the public,
-  indexable page for a shared build, and the dashboard layout marks every page `noindex` and
-  expects a session.
+- **My Builds lives in the `(dashboard)` group, a single build doesn't.** `/builds` is signed-in
+  only, so it sits in `app/(dashboard)/builds` with Offers and the rest of the sidebar. Moving
+  between them keeps the frame mounted and shows the page's `loading.tsx` skeleton at once, instead
+  of leaving the previous page on screen while a different layout loads. `/builds/<id>` can't move
+  there: it is also the public, indexable page for a shared build, and the dashboard layout marks
+  every page `noindex` and expects a session. So `app/builds/layout.tsx` checks the session itself
+  and renders `DashboardShell` when signed in, or the standalone public page when not.
+- **Lists and pages decide "loading" with react-query's `isPending`, not `isLoading`.** These
+  components are server-rendered first, and on the server a query never fetches, so `isLoading`
+  is false there. Using it put the empty state ("No builds yet") into the server HTML, which
+  flashed on every refresh before the real data arrived. `isPending` is true until there is data,
+  so the server and the first client paint show the skeleton instead. A query that is switched off
+  on purpose (`PostAsLookPanel` when you can't post) returns before the skeleton is drawn, so it
+  never shows one forever.
+- **Tab switches write the URL with `history.replaceState`, not `router.replace`.** On the build
+  page `router.replace` would re-run the server page (its session check and metadata fetch) on
+  every tab click. `replaceState` keeps `useSearchParams` in sync without that, the same reason the
+  creator profile uses it for `?look=`. The hook also highlights the new tab at once through
+  `usePendingSelection`, like Explore's tabs.
 - **The board is split into tabs so it fits on one screen.** Everything used to sit in one long
   right-hand column (finder, people, actions, photos, drop as look, buy, offers), so editing meant
   a lot of scrolling. The actions are now a toolbar above the tabs, so lock, unlock, "I'm happy",

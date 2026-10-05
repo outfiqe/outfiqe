@@ -16,7 +16,10 @@ const SENT_URL = "/api/outfit-offers/sent";
 const RECEIVED_URL = "/api/outfit-offers/received";
 
 const mockAuth = (isBrandOwner: boolean) =>
-  vi.mocked(useAuth).mockReturnValue({ isBrandOwner } as ReturnType<typeof useAuth>);
+  vi.mocked(useAuth).mockReturnValue({
+    isBrandOwner,
+    isAuthResolved: true,
+  } as ReturnType<typeof useAuth>);
 
 const renderPage = () => {
   const { Wrapper } = createTranslatedQueryWrapper();
