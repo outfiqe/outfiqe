@@ -55,7 +55,7 @@ describe("starting a build", () => {
     const response = await startBuild(owner, { title: "Dashain look" });
 
     expect(response.status).toBe(CREATED_STATUS);
-    expect(response.headers.etag).toBe('"0"');
+    expect(response.get(OUTFIT_VERSION_HEADER)).toBe("0");
     expect(response.body.data).toMatchObject({
       title: "Dashain look",
       status: "DRAFT",
@@ -169,7 +169,7 @@ describe("placing items", () => {
     });
 
     expect(response.status).toBe(OK_STATUS);
-    expect(response.headers.etag).toBe('"1"');
+    expect(response.get(OUTFIT_VERSION_HEADER)).toBe("1");
     const { version, board } = response.body.data;
     expect(version).toBe(1);
     expect(board).toMatchObject({ itemCount: 1, total: 3_200, isFullyAvailable: true });
