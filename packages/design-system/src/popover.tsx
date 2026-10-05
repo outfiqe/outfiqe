@@ -4,6 +4,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 import type { ComponentPropsWithoutRef } from "react";
 
 import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
 
 export const Popover = PopoverPrimitive.Root;
 export const PopoverTrigger = PopoverPrimitive.Trigger;
@@ -23,7 +24,8 @@ export const PopoverContent = ({
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 rounded-lg border border-border bg-card shadow-lg outline-none",
+        "rounded-lg border border-border bg-card shadow-lg outline-none",
+        OVERLAY_LAYER.FLOATING,
         className,
       )}
       {...props}

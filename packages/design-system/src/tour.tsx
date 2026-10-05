@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 
 import { Button } from "./button";
 import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
 import { Skeleton } from "./skeleton";
 
 export type TourStep = {
@@ -211,7 +212,7 @@ export const Tour = ({
   if (!isShowing) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100]">
+    <div className={cn("fixed inset-0", OVERLAY_LAYER.TOUR)}>
       {anchorRect ? (
         <div
           aria-hidden="true"

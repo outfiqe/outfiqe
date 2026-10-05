@@ -23,30 +23,32 @@ const mockBanks = () => {
 
 const renderModal = (onClose = vi.fn()) => {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  const utils = render(
+  render(
     <QueryClientProvider client={queryClient}>
       <AddBankAccountModal ownerType="CREATOR" onClose={onClose} />
       <Toaster />
     </QueryClientProvider>,
   );
-  return { onClose, container: utils.container };
+  return { onClose };
 };
 
-const uploadQrCode = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
-  const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+const uploadQrCode = async (user: ReturnType<typeof userEvent.setup>) => {
+  const fileInput = screen
+    .getByRole("dialog")
+    .querySelector<HTMLInputElement>('input[type="file"]');
   if (!fileInput) throw new Error("QR upload input not found");
   const qrFile = new File(["qr"], "bank-qr.png", { type: "image/png" });
   await user.upload(fileInput, qrFile);
   await screen.findByRole("button", { name: "Remove image" });
 };
 
-const fillValidForm = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
+const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.selectOptions(screen.getByLabelText("Bank"), "bank-1");
   await user.type(screen.getByLabelText("Account holder name"), "Sabin Shrestha");
   await user.type(screen.getByLabelText("Account number"), "1234567890");
   await user.type(screen.getByLabelText("Confirm account number"), "1234567890");
   await user.type(screen.getByLabelText("Branch"), "Kathmandu");
-  await uploadQrCode(user, container);
+  await uploadQrCode(user);
 };
 
 describe("AddBankAccountModal", () => {
@@ -119,8 +121,8 @@ describe("AddBankAccountModal", () => {
     );
 
     const user = userEvent.setup();
-    const { onClose, container } = renderModal();
-    await fillValidForm(user, container);
+    const { onClose } = renderModal();
+    await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Add bank account" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
@@ -142,8 +144,8 @@ describe("AddBankAccountModal", () => {
     );
 
     const user = userEvent.setup();
-    const { container } = renderModal();
-    await fillValidForm(user, container);
+    renderModal();
+    await fillValidForm(user);
     await user.click(screen.getByRole("button", { name: "Add bank account" }));
 
     expect(await screen.findByText("This bank isn't available for selection.")).toBeInTheDocument();

@@ -94,6 +94,30 @@ describe("Modal", () => {
       expect(screen.getByRole("dialog").parentElement).not.toHaveClass("backdrop-blur-sm");
       expect(screen.getByRole("button", { name: "Close" })).not.toHaveClass("backdrop-blur-sm");
     });
+
+    it("covers the whole page even when opened inside a small clipped panel", () => {
+      const { container } = render(
+        <div className="relative h-40 overflow-hidden">
+          <Modal open onClose={vi.fn()} title="Group info">
+            Members
+          </Modal>
+        </div>,
+      );
+
+      const scrim = screen.getByRole("dialog").parentElement;
+      expect(scrim?.parentElement).toBe(document.body);
+      expect(container).not.toContainElement(screen.getByRole("dialog"));
+    });
+
+    it("scrolls its body when the content is taller than the screen", () => {
+      render(
+        <Modal open onClose={vi.fn()} title="Group info">
+          Members
+        </Modal>,
+      );
+
+      expect(screen.getByText("Members")).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
+    });
   });
 
   describe("on mobile", () => {
