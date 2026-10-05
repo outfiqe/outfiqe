@@ -61,7 +61,6 @@ describe("jobs and health", () => {
     expect(health.body.data.queues.map(({ name }: { name: string }) => name).sort()).toEqual(
       Object.values(OUTBOX_QUEUE_NAME).sort(),
     );
-    expect(health.body.data.queueDashboardPath).toBe("/internal/queues");
   });
 
   it("sends a stuck event again by clearing its tries, and audits it", async () => {

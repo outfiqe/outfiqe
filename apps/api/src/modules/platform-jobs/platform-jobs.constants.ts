@@ -5,8 +5,6 @@ export const PLATFORM_JOBS_LIMITS = {
   FAILED_JOBS_RETRIED_PER_REQUEST: 500,
 } as const;
 
-export const QUEUE_DASHBOARD_PATH = "/internal/queues";
-
 export const OUTBOX_BACKLOG_ALERT = {
   MAX_WAITING_EVENTS: 1_000,
   MAX_OLDEST_WAIT_MINUTES: 5,

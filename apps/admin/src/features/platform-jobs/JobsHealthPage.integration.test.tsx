@@ -27,7 +27,6 @@ const health = (overrides: Record<string, unknown> = {}) => ({
     { name: "outbox-notify", isReachable: true, waiting: 2, active: 1, delayed: 0, failed: 3 },
     { name: "outbox-realtime", isReachable: false, waiting: 0, active: 0, delayed: 0, failed: 0 },
   ],
-  queueDashboardPath: "/internal/queues",
   ...overrides,
 });
 
@@ -48,10 +47,7 @@ describe("JobsHealthPage", () => {
     expect(await screen.findByText("Redis connection refused")).toBeInTheDocument();
     expect(screen.getByText("Can't be reached")).toBeInTheDocument();
     expect(screen.getByText(/2 waiting · 1 running · 0 delayed · 3 failed/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open the queue dashboard" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/internal/queues"),
-    );
+    expect(screen.queryByRole("link", { name: /queue dashboard/i })).not.toBeInTheDocument();
   });
 
   it("sends a stuck event again and retries a queue's failed jobs", async () => {

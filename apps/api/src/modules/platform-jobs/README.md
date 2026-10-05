@@ -21,8 +21,7 @@ outbox queue is doing, and buttons to send stuck or failed work again.
 
 **User-facing:** a super admin opens Jobs & health, sees how many events are waiting and since
 when, which events gave up after every retry and why, and each queue's waiting, running, delayed
-and failed counts. They can send a stuck event again, retry a queue's failed jobs, or open the
-full queue dashboard.
+and failed counts. They can send a stuck event again or retry a queue's failed jobs.
 
 **Technical:** admin `features/platform-jobs` → `/api/platform/jobs…` → `requirePlatformRole` →
 controller → `platformJobsService` → `platformJobsRepository` (the `outbox_events` table) and
@@ -39,5 +38,6 @@ controller → `platformJobsService` → `platformJobsRepository` (the `outbox_e
 - **Retrying failed jobs** retries at most 500 of a queue's failed jobs per click, through
   BullMQ's own `job.retry()`, so the job keeps its id and handlers stay safe to run again.
 - Every retry is written to the platform audit log.
-- The queue dashboard link points at Bull Board (`/internal/queues`), which stays limited to
-  co-founders on its own.
+- Bull Board is still mounted at `/internal/queues` (co-founders only, see `app.ts`), but admin no
+  longer links to it. It checks the `Authorization` header, which a browser tab opened from a link
+  never sends, so the link never worked. This screen covers what's needed day to day.

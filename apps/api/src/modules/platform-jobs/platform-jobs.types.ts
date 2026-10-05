@@ -25,5 +25,4 @@ export type JobsHealth = {
   };
   stuckEvents: StuckOutboxEvent[];
   queues: QueueHealth[];
-  queueDashboardPath: string;
 };
