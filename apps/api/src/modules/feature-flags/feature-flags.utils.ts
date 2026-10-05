@@ -39,3 +39,12 @@ export const findMissingIds = (requestedIds: string[], existingIds: string[]): s
   const existingIdSet = new Set(existingIds);
   return requestedIds.filter((requestedId) => !existingIdSet.has(requestedId));
 };
+
+export const pickInOrder = <Entry>(
+  ids: readonly string[],
+  entryById: ReadonlyMap<string, Entry>,
+): Entry[] =>
+  ids.flatMap((id) => {
+    const entry = entryById.get(id);
+    return entry ? [entry] : [];
+  });

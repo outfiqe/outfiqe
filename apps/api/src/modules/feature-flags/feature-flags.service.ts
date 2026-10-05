@@ -24,6 +24,7 @@ import {
   findMissingIds,
   isFlagOnFor,
   needsBrandMembershipLookup,
+  pickInOrder,
   toFlagSettings,
 } from "./feature-flags.utils.js";
 
@@ -100,11 +101,26 @@ export const featureFlagsService = {
   async list(): Promise<FeatureFlagView[]> {
     const storedStates = await featureFlagsRepository.listAll();
     const storedStateByKey = new Map(storedStates.map((state) => [state.key, state]));
-    return FEATURE_FLAG_REGISTRY.map(({ key, label, description }) => ({
-      ...(storedStateByKey.get(key) ?? defaultFeatureFlagState(key)),
-      label,
-      description,
-    }));
+    const [allowListedUsers, allowListedBrands] = await Promise.all([
+      featureFlagsRepository.listAllowListedUsers(
+        dedupe(storedStates.flatMap(({ allowedUserIds }) => allowedUserIds)),
+      ),
+      featureFlagsRepository.listAllowListedBrands(
+        dedupe(storedStates.flatMap(({ allowedBrandIds }) => allowedBrandIds)),
+      ),
+    ]);
+    const userById = new Map(allowListedUsers.map((user) => [user.id, user]));
+    const brandById = new Map(allowListedBrands.map((brand) => [brand.id, brand]));
+    return FEATURE_FLAG_REGISTRY.map(({ key, label, description }) => {
+      const state = storedStateByKey.get(key) ?? defaultFeatureFlagState(key);
+      return {
+        ...state,
+        label,
+        description,
+        allowedUsers: pickInOrder(state.allowedUserIds, userById),
+        allowedBrands: pickInOrder(state.allowedBrandIds, brandById),
+      };
+    });
   },
 
   async update(

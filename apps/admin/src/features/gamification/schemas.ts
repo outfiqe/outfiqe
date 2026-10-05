@@ -214,14 +214,6 @@ export const sponsorBrandSchema = z.object({
 });
 export type SponsorBrand = z.infer<typeof sponsorBrandSchema>;
 
-export const userSearchResultSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  handle: z.string(),
-  avatarUrl: z.string().nullable(),
-});
-export type UserSearchResult = z.infer<typeof userSearchResultSchema>;
-
 export const badgeAdminSchema = z.object({
   id: z.string(),
   name: z.string(),

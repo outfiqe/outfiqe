@@ -25,10 +25,9 @@ signup.
   unbounded fetch. `.create` takes a single `{ name, subdomain, targetOwnerUserId, linkedBrandId }`
   input, gated server-side on `platform:organizations:manage` (see `crm-access/README.md` in
   `apps/api`) — listing/suggesting stay on the coarser platform-staff gate.
-- `BusinessOwnerField.tsx` — brand-search autocomplete for picking the business to onboard, same
-  shape as `features/gamification/BadgesSection/BrandSponsorField.tsx`, built on the shared
-  `brandsApi.search` (`apps/admin/src/lib/brandsApi.ts`) rather than a third local copy of that
-  search call.
+- `BusinessOwnerField.tsx` — the business picker for onboarding: the shared
+  `@/components/BrandSearchField` with this screen's wording ("Business", "businesses"), backed by
+  `brandsApi.search` (`apps/admin/src/lib/brandsApi.ts`).
 - `OrganizationsPage.tsx` — list + inline create form: pick a business, review the
   auto-suggested (editable) subdomain and any organizations that business already owns, hit Create.
 
@@ -96,7 +95,8 @@ verbatim rather than inventing a second acceptance mechanism.
   once between `features/gamification` and `features/platform-commission` before this feature
   existed; adding a third local copy here would have made that worse. This is the first time it's
   been pulled into a proper shared location — the other two call sites haven't been migrated to it,
-  since consolidating pre-existing duplicates wasn't in scope for this change.
+  since consolidating pre-existing duplicates wasn't in scope for this change. The field itself now
+  lives in `@/components/BrandSearchField`, shared with the Feature switches page.
 
 ## Form validation
 
