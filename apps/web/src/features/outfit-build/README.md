@@ -10,7 +10,7 @@ The whole feature sits behind the `outfit_builder` flag on the API.
 ## Structure
 
 - `api/outfitApi.ts`, `api/outfitSchemas.ts` — the `/api/outfits` client and zod schemas for every
-  response. Every write sends the build version it last saw (`If-Match`) and a fresh
+  response. Every write sends the build version it last saw (`X-Outfit-Version`) and a fresh
   `Idempotency-Key`.
 - `hooks/`
   - `useOutfit` — the build (`["outfit", id]`), either the live board or the published version.

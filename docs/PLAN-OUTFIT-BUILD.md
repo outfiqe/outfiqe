@@ -93,9 +93,9 @@ from this plan, and open questions.
 
 - Postgres is the only source of truth. Every change is a REST request that runs one short
   transaction.
-- Every request that changes a board sends the version it last saw in an `If-Match` header. No
+- Every request that changes a board sends the version it last saw in an `X-Outfit-Version` header. No
   header returns `428`. A stale version returns `409 OUTFIT_VERSION_CONFLICT` with the current
-  version. The new version comes back in the response and as an `ETag`.
+  version. The new version comes back in the response and in that header.
 - Every write needs an `Idempotency-Key`. Sending the same request twice has one effect and
   returns the same answer.
 - Changing the editor list locks the build row first, so the five-editor limit cannot be raced.
@@ -325,7 +325,7 @@ Concurrency and stock tests run against a real database, never mocks.
 | An 8th item, a second Top, the wrong product type, a Full Outfit with a Top | All refused by the API.                                                               |
 | Locking by an editor, or while someone has not tapped "I'm happy"           | Refused.                                                                              |
 | The same request sent 5 times with one idempotency key                      | One effect, the same answer every time.                                               |
-| A board change with no `If-Match` header                                    | `428`.                                                                                |
+| A board change with no `X-Outfit-Version` header                            | `428`.                                                                                |
 | The same build version published twice by one creator                       | One Creator Look.                                                                     |
 | Publishing by a brand, or from an unlocked build                            | Refused.                                                                              |
 | An order through a build and through a published look                       | Each uses the right commission rate. Build commission splits equally.                 |

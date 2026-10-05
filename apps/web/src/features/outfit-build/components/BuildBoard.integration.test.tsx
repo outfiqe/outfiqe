@@ -120,7 +120,7 @@ describe("BuildBoard", () => {
     const picker = await screen.findByRole("dialog");
     await user.click(await within(picker).findByRole("button", { name: /Maroon Kurta/ }));
 
-    await waitFor(() => expect(sentRequest.headers?.get("If-Match")).toBe('"4"'));
+    await waitFor(() => expect(sentRequest.headers?.get("X-Outfit-Version")).toBe("4"));
     expect(sentRequest.headers?.get("Idempotency-Key")).toEqual(expect.any(String));
     expect(await screen.findByText("Total: Rs 3,200")).toBeInTheDocument();
   });

@@ -29,8 +29,8 @@ notifications. The web board and the rest of the feature are added on top (see
   | `POST /:id/members` · `DELETE /:id/members/:userId` · `POST /:id/leave` · `POST /:id/transfer-ownership` | People                                                             |
   | `PUT /:id/visibility` · `DELETE /:id/shares/:userId`                                                     | Private, shared (sent to named people) or public                   |
 
-- `outfit.controller.ts` — reads the `If-Match` version and the idempotency key, and sends every
-  write's new version back in the body and as an `ETag`.
+- `outfit.controller.ts` — reads the `X-Outfit-Version` header and the idempotency key, and sends every
+  write's new version back in the body and in the same header.
 - `outfit.write.ts` — `runOutfitWrite`, the one path every board change takes (see Funnel).
 - `outfit.service.ts` — starting, reading and listing builds; items; settings; "I'm happy"; lock,
   unlock and archive.
@@ -42,7 +42,7 @@ notifications. The web board and the rest of the feature are added on top (see
 - `outfit.board.ts` — loads a board and the admin limits and builds the board view.
 - `outfit.repository.ts` — every query, including the version check (`bumpVersion`).
 - `outfit.utils.ts` — pure mappers: live price (list price minus any active brand discount),
-  stock status in words, the board and summary views, snapshot items, and `If-Match`/`ETag`
+  stock status in words, the board and summary views, snapshot items, and `X-Outfit-Version`
   parsing.
 - `outfit.access.ts` — `resolveLiveBoardRole`: owner, editor, or viewer from the chat the build
   started in, or nobody. Used by `GET /:id`, the history endpoint and the socket room guard.
@@ -149,7 +149,7 @@ for changes; archiving hides it.
 
 1. Claim the idempotency key (`withIdempotentTransaction`). A replay returns the stored answer.
 2. In one transaction: check the caller is a member with the right role (anyone else gets 404),
-   bump the version only if it still equals `If-Match` (otherwise 409 with the current version),
+   bump the version only if it still equals `X-Outfit-Version` (otherwise 409 with the current version),
    check the build's status, apply the change, write one `outfit_events` row for the new version
    and one `outfit.changed` outbox row, mark the key completed, and load the fresh board.
 3. The outbox relay hands `outfit.changed` to the realtime queue, which tells everyone watching
@@ -228,7 +228,7 @@ as in stock only if one of its buyable sizes is.
    `POST /api/uploads/pipeline`, which keeps that route's own rules (5 MB, JPEG/PNG/WebP, rate
    limit, queue back-pressure) and returns `{ url, assetId }`.
 2. `POST /:id/photos` with `{ kind: COVER | TRY_ON, photos: [{ imageUrl, imageAssetId }] }`
-   attaches them. It is a normal board write (`If-Match`, idempotency key, its own rate limit of 10
+   attaches them. It is a normal board write (`X-Outfit-Version`, idempotency key, its own rate limit of 10
    a minute). The photos must be the caller's own uploads (`assertAssetsOwnedBy`) and not already
    on a build. Inside the write, the person's and the board's photo counts are checked against
    `outfit.maxPhotosPerMember` / `outfit.maxPhotosPerBoard`.
@@ -245,6 +245,12 @@ as in stock only if one of its buyable sizes is.
 
 ## Non-obvious rationale
 
+- **The version travels in `X-Outfit-Version`, not `If-Match` / `ETag`.** The web app reaches the
+  API through Vercel's `/api` rewrite, and Vercel applies standard HTTP rules to those headers. It
+  compared a write's `If-Match` (the old version) with the response's `ETag` (the new one) and
+  replaced the API's 200 with a 412, after the change had already been saved. Users saw "Request
+  failed with 412" on edits that worked. A custom header is left alone by proxies and CDNs. The check
+  itself is unchanged: a missing header gets 428 and a stale version gets 409 with the current one.
 - **The feed shows the locked version, filtered in SQL.** Price, style, brand, contributor and
   "everything in stock" filters all read the published snapshot (`jsonb_to_recordset` over its
   items) in one query, so the card a viewer sees is exactly what was filtered. Stock is checked
@@ -264,7 +270,7 @@ as in stock only if one of its buyable sizes is.
   creator who deletes that look can't post the same version again, because the deleted row still
   holds the slot (`409 LOOK_FROM_VERSION_DELETED`); a newly locked version can be posted.
 - **Availability changes don't bump the build version.** The version counts changes people make,
-  and writes check it (`If-Match`). A sell-out isn't a change to the build, so bumping the version
+  and writes check it (`X-Outfit-Version`). A sell-out isn't a change to the build, so bumping the version
   would make everyone's next edit fail with a conflict. The board learns about it from
   `outfit:availability-changed` and refetches instead.
 

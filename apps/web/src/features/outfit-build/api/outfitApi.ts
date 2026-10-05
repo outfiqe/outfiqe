@@ -25,7 +25,7 @@ import {
   publishedLookSchema,
 } from "./outfitSchemas";
 
-const IF_MATCH_HEADER = "If-Match";
+const OUTFIT_VERSION_HEADER = "X-Outfit-Version";
 
 export type PublishLookInput = {
   imageUrls: string[];
@@ -49,7 +49,7 @@ export type OutfitWrite = {
 
 const writeHeaders = ({ expectedVersion, idempotencyKey }: OutfitWrite) => ({
   headers: {
-    [IF_MATCH_HEADER]: `"${expectedVersion}"`,
+    [OUTFIT_VERSION_HEADER]: String(expectedVersion),
     [IDEMPOTENCY_HEADER]: idempotencyKey,
   },
 });
