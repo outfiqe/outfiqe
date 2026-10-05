@@ -3,7 +3,6 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { API_BASE_URL } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { JOBS_HEALTH_QUERY_KEY, platformJobsApi } from "./api";
@@ -12,9 +11,6 @@ const REFRESH_INTERVAL_MS = 15_000;
 const SKELETON_ROW_COUNT = 3;
 const NOTHING_FAILED = 0;
 const NOTHING_STUCK = 0;
-
-const toQueueDashboardHref = (path: string): string =>
-  new URL(path, new URL(API_BASE_URL, window.location.origin)).toString();
 
 export const JobsHealthPage = () => {
   const health = useQuery({
@@ -36,24 +32,12 @@ export const JobsHealthPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Jobs & health</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Background work behind live boards, notifications and stock alerts. Refreshes every 15
-            seconds.
-          </p>
-        </div>
-        {health.data && (
-          <a
-            href={toQueueDashboardHref(health.data.queueDashboardPath)}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm font-medium text-foreground underline underline-offset-4"
-          >
-            Open the queue dashboard
-          </a>
-        )}
+      <div>
+        <h1 className="font-display text-2xl font-bold text-foreground">Jobs & health</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Background work behind live boards, notifications and stock alerts. Refreshes every 15
+          seconds.
+        </p>
       </div>
 
       {health.isLoading &&

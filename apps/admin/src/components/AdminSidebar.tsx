@@ -414,7 +414,7 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     id: "platform-settings",
     href: "/platform/settings",
-    label: "Platform settings",
+    label: "Limits",
     icon: Settings2,
     group: "platform-settings",
   },

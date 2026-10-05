@@ -45,10 +45,7 @@ export const SiteFooter = () => {
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
-            <LanguageSwitch />
-            <p className="text-xs text-muted-foreground">Made for Nepal.</p>
-          </div>
+          <LanguageSwitch />
         </div>
       </div>
     </footer>

@@ -96,7 +96,7 @@ export const PlatformSettingsPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Platform settings</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Limits</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Limits that apply across the platform. Changes take effect within a minute and are
           recorded in the audit log.

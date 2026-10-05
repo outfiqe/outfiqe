@@ -10,7 +10,6 @@ import { describeError } from "#redis/redis.utils.js";
 import {
   PLATFORM_JOBS_AUDIT_TARGET_TYPE,
   PLATFORM_JOBS_LIMITS,
-  QUEUE_DASHBOARD_PATH,
 } from "./platform-jobs.constants.js";
 import { platformJobsRepository } from "./platform-jobs.repository.js";
 import type { JobsHealth, QueueHealth } from "./platform-jobs.types.js";
@@ -71,7 +70,6 @@ export const platformJobsService = {
         createdAt: createdAt.toISOString(),
       })),
       queues,
-      queueDashboardPath: QUEUE_DASHBOARD_PATH,
     };
   },
 

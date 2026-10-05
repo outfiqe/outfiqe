@@ -25,7 +25,6 @@ export const jobsHealthSchema = z.object({
       failed: z.number(),
     }),
   ),
-  queueDashboardPath: z.string(),
 });
 
 export const retriedJobsSchema = z.object({ retriedCount: z.number() });
