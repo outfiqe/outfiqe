@@ -54,7 +54,7 @@ export default function boardSession() {
       headers: {
         ...authHeaders,
         "Content-Type": "application/json",
-        "If-Match": `"${version}"`,
+        "X-Outfit-Version": String(version),
         "Idempotency-Key": idempotencyKey(),
       },
     },

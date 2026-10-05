@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { IDEMPOTENCY_HEADER, IF_MATCH_HEADER } from "#constants/http.constants.js";
+import { IDEMPOTENCY_HEADER, OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { FeatureFlagRollout } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -55,7 +55,7 @@ describe("starting a build", () => {
     const response = await startBuild(owner, { title: "Dashain look" });
 
     expect(response.status).toBe(CREATED_STATUS);
-    expect(response.headers.etag).toBe('"0"');
+    expect(response.get(OUTFIT_VERSION_HEADER)).toBe("0");
     expect(response.body.data).toMatchObject({
       title: "Dashain look",
       status: "DRAFT",
@@ -169,7 +169,7 @@ describe("placing items", () => {
     });
 
     expect(response.status).toBe(OK_STATUS);
-    expect(response.headers.etag).toBe('"1"');
+    expect(response.get(OUTFIT_VERSION_HEADER)).toBe("1");
     const { version, board } = response.body.data;
     expect(version).toBe(1);
     expect(board).toMatchObject({ itemCount: 1, total: 3_200, isFullyAvailable: true });
@@ -341,7 +341,7 @@ describe("placing items", () => {
 });
 
 describe("versions and retries", () => {
-  it("needs the version in If-Match and refuses a stale one with the current version", async () => {
+  it("needs the version header and refuses a stale one with the current version", async () => {
     const owner = await createOutfitUser("Sita");
     const outfitId = await startBuildOrFail(owner);
     const shirt = await createOutfitProduct("tops");
@@ -358,7 +358,7 @@ describe("versions and retries", () => {
       .put(`/api/outfits${slotPath(outfitId, "top", 0)}`)
       .set("Authorization", owner.auth)
       .set(IDEMPOTENCY_HEADER, randomUUID())
-      .set(IF_MATCH_HEADER, "latest")
+      .set(OUTFIT_VERSION_HEADER, "latest")
       .send({ productId: shirt.id });
     expect(malformedVersion.status).toBe(BAD_REQUEST_STATUS);
 

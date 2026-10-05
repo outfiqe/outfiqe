@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { ETAG_HEADER, IF_MATCH_HEADER } from "#constants/http.constants.js";
+import { OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { readRequiredIdempotencyKey } from "#middlewares/require-idempotency-key.js";
@@ -29,7 +29,7 @@ import type {
   UpdateOutfitSettingsBody,
 } from "./outfit.schemas.js";
 import { outfitService } from "./outfit.service.js";
-import { parseVersionHeader, toETag } from "./outfit.utils.js";
+import { parseVersionHeader, toVersionHeaderValue } from "./outfit.utils.js";
 import type { OutfitWriteCall, OutfitWriteResult } from "./outfit.write.js";
 import { outfitCartService } from "./outfit-cart.service.js";
 import { outfitMemberService } from "./outfit-member.service.js";
@@ -42,7 +42,7 @@ const OK_STATUS = 200;
 const CREATED_STATUS = 201;
 
 const readExpectedVersion = (req: Request): number => {
-  const headerValue = req.get(IF_MATCH_HEADER);
+  const headerValue = req.get(OUTFIT_VERSION_HEADER);
   if (!headerValue) throw outfitErrors.versionRequired();
   const expectedVersion = parseVersionHeader(headerValue);
   if (expectedVersion === null) throw outfitErrors.versionMalformed();
@@ -57,7 +57,7 @@ const toWriteCall = (req: Request, res: Response, outfitId: string): OutfitWrite
 });
 
 const sendWriteResult = (res: Response, result: OutfitWriteResult, message: string): void => {
-  res.setHeader(ETAG_HEADER, toETag(result.version));
+  res.setHeader(OUTFIT_VERSION_HEADER, toVersionHeaderValue(result.version));
   sendSuccess(res, result, message);
 };
 
@@ -66,7 +66,7 @@ export const outfitController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateOutfitBody>(res);
     const board = await outfitService.create(userId, body, readRequiredIdempotencyKey(req));
-    res.setHeader(ETAG_HEADER, toETag(board.version));
+    res.setHeader(OUTFIT_VERSION_HEADER, toVersionHeaderValue(board.version));
     sendSuccess(res, board, "Build started.", CREATED_STATUS);
   },
 
@@ -74,7 +74,9 @@ export const outfitController = {
     const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<OutfitIdParam>(res);
     const outfit = await outfitService.get(userId, id);
-    if (outfit.kind === "board") res.setHeader(ETAG_HEADER, toETag(outfit.version));
+    if (outfit.kind === "board") {
+      res.setHeader(OUTFIT_VERSION_HEADER, toVersionHeaderValue(outfit.version));
+    }
     sendSuccess(res, outfit, "Build.");
   },
 

@@ -13,8 +13,8 @@ import {
 } from "#modules/discounts/discount.utils.js";
 
 import {
-  OUTFIT_ETAG_PATTERN,
   OUTFIT_ITEM_AVAILABILITY,
+  OUTFIT_VERSION_HEADER_PATTERN,
   OUTFIT_VIEWER_ROLE,
 } from "./outfit.constants.js";
 import type {
@@ -36,7 +36,7 @@ import type { OutfitCoverPhotoView } from "./outfit-photo.types.js";
 
 const NO_STOCK = 0;
 const EMPTY_TOTAL = 0;
-const ETAG_VERSION_GROUP = 1;
+const VERSION_NUMBER_GROUP = 1;
 
 export const canReceiveOffers = (user: {
   role: UserRole;
@@ -226,9 +226,9 @@ export const toSummaryView = (
 });
 
 export const parseVersionHeader = (headerValue: string): number | null => {
-  const match = OUTFIT_ETAG_PATTERN.exec(headerValue.trim());
-  const versionText = match?.[ETAG_VERSION_GROUP];
+  const match = OUTFIT_VERSION_HEADER_PATTERN.exec(headerValue.trim());
+  const versionText = match?.[VERSION_NUMBER_GROUP];
   return versionText === undefined ? null : Number.parseInt(versionText, 10);
 };
 
-export const toETag = (version: number): string => `"${version}"`;
+export const toVersionHeaderValue = (version: number): string => String(version);
