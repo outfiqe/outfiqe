@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { LanguageSwitch } from "@/i18n/LanguageSwitch";
-
 import { Logo } from "./Logo";
 import { FOOTER_LINK_GROUPS } from "./siteFooter.constants";
 
@@ -41,12 +39,9 @@ export const SiteFooter = () => {
         <p className="text-xs text-muted-foreground">
           Muses may earn a commission when you shop the pieces they&apos;ve tagged in their looks.
         </p>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
-          </p>
-          <LanguageSwitch />
-        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
+        </p>
       </div>
     </footer>
   );

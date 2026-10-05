@@ -288,7 +288,6 @@ export default defineConfig({
         "src/shared/hooks/useFeatureFlag.ts",
         "src/i18n/localeCookie.ts",
         "src/i18n/useChosenLanguage.ts",
-        "src/i18n/LanguageSwitch.tsx",
       ],
       thresholds: {
         lines: 80,
