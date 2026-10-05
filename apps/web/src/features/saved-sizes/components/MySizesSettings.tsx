@@ -74,10 +74,10 @@ const SizeRow = ({ savedSize, isSaving, onChange }: SizeRowProps) => {
 
 export const MySizesSettings = () => {
   const t = useTranslations("savedSizes");
-  const { data: savedSizes, isLoading, isError, refetch } = useSavedSizes();
+  const { data: savedSizes, isPending, isError, refetch } = useSavedSizes();
   const changeSavedSize = useChangeSavedSize();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div aria-busy="true" className="space-y-3">
         {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
