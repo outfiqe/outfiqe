@@ -9,7 +9,6 @@ import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { useCart } from "@/features/cart";
-import { LanguageSwitch } from "@/i18n/LanguageSwitch";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -185,10 +184,6 @@ export const MobileNav = () => {
                 {isDark ? <Sun suppressHydrationWarning /> : <Moon suppressHydrationWarning />}
                 Theme
               </Button>
-              <div className="flex items-center justify-between px-2 py-2 text-muted-foreground">
-                <span>Language</span>
-                <LanguageSwitch />
-              </div>
             </div>
 
             <div className="mt-4 flex flex-col gap-2.5 border-t border-border pt-4">

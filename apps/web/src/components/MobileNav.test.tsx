@@ -21,8 +21,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
-vi.mock("@/i18n/setLanguage", () => ({ setLanguage: vi.fn() }));
-
 const buildIdleLogoutMutation = (): ReturnType<typeof useLogout> => ({
   context: undefined,
   data: undefined,
@@ -97,13 +95,11 @@ describe("MobileNav", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers the English and Nepali switch in the drawer", async () => {
+  it("leaves the language switch to the footer and settings, not the drawer", async () => {
     render(<MobileNav />);
     await openMenu();
 
-    expect(screen.getByRole("group", { name: "Language / भाषा" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "नेपाली (Nepali)" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Language / भाषा" })).not.toBeInTheDocument();
   });
 
   it("no longer renders a search field inside the drawer", async () => {

@@ -1,23 +1,26 @@
 "use client";
 
 import { NextIntlClientProvider } from "next-intl";
-import { useSyncExternalStore } from "react";
 
-import { readLocaleCookie, subscribeToLocaleChanges } from "./localeCookie";
-import { DEFAULT_LOCALE, NEPAL_TIME_ZONE } from "./locales";
+import { DEFAULT_LOCALE, NEPAL_TIME_ZONE, type SupportedLocale } from "./locales";
 import englishMessages from "./messages/en.json";
 import nepaliMessages from "./messages/ne.json";
+import { useActiveLocale } from "./useChosenLanguage";
 
 const MESSAGES_BY_LOCALE = { en: englishMessages, ne: nepaliMessages } as const;
 
-const readDefaultLocale = () => DEFAULT_LOCALE;
+type ClientTranslationsProviderProps = {
+  children: React.ReactNode;
+  localeOnServer?: SupportedLocale;
+  marksLanguage?: boolean;
+};
 
-export const ClientTranslationsProvider = ({ children }: { children: React.ReactNode }) => {
-  const locale = useSyncExternalStore(
-    subscribeToLocaleChanges,
-    readLocaleCookie,
-    readDefaultLocale,
-  );
+export const ClientTranslationsProvider = ({
+  children,
+  localeOnServer = DEFAULT_LOCALE,
+  marksLanguage = false,
+}: ClientTranslationsProviderProps) => {
+  const locale = useActiveLocale(localeOnServer);
 
   return (
     <NextIntlClientProvider
@@ -25,7 +28,7 @@ export const ClientTranslationsProvider = ({ children }: { children: React.React
       messages={MESSAGES_BY_LOCALE[locale]}
       timeZone={NEPAL_TIME_ZONE}
     >
-      {children}
+      {marksLanguage ? <div lang={locale}>{children}</div> : children}
     </NextIntlClientProvider>
   );
 };
