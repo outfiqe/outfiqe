@@ -76,14 +76,20 @@ jobs:
 
       - name: Migrate and deploy on the droplet
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           command_timeout: 15m
+          envs: GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -euo pipefail
             cd /srv/outfiqe
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
             export IMAGE_TAG="${{ steps.target.outputs.sha }}"
             UNUSED_IMAGE_RETENTION_HOURS=24
             REQUIRED_FREE_MEGABYTES=3072
