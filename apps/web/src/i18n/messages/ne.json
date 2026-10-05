@@ -59,7 +59,14 @@
       "unavailableTitle": "यो बिल्ड उपलब्ध छैन",
       "unavailableBody": "यो संग्रहित भएको हुन सक्छ, वा तपाईंलाई यसको पहुँच नहुन सक्छ।",
       "backToMyBuilds": "मेरा बिल्डहरूमा फर्कनुहोस्",
-      "soldOutBanner": "{count} वटा सामान सकिए। बिल्ड लक गर्न तिनलाई बदल्नुहोस्।"
+      "soldOutBanner": "{count} वटा सामान सकिए। बिल्ड लक गर्न तिनलाई बदल्नुहोस्।",
+      "sectionsLabel": "बिल्डका भागहरू",
+      "tabs": {
+        "outfit": "आउटफिट",
+        "people": "मानिसहरू · {count}",
+        "photos": "फोटोहरू",
+        "buyAndDrop": "किन्नुहोस् र ड्रप"
+      }
     },
     "slots": {
       "filledOf": "{max} मध्ये {filled}",

@@ -103,15 +103,15 @@ export const MyBuildsPage = () => {
 
   if (isFeatureOff(myBuilds.error)) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-3xl py-16 text-center">
         <h1 className="font-display text-2xl font-bold text-foreground">{t("title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("comingSoon")}</p>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
+    <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">{t("title")}</h1>
@@ -134,6 +134,6 @@ export const MyBuildsPage = () => {
           <BuildGrid query={sharedBuilds} emptyText={t("emptyShared")} />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   );
 };

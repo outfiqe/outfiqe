@@ -20,7 +20,7 @@ export const BuildPage = ({ outfitId }: { outfitId: string }) => {
 
   if (isLoading) {
     return (
-      <div aria-busy className="mx-auto max-w-6xl space-y-4 px-4 py-6">
+      <div aria-busy className="space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-20 w-full rounded-xl" />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -34,7 +34,7 @@ export const BuildPage = ({ outfitId }: { outfitId: string }) => {
 
   if (isError || !outfit) {
     const unavailable = (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-xl py-16 text-center">
         <h1 className="font-display text-xl font-bold text-foreground">
           {wasRemoved ? t("removedTitle") : t("unavailableTitle")}
         </h1>

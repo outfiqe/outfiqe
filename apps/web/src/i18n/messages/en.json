@@ -59,7 +59,14 @@
       "unavailableTitle": "This build isn't available",
       "unavailableBody": "It may have been archived, or you may not have access to it.",
       "backToMyBuilds": "Back to My Builds",
-      "soldOutBanner": "{count, plural, one {# item has sold out.} other {# items have sold out.}} Swap them to lock the build."
+      "soldOutBanner": "{count, plural, one {# item has sold out.} other {# items have sold out.}} Swap them to lock the build.",
+      "sectionsLabel": "Build sections",
+      "tabs": {
+        "outfit": "Outfit",
+        "people": "People · {count}",
+        "photos": "Photos",
+        "buyAndDrop": "Buy & drop"
+      }
     },
     "slots": {
       "filledOf": "{filled} of {max}",
