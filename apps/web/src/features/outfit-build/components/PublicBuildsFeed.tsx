@@ -9,6 +9,7 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import type { PublicBuildFilters } from "../api/outfitSocialSchemas";
 import { usePublicBuilds } from "../hooks/useBuildSocial";
+import { clearNarrowingFilters, hasNarrowingFilters } from "../utils/publicBuildFilters";
 import { BuildDetailModal } from "./BuildDetailModal";
 import { PublicBuildCardView } from "./PublicBuildCardView";
 import { PublicBuildFiltersBar } from "./PublicBuildFiltersBar";
@@ -30,6 +31,7 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
   const { data, isLoading, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
     usePublicBuilds({ ...debouncedFilters, ...fixedFilters });
   const builds = data?.pages.flatMap((page) => page.items) ?? [];
+  const isNarrowed = hasNarrowingFilters(debouncedFilters);
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
     Boolean(hasNextPage) && !isFetchingNextPage,
@@ -56,7 +58,20 @@ export const PublicBuildsFeed = ({ fixedFilters, showFilters = true }: PublicBui
           </div>
         )}
         {!isLoading && !isError && builds.length === NO_BUILDS && (
-          <p className="py-10 text-center text-sm text-muted-foreground">{t("emptyFeed")}</p>
+          <div className="space-y-3 py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              {isNarrowed ? t("emptyFilteredFeed") : t("emptyFeed")}
+            </p>
+            {isNarrowed && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters(clearNarrowingFilters(filters))}
+              >
+                {t("clearFilters")}
+              </Button>
+            )}
+          </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {builds.map((card) => (

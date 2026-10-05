@@ -29,14 +29,14 @@ export const outfitErrors = {
   versionRequired: () =>
     new AppError(
       "OUTFIT_VERSION_REQUIRED",
-      "Send the version of the build you last saw in an If-Match header.",
+      "Send the version of the build you last saw in an X-Outfit-Version header.",
       PRECONDITION_REQUIRED_STATUS,
     ),
 
   versionMalformed: () =>
     new AppError(
       "OUTFIT_VERSION_MALFORMED",
-      "The If-Match header must be the build's version number.",
+      "The X-Outfit-Version header must be the build's version number.",
       BAD_REQUEST_STATUS,
     ),
 

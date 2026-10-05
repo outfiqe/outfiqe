@@ -29,7 +29,7 @@ its commission equally.
 ## The design in short
 
 **Every board change is one short transaction.** The browser sends the version it last saw
-(`If-Match`) and an `Idempotency-Key`. The server checks the person's role, claims the next version
+(`X-Outfit-Version`) and an `Idempotency-Key`. The server checks the person's role, claims the next version
 with a conditional update, checks the rules (slot fits, item limits, photo limits, status), applies
 the change, and writes a history row and an outbox row, all in that one transaction
 (`runOutfitWrite`, `modules/outfits/outfit.write.ts`). A stale version gets `409` with the current
@@ -125,7 +125,7 @@ most:
 | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 50 people change one board at once: one wins each version                                 | `modules/outfits/outfit.board.integration.test.ts`                                         |
 | Photo adds at the same moment never exceed the limits                                     | `modules/outfits/outfit.photos.integration.test.ts`                                        |
-| Slot rules, locking rules, `428` without `If-Match`, idempotent retries                   | `modules/outfits/outfit.board.integration.test.ts`, `outfit.lifecycle.integration.test.ts` |
+| Slot rules, locking rules, `428` without `X-Outfit-Version`, idempotent retries           | `modules/outfits/outfit.board.integration.test.ts`, `outfit.lifecycle.integration.test.ts` |
 | Publishing the same version twice makes one look                                          | `modules/outfits/outfit.publish.integration.test.ts`                                       |
 | Build and look orders pay the right rate; Build commission splits equally                 | `modules/outfits/outfit.cart.integration.test.ts`, `modules/orders`                        |
 | Offers: pay, accept, post, hold, release, refund, expiry                                  | `modules/outfit-offers/outfit-offer.integration.test.ts`                                   |

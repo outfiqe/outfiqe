@@ -59,7 +59,14 @@
       "unavailableTitle": "This build isn't available",
       "unavailableBody": "It may have been archived, or you may not have access to it.",
       "backToMyBuilds": "Back to My Builds",
-      "soldOutBanner": "{count, plural, one {# item has sold out.} other {# items have sold out.}} Swap them to lock the build."
+      "soldOutBanner": "{count, plural, one {# item has sold out.} other {# items have sold out.}} Swap them to lock the build.",
+      "sectionsLabel": "Build sections",
+      "tabs": {
+        "outfit": "Outfit",
+        "people": "People · {count}",
+        "photos": "Photos",
+        "buyAndDrop": "Buy & drop"
+      }
     },
     "slots": {
       "filledOf": "{filled} of {max}",
@@ -242,12 +249,26 @@
       "feedFailed": "Couldn't load builds. Try again.",
       "retry": "Try again",
       "emptyFeed": "No builds match yet.",
+      "emptyFilteredFeed": "No builds match these filters.",
+      "clearFilters": "Clear filters",
       "filtersLabel": "Filter builds",
       "category": "Style",
       "allCategories": "All styles",
-      "minPrice": "Lowest price (Rs)",
-      "maxPrice": "Highest price (Rs)",
+      "price": "Price",
+      "priceRanges": {
+        "any": "Any price",
+        "under5k": "Under Rs 5,000",
+        "from5kTo10k": "Rs 5,000–10,000",
+        "over10k": "Rs 10,000+"
+      },
       "inStockOnly": "Everything in stock",
+      "sortLabel": "Sort by",
+      "sorts": {
+        "newest": "Newest",
+        "mostCheriqed": "Most cheriqed",
+        "priceLow": "Price: low to high",
+        "priceHigh": "Price: high to low"
+      },
       "openBuild": "Open {title}",
       "by": "By {names}",
       "itemCount": "{count, plural, one {# item} other {# items}}",

@@ -1,3 +1,5 @@
+import { PUBLIC_BUILD_SORT, type PublicBuildSort } from "@outfiqe/utils";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { OutfitVisibility } from "#generated/prisma/enums.js";
@@ -13,11 +15,30 @@ export type PublicBuildFilters = {
   isInStockOnly: boolean;
   contributorId?: string;
   brandId?: string;
+  sort: PublicBuildSort;
 };
 
-export type PublicFeedCursor = { madePublicAt: string; id: string };
+export type PublicFeedCursor = { sort: PublicBuildSort; value: string; id: string };
 
-export type PublicFeedRow = { id: string; madePublicAt: Date };
+export type PublicFeedRow = { id: string; madePublicAt: Date; likeCount: number; total: number };
+
+const FEED_ORDER: Record<PublicBuildSort, Prisma.Sql> = {
+  [PUBLIC_BUILD_SORT.NEWEST]: Prisma.sql`o.made_public_at DESC, o.id DESC`,
+  [PUBLIC_BUILD_SORT.MOST_CHERIQED]: Prisma.sql`o.like_count DESC, o.id DESC`,
+  [PUBLIC_BUILD_SORT.PRICE_LOW]: Prisma.sql`s.total ASC, o.id ASC`,
+  [PUBLIC_BUILD_SORT.PRICE_HIGH]: Prisma.sql`s.total DESC, o.id DESC`,
+};
+
+const FEED_AFTER_CURSOR: Record<PublicBuildSort, (cursor: PublicFeedCursor) => Prisma.Sql> = {
+  [PUBLIC_BUILD_SORT.NEWEST]: ({ value, id }) =>
+    Prisma.sql`(o.made_public_at, o.id) < (${value}::timestamp, ${id}::uuid)`,
+  [PUBLIC_BUILD_SORT.MOST_CHERIQED]: ({ value, id }) =>
+    Prisma.sql`(o.like_count, o.id) < (${Number(value)}::int, ${id}::uuid)`,
+  [PUBLIC_BUILD_SORT.PRICE_LOW]: ({ value, id }) =>
+    Prisma.sql`(s.total, o.id) > (${Number(value)}::int, ${id}::uuid)`,
+  [PUBLIC_BUILD_SORT.PRICE_HIGH]: ({ value, id }) =>
+    Prisma.sql`(s.total, o.id) < (${Number(value)}::int, ${id}::uuid)`,
+};
 
 const commentAuthorSelect = {
   id: true,
@@ -41,9 +62,10 @@ export const outfitSocialRepository = {
     cursor: PublicFeedCursor | undefined,
     take: number,
   ): Promise<PublicFeedRow[]> {
-    const { categorySlug, minPrice, maxPrice, isInStockOnly, contributorId, brandId } = filters;
+    const { categorySlug, minPrice, maxPrice, isInStockOnly, contributorId, brandId, sort } =
+      filters;
     return prisma.$queryRaw<PublicFeedRow[]>(Prisma.sql`
-      SELECT o.id, o.made_public_at AS "madePublicAt"
+      SELECT o.id, o.made_public_at AS "madePublicAt", o.like_count AS "likeCount", s.total
       FROM outfits o
       JOIN outfit_snapshots s ON s.outfit_id = o.id AND s.version = o.published_version
       WHERE o.visibility::text = ${OutfitVisibility.PUBLIC}
@@ -85,11 +107,8 @@ export const outfitSocialRepository = {
             )
           )`,
         )}
-        ${optionalCondition(
-          cursor !== undefined,
-          Prisma.sql`(o.made_public_at, o.id) < (${cursor?.madePublicAt}::timestamp, ${cursor?.id}::uuid)`,
-        )}
-      ORDER BY o.made_public_at DESC, o.id DESC
+        ${cursor ? Prisma.sql`AND ${FEED_AFTER_CURSOR[sort](cursor)}` : Prisma.empty}
+      ORDER BY ${FEED_ORDER[sort]}
       LIMIT ${take}
     `);
   },

@@ -103,12 +103,46 @@ describe("PublicBuildsFeed", () => {
     const user = userEvent.setup();
 
     expect(await screen.findByText("No builds match yet.")).toBeInTheDocument();
-    await user.click(screen.getByLabelText("Everything in stock"));
-    await user.selectOptions(screen.getByLabelText("Style"), "festive");
+    await user.click(screen.getByRole("button", { name: "Everything in stock" }));
+    await user.click(await screen.findByRole("button", { name: "Festive" }));
+    await user.click(screen.getByRole("button", { name: "Rs 5,000–10,000" }));
+    await user.selectOptions(screen.getByLabelText("Sort by"), "price-low");
 
     await waitFor(() =>
-      expect(requestedSearches.at(-1)).toBe("?category=festive&inStockOnly=true"),
+      expect(requestedSearches.at(-1)).toBe(
+        "?category=festive&minPrice=5000&maxPrice=9999&inStockOnly=true&sort=price-low",
+      ),
     );
+    expect(screen.getByRole("button", { name: "Festive" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "All styles" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("explains an empty filtered feed and clears the filters but keeps the sort", async () => {
+    const requestedSearches: string[] = [];
+    mswServer.use(
+      http.get("/api/outfits/public", ({ request }) => {
+        requestedSearches.push(new URL(request.url).search);
+        return ok({ items: [], nextCursor: null });
+      }),
+    );
+    renderFeed();
+    const user = userEvent.setup();
+
+    await user.selectOptions(await screen.findByLabelText("Sort by"), "most-cheriqed");
+    await user.click(screen.getByRole("button", { name: "Under Rs 5,000" }));
+    const emptyMessage = await screen.findByText("No builds match these filters.");
+    const emptyState = emptyMessage.parentElement ?? document.body;
+    await user.click(within(emptyState).getByRole("button", { name: "Clear filters" }));
+
+    await waitFor(() => expect(requestedSearches.at(-1)).toBe("?sort=most-cheriqed"));
+    expect(screen.getByRole("button", { name: "Any price" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
   });
 
   it("opens a build in a pop-up where people can cheriq it and chime", async () => {

@@ -38,21 +38,11 @@ export const generateMetadata = async ({ params }: BuildRouteProps): Promise<Met
 const BuildRoute = async ({ params }: BuildRouteProps) => {
   const { outfitId } = await params;
   const session = await getServerSessionWithToken();
-  if (session) {
-    return (
-      <main>
-        <BuildPage outfitId={outfitId} />
-      </main>
-    );
-  }
+  if (session) return <BuildPage outfitId={outfitId} />;
 
   const build = await getPublicBuildServer(outfitId);
   if (!build) redirect(`/login?redirect=${encodeURIComponent(`/builds/${outfitId}`)}`);
-  return (
-    <main>
-      <PublicBuildPage initialBuild={build} />
-    </main>
-  );
+  return <PublicBuildPage initialBuild={build} />;
 };
 
 export default BuildRoute;

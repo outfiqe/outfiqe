@@ -5,7 +5,6 @@ import {
   Award,
   BanknoteArrowUp,
   HandCoins,
-  Languages,
   LayoutDashboard,
   LayoutGrid,
   LifeBuoy,
@@ -43,13 +42,6 @@ const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
   href: "/settings/chat",
   label: "Chat",
   icon: MessageCircleOff,
-};
-
-const LANGUAGE_NAV_ITEM: SidebarNavItem = {
-  id: "language",
-  href: "/settings/language",
-  label: "Language",
-  icon: Languages,
 };
 
 const SIZES_NAV_ITEM: SidebarNavItem = {
@@ -106,7 +98,6 @@ const CREATOR_NAV: SidebarNavItem[] = [
   ADDRESSES_NAV_ITEM,
   SIZES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
-  LANGUAGE_NAV_ITEM,
   SECURITY_NAV_ITEM,
   SUPPORT_NAV_ITEM,
 ];
@@ -129,7 +120,6 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "orders", href: "/manage-orders", label: "Orders", icon: ShoppingBag },
   { id: "wallet", href: "/wallet", label: "Wallet", icon: Wallet },
   CHAT_SETTINGS_NAV_ITEM,
-  LANGUAGE_NAV_ITEM,
   SECURITY_NAV_ITEM,
   SUPPORT_NAV_ITEM,
 ];

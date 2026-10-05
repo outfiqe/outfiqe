@@ -1,3 +1,4 @@
+import { PUBLIC_BUILD_SORT } from "@outfiqe/utils";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -13,28 +14,28 @@ import {
   hasStock,
   parseSnapshotItems,
   parseVersionHeader,
-  toETag,
   toItemAvailability,
   toLiveUnitPrice,
+  toPublicFeedCursorValue,
+  toVersionHeaderValue,
   toViewerRole,
 } from "./outfit.utils.js";
 
 describe("parseVersionHeader", () => {
-  it("reads a plain number, a quoted ETag and a weak ETag", () => {
+  it("reads a plain number or a quoted one", () => {
     expect(parseVersionHeader("3")).toBe(3);
     expect(parseVersionHeader('"12"')).toBe(12);
-    expect(parseVersionHeader('W/"7"')).toBe(7);
     expect(parseVersionHeader('  "0"  ')).toBe(0);
   });
 
   it("refuses anything that isn't a whole version number", () => {
-    for (const headerValue of ["latest", "-1", "1.5", '"abc"', "*", ""]) {
+    for (const headerValue of ["latest", "-1", "1.5", '"abc"', "*", 'W/"7"', ""]) {
       expect(parseVersionHeader(headerValue)).toBeNull();
     }
   });
 
-  it("round-trips with toETag", () => {
-    expect(parseVersionHeader(toETag(42))).toBe(42);
+  it("round-trips with toVersionHeaderValue", () => {
+    expect(parseVersionHeader(toVersionHeaderValue(42))).toBe(42);
   });
 });
 
@@ -126,5 +127,23 @@ describe("parseSnapshotItems", () => {
     expect(parseSnapshotItems([item])).toEqual([item]);
     expect(parseSnapshotItems([{ slotKey: "top" }])).toEqual([]);
     expect(parseSnapshotItems(null)).toEqual([]);
+  });
+});
+
+describe("toPublicFeedCursorValue", () => {
+  const feedRow = {
+    id: "outfit-1",
+    madePublicAt: new Date("2026-10-01T08:30:00.000Z"),
+    likeCount: 14,
+    total: 7_450,
+  };
+
+  it("keys each sort on the column it orders by", () => {
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.NEWEST)).toBe(
+      "2026-10-01T08:30:00.000Z",
+    );
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.MOST_CHERIQED)).toBe("14");
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.PRICE_LOW)).toBe("7450");
+    expect(toPublicFeedCursorValue(feedRow, PUBLIC_BUILD_SORT.PRICE_HIGH)).toBe("7450");
   });
 });

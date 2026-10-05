@@ -71,4 +71,4 @@ export const OUTFIT_ITEM_AVAILABILITY = {
   OUT_OF_STOCK: "OUT_OF_STOCK",
 } as const;
 
-export const OUTFIT_ETAG_PATTERN = /^(?:W\/)?"?(\d+)"?$/;
+export const OUTFIT_VERSION_HEADER_PATTERN = /^"?(\d+)"?$/;

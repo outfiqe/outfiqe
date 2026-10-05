@@ -15,10 +15,10 @@ export const SocialBuildView = ({
 }) => {
   const { data: build, isLoading, isError } = usePublicBuild(outfitId);
 
-  if (isLoading) return <Skeleton className="mx-auto my-6 h-64 max-w-3xl rounded-xl" />;
+  if (isLoading) return <Skeleton className="mx-auto h-64 max-w-3xl rounded-xl" />;
   if (isError || !build) return fallback;
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto max-w-3xl">
       <PublicBuildDetailView build={build} />
     </div>
   );

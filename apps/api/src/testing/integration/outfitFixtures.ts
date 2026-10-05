@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import request from "supertest";
 
-import { IDEMPOTENCY_HEADER, IF_MATCH_HEADER } from "#constants/http.constants.js";
+import { IDEMPOTENCY_HEADER, OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   ConversationType,
@@ -200,7 +200,7 @@ export const writeToBuild = (
     [method](`/api/outfits${path}`)
     .set("Authorization", caller.auth)
     .set(IDEMPOTENCY_HEADER, idempotencyKey)
-    .set(IF_MATCH_HEADER, `"${version}"`);
+    .set(OUTFIT_VERSION_HEADER, String(version));
   return body ? pending.send(body) : pending;
 };
 

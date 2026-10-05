@@ -1,4 +1,4 @@
-import { OUTFIT_ITEMS_PER_MEMBER_CHOICES } from "@outfiqe/utils";
+import { OUTFIT_ITEMS_PER_MEMBER_CHOICES, PUBLIC_BUILD_SORT } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { OutfitPhotoKind, OutfitVisibility } from "#generated/prisma/enums.js";
@@ -158,6 +158,7 @@ export const publicBuildsQuerySchema = z
       .transform((value) => value === TRUE_TEXT),
     contributorId: z.uuid().optional(),
     brandId: z.uuid().optional(),
+    sort: z.enum(PUBLIC_BUILD_SORT).default(PUBLIC_BUILD_SORT.NEWEST),
     cursor: z.string().optional(),
     limit: z.coerce
       .number()

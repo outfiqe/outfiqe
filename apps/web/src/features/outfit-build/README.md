@@ -10,7 +10,7 @@ The whole feature sits behind the `outfit_builder` flag on the API.
 ## Structure
 
 - `api/outfitApi.ts`, `api/outfitSchemas.ts` — the `/api/outfits` client and zod schemas for every
-  response. Every write sends the build version it last saw (`If-Match`) and a fresh
+  response. Every write sends the build version it last saw (`X-Outfit-Version`) and a fresh
   `Idempotency-Key`.
 - `hooks/`
   - `useOutfit` — the build (`["outfit", id]`), either the live board or the published version.
@@ -27,12 +27,16 @@ The whole feature sits behind the `outfit_builder` flag on the API.
   - `MyBuildsPage` — My builds / Shared with me tabs, New build, empty/loading/error states, and a
     "coming soon" state while the flag is off.
   - `BuildPage` — loads a build and shows `BuildBoard` or `PublishedBuildView`.
-  - `BuildBoard` — header, `BudgetBar`, the `SlotCard` grid, `BoardPeople`, `BoardActions`, and
-    the picker and modals. Wraps everything in a dnd-kit `DndContext`.
+  - `BuildBoard` — the header (title, status, visibility, open chat), `BoardActions` as a toolbar,
+    `BudgetBar`, then tabs: **Outfit** (the `SlotCard` grid with `ProductFinderPanel` beside it on
+    wide screens), **People** (`BoardPeople`), **Photos** (`BoardPhotosPanel`, only while photos are
+    switched on) and **Buy & drop** (`BuyBuildPanel`, `PostAsLookPanel`, offers). Also the picker
+    and modals. Wraps everything in a dnd-kit `DndContext`.
   - `SlotCard` — one slot: its items (image, price, stock in words, who added it) and empty
     places to tap. It is also the drop target when dragging.
   - `ProductPickerModal` — tap a slot → search products of that slot's garment types → tap one.
-  - `ProductFinderPanel` — desktop-only sidebar of draggable search results.
+  - `ProductFinderPanel` — draggable search results beside the slots on extra-wide screens
+    (`xl`); on smaller screens people add items by tapping a slot instead.
   - `InviteEditorsModal`, `VisibilityModal`, `BoardSettingsModal` — owner tools; people are picked
     with the messaging `ContactPicker`.
   - `BuildCardMessage` — the card a chat shows for a build started in it; it loads the build live.
@@ -55,9 +59,13 @@ are indexed.
 
 Builds in public (`api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`, `hooks/useBuildSocial.ts`):
 
-- `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: style, price range, everything in stock),
-  a grid of `PublicBuildCardView`s, infinite scroll, empty, loading and error states, and the
-  `BuildDetailModal` pop-up. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
+- `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: a row of style chips that scrolls sideways
+  on phones, price range chips, an "everything in stock" chip, a clear button and a sort menu for
+  newest, most cheriqed, or price either way), a grid of `PublicBuildCardView`s, infinite scroll,
+  loading and error states, an empty state that says when the filters are the reason and offers to
+  clear them (the sort order is kept), and the `BuildDetailModal` pop-up. The price ranges and the
+  clear rules live in `utils/publicBuildFilters.ts`; each range stops one rupee below the next so a
+  build never falls in two. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
   Builds tab on creator profiles (builds they contributed to) and brand profiles (builds using
   their products). Both only while `outfit_public_feed` is on for the viewer.
 - `PublicBuildDetailView` — the locked items with live stock, contributors linking to their
@@ -121,6 +129,16 @@ board at once, the loser's change is undone and they're told who got there first
 
 ## Non-obvious rationale
 
+- **`/builds` uses the dashboard frame only for signed-in people.** `app/builds/layout.tsx` checks
+  the session: signed in, it renders `DashboardShell` (the same header, sidebar and mobile nav as
+  every other dashboard page); signed out, it renders the standalone public page. Builds can't
+  simply move into the `(dashboard)` route group, because `/builds/<id>` is also the public,
+  indexable page for a shared build, and the dashboard layout marks every page `noindex` and
+  expects a session.
+- **The board is split into tabs so it fits on one screen.** Everything used to sit in one long
+  right-hand column (finder, people, actions, photos, drop as look, buy, offers), so editing meant
+  a lot of scrolling. The actions are now a toolbar above the tabs, so lock, unlock, "I'm happy",
+  who can see it and settings are always in reach.
 - **Writes are queued, not fired in parallel.** Each write carries the version it expects. Two
   writes sent at once from the same screen would make the second one conflict with the first, so
   the hook sends them one after another, each with the version the previous one returned.

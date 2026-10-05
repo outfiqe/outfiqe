@@ -67,15 +67,19 @@ beforeEach(() => {
 });
 
 describe("BuildBoard", () => {
-  it("shows the slots, the people and who is happy", async () => {
+  it("shows the slots and the lock hint first, and the people in their own tab", async () => {
     renderBoard(buildBoard());
 
     expect(screen.getByRole("heading", { name: "Dashain look" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Top" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Footwear" })).toBeInTheDocument();
+    expect(screen.getByText("Add at least 2 items to lock.")).toBeInTheDocument();
+    expect(screen.queryByText("Ram Thapa")).not.toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByRole("tab", { name: /People/ }));
+
     expect(screen.getByText("Sita Rai (you)")).toBeInTheDocument();
     expect(screen.getByText("Ram Thapa")).toBeInTheDocument();
-    expect(screen.getByText("Add at least 2 items to lock.")).toBeInTheDocument();
   });
 
   it("adds a product picked for a slot, sending the version and a request key", async () => {
@@ -120,7 +124,7 @@ describe("BuildBoard", () => {
     const picker = await screen.findByRole("dialog");
     await user.click(await within(picker).findByRole("button", { name: /Maroon Kurta/ }));
 
-    await waitFor(() => expect(sentRequest.headers?.get("If-Match")).toBe('"4"'));
+    await waitFor(() => expect(sentRequest.headers?.get("X-Outfit-Version")).toBe("4"));
     expect(sentRequest.headers?.get("Idempotency-Key")).toEqual(expect.any(String));
     expect(await screen.findByText("Total: Rs 3,200")).toBeInTheDocument();
   });

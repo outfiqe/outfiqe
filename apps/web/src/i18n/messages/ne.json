@@ -59,7 +59,14 @@
       "unavailableTitle": "यो बिल्ड उपलब्ध छैन",
       "unavailableBody": "यो संग्रहित भएको हुन सक्छ, वा तपाईंलाई यसको पहुँच नहुन सक्छ।",
       "backToMyBuilds": "मेरा बिल्डहरूमा फर्कनुहोस्",
-      "soldOutBanner": "{count} वटा सामान सकिए। बिल्ड लक गर्न तिनलाई बदल्नुहोस्।"
+      "soldOutBanner": "{count} वटा सामान सकिए। बिल्ड लक गर्न तिनलाई बदल्नुहोस्।",
+      "sectionsLabel": "बिल्डका भागहरू",
+      "tabs": {
+        "outfit": "आउटफिट",
+        "people": "मानिसहरू · {count}",
+        "photos": "फोटोहरू",
+        "buyAndDrop": "किन्नुहोस् र ड्रप"
+      }
     },
     "slots": {
       "filledOf": "{max} मध्ये {filled}",
@@ -242,12 +249,26 @@
       "feedFailed": "बिल्डहरू लोड हुन सकेनन्। फेरि प्रयास गर्नुहोस्।",
       "retry": "फेरि प्रयास गर्नुहोस्",
       "emptyFeed": "अहिलेसम्म मिल्ने बिल्ड छैन।",
+      "emptyFilteredFeed": "यी फिल्टरसँग मिल्ने बिल्ड छैन।",
+      "clearFilters": "फिल्टर हटाउनुहोस्",
       "filtersLabel": "बिल्डहरू छान्नुहोस्",
       "category": "शैली",
       "allCategories": "सबै शैली",
-      "minPrice": "सबैभन्दा कम मूल्य (रु)",
-      "maxPrice": "सबैभन्दा बढी मूल्य (रु)",
+      "price": "मूल्य",
+      "priceRanges": {
+        "any": "जुनसुकै मूल्य",
+        "under5k": "रु ५,००० भन्दा कम",
+        "from5kTo10k": "रु ५,०००–१०,०००",
+        "over10k": "रु १०,००० भन्दा बढी"
+      },
       "inStockOnly": "सबै स्टकमा भएका",
+      "sortLabel": "क्रम",
+      "sorts": {
+        "newest": "नयाँ पहिले",
+        "mostCheriqed": "धेरै चेरिक भएका",
+        "priceLow": "मूल्य: कमदेखि बढी",
+        "priceHigh": "मूल्य: बढीदेखि कम"
+      },
       "openBuild": "{title} खोल्नुहोस्",
       "by": "{names} ले बनाएको",
       "itemCount": "{count} वटा सामान",

@@ -1,22 +1,46 @@
 "use client";
 
-import { Checkbox, Input, Label, Select } from "@outfiqe/design-system";
+import { Button, FilterChip, Label, Select } from "@outfiqe/design-system";
+import { PUBLIC_BUILD_SORT, type PublicBuildSort } from "@outfiqe/utils";
 import { useTranslations } from "next-intl";
 import { useId } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 
 import type { PublicBuildFilters } from "../api/outfitSocialSchemas";
+import {
+  clearNarrowingFilters,
+  findSelectedPriceRange,
+  hasNarrowingFilters,
+  PRICE_RANGE,
+  PRICE_RANGE_BOUNDS,
+  PRICE_RANGE_ORDER,
+  type PriceRange,
+} from "../utils/publicBuildFilters";
 
-const ALL_CATEGORIES_VALUE = "";
-const DECIMAL_RADIX = 10;
-const PRICE_STEP = 500;
-const MIN_PRICE = 0;
+const PRICE_RANGE_MESSAGE_KEY = {
+  [PRICE_RANGE.ANY]: "priceRanges.any",
+  [PRICE_RANGE.UNDER_5K]: "priceRanges.under5k",
+  [PRICE_RANGE.FROM_5K_TO_10K]: "priceRanges.from5kTo10k",
+  [PRICE_RANGE.OVER_10K]: "priceRanges.over10k",
+} as const satisfies Record<PriceRange, string>;
 
-const toPrice = (text: string): number | undefined => {
-  const parsed = Number.parseInt(text, DECIMAL_RADIX);
-  return Number.isNaN(parsed) ? undefined : parsed;
-};
+const SORT_MESSAGE_KEY = {
+  [PUBLIC_BUILD_SORT.NEWEST]: "sorts.newest",
+  [PUBLIC_BUILD_SORT.MOST_CHERIQED]: "sorts.mostCheriqed",
+  [PUBLIC_BUILD_SORT.PRICE_LOW]: "sorts.priceLow",
+  [PUBLIC_BUILD_SORT.PRICE_HIGH]: "sorts.priceHigh",
+} as const satisfies Record<PublicBuildSort, string>;
+
+const SORT_ORDER: PublicBuildSort[] = [
+  PUBLIC_BUILD_SORT.NEWEST,
+  PUBLIC_BUILD_SORT.MOST_CHERIQED,
+  PUBLIC_BUILD_SORT.PRICE_LOW,
+  PUBLIC_BUILD_SORT.PRICE_HIGH,
+];
+
+const findSort = (value: string): PublicBuildSort | undefined =>
+  SORT_ORDER.find((sort) => sort === value);
 
 export const PublicBuildFiltersBar = ({
   filters,
@@ -26,64 +50,84 @@ export const PublicBuildFiltersBar = ({
   onChange: (filters: PublicBuildFilters) => void;
 }) => {
   const t = useTranslations("outfitBuild.public");
-  const fieldId = useId();
+  const sortId = useId();
   const { data: categories = [] } = useCategories();
+  const { category, isInStockOnly = false, sort = PUBLIC_BUILD_SORT.NEWEST } = filters;
+  const selectedPriceRange = findSelectedPriceRange(filters);
 
   return (
-    <fieldset className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:grid-cols-4 sm:items-end">
+    <fieldset className="min-w-0 space-y-3">
       <legend className="sr-only">{t("filtersLabel")}</legend>
-      <div className="space-y-1">
-        <Label htmlFor={`${fieldId}-category`}>{t("category")}</Label>
-        <Select
-          id={`${fieldId}-category`}
-          value={filters.category ?? ALL_CATEGORIES_VALUE}
-          onChange={(event) =>
-            onChange({
-              ...filters,
-              category:
-                event.target.value === ALL_CATEGORIES_VALUE ? undefined : event.target.value,
-            })
-          }
+
+      <div
+        role="group"
+        aria-label={t("category")}
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      >
+        <FilterChip
+          isSelected={category === undefined}
+          onClick={() => onChange({ ...filters, category: undefined })}
         >
-          <option value={ALL_CATEGORIES_VALUE}>{t("allCategories")}</option>
-          {categories.map((category) => (
-            <option key={category.slug} value={category.slug}>
-              {category.name}
-            </option>
+          {t("allCategories")}
+        </FilterChip>
+        {categories.map(({ slug, name }) => (
+          <FilterChip
+            key={slug}
+            isSelected={category === slug}
+            onClick={() => onChange({ ...filters, category: slug })}
+          >
+            {name}
+          </FilterChip>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="group" aria-label={t("price")} className="flex flex-wrap items-center gap-2">
+          {PRICE_RANGE_ORDER.map((priceRange) => (
+            <FilterChip
+              key={priceRange}
+              isSelected={selectedPriceRange === priceRange}
+              onClick={() => onChange({ ...filters, ...PRICE_RANGE_BOUNDS[priceRange] })}
+            >
+              {t(PRICE_RANGE_MESSAGE_KEY[priceRange])}
+            </FilterChip>
           ))}
-        </Select>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor={`${fieldId}-min`}>{t("minPrice")}</Label>
-        <Input
-          id={`${fieldId}-min`}
-          type="number"
-          inputMode="numeric"
-          min={MIN_PRICE}
-          step={PRICE_STEP}
-          value={filters.minPrice ?? ""}
-          onChange={(event) => onChange({ ...filters, minPrice: toPrice(event.target.value) })}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor={`${fieldId}-max`}>{t("maxPrice")}</Label>
-        <Input
-          id={`${fieldId}-max`}
-          type="number"
-          inputMode="numeric"
-          min={MIN_PRICE}
-          step={PRICE_STEP}
-          value={filters.maxPrice ?? ""}
-          onChange={(event) => onChange({ ...filters, maxPrice: toPrice(event.target.value) })}
-        />
-      </div>
-      <div className="flex items-center gap-2 pb-2">
-        <Checkbox
-          id={`${fieldId}-stock`}
-          checked={filters.isInStockOnly ?? false}
-          onChange={(event) => onChange({ ...filters, isInStockOnly: event.target.checked })}
-        />
-        <Label htmlFor={`${fieldId}-stock`}>{t("inStockOnly")}</Label>
+          <FilterChip
+            isSelected={isInStockOnly}
+            onClick={() => onChange({ ...filters, isInStockOnly: !isInStockOnly })}
+          >
+            {t("inStockOnly")}
+          </FilterChip>
+          {hasNarrowingFilters(filters) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange(clearNarrowingFilters(filters))}
+            >
+              {t("clearFilters")}
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Label htmlFor={sortId} className="shrink-0 text-xs text-muted-foreground">
+            {t("sortLabel")}
+          </Label>
+          <Select
+            id={sortId}
+            className="h-9 w-auto"
+            value={sort}
+            onChange={(event) =>
+              onChange({ ...filters, sort: findSort(event.target.value) ?? sort })
+            }
+          >
+            {SORT_ORDER.map((sortOption) => (
+              <option key={sortOption} value={sortOption}>
+                {t(SORT_MESSAGE_KEY[sortOption])}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
     </fieldset>
   );
