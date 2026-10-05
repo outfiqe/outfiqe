@@ -70,7 +70,9 @@ Ubuntu 24.04, 1 GB / 1 vCPU is enough for internal use.
 3. Install Docker: `curl -fsSL https://get.docker.com | sudo sh`, then add your user to the `docker` group.
 4. `sudo mkdir -p /srv/outfiqe && sudo chown $USER /srv/outfiqe`.
 5. Put `docker-compose.prod.yml`, `Caddyfile`, and `.env.prod` in `/srv/outfiqe`. `chmod 600 .env.prod`.
-6. `docker login ghcr.io` with a token that has only `read:packages`.
+6. `docker login ghcr.io` with a token that has only `read:packages`. Only the first bring-up below and
+   manual rollbacks on the droplet use it: every deploy logs in with that run's own `GITHUB_TOKEN`
+   and logs out again (see CI/CD), so an expired token here never breaks a deploy.
 7. Point an `A` record for the API domain (Cloudflare, DNS-only / grey cloud) at the droplet IP.
 8. First bring-up:
    ```
@@ -98,7 +100,7 @@ Copy `.env.prod.example` and replace every `######`. Notes:
 ## CI/CD
 
 - `ci.yml` runs on push and PRs to `main` and `dev` (lint, typecheck, unit, integration, build). The coverage gate runs on push to `main` only.
-- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, copies `docker-compose.prod.yml` and `Caddyfile` to `/srv/outfiqe`, then over SSH: reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, reloads Caddy's config (see "Known gotchas" for why that step exists on its own), and polls `/ready`.
+- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, copies `docker-compose.prod.yml` and `Caddyfile` to `/srv/outfiqe`, then over SSH: logs the droplet in to GHCR with the run's `GITHUB_TOKEN` (logged out again when the script exits), reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, reloads Caddy's config (see "Known gotchas" for why that step exists on its own), and polls `/ready`.
 - The compose file and `Caddyfile` are shipped by the deploy, so the versions in git are the ones that run. Editing either directly on the droplet is pointless — the next deploy overwrites it. `.env.prod` is deliberately **not** copied: it holds secrets and lives only on the droplet.
 - The `production` GitHub Environment gates the deploy job. Add a required reviewer there for a one-click approval.
 - `keepalive.yml` curls `/ready` every three days so the Supabase free project does not pause.
@@ -107,7 +109,9 @@ Copy `.env.prod.example` and replace every `######`. Notes:
 
 Environment `production` (or repo) secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY`, `API_DOMAIN`.
 Repo variable: `API_DOMAIN` (for `keepalive.yml`).
-`GITHUB_TOKEN` (automatic) pushes to GHCR — no PAT needed for the push.
+`GITHUB_TOKEN` (automatic) pushes to GHCR and is also what the droplet pulls with during a deploy — no PAT
+needed for either. A deploy once failed with `error from registry: denied` because the droplet was
+pulling with a token stored on it by hand, which had expired; that is why the deploy now logs in itself.
 
 ### Rollback
 
