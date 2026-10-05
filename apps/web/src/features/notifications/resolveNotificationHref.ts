@@ -118,6 +118,14 @@ export const resolveNotificationHref = (
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
     case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
       return entityId ? outfitBuildPath(entityId) : WEB_NOTIFICATION_ROUTES.buildsList;
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return WEB_NOTIFICATION_ROUTES.offers;
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return WEB_NOTIFICATION_ROUTES.wallet;
     default:
       return null;
   }

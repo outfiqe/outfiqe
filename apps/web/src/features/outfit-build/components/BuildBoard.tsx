@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { type ComponentProps, useState } from "react";
 
 import { useAuth } from "@/features/auth";
+import { BuildOffersSection } from "@/features/outfit-offers";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useMySizeByProductType } from "@/features/saved-sizes";
@@ -266,6 +267,14 @@ export const BuildBoard = ({
                 items={toBuyableBuildItems(board, mySizeByProductType)}
               />
             )}
+            <BuildOffersSection
+              outfitId={board.id}
+              isLocked={board.status === "LOCKED"}
+              isMember={board.myRole !== "VIEWER"}
+              people={board.members
+                .filter(({ canReceiveOffers }) => canReceiveOffers)
+                .map(({ user }) => ({ id: user.id, name: user.name }))}
+            />
           </aside>
         </div>
       </div>

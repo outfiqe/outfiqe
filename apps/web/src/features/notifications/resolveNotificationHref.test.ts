@@ -47,6 +47,23 @@ describe("resolveNotificationHref for outfit builds", () => {
       expect(resolveNotificationHref(buildNotification({ type }), OWN_HANDLE)).toBe("/builds");
     }
   });
+
+  it("opens Offers for offer updates and the wallet once offer money is released", () => {
+    for (const type of [
+      "OUTFIT_OFFER_RECEIVED",
+      "OUTFIT_OFFER_ACCEPTED",
+      "OUTFIT_OFFER_DECLINED",
+      "OUTFIT_OFFER_EXPIRED",
+      "OUTFIT_OFFER_REFUNDED",
+    ] as const) {
+      expect(
+        resolveNotificationHref(buildNotification({ type, entityId: "offer-1" }), OWN_HANDLE),
+      ).toBe("/offers");
+    }
+    expect(
+      resolveNotificationHref(buildNotification({ type: "OUTFIT_OFFER_RELEASED" }), OWN_HANDLE),
+    ).toBe("/wallet");
+  });
 });
 
 describe("resolveNotificationHref", () => {

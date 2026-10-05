@@ -36,8 +36,8 @@ export const buildBoard = (overrides: Partial<OutfitBoard> = {}): OutfitBoard =>
   updatedAt: CREATED_AT,
   myRole: "OWNER",
   members: [
-    { user: SITA, role: "OWNER", isHappy: false, joinedAt: CREATED_AT },
-    { user: RAM, role: "EDITOR", isHappy: false, joinedAt: CREATED_AT },
+    { user: SITA, role: "OWNER", isHappy: false, joinedAt: CREATED_AT, canReceiveOffers: false },
+    { user: RAM, role: "EDITOR", isHappy: false, joinedAt: CREATED_AT, canReceiveOffers: true },
   ],
   slots: [
     buildSlot(),

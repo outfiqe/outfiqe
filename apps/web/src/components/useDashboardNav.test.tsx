@@ -73,6 +73,17 @@ describe("useDashboardNav", () => {
     expect([firstNavId, secondNavId]).toEqual(["overview", "builds"]);
   });
 
+  it("adds Offers after My Builds for brands and approved creators, not for plain shoppers", () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+
+    expect(navIdsFor(UserRole.BRAND_OWNER).slice(0, 3)).toEqual(["overview", "builds", "offers"]);
+    expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("offers");
+
+    mockAuth(UserRole.CUSTOMER, true);
+    const { result } = renderHook(() => useDashboardNav());
+    expect(result.current.navItems.map((item) => item.id)).toContain("offers");
+  });
+
   it("keeps Earnings and Withdraw away from shoppers who haven't earned anything", () => {
     const navIds = navIdsFor(UserRole.CUSTOMER);
 

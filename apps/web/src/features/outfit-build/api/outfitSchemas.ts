@@ -66,6 +66,7 @@ export const outfitBoardSchema = z.object({
       role: z.enum(["OWNER", "EDITOR"]),
       isHappy: z.boolean(),
       joinedAt: z.string(),
+      canReceiveOffers: z.boolean(),
     }),
   ),
   slots: z.array(outfitSlotSchema),

@@ -4,6 +4,7 @@ import type { SidebarNavItem } from "@outfiqe/components";
 import {
   Award,
   BanknoteArrowUp,
+  HandCoins,
   Languages,
   LayoutDashboard,
   LayoutGrid,
@@ -63,6 +64,13 @@ const BUILDS_NAV_ITEM: SidebarNavItem = {
   href: "/builds",
   label: "My Builds",
   icon: Shirt,
+};
+
+const OFFERS_NAV_ITEM: SidebarNavItem = {
+  id: "offers",
+  href: "/offers",
+  label: "Offers",
+  icon: HandCoins,
 };
 
 const ADDRESSES_NAV_ITEM: SidebarNavItem = {
@@ -147,9 +155,11 @@ export const useDashboardNav = (): DashboardNav => {
 
   const isBrand = state.user?.role === UserRole.BRAND_OWNER;
   const roleNavItems = isBrand ? BRAND_NAV : navItemsForShopper(isCreator, canEarn);
+  const canUseOffers = isBrand || isCreator;
+  const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
   const baseNavItems = isOutfitBuildOn
     ? roleNavItems.flatMap((item) =>
-        item === OVERVIEW_NAV_ITEM ? [item, BUILDS_NAV_ITEM] : [item],
+        item === OVERVIEW_NAV_ITEM ? [item, ...outfitBuildNavItems] : [item],
       )
     : roleNavItems;
   const showCrmLink = hasCrmAccess && isOnTenantHost;

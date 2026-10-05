@@ -295,6 +295,68 @@
       "summary": "{count, plural, one {# item} other {# items}} · {total}",
       "youStarted": "You started an outfit build",
       "startedBy": "{name} started an outfit build"
+    },
+    "offer": {
+      "panelTitle": "Offer to pay for a post",
+      "description": "Pay a creator on this build to post it as a look. Your money is held until the look has stayed up for the hold period, and refunded if they say no or run out of time.",
+      "noCreators": "There's no creator on this build to send an offer to.",
+      "creator": "Creator",
+      "pickCreator": "Pick a creator",
+      "pickCreatorFirst": "Pick the creator you want to pay.",
+      "amount": "Amount (Rs)",
+      "wholeRupees": "Enter the amount in whole rupees.",
+      "payWith": "Pay with",
+      "method": {
+        "KHALTI": "Khalti",
+        "ESEWA": "eSewa"
+      },
+      "note": "Note to the creator (optional)",
+      "send": "Pay and send offer",
+      "listTitle": "Offers",
+      "loadFailed": "Couldn't load offers. Try again.",
+      "loadMore": "Load more",
+      "emptyForBuild": "No offers on this build yet.",
+      "emptySent": "You haven't sent any offers yet. Open a locked build to offer a creator money to post it.",
+      "emptyReceived": "No offers yet. When a brand offers to pay you to post a build, it shows up here.",
+      "pageTitle": "Offers",
+      "pageDescriptionSent": "Money you've offered creators to post builds as looks.",
+      "pageDescriptionReceived": "Brands offering to pay you to post builds as looks.",
+      "fromBrand": "From {brand}",
+      "toCreator": "To {name}",
+      "answerBy": "Answer by {date}",
+      "postBy": "Post the look by {date}",
+      "releaseAt": "Money is released on {date} if the look stays up",
+      "refundPending": "Refund in progress.",
+      "refunded": "Refunded.",
+      "manualRefund": "Our team is refunding this by hand. It can take a few working days.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancel": "Cancel offer",
+      "finishPayment": "Finish payment",
+      "status": {
+        "PAYMENT_PENDING": "Waiting for payment",
+        "PAYMENT_FAILED": "Payment failed",
+        "AWAITING_RESPONSE": "Waiting for answer",
+        "ACCEPTED": "Accepted",
+        "POSTED": "Posted",
+        "RELEASED": "Paid out",
+        "DECLINED": "Declined",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Expired",
+        "LOOK_REMOVED": "Look removed"
+      },
+      "payment": {
+        "checking": "Checking your payment…",
+        "paidTitle": "Offer sent",
+        "paidBody": "We've told {name} about your offer.",
+        "backToBuild": "Back to the build",
+        "failedTitle": "Payment didn't go through",
+        "failedBody": "Your offer wasn't sent. You haven't been charged, or the charge will be reversed.",
+        "retry": "Try paying again",
+        "viewOffers": "See my offers",
+        "stillCheckingTitle": "Still checking your payment",
+        "stillCheckingBody": "This is taking longer than usual. We'll keep checking, and the offer will show as sent once the payment is confirmed."
+      }
     }
   }
 }

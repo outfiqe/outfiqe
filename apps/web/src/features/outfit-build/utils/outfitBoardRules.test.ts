@@ -59,8 +59,20 @@ const board = (slots: OutfitSlot[]): OutfitBoard => ({
   updatedAt: "2026-09-30T10:00:00.000Z",
   myRole: "OWNER",
   members: [
-    { user: SITA, role: "OWNER", isHappy: true, joinedAt: "2026-09-30T10:00:00.000Z" },
-    { user: RAM, role: "EDITOR", isHappy: true, joinedAt: "2026-09-30T10:00:00.000Z" },
+    {
+      user: SITA,
+      role: "OWNER",
+      isHappy: true,
+      joinedAt: "2026-09-30T10:00:00.000Z",
+      canReceiveOffers: false,
+    },
+    {
+      user: RAM,
+      role: "EDITOR",
+      isHappy: true,
+      joinedAt: "2026-09-30T10:00:00.000Z",
+      canReceiveOffers: false,
+    },
   ],
   slots,
   itemCount: 0,

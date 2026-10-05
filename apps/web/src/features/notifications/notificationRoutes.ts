@@ -10,6 +10,7 @@ export const WEB_NOTIFICATION_ROUTES = {
   tagReviews: "/tag-reviews",
   messagesList: "/messages",
   buildsList: "/builds",
+  offers: "/offers",
   supportList: "/support",
 } as const;
 
