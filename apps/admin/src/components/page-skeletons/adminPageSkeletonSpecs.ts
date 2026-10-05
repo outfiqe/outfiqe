@@ -540,9 +540,9 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     blocks: [
       {
         kind: "section",
-        title: "Commission tiers",
+        title: "Creator Look commission",
         description:
-          "Fixed commission a creator earns per attributed sale, by the sold item's price band.",
+          "Fixed commission a creator earns when someone buys from their post or link, by the sold item's price band.",
         blocks: [
           {
             kind: "formCard",
@@ -569,6 +569,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     sourceFiles: [
       `${FEATURES_DIR}/commissions/CommissionsPage.tsx`,
       `${FEATURES_DIR}/commissions/CommissionTiersSection.tsx`,
+      `${FEATURES_DIR}/commissions/commissionScopeCopy.ts`,
       `${FEATURES_DIR}/commissions/CommissionsListSection.tsx`,
     ],
   },

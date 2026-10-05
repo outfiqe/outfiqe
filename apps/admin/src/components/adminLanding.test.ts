@@ -45,6 +45,11 @@ const EVERY_SECTION_BUT_SUPPORT = [
   "organizations",
   "team",
   "announcements",
+  "outfit-builds",
+  "platform-switches",
+  "platform-settings",
+  "platform-audit",
+  "platform-jobs",
 ];
 
 const buildUser = (overrides: Partial<AdminUser> = {}): AdminUser => ({

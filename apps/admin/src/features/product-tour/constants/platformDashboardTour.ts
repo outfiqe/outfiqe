@@ -66,7 +66,7 @@ const GROUP_STEPS: PlatformTourStep[] = [
     groupKey: "moderation",
     anchorSelector: groupSelector("moderation"),
     title: "Moderation & Support",
-    body: "Everything that needs a human look: support requests, product reviews, creator tag reviews and reports, flagged content, and user accounts.",
+    body: "Everything that needs a human look: support requests, product reviews, creator tag reviews and reports, flagged content, outfit builds, and user accounts.",
   },
   {
     id: "finance",
@@ -87,7 +87,7 @@ const GROUP_STEPS: PlatformTourStep[] = [
     groupKey: "platform-settings",
     anchorSelector: groupSelector("platform-settings"),
     title: "Platform Settings",
-    body: "Feature flags that turn functionality on or off platform-wide, and, for co-founders only, control over which parts of this navigation other admins can see.",
+    body: "Feature flags and switches that turn functionality on or off, platform settings, the audit log, background jobs and their health, and, for co-founders only, control over which parts of this navigation other admins can see.",
   },
 ];
 
