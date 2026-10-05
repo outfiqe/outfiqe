@@ -13,6 +13,9 @@ import { SITA } from "../testing/outfitFixtures";
 import { PublicBuildsFeed } from "./PublicBuildsFeed";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 const ok = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
@@ -68,7 +71,17 @@ const renderFeed = () => {
   );
 };
 
+const pickFromMenu = async (
+  user: ReturnType<typeof userEvent.setup>,
+  menuName: RegExp,
+  optionName: string,
+) => {
+  await user.click(screen.getByRole("button", { name: menuName }));
+  await user.click(await screen.findByRole("radio", { name: optionName }));
+};
+
 beforeEach(() => {
+  window.history.replaceState(null, "", "/explore?tab=builds");
   vi.mocked(useAuth).mockReturnValue({
     state: { user: { id: "viewer-1" } },
     isAuthenticated: true,
@@ -104,20 +117,36 @@ describe("PublicBuildsFeed", () => {
 
     expect(await screen.findByText("No builds match yet.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Everything in stock" }));
-    await user.click(await screen.findByRole("button", { name: "Festive" }));
-    await user.click(screen.getByRole("button", { name: "Rs 5,000–10,000" }));
-    await user.selectOptions(screen.getByLabelText("Sort by"), "price-low");
+    await pickFromMenu(user, /^Style/, "Festive");
+    await pickFromMenu(user, /^Price/, "Rs 5,000–10,000");
+    await pickFromMenu(user, /^Sort by/, "Price: low to high");
 
     await waitFor(() =>
       expect(requestedSearches.at(-1)).toBe(
         "?category=festive&minPrice=5000&maxPrice=9999&inStockOnly=true&sort=price-low",
       ),
     );
-    expect(screen.getByRole("button", { name: "Festive" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "All styles" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
+    expect(screen.getByRole("button", { name: /Style: Festive/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Price: Rs 5,000–10,000/ })).toBeInTheDocument();
+    expect(window.location.search).toBe(
+      "?tab=builds&style=festive&price=5k-10k&inStock=true&sort=price-low",
     );
+  });
+
+  it("starts from the filters in the link", async () => {
+    window.history.replaceState(null, "", "/explore?tab=builds&style=festive&price=over-10k");
+    const requestedSearches: string[] = [];
+    mswServer.use(
+      http.get("/api/outfits/public", ({ request }) => {
+        requestedSearches.push(new URL(request.url).search);
+        return ok({ items: [], nextCursor: null });
+      }),
+    );
+
+    renderFeed();
+
+    await waitFor(() => expect(requestedSearches[0]).toBe("?category=festive&minPrice=10000"));
+    expect(screen.getByRole("button", { name: /Price: Rs 10,000\+/ })).toBeInTheDocument();
   });
 
   it("explains an empty filtered feed and clears the filters but keeps the sort", async () => {
@@ -131,18 +160,17 @@ describe("PublicBuildsFeed", () => {
     renderFeed();
     const user = userEvent.setup();
 
-    await user.selectOptions(await screen.findByLabelText("Sort by"), "most-cheriqed");
-    await user.click(screen.getByRole("button", { name: "Under Rs 5,000" }));
+    await screen.findByText("No builds match yet.");
+    await pickFromMenu(user, /^Sort by/, "Most cheriqed");
+    await pickFromMenu(user, /^Price/, "Under Rs 5,000");
     const emptyMessage = await screen.findByText("No builds match these filters.");
     const emptyState = emptyMessage.parentElement ?? document.body;
     await user.click(within(emptyState).getByRole("button", { name: "Clear filters" }));
 
     await waitFor(() => expect(requestedSearches.at(-1)).toBe("?sort=most-cheriqed"));
-    expect(screen.getByRole("button", { name: "Any price" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: /^Price$/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
+    expect(window.location.search).toBe("?tab=builds&sort=most-cheriqed");
   });
 
   it("opens a build in a pop-up where people can cheriq it and chime", async () => {

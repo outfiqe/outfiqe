@@ -13,7 +13,7 @@ vi.mock("@/features/products/hooks/useProductTypes", () => ({
 const mockProductTypes = (overrides: Partial<ReturnType<typeof useProductTypes>>) => {
   vi.mocked(useProductTypes).mockReturnValue({
     data: undefined,
-    isLoading: false,
+    isPending: false,
     ...overrides,
   } as ReturnType<typeof useProductTypes>);
 };
@@ -31,7 +31,7 @@ const renderFilters = (
 
 describe("CategoryTypeFilters", () => {
   it("keeps the All filter visible and shows placeholders while product types load", () => {
-    mockProductTypes({ isLoading: true });
+    mockProductTypes({ isPending: true });
 
     const { container } = renderFilters();
 

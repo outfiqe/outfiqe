@@ -19,9 +19,9 @@ const BuildCardBody = ({ outfitId }: { outfitId: string }) => {
   const t = useTranslations("outfitBuild.card");
   const tBudget = useTranslations("outfitBuild.budget");
   const tBoard = useTranslations("outfitBuild.board");
-  const { data: outfit, isLoading, isError } = useOutfit(outfitId);
+  const { data: outfit, isPending, isError } = useOutfit(outfitId);
 
-  if (isLoading) return <Skeleton className="h-24 w-64 rounded-xl" />;
+  if (isPending) return <Skeleton className="h-24 w-64 rounded-xl" />;
   if (isError || !outfit) {
     return <p className="text-sm text-muted-foreground">{t("unavailable")}</p>;
   }

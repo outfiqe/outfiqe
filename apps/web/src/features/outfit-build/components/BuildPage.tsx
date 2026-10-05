@@ -15,10 +15,10 @@ const MY_BUILDS_PATH = "/builds";
 
 export const BuildPage = ({ outfitId }: { outfitId: string }) => {
   const t = useTranslations("outfitBuild.board");
-  const { data: outfit, isLoading, isError } = useOutfit(outfitId);
+  const { data: outfit, isPending, isError } = useOutfit(outfitId);
   const { isReconnecting, wasRemoved } = useOutfitLiveSync(outfitId, outfit?.kind === "board");
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div aria-busy className="space-y-4">
         <Skeleton className="h-8 w-64" />

@@ -17,7 +17,7 @@ export const PostAsLookPanel = ({ board }: { board: OutfitBoard }) => {
   const { state, isCreator } = useAuth();
   const [isPosting, setIsPosting] = useState(false);
   const canPost = isCreator && board.myRole !== "VIEWER" && board.status === "LOCKED";
-  const { data: myLook, isLoading, isError } = useMyBuildLook(board.id, canPost);
+  const { data: myLook, isPending, isError } = useMyBuildLook(board.id, canPost);
 
   if (!canPost) return null;
 
@@ -32,12 +32,12 @@ export const PostAsLookPanel = ({ board }: { board: OutfitBoard }) => {
       <h2 id="post-as-look-title" className="text-sm font-semibold text-foreground">
         {t("panelTitle")}
       </h2>
-      {isLoading && <Skeleton className="h-9 w-40 rounded-lg" />}
+      {isPending && <Skeleton className="h-9 w-40 rounded-lg" />}
       {isError && <p className="text-sm text-muted-foreground">{t("statusFailed")}</p>}
-      {!isLoading && myLook?.isOutdated && (
+      {!isPending && myLook?.isOutdated && (
         <p className="text-sm text-muted-foreground">{t("newVersionAvailable")}</p>
       )}
-      {!isLoading && hasCurrentLook && (
+      {!isPending && hasCurrentLook && (
         <p className="text-sm text-muted-foreground">
           {t("alreadyPosted")}{" "}
           {handle && (
@@ -50,7 +50,7 @@ export const PostAsLookPanel = ({ board }: { board: OutfitBoard }) => {
           )}
         </p>
       )}
-      {!isLoading && !hasCurrentLook && (
+      {!isPending && !hasCurrentLook && (
         <Button onClick={() => setIsPosting(true)}>
           {myLook?.isOutdated ? t("postNewVersion") : t("postAsLook")}
         </Button>

@@ -29,7 +29,7 @@ export const BuildOffersSection = ({
   const titleId = useId();
   const { isBrandOwner, isCreator, state } = useAuth();
   const canSeeOffers = isBrandOwner || isCreator;
-  const { data: offers, isLoading, isError } = useBuildOffers(outfitId, canSeeOffers);
+  const { data: offers, isPending, isError } = useBuildOffers(outfitId, canSeeOffers);
 
   if (!canSeeOffers) return null;
 
@@ -45,9 +45,9 @@ export const BuildOffersSection = ({
         <h2 id={titleId} className="text-sm font-semibold text-foreground">
           {t("listTitle")}
         </h2>
-        {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
+        {isPending && <Skeleton className="h-24 w-full rounded-xl" />}
         {isError && <p className="text-sm text-muted-foreground">{t("loadFailed")}</p>}
-        {!isLoading && !isError && !hasOffers && (
+        {!isPending && !isError && !hasOffers && (
           <p className="text-sm text-muted-foreground">{t("emptyForBuild")}</p>
         )}
         {offers?.map((offer) => (

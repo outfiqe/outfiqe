@@ -446,7 +446,11 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         </div>
       </div>
 
-      <ProfileBuildsTabs primaryLabel="Drops" buildFilters={{ contributorId: userId }}>
+      <ProfileBuildsTabs
+        primaryTab="drops"
+        primaryLabel="Drops"
+        buildFilters={{ contributorId: userId }}
+      >
         {isLoading ? (
           <CreatorPostGridSkeleton />
         ) : posts.length === 0 ? (

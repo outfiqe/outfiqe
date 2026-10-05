@@ -65,9 +65,9 @@ const OfferList = ({
 
 export const OffersPage = () => {
   const t = useTranslations("outfitBuild.offer");
-  const { isBrandOwner } = useAuth();
-  const received = useReceivedOffers(!isBrandOwner);
-  const sent = useSentOffers(isBrandOwner);
+  const { isAuthResolved, isBrandOwner } = useAuth();
+  const received = useReceivedOffers(isAuthResolved && !isBrandOwner);
+  const sent = useSentOffers(isAuthResolved && isBrandOwner);
   const shownOffers = isBrandOwner ? sent : received;
 
   return (
@@ -80,7 +80,7 @@ export const OffersPage = () => {
       </div>
       <OfferList
         offers={shownOffers.data?.pages.flatMap((page) => page.items) ?? []}
-        isLoading={shownOffers.isLoading}
+        isLoading={!isAuthResolved || shownOffers.isPending}
         isError={shownOffers.isError}
         hasNextPage={shownOffers.hasNextPage}
         isFetchingNextPage={shownOffers.isFetchingNextPage}

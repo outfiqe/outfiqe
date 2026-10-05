@@ -26,10 +26,15 @@ flow.
 - `components/OffersPage.tsx` — the dashboard `/offers` page: a brand account sees the offers it
   sent, everyone else the offers they received (a brand account can never receive one). Linked
   from the dashboard nav ("Offers") for brands and approved creators while Outfit Build is on,
-  and from every offer notification; released money notifications go to `/wallet`.
+  and from every offer notification; released money notifications go to `/wallet`. It waits for
+  the signed-in account to load before choosing which list to fetch, and shows its skeleton (and
+  `app/(dashboard)/offers/loading.tsx` during navigation) until that list has data. Without that, a
+  refresh showed "no offers" first, and a brand account briefly asked for received offers.
 - `testing/offerFixtures.ts` — a full `Offer` builder and the API envelope helper for tests.
 - `components/OfferPaymentScreen.tsx` — the page the gateway returns to
   (`app/offers/payment/[provider]/callback/[offerId]`, and `/failed`).
+  `components/OfferPaymentScreenSkeleton.tsx` is what shows while it loads: the route's
+  `loading.tsx` and the pages' `Suspense` fallback both use it, so the screen is never blank.
 
 ## Funnel
 

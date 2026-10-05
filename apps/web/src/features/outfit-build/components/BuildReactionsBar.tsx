@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, cn } from "@outfiqe/design-system";
-import { Bookmark, Heart } from "lucide-react";
+import { Button, CheriqIcon, cn } from "@outfiqe/design-system";
+import { Bookmark } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -38,10 +38,7 @@ export const BuildReactionsBar = ({ build }: { build: PublicBuildCard }) => {
         aria-pressed={build.isLiked}
         onClick={() => toggleLike.mutate(!build.isLiked)}
       >
-        <Heart
-          className={cn("size-4", build.isLiked && "fill-current text-destructive")}
-          aria-hidden
-        />
+        <CheriqIcon className="size-4" isCheriqed={build.isLiked} />
         {build.isLiked ? t("liked") : t("like")}
         <span className="text-muted-foreground">{build.likeCount}</span>
       </Button>

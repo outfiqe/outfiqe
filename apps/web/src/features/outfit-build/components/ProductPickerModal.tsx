@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn, Input, Modal, Skeleton } from "@outfiqe/design-system";
+import { Button, FilterChip, Input, Modal, ScrollRow, Skeleton } from "@outfiqe/design-system";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -40,7 +40,7 @@ const ReplacementSuggestions = ({
 }) => {
   const t = useTranslations("outfitBuild.picker");
   const tBudget = useTranslations("outfitBuild.budget");
-  const { data: suggestions = [], isLoading, isError } = useReplacementSuggestions(target);
+  const { data: suggestions = [], isPending, isError } = useReplacementSuggestions(target);
 
   return (
     <section aria-labelledby="replacement-suggestions-title" className="space-y-2">
@@ -50,10 +50,10 @@ const ReplacementSuggestions = ({
       >
         {t("suggestionsTitle")}
       </h3>
-      <div aria-live="polite" aria-busy={isLoading} className="space-y-2">
-        {isLoading && <Skeleton className="h-16 w-full rounded-lg" />}
+      <div aria-live="polite" aria-busy={isPending} className="space-y-2">
+        {isPending && <Skeleton className="h-16 w-full rounded-lg" />}
         {isError && <p className="text-sm text-muted-foreground">{t("suggestionsLoadFailed")}</p>}
-        {!isLoading && !isError && suggestions.length === NO_PRODUCTS && (
+        {!isPending && !isError && suggestions.length === NO_PRODUCTS && (
           <p className="text-sm text-muted-foreground">{t("noSuggestions")}</p>
         )}
         {suggestions.map((suggestion) => (
@@ -92,7 +92,7 @@ export const ProductPickerModal = ({
     productTypes.map((productType) => [productType.slug, productType.id]),
   );
 
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+  const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useSlotProductSearch({ typeSlug, searchText, isEnabled: true });
   const products = data?.pages.flatMap((page) => page.products) ?? [];
 
@@ -129,30 +129,35 @@ export const ProductPickerModal = ({
         />
 
         {(allowedTypes.length > SINGLE_TYPE || slot.acceptsAnyProductType) && (
-          <div role="group" aria-label={t("typeFilterLabel")} className="flex flex-wrap gap-2">
+          <ScrollRow
+            label={t("typeFilterLabel")}
+            scrollBackLabel={t("earlierTypes")}
+            scrollForwardLabel={t("moreTypes")}
+            surface="card"
+          >
             {slot.acceptsAnyProductType && (
-              <TypeChip isSelected={typeSlug === null} onSelect={() => setTypeSlug(null)}>
+              <FilterChip isSelected={typeSlug === null} onClick={() => setTypeSlug(null)}>
                 {t("allTypes")}
-              </TypeChip>
+              </FilterChip>
             )}
             {allowedTypes.map((productType) => (
-              <TypeChip
+              <FilterChip
                 key={productType.id}
                 isSelected={typeSlug === productType.slug}
-                onSelect={() => setTypeSlug(productType.slug)}
+                onClick={() => setTypeSlug(productType.slug)}
               >
                 {productType.label}
-              </TypeChip>
+              </FilterChip>
             ))}
-          </div>
+          </ScrollRow>
         )}
 
         <div
           aria-live="polite"
-          aria-busy={isLoading}
+          aria-busy={isPending}
           className="max-h-[55vh] space-y-2 overflow-y-auto"
         >
-          {isLoading &&
+          {isPending &&
             Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
               <Skeleton key={index} className="h-16 w-full rounded-lg" />
             ))}
@@ -161,7 +166,7 @@ export const ProductPickerModal = ({
               {t("loadFailed")}
             </p>
           )}
-          {!isLoading && !isError && products.length === NO_PRODUCTS && (
+          {!isPending && !isError && products.length === NO_PRODUCTS && (
             <p className="py-6 text-center text-sm text-muted-foreground">{t("noResults")}</p>
           )}
           {products.map((product) => (
@@ -212,29 +217,5 @@ const ProductOption = ({
       <span className="block truncate text-sm font-medium text-foreground">{name}</span>
       <span className="block truncate text-xs text-muted-foreground">{details}</span>
     </span>
-  </button>
-);
-
-const TypeChip = ({
-  isSelected,
-  onSelect,
-  children,
-}: {
-  isSelected: boolean;
-  onSelect: () => void;
-  children: React.ReactNode;
-}) => (
-  <button
-    type="button"
-    aria-pressed={isSelected}
-    onClick={onSelect}
-    className={cn(
-      "cursor-pointer rounded-full border px-3 py-1 text-xs font-medium",
-      isSelected
-        ? "border-foreground bg-foreground text-background"
-        : "border-border text-muted-foreground hover:text-foreground",
-    )}
-  >
-    {children}
   </button>
 );

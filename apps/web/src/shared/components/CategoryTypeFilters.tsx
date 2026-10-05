@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, ScrollRow, Skeleton } from "@outfiqe/design-system";
 
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { cn } from "@/shared/lib/cn";
@@ -28,32 +28,39 @@ export const CategoryTypeFilters = ({
   ];
 
   return (
-    <div className="flex flex-wrap gap-2" aria-busy={isNavigating}>
-      {filters.map((filter) => {
-        const isActive = filter.id === activeType;
+    <div aria-busy={isNavigating}>
+      <ScrollRow
+        label="Filter by type"
+        scrollBackLabel="Earlier types"
+        scrollForwardLabel="More types"
+      >
+        {filters.map((filter) => {
+          const isActive = filter.id === activeType;
 
-        return (
-          <Button
-            key={filter.id}
-            variant="ghost"
-            size="sm"
-            onClick={() => onSelectType(filter.id)}
-            className={cn(
-              "h-auto rounded-full border px-3 py-1.5 font-medium sm:px-4 sm:py-2",
-              isActive
-                ? "border-foreground bg-foreground text-background hover:bg-foreground hover:text-background"
-                : "border-border text-muted-foreground hover:border-foreground hover:bg-transparent hover:text-foreground",
-            )}
-          >
-            {filter.label}
-          </Button>
-        );
-      })}
+          return (
+            <Button
+              key={filter.id}
+              variant="ghost"
+              size="sm"
+              aria-pressed={isActive}
+              onClick={() => onSelectType(filter.id)}
+              className={cn(
+                "h-auto shrink-0 rounded-full border px-3 py-1.5 font-medium sm:px-4 sm:py-2",
+                isActive
+                  ? "border-foreground bg-foreground text-background hover:bg-foreground hover:text-background"
+                  : "border-border text-muted-foreground hover:border-foreground hover:bg-transparent hover:text-foreground",
+              )}
+            >
+              {filter.label}
+            </Button>
+          );
+        })}
 
-      {productTypes.isLoading &&
-        Array.from({ length: TYPE_FILTER_PLACEHOLDER_COUNT }).map((_, index) => (
-          <Skeleton key={index} className="h-[38px] w-20 rounded-full" />
-        ))}
+        {productTypes.isPending &&
+          Array.from({ length: TYPE_FILTER_PLACEHOLDER_COUNT }).map((_, index) => (
+            <Skeleton key={index} className="h-[38px] w-20 shrink-0 rounded-full" />
+          ))}
+      </ScrollRow>
     </div>
   );
 };
