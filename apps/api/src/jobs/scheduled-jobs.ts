@@ -49,6 +49,8 @@ import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
 import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
+import { OUTBOX_BACKLOG_ALERT } from "#modules/platform-jobs/platform-jobs.constants.js";
+import { runOutboxBacklogCheck } from "#modules/platform-jobs/platform-jobs.monitor.js";
 import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import { SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS } from "#modules/platform-suspensions/platform-suspensions.constants.js";
@@ -89,6 +91,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "outbox-retention-sweep",
     run: runOutboxRetentionSweep,
     intervalMs: OUTBOX_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "outbox-backlog-check",
+    run: runOutboxBacklogCheck,
+    intervalMs: OUTBOX_BACKLOG_ALERT.CHECK_INTERVAL_MS,
   },
   {
     name: "idempotency-key-retention-sweep",

@@ -33,6 +33,7 @@ const ANNOUNCEMENTS_READ = [
   "platform:announcements:manage",
 ] as const;
 const BRANDS_READ = ["platform:brands:read", "platform:brands:manage"] as const;
+const BUILDS_READ = ["platform:builds:read", "platform:builds:manage"] as const;
 const CATALOG_READ = ["platform:catalog:read", "platform:catalog:manage"] as const;
 const COMMISSIONS_READ = ["platform:commissions:read", "platform:commissions:manage"] as const;
 const COUPONS_READ = ["platform:coupons:read", "platform:coupons:manage"] as const;
@@ -264,6 +265,17 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("get", "/api/platform/permissions", "platform:team:manage"),
     route("get", "/api/platform/roles", "platform:team:manage"),
     route("get", "/api/platform/team", "platform:team:manage"),
+    route("get", "/api/platform/jobs", "platform:jobs:manage"),
+    route("post", `/api/platform/jobs/outbox/${SOME_ID}/retry`, "platform:jobs:manage"),
+    route("post", "/api/platform/jobs/queues/outbox-notify/retry-failed", "platform:jobs:manage"),
+  ],
+  outfitBuilds: [
+    route("get", "/api/platform/builds", ...BUILDS_READ),
+    route("get", "/api/platform/builds/metrics", ...BUILDS_READ),
+    route("get", `/api/platform/builds/${SOME_ID}`, ...BUILDS_READ),
+    route("get", `/api/platform/builds/${SOME_ID}/history`, ...BUILDS_READ),
+    route("post", `/api/platform/builds/${SOME_ID}/unlock`, "platform:builds:manage"),
+    route("post", `/api/platform/builds/${SOME_ID}/archive`, "platform:builds:manage"),
   ],
 };
 

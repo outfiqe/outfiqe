@@ -70,6 +70,7 @@ import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
+import { outfitAdminRoutes } from "./modules/outfit-admin/outfit-admin.routes.js";
 import { outfitOfferRoutes } from "./modules/outfit-offers/outfit-offer.routes.js";
 import { outfitSlotTypeRoutes } from "./modules/outfit-slot-types/outfit-slot-type.routes.js";
 import { outfitRoutes } from "./modules/outfits/outfit.routes.js";
@@ -78,6 +79,7 @@ import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.rou
 import { platformFeaturesRoutes } from "./modules/platform-features/platform-features.routes.js";
 import { impersonationRequestAudit } from "./modules/platform-impersonation/platform-impersonation.audit.js";
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
+import { platformJobsRoutes } from "./modules/platform-jobs/platform-jobs.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { requireCoFounder } from "./modules/platform-nav-access/platform-nav-access.middleware.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
@@ -219,6 +221,8 @@ export const createApp = () => {
   app.use("/api/platform", platformFeaturesRoutes);
   app.use("/api/platform", platformSettingsRoutes);
   app.use("/api/platform", featureFlagsRoutes);
+  app.use("/api/platform", outfitAdminRoutes);
+  app.use("/api/platform", platformJobsRoutes);
   app.use("/api/platform", platformImpersonationRoutes);
   app.use("/api/platform", platformNavAccessRoutes);
   app.use("/api/platform", platformRolesRoutes);

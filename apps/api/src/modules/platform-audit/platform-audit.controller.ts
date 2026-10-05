@@ -8,10 +8,18 @@ import { platformAudit } from "./platform-audit.service.js";
 
 export const platformAuditController = {
   async listAuditLogs(_req: Request, res: Response) {
-    const { organizationId, actorUserId, action, cursor, limit } =
+    const { organizationId, actorUserId, action, targetType, targetId, cursor, limit } =
       validated.query<ListPlatformAuditQuery>(res);
 
-    const page = await platformAudit.list({ organizationId, actorUserId, action, cursor, limit });
+    const page = await platformAudit.list({
+      organizationId,
+      actorUserId,
+      action,
+      targetType,
+      targetId,
+      cursor,
+      limit,
+    });
     sendSuccess(res, page, "Platform audit log.");
   },
 };

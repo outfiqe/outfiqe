@@ -54,6 +54,7 @@ export const platformAuditRepository = {
     if (filters.actorUserId) where.actorUserId = filters.actorUserId;
     if (filters.action) where.action = filters.action;
     if (filters.targetType) where.targetType = filters.targetType;
+    if (filters.targetId) where.targetId = filters.targetId;
     if (filters.metadataMatch) {
       where.metadata = { path: [filters.metadataMatch.key], equals: filters.metadataMatch.value };
     }

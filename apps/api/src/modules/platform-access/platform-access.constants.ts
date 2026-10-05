@@ -189,6 +189,21 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Turn platform features on or off and manage who can see them",
     group: "Platform",
   },
+  {
+    key: "platform:builds:read",
+    label: "View outfit builds, their history and build metrics",
+    group: "Outfit Build",
+  },
+  {
+    key: "platform:builds:manage",
+    label: "Unlock or archive outfit builds",
+    group: "Outfit Build",
+  },
+  {
+    key: "platform:jobs:manage",
+    label: "See background jobs and retry failed ones",
+    group: "Platform",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

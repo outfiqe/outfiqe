@@ -60,8 +60,9 @@ fails open (`next()`) on an internal error so a config-store blip never blanks a
   route — same stance as the withdraw-policy bootstrap work.
 - **Server-enforced vs. nav-only.** Only `SERVER_ENFORCED_PLATFORM_NAV_KEYS` (money + ops:
   gamification, commissions, platform-commission, withdraw-requests, withdraw-policy,
-  financial-rollup, impersonation, feature flags, team, organizations) get `requirePlatformNavItem`
-  on their routes. The pure-catalog keys (products, collections, orders, …) are navbar declutter
+  financial-rollup, impersonation, feature flags, team, organizations, feature switches, platform
+  settings, jobs & health) get `requirePlatformNavItem` on their routes. Outfit builds and the
+  audit log are nav-only: their routes are already limited by their own permissions. The pure-catalog keys (products, collections, orders, …) are navbar declutter
   only — every platform admin already has that access, so there's nothing to guard server-side.
 - **`gamification` is a cluster.** One nav key, but its screens hit five API modules — `xp`,
   `badges`, `challenges`, `creator-leaderboard`, `creator-competitions` — so the guard is added to

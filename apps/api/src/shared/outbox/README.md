@@ -58,7 +58,8 @@ fails fast instead of stalling.
 
 **Failures are recorded, not retried forever.** A row that can't be published gets its `attempts`
 counted and its error saved in `lastError`, and is reported to Sentry. After 10 attempts the relay
-stops picking it up; it stays in the table for the admin jobs screen. A BullMQ job that fails
+stops picking it up; it stays in the table, and the admin Jobs & health screen
+(`../../modules/platform-jobs`) lists it and can reset it so the relay tries again. A BullMQ job that fails
 5 times, with exponential backoff between tries, stays in the queue's failed set and is reported
 to Sentry. Bull Board (`/internal/queues`, co-founders only) shows every outbox queue.
 

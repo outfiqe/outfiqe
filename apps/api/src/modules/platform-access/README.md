@@ -17,6 +17,13 @@ as platform staff, and gives every platform route an explicit permission, so a r
   `CONTENT_MODERATE_PERMISSION_KEY`). Most sections have a read key and a manage key
   (`platform:catalog:read` / `platform:catalog:manage`, and so on for orders, users, creators,
   brands, withdrawals, coupons, commissions, gamification, organizations and announcements).
+  Outfit Build adds `platform:builds:read` / `platform:builds:manage` (view builds and metrics /
+  unlock and archive) and `platform:jobs:manage` (Jobs & health). The PRD's Support, Moderator,
+  Finance and Super admin roles are custom roles built from these: Support holds
+  `platform:builds:read`; Moderator adds `platform:builds:manage` and `platform:content:moderate`;
+  Finance adds `platform:commissions:manage` (both Build and Creator Look tiers); Super admin holds
+  everything, including `platform:flags:manage`, `platform:settings:manage` and
+  `platform:jobs:manage`.
 - `platform-access.service.ts` — `resolveAccess(userId)` returns `{ hasStaffAccess,
 hasFullAccess, permissionKeys }` from the user's active membership in the platform
   organization; `permissionKeysFor`, `principalHasPermission`, and
