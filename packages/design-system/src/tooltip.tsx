@@ -4,6 +4,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
 
 const DEFAULT_OPEN_DELAY_MS = 200;
 
@@ -18,7 +19,8 @@ export const TooltipContent = ({ className, sideOffset = 6, ...props }: TooltipC
     <TooltipPrimitive.Content
       sideOffset={sideOffset}
       className={cn(
-        "z-50 max-w-xs rounded-lg border border-border bg-card px-3 py-2 text-xs leading-relaxed text-foreground shadow-lg",
+        "max-w-xs rounded-lg border border-border bg-card px-3 py-2 text-xs leading-relaxed text-foreground shadow-lg",
+        OVERLAY_LAYER.FLOATING,
         className,
       )}
       {...props}

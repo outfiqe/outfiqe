@@ -2,9 +2,11 @@
 
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Drawer as VaulDrawer } from "vaul";
 
 import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
 import { useMediaQuery } from "./use-media-query";
 
 const MOBILE_SHEET_MEDIA_QUERY = "(max-width: 639.98px)";
@@ -48,12 +50,13 @@ const ModalSheet = ({
   return (
     <VaulDrawer.Root open={open} onOpenChange={handleOpenChange}>
       <VaulDrawer.Portal>
-        <VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/60" />
+        <VaulDrawer.Overlay className={cn("fixed inset-0 bg-black/60", OVERLAY_LAYER.MODAL)} />
 
         <VaulDrawer.Content
           aria-label={title ? undefined : ariaLabel}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-border bg-card shadow-xl outline-none",
+            "fixed inset-x-0 bottom-0 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-border bg-card shadow-xl outline-none",
+            OVERLAY_LAYER.MODAL,
             className,
           )}
         >
@@ -136,9 +139,12 @@ const ModalDialog = ({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:px-4"
+      className={cn(
+        "fixed inset-0 flex items-end justify-center bg-black/60 sm:items-center sm:px-4",
+        OVERLAY_LAYER.MODAL,
+      )}
       onClick={onClose}
     >
       <div
@@ -171,13 +177,14 @@ const ModalDialog = ({
           </div>
         )}
 
-        <div className={cn("flex-1 overflow-y-auto px-6 py-5", SCROLL_AREA_CLASSES)}>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", SCROLL_AREA_CLASSES)}>
           {children}
         </div>
 
         {footer && <div className="shrink-0 border-t border-border px-6 py-4">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

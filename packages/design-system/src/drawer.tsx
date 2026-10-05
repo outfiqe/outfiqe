@@ -5,6 +5,7 @@ import { type CSSProperties, type ReactNode, useMemo, useSyncExternalStore } fro
 import { Drawer as VaulDrawer } from "vaul";
 
 import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
 import { useMediaQuery } from "./use-media-query";
 
 const MOBILE_SHEET_MEDIA_QUERY = "(max-width: 639.98px)";
@@ -89,7 +90,7 @@ export const Drawer = ({
             aria-hidden
             data-testid="drawer-backdrop"
             onClick={onClose}
-            className="fixed inset-0 z-[60] bg-black/55 sm:hidden"
+            className={cn("fixed inset-0 bg-black/55 sm:hidden", OVERLAY_LAYER.DRAWER)}
           />
         )}
 
@@ -97,7 +98,8 @@ export const Drawer = ({
           aria-label={ariaLabel}
           style={keyboardAwareStyle}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-[60] flex h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-border bg-card shadow-xl outline-none",
+            "fixed inset-x-0 bottom-0 flex h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-border bg-card shadow-xl outline-none",
+            OVERLAY_LAYER.DRAWER,
             "sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[360px] sm:rounded-2xl sm:border",
             className,
           )}

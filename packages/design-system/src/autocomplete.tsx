@@ -15,6 +15,7 @@ import {
 
 import { cn } from "./cn";
 import { Input } from "./input";
+import { OVERLAY_LAYER } from "./layers";
 
 type SelectHandler = () => void;
 
@@ -236,7 +237,8 @@ export const AutocompleteContent = ({
         sideOffset={6}
         onOpenAutoFocus={(event) => event.preventDefault()}
         className={cn(
-          "z-50 max-h-72 w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border border-border bg-card p-1.5 shadow-lg",
+          "max-h-72 w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border border-border bg-card p-1.5 shadow-lg",
+          OVERLAY_LAYER.FLOATING,
           className,
         )}
         {...props}
