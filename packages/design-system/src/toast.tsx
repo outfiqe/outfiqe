@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { cn } from "./cn";
+import { OVERLAY_LAYER } from "./layers";
+
 interface ToastMessage {
   id: number;
   message: string;
@@ -59,7 +62,10 @@ export const Toaster = () => {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6"
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-20 flex flex-col items-center gap-2 px-4 lg:bottom-6",
+        OVERLAY_LAYER.TOAST,
+      )}
     >
       {visibleToasts.map((toastMessage) => (
         <div
