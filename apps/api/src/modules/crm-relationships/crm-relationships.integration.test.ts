@@ -147,15 +147,15 @@ const placeCustomerOrder = async (
 };
 
 describe("GET /api/crm/partners", () => {
-  it("lists only creators tied to the tenant's own linked brand", async () => {
+  it("lists only muses tied to the tenant's own linked brand", async () => {
     const { product: productA } = await createBrandWithProduct("Brand A");
     const { product: productB } = await createBrandWithProduct("Brand B");
     const tenantA = await linkTenantToBrand(
       (await prisma.product.findUniqueOrThrow({ where: { id: productA.id } })).brandId,
     );
 
-    const creatorForA = await createUser("Creator A", UserRole.CUSTOMER);
-    const creatorForB = await createUser("Creator B", UserRole.CUSTOMER);
+    const creatorForA = await createUser("Muse A", UserRole.CUSTOMER);
+    const creatorForB = await createUser("Muse B", UserRole.CUSTOMER);
     await attachCreatorSignals(creatorForA.id, productA.id, { withAttributedOrder: true });
     await attachCreatorSignals(creatorForB.id, productB.id);
 
@@ -178,7 +178,7 @@ describe("GET /api/crm/partners", () => {
     const tenant = await linkTenantToBrand(
       (await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).brandId,
     );
-    const matching = await createUser("Findable Creator", UserRole.CUSTOMER);
+    const matching = await createUser("Findable Muse", UserRole.CUSTOMER);
     const other = await createUser("Hidden Maker", UserRole.CUSTOMER);
     await attachCreatorSignals(matching.id, product.id);
     await attachCreatorSignals(other.id, product.id);
@@ -250,12 +250,12 @@ describe("GET /api/crm/partners", () => {
 });
 
 describe("GET /api/crm/partners/:creatorId", () => {
-  it("returns a per-product breakdown and 404s for a creator with no signal for this brand", async () => {
+  it("returns a per-product breakdown and 404s for a muse with no signal for this brand", async () => {
     const { product } = await createBrandWithProduct("Detail Brand");
     const tenant = await linkTenantToBrand(
       (await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).brandId,
     );
-    const creator = await createUser("Detail Creator", UserRole.CUSTOMER);
+    const creator = await createUser("Detail Muse", UserRole.CUSTOMER);
     await attachCreatorSignals(creator.id, product.id, { withAttributedOrder: true });
 
     const found = await request(testApp)
@@ -266,7 +266,7 @@ describe("GET /api/crm/partners/:creatorId", () => {
     expect(found.body.data.productBreakdown).toHaveLength(1);
     expect(found.body.data.recentAttributedOrders).toHaveLength(1);
 
-    const stranger = await createUser("Unrelated Creator", UserRole.CUSTOMER);
+    const stranger = await createUser("Unrelated Muse", UserRole.CUSTOMER);
     const missing = await request(testApp)
       .get(`/api/crm/partners/${stranger.id}`)
       .set("Host", tenant.host)
@@ -317,12 +317,12 @@ describe("GET /api/crm/customers", () => {
 });
 
 describe("crmRelationshipsService.isPartner", () => {
-  it("is true only for a creator with a signal on the tenant's linked brand", async () => {
+  it("is true only for a muse with a signal on the tenant's linked brand", async () => {
     const { product } = await createBrandWithProduct("Is Partner Brand");
     const brandId = (await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).brandId;
     const tenant = await linkTenantToBrand(brandId);
-    const creator = await createUser("Signal Creator", UserRole.CUSTOMER);
-    const stranger = await createUser("No Signal Creator", UserRole.CUSTOMER);
+    const creator = await createUser("Signal Muse", UserRole.CUSTOMER);
+    const stranger = await createUser("No Signal Muse", UserRole.CUSTOMER);
     await attachCreatorSignals(creator.id, product.id);
 
     const organization = await prisma.organization.findUniqueOrThrow({

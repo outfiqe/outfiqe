@@ -68,7 +68,7 @@ describe("PartnersPage", () => {
       items: [
         {
           creatorId: "c-1",
-          name: "Aasha Creator",
+          name: "Aasha Muse",
           handle: "aasha",
           avatarUrl: null,
           tagClickCount: 12,
@@ -84,7 +84,7 @@ describe("PartnersPage", () => {
 
     renderPartnersPage();
 
-    expect(await screen.findByText("Aasha Creator")).toBeInTheDocument();
+    expect(await screen.findByText("Aasha Muse")).toBeInTheDocument();
     expect(screen.getByText("Rs. 4,500")).toBeInTheDocument();
     expect(screen.getByText("1 total")).toBeInTheDocument();
   });
@@ -152,7 +152,7 @@ describe("PartnersPage", () => {
     renderPartnersPage();
     await screen.findByText("No partners yet.");
 
-    await userEvent.type(screen.getByPlaceholderText("Search creators"), "aasha");
+    await userEvent.type(screen.getByPlaceholderText("Search muses"), "aasha");
 
     await waitFor(() => expect(lastQuery).toBe("aasha"));
     expect(await screen.findByText("No partners match your search.")).toBeInTheDocument();
@@ -171,7 +171,7 @@ describe("PartnersPage", () => {
             items: [
               {
                 creatorId: "c-1",
-                name: page === "2" ? "Page Two Creator" : "Aasha Creator",
+                name: page === "2" ? "Page Two Muse" : "Aasha Muse",
                 handle: "aasha",
                 avatarUrl: null,
                 tagClickCount: 1,
@@ -189,13 +189,13 @@ describe("PartnersPage", () => {
     );
 
     renderPartnersPage();
-    await screen.findByText("Aasha Creator");
+    await screen.findByText("Aasha Muse");
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(await screen.findByText("Page Two Creator")).toBeInTheDocument();
+    expect(await screen.findByText("Page Two Muse")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Previous" }));
-    expect(await screen.findByText("Aasha Creator")).toBeInTheDocument();
+    expect(await screen.findByText("Aasha Muse")).toBeInTheDocument();
     expect(seenPages).toContain("2");
   });
 });

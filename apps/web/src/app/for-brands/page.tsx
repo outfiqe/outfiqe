@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Sell on Outfiqe",
   description:
-    "List your Nepali clothing brand on Outfiqe. Free to list, a small commission only on completed sales, creator looks that show your pieces on real people, and one dashboard for stock and orders.",
+    "List your Nepali clothing brand on Outfiqe. Free to list, a small commission only on completed sales, muse looks that show your pieces on real people, and one dashboard for stock and orders.",
   path: "/for-brands",
   keywords: [
     "sell clothes online Nepal",
@@ -31,7 +31,7 @@ const steps = [
   },
   {
     title: "We set you up",
-    body: "Send photos and prices. We build your brand page and your first creator looks with you.",
+    body: "Send photos and prices. We build your brand page and your first muse looks with you.",
   },
   {
     title: "Sell and get paid",
@@ -46,11 +46,11 @@ const value = [
   },
   {
     title: "Commission only on sales",
-    body: "Outfiqe takes a small percentage of completed sales. A share of that funds the creator whose look sourced the sale.",
+    body: "Outfiqe takes a small percentage of completed sales. A share of that funds the muse whose look sourced the sale.",
   },
   {
-    title: "Creator looks included",
-    body: "Your pieces get styled and posted by Nepali creators who tag them. That is real-world context a catalogue photo cannot give.",
+    title: "Muse looks included",
+    body: "Your pieces get styled and dropped by Nepali muses who tag them. That is real-world context a catalogue photo cannot give.",
   },
   {
     title: "One dashboard",
@@ -97,7 +97,7 @@ const ForBrandsPage = () => (
           clothes seen.
         </>
       }
-      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and get your pieces in front of shoppers and the creators who actually wear them."
+      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and get your pieces in front of shoppers and the muses who actually wear them."
     />
 
     <MarketingSection heading="How it works">

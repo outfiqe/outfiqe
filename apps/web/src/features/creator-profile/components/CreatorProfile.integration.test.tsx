@@ -55,9 +55,9 @@ vi.mock("@/features/explore", async (importOriginal) => {
   const actual = await importOriginal<typeof ExploreModule>();
   return {
     ...actual,
-    AddPostButton: () => <button type="button">Add post</button>,
+    AddPostButton: () => <button type="button">Add drop</button>,
     PostDetailModal: ({ onClose }: { onClose: () => void }) => (
-      <div role="dialog" aria-label="Post detail">
+      <div role="dialog" aria-label="Drop detail">
         <button type="button" onClick={onClose}>
           Close detail
         </button>
@@ -69,7 +69,7 @@ vi.mock("@/features/explore", async (importOriginal) => {
 vi.mock("@/features/creator-dashboard/components/EditPostModal", () => ({
   EditPostModal: ({ lookId, onClose }: { lookId: string | null; onClose: () => void }) =>
     lookId ? (
-      <div role="dialog" aria-label="Edit post">
+      <div role="dialog" aria-label="Edit drop">
         <button type="button" onClick={onClose}>
           Close edit
         </button>
@@ -233,12 +233,12 @@ beforeEach(() => {
   });
 });
 
-describe("CreatorProfile loading and post states", () => {
-  it("shows the loading skeleton while posts are loading", () => {
+describe("CreatorProfile loading and drop states", () => {
+  it("shows the loading skeleton while drops are loading", () => {
     mockLooks({ isLoading: true, data: undefined });
     renderProfile(buildCreator());
 
-    expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading drops" })).toBeInTheDocument();
   });
 
   it("shows the loading skeleton instead of stale anonymous data while auth is still resolving", () => {
@@ -246,43 +246,43 @@ describe("CreatorProfile loading and post states", () => {
 
     renderProfile(buildCreator());
 
-    expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading drops" })).toBeInTheDocument();
     expect(screen.queryByText("Caption p1")).not.toBeInTheDocument();
     expect(useInfiniteCreatorLooks).toHaveBeenCalledWith(expect.any(String), false, "viewer-1");
   });
 
-  it("shows an empty state when there are no posts", () => {
+  it("shows an empty state when there are no drops", () => {
     mockLooks({ data: { pages: [{ posts: [], nextCursor: null }], pageParams: [undefined] } });
     renderProfile(buildCreator());
 
-    expect(screen.getByText("No posts yet.")).toBeInTheDocument();
+    expect(screen.getByText("No drops yet.")).toBeInTheDocument();
   });
 
-  it("renders a thumbnail for every post across pages", () => {
+  it("renders a thumbnail for every drop across pages", () => {
     renderProfile(buildCreator());
 
     expect(screen.getByText("Caption p1")).toBeInTheDocument();
     expect(screen.getByText("Caption p2")).toBeInTheDocument();
   });
 
-  it("shows the approved badge only when the creator is approved", () => {
+  it("shows the approved badge only when the muse is approved", () => {
     renderProfile(buildCreator({ creatorStatus: "APPROVED" }));
-    expect(screen.getByRole("img", { name: "Approved creator" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Approved muse" })).toBeInTheDocument();
   });
 
-  it("hides the approved badge for a non-approved creator", () => {
+  it("hides the approved badge for a non-approved muse", () => {
     renderProfile(buildCreator({ creatorStatus: "PENDING" }));
-    expect(screen.queryByRole("img", { name: "Approved creator" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Approved muse" })).not.toBeInTheDocument();
   });
 });
 
 describe("CreatorProfile own vs visitor view", () => {
-  it("shows Edit profile and Add post for the profile owner", () => {
+  it("shows Edit profile and Add drop for the profile owner", () => {
     mockAuth("creator-9");
     renderProfile(buildCreator());
 
     expect(screen.getByRole("button", { name: "Edit profile" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add post" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add drop" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
   });
 
@@ -292,7 +292,7 @@ describe("CreatorProfile own vs visitor view", () => {
 
     expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit profile" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add post" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add drop" })).not.toBeInTheDocument();
   });
 
   it("hides the Follow button for a platform admin viewer, keeping Message", () => {
@@ -326,7 +326,7 @@ describe("CreatorProfile message button", () => {
     expect(push).toHaveBeenCalledWith("/login?redirect=/creator/ava");
   });
 
-  it("starts a conversation with the creator when Message is clicked", async () => {
+  it("starts a conversation with the muse when Message is clicked", async () => {
     const openConversationWith = vi.fn();
     vi.mocked(useChatPanel).mockReturnValue({
       isOpen: false,
@@ -835,8 +835,8 @@ describe("CreatorProfile edit flow — username change", () => {
   });
 });
 
-describe("CreatorProfile post detail modal", () => {
-  it("puts the post's ?look= url in place without a router navigation when a thumbnail is clicked", async () => {
+describe("CreatorProfile drop detail modal", () => {
+  it("puts the drop's ?look= url in place without a router navigation when a thumbnail is clicked", async () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
@@ -846,11 +846,11 @@ describe("CreatorProfile post detail modal", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("opens the post detail modal when ?look= matches an already-loaded post", () => {
+  it("opens the drop detail modal when ?look= matches an already-loaded drop", () => {
     mockSearchParams({ look: "p1" });
     renderProfile(buildCreator());
 
-    expect(screen.getByRole("dialog", { name: "Post detail" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Drop detail" })).toBeInTheDocument();
   });
 
   it("clears the ?look= param when the modal is closed", async () => {
@@ -864,7 +864,7 @@ describe("CreatorProfile post detail modal", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("fetches and shows a post that isn't already loaded in the grid (e.g. a deep link)", async () => {
+  it("fetches and shows a drop that isn't already loaded in the grid (e.g. a deep link)", async () => {
     mockSearchParams({ look: "p99" });
     mswServer.use(
       http.get("/api/creator-looks/p99/public", () =>
@@ -874,13 +874,13 @@ describe("CreatorProfile post detail modal", () => {
     renderProfile(buildCreator());
 
     await waitFor(() =>
-      expect(screen.getByRole("dialog", { name: "Post detail" })).toBeInTheDocument(),
+      expect(screen.getByRole("dialog", { name: "Drop detail" })).toBeInTheDocument(),
     );
   });
 });
 
-describe("CreatorProfile delete post flow", () => {
-  it("deletes the post through the real API and decrements the posts count", async () => {
+describe("CreatorProfile delete drop flow", () => {
+  it("deletes the drop through the real API and decrements the drops count", async () => {
     mswServer.use(
       http.delete("/api/creator-looks/p1", () => new HttpResponse(null, { status: 204 })),
     );
@@ -889,12 +889,12 @@ describe("CreatorProfile delete post flow", () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
-    const menuButtons = screen.getAllByRole("button", { name: "Post options" });
+    const menuButtons = screen.getAllByRole("button", { name: "Drop options" });
     await user.click(menuButtons[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
-    await waitFor(() => expect(screen.queryByText("Delete post?")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("Delete drop?")).not.toBeInTheDocument());
   });
 
   it("cancels the delete confirmation without deleting", async () => {
@@ -902,14 +902,14 @@ describe("CreatorProfile delete post flow", () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
-    const menuButtons = screen.getAllByRole("button", { name: "Post options" });
+    const menuButtons = screen.getAllByRole("button", { name: "Drop options" });
     await user.click(menuButtons[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
-    expect(screen.getByText("Delete post?")).toBeInTheDocument();
+    expect(screen.getByText("Delete drop?")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.queryByText("Delete post?")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete drop?")).not.toBeInTheDocument();
   });
 
   it("closes the delete confirmation via its own close control", async () => {
@@ -917,12 +917,12 @@ describe("CreatorProfile delete post flow", () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
-    const menuButtons = screen.getAllByRole("button", { name: "Post options" });
+    const menuButtons = screen.getAllByRole("button", { name: "Drop options" });
     await user.click(menuButtons[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Close" }));
 
-    expect(screen.queryByText("Delete post?")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete drop?")).not.toBeInTheDocument();
   });
 
   it("opens the edit-post modal from the post-actions menu", async () => {
@@ -930,14 +930,14 @@ describe("CreatorProfile delete post flow", () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
-    const menuButtons = screen.getAllByRole("button", { name: "Post options" });
+    const menuButtons = screen.getAllByRole("button", { name: "Drop options" });
     await user.click(menuButtons[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: "Edit" }));
 
-    expect(screen.getByRole("dialog", { name: "Edit post" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Edit drop" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Close edit" }));
-    expect(screen.queryByRole("dialog", { name: "Edit post" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Edit drop" })).not.toBeInTheDocument();
   });
 
   it("opens the edit-post modal from a ?edit= deep link on the owner's own profile", () => {
@@ -945,7 +945,7 @@ describe("CreatorProfile delete post flow", () => {
     mockSearchParams({ edit: "p1" });
     renderProfile(buildCreator());
 
-    expect(screen.getByRole("dialog", { name: "Edit post" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Edit drop" })).toBeInTheDocument();
   });
 
   it("ignores a ?edit= deep link on someone else's profile", () => {
@@ -953,7 +953,7 @@ describe("CreatorProfile delete post flow", () => {
     mockSearchParams({ edit: "p1" });
     renderProfile(buildCreator());
 
-    expect(screen.queryByRole("dialog", { name: "Edit post" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Edit drop" })).not.toBeInTheDocument();
   });
 
   it("clears the ?edit= param when the edit modal is closed", async () => {

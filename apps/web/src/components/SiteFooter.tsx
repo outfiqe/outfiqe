@@ -10,7 +10,7 @@ export const SiteFooter = () => {
         <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            The one place Nepali shoppers go for fashion: local brands, real creator looks, one
+            The one place Nepali shoppers go for fashion: local brands, real muse looks, one
             checkout.
           </p>
         </div>
@@ -37,8 +37,7 @@ export const SiteFooter = () => {
 
       <div className="mt-10 border-t border-border pt-6">
         <p className="text-xs text-muted-foreground">
-          Creators may earn a commission when you shop the pieces they&apos;ve tagged in their
-          looks.
+          Muses may earn a commission when you shop the pieces they&apos;ve tagged in their looks.
         </p>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">

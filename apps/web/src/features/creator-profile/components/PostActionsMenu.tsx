@@ -33,7 +33,7 @@ export const PostActionsMenu = ({ onEdit, onDelete, className }: PostActionsMenu
           event.stopPropagation();
           setOpen((current) => !current);
         }}
-        aria-label="Post options"
+        aria-label="Drop options"
         aria-haspopup="menu"
         aria-expanded={open}
         className="flex size-8 items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/70"

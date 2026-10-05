@@ -187,7 +187,7 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 };
 
 describe("GET /api/creator-looks/autocomplete", () => {
-  it("returns posts matching the caption, hydrated with creator info", async () => {
+  it("returns drops matching the caption, hydrated with muse info", async () => {
     const creator = await createCreator("Priya Shah", "priya-shah");
     await createLook(creator.id, "Winter layers done right");
 
@@ -207,7 +207,7 @@ describe("GET /api/creator-looks/autocomplete", () => {
   });
 
   it("serves a repeated query from the in-process memory cache", async () => {
-    const creator = await createCreator("Repeat Query Creator", "repeat-query-creator");
+    const creator = await createCreator("Repeat Query Muse", "repeat-query-creator");
     await createLook(creator.id, "Repeatable caption unique-marker-repeat");
 
     const first = await request(testApp)
@@ -222,7 +222,7 @@ describe("GET /api/creator-looks/autocomplete", () => {
     expect(second.body.data).toEqual(first.body.data);
   });
 
-  it("matches by the post's creator name, not just the caption", async () => {
+  it("matches by the drop's muse name, not just the caption", async () => {
     const creator = await createCreator("Sabin Shrestha", "sabin-shrestha");
     await createLook(creator.id, "Everyday street style");
 
@@ -267,7 +267,7 @@ describe("GET /api/creator-looks/autocomplete", () => {
 
 describe("POST /api/creator-looks", () => {
   it("creates a look with tagged products and extracted hashtags", async () => {
-    const creator = await createCreator("Post Creator", "post-creator");
+    const creator = await createCreator("Drop Muse", "post-creator");
     const product = await createApprovedProduct("Denim Jacket");
 
     const response = await request(testApp)
@@ -306,7 +306,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("creates a look without a caption", async () => {
-    const creator = await createCreator("Captionless Creator", "captionless-creator");
+    const creator = await createCreator("Captionless Muse", "captionless-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -323,7 +323,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("defaults to a PORTRAIT layout when none is chosen", async () => {
-    const creator = await createCreator("Default Layout Creator", "default-layout-creator");
+    const creator = await createCreator("Default Layout Muse", "default-layout-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -337,7 +337,7 @@ describe("POST /api/creator-looks", () => {
   it.each(["PORTRAIT", "SQUARE", "TALL"])(
     "persists and returns a %s layout chosen at creation",
     async (layout) => {
-      const creator = await createCreator(`Layout Creator ${layout}`, `layout-creator-${layout}`);
+      const creator = await createCreator(`Layout Muse ${layout}`, `layout-creator-${layout}`);
 
       const response = await request(testApp)
         .post("/api/creator-looks")
@@ -359,7 +359,7 @@ describe("POST /api/creator-looks", () => {
   );
 
   it("rejects a layout value outside the closed set", async () => {
-    const creator = await createCreator("Invalid Layout Creator", "invalid-layout-creator");
+    const creator = await createCreator("Invalid Layout Muse", "invalid-layout-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -374,7 +374,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("links the caller's uploaded image assets to the look's images by position", async () => {
-    const creator = await createCreator("Asset Link Creator", "asset-link-creator");
+    const creator = await createCreator("Asset Link Muse", "asset-link-creator");
     const asset = await createImageAsset(creator.id);
 
     const response = await request(testApp)
@@ -395,7 +395,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("rejects image assets owned by another user", async () => {
-    const creator = await createCreator("Asset Owner Creator", "asset-owner-creator");
+    const creator = await createCreator("Asset Owner Muse", "asset-owner-creator");
     const stranger = await createPlainUser("Stranger", "asset-stranger");
     const strangersAsset = await createImageAsset(stranger.id);
 
@@ -412,7 +412,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("rejects an imageAssetIds list that does not line up with imageUrls", async () => {
-    const creator = await createCreator("Asset Mismatch Creator", "asset-mismatch-creator");
+    const creator = await createCreator("Asset Mismatch Muse", "asset-mismatch-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -426,8 +426,8 @@ describe("POST /api/creator-looks", () => {
     expect(response.status).toBe(422);
   });
 
-  it("rejects a non-approved creator", async () => {
-    const plainUser = await createPlainUser("Not A Creator", "post-not-a-creator");
+  it("rejects a non-approved muse", async () => {
+    const plainUser = await createPlainUser("Not A Muse", "post-not-a-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -440,9 +440,9 @@ describe("POST /api/creator-looks", () => {
     expect(response.status).toBe(403);
   });
 
-  it("rejects a platform admin even if their row is already flagged as an approved creator", async () => {
+  it("rejects a platform admin even if their row is already flagged as an approved muse", async () => {
     const corruptedAdmin = await createUserWithRole(
-      "Corrupted Admin Creator",
+      "Corrupted Admin Muse",
       "corrupted-admin-creator",
       UserRole.ADMIN,
       { isCreator: true, creatorStatus: CreatorStatus.APPROVED },
@@ -461,7 +461,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("rejects tagging a product that isn't approved", async () => {
-    const creator = await createCreator("Rejected Tag Creator", "rejected-tag-creator");
+    const creator = await createCreator("Rejected Tag Muse", "rejected-tag-creator");
     const pendingProduct = await createPendingProduct("Unapproved Hoodie");
 
     const response = await request(testApp)
@@ -476,7 +476,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("rejects tagging a product that doesn't exist", async () => {
-    const creator = await createCreator("Nonexistent Tag Creator", "nonexistent-tag-creator");
+    const creator = await createCreator("Nonexistent Tag Muse", "nonexistent-tag-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -525,7 +525,7 @@ describe("POST /api/creator-looks", () => {
   });
 
   it("rejects an empty imageUrls array", async () => {
-    const creator = await createCreator("Empty Images Creator", "empty-images-creator");
+    const creator = await createCreator("Empty Images Muse", "empty-images-creator");
 
     const response = await request(testApp)
       .post("/api/creator-looks")
@@ -537,10 +537,10 @@ describe("POST /api/creator-looks", () => {
 });
 
 describe("GET /api/creator-looks/:lookId", () => {
-  it("returns the owner's own post detail", async () => {
+  it("returns the owner's own drop detail", async () => {
     const creator = await createCreator("Owner Getter", "owner-getter");
     const product = await createApprovedProduct("Getter Boots");
-    const look = await createLook(creator.id, "My own post");
+    const look = await createLook(creator.id, "My own drop");
     await tagProduct(look.id, product.id);
 
     const response = await request(testApp)
@@ -587,7 +587,7 @@ describe("GET /api/creator-looks/:lookId", () => {
     });
   });
 
-  it("returns 404 for a post owned by someone else", async () => {
+  it("returns 404 for a drop owned by someone else", async () => {
     const owner = await createCreator("Real Owner", "real-owner");
     const outsider = await createCreator("Outsider Viewer", "outsider-viewer");
     const look = await createLook(owner.id, "Not yours");
@@ -599,8 +599,8 @@ describe("GET /api/creator-looks/:lookId", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 404 for a nonexistent post", async () => {
-    const creator = await createCreator("Missing Post Viewer", "missing-post-viewer");
+  it("returns 404 for a nonexistent drop", async () => {
+    const creator = await createCreator("Missing Drop Viewer", "missing-post-viewer");
 
     const response = await request(testApp)
       .get(`/api/creator-looks/${randomUUID()}`)
@@ -620,7 +620,7 @@ describe("GET /api/creator-looks/:lookId", () => {
 });
 
 describe("GET /api/creator-looks/:lookId/public", () => {
-  it("returns a post for any viewer, not just the owner", async () => {
+  it("returns a drop for any viewer, not just the owner", async () => {
     const creator = await createCreator("Public Getter", "public-getter");
     const viewer = await createCreator("Public Viewer", "public-viewer");
     const look = await createLook(creator.id, "Anyone can see this");
@@ -647,7 +647,7 @@ describe("GET /api/creator-looks/:lookId/public", () => {
   it("reflects the viewer's own like state", async () => {
     const creator = await createCreator("Liked Getter", "liked-getter");
     const liker = await createCreator("Liker Viewer", "liker-viewer");
-    const look = await createLook(creator.id, "Liked post");
+    const look = await createLook(creator.id, "Liked drop");
 
     await request(testApp)
       .post(`/api/creator-looks/${look.id}/like`)
@@ -661,7 +661,7 @@ describe("GET /api/creator-looks/:lookId/public", () => {
     expect(response.body.data.isLiked).toBe(true);
   });
 
-  it("returns 404 for a nonexistent post", async () => {
+  it("returns 404 for a nonexistent drop", async () => {
     const response = await request(testApp).get(`/api/creator-looks/${randomUUID()}/public`);
 
     expect(response.status).toBe(404);
@@ -669,8 +669,8 @@ describe("GET /api/creator-looks/:lookId/public", () => {
 });
 
 describe("PATCH /api/creator-looks/:lookId", () => {
-  it("updates a post's images, caption, and tagged products", async () => {
-    const creator = await createCreator("Update Creator", "update-creator");
+  it("updates a drop's images, caption, and tagged products", async () => {
+    const creator = await createCreator("Update Muse", "update-creator");
     const originalProduct = await createApprovedProduct("Original Scarf");
     const newProduct = await createApprovedProduct("New Scarf");
     const look = await createLook(creator.id, "Before edit");
@@ -698,7 +698,7 @@ describe("PATCH /api/creator-looks/:lookId", () => {
   });
 
   it("clears the derived hashtags when the caption is omitted from the update", async () => {
-    const creator = await createCreator("Caption Clear Creator", "caption-clear-creator");
+    const creator = await createCreator("Caption Clear Muse", "caption-clear-creator");
     const look = await createLook(creator.id, "Had a caption #before");
     await prisma.creatorLookHashtag.create({ data: { creatorLookId: look.id, tag: "before" } });
 
@@ -715,7 +715,7 @@ describe("PATCH /api/creator-looks/:lookId", () => {
     expect(hashtags).toEqual([]);
   });
 
-  it("returns 404 for a post owned by someone else", async () => {
+  it("returns 404 for a drop owned by someone else", async () => {
     const owner = await createCreator("Update Real Owner", "update-real-owner");
     const outsider = await createCreator("Update Outsider", "update-outsider");
     const look = await createLook(owner.id, "Protected");
@@ -729,7 +729,7 @@ describe("PATCH /api/creator-looks/:lookId", () => {
   });
 
   it("rejects tagging a product that isn't approved", async () => {
-    const creator = await createCreator("Update Reject Creator", "update-reject-creator");
+    const creator = await createCreator("Update Reject Muse", "update-reject-creator");
     const pendingProduct = await createPendingProduct("Still Pending");
     const look = await createLook(creator.id, "Editable");
 
@@ -754,8 +754,8 @@ describe("PATCH /api/creator-looks/:lookId", () => {
 });
 
 describe("DELETE /api/creator-looks/:lookId", () => {
-  it("soft-deletes the owner's post", async () => {
-    const creator = await createCreator("Delete Creator", "delete-creator");
+  it("soft-deletes the owner's drop", async () => {
+    const creator = await createCreator("Delete Muse", "delete-creator");
     const look = await createLook(creator.id, "Going away");
 
     const response = await request(testApp)
@@ -774,7 +774,7 @@ describe("DELETE /api/creator-looks/:lookId", () => {
     expect(afterDelete.status).toBe(404);
   });
 
-  it("returns 404 for a post owned by someone else", async () => {
+  it("returns 404 for a drop owned by someone else", async () => {
     const owner = await createCreator("Delete Real Owner", "delete-real-owner");
     const outsider = await createCreator("Delete Outsider", "delete-outsider");
     const look = await createLook(owner.id, "Protected from deletion");
@@ -798,7 +798,7 @@ describe("DELETE /api/creator-looks/:lookId", () => {
     expect(response.status).toBe(404);
   });
 
-  it("lets a platform moderator delete another creator's post and logs it", async () => {
+  it("lets a platform moderator delete another muse's drop and logs it", async () => {
     const owner = await createCreator("Moderated Owner", "moderated-owner");
     const moderator = await createContentModerator("Content Moderator", "content-moderator-look");
     const look = await createLook(owner.id, "About to be removed by staff");
@@ -832,7 +832,7 @@ describe("DELETE /api/creator-looks/:lookId", () => {
 
 describe("GET /api/creator-looks/saved", () => {
   it("lists the caller's saved looks, most recently saved first, with cursor pagination", async () => {
-    const creator = await createCreator("Saved List Creator", "saved-list-creator");
+    const creator = await createCreator("Saved List Muse", "saved-list-creator");
     const viewer = await createCreator("Saved List Viewer", "saved-list-viewer");
     const lookOne = await createLook(creator.id, "Save target one");
     const lookTwo = await createLook(creator.id, "Save target two");
@@ -884,9 +884,9 @@ describe("GET /api/creator-looks/saved", () => {
 
 describe("GET /api/creator-looks (listFeatured)", () => {
   it("returns looks with approved tagged products, ranked by engagement", async () => {
-    const creator = await createCreator("Featured Creator", "featured-creator");
+    const creator = await createCreator("Featured Muse", "featured-creator");
     const product = await createApprovedProduct("Featured Blazer");
-    const look = await createLook(creator.id, "Featured post");
+    const look = await createLook(creator.id, "Featured drop");
     await tagProduct(look.id, product.id);
 
     const response = await request(testApp).get("/api/creator-looks");
@@ -906,12 +906,12 @@ describe("GET /api/creator-looks (listFeatured)", () => {
   });
 
   it("paginates using nextCursor", async () => {
-    const creator = await createCreator("Featured Page Creator", "featured-page-creator");
+    const creator = await createCreator("Featured Page Muse", "featured-page-creator");
     const viewer = await createCreator("Featured Page Viewer", "featured-page-viewer");
     const productOne = await createApprovedProduct("Featured Page Product One");
     const productTwo = await createApprovedProduct("Featured Page Product Two");
-    const lookOne = await createLook(creator.id, "Featured page post one");
-    const lookTwo = await createLook(creator.id, "Featured page post two");
+    const lookOne = await createLook(creator.id, "Featured page drop one");
+    const lookTwo = await createLook(creator.id, "Featured page drop two");
     await tagProduct(lookOne.id, productOne.id);
     await tagProduct(lookTwo.id, productTwo.id);
     await request(testApp)
@@ -935,8 +935,8 @@ describe("GET /api/creator-looks (listFeatured)", () => {
 });
 
 describe("GET /api/creator-looks/search", () => {
-  it("returns matching posts with a total count", async () => {
-    const creator = await createCreator("Search Post Creator", "search-post-creator");
+  it("returns matching drops with a total count", async () => {
+    const creator = await createCreator("Search Drop Muse", "search-post-creator");
     await createLook(creator.id, "Searchable caption unique-marker-one");
 
     const response = await request(testApp)
@@ -960,7 +960,7 @@ describe("GET /api/creator-looks/search", () => {
   });
 
   it("reflects the viewer's like state when authenticated", async () => {
-    const creator = await createCreator("Search Like Creator", "search-like-creator");
+    const creator = await createCreator("Search Like Muse", "search-like-creator");
     const viewer = await createCreator("Search Like Viewer", "search-like-viewer");
     const look = await createLook(creator.id, "Searchable caption unique-marker-two");
 
@@ -978,7 +978,7 @@ describe("GET /api/creator-looks/search", () => {
   });
 
   it("paginates using nextCursor", async () => {
-    const creator = await createCreator("Search Page Creator", "search-page-creator");
+    const creator = await createCreator("Search Page Muse", "search-page-creator");
     const marker = randomUUID().slice(0, 8);
     await createLook(creator.id, `Marker ${marker} entry one`);
     await createLook(creator.id, `Marker ${marker} entry two`);
@@ -1009,9 +1009,9 @@ describe("GET /api/creator-looks/search", () => {
 
 describe("GET /api/creator-looks/tags/trending", () => {
   it("falls back to the legacy hashtag aggregate when no trend metrics exist yet", async () => {
-    const creator = await createCreator("Trending Tag Creator", "trending-tag-creator");
+    const creator = await createCreator("Trending Tag Muse", "trending-tag-creator");
     const marker = randomUUID().slice(0, 6);
-    const look = await createLook(creator.id, `Post about #trendtag${marker}`);
+    const look = await createLook(creator.id, `Drop about #trendtag${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: look.id, tag: `trendtag${marker}` },
     });
@@ -1029,9 +1029,9 @@ describe("GET /api/creator-looks/tags/trending", () => {
   });
 
   it("uses the ranked score once the trend-tag pipeline has run", async () => {
-    const creator = await createCreator("Ranked Tag Creator", "ranked-tag-creator");
+    const creator = await createCreator("Ranked Tag Muse", "ranked-tag-creator");
     const marker = randomUUID().slice(0, 6);
-    const look = await createLook(creator.id, `Ranked pipeline post #rankedtag${marker}`);
+    const look = await createLook(creator.id, `Ranked pipeline drop #rankedtag${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: look.id, tag: `rankedtag${marker}` },
     });
@@ -1058,9 +1058,9 @@ describe("creatorLookService tag trending pipeline", () => {
   });
 
   it("caches a non-empty scoring result with the normal long-lived TTL", async () => {
-    const creator = await createCreator("Tag TTL Creator", "tag-ttl-creator");
+    const creator = await createCreator("Tag TTL Muse", "tag-ttl-creator");
     const marker = randomUUID().slice(0, 6);
-    const look = await createLook(creator.id, `Tag TTL post #tagttl${marker}`);
+    const look = await createLook(creator.id, `Tag TTL drop #tagttl${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: look.id, tag: `tagttl${marker}` },
     });
@@ -1073,11 +1073,11 @@ describe("creatorLookService tag trending pipeline", () => {
     expect(ttl).toBeGreaterThan(90);
   });
 
-  it("excludes hashtags from deleted creator looks when aggregating tag metrics", async () => {
-    const creator = await createCreator("Tag Deleted Creator", "tag-deleted-creator");
+  it("excludes hashtags from deleted muse looks when aggregating tag metrics", async () => {
+    const creator = await createCreator("Tag Deleted Muse", "tag-deleted-creator");
     const marker = randomUUID().slice(0, 6);
     const tag = `deletedtag${marker}`;
-    const look = await createLook(creator.id, `Deleted post #${tag}`);
+    const look = await createLook(creator.id, `Deleted drop #${tag}`);
     await prisma.creatorLookHashtag.create({ data: { creatorLookId: look.id, tag } });
     await prisma.creatorLook.update({ where: { id: look.id }, data: { deletedAt: new Date() } });
 
@@ -1113,16 +1113,16 @@ describe("creatorLookService tag trending pipeline", () => {
   });
 
   it("breaks a tie between equally-scored tags the same way on every recompute", async () => {
-    const creatorOne = await createCreator("Tag Tie Creator One", "tag-tie-creator-one");
-    const creatorTwo = await createCreator("Tag Tie Creator Two", "tag-tie-creator-two");
+    const creatorOne = await createCreator("Tag Tie Muse One", "tag-tie-creator-one");
+    const creatorTwo = await createCreator("Tag Tie Muse Two", "tag-tie-creator-two");
     const markerA = randomUUID().slice(0, 6);
     const markerB = randomUUID().slice(0, 6);
     const tagA = `tietaga${markerA}`;
     const tagB = `tietagb${markerB}`;
 
-    const lookA = await createLook(creatorOne.id, `Tie post A #${tagA}`);
+    const lookA = await createLook(creatorOne.id, `Tie drop A #${tagA}`);
     await prisma.creatorLookHashtag.create({ data: { creatorLookId: lookA.id, tag: tagA } });
-    const lookB = await createLook(creatorTwo.id, `Tie post B #${tagB}`);
+    const lookB = await createLook(creatorTwo.id, `Tie drop B #${tagB}`);
     await prisma.creatorLookHashtag.create({ data: { creatorLookId: lookB.id, tag: tagB } });
     await creatorLookService.runTagTrendingAggregation();
 
@@ -1151,10 +1151,10 @@ describe("creatorLookService tag trending pipeline", () => {
 });
 
 describe("POST /api/creator-looks/:lookId/like and unlike", () => {
-  it("likes a post and increments the like count", async () => {
-    const creator = await createCreator("Like Target Creator", "like-target-creator");
+  it("likes a drop and increments the like count", async () => {
+    const creator = await createCreator("Like Target Muse", "like-target-creator");
     const viewer = await createCreator("Like Actor", "like-actor");
-    const look = await createLook(creator.id, "Likeable post");
+    const look = await createLook(creator.id, "Likeable drop");
 
     const response = await request(testApp)
       .post(`/api/creator-looks/${look.id}/like`)
@@ -1164,8 +1164,8 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(response.body.data).toEqual({ liked: true, likeCount: 1 });
   });
 
-  it("is idempotent when liking the same post twice", async () => {
-    const creator = await createCreator("Idempotent Like Creator", "idempotent-like-creator");
+  it("is idempotent when liking the same drop twice", async () => {
+    const creator = await createCreator("Idempotent Like Muse", "idempotent-like-creator");
     const viewer = await createCreator("Idempotent Like Actor", "idempotent-like-actor");
     const look = await createLook(creator.id, "Double like target");
 
@@ -1180,10 +1180,10 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(second.body.data.likeCount).toBe(1);
   });
 
-  it("unlikes a previously liked post and decrements the count", async () => {
-    const creator = await createCreator("Unlike Target Creator", "unlike-target-creator");
+  it("unlikes a previously liked drop and decrements the count", async () => {
+    const creator = await createCreator("Unlike Target Muse", "unlike-target-creator");
     const viewer = await createCreator("Unlike Actor", "unlike-actor");
-    const look = await createLook(creator.id, "Unlikeable post");
+    const look = await createLook(creator.id, "Unlikeable drop");
 
     await request(testApp)
       .post(`/api/creator-looks/${look.id}/like`)
@@ -1196,8 +1196,8 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(response.body.data).toEqual({ liked: false, likeCount: 0 });
   });
 
-  it("is a no-op unliking a post that was never liked", async () => {
-    const creator = await createCreator("Noop Unlike Creator", "noop-unlike-creator");
+  it("is a no-op unliking a drop that was never liked", async () => {
+    const creator = await createCreator("Noop Unlike Muse", "noop-unlike-creator");
     const viewer = await createCreator("Noop Unlike Actor", "noop-unlike-actor");
     const look = await createLook(creator.id, "Never liked");
 
@@ -1209,7 +1209,7 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(response.body.data.likeCount).toBe(0);
   });
 
-  it("returns 404 liking a post that doesn't exist", async () => {
+  it("returns 404 liking a drop that doesn't exist", async () => {
     const viewer = await createCreator("Missing Like Actor", "missing-like-actor");
 
     const response = await request(testApp)
@@ -1225,8 +1225,8 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejects a platform admin liking a post", async () => {
-    const creator = await createCreator("Admin Like Target Creator", "admin-like-target-creator");
+  it("rejects a platform admin liking a drop", async () => {
+    const creator = await createCreator("Admin Like Target Muse", "admin-like-target-creator");
     const admin = await createUserWithRole("Liking Admin", "liking-admin", UserRole.ADMIN);
     const look = await createLook(creator.id, "Off-limits to staff");
 
@@ -1241,11 +1241,8 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
     expect(stored.likeCount).toBe(0);
   });
 
-  it("still allows a platform admin to unlike a post from before this restriction shipped", async () => {
-    const creator = await createCreator(
-      "Admin Unlike Target Creator",
-      "admin-unlike-target-creator",
-    );
+  it("still allows a platform admin to unlike a drop from before this restriction shipped", async () => {
+    const creator = await createCreator("Admin Unlike Target Muse", "admin-unlike-target-creator");
     const admin = await createUserWithRole("Unliking Admin", "unliking-admin", UserRole.ADMIN);
     const look = await createLook(creator.id, "Legacy admin like");
     await prisma.creatorLook.update({ where: { id: look.id }, data: { likeCount: 1 } });
@@ -1261,10 +1258,10 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
 });
 
 describe("POST /api/creator-looks/:lookId/save and unsave", () => {
-  it("saves a post and increments the save count", async () => {
-    const creator = await createCreator("Save Target Creator", "save-target-creator");
+  it("saves a drop and increments the save count", async () => {
+    const creator = await createCreator("Save Target Muse", "save-target-creator");
     const viewer = await createCreator("Save Actor", "save-actor");
-    const look = await createLook(creator.id, "Saveable post");
+    const look = await createLook(creator.id, "Saveable drop");
 
     const response = await request(testApp)
       .post(`/api/creator-looks/${look.id}/save`)
@@ -1274,8 +1271,8 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     expect(response.body.data).toEqual({ saved: true, saveCount: 1 });
   });
 
-  it("is idempotent when saving the same post twice", async () => {
-    const creator = await createCreator("Idempotent Save Creator", "idempotent-save-creator");
+  it("is idempotent when saving the same drop twice", async () => {
+    const creator = await createCreator("Idempotent Save Muse", "idempotent-save-creator");
     const viewer = await createCreator("Idempotent Save Actor", "idempotent-save-actor");
     const look = await createLook(creator.id, "Double save target");
 
@@ -1290,10 +1287,10 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     expect(second.body.data.saveCount).toBe(1);
   });
 
-  it("unsaves a previously saved post and decrements the count", async () => {
-    const creator = await createCreator("Unsave Target Creator", "unsave-target-creator");
+  it("unsaves a previously saved drop and decrements the count", async () => {
+    const creator = await createCreator("Unsave Target Muse", "unsave-target-creator");
     const viewer = await createCreator("Unsave Actor", "unsave-actor");
-    const look = await createLook(creator.id, "Unsaveable post");
+    const look = await createLook(creator.id, "Unsaveable drop");
 
     await request(testApp)
       .post(`/api/creator-looks/${look.id}/save`)
@@ -1306,8 +1303,8 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     expect(response.body.data).toEqual({ saved: false, saveCount: 0 });
   });
 
-  it("is a no-op unsaving a post that was never saved", async () => {
-    const creator = await createCreator("Noop Unsave Creator", "noop-unsave-creator");
+  it("is a no-op unsaving a drop that was never saved", async () => {
+    const creator = await createCreator("Noop Unsave Muse", "noop-unsave-creator");
     const viewer = await createCreator("Noop Unsave Actor", "noop-unsave-actor");
     const look = await createLook(creator.id, "Never saved");
 
@@ -1319,7 +1316,7 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     expect(response.body.data.saveCount).toBe(0);
   });
 
-  it("returns 404 saving a post that doesn't exist", async () => {
+  it("returns 404 saving a drop that doesn't exist", async () => {
     const viewer = await createCreator("Missing Save Actor", "missing-save-actor");
 
     const response = await request(testApp)
@@ -1335,8 +1332,8 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     expect(response.status).toBe(401);
   });
 
-  it("allows a platform admin to save and unsave a post, unlike/comment/like", async () => {
-    const creator = await createCreator("Admin Save Target Creator", "admin-save-target-creator");
+  it("allows a platform admin to save and unsave a drop, unlike/comment/like", async () => {
+    const creator = await createCreator("Admin Save Target Muse", "admin-save-target-creator");
     const admin = await createUserWithRole("Saving Admin", "saving-admin", UserRole.ADMIN);
     const look = await createLook(creator.id, "Admins can still bookmark this");
 
@@ -1356,9 +1353,9 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
 
 describe("GET and POST /api/creator-looks/:lookId/comments", () => {
   it("adds a comment and increments the comment count", async () => {
-    const creator = await createCreator("Comment Target Creator", "comment-target-creator");
+    const creator = await createCreator("Comment Target Muse", "comment-target-creator");
     const commenter = await createCreator("Commenter", "commenter");
-    const look = await createLook(creator.id, "Commentable post");
+    const look = await createLook(creator.id, "Commentable drop");
 
     const response = await request(testApp)
       .post(`/api/creator-looks/${look.id}/comments`)
@@ -1373,7 +1370,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
   });
 
   it("lists comments oldest first with cursor pagination", async () => {
-    const creator = await createCreator("Comment List Creator", "comment-list-creator");
+    const creator = await createCreator("Comment List Muse", "comment-list-creator");
     const commenter = await createCreator("Comment Lister", "comment-lister");
     const look = await createLook(creator.id, "Comment list target");
 
@@ -1403,7 +1400,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
   });
 
   it("returns an empty page when there are no comments", async () => {
-    const creator = await createCreator("Empty Comments Creator", "empty-comments-creator");
+    const creator = await createCreator("Empty Comments Muse", "empty-comments-creator");
     const look = await createLook(creator.id, "No comments yet");
 
     const response = await request(testApp).get(`/api/creator-looks/${look.id}/comments`);
@@ -1412,7 +1409,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
     expect(response.body.data.comments).toEqual([]);
   });
 
-  it("returns 404 commenting on a post that doesn't exist", async () => {
+  it("returns 404 commenting on a drop that doesn't exist", async () => {
     const commenter = await createCreator("Missing Comment Actor", "missing-comment-actor");
 
     const response = await request(testApp)
@@ -1423,14 +1420,14 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 404 listing comments on a post that doesn't exist", async () => {
+  it("returns 404 listing comments on a drop that doesn't exist", async () => {
     const response = await request(testApp).get(`/api/creator-looks/${randomUUID()}/comments`);
 
     expect(response.status).toBe(404);
   });
 
   it("requires authentication to comment", async () => {
-    const creator = await createCreator("Auth Comment Creator", "auth-comment-creator");
+    const creator = await createCreator("Auth Comment Muse", "auth-comment-creator");
     const look = await createLook(creator.id, "Needs auth to comment");
 
     const response = await request(testApp)
@@ -1441,7 +1438,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
   });
 
   it("rejects an empty comment body", async () => {
-    const creator = await createCreator("Empty Body Creator", "empty-body-creator");
+    const creator = await createCreator("Empty Body Muse", "empty-body-creator");
     const commenter = await createCreator("Empty Body Commenter", "empty-body-commenter");
     const look = await createLook(creator.id, "Empty body target");
 
@@ -1453,9 +1450,9 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
     expect(response.status).toBe(422);
   });
 
-  it("rejects a platform admin commenting on a post", async () => {
+  it("rejects a platform admin commenting on a drop", async () => {
     const creator = await createCreator(
-      "Admin Comment Target Creator",
+      "Admin Comment Target Muse",
       "admin-comment-target-creator",
     );
     const admin = await createUserWithRole("Commenting Admin", "commenting-admin", UserRole.ADMIN);
@@ -1476,7 +1473,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
 
 describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   it("lets a comment's own author delete it", async () => {
-    const creator = await createCreator("Comment Delete Creator", "comment-delete-creator");
+    const creator = await createCreator("Comment Delete Muse", "comment-delete-creator");
     const commenter = await createCreator("Comment Deleter", "comment-deleter");
     const look = await createLook(creator.id, "Comment gets deleted");
     const comment = await prisma.creatorLookComment.create({
@@ -1501,7 +1498,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   });
 
   it("returns 404 for a non-owner, non-moderator caller", async () => {
-    const creator = await createCreator("Protected Comment Creator", "protected-comment-creator");
+    const creator = await createCreator("Protected Comment Muse", "protected-comment-creator");
     const commenter = await createCreator("Protected Commenter", "protected-commenter");
     const outsider = await createCreator("Comment Outsider", "comment-outsider");
     const look = await createLook(creator.id, "Comment stays");
@@ -1522,7 +1519,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   });
 
   it("lets a platform moderator delete someone else's comment and logs it", async () => {
-    const creator = await createCreator("Moderated Comment Creator", "moderated-comment-creator");
+    const creator = await createCreator("Moderated Comment Muse", "moderated-comment-creator");
     const commenter = await createCreator("Moderated Commenter", "moderated-commenter");
     const moderator = await createContentModerator(
       "Comment Moderator",
@@ -1550,7 +1547,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   });
 
   it("returns 404 for a comment that doesn't exist", async () => {
-    const creator = await createCreator("Missing Comment Creator", "missing-comment-creator");
+    const creator = await createCreator("Missing Comment Muse", "missing-comment-creator");
     const look = await createLook(creator.id, "No such comment");
 
     const response = await request(testApp)
@@ -1561,7 +1558,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   });
 
   it("cascades to every reply when a top-level comment is deleted", async () => {
-    const creator = await createCreator("Cascade Creator", "cascade-creator");
+    const creator = await createCreator("Cascade Muse", "cascade-creator");
     const commenter = await createCreator("Cascade Commenter", "cascade-commenter");
     const replier = await createCreator("Cascade Replier", "cascade-replier");
     const look = await createLook(creator.id, "Cascade target");
@@ -1609,7 +1606,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
   });
 
   it("deleting a single reply only decrements the parent's reply count by one", async () => {
-    const creator = await createCreator("Single Reply Creator", "single-reply-creator");
+    const creator = await createCreator("Single Reply Muse", "single-reply-creator");
     const commenter = await createCreator("Single Reply Commenter", "single-reply-commenter");
     const replier = await createCreator("Single Replier", "single-replier");
     const look = await createLook(creator.id, "Single reply target");
@@ -1655,7 +1652,7 @@ describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
 
 describe("POST /api/creator-looks/:lookId/comments/:commentId/replies", () => {
   it("rejects a platform admin replying to a comment", async () => {
-    const creator = await createCreator("Admin Reply Target Creator", "admin-reply-target-creator");
+    const creator = await createCreator("Admin Reply Target Muse", "admin-reply-target-creator");
     const commenter = await createCreator("Reply Thread Starter", "reply-thread-starter");
     const admin = await createUserWithRole("Replying Admin", "replying-admin", UserRole.ADMIN);
     const look = await createLook(creator.id, "Off-limits reply target");
@@ -1675,7 +1672,7 @@ describe("POST /api/creator-looks/:lookId/comments/:commentId/replies", () => {
 
 describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
   it("records a tag click for an anonymous viewer", async () => {
-    const creator = await createCreator("Tag Click Creator", "tag-click-creator");
+    const creator = await createCreator("Tag Click Muse", "tag-click-creator");
     const product = await createApprovedProduct("Clickable Sneakers");
     const look = await createLook(creator.id, "Tag click target");
     await tagProduct(look.id, product.id);
@@ -1695,7 +1692,7 @@ describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
   });
 
   it("records the viewer id when the caller is authenticated", async () => {
-    const creator = await createCreator("Auth Tag Click Creator", "auth-tag-click-creator");
+    const creator = await createCreator("Auth Tag Click Muse", "auth-tag-click-creator");
     const viewer = await createCreator("Tag Click Viewer", "tag-click-viewer");
     const product = await createApprovedProduct("Auth Clickable Bag");
     const look = await createLook(creator.id, "Auth tag click target");
@@ -1715,7 +1712,7 @@ describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
     expect(stored?.source).toBe("PRODUCT_PAGE");
   });
 
-  it("returns 404 for a post that doesn't exist", async () => {
+  it("returns 404 for a drop that doesn't exist", async () => {
     const response = await request(testApp)
       .post(`/api/creator-looks/${randomUUID()}/tags/${randomUUID()}/click`)
       .send({ sessionId: randomUUID() });
@@ -1724,7 +1721,7 @@ describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
   });
 
   it("returns 404 when the product isn't tagged in this look", async () => {
-    const creator = await createCreator("Untagged Click Creator", "untagged-click-creator");
+    const creator = await createCreator("Untagged Click Muse", "untagged-click-creator");
     const product = await createApprovedProduct("Untagged Product");
     const look = await createLook(creator.id, "No tags here");
 
@@ -1736,7 +1733,7 @@ describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
   });
 
   it("rejects a missing sessionId", async () => {
-    const creator = await createCreator("Missing Session Creator", "missing-session-creator");
+    const creator = await createCreator("Missing Session Muse", "missing-session-creator");
     const product = await createApprovedProduct("Missing Session Product");
     const look = await createLook(creator.id, "Missing session target");
     await tagProduct(look.id, product.id);
@@ -1751,8 +1748,8 @@ describe("POST /api/creator-looks/:lookId/tags/:productId/click", () => {
 
 describe("GET /api/creator-looks/feed", () => {
   it("defaults to the for_you tab for an anonymous caller and falls back to the legacy trending snapshot", async () => {
-    const creator = await createCreator("Feed Default Creator", "feed-default-creator");
-    await createLook(creator.id, "Default feed post");
+    const creator = await createCreator("Feed Default Muse", "feed-default-creator");
+    await createLook(creator.id, "Default feed drop");
 
     const response = await request(testApp).get("/api/creator-looks/feed");
 
@@ -1769,10 +1766,10 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns an empty following tab, not trending posts, when the viewer follows nobody", async () => {
+  it("returns an empty following tab, not trending drops, when the viewer follows nobody", async () => {
     const viewer = await createCreator("No Follows Viewer", "no-follows-viewer");
     const strangerCreator = await createCreator("Unfollowed Poster", "unfollowed-poster");
-    await createLook(strangerCreator.id, "Post from a creator nobody follows");
+    await createLook(strangerCreator.id, "Drop from a muse nobody follows");
 
     const response = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -1784,11 +1781,11 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data.nextCursor).toBeNull();
   });
 
-  it("restricts the following tab to posts from followed creators", async () => {
-    const followedCreator = await createCreator("Followed Creator", "followed-creator");
-    const unfollowedCreator = await createCreator("Unfollowed Creator", "unfollowed-creator");
+  it("restricts the following tab to drops from followed muses", async () => {
+    const followedCreator = await createCreator("Followed Muse", "followed-creator");
+    const unfollowedCreator = await createCreator("Unfollowed Muse", "unfollowed-creator");
     const viewer = await createCreator("Following Tab Viewer", "following-tab-viewer");
-    const followedLook = await createLook(followedCreator.id, "From a followed creator");
+    const followedLook = await createLook(followedCreator.id, "From a followed muse");
     await createLook(unfollowedCreator.id, "From someone not followed");
     await followCreator(viewer.id, followedCreator.id);
 
@@ -1803,10 +1800,10 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("paginates the following tab using nextCursor", async () => {
-    const followedCreator = await createCreator("Paged Followed Creator", "paged-followed-creator");
+    const followedCreator = await createCreator("Paged Followed Muse", "paged-followed-creator");
     const viewer = await createCreator("Paged Following Viewer", "paged-following-viewer");
-    const lookOne = await createLook(followedCreator.id, "Paged following post one");
-    const lookTwo = await createLook(followedCreator.id, "Paged following post two");
+    const lookOne = await createLook(followedCreator.id, "Paged following drop one");
+    const lookTwo = await createLook(followedCreator.id, "Paged following drop two");
     await followCreator(viewer.id, followedCreator.id);
 
     const first = await request(testApp)
@@ -1828,14 +1825,14 @@ describe("GET /api/creator-looks/feed", () => {
     expect(second.body.data.posts[0].id).toBe(lookOne.id);
   });
 
-  it("carries the tagged product's size and the creator's height when the creator shows it", async () => {
-    const creator = await createCreator("Height Visible Creator", "height-visible-creator");
+  it("carries the tagged product's size and the muse's height when the muse shows it", async () => {
+    const creator = await createCreator("Height Visible Muse", "height-visible-creator");
     await prisma.user.update({
       where: { id: creator.id },
       data: { heightCm: 168, showHeight: true },
     });
     const viewer = await createCreator("Height Feed Viewer", "height-feed-viewer");
-    const look = await createLook(creator.id, "Post with a sized tag");
+    const look = await createLook(creator.id, "Drop with a sized tag");
     const product = await createApprovedProduct("Sized Product");
     await tagProduct(look.id, product.id, "M");
     await followCreator(viewer.id, creator.id);
@@ -1850,14 +1847,14 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data.posts[0].taggedProducts[0].sizeWorn).toBe("M");
   });
 
-  it("hides the creator's height on the feed when they have chosen not to show it", async () => {
-    const creator = await createCreator("Height Hidden Creator", "height-hidden-creator");
+  it("hides the muse's height on the feed when they have chosen not to show it", async () => {
+    const creator = await createCreator("Height Hidden Muse", "height-hidden-creator");
     await prisma.user.update({
       where: { id: creator.id },
       data: { heightCm: 168, showHeight: false },
     });
     const viewer = await createCreator("Height Hidden Feed Viewer", "height-hidden-feed-viewer");
-    await createLook(creator.id, "Post from a creator hiding their height");
+    await createLook(creator.id, "Drop from a muse hiding their height");
     await followCreator(viewer.id, creator.id);
 
     const response = await request(testApp)
@@ -1870,9 +1867,9 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("filters the feed by an arbitrary hashtag tab", async () => {
-    const creator = await createCreator("Hashtag Tab Creator", "hashtag-tab-creator");
+    const creator = await createCreator("Hashtag Tab Muse", "hashtag-tab-creator");
     const marker = randomUUID().slice(0, 6);
-    const look = await createLook(creator.id, `Tagged post #feedtag${marker}`);
+    const look = await createLook(creator.id, `Tagged drop #feedtag${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: look.id, tag: `feedtag${marker}` },
     });
@@ -1885,31 +1882,28 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data.posts.map((post: { id: string }) => post.id)).toEqual([look.id]);
   });
 
-  it("personalizes the for_you tab once the trending pipeline has scored posts, applying follow, engagement, and hashtag boosts with a per-creator diversity cap", async () => {
-    const busyCreator = await createCreator("Busy Creator", "busy-creator");
+  it("personalizes the for_you tab once the trending pipeline has scored drops, applying follow, engagement, and hashtag boosts with a per-creator diversity cap", async () => {
+    const busyCreator = await createCreator("Busy Muse", "busy-creator");
     const followedCreator = await createCreator(
-      "Boosted Followed Creator",
+      "Boosted Followed Muse",
       "boosted-followed-creator",
     );
-    const engagedCreator = await createCreator(
-      "Boosted Engaged Creator",
-      "boosted-engaged-creator",
-    );
+    const engagedCreator = await createCreator("Boosted Engaged Muse", "boosted-engaged-creator");
     const viewer = await createCreator("Personalized Viewer", "personalized-viewer");
     const marker = randomUUID().slice(0, 6);
 
     const busyLooks = await Promise.all(
       Array.from({ length: 4 }, (_, index) =>
-        createLook(busyCreator.id, `Busy creator post ${index} #shared${marker}`),
+        createLook(busyCreator.id, `Busy muse drop ${index} #shared${marker}`),
       ),
     );
-    const followedLook = await createLook(followedCreator.id, `Followed post #shared${marker}`);
-    const engagedLook = await createLook(engagedCreator.id, `Engaged post #shared${marker}`);
-    const unengagedCreator = await createCreator("Unengaged Creator", "unengaged-creator");
+    const followedLook = await createLook(followedCreator.id, `Followed drop #shared${marker}`);
+    const engagedLook = await createLook(engagedCreator.id, `Engaged drop #shared${marker}`);
+    const unengagedCreator = await createCreator("Unengaged Muse", "unengaged-creator");
     const unengagedViewer = await createCreator("Unengaged Viewer", "unengaged-viewer");
     const unengagedLook = await createLook(
       unengagedCreator.id,
-      `Unengaged post #different${marker}`,
+      `Unengaged drop #different${marker}`,
     );
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: unengagedLook.id, tag: `different${marker}` },
@@ -1955,17 +1949,17 @@ describe("GET /api/creator-looks/feed", () => {
     expect(busyLookIdsInFeed.length).toBeLessThanOrEqual(3);
   });
 
-  it("surfaces a followed creator's brand-new, not-yet-trending post in for_you, not just re-ranked trending content", async () => {
-    const trendingCreator = await createCreator("Discovery Creator", "discovery-creator");
-    const followedCreator = await createCreator("Quiet Followed Creator", "quiet-followed-creator");
+  it("surfaces a followed muse's brand-new, not-yet-trending drop in for_you, not just re-ranked trending content", async () => {
+    const trendingCreator = await createCreator("Discovery Muse", "discovery-creator");
+    const followedCreator = await createCreator("Quiet Followed Muse", "quiet-followed-creator");
     const engager = await createCreator("Discovery Engager", "discovery-engager");
     const viewer = await createCreator("Followed Discovery Viewer", "followed-discovery-viewer");
 
-    const trendingLook = await createLook(trendingCreator.id, "Discovery trending post");
+    const trendingLook = await createLook(trendingCreator.id, "Discovery trending drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: trendingLook.id, userId: engager.id },
     });
-    const quietFollowedLook = await createLook(followedCreator.id, "Quiet followed post");
+    const quietFollowedLook = await createLook(followedCreator.id, "Quiet followed drop");
 
     await followCreator(viewer.id, followedCreator.id);
     await creatorLookService.runTrendingAggregation();
@@ -1983,17 +1977,17 @@ describe("GET /api/creator-looks/feed", () => {
     expect(ids).toContain(trendingLook.id);
   });
 
-  it("pads a signed-in for_you feed with recent posts when few posts are trending, matching what an anonymous visitor sees", async () => {
-    const trendingCreator = await createCreator("Pad Trending Creator", "pad-trending-creator");
-    const recentCreator = await createCreator("Pad Recent Creator", "pad-recent-creator");
+  it("pads a signed-in for_you feed with recent drops when few drops are trending, matching what an anonymous visitor sees", async () => {
+    const trendingCreator = await createCreator("Pad Trending Muse", "pad-trending-creator");
+    const recentCreator = await createCreator("Pad Recent Muse", "pad-recent-creator");
     const engager = await createCreator("Pad Engager", "pad-engager");
     const viewer = await createCreator("Pad Viewer", "pad-viewer");
 
-    const trendingLook = await createLook(trendingCreator.id, "Pad trending post");
+    const trendingLook = await createLook(trendingCreator.id, "Pad trending drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: trendingLook.id, userId: engager.id },
     });
-    const recentLook = await createLook(recentCreator.id, "Pad recent untrended post");
+    const recentLook = await createLook(recentCreator.id, "Pad recent untrended drop");
 
     await creatorLookService.runTrendingAggregation();
     await creatorLookService.runTrendingScoring();
@@ -2014,20 +2008,20 @@ describe("GET /api/creator-looks/feed", () => {
     expect(anonymousIds).toContain(recentLook.id);
   });
 
-  it("only flags genuinely-scored posts as trending in for_you, not the followed posts interleaved in for personalization", async () => {
-    const trendingCreator = await createCreator("Rank Discovery Creator", "rank-discovery-creator");
+  it("only flags genuinely-scored drops as trending in for_you, not the followed drops interleaved in for personalization", async () => {
+    const trendingCreator = await createCreator("Rank Discovery Muse", "rank-discovery-creator");
     const followedCreator = await createCreator(
-      "Rank Quiet Followed Creator",
+      "Rank Quiet Followed Muse",
       "rank-quiet-followed-creator",
     );
     const engager = await createCreator("Rank Discovery Engager", "rank-discovery-engager");
     const viewer = await createCreator("Rank Discovery Viewer", "rank-discovery-viewer");
 
-    const trendingLook = await createLook(trendingCreator.id, "Rank discovery trending post");
+    const trendingLook = await createLook(trendingCreator.id, "Rank discovery trending drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: trendingLook.id, userId: engager.id },
     });
-    const quietFollowedLook = await createLook(followedCreator.id, "Rank quiet followed post");
+    const quietFollowedLook = await createLook(followedCreator.id, "Rank quiet followed drop");
 
     await followCreator(viewer.id, followedCreator.id);
     await creatorLookService.runTrendingAggregation();
@@ -2044,12 +2038,12 @@ describe("GET /api/creator-looks/feed", () => {
     expect(posts.find((post) => post.id === quietFollowedLook.id)?.isTrending).toBe(false);
   });
 
-  it("keeps the for_you candidate set stable across repeat page-1 requests, even once a new post starts scoring in between", async () => {
-    const creatorA = await createCreator("Stable Creator A", "stable-creator-a");
+  it("keeps the for_you candidate set stable across repeat page-1 requests, even once a new drop starts scoring in between", async () => {
+    const creatorA = await createCreator("Stable Muse A", "stable-creator-a");
     const neutralViewer = await createCreator("Stable Neutral Viewer", "stable-neutral-viewer");
     const viewer = await createCreator("Stable Ranking Viewer", "stable-ranking-viewer");
 
-    const lookA = await createLook(creatorA.id, "Stable ranking post A");
+    const lookA = await createLook(creatorA.id, "Stable ranking drop A");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: lookA.id, userId: neutralViewer.id },
     });
@@ -2064,8 +2058,8 @@ describe("GET /api/creator-looks/feed", () => {
     const firstIds = first.body.data.posts.map((post: { id: string }) => post.id);
     expect(firstIds).toContain(lookA.id);
 
-    const creatorC = await createCreator("Stable Creator C", "stable-creator-c");
-    const lookC = await createLook(creatorC.id, "Newly scored post C");
+    const creatorC = await createCreator("Stable Muse C", "stable-creator-c");
+    const lookC = await createLook(creatorC.id, "Newly scored drop C");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: lookC.id, userId: neutralViewer.id },
     });
@@ -2084,9 +2078,9 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("computes a fresh personalized score when nothing is cached yet", async () => {
-    const creator = await createCreator("Fresh Score Creator", "fresh-score-creator");
+    const creator = await createCreator("Fresh Score Muse", "fresh-score-creator");
     const viewer = await createCreator("Fresh Score Viewer", "fresh-score-viewer");
-    const look = await createLook(creator.id, "Fresh score post");
+    const look = await createLook(creator.id, "Fresh score drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
     await creatorLookService.runTrendingAggregation();
 
@@ -2099,10 +2093,10 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data.posts.some((post: { id: string }) => post.id === look.id)).toBe(true);
   });
 
-  it("falls back to the legacy trending snapshot for an authenticated viewer when no post has ever scored, without flagging it as trending", async () => {
-    const creator = await createCreator("No Score Creator", "no-score-creator");
+  it("falls back to the legacy trending snapshot for an authenticated viewer when no drop has ever scored, without flagging it as trending", async () => {
+    const creator = await createCreator("No Score Muse", "no-score-creator");
     const viewer = await createCreator("No Score Viewer", "no-score-viewer");
-    const look = await createLook(creator.id, "Never scored post");
+    const look = await createLook(creator.id, "Never scored drop");
 
     const response = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -2116,9 +2110,9 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("paginates the trending tab with a stable snapshot across pages", async () => {
-    const creator = await createCreator("Trending Page Creator", "trending-page-creator");
-    await createLook(creator.id, "Trending page post one");
-    await createLook(creator.id, "Trending page post two");
+    const creator = await createCreator("Trending Page Muse", "trending-page-creator");
+    await createLook(creator.id, "Trending page drop one");
+    await createLook(creator.id, "Trending page drop two");
 
     const first = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -2137,10 +2131,10 @@ describe("GET /api/creator-looks/feed", () => {
     }
   });
 
-  it("drops a post from the trending tab once it's deleted, even while its snapshot cache is warm", async () => {
-    const creator = await createCreator("Stale Trending Creator", "stale-trending-creator");
+  it("drops a drop from the trending tab once it's deleted, even while its snapshot cache is warm", async () => {
+    const creator = await createCreator("Stale Trending Muse", "stale-trending-creator");
     const engager = await createCreator("Stale Trending Engager", "stale-trending-engager");
-    const look = await createLook(creator.id, "Stale trending post");
+    const look = await createLook(creator.id, "Stale trending drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: engager.id } });
     await creatorLookService.runTrendingAggregation();
     await creatorLookService.runTrendingScoring();
@@ -2154,10 +2148,10 @@ describe("GET /api/creator-looks/feed", () => {
     expect(after.body.data.posts.map((post: { id: string }) => post.id)).not.toContain(look.id);
   });
 
-  it("drops a post from the for_you tab once it's deleted, even while its snapshot cache is warm", async () => {
-    const creator = await createCreator("Stale For You Creator", "stale-for-you-creator");
+  it("drops a drop from the for_you tab once it's deleted, even while its snapshot cache is warm", async () => {
+    const creator = await createCreator("Stale For You Muse", "stale-for-you-creator");
     const engager = await createCreator("Stale For You Engager", "stale-for-you-engager");
-    const look = await createLook(creator.id, "Stale for-you post");
+    const look = await createLook(creator.id, "Stale for-you drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: engager.id } });
     await creatorLookService.runTrendingAggregation();
     await creatorLookService.runTrendingScoring();
@@ -2183,11 +2177,11 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("resumes the trending tab from where it left off instead of rewinding to page one when the session snapshot expires mid-scroll", async () => {
-    const creator = await createCreator("Resume Trending Creator", "resume-trending-creator");
+    const creator = await createCreator("Resume Trending Muse", "resume-trending-creator");
     const engagerOne = await createCreator("Resume Trending Engager One", "resume-trending-eng-1");
     const engagerTwo = await createCreator("Resume Trending Engager Two", "resume-trending-eng-2");
-    const topLook = await createLook(creator.id, "Resume trending top post");
-    const secondLook = await createLook(creator.id, "Resume trending second post");
+    const topLook = await createLook(creator.id, "Resume trending top drop");
+    const secondLook = await createLook(creator.id, "Resume trending second drop");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: topLook.id, userId: engagerOne.id },
@@ -2216,12 +2210,12 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("resumes the for_you tab from where it left off instead of rewinding to page one when the session snapshot expires mid-scroll", async () => {
-    const creator = await createCreator("Resume For You Creator", "resume-for-you-creator");
+    const creator = await createCreator("Resume For You Muse", "resume-for-you-creator");
     const engagerOne = await createCreator("Resume For You Engager One", "resume-for-you-eng-1");
     const engagerTwo = await createCreator("Resume For You Engager Two", "resume-for-you-eng-2");
     const viewer = await createCreator("Resume For You Viewer", "resume-for-you-viewer");
-    const topLook = await createLook(creator.id, "Resume for-you top post");
-    const secondLook = await createLook(creator.id, "Resume for-you second post");
+    const topLook = await createLook(creator.id, "Resume for-you top drop");
+    const secondLook = await createLook(creator.id, "Resume for-you second drop");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: topLook.id, userId: engagerOne.id },
@@ -2251,9 +2245,9 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("recomputes on demand once an empty cached score result has expired, instead of staying suppressed", async () => {
-    const creator = await createCreator("Self Heal Creator", "self-heal-creator");
+    const creator = await createCreator("Self Heal Muse", "self-heal-creator");
     const viewer = await createCreator("Self Heal Viewer", "self-heal-viewer");
-    const look = await createLook(creator.id, "Self heal post");
+    const look = await createLook(creator.id, "Self heal drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
     await creatorLookService.runTrendingAggregation();
 
@@ -2274,16 +2268,16 @@ describe("GET /api/creator-looks/feed", () => {
     expect(posts.find((post) => post.id === look.id)?.isTrending).toBe(true);
   });
 
-  it("shows scored trending posts first, followed by unscored recent posts, without marking the fallback ones as trending", async () => {
-    const scoredCreator = await createCreator("Hybrid Scored Creator", "hybrid-scored-creator");
+  it("shows scored trending drops first, followed by unscored recent drops, without marking the fallback ones as trending", async () => {
+    const scoredCreator = await createCreator("Hybrid Scored Muse", "hybrid-scored-creator");
     const engager = await createCreator("Hybrid Engager", "hybrid-engager");
-    const quietCreator = await createCreator("Hybrid Quiet Creator", "hybrid-quiet-creator");
+    const quietCreator = await createCreator("Hybrid Quiet Muse", "hybrid-quiet-creator");
 
-    const scoredLook = await createLook(scoredCreator.id, "Hybrid scored post");
+    const scoredLook = await createLook(scoredCreator.id, "Hybrid scored drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: scoredLook.id, userId: engager.id },
     });
-    const quietLook = await createLook(quietCreator.id, "Hybrid quiet post");
+    const quietLook = await createLook(quietCreator.id, "Hybrid quiet drop");
 
     await creatorLookService.runTrendingAggregation();
     const { ranked } = await creatorLookService.runTrendingScoring();
@@ -2306,21 +2300,18 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("keeps engagement-based personalization for for_you even when nothing has been scored yet", async () => {
-    const engagedCreator = await createCreator(
-      "Fallback Engaged Creator",
-      "fallback-engaged-creator",
-    );
-    const otherCreator = await createCreator("Fallback Other Creator", "fallback-other-creator");
+    const engagedCreator = await createCreator("Fallback Engaged Muse", "fallback-engaged-creator");
+    const otherCreator = await createCreator("Fallback Other Muse", "fallback-other-creator");
     const viewer = await createCreator(
       "Fallback Personalize Viewer",
       "fallback-personalize-viewer",
     );
 
-    const engagedLook = await createLook(engagedCreator.id, "Fallback engaged post");
+    const engagedLook = await createLook(engagedCreator.id, "Fallback engaged drop");
     await prisma.creatorLookSave.create({
       data: { creatorLookId: engagedLook.id, userId: viewer.id },
     });
-    const otherLook = await createLook(otherCreator.id, "Fallback unrelated post");
+    const otherLook = await createLook(otherCreator.id, "Fallback unrelated drop");
 
     const response = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -2339,12 +2330,12 @@ describe("GET /api/creator-looks/feed", () => {
   });
 
   it("gives anonymous for_you its own creator-diversity-capped ranking instead of mirroring the trending tab", async () => {
-    const busyCreator = await createCreator("Anon Busy Creator", "anon-busy-creator");
+    const busyCreator = await createCreator("Anon Busy Muse", "anon-busy-creator");
     const engager = await createCreator("Anon Diversity Engager", "anon-diversity-engager");
 
     const busyLooks = await Promise.all(
       Array.from({ length: 5 }, (_, index) =>
-        createLook(busyCreator.id, `Anon busy post ${index}`),
+        createLook(busyCreator.id, `Anon busy drop ${index}`),
       ),
     );
     for (const look of busyLooks) {
@@ -2395,11 +2386,11 @@ describe("creatorLookService.countNewSince", () => {
     expect(count).toBe(0);
   });
 
-  it("counts new posts from followed creators", async () => {
-    const followedCreator = await createCreator("Count Followed Creator", "count-followed-creator");
+  it("counts new drops from followed muses", async () => {
+    const followedCreator = await createCreator("Count Followed Muse", "count-followed-creator");
     const viewer = await createCreator("Count Following Viewer", "count-following-viewer");
     await followCreator(viewer.id, followedCreator.id);
-    await createLook(followedCreator.id, "New since post");
+    await createLook(followedCreator.id, "New since drop");
 
     const count = await creatorLookService.countNewSince(viewer.id, {
       tab: "following",
@@ -2409,9 +2400,9 @@ describe("creatorLookService.countNewSince", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it("counts new posts for the trending and for_you tabs", async () => {
-    const creator = await createCreator("Count Trending Creator", "count-trending-creator");
-    await createLook(creator.id, "Trending count post");
+  it("counts new drops for the trending and for_you tabs", async () => {
+    const creator = await createCreator("Count Trending Muse", "count-trending-creator");
+    await createLook(creator.id, "Trending count drop");
 
     const since = new Date(Date.now() - 60 * 60 * 1000);
     const trendingCount = await creatorLookService.countNewSince(undefined, {
@@ -2427,10 +2418,10 @@ describe("creatorLookService.countNewSince", () => {
     expect(forYouCount).toBeGreaterThan(0);
   });
 
-  it("counts new posts for an arbitrary hashtag tab", async () => {
-    const creator = await createCreator("Count Hashtag Creator", "count-hashtag-creator");
+  it("counts new drops for an arbitrary hashtag tab", async () => {
+    const creator = await createCreator("Count Hashtag Muse", "count-hashtag-creator");
     const marker = randomUUID().slice(0, 6);
-    const look = await createLook(creator.id, `Count hashtag post #counttag${marker}`);
+    const look = await createLook(creator.id, `Count hashtag drop #counttag${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: look.id, tag: `counttag${marker}` },
     });
@@ -2445,10 +2436,10 @@ describe("creatorLookService.countNewSince", () => {
 });
 
 describe("creatorLookService trending pipeline", () => {
-  it("aggregates hourly post metrics and prunes buckets older than the retention window", async () => {
-    const creator = await createCreator("Pipeline Post Creator", "pipeline-post-creator");
-    const viewer = await createCreator("Pipeline Post Viewer", "pipeline-post-viewer");
-    const look = await createLook(creator.id, "Pipeline aggregation post");
+  it("aggregates hourly drop metrics and prunes buckets older than the retention window", async () => {
+    const creator = await createCreator("Pipeline Drop Muse", "pipeline-post-creator");
+    const viewer = await createCreator("Pipeline Drop Viewer", "pipeline-post-viewer");
+    const look = await createLook(creator.id, "Pipeline aggregation drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
 
     const { bucketStart, deletedBuckets } = await creatorLookService.runTrendingAggregation();
@@ -2463,9 +2454,9 @@ describe("creatorLookService trending pipeline", () => {
   });
 
   it("computes and caches ranked trending scores", async () => {
-    const creator = await createCreator("Pipeline Score Creator", "pipeline-score-creator");
+    const creator = await createCreator("Pipeline Score Muse", "pipeline-score-creator");
     const viewer = await createCreator("Pipeline Score Viewer", "pipeline-score-viewer");
-    const look = await createLook(creator.id, "Pipeline scoring post");
+    const look = await createLook(creator.id, "Pipeline scoring drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
     await creatorLookService.runTrendingAggregation();
 
@@ -2474,12 +2465,12 @@ describe("creatorLookService trending pipeline", () => {
     expect(ranked.some((entry) => entry.lookId === look.id)).toBe(true);
   });
 
-  it("breaks a tie between equally-scored posts the same way on every recompute", async () => {
-    const creator = await createCreator("Pipeline Tie Creator", "pipeline-tie-creator");
+  it("breaks a tie between equally-scored drops the same way on every recompute", async () => {
+    const creator = await createCreator("Pipeline Tie Muse", "pipeline-tie-creator");
     const viewerOne = await createCreator("Pipeline Tie Viewer One", "pipeline-tie-viewer-one");
     const viewerTwo = await createCreator("Pipeline Tie Viewer Two", "pipeline-tie-viewer-two");
-    const lookA = await createLook(creator.id, "Pipeline tie post A");
-    const lookB = await createLook(creator.id, "Pipeline tie post B");
+    const lookA = await createLook(creator.id, "Pipeline tie drop A");
+    const lookB = await createLook(creator.id, "Pipeline tie drop B");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: lookA.id, userId: viewerOne.id },
@@ -2507,10 +2498,10 @@ describe("creatorLookService trending pipeline", () => {
   });
 
   it("finalizes an hour's bucket with activity that arrives after aggregation has already moved on to the next hour", async () => {
-    const creator = await createCreator("Boundary Creator", "boundary-creator");
+    const creator = await createCreator("Boundary Muse", "boundary-creator");
     const engagerA = await createCreator("Boundary Engager A", "boundary-engager-a");
     const engagerB = await createCreator("Boundary Engager B", "boundary-engager-b");
-    const look = await createLook(creator.id, "Boundary gap post");
+    const look = await createLook(creator.id, "Boundary gap drop");
 
     const hourOneStart = truncateToHour(new Date(Date.now() - 2 * 60 * 60 * 1000));
     const hourTwoStart = new Date(hourOneStart.getTime() + 60 * 60 * 1000);
@@ -2554,9 +2545,9 @@ describe("creatorLookService trending pipeline", () => {
   });
 
   it("caches a non-empty scoring result with the normal long-lived TTL", async () => {
-    const creator = await createCreator("TTL Creator", "ttl-creator");
+    const creator = await createCreator("TTL Muse", "ttl-creator");
     const viewer = await createCreator("TTL Viewer", "ttl-viewer");
-    const look = await createLook(creator.id, "TTL post");
+    const look = await createLook(creator.id, "TTL drop");
     await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
     await creatorLookService.runTrendingAggregation();
 
@@ -2569,10 +2560,10 @@ describe("creatorLookService trending pipeline", () => {
 });
 
 describe("GET /api/creators/by-handle/:handle/looks integration with feed", () => {
-  it("hydrates a creator's public post list with tagged products and hashtags", async () => {
-    const creator = await createCreator("Handle Feed Creator", "handle-feed-creator");
+  it("hydrates a muse's public drop list with tagged products and hashtags", async () => {
+    const creator = await createCreator("Handle Feed Muse", "handle-feed-creator");
     const product = await createApprovedProduct("Handle Feed Product");
-    const look = await createLook(creator.id, "Handle feed #style post");
+    const look = await createLook(creator.id, "Handle feed #style drop");
     await tagProduct(look.id, product.id);
     await prisma.creatorLookHashtag.create({ data: { creatorLookId: look.id, tag: "style" } });
 
@@ -2597,10 +2588,10 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   };
 
   it("adds a reply, increments the parent's reply count, and the look's comment count", async () => {
-    const creator = await createCreator("Reply Target Creator", "reply-target-creator");
+    const creator = await createCreator("Reply Target Muse", "reply-target-creator");
     const commenter = await createCreator("Reply Thread Starter", "reply-thread-starter");
     const replier = await createCreator("Reply Author", "reply-author");
-    const look = await createLook(creator.id, "Reply target post");
+    const look = await createLook(creator.id, "Reply target drop");
     const commentId = await postComment(look.id, commenter.id, "Great fit!");
 
     const response = await request(testApp)
@@ -2625,7 +2616,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("surfaces reply count and a preview of replies when listing top-level comments", async () => {
-    const creator = await createCreator("Preview Reply Creator", "preview-reply-creator");
+    const creator = await createCreator("Preview Reply Muse", "preview-reply-creator");
     const commenter = await createCreator("Preview Reply Commenter", "preview-reply-commenter");
     const replier = await createCreator("Preview Reply Replier", "preview-reply-replier");
     const look = await createLook(creator.id, "Preview reply target");
@@ -2649,7 +2640,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("lists replies oldest first with cursor pagination", async () => {
-    const creator = await createCreator("Reply List Creator", "reply-list-creator");
+    const creator = await createCreator("Reply List Muse", "reply-list-creator");
     const commenter = await createCreator("Reply List Commenter", "reply-list-commenter");
     const replier = await createCreator("Reply List Replier", "reply-list-replier");
     const look = await createLook(creator.id, "Reply list target");
@@ -2681,7 +2672,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("rejects replying to a reply, keeping threads exactly one level deep", async () => {
-    const creator = await createCreator("Nested Reply Creator", "nested-reply-creator");
+    const creator = await createCreator("Nested Reply Muse", "nested-reply-creator");
     const commenter = await createCreator("Nested Reply Commenter", "nested-reply-commenter");
     const replier = await createCreator("Nested Reply Replier", "nested-reply-replier");
     const nestedReplier = await createCreator("Nested Reply Second", "nested-reply-second");
@@ -2703,7 +2694,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("returns 404 replying to a comment that doesn't exist", async () => {
-    const creator = await createCreator("Missing Reply Creator", "missing-reply-creator");
+    const creator = await createCreator("Missing Reply Muse", "missing-reply-creator");
     const replier = await createCreator("Missing Reply Author", "missing-reply-author");
     const look = await createLook(creator.id, "Missing reply target");
 
@@ -2716,7 +2707,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("returns 404 listing replies for a comment that doesn't exist", async () => {
-    const creator = await createCreator("Missing Reply List Creator", "missing-reply-list-creator");
+    const creator = await createCreator("Missing Reply List Muse", "missing-reply-list-creator");
     const look = await createLook(creator.id, "Missing reply list target");
 
     const response = await request(testApp).get(
@@ -2727,7 +2718,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("requires authentication to reply", async () => {
-    const creator = await createCreator("Auth Reply Creator", "auth-reply-creator");
+    const creator = await createCreator("Auth Reply Muse", "auth-reply-creator");
     const commenter = await createCreator("Auth Reply Commenter", "auth-reply-commenter");
     const look = await createLook(creator.id, "Needs auth to reply");
     const commentId = await postComment(look.id, commenter.id, "Needs a reply");
@@ -2740,7 +2731,7 @@ describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", 
   });
 
   it("rejects an empty reply body", async () => {
-    const creator = await createCreator("Empty Reply Creator", "empty-reply-creator");
+    const creator = await createCreator("Empty Reply Muse", "empty-reply-creator");
     const commenter = await createCreator("Empty Reply Commenter", "empty-reply-commenter");
     const replier = await createCreator("Empty Reply Author", "empty-reply-author");
     const look = await createLook(creator.id, "Empty reply target");

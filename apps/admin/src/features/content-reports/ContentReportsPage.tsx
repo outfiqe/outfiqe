@@ -61,7 +61,7 @@ export const ContentReportsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Content reports</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Posts and comments flagged by viewers.
+        Drops and chimes flagged by viewers.
         {openCount.data ? ` ${openCount.data} open.` : ""}
       </p>
 

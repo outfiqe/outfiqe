@@ -157,6 +157,7 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.OUTFIT_OFFER_DECLINED]: businessAccounts,
   [NotificationType.OUTFIT_OFFER_REFUNDED]: businessAccounts,
   [NotificationType.OUTFIT_OFFER_EXPIRED]: shoppersAndBusinesses,
+  [NotificationType.ACCOUNT_APPROVED]: creatorsAndBusinesses,
 };
 
 export const canReceiveNotificationType = (

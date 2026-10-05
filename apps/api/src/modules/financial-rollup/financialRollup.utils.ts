@@ -46,7 +46,7 @@ const LEDGER_CSV_HEADERS = [
   "Gross",
   "Platform Fee",
   "Gateway Fee",
-  "Creator Commission",
+  "Muse Commission",
   "Brand Net",
   "Brand Payout Status",
 ];

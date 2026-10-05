@@ -9,6 +9,6 @@ export const creatorOverviewController = {
   async getMine(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const overview = await creatorOverviewService.getOverview(userId);
-    sendSuccess(res, overview, "Your creator overview.");
+    sendSuccess(res, overview, "Your muse overview.");
   },
 };

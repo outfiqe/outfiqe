@@ -92,8 +92,8 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
           <ActivityStat label="Purchases" value={data.recentActivity.purchaseUnits} />
           <ActivityStat label="Cart adds" value={data.recentActivity.cartAdds} />
-          <ActivityStat label="Saves" value={data.recentActivity.saves} />
-          <ActivityStat label="Creator tags" value={data.recentActivity.creatorTags} />
+          <ActivityStat label="Stashes" value={data.recentActivity.saves} />
+          <ActivityStat label="Muse tags" value={data.recentActivity.creatorTags} />
           <ActivityStat label="Tag clicks" value={data.recentActivity.tagClicks} />
         </div>
       </div>

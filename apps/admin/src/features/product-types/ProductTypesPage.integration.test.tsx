@@ -48,7 +48,7 @@ const renderPage = () => {
 };
 
 describe("ProductTypesPage", () => {
-  it("posts the dragged id order when one row is dropped onto another", async () => {
+  it("drops the dragged id order when one row is dropped onto another", async () => {
     let reorderBody: unknown;
     mswServer.use(
       http.get(`${API_BASE}/product-types/admin`, () =>

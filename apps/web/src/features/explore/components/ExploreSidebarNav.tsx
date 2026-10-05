@@ -33,7 +33,7 @@ const SavedNavLink = () => {
       className={cn(NAV_ITEM_CLASS, pending ? NAV_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS)}
     >
       <Bookmark className="size-4 shrink-0" />
-      Saved
+      Stash
       <span
         aria-hidden
         className={cn(

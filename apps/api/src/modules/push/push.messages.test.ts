@@ -8,6 +8,7 @@ import {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
+import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 import { toPushMessage } from "./push.messages.js";
 
@@ -33,13 +34,13 @@ const aNotification = (
 });
 
 describe("toPushMessage", () => {
-  it("names the single person behind a like", () => {
+  it("names the single person behind a cheriq", () => {
     const message = toPushMessage(
       aNotification({ type: NotificationType.LOOK_LIKED, actorCount: 1 }),
     );
 
-    expect(message.title).toBe("New like");
-    expect(message.body).toBe("Someone liked your look");
+    expect(message.title).toBe("New cheriq");
+    expect(message.body).toBe("Someone cheriqed your drop");
   });
 
   it("counts the group once more than one person did the same thing", () => {
@@ -112,6 +113,40 @@ describe("toPushMessage", () => {
 
     expect(approved.url).toBe("/wallet");
     expect(paid.url).toBe("/wallet");
+  });
+
+  it("welcomes a newly approved muse and sends them to their dashboard", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        actorId: null,
+        entityType: null,
+        entityId: null,
+        metadata: { approvedAccountKind: ApprovedAccountKind.CREATOR },
+      }),
+    );
+
+    expect(message.title).toBe("Welcome to Outfiqe");
+    expect(message.body).toBe("You're now an approved muse. Drop your first look");
+    expect(message.url).toBe("/overview");
+  });
+
+  it("welcomes a new brand by name, or generically when the name is missing", () => {
+    const named = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        metadata: { approvedAccountKind: ApprovedAccountKind.BRAND, brandName: "Meridian" },
+      }),
+    );
+    const unnamed = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        metadata: { approvedAccountKind: ApprovedAccountKind.BRAND },
+      }),
+    );
+
+    expect(named.body).toBe("Meridian is set up. Add your first products");
+    expect(unnamed.body).toBe("Your brand is set up. Add your first products");
   });
 
   it("falls back to the notification list for a type with no dedicated page", () => {

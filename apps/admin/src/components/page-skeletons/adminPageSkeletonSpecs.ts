@@ -87,7 +87,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
           },
           {
             title: "Ledger",
-            description: "What's owed to creators and brands per the settlement ledger.",
+            description: "What's owed to muses and brands per the settlement ledger.",
             rowCount: 4,
           },
         ],
@@ -149,7 +149,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
   "/withdraw-policy": {
     title: "Withdrawal policy",
     blocks: [
-      { kind: "filterTabs", labels: ["Creator", "Business"] },
+      { kind: "filterTabs", labels: ["Muse", "Business"] },
       {
         kind: "formCard",
         layout: "grid",
@@ -280,11 +280,11 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     sourceFiles: [`${FEATURES_DIR}/platform-nav-access/PlatformNavAccessPage.tsx`],
   },
   "/content-browser": {
-    title: "Browse posts",
+    title: "Browse drops",
     description:
-      "Search creator posts and comments directly and take one down without waiting for a report.",
+      "Search muse drops and chimes directly and take one down without waiting for a report.",
     blocks: [
-      { kind: "searchInput", placeholder: "Search by caption or creator…" },
+      { kind: "searchInput", placeholder: "Search by caption or muse…" },
       { kind: "posterGrid", count: POSTER_COUNT },
     ],
     sourceFiles: [`${FEATURES_DIR}/content-browser/ContentBrowserPage.tsx`],
@@ -292,7 +292,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
 
   "/content-reports": {
     title: "Content reports",
-    description: "Posts and comments flagged by viewers.",
+    description: "Drops and chimes flagged by viewers.",
     blocks: [
       { kind: "filterTabs", labels: ["Open", "Actioned", "Dismissed"] },
       { kind: "reportRows", count: ROW_COUNT },
@@ -384,7 +384,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
   },
 
   "/creators": {
-    title: "Creators",
+    title: "Muses",
     blocks: [
       { kind: "filterTabs", labels: ["Pending", "Approved", "Rejected"] },
       {
@@ -540,9 +540,9 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     blocks: [
       {
         kind: "section",
-        title: "Creator Look commission",
+        title: "Drop commission",
         description:
-          "Fixed commission a creator earns when someone buys from their post or link, by the sold item's price band.",
+          "Fixed commission a muse earns when someone buys from their drop or link, by the sold item's price band.",
         blocks: [
           {
             kind: "formCard",
@@ -680,14 +680,14 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     blocks: [
       {
         kind: "section",
-        title: "Creator leaderboard",
+        title: "Muse leaderboard",
         description:
           "Each ranking can be shown or hidden independently on the public leaderboard page — turning one off removes it from the page immediately, it doesn't stop the numbers behind it from being tracked.",
         blocks: [{ kind: "toggleRows", count: ROW_COUNT }],
       },
       {
         kind: "section",
-        title: "Creator competitions",
+        title: "Muse competitions",
         description:
           "An ongoing weekly rule, not a one-off event — the top finishers in a leaderboard category win the trophy badge automatically every week, settled the moment each ISO week ends. Deactivating a competition stops future settlements without taking back badges already won.",
         blocks: [

@@ -110,7 +110,7 @@ beforeEach(() => {
     allItems: [...pinnedItems, ...overflowItems],
     savePins,
     resetPins,
-    accountLabel: "Creator account",
+    accountLabel: "Muse account",
   });
 });
 

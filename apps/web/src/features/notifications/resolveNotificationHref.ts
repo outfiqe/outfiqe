@@ -72,6 +72,8 @@ export const resolveNotificationHref = (
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return WEB_NOTIFICATION_ROUTES.wallet;
+    case NotificationType.ACCOUNT_APPROVED:
+      return WEB_NOTIFICATION_ROUTES.dashboardOverview;
     case NotificationType.NEW_MESSAGE:
       return entityId ? conversationPath(entityId) : WEB_NOTIFICATION_ROUTES.messagesList;
     case NotificationType.SUPPORT_TICKET_REPLY:

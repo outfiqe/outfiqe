@@ -5,9 +5,9 @@ export const COMMISSION_SCOPE_COPY: Record<
   { title: string; description: string }
 > = {
   CREATOR_LOOK: {
-    title: "Creator Look commission",
+    title: "Drop commission",
     description:
-      "Fixed commission a creator earns when someone buys from their post or link, by the sold item's price band.",
+      "Fixed commission a muse earns when someone buys from their drop or link, by the sold item's price band.",
   },
   OUTFIT_BUILD: {
     title: "Build commission",

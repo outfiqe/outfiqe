@@ -18,7 +18,7 @@ export const EditPostModal = ({ lookId, onClose }: EditPostModalProps) => {
     <Modal
       open={open}
       onClose={onClose}
-      title="Edit post"
+      title="Edit drop"
       description="Update your photos, caption, and tagged pieces."
       className="sm:max-w-lg"
     >
@@ -33,7 +33,7 @@ export const EditPostModal = ({ lookId, onClose }: EditPostModalProps) => {
 
 const EditPostModalSkeleton = ({ isError }: { isError: boolean }) =>
   isError ? (
-    <p className="py-8 text-center text-sm text-muted-foreground">Couldn&apos;t load this post.</p>
+    <p className="py-8 text-center text-sm text-muted-foreground">Couldn&apos;t load this drop.</p>
   ) : (
     <div className="space-y-5" aria-hidden>
       <div className="flex gap-2">

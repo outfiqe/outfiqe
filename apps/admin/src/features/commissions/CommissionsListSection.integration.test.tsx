@@ -286,7 +286,7 @@ describe("CommissionsListSection", () => {
         const cursor = new URL(request.url).searchParams.get("cursor");
         return okJson({
           items: cursor
-            ? [commission({ id: "commission-2", recipientName: "Second Creator" })]
+            ? [commission({ id: "commission-2", recipientName: "Second Muse" })]
             : [commission()],
           nextCursor: cursor ? null : "cursor-1",
         });
@@ -298,7 +298,7 @@ describe("CommissionsListSection", () => {
     await screen.findByText("Asha Rai");
     await userEvent.click(await screen.findByRole("button", { name: "Load more" }));
 
-    expect(await screen.findByText("Second Creator")).toBeInTheDocument();
+    expect(await screen.findByText("Second Muse")).toBeInTheDocument();
   });
 
   it("shows a loading label on the load-more button while the next page fetches", async () => {

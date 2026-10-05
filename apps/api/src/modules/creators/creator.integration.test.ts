@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
@@ -77,7 +78,7 @@ const createAdmin = async (name: string, handle: string) => {
 };
 
 describe("GET /api/creators/autocomplete", () => {
-  it("returns approved creators ranked by name/handle match", async () => {
+  it("returns approved muses ranked by name/handle match", async () => {
     await createApprovedCreator("Ava Martinez", "ava-martinez");
     await createApprovedCreator("Noah Chen", "noah-chen");
 
@@ -93,11 +94,11 @@ describe("GET /api/creators/autocomplete", () => {
     expect(response.body.data[0]).toHaveProperty("followerCount");
   });
 
-  it("excludes users who aren't approved creators", async () => {
+  it("excludes users who aren't approved muses", async () => {
     await prisma.user.create({
       data: {
         email: `pending-${randomUUID()}@outfiqe.test`,
-        name: "Pending Creator",
+        name: "Pending Muse",
         handle: `pending-creator-${randomUUID().slice(0, 6)}`,
         phone: uniquePhone(),
         passwordHash: "not-used-in-tests",
@@ -108,7 +109,7 @@ describe("GET /api/creators/autocomplete", () => {
 
     const response = await request(testApp)
       .get("/api/creators/autocomplete")
-      .query({ q: "Pending Creator" });
+      .query({ q: "Pending Muse" });
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(0);
@@ -131,7 +132,7 @@ describe("GET /api/creators/autocomplete", () => {
 });
 
 describe("PATCH /api/creators/me", () => {
-  it("updates the creator's height and show-height preference", async () => {
+  it("updates the muse's height and show-height preference", async () => {
     const creator = await createApprovedCreator("Height Setter", "height-setter");
 
     const response = await request(testApp)
@@ -275,7 +276,7 @@ describe("PATCH /api/creators/me — username change", () => {
 });
 
 describe("GET /api/creators/by-handle/:handle", () => {
-  it("hides height from other viewers when the creator has not opted in", async () => {
+  it("hides height from other viewers when the muse has not opted in", async () => {
     const creator = await createApprovedCreator("Hidden Height", "hidden-height", {
       heightCm: 165,
       showHeight: false,
@@ -291,7 +292,7 @@ describe("GET /api/creators/by-handle/:handle", () => {
     expect(response.body.data.showHeight).toBe(false);
   });
 
-  it("shows height to other viewers when the creator has opted in", async () => {
+  it("shows height to other viewers when the muse has opted in", async () => {
     const creator = await createApprovedCreator("Shown Height", "shown-height", {
       heightCm: 172,
       showHeight: true,
@@ -325,8 +326,8 @@ describe("GET /api/creators/by-handle/:handle", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 404 for a user who exists but isn't a creator", async () => {
-    const user = await createPlainUser("Not A Creator", "not-a-creator");
+  it("returns 404 for a user who exists but isn't a muse", async () => {
+    const user = await createPlainUser("Not A Muse", "not-a-creator");
 
     const response = await request(testApp).get(`/api/creators/by-handle/${user.handle}`);
 
@@ -377,7 +378,7 @@ describe("GET /api/creators/by-handle/:handle", () => {
 });
 
 describe("GET /api/creators/by-handle/:handle/looks", () => {
-  it("returns the creator's published looks", async () => {
+  it("returns the muse's published looks", async () => {
     const creator = await createApprovedCreator("Look Poster", "look-poster");
     await prisma.creatorLook.create({
       data: {
@@ -443,7 +444,7 @@ describe("POST /api/creators/apply", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejects a platform admin applying to become a creator", async () => {
+  it("rejects a platform admin applying to become a muse", async () => {
     const admin = await createUserWithRole("Admin Applicant", "admin-applicant", UserRole.ADMIN);
 
     const response = await request(testApp)
@@ -457,7 +458,7 @@ describe("POST /api/creators/apply", () => {
     expect(stored.creatorStatus).toBe(CreatorStatus.NONE);
   });
 
-  it("rejects a brand owner applying to become a creator", async () => {
+  it("rejects a brand owner applying to become a muse", async () => {
     const brandOwner = await createUserWithRole(
       "Brand Owner Applicant",
       "brand-owner-applicant",
@@ -548,7 +549,7 @@ describe("GET /api/creators/search", () => {
 });
 
 describe("GET /api/creators (admin list)", () => {
-  it("lists creators filtered by status for an admin", async () => {
+  it("lists muses filtered by status for an admin", async () => {
     const admin = await createAdmin("List Admin", "list-admin");
     const pending = await createPendingCreator("Listed Pending", "listed-pending");
 
@@ -581,9 +582,10 @@ describe("GET /api/creators (admin list)", () => {
 });
 
 describe("POST /api/creators/:userId/approve", () => {
-  it("approves a pending creator", async () => {
+  it("approves a pending muse", async () => {
     const admin = await createAdmin("Approving Admin", "approving-admin");
     const pending = await createPendingCreator("To Be Approved", "to-be-approved");
+    const publishSpy = vi.spyOn(eventBus, "publish");
 
     const response = await request(testApp)
       .post(`/api/creators/${pending.id}/approve`)
@@ -594,9 +596,11 @@ describe("POST /api/creators/:userId/approve", () => {
     const stored = await prisma.user.findUniqueOrThrow({ where: { id: pending.id } });
     expect(stored.creatorStatus).toBe(CreatorStatus.APPROVED);
     expect(stored.isCreator).toBe(true);
+    expect(publishSpy).toHaveBeenCalledWith(DomainEvents.CREATOR_APPROVED, { userId: pending.id });
+    publishSpy.mockRestore();
   });
 
-  it("rejects approving a creator who isn't pending", async () => {
+  it("rejects approving a muse who isn't pending", async () => {
     const admin = await createAdmin("Approving Admin Two", "approving-admin-two");
     const creator = await createApprovedCreator("Already Done", "already-done");
 
@@ -654,7 +658,7 @@ describe("POST /api/creators/:userId/approve", () => {
 });
 
 describe("POST /api/creators/:userId/reject", () => {
-  it("rejects a pending creator", async () => {
+  it("rejects a pending muse", async () => {
     const admin = await createAdmin("Rejecting Admin", "rejecting-admin");
     const pending = await createPendingCreator("To Be Rejected", "to-be-rejected");
 
@@ -669,7 +673,7 @@ describe("POST /api/creators/:userId/reject", () => {
     expect(stored.isCreator).toBe(false);
   });
 
-  it("rejects rejecting a creator who isn't pending", async () => {
+  it("rejects rejecting a muse who isn't pending", async () => {
     const admin = await createAdmin("Rejecting Admin Two", "rejecting-admin-two");
     const creator = await createApprovedCreator("Not Pending", "not-pending-reject");
 

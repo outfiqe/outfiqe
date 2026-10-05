@@ -33,7 +33,7 @@ const createWrapper = () => {
 const baseEntry: BadgeCollectionEntry = {
   id: "badge-1",
   name: "Trailblazer",
-  description: "Posted 10 looks.",
+  description: "Dropped 10 looks.",
   category: "CREATOR",
   rarity: "COMMON",
   icon: "🏆",

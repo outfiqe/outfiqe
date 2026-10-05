@@ -43,7 +43,7 @@ describe("PartnerDetailPage", () => {
           success: true,
           data: {
             creatorId: "c-1",
-            name: "Aasha Creator",
+            name: "Aasha Muse",
             handle: "aasha",
             avatarUrl: null,
             tagClickCount: 12,
@@ -78,7 +78,7 @@ describe("PartnerDetailPage", () => {
 
     renderDetail("/_authenticated/crm/partners/c-1");
 
-    expect(await screen.findByRole("heading", { name: "Aasha Creator" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Aasha Muse" })).toBeInTheDocument();
     expect(screen.getByText("Graphic Tee")).toBeInTheDocument();
     expect(screen.getByText(/PAID/i)).toBeInTheDocument();
   });

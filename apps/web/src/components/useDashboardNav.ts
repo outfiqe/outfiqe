@@ -165,11 +165,7 @@ export const useDashboardNav = (): DashboardNav => {
   const showCrmLink = hasCrmAccess && isOnTenantHost;
   const navItems = showCrmLink ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
 
-  const accountLabel = isBrand
-    ? "Brand account"
-    : isCreator
-      ? "Creator account"
-      : "Shopper account";
+  const accountLabel = isBrand ? "Brand account" : isCreator ? "Muse account" : "Shopper account";
 
   return { navItems, isBrand, accountLabel };
 };

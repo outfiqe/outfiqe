@@ -35,7 +35,7 @@ export const EarningsSection = ({ creatorStatus, canEarn }: EarningsSectionProps
     return (
       <CreatorStatusGate
         creatorStatus={creatorStatus}
-        pitch="Post your fits, tag the pieces you're wearing, and earn commission when someone buys through your post or link."
+        pitch="Drop your fits, tag the pieces you're wearing, and earn commission when someone buys through your drop or link."
       />
     );
   }
@@ -45,7 +45,7 @@ export const EarningsSection = ({ creatorStatus, canEarn }: EarningsSectionProps
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Earnings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Commission from sales through your posts, links and the builds you helped make.
+          Commission from sales through your drops, links and the builds you helped make.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export const EarningsSection = ({ creatorStatus, canEarn }: EarningsSectionProps
       {!isPending && !isEarningsError && earnings.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
-            No earnings yet — tag products in your posts to start earning.
+            No earnings yet — tag products in your drops to start earning.
           </p>
         </div>
       )}

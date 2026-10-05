@@ -56,7 +56,7 @@ const stub = (openItems: TagReport[]) => {
 const renderPage = () => renderWithRouter(<TagReportsPage />, { path: "/tag-reports" });
 
 describe("TagReportsPage", () => {
-  it("lists an open report with the creator's counterfeit flag count", async () => {
+  it("lists an open report with the muse's counterfeit flag count", async () => {
     stub([aReport()]);
     renderPage();
 

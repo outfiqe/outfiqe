@@ -67,7 +67,7 @@ describe("resolveNotificationHref for outfit builds", () => {
 });
 
 describe("resolveNotificationHref", () => {
-  it("deep-links likes and comments on your own look to that post on your profile", () => {
+  it("deep-links likes and comments on your own look to that drop on your profile", () => {
     const liked = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });
     expect(resolveNotificationHref(liked, OWN_HANDLE)).toBe(`/creator/${OWN_HANDLE}?look=look-1`);
 
@@ -77,7 +77,7 @@ describe("resolveNotificationHref", () => {
     );
   });
 
-  it("deep-links a comment reply to the post on the look owner's profile, not the viewer's", () => {
+  it("deep-links a comment reply to the drop on the look owner's profile, not the viewer's", () => {
     const replied = buildNotification({
       type: "COMMENT_REPLIED",
       entityId: "look-3",
@@ -95,7 +95,7 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/mun?look=look-3");
   });
 
-  it("falls back to the dashboard profile for a comment reply with no creator handle at all", () => {
+  it("falls back to the dashboard profile for a comment reply with no muse handle at all", () => {
     const replied = buildNotification({ type: "COMMENT_REPLIED", entityId: "look-3" });
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/profile");
   });
@@ -108,7 +108,13 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
   });
 
-  it("routes a new follower who is a creator to their creator profile", () => {
+  it("sends an account-approved welcome to the dashboard overview", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "ACCOUNT_APPROVED" }), OWN_HANDLE),
+    ).toBe("/overview");
+  });
+
+  it("routes a new follower who is a muse to their muse profile", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",
       metadata: {
@@ -139,7 +145,7 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/brand/brand-7");
   });
 
-  it("routes a new brand follower who is a creator to their creator profile", () => {
+  it("routes a new brand follower who is a muse to their muse profile", () => {
     const notification = buildNotification({
       type: "NEW_BRAND_FOLLOWER",
       metadata: {
@@ -151,7 +157,7 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/anjeshghimire");
   });
 
-  it("falls back to the dashboard profile for a follower with no creator profile or brand", () => {
+  it("falls back to the dashboard profile for a follower with no muse profile or brand", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",
       metadata: {

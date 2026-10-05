@@ -34,6 +34,9 @@ section only, while every other section — and the header, footer and nav — k
   (`serverResolvedTasteSlugs`) and, when signed in, into the `taste-preferences` query cache.
   `page.tsx` reads `?category` / `?type` from `searchParams` and passes them in; `default.tsx`
   renders the slot with no params for soft-navigation states where `searchParams` is unavailable.
+  Picking a taste smooth-scrolls the results section (`id="taste-results"`, `scrollToTasteResults`) to
+  the top of the viewport, honoring `prefers-reduced-motion`, so the visitor sees that the grid
+  below changed — on a phone the results start below the fold and the swap is otherwise invisible.
 - `HomeSectionError` lives in `@/components` (not here) because it is a reusable presentational
   component, not route glue.
 

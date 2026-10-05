@@ -112,10 +112,10 @@ describe("brand application templates", () => {
   });
 });
 
-describe("creator and product templates", () => {
+describe("muse and product templates", () => {
   it("creatorApprovedTemplate and creatorRejectedTemplate return fixed subjects", () => {
-    expect(creatorApprovedTemplate().subject).toBe("You're an approved Outfiqe creator");
-    expect(creatorRejectedTemplate().subject).toBe("About your Outfiqe creator application");
+    expect(creatorApprovedTemplate().subject).toBe("You're an approved Outfiqe muse");
+    expect(creatorRejectedTemplate().subject).toBe("About your Outfiqe muse application");
   });
 
   it("productApprovedTemplate and productRejectedTemplate escape the product name", () => {

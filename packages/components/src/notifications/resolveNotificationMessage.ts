@@ -1,4 +1,9 @@
-import { CrmItemKind, type Notification, NotificationType } from "@outfiqe/types";
+import {
+  ApprovedAccountKind,
+  CrmItemKind,
+  type Notification,
+  NotificationType,
+} from "@outfiqe/types";
 import { formatActorList } from "@outfiqe/utils";
 
 const actorList = (notification: Notification): string =>
@@ -30,11 +35,11 @@ export const resolveNotificationMessage = (notification: Notification): string =
 
   switch (type) {
     case NotificationType.LOOK_LIKED:
-      return `${actorList(notification)} liked your look`;
+      return `${actorList(notification)} cheriqed your drop`;
     case NotificationType.LOOK_COMMENTED:
-      return `${metadata.actor?.name ?? "Someone"} commented on your look`;
+      return `${metadata.actor?.name ?? "Someone"} chimed on your drop`;
     case NotificationType.COMMENT_REPLIED:
-      return `${metadata.actor?.name ?? "Someone"} replied to your comment`;
+      return `${metadata.actor?.name ?? "Someone"} replied to your chime`;
     case NotificationType.NEW_FOLLOWER:
       return `${actorList(notification)} started following you`;
     case NotificationType.NEW_BRAND_FOLLOWER:
@@ -92,8 +97,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.PRODUCT_TAG_REVIEW_REMINDER: {
       const count = metadata.pendingTagReviewCount ?? 0;
       return count === 1
-        ? "1 creator tag is still waiting for your review"
-        : `${count} creator tags are still waiting for your review`;
+        ? "1 muse tag is still waiting for your review"
+        : `${count} muse tags are still waiting for your review`;
     }
     case NotificationType.PRODUCT_TAG_APPROVED:
       return metadata.tagAutoApproved
@@ -151,6 +156,10 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `Your ${offerAmount(notification)} for ${outfitName(notification)} is ready to withdraw`;
     case NotificationType.OUTFIT_OFFER_REFUNDED:
       return `Your ${offerAmount(notification)} offer on ${outfitName(notification)} is being refunded`;
+    case NotificationType.ACCOUNT_APPROVED:
+      return metadata.approvedAccountKind === ApprovedAccountKind.BRAND
+        ? `Welcome to Outfiqe! ${metadata.brandName ?? "Your brand"} is set up. Add your first products to start selling.`
+        : "Welcome to Outfiqe! You're now an approved muse. Drop your first look and tag the pieces you're wearing.";
     default:
       return "You have a new notification";
   }

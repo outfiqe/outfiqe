@@ -114,7 +114,7 @@ const anyVerifiedBankAccountExists = async (owner: OwnerContext): Promise<boolea
 const getOwnerDisplayName = async (owner: OwnerContext): Promise<string> => {
   if (owner.ownerType === "CREATOR") {
     const user = await userRepository.findById(owner.creatorId);
-    return user?.name ?? "Unknown creator";
+    return user?.name ?? "Unknown muse";
   }
   const brand = await brandRepository.findById(owner.brandId);
   return brand?.name ?? "Unknown brand";

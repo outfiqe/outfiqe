@@ -1,7 +1,12 @@
 "use client";
 
-import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from "@outfiqe/design-system";
-import { Flame } from "lucide-react";
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CheriqIcon,
+} from "@outfiqe/design-system";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 import { AppImage } from "@/shared/components/AppImage";
@@ -146,10 +151,11 @@ export const PostCarousel = ({
       {burstToken !== null && (
         <div key={burstToken} className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Flame
+            <CheriqIcon
               aria-hidden
+              isCheriqed
               onAnimationEnd={() => setBurstToken(null)}
-              className="size-24 animate-like-burst-flame fill-primary stroke-primary drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
+              className="size-24 animate-like-burst-bloom drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
             />
           </div>
 

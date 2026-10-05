@@ -162,14 +162,14 @@ describe("Sidebar", () => {
     expect(screen.queryByTestId("suggested-creators-modal")).not.toBeInTheDocument();
   });
 
-  it("disables a suggested creator's follow button while a follow is already in flight", () => {
+  it("disables a suggested muse's follow button while a follow is already in flight", () => {
     mockAuthGate(true);
     vi.mocked(useSuggestedCreators).mockReturnValue(
       buildQuerySuccessResult([
         {
           id: "creator-1",
           handle: "creator-one",
-          name: "Creator One",
+          name: "Muse One",
           followerCount: 3,
           isCreator: true,
           creatorStatus: "APPROVED",
@@ -193,7 +193,7 @@ describe("Sidebar", () => {
         {
           id: "creator-1",
           handle: "creator-one",
-          name: "Creator One",
+          name: "Muse One",
           followerCount: 3,
           isCreator: true,
           creatorStatus: "APPROVED",
@@ -203,7 +203,7 @@ describe("Sidebar", () => {
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
-    expect(screen.queryByText("Creators to follow")).not.toBeInTheDocument();
+    expect(screen.queryByText("Muses to follow")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Find more" })).not.toBeInTheDocument();
   });
 
@@ -214,7 +214,7 @@ describe("Sidebar", () => {
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
-    expect(screen.queryByText("Creators to follow")).not.toBeInTheDocument();
+    expect(screen.queryByText("Muses to follow")).not.toBeInTheDocument();
   });
 
   it("still shows the loading skeleton for a non-admin while auth is resolving", () => {
@@ -223,6 +223,6 @@ describe("Sidebar", () => {
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
-    expect(screen.getByText("Creators to follow")).toBeInTheDocument();
+    expect(screen.getByText("Muses to follow")).toBeInTheDocument();
   });
 });

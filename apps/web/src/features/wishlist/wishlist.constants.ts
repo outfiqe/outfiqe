@@ -11,8 +11,15 @@ export type SavedTabValue = (typeof SAVED_TAB)[keyof typeof SAVED_TAB];
 
 export const SAVED_TABS: { value: SavedTabValue; label: string }[] = [
   { value: SAVED_TAB.PRODUCTS, label: "Products" },
-  { value: SAVED_TAB.POSTS, label: "Posts" },
+  { value: SAVED_TAB.POSTS, label: "Drops" },
 ];
 
 export const STAFF_CANNOT_SAVE_PRODUCT_MESSAGE =
-  "Staff accounts can't save products — this keeps trending based on real audience activity.";
+  "Staff accounts can't stash products — this keeps trending based on real audience activity.";
+
+export const STASH_STATE_PRODUCT_QUERY_ROOTS = [
+  "products",
+  "brand-products",
+  "collection-products",
+  "wishlist",
+] as const;

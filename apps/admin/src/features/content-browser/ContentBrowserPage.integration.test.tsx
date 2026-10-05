@@ -92,7 +92,7 @@ const topmostConfirmDialog = async (): Promise<HTMLElement> => {
 };
 
 describe("ContentBrowserPage", () => {
-  it("lists a post as a grid card with its creator and caption", async () => {
+  it("lists a drop as a grid card with its muse and caption", async () => {
     stubLooks([aLook()]);
     renderPage();
 
@@ -101,7 +101,7 @@ describe("ContentBrowserPage", () => {
     expect(screen.getByRole("button", { name: "Denim jacket fit" })).toBeInTheDocument();
   });
 
-  it("searches posts by the typed query", async () => {
+  it("searches drops by the typed query", async () => {
     stubLooks([aLook()]);
     renderPage();
     await screen.findByText("@asharai");
@@ -123,16 +123,16 @@ describe("ContentBrowserPage", () => {
     await waitFor(() => expect(requestedQuery).toBe("denim"));
   });
 
-  it("opens a post's detail and shows the prior-removal count and engagement stats", async () => {
+  it("opens a drop's detail and shows the prior-removal count and engagement stats", async () => {
     stubLooks([aLook()]);
     renderPage();
     const dialog = await openDetail(aLook());
 
     expect(within(dialog).getByText("2 prior removals")).toBeInTheDocument();
-    expect(within(dialog).getByText(/12 likes/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/12 cheriqs/)).toBeInTheDocument();
   });
 
-  it("deletes a post after confirming from the detail view", async () => {
+  it("deletes a drop after confirming from the detail view", async () => {
     stubLooks([aLook()]);
     let deleteCalled = false;
     mswServer.use(
@@ -144,7 +144,7 @@ describe("ContentBrowserPage", () => {
     renderPage();
 
     const dialog = await openDetail(aLook());
-    await userEvent.click(within(dialog).getByRole("button", { name: "Delete post" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete drop" }));
 
     const confirm = await topmostConfirmDialog();
     await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
@@ -152,7 +152,7 @@ describe("ContentBrowserPage", () => {
     await waitFor(() => expect(deleteCalled).toBe(true));
   });
 
-  it("shows a post's comments in its detail view and deletes one", async () => {
+  it("shows a drop's comments in its detail view and deletes one", async () => {
     stubLooks([aLook()]);
     stubComments("look-1", [aComment()]);
     let deletedCommentId: string | null = null;

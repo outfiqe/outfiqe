@@ -22,7 +22,7 @@ const sections: SidebarNavSection[] = [
         href: "/creators",
         label: "Growth",
         items: [
-          { id: "creators", href: "/creators", label: "Creators" },
+          { id: "creators", href: "/creators", label: "Muses" },
           { id: "trending", href: "/trending", label: "Trending" },
         ],
       },

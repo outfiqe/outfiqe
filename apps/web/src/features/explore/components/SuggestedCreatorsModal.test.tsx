@@ -24,7 +24,7 @@ vi.mock("@/shared/hooks/useLoadMoreOnVisible", () => ({
 
 const buildCreator = (id: string): SuggestedCreator => ({
   id,
-  name: `Creator ${id}`,
+  name: `Muse ${id}`,
   handle: `creator-${id}`,
   isCreator: true,
   creatorStatus: "APPROVED",
@@ -111,7 +111,7 @@ describe("SuggestedCreatorsModal", () => {
     expect(screen.getByText("No suggestions right now.")).toBeInTheDocument();
   });
 
-  it("renders a row for every creator across all fetched pages", () => {
+  it("renders a row for every muse across all fetched pages", () => {
     mockInfiniteSuggestedCreators({
       data: {
         pages: [
@@ -124,12 +124,12 @@ describe("SuggestedCreatorsModal", () => {
 
     render(<SuggestedCreatorsModal onClose={vi.fn()} />);
 
-    expect(screen.getByText("Creator 1")).toBeInTheDocument();
-    expect(screen.getByText("Creator 2")).toBeInTheDocument();
-    expect(screen.getByText("Creator 3")).toBeInTheDocument();
+    expect(screen.getByText("Muse 1")).toBeInTheDocument();
+    expect(screen.getByText("Muse 2")).toBeInTheDocument();
+    expect(screen.getByText("Muse 3")).toBeInTheDocument();
   });
 
-  it("follows a creator when its Follow button is clicked", async () => {
+  it("follows a muse when its Follow button is clicked", async () => {
     const user = userEvent.setup();
     mockInfiniteSuggestedCreators({
       data: {
@@ -159,7 +159,7 @@ describe("SuggestedCreatorsModal", () => {
     expect(vi.mocked(useLoadMoreOnVisible)).toHaveBeenCalledWith(expect.any(Function), true);
   });
 
-  it("disables a creator's follow button while a follow is already in flight", () => {
+  it("disables a muse's follow button while a follow is already in flight", () => {
     mockInfiniteSuggestedCreators({
       data: {
         pages: [{ creators: [buildCreator("1")], nextCursor: null }],

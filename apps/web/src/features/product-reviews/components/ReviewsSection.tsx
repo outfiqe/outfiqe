@@ -92,7 +92,7 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
       return;
     }
     await createReview.mutateAsync(input);
-    toast.success("Review posted.");
+    toast.success("Review published.");
   };
 
   let reviewFormInitialValues: WriteProductReviewInput | undefined;

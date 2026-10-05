@@ -8,7 +8,7 @@ describe("SiteFooter", () => {
     render(<SiteFooter />);
 
     expect(
-      screen.getByText(/creators may earn a commission when you shop the pieces they've tagged/i),
+      screen.getByText(/muses may earn a commission when you shop the pieces they've tagged/i),
     ).toBeInTheDocument();
   });
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { Tooltip } from "@outfiqe/design-system";
-import { Bookmark, Flame, MessageCircle, Share2 } from "lucide-react";
+import { CheriqIcon, Tooltip } from "@outfiqe/design-system";
+import { Bookmark, MessageCircle, Share2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 
@@ -51,7 +51,7 @@ export const PostActionsRow = ({
           (isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground"),
       )}
     >
-      <Flame className={cn("size-5", isLiked && "fill-primary stroke-primary")} />
+      <CheriqIcon className="size-5" isCheriqed={isLiked} />
       {likeCount}
     </button>
   );
@@ -87,7 +87,7 @@ export const PostActionsRow = ({
           onClick={onSave}
           disabled={isSaving}
           aria-pressed={isSaved}
-          aria-label="Save post"
+          aria-label="Stash drop"
           className={cn(
             "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
             isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -99,7 +99,7 @@ export const PostActionsRow = ({
         <button
           type="button"
           onClick={onShare}
-          aria-label="Share post"
+          aria-label="Share drop"
           className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <Share2 className="size-4" />

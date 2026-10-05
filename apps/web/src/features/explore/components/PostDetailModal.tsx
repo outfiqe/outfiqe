@@ -82,7 +82,7 @@ export const PostDetailModal = ({
     <Modal
       open
       onClose={onClose}
-      ariaLabel={`Post by ${creatorName}`}
+      ariaLabel={`Drop by ${creatorName}`}
       className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl"
     >
       <div
@@ -169,7 +169,7 @@ export const PostDetailModal = ({
 
       {reportOpen && (
         <ReportContentModal
-          targetLabel="post"
+          targetLabel="drop"
           isPending={isReporting}
           onConfirm={(input) =>
             submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })

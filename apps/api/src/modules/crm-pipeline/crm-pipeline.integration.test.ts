@@ -76,7 +76,7 @@ const seedPipelineTenant = async () => {
     data: { superAdminMembershipId: membership.id, trialEndsAt: addDays(new Date(), 10) },
   });
 
-  const partner = await createUser("Partner Creator", UserRole.CUSTOMER);
+  const partner = await createUser("Partner Muse", UserRole.CUSTOMER);
   await prisma.creatorLink.create({
     data: {
       creatorId: partner.id,
@@ -222,7 +222,7 @@ describe("CRM deals", () => {
       });
     expect(created.status).toBe(201);
     expect(created.body.data.status).toBe("OPEN");
-    expect(created.body.data.partnerName).toBe("Partner Creator");
+    expect(created.body.data.partnerName).toBe("Partner Muse");
     expect(created.body.data.ownerName).toBe("Pipeline Staff");
 
     const moved = await request(testApp)
@@ -235,12 +235,12 @@ describe("CRM deals", () => {
     expect(moved.body.data.closedAt).not.toBeNull();
   });
 
-  it("rejects a deal against a creator who is not a partner of this brand", async () => {
+  it("rejects a deal against a muse who is not a partner of this brand", async () => {
     const tenant = await seedPipelineTenant();
     const firstStage = await prisma.pipelineStage.findFirstOrThrow({
       where: { organizationId: tenant.organization.id },
     });
-    const stranger = await createUser("Random Creator", UserRole.CUSTOMER);
+    const stranger = await createUser("Random Muse", UserRole.CUSTOMER);
 
     const response = await request(testApp)
       .post("/api/crm/deals")

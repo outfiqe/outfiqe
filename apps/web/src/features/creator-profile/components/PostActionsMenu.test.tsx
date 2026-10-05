@@ -15,7 +15,7 @@ describe("PostActionsMenu", () => {
     const user = userEvent.setup();
     render(<PostActionsMenu onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
 
     expect(screen.getByRole("menu")).toBeInTheDocument();
   });
@@ -25,7 +25,7 @@ describe("PostActionsMenu", () => {
     const user = userEvent.setup();
     render(<PostActionsMenu onEdit={onEdit} onDelete={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
     await user.click(screen.getByRole("menuitem", { name: "Edit" }));
 
     expect(onEdit).toHaveBeenCalledOnce();
@@ -37,7 +37,7 @@ describe("PostActionsMenu", () => {
     const user = userEvent.setup();
     render(<PostActionsMenu onEdit={vi.fn()} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
     await user.click(screen.getByRole("menuitem", { name: "Delete" }));
 
     expect(onDelete).toHaveBeenCalledOnce();
@@ -53,7 +53,7 @@ describe("PostActionsMenu", () => {
       </div>,
     );
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
     expect(screen.getByRole("menu")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Outside" }));

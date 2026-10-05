@@ -6,7 +6,7 @@ import { CreatorStatus } from "@/features/auth/types";
 import { CreatorStatusGate } from "./CreatorStatusGate";
 
 vi.mock("./ApplyAsCreatorButton", () => ({
-  ApplyAsCreatorButton: () => <button type="button">Apply to become a creator</button>,
+  ApplyAsCreatorButton: () => <button type="button">Apply to become a muse</button>,
 }));
 
 describe("CreatorStatusGate", () => {
@@ -15,22 +15,22 @@ describe("CreatorStatusGate", () => {
 
     expect(screen.getByText("Application under review")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Apply to become a creator" }),
+      screen.queryByRole("button", { name: "Apply to become a muse" }),
     ).not.toBeInTheDocument();
   });
 
   it("shows the become-a-creator pitch and apply button when the caller has never applied", () => {
     render(<CreatorStatusGate creatorStatus={CreatorStatus.NONE} pitch="Earn commission." />);
 
-    expect(screen.getByText("Become a creator")).toBeInTheDocument();
+    expect(screen.getByText("Become a muse")).toBeInTheDocument();
     expect(screen.getByText("Earn commission.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Apply to become a creator" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply to become a muse" })).toBeInTheDocument();
   });
 
   it("adds a reapply note for a rejected application", () => {
     render(<CreatorStatusGate creatorStatus={CreatorStatus.REJECTED} pitch="Earn commission." />);
 
     expect(screen.getByText(/wasn't a fit/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Apply to become a creator" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply to become a muse" })).toBeInTheDocument();
   });
 });

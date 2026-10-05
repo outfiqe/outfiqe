@@ -4,8 +4,15 @@ import { subDays } from "date-fns/subDays";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { NotificationEntityType, NotificationType, UserRole } from "#generated/prisma/enums.js";
+import {
+  CreatorStatus,
+  NotificationEntityType,
+  NotificationSurface,
+  NotificationType,
+  UserRole,
+} from "#generated/prisma/enums.js";
 
+import { ApprovedAccountKind } from "./notification.constants.js";
 import { notificationService } from "./notification.service.js";
 
 const createUser = async (overrides: Partial<{ role: UserRole }> = {}) => {
@@ -88,6 +95,45 @@ describe("notificationService.notifyIndividual", () => {
 
     const rows = await prisma.notification.findMany({ where: { recipientId: recipient.id } });
     expect(rows).toHaveLength(0);
+  });
+});
+
+describe("ACCOUNT_APPROVED welcome", () => {
+  it("writes an actor-less welcome that opens the dashboard overview", async () => {
+    const newMuse = await createUser();
+
+    await notificationService.notifyIndividual({
+      recipientId: newMuse.id,
+      type: NotificationType.ACCOUNT_APPROVED,
+      sourceEventId: randomUUID(),
+      metadata: { approvedAccountKind: ApprovedAccountKind.CREATOR },
+    });
+
+    const [welcome] = await prisma.notification.findMany({ where: { recipientId: newMuse.id } });
+    expect(welcome).toMatchObject({
+      type: NotificationType.ACCOUNT_APPROVED,
+      actorId: null,
+      targetSurface: NotificationSurface.WEB,
+      targetPath: "/overview",
+      metadata: { approvedAccountKind: ApprovedAccountKind.CREATOR },
+    });
+  });
+
+  it("lists the welcome in an approved muse's notification settings, not a shopper's", async () => {
+    const [shopper, approvedMuse] = await Promise.all([createUser(), createUser()]);
+    await prisma.user.update({
+      where: { id: approvedMuse.id },
+      data: { isCreator: true, creatorStatus: CreatorStatus.APPROVED },
+    });
+
+    const [shopperTypes, museTypes] = await Promise.all(
+      [shopper, approvedMuse].map(async ({ id }) =>
+        (await notificationService.listPreferences(id)).map(({ type }) => type),
+      ),
+    );
+
+    expect(museTypes).toContain(NotificationType.ACCOUNT_APPROVED);
+    expect(shopperTypes).not.toContain(NotificationType.ACCOUNT_APPROVED);
   });
 });
 

@@ -68,7 +68,7 @@ beforeEach(() => {
 });
 
 describe("EarningsSection", () => {
-  it("shows the creator status gate instead of earnings to someone who can't earn yet", () => {
+  it("shows the muse status gate instead of earnings to someone who can't earn yet", () => {
     render(<EarningsSection creatorStatus={CreatorStatus.PENDING} canEarn={false} />);
 
     expect(screen.getByText("Status gate for PENDING")).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("EarningsSection", () => {
     render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
-      screen.getByText("No earnings yet — tag products in your posts to start earning."),
+      screen.getByText("No earnings yet — tag products in your drops to start earning."),
     ).toBeInTheDocument();
   });
 
@@ -127,7 +127,7 @@ describe("EarningsSection", () => {
     render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} canEarn />);
 
     expect(
-      screen.queryByText("No earnings yet — tag products in your posts to start earning."),
+      screen.queryByText("No earnings yet — tag products in your drops to start earning."),
     ).not.toBeInTheDocument();
   });
 
@@ -164,7 +164,7 @@ describe("EarningsSection", () => {
       screen.getByText("We couldn't load your earnings right now. Please try again."),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText("No earnings yet — tag products in your posts to start earning."),
+      screen.queryByText("No earnings yet — tag products in your drops to start earning."),
     ).not.toBeInTheDocument();
   });
 

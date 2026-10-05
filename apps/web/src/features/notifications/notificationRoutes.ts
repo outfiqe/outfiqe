@@ -1,4 +1,5 @@
 export const WEB_NOTIFICATION_ROUTES = {
+  dashboardOverview: "/overview",
   dashboardProfile: "/profile",
   badges: "/badges",
   progress: "/progress",

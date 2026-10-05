@@ -13,7 +13,7 @@ export const ReportRowSkeleton = ({ hasLeadingName = false }: ReportRowSkeletonP
       <div className="flex flex-wrap items-center gap-2">
         {hasLeadingName && <Skeleton className="h-5 w-32" />}
         <SkeletonBadge label="Reason" />
-        <SkeletonBadge label="Reported post" />
+        <SkeletonBadge label="Reported drop" />
       </div>
       <Skeleton className="mt-1 h-4 w-72 max-w-full" />
       <Skeleton className="mt-1.5 h-5 w-full max-w-md" />

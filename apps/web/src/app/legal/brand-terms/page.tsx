@@ -64,7 +64,7 @@ const BrandTermsPage = () => (
           gateway fee.
         </li>
         <li>
-          A portion of Outfiqe&apos;s commission funds the creator who sourced an attributed sale.
+          A portion of Outfiqe&apos;s commission funds the muse who sourced an attributed sale.
         </li>
         <li>
           The rate applied to each sale is recorded and does not change retroactively if the
@@ -119,7 +119,7 @@ const BrandTermsPage = () => (
       <h2>7. Brand content and marks</h2>
       <p>
         You grant Outfiqe a licence to use your name, logo, product images and descriptions to
-        operate and market the marketplace. Creators may feature your products in looks.
+        operate and market the marketplace. Muses may feature your products in looks.
       </p>
 
       <h2>8. Suspension and termination</h2>

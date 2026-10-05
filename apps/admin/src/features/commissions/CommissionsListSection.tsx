@@ -25,8 +25,8 @@ const STATUS_TONE: Record<CommissionStatusValue, "neutral" | "positive" | "negat
 };
 
 const SOURCE_LABEL: Record<CommissionSourceValue, string> = {
-  TAG_CLICK: "Tagged post",
-  INTERNAL_LINK: "Creator link",
+  TAG_CLICK: "Tagged drop",
+  INTERNAL_LINK: "Muse link",
   EXTERNAL_LINK: "Shared link",
   OUTFIT_BUILD: "Build",
 };

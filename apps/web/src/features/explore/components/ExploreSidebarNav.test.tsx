@@ -62,10 +62,10 @@ describe("ExploreSidebarNav", () => {
     expect(onLayoutChange).toHaveBeenCalledWith(FEED_LAYOUT.LIST);
   });
 
-  it("links Saved to the posts tab of the wishlist", () => {
+  it("links Saved to the drops tab of the wishlist", () => {
     renderNav();
 
-    expect(screen.getByRole("link", { name: /Saved/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Stash/ })).toHaveAttribute(
       "href",
       "/wishlist?tab=posts",
     );
@@ -101,7 +101,7 @@ describe("ExploreSidebarNav", () => {
     linkStatus.pending = true;
     renderNav();
 
-    const savedContent = screen.getByText("Saved");
+    const savedContent = screen.getByText("Stash");
     expect(savedContent.className).toContain("bg-foreground");
     expect(savedContent.querySelector("span[aria-hidden]")?.className).toContain(
       "motion-safe:animate-pulse",
@@ -111,7 +111,7 @@ describe("ExploreSidebarNav", () => {
   it("leaves Saved unhighlighted with a hidden dot when no navigation is pending", () => {
     renderNav();
 
-    const savedContent = screen.getByText("Saved");
+    const savedContent = screen.getByText("Stash");
     expect(savedContent.className).toContain("text-muted-foreground");
     expect(savedContent.className).not.toContain("bg-foreground");
     expect(savedContent.querySelector("span[aria-hidden]")?.className).toContain("opacity-0");

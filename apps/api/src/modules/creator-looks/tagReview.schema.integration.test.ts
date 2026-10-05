@@ -27,7 +27,7 @@ const createCreator = () =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
-      name: "Tag Review Creator",
+      name: "Tag Review Muse",
       handle: `trc-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",

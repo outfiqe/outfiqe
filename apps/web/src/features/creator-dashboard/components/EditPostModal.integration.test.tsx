@@ -45,7 +45,7 @@ describe("EditPostModal", () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
         return HttpResponse.json({
           success: true,
-          message: "Post detail.",
+          message: "Drop detail.",
           data: {
             id: "look-1",
             imageUrls: [],
@@ -59,7 +59,7 @@ describe("EditPostModal", () => {
 
     renderModal("look-1");
 
-    expect(screen.getByRole("dialog", { name: "Edit post" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Edit drop" })).toBeInTheDocument();
     expect(screen.queryByText(/Editing look-1/)).not.toBeInTheDocument();
 
     expect(await screen.findByText(/Editing look-1/)).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("EditPostModal", () => {
       http.get("/api/creator-looks/look-1", () =>
         HttpResponse.json({
           success: true,
-          message: "Post detail.",
+          message: "Drop detail.",
           data: {
             id: "look-1",
             imageUrls: ["https://cdn.outfiqe.test/a.jpg"],
@@ -90,12 +90,12 @@ describe("EditPostModal", () => {
   it("shows a couldn't-load message when the fetch fails", async () => {
     mswServer.use(
       http.get("/api/creator-looks/look-1", () =>
-        HttpResponse.json({ success: false, message: "Post not found." }, { status: 404 }),
+        HttpResponse.json({ success: false, message: "Drop not found." }, { status: 404 }),
       ),
     );
 
     renderModal("look-1");
 
-    expect(await screen.findByText("Couldn't load this post.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load this drop.")).toBeInTheDocument();
   });
 });

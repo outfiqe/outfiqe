@@ -1,4 +1,4 @@
-import { LogoMark } from "@outfiqe/design-system";
+import { LogoMark, LogoWordmark } from "@outfiqe/design-system";
 import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
@@ -28,10 +28,7 @@ export const Logo = ({ size = "md", className, wordmarkClassName }: LogoProps) =
       )}
     >
       <LogoMark className={cn(styles.mark, "shrink-0")} />
-      <span className={cn(styles.text, wordmarkClassName)}>
-        <span className="text-primary">out</span>
-        <span className="text-secondary">fiqe.</span>
-      </span>
+      <LogoWordmark className={cn(styles.text, wordmarkClassName)} />
     </Link>
   );
 };

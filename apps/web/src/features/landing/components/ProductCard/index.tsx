@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, Tooltip } from "@outfiqe/design-system";
+import { Button, CheriqIcon, Tooltip } from "@outfiqe/design-system";
 import { THRIFT_CONDITION_LABEL, type ThriftCondition } from "@outfiqe/utils";
-import { Heart, Shirt, Star } from "lucide-react";
+import { Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -148,18 +148,18 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Save to wishlist"
+              aria-label="Stash it"
               disabled
               className="absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background"
             >
-              <Heart className="size-4" />
+              <CheriqIcon className="size-4" />
             </Button>
           </Tooltip>
         ) : (
           <Button
             variant="ghost"
             size="icon"
-            aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+            aria-label={saved ? "Remove from stash" : "Stash it"}
             aria-pressed={saved}
             onClick={toggleSaved}
             disabled={wishlistMutation.isPending}
@@ -168,7 +168,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
               saved && "text-primary",
             )}
           >
-            <Heart className={cn("size-4", saved && "fill-primary")} />
+            <CheriqIcon className="size-4" isCheriqed={saved} />
           </Button>
         )}
 
@@ -222,7 +222,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
           )}
           <span className="text-xs text-muted-foreground">
             {creatorBuyerCount > 0 &&
-              `Worn by ${creatorBuyerCount} ${creatorBuyerCount === 1 ? "creator" : "creators"}`}
+              `Worn by ${creatorBuyerCount} ${creatorBuyerCount === 1 ? "muse" : "muses"}`}
             {creatorBuyerCount > 0 && unitsSold > 0 && <span aria-hidden> · </span>}
             {unitsSold > 0 && `${unitsSold.toLocaleString()} bought`}
           </span>

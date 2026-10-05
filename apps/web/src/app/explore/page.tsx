@@ -12,13 +12,13 @@ import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Explore creator looks",
+  title: "Explore muse looks",
   description:
-    "A feed of real outfits from Nepali creators. Every look is shoppable. Tap any piece to see the price, sizes and the brand behind it.",
+    "A feed of real outfits from Nepali muses. Every look is shoppable. Tap any piece to see the price, sizes and the brand behind it.",
   path: "/explore",
   keywords: [
     "outfit inspiration Nepal",
-    "creator looks",
+    "muse looks",
     "Nepali fashion looks",
     "shop the look Nepal",
   ],

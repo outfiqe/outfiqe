@@ -15,6 +15,7 @@ import {
   resolveActiveCategorySlug,
   resolveDisplayCategories,
 } from "../../lib/resolveTasteCategories";
+import { scrollToTasteResults } from "../../lib/scrollToTasteResults";
 import { CustomizeTasteModal } from "./CustomizeTasteModal";
 
 const SCROLL_STEP_PX = 320;
@@ -76,6 +77,7 @@ export const TasteCategories = () => {
   const selectCategory = (slug: string) => {
     markCategoryPending(slug);
     router.replace(`/?category=${slug}`, { scroll: false });
+    scrollToTasteResults();
   };
 
   const hasNoCategories = !categories.isLoading && allCategories.length === 0;

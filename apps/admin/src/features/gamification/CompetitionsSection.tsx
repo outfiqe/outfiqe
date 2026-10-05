@@ -366,7 +366,7 @@ export const CompetitionsSection = () => {
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-foreground">Creator competitions</h2>
+      <h2 className="font-display text-lg font-bold text-foreground">Muse competitions</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         An ongoing weekly rule, not a one-off event — the top finishers in a leaderboard category
         win the trophy badge automatically every week, settled the moment each ISO week ends.

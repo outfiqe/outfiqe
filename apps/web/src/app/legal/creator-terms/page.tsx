@@ -5,9 +5,9 @@ import { LegalDocument, MarketingShell } from "@/features/marketing";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Creator & affiliate terms",
+  title: "Muse & affiliate terms",
   description:
-    "The terms for Outfiqe creators: content standards, how attribution and commissions work, payout conditions, and prohibited conduct.",
+    "The terms for Outfiqe muses: content standards, how attribution and commissions work, payout conditions, and prohibited conduct.",
   path: "/legal/creator-terms",
 });
 
@@ -17,18 +17,18 @@ const CreatorTermsPage = () => (
     breadcrumbs={[
       { name: "Home", path: "/" },
       { name: "Legal", path: "/legal/creator-terms" },
-      { name: "Creator & affiliate terms", path: "/legal/creator-terms" },
+      { name: "Muse & affiliate terms", path: "/legal/creator-terms" },
     ]}
   >
     <LegalDocument
-      title="Creator & affiliate terms"
-      summary="These terms apply to approved Outfiqe creators, in addition to the general terms of service."
+      title="Muse & affiliate terms"
+      summary="These terms apply to approved Outfiqe muses, in addition to the general terms of service."
       lastReviewed="[NEEDS INPUT: effective date]"
       status="draft"
     >
-      <h2>1. Becoming a creator</h2>
+      <h2>1. Becoming a muse</h2>
       <p>
-        Creator status is granted after review and can be suspended or removed for breach of these
+        Muse status is granted after review and can be suspended or removed for breach of these
         terms or the <Link href="/legal/community-guidelines">community guidelines</Link>. You must
         be at least <strong>[NEEDS INPUT: minimum age]</strong>.
       </p>
@@ -40,9 +40,9 @@ const CreatorTermsPage = () => (
           permission.
         </li>
         <li>
-          You must own or have the rights to the photos you post and any people shown must consent.
+          You must own or have the rights to the photos you drop and any people shown must consent.
         </li>
-        <li>You must not post misleading, offensive, infringing or unlawful content.</li>
+        <li>You must not drop misleading, offensive, infringing or unlawful content.</li>
         <li>
           You grant Outfiqe a non-exclusive licence to display, resize and promote your looks across
           the platform and its marketing.
@@ -100,9 +100,9 @@ const CreatorTermsPage = () => (
 
       <h2>7. Changes and termination</h2>
       <p>
-        Outfiqe may update these terms and the commission structure, and may end the creator
-        programme or your participation in it. Commissions already available at that point remain
-        payable subject to the withdrawal policy.
+        Outfiqe may update these terms and the commission structure, and may end the muse programme
+        or your participation in it. Commissions already available at that point remain payable
+        subject to the withdrawal policy.
       </p>
     </LegalDocument>
   </MarketingShell>

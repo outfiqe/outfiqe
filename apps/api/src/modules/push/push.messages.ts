@@ -2,6 +2,7 @@ import { isExternalNotificationPath } from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 export type PushMessage = {
   title: string;
@@ -46,16 +47,16 @@ const thresholdPercentFrom = (payload: NotificationBroadcastPayload): string =>
 
 const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.LOOK_LIKED]: {
-    title: "New like",
-    body: (payload) => withOthers(payload, "liked your look"),
+    title: "New cheriq",
+    body: (payload) => withOthers(payload, "cheriqed your drop"),
   },
   [NotificationType.LOOK_COMMENTED]: {
-    title: "New comment",
-    body: () => "Someone commented on your look",
+    title: "New chime",
+    body: () => "Someone chimed on your drop",
   },
   [NotificationType.COMMENT_REPLIED]: {
     title: "New reply",
-    body: () => "Someone replied to your comment",
+    body: () => "Someone replied to your chime",
   },
   [NotificationType.NEW_FOLLOWER]: {
     title: "New follower",
@@ -75,7 +76,7 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   },
   [NotificationType.COMMISSION_EARNED]: {
     title: "You earned a commission",
-    body: () => "A sale from one of your looks came through",
+    body: () => "A sale from one of your drops came through",
   },
   [NotificationType.NEW_ORDER]: {
     title: "New order",
@@ -155,8 +156,8 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) => {
       const count = payload.metadata.pendingTagReviewCount;
       return typeof count === "number"
-        ? `${count} creator tag${count === 1 ? "" : "s"} still need your review`
-        : "You have creator tags waiting for review";
+        ? `${count} muse tag${count === 1 ? "" : "s"} still need your review`
+        : "You have muse tags waiting for review";
     },
   },
   [NotificationType.PRODUCT_TAG_APPROVED]: {
@@ -255,6 +256,13 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Offer refunded",
     body: (payload) => `Your money for the offer on ${outfitNameFrom(payload)} is on its way back`,
   },
+  [NotificationType.ACCOUNT_APPROVED]: {
+    title: "Welcome to Outfiqe",
+    body: (payload) =>
+      payload.metadata.approvedAccountKind === ApprovedAccountKind.BRAND
+        ? `${typeof payload.metadata.brandName === "string" ? payload.metadata.brandName : "Your brand"} is set up. Add your first products`
+        : "You're now an approved muse. Drop your first look",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -285,6 +293,8 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return "/wallet";
+    case NotificationType.ACCOUNT_APPROVED:
+      return "/overview";
     case NotificationType.NEW_MESSAGE:
       return "/messages";
     case NotificationType.OUTFIT_OFFER_RECEIVED:

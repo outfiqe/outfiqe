@@ -6,7 +6,7 @@ import { useId, useState } from "react";
 import type { ContentReportReasonValue } from "../api/exploreFeedSchemas";
 
 type ReportContentModalProps = {
-  targetLabel: "post" | "comment" | "build" | "photo";
+  targetLabel: "drop" | "chime" | "build" | "photo";
   isPending: boolean;
   onConfirm: (input: { reason: ContentReportReasonValue; note?: string }) => void;
   onCancel: () => void;

@@ -1,9 +1,9 @@
 import { NotificationType } from "@outfiqe/types";
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
-  [NotificationType.LOOK_LIKED]: "Likes on your looks",
-  [NotificationType.LOOK_COMMENTED]: "Comments on your looks",
-  [NotificationType.COMMENT_REPLIED]: "Replies to your comments",
+  [NotificationType.LOOK_LIKED]: "Cheriqs on your drops",
+  [NotificationType.LOOK_COMMENTED]: "Chimes on your drops",
+  [NotificationType.COMMENT_REPLIED]: "Replies to your chimes",
   [NotificationType.NEW_FOLLOWER]: "New followers",
   [NotificationType.NEW_BRAND_FOLLOWER]: "New brand followers",
   [NotificationType.ACHIEVEMENT_UNLOCKED]: "Badges unlocked",
@@ -26,7 +26,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.COUPON_APPROVAL_REQUESTED]: "Coupons awaiting approval",
   [NotificationType.COUPON_BUDGET_ALERT]: "Coupon budget alerts",
   [NotificationType.COUPON_REDEMPTION_FLAGGED]: "Flagged coupon redemptions",
-  [NotificationType.PRODUCT_TAG_SUBMITTED]: "Creator tags waiting for review",
+  [NotificationType.PRODUCT_TAG_SUBMITTED]: "Muse tags waiting for review",
   [NotificationType.PRODUCT_TAG_REVIEW_REMINDER]: "Reminders about tags waiting for review",
   [NotificationType.PRODUCT_TAG_APPROVED]: "Your tags approved by brands",
   [NotificationType.PRODUCT_TAG_REJECTED]: "Your tags declined by brands",
@@ -51,4 +51,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.OUTFIT_OFFER_EXPIRED]: "Offers running out of time",
   [NotificationType.OUTFIT_OFFER_RELEASED]: "Offer money ready to withdraw",
   [NotificationType.OUTFIT_OFFER_REFUNDED]: "Refunds for your offers",
+  [NotificationType.ACCOUNT_APPROVED]: "Account approval and welcome",
 };

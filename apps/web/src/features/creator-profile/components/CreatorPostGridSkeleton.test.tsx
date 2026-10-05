@@ -9,7 +9,7 @@ describe("CreatorPostGridSkeleton", () => {
   it("renders an accessible loading status with the expected number of placeholders", () => {
     render(<CreatorPostGridSkeleton />);
 
-    const status = screen.getByRole("status", { name: "Loading posts" });
+    const status = screen.getByRole("status", { name: "Loading drops" });
     expect(status.children).toHaveLength(GRID_ITEM_COUNT);
   });
 });

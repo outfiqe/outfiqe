@@ -1,12 +1,12 @@
 import { XpActivityType, type XpTransaction } from "../api/xpSchemas";
 
 const ACTIVITY_LABEL: Record<XpTransaction["activityType"], string> = {
-  [XpActivityType.LOOK_CREATED]: "Posted a look",
-  [XpActivityType.LOOK_LIKE_RECEIVED]: "Received a like",
-  [XpActivityType.LOOK_COMMENT_RECEIVED]: "Received a comment",
-  [XpActivityType.LOOK_COMMENTED]: "Commented on a post",
-  [XpActivityType.LOOK_SAVED]: "Saved a post",
-  [XpActivityType.USER_FOLLOWED]: "Followed a creator",
+  [XpActivityType.LOOK_CREATED]: "Dropped a look",
+  [XpActivityType.LOOK_LIKE_RECEIVED]: "Received a cheriq",
+  [XpActivityType.LOOK_COMMENT_RECEIVED]: "Received a chime",
+  [XpActivityType.LOOK_COMMENTED]: "Chimed on a drop",
+  [XpActivityType.LOOK_SAVED]: "Stashed a drop",
+  [XpActivityType.USER_FOLLOWED]: "Followed a muse",
   [XpActivityType.PRODUCT_PURCHASED]: "Purchased a product",
   [XpActivityType.SALE_GENERATED]: "Generated a sale",
   [XpActivityType.PRODUCT_TAGGED]: "Tagged a product",

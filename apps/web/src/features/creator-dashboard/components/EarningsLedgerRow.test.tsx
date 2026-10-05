@@ -46,7 +46,7 @@ describe("EarningsLedgerRow", () => {
   });
 
   it.each([
-    [CommissionSource.TAG_CLICK, "via tagged post"],
+    [CommissionSource.TAG_CLICK, "via tagged drop"],
     [CommissionSource.INTERNAL_LINK, "via your link"],
     [CommissionSource.EXTERNAL_LINK, "via shared link"],
     [CommissionSource.OUTFIT_BUILD, "from a build you helped make"],

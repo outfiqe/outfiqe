@@ -164,7 +164,7 @@ const CommentRow = ({
       )}
       {isReporting && (
         <ReportContentModal
-          targetLabel="comment"
+          targetLabel="chime"
           isPending={reportComment.isPending}
           onCancel={() => setIsReporting(false)}
           onConfirm={({ reason, note }) =>

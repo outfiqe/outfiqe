@@ -22,7 +22,7 @@ vi.mock("./NotificationPanel", () => ({
 }));
 
 vi.mock("./resolveNotificationMessage", () => ({
-  resolveNotificationMessage: () => "Someone liked your look",
+  resolveNotificationMessage: () => "Someone cheriqed your drop",
 }));
 
 const buildNotification = (isRead = false): Notification => ({
@@ -138,7 +138,7 @@ describe("NotificationBell", () => {
 
     socket.emitCreated(buildNotification());
 
-    await waitFor(() => expect(screen.getByText("Someone liked your look")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Someone cheriqed your drop")).toBeInTheDocument());
   });
 
   it("stays silent for a notification that arrives already read", async () => {
@@ -148,7 +148,7 @@ describe("NotificationBell", () => {
     socket.emitCreated(buildNotification(true));
 
     await waitFor(() =>
-      expect(screen.queryByText("Someone liked your look")).not.toBeInTheDocument(),
+      expect(screen.queryByText("Someone cheriqed your drop")).not.toBeInTheDocument(),
     );
   });
 

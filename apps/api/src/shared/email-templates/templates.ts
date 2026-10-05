@@ -107,24 +107,24 @@ export const brandRejectedTemplate = (
 });
 
 export const creatorApprovedTemplate = (): { subject: string; html: string } => ({
-  subject: "You're an approved Outfiqe creator",
+  subject: "You're an approved Outfiqe muse",
   html: renderEmailLayout({
-    preheader: "You're approved as an Outfiqe creator.",
+    preheader: "You're approved as an Outfiqe muse.",
     bodyHtml: `
       ${emailStatusPill("Approved", "success")}
       ${emailHeading("You're in")}
-      ${emailLede("Your creator account is approved. You can now post fits and tag products.")}
+      ${emailLede("Your muse account is approved. You can now drop fits and tag products.")}
     `,
   }),
 });
 
 export const creatorRejectedTemplate = (): { subject: string; html: string } => ({
-  subject: "About your Outfiqe creator application",
+  subject: "About your Outfiqe muse application",
   html: renderEmailLayout({
-    preheader: "An update on your creator application.",
+    preheader: "An update on your muse application.",
     bodyHtml: `
       ${emailHeading("Not quite a fit right now")}
-      ${emailLede("Your creator application isn't a fit at the moment. You're welcome to apply again later.")}
+      ${emailLede("Your muse application isn't a fit at the moment. You're welcome to apply again later.")}
     `,
   }),
 });

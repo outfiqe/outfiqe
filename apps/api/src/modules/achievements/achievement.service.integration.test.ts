@@ -153,7 +153,7 @@ const createRankAchievement = async () => {
 };
 
 describe("achievementService.listProgressForUser with a rank-metric condition", () => {
-  it("reports a null currentValue for a creator with no leaderboard activity yet", async () => {
+  it("reports a null currentValue for a muse with no leaderboard activity yet", async () => {
     const user = await createUser();
     await createRankAchievement();
 

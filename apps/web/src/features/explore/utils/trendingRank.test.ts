@@ -25,13 +25,13 @@ const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
 });
 
 describe("buildTrendingRankByPostId", () => {
-  it("returns no ranks on a tab that isn't ranked, even for genuinely trending posts", () => {
+  it("returns no ranks on a tab that isn't ranked, even for genuinely trending drops", () => {
     const posts = [buildPost({ id: "trending-1", isTrending: true })];
 
     expect(buildTrendingRankByPostId(posts, false).size).toBe(0);
   });
 
-  it("never badges a post that isn't actually trending, even when it sits first in the array", () => {
+  it("never badges a drop that isn't actually trending, even when it sits first in the array", () => {
     const posts = [
       buildPost({ id: "followed-recency-post", isTrending: false }),
       buildPost({ id: "genuinely-trending-post", isTrending: true }),
@@ -43,7 +43,7 @@ describe("buildTrendingRankByPostId", () => {
     expect(ranks.get("genuinely-trending-post")).toBe(1);
   });
 
-  it("numbers only the genuinely trending posts in order, skipping interleaved followed posts in between", () => {
+  it("numbers only the genuinely trending drops in order, skipping interleaved followed drops in between", () => {
     const posts = [
       buildPost({ id: "trend-1", isTrending: true }),
       buildPost({ id: "followed-1", isTrending: false }),
@@ -61,7 +61,7 @@ describe("buildTrendingRankByPostId", () => {
     expect(ranks.has("followed-2")).toBe(false);
   });
 
-  it("stops at the top 3 trending posts, leaving the rest unbadged", () => {
+  it("stops at the top 3 trending drops, leaving the rest unbadged", () => {
     const posts = [
       buildPost({ id: "trend-1", isTrending: true }),
       buildPost({ id: "trend-2", isTrending: true }),
@@ -83,7 +83,7 @@ describe("findTrendingFallbackBoundary", () => {
     expect(findTrendingFallbackBoundary(posts, false)).toBe(-1);
   });
 
-  it("returns -1 when every post is genuinely trending, so there is nothing to divide", () => {
+  it("returns -1 when every drop is genuinely trending, so there is nothing to divide", () => {
     const posts = [
       buildPost({ id: "trend-1", isTrending: true }),
       buildPost({ id: "trend-2", isTrending: true }),
@@ -92,7 +92,7 @@ describe("findTrendingFallbackBoundary", () => {
     expect(findTrendingFallbackBoundary(posts, true)).toBe(-1);
   });
 
-  it("returns 0 when no post is genuinely trending, so the whole list is fallback", () => {
+  it("returns 0 when no drop is genuinely trending, so the whole list is fallback", () => {
     const posts = [
       buildPost({ id: "fallback-1", isTrending: false }),
       buildPost({ id: "fallback-2", isTrending: false }),
@@ -101,7 +101,7 @@ describe("findTrendingFallbackBoundary", () => {
     expect(findTrendingFallbackBoundary(posts, true)).toBe(0);
   });
 
-  it("returns the index of the first fallback post in a mixed scored-then-fallback list", () => {
+  it("returns the index of the first fallback drop in a mixed scored-then-fallback list", () => {
     const posts = [
       buildPost({ id: "trend-1", isTrending: true }),
       buildPost({ id: "trend-2", isTrending: true }),

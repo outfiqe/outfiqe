@@ -2000,6 +2000,7 @@ enum NotificationType {
   OUTFIT_OFFER_EXPIRED
   OUTFIT_OFFER_RELEASED
   OUTFIT_OFFER_REFUNDED
+  ACCOUNT_APPROVED
 }
 
 enum NotificationEntityType {

@@ -17,7 +17,7 @@ const FILTER_LABEL: Record<BadgeFilterValue, string> = {
   [BADGE_FILTER.COLLECTED]: "Collected",
   [BADGE_FILTER.LOCKED]: "Locked",
   [BadgeCategory.BEGINNER]: "Beginner",
-  [BadgeCategory.CREATOR]: "Creator",
+  [BadgeCategory.CREATOR]: "Muse",
   [BadgeCategory.COMMUNITY]: "Community",
   [BadgeCategory.ENGAGEMENT]: "Engagement",
   [BadgeCategory.COMMERCE]: "Commerce",

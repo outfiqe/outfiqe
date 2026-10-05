@@ -49,6 +49,7 @@ export const NotificationType = {
   OUTFIT_OFFER_EXPIRED: "OUTFIT_OFFER_EXPIRED",
   OUTFIT_OFFER_RELEASED: "OUTFIT_OFFER_RELEASED",
   OUTFIT_OFFER_REFUNDED: "OUTFIT_OFFER_REFUNDED",
+  ACCOUNT_APPROVED: "ACCOUNT_APPROVED",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -75,6 +76,13 @@ export const NotificationEntityType = {
 
 export type NotificationEntityType =
   (typeof NotificationEntityType)[keyof typeof NotificationEntityType];
+
+export const ApprovedAccountKind = {
+  CREATOR: "creator",
+  BRAND: "brand",
+} as const;
+
+export type ApprovedAccountKind = (typeof ApprovedAccountKind)[keyof typeof ApprovedAccountKind];
 
 export const CrmItemKind = {
   TASK: "task",
@@ -153,6 +161,7 @@ export type NotificationMetadata = {
   announcementTargetSurface?: NotificationSurface | null;
   announcementTargetPath?: string | null;
   announcementExpiresAt?: string | null;
+  approvedAccountKind?: ApprovedAccountKind;
 };
 
 export type Notification = {

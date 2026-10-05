@@ -15,7 +15,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Brand leaderboard",
   description:
-    "The Nepali brands shoppers and creators are responding to most on Outfiqe this week, ranked.",
+    "The Nepali brands shoppers and muses are responding to most on Outfiqe this week, ranked.",
   path: "/leaderboard",
 });
 
@@ -38,7 +38,7 @@ const LeaderboardPage = () => {
             href="/leaderboard/creators"
             className="mt-3 inline-block text-sm font-semibold text-primary-strong hover:underline"
           >
-            View the creator leaderboard →
+            View the muse leaderboard →
           </Link>
 
           <div className="mt-8">

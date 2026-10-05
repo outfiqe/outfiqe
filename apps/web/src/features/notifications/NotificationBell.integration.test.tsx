@@ -139,7 +139,7 @@ describe("NotificationBell", () => {
     const { onSelect } = renderBell(new FakeSocket());
     const user = await openPanel();
 
-    await user.click(await screen.findByText("Jane liked your look"));
+    await user.click(await screen.findByText("Jane cheriqed your drop"));
 
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: notification.id }));
   });
@@ -159,7 +159,7 @@ describe("NotificationBell", () => {
     renderBell(new FakeSocket());
     const user = await openPanel();
 
-    await waitFor(() => expect(screen.getAllByText("Jane liked your look")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByText("Jane cheriqed your drop")).toHaveLength(2));
     await user.click(screen.getByRole("button", { name: "Mark all as read" }));
 
     await waitFor(
@@ -178,7 +178,7 @@ describe("NotificationBell", () => {
     renderBell(socket);
     await openPanel();
 
-    await screen.findByText("Jane liked your look");
+    await screen.findByText("Jane cheriqed your drop");
 
     socket.emit(
       "notification:updated",
@@ -195,9 +195,9 @@ describe("NotificationBell", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByText("Jane and John liked your look")).toBeInTheDocument(),
+      expect(screen.getByText("Jane and John cheriqed your drop")).toBeInTheDocument(),
     );
-    expect(screen.queryByText("Jane liked your look")).not.toBeInTheDocument();
-    expect(screen.getAllByText(/liked your look/)).toHaveLength(1);
+    expect(screen.queryByText("Jane cheriqed your drop")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/cheriqed your drop/)).toHaveLength(1);
   });
 });

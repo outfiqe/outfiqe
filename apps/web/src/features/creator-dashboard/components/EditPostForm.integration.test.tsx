@@ -378,7 +378,7 @@ describe("EditPostForm", () => {
         expect(body.imageUrls).toContain("https://cdn.outfiqe.test/cropped.jpg");
         return HttpResponse.json({
           success: true,
-          message: "Post updated.",
+          message: "Drop updated.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
@@ -452,7 +452,7 @@ describe("EditPostForm", () => {
         ]);
         return HttpResponse.json({
           success: true,
-          message: "Post updated.",
+          message: "Drop updated.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
@@ -483,7 +483,7 @@ describe("EditPostForm", () => {
         await delay(200);
         return HttpResponse.json({
           success: true,
-          message: "Post updated.",
+          message: "Drop updated.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
@@ -508,7 +508,7 @@ describe("EditPostForm", () => {
     mswServer.use(
       http.patch("/api/creator-looks/look-1", () =>
         HttpResponse.json(
-          { success: false, message: "This post no longer exists." },
+          { success: false, message: "This drop no longer exists." },
           { status: 404 },
         ),
       ),
@@ -519,7 +519,7 @@ describe("EditPostForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
-    expect(await screen.findByText("This post no longer exists.")).toBeInTheDocument();
+    expect(await screen.findByText("This drop no longer exists.")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -540,22 +540,22 @@ describe("EditPostForm", () => {
     );
 
     expect(
-      screen.getByText(/stay hidden on the post until the brand approves/i),
+      screen.getByText(/stay hidden on the drop until the brand approves/i),
     ).toBeInTheDocument();
     expect(screen.getAllByText("In review").length).toBeGreaterThan(0);
     expect(
-      screen.getByText(/hidden on your post until the brand approves it/i),
+      screen.getByText(/hidden on your drop until the brand approves it/i),
     ).toBeInTheDocument();
   });
 
-  it("shows the brand's reason and note on a declined tag and lets the creator request again", async () => {
+  it("shows the brand's reason and note on a declined tag and lets the muse request again", async () => {
     let patchBody: unknown;
     mswServer.use(
       http.patch("/api/creator-looks/look-1", async ({ request }) => {
         patchBody = await request.json();
         return HttpResponse.json({
           success: true,
-          message: "Post updated.",
+          message: "Drop updated.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
@@ -599,7 +599,7 @@ describe("EditPostForm", () => {
         await delay(50);
         return HttpResponse.json({
           success: true,
-          message: "Post updated.",
+          message: "Drop updated.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",

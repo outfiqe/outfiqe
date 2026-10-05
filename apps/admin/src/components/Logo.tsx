@@ -1,4 +1,4 @@
-import { cn, LogoMark } from "@outfiqe/design-system";
+import { cn, LogoMark, LogoWordmark } from "@outfiqe/design-system";
 
 import { isOnTenantHost } from "@/lib/tenantHost";
 
@@ -35,10 +35,7 @@ export const Logo = ({ size = "md", className }: LogoProps) => {
       )}
     >
       <LogoMark className={cn(styles.mark, "shrink-0")} />
-      <span className={styles.text}>
-        <span className="text-primary">out</span>
-        <span className="text-secondary">fiqe.</span>
-      </span>
+      <LogoWordmark className={styles.text} />
     </a>
   );
 };

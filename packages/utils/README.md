@@ -10,6 +10,7 @@ to any one app.
 
 - `avatar/` — `getAvatarColor` (deterministic palette color from an id) and `initialsFor` (a
   display name's fallback avatar initial).
+- `email-logo/` — `EMAIL_LOGO_PATH`, `EMAIL_LOGO_RENDER_SIZE`/`EMAIL_LOGO_DISPLAY_SIZE` and `emailLogoUrl(siteOrigin)`: the one agreement between `apps/web`, which draws the logo PNG at that path (`app/email/logo.png`), and `apps/api`'s email layout, which shows it. The image is drawn at twice the size it is displayed so it stays sharp on high-density screens.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
 - `tenant/` — `extractTenantSubdomain(host, baseDomain)` / `isTenantHost(host, baseDomain)` plus

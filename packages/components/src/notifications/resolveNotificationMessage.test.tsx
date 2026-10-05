@@ -131,6 +131,34 @@ describe("resolveNotificationMessage for outfit builds", () => {
 });
 
 describe("resolveNotificationMessage", () => {
+  it("welcomes a newly approved muse", () => {
+    const message = resolveNotificationMessage(
+      buildNotification({ type: "ACCOUNT_APPROVED", metadata: { approvedAccountKind: "creator" } }),
+    );
+    expect(message).toBe(
+      "Welcome to Outfiqe! You're now an approved muse. Drop your first look and tag the pieces you're wearing.",
+    );
+  });
+
+  it("welcomes a new brand by name", () => {
+    const message = resolveNotificationMessage(
+      buildNotification({
+        type: "ACCOUNT_APPROVED",
+        metadata: { approvedAccountKind: "brand", brandName: "Meridian" },
+      }),
+    );
+    expect(message).toBe(
+      "Welcome to Outfiqe! Meridian is set up. Add your first products to start selling.",
+    );
+  });
+
+  it("welcomes a new brand generically when its name is missing", () => {
+    const message = resolveNotificationMessage(
+      buildNotification({ type: "ACCOUNT_APPROVED", metadata: { approvedAccountKind: "brand" } }),
+    );
+    expect(message).toContain("Your brand is set up.");
+  });
+
   it("names the coupon awaiting approval", () => {
     const message = resolveNotificationMessage(
       buildNotification({ type: "COUPON_APPROVAL_REQUESTED", metadata: { couponCode: "SAVE10" } }),

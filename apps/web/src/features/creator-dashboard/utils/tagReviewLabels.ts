@@ -15,4 +15,4 @@ export const TAG_REJECTION_REASON_LABELS: Record<TagRejectionReasonValue, string
 };
 
 export const TAG_IN_REVIEW_HINT =
-  "This tag stays hidden on your post until the brand approves it. Your post is already live.";
+  "This tag stays hidden on your drop until the brand approves it. Your drop is already live.";

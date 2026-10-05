@@ -21,7 +21,7 @@ export const wishlistService = {
     await assertCanEngage(userId, {
       code: "ADMIN_CANNOT_SAVE",
       message:
-        "Staff accounts can't save products — this keeps trending based on real audience activity.",
+        "Staff accounts can't stash products — this keeps trending based on real audience activity.",
     });
     await requireProduct(productId);
     await wishlistRepository.save(userId, productId);

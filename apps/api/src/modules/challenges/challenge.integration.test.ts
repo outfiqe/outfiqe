@@ -56,7 +56,7 @@ const validChallengePayload = (overrides: Record<string, unknown> = {}) => ({
   activeFrom: new Date(Date.now() - HOUR_MS).toISOString(),
   activeUntil: new Date(Date.now() + HOUR_MS).toISOString(),
   challengeName: `August Sprint ${randomUUID()}`,
-  challengeDescription: "Post looks and rack up likes before the week ends.",
+  challengeDescription: "Drop looks and rack up likes before the week ends.",
   bannerImageUrl: null,
   ...overrides,
 });

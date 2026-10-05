@@ -38,7 +38,7 @@ export const ResolveContentReportModal = ({
       open
       onClose={onCancel}
       title="Resolve report"
-      description={report.target ? `Posted by @${report.target.author.handle}` : undefined}
+      description={report.target ? `Dropped by @${report.target.author.handle}` : undefined}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>

@@ -1,8 +1,8 @@
 "use client";
 
 import { HeaderBar, useHeaderCondense } from "@outfiqe/components";
-import { ThemeToggle } from "@outfiqe/design-system";
-import { ChevronDown, Heart, ShoppingBag } from "lucide-react";
+import { CheriqIcon, ThemeToggle } from "@outfiqe/design-system";
+import { ChevronDown, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -51,7 +51,7 @@ export const SiteHeader = () => {
       <ShopExploreToggle size="header" className="hidden shrink-0 lg:flex" />
 
       {isExploreRoute(pathname) ? (
-        <ExploreSearchBox placeholder="Search creators & posts" formClassName={SEARCH_FORM_CLASS} />
+        <ExploreSearchBox placeholder="Search muses & drops" formClassName={SEARCH_FORM_CLASS} />
       ) : (
         <ProductSearchBox
           placeholder="Search fashion, brands & categories"
@@ -119,10 +119,10 @@ export const SiteHeader = () => {
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Link
           href="/wishlist"
-          aria-label="Wishlist"
+          aria-label="Your stash"
           className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
         >
-          <Heart className="size-[18px]" />
+          <CheriqIcon className="size-[18px]" />
         </Link>
 
         {isShopper && (

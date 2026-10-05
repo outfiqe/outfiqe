@@ -110,7 +110,7 @@ describe("toLedgerCsv", () => {
     const lines = csv.split("\r\n");
 
     expect(lines[0]).toBe(
-      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Creator Commission,Brand Net,Brand Payout Status",
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status",
     );
     expect(lines[1]).toBe(
       "order-1,item-1,2026-01-05T10:00:00.000Z,COD,1000,50,0,100,950,WITHDRAWN",

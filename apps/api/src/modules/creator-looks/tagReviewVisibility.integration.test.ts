@@ -20,7 +20,7 @@ const createCreator = () =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
-      name: "Visibility Creator",
+      name: "Visibility Muse",
       handle: `vc-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
@@ -74,7 +74,7 @@ const createLookWithTags = async (
 };
 
 describe("pending tags are invisible on public read paths", () => {
-  it("only exposes approved tags on a deep-linked post and the creator's public feed", async () => {
+  it("only exposes approved tags on a deep-linked drop and the muse's public feed", async () => {
     const creator = await createCreator();
     const [approved, pending] = await Promise.all([
       createProduct("Approved Jacket"),
@@ -150,7 +150,7 @@ describe("pending tags are invisible on public read paths", () => {
     expect(approvedClick.status).toBe(200);
   });
 
-  it("counts and lists only approved-tag creators for wornBy and PDP 'seen on'", async () => {
+  it("counts and lists only approved-tag muses for wornBy and PDP 'seen on'", async () => {
     const [approvedCreator, pendingCreator] = await Promise.all([createCreator(), createCreator()]);
     const product = await createProduct("Worn Sneaker");
 

@@ -21,7 +21,7 @@ const buildPost = (id: string) => ({
   imageUrl: `https://cdn.test/${id}.jpg`,
   images: [`https://cdn.test/${id}.jpg`],
   layout: "PORTRAIT",
-  caption: `Post ${id}`,
+  caption: `Drop ${id}`,
   likeCount: 0,
   commentCount: 0,
   saveCount: 0,
@@ -42,7 +42,7 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 };
 
 describe("useInfiniteCreatorLooks", () => {
-  it("fetches the first page of a creator's posts", async () => {
+  it("fetches the first page of a muse's drops", async () => {
     mswServer.use(
       http.get(`/api/creators/by-handle/${HANDLE}/looks`, ({ request }) => {
         const cursor = new URL(request.url).searchParams.get("cursor");
@@ -50,7 +50,7 @@ describe("useInfiniteCreatorLooks", () => {
 
         return HttpResponse.json({
           success: true,
-          message: "Creator's posts.",
+          message: "Muse's drops.",
           data: { posts: [buildPost("p1"), buildPost("p2")], nextCursor: "p2" },
         });
       }),
@@ -72,7 +72,7 @@ describe("useInfiniteCreatorLooks", () => {
         if (!cursor) {
           return HttpResponse.json({
             success: true,
-            message: "Creator's posts.",
+            message: "Muse's drops.",
             data: { posts: [buildPost("p1")], nextCursor: "p1" },
           });
         }
@@ -80,7 +80,7 @@ describe("useInfiniteCreatorLooks", () => {
         expect(cursor).toBe("p1");
         return HttpResponse.json({
           success: true,
-          message: "Creator's posts.",
+          message: "Muse's drops.",
           data: { posts: [buildPost("p2")], nextCursor: null },
         });
       }),

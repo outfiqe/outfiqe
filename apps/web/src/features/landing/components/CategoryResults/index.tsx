@@ -16,6 +16,7 @@ import { formatResultCount } from "@/shared/lib/formatCount";
 
 import { useCategorySelection } from "../../lib/CategorySelectionContext";
 import { resolveDisplayCategories } from "../../lib/resolveTasteCategories";
+import { TASTE_RESULTS_SECTION_ID } from "../../lib/scrollToTasteResults";
 import { ProductCard } from "../ProductCard";
 
 export const CategoryResults = () => {
@@ -83,11 +84,14 @@ export const CategoryResults = () => {
   const firstPage = isNavigatingCategory ? undefined : productsPages?.pages[0];
 
   return (
-    <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
+    <section
+      id={TASTE_RESULTS_SECTION_ID}
+      className="scroll-mt-4 px-6 pb-10 pt-[calc(var(--site-header-height,0px)-0.5rem)] sm:scroll-mt-6 sm:pb-14 sm:pt-[calc(var(--site-header-height,0px)-1rem)] lg:px-10"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-bold uppercase text-foreground sm:text-3xl">
-            In {name}
+            {name}
           </h2>
           {firstPage ? (
             <p className="mt-1 min-h-5 text-sm text-muted-foreground">

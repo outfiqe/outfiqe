@@ -127,9 +127,9 @@ export const PostCommentsPanel = ({
   return (
     <div className="mt-4 space-y-4 border-t border-border pt-4">
       {isLoading && <CommentsSkeleton />}
-      {error && <p className="text-sm text-destructive">Couldn&apos;t load comments.</p>}
+      {error && <p className="text-sm text-destructive">Couldn&apos;t load chimes.</p>}
       {!isLoading && !error && comments.length === 0 && (
-        <p className="text-sm text-muted-foreground">No comments on this post.</p>
+        <p className="text-sm text-muted-foreground">No chimes on this drop.</p>
       )}
 
       {comments.map((comment) => (
@@ -167,7 +167,7 @@ export const PostCommentsPanel = ({
           onClick={() => void fetchNextPage()}
           isLoading={isFetchingNextPage}
         >
-          Load more comments
+          Load more chimes
         </Button>
       )}
     </div>

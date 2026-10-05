@@ -70,7 +70,7 @@ const accountFaqs = [
   {
     question: "Do I need to verify my email?",
     answer:
-      "Yes. You can browse without an account, but saving items, checking out and tracking orders require a verified email.",
+      "Yes. You can browse without an account, but stashing items, checking out and tracking orders require a verified email.",
   },
   {
     question: "How do I change my password?",

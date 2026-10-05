@@ -33,7 +33,7 @@ const createCreator = () =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
-      name: "Creator",
+      name: "Muse",
       handle: `cr-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
@@ -149,7 +149,7 @@ describe("GET /api/tag-reports", () => {
     expect(response.status).toBe(403);
   });
 
-  it("lists reports with the tag context and the creator's flag count", async () => {
+  it("lists reports with the tag context and the muse's flag count", async () => {
     const { authHeader } = await createAdminSession();
     const { creator, look, product } = await seedTag("APPROVED");
     await prisma.user.update({
@@ -247,7 +247,7 @@ describe("POST /api/tag-reports/:id/resolve", () => {
 });
 
 describe("escalateCounterfeitTagRemoval", () => {
-  it("opens an escalation report and bumps the creator's flag count on a counterfeit rejection", async () => {
+  it("opens an escalation report and bumps the muse's flag count on a counterfeit rejection", async () => {
     const { creator, tag } = await seedTag("PENDING");
 
     await escalateCounterfeitTagRemoval({
