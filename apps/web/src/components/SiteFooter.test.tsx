@@ -1,15 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
-
-import { readLocaleCookie } from "@/i18n/localeCookie";
-import { LOCALE_COOKIE_NAME } from "@/i18n/locales";
+import { describe, expect, it } from "vitest";
 
 import { SiteFooter } from "./SiteFooter";
-
-afterEach(() => {
-  document.cookie = `${LOCALE_COOKIE_NAME}=; path=/; max-age=0`;
-});
 
 describe("SiteFooter", () => {
   it("renders the creator-commission disclosure", () => {
@@ -26,18 +18,9 @@ describe("SiteFooter", () => {
     expect(screen.getAllByRole("navigation").length).toBeGreaterThan(0);
   });
 
-  it("switches the language straight away from the footer", async () => {
+  it("has no language switch", () => {
     render(<SiteFooter />);
-    const nepali = screen.getByRole("button", { name: "नेपाली (Nepali)" });
-    expect(nepali).toHaveAttribute("aria-pressed", "false");
 
-    await userEvent.click(nepali);
-
-    expect(nepali).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-    expect(readLocaleCookie()).toBe("ne");
+    expect(screen.queryByRole("group", { name: "Language / भाषा" })).not.toBeInTheDocument();
   });
 });

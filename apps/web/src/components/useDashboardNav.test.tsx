@@ -50,9 +50,9 @@ describe("useDashboardNav", () => {
     expect(navIdsFor(UserRole.CUSTOMER)).toContain("addresses");
   });
 
-  it("offers the Language settings to every kind of account", () => {
-    expect(navIdsFor(UserRole.CUSTOMER)).toContain("language");
-    expect(navIdsFor(UserRole.BRAND_OWNER)).toContain("language");
+  it("has no Language settings item for any kind of account", () => {
+    expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("language");
+    expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("language");
   });
 
   it("offers My sizes to shoppers and creators but not to brand accounts", () => {
