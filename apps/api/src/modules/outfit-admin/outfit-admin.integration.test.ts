@@ -22,6 +22,8 @@ import {
 } from "#test/integration/outfitFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
+import { outfitAdminRepository } from "./outfit-admin.repository.js";
+
 const OK_STATUS = 200;
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
@@ -221,5 +223,22 @@ describe("build metrics", () => {
     expect(sharedBuildCount).toBe(0);
     expect(publicBuildCount).toBe(0);
     expect(commissionByTier).toEqual([]);
+  });
+
+  it("counts a build started just after midnight on a Monday in Nepal in that Monday's week", async () => {
+    const mondayJustAfterMidnightInNepal = new Date("2026-09-27T18:30:00.000Z");
+    const thatMondayInNepal = "2026-09-28T00:00:00.000Z";
+    const weekBefore = new Date("2026-09-20T00:00:00.000Z");
+    const outfitId = await startBuildOrFail(await createOutfitUser("Sita Rai"));
+    await prisma.outfit.update({
+      where: { id: outfitId },
+      data: { createdAt: mondayJustAfterMidnightInNepal },
+    });
+
+    const weeklyStarts = await outfitAdminRepository.buildStartsByWeek(weekBefore);
+
+    expect(weeklyStarts.map(({ week_start }) => week_start.toISOString())).toEqual([
+      thatMondayInNepal,
+    ]);
   });
 });

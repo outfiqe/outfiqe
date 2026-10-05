@@ -1,5 +1,5 @@
 import { prismaRead } from "#db/prisma.js";
-import type { Prisma } from "#generated/prisma/client.js";
+import { Prisma } from "#generated/prisma/client.js";
 import type { OutfitVisibility } from "#generated/prisma/enums.js";
 import {
   CommissionStatus,
@@ -14,6 +14,9 @@ import type { ListAdminBuildsQuery } from "./outfit-admin.schemas.js";
 
 const LOOKAHEAD_ROW = 1;
 const SKIP_CURSOR_ROW = 1;
+
+const weekStartInMetricsZone = (storedUtcColumn: string): Prisma.Sql =>
+  Prisma.sql`date_trunc('week', (${Prisma.raw(storedUtcColumn)} AT TIME ZONE 'UTC') AT TIME ZONE ${METRICS_TIME_ZONE})`;
 
 const adminBuildSummarySelect = {
   id: true,
@@ -190,7 +193,7 @@ export const outfitAdminRepository = {
 
   buildStartsByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyStartRow[]>`
-      SELECT date_trunc('week', created_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("created_at")} AS week_start,
              source_conversation_id IS NOT NULL AS from_chat,
              COUNT(*)::bigint AS count
       FROM outfits
@@ -201,7 +204,7 @@ export const outfitAdminRepository = {
 
   firstLocksByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyCountRow[]>`
-      SELECT date_trunc('week', first_locked_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("first_locked_at")} AS week_start,
              COUNT(*)::bigint AS count
       FROM (
         SELECT outfit_id, MIN(created_at) AS first_locked_at
@@ -215,7 +218,7 @@ export const outfitAdminRepository = {
 
   madePublicByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyCountRow[]>`
-      SELECT date_trunc('week', made_public_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("made_public_at")} AS week_start,
              COUNT(*)::bigint AS count
       FROM outfits
       WHERE made_public_at >= ${since}
@@ -225,7 +228,7 @@ export const outfitAdminRepository = {
 
   commentsByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyCountRow[]>`
-      SELECT date_trunc('week', created_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("created_at")} AS week_start,
              COUNT(*)::bigint AS count
       FROM outfit_comments
       WHERE created_at >= ${since} AND deleted_at IS NULL
@@ -235,7 +238,7 @@ export const outfitAdminRepository = {
 
   likesByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyCountRow[]>`
-      SELECT date_trunc('week', created_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("created_at")} AS week_start,
              COUNT(*)::bigint AS count
       FROM outfit_likes
       WHERE created_at >= ${since}
@@ -245,7 +248,7 @@ export const outfitAdminRepository = {
 
   savesByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyCountRow[]>`
-      SELECT date_trunc('week', created_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("created_at")} AS week_start,
              COUNT(*)::bigint AS count
       FROM outfit_saves
       WHERE created_at >= ${since}
@@ -255,7 +258,7 @@ export const outfitAdminRepository = {
 
   buildOrdersByWeek(since: Date) {
     return prismaRead.$queryRaw<WeeklyOrderRow[]>`
-      SELECT date_trunc('week', orders.created_at AT TIME ZONE ${METRICS_TIME_ZONE}) AS week_start,
+      SELECT ${weekStartInMetricsZone("orders.created_at")} AS week_start,
              build_lines.line_count >= jsonb_array_length(outfit_snapshots.items) AS is_full_set,
              COUNT(*)::bigint AS count
       FROM (

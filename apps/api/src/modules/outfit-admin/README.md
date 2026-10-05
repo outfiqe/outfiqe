@@ -42,9 +42,15 @@ open boards refresh.
   platform audit log with the reason.
 - **Staff unlock clears everyone's "I'm happy"**, exactly like the owner unlocking, so the build
   has to be agreed again before it can be locked.
-- **Metrics weeks start on Monday, Nepal time.** Every weekly count is grouped with
-  `date_trunc('week', … AT TIME ZONE 'Asia/Kathmandu')`, and the list of weeks comes from
-  `generate_series`, so a week with no activity still shows as zeros.
+- **Metrics weeks start on Monday, Nepal time.** Every weekly count is grouped by
+  `weekStartInMetricsZone(column)`, which is
+  `date_trunc('week', (column AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Kathmandu')`. The list of
+  weeks comes from `generate_series`, so a week with no activity still shows as zeros.
+- **The `AT TIME ZONE 'UTC'` step is required.** Our timestamp columns are `TIMESTAMP(3)` without a
+  time zone, holding UTC. A single `column AT TIME ZONE 'Asia/Kathmandu'` reads that UTC value as if
+  it were already Nepal time and shifts it the wrong way, so anything from the first hours of a
+  Monday in Nepal landed in the previous week. Converting from UTC first gives the Nepal wall-clock
+  time. `now()` has a time zone, so the current week needs only the single conversion.
 - **Full set or picked items is worked out from the order, not stored.** An order counts as a
   full-set order for a build version when its lines attributed to that build cover every item in
   that version's snapshot (`order_items.attributed_outfit_*` against
