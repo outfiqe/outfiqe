@@ -147,6 +147,13 @@ export const outfitErrors = {
       CONFLICT_STATUS,
     ),
 
+  openOfferBlocksLeave: () =>
+    new AppError(
+      "OPEN_OFFER_BLOCKS_LEAVE",
+      "You've still got an offer open on this build. Settle it first (accept and post, or decline), then you're free to leave.",
+      CONFLICT_STATUS,
+    ),
+
   neverLocked: () =>
     new AppError(
       "OUTFIT_NEVER_LOCKED",

@@ -354,5 +354,20 @@ as in stock only if one of its buyable sizes is.
   (`creator_id`, `source_outfit_id`, `source_outfit_version`) on `creator_looks`.
 - **Snapshots save the contributors.** Build commission is split among everyone on the build when
   it was published, so each lock records the contributor ids alongside the prices.
+- **Leaving a build takes you off its credit; being removed doesn't.** When an editor leaves, the
+  same transaction drops them from `contributor_ids` on every snapshot of the build. Their name
+  comes off the public build, the card and their profile's Builds tab, and later sales split the
+  commission among the people left. Commission is worked out and saved when an order is placed,
+  so anything already earned stays theirs. An owner removing an editor does not touch the
+  snapshots, so an owner can't push someone out after publishing to take their share.
+  Leaving is refused (`OPEN_OFFER_BLOCKS_LEAVE`) while that person has an offer on the build
+  waiting for their answer or accepted but not yet posted; declining it already refunds the brand,
+  so they settle it first. An offer still being paid for isn't visible to them yet; if it lands
+  after they left it shows on their Offers page and declining it refunds the brand. Migration
+  `20261005120000_drop_build_credit_for_people_who_left` applied the same rule to people who had
+  already left: using `outfit_events`, anyone no longer on a build whose latest membership change
+  was `MEMBER_LEFT` (not `MEMBER_REMOVED`) was taken off that build's snapshots, keeping everyone
+  else in order. Signed-out visitors see the public page from a copy that refreshes every minute,
+  so for them a name can take up to a minute to disappear.
 - **Simultaneous edits are tested below the rate limiter.** Fifty parallel requests from one
   person would trip the 30-a-minute limit, so the concurrency test calls the service directly.

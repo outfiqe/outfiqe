@@ -82,8 +82,12 @@ export const outfitMemberService = {
       allowedStatuses: NOT_ARCHIVED,
       apply: async ({ tx, outfit, actor, actorRole }) => {
         if (actorRole === OutfitMemberRole.OWNER) throw outfitErrors.ownerMustHandOver();
+        if (await outfitRepository.hasOfferAwaitingCreator(tx, outfit.id, actor.id)) {
+          throw outfitErrors.openOfferBlocksLeave();
+        }
 
         await outfitRepository.removeMember(tx, outfit.id, actor.id);
+        await outfitRepository.removeContributorFromSnapshots(tx, outfit.id, actor.id);
         if (outfit.conversationId) {
           await buildChatService.removeMember(tx, outfit.conversationId, actor, actor);
         }

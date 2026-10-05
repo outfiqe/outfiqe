@@ -1,5 +1,7 @@
 import { minutesToMilliseconds } from "date-fns/minutesToMilliseconds";
 
+import { OutfitOfferStatus } from "#generated/prisma/enums.js";
+
 export const OUTFIT_IDEMPOTENCY_ENDPOINT = {
   CREATE: "outfits:create",
   PLACE_ITEM: "outfits:place-item",
@@ -58,6 +60,11 @@ export const BUILD_ITEM_LEFT_OUT_REASON = {
 } as const;
 
 export const OUTFIT_CHAT_FALLBACK_NAME = "Outfit build";
+
+export const OFFER_STATUSES_AWAITING_CREATOR = [
+  OutfitOfferStatus.AWAITING_RESPONSE,
+  OutfitOfferStatus.ACCEPTED,
+] as const;
 
 export const OUTFIT_VIEWER_ROLE = {
   OWNER: "OWNER",

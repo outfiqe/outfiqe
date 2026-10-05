@@ -42,6 +42,8 @@ export const BoardActions = ({
 }: BoardActionsProps) => {
   const t = useTranslations("outfitBuild.actions");
   const [isConfirmingArchive, setIsConfirmingArchive] = useState(false);
+  const [isConfirmingLeave, setIsConfirmingLeave] = useState(false);
+  const hasBeenLocked = board.lastLockedVersion !== null;
   const isOwner = board.myRole === "OWNER";
   const isDraft = board.status === "DRAFT";
   const isArchived = board.status === "ARCHIVED";
@@ -86,12 +88,28 @@ export const BoardActions = ({
             </Button>
           </>
         )}
-        {!isOwner && (
-          <Button variant="ghost" onClick={onLeave} disabled={isSaving}>
+        {!isOwner && !isConfirmingLeave && (
+          <Button variant="ghost" onClick={() => setIsConfirmingLeave(true)} disabled={isSaving}>
             {t("leave")}
           </Button>
         )}
       </div>
+
+      {!isOwner && isConfirmingLeave && (
+        <div role="alert" className="space-y-2 rounded-lg border border-border p-3 text-sm">
+          <p className="font-medium text-foreground">{t("leaveConfirm.title")}</p>
+          <p className="text-muted-foreground">{t("leaveConfirm.body")}</p>
+          {hasBeenLocked && <p className="text-muted-foreground">{t("leaveConfirm.creditNote")}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={onLeave} disabled={isSaving}>
+              {t("leaveConfirm.confirm")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setIsConfirmingLeave(false)}>
+              {t("leaveConfirm.stay")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isOwner && isDraft && blocker && (
         <p className="text-xs text-muted-foreground">
