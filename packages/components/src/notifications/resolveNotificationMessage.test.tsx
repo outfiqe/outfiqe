@@ -74,6 +74,23 @@ describe("resolveNotificationMessage for outfit builds", () => {
     ).toBe('"Dashain look" is now public');
   });
 
+  it("names the brand, amount and build on an offer, with fallbacks", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_OFFER_RECEIVED",
+          metadata: { brandName: "Kastha", offerAmount: 12500, outfitTitle: "Dashain look" },
+        }),
+      ),
+    ).toBe('Kastha offered you Rs. 12,500 to post "Dashain look"');
+    expect(resolveNotificationMessage(buildNotification({ type: "OUTFIT_OFFER_RELEASED" }))).toBe(
+      "Your money for an outfit build is ready to withdraw",
+    );
+    expect(resolveNotificationMessage(buildNotification({ type: "OUTFIT_OFFER_EXPIRED" }))).toBe(
+      "The offer on an outfit build ran out of time",
+    );
+  });
+
   it("says a newer version of a posted build is ready", () => {
     expect(
       resolveNotificationMessage(

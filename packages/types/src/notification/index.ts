@@ -43,6 +43,12 @@ export const NotificationType = {
   OUTFIT_MADE_PUBLIC: "OUTFIT_MADE_PUBLIC",
   OUTFIT_ITEMS_SOLD_OUT: "OUTFIT_ITEMS_SOLD_OUT",
   OUTFIT_NEW_VERSION_AVAILABLE: "OUTFIT_NEW_VERSION_AVAILABLE",
+  OUTFIT_OFFER_RECEIVED: "OUTFIT_OFFER_RECEIVED",
+  OUTFIT_OFFER_ACCEPTED: "OUTFIT_OFFER_ACCEPTED",
+  OUTFIT_OFFER_DECLINED: "OUTFIT_OFFER_DECLINED",
+  OUTFIT_OFFER_EXPIRED: "OUTFIT_OFFER_EXPIRED",
+  OUTFIT_OFFER_RELEASED: "OUTFIT_OFFER_RELEASED",
+  OUTFIT_OFFER_REFUNDED: "OUTFIT_OFFER_REFUNDED",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -64,6 +70,7 @@ export const NotificationEntityType = {
   CRM_SUBSCRIPTION: "CRM_SUBSCRIPTION",
   CRM_SUBSCRIPTION_INVOICE: "CRM_SUBSCRIPTION_INVOICE",
   OUTFIT: "OUTFIT",
+  OUTFIT_OFFER: "OUTFIT_OFFER",
 } as const;
 
 export type NotificationEntityType =
@@ -112,6 +119,7 @@ export type NotificationMetadata = {
   levelName?: string;
   levelIcon?: string | null;
   commissionAmount?: number;
+  offerAmount?: number;
   orderTotal?: number;
   brandName?: string;
   status?: string;

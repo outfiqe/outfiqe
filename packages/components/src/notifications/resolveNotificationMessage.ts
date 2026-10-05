@@ -9,6 +9,11 @@ const outfitName = (notification: Notification): string => {
   return outfitTitle ? `"${outfitTitle}"` : "an outfit build";
 };
 
+const offerAmount = (notification: Notification): string => {
+  const { offerAmount: amount } = notification.metadata;
+  return amount === undefined ? "money" : `Rs. ${amount.toLocaleString("en-IN")}`;
+};
+
 const SINGLE_SOLD_OUT_ITEM = 1;
 
 const soldOutMessage = (notification: Notification): string => {
@@ -134,6 +139,18 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return soldOutMessage(notification);
     case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
       return `A new version of ${outfitName(notification)} is ready to post as a look`;
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+      return `${metadata.brandName ?? "A brand"} offered you ${offerAmount(notification)} to post ${outfitName(notification)}`;
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+      return `${metadata.actor?.name ?? "The creator"} accepted your offer on ${outfitName(notification)}`;
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+      return `${metadata.actor?.name ?? "The creator"} declined your offer on ${outfitName(notification)}. It will be refunded`;
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+      return `The offer on ${outfitName(notification)} ran out of time`;
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return `Your ${offerAmount(notification)} for ${outfitName(notification)} is ready to withdraw`;
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return `Your ${offerAmount(notification)} offer on ${outfitName(notification)} is being refunded`;
     default:
       return "You have a new notification";
   }
