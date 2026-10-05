@@ -26,8 +26,6 @@ import {
   manualAwardSchema,
   type SponsorBrand,
   sponsorBrandSchema,
-  type UserSearchResult,
-  userSearchResultSchema,
   type XpMultiplier,
   xpMultiplierSchema,
   type XpStats,
@@ -43,7 +41,6 @@ const manualAwardListSchema = z.array(manualAwardSchema);
 const challengeListSchema = z.array(challengeAdminSchema);
 const creatorCompetitionListSchema = z.array(creatorCompetitionAdminSchema);
 const creatorLeaderboardCategoryListSchema = z.array(creatorLeaderboardCategoryStateSchema);
-const userSearchResultListSchema = z.array(userSearchResultSchema);
 
 const BRAND_SEARCH_RESULT_LIMIT = 8;
 
@@ -234,11 +231,6 @@ export const gamificationApi = {
       params: { q, limit: BRAND_SEARCH_RESULT_LIMIT },
     });
     return sponsorBrandListSchema.parse(res.data.brands);
-  },
-
-  async searchUsers(q: string): Promise<UserSearchResult[]> {
-    const res = await apiClient.get<UserSearchResult[]>("/users/search", { params: { q } });
-    return userSearchResultListSchema.parse(res.data);
   },
 
   async awardBadge(badgeId: string, userId: string, reason: string): Promise<AwardBadgeResult> {

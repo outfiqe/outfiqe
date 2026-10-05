@@ -10,8 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 
-import { gamificationApi } from "./api";
-import type { UserSearchResult } from "./schemas";
+import { usersApi, type UserSearchResult } from "@/lib/usersApi";
 
 const USER_SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -23,11 +22,18 @@ type UserSearchFieldProps = {
   label: string;
   value: SelectedUser | null;
   onChange: (user: SelectedUser | null) => void;
+  placeholder?: string;
 };
 
 const describeUser = (user: SelectedUser) => `${user.name} (@${user.handle})`;
 
-export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldProps) => {
+export const UserSearchField = ({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder = "Search by name or @handle…",
+}: UserSearchFieldProps) => {
   const [typedQuery, setTypedQuery] = useState<string | null>(null);
   const query = typedQuery ?? (value ? describeUser(value) : "");
 
@@ -36,7 +42,7 @@ export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldP
 
   const { data: results, isLoading } = useQuery({
     queryKey: ["admin-user-search", debouncedQuery],
-    queryFn: () => gamificationApi.searchUsers(debouncedQuery.trim()),
+    queryFn: () => usersApi.search(debouncedQuery.trim()),
     enabled: isSearching,
   });
   const users = results ?? [];
@@ -62,7 +68,7 @@ export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldP
         <div className="relative">
           <AutocompleteInput
             id={id}
-            placeholder="Search by name or @handle…"
+            placeholder={placeholder}
             value={query}
             onChange={(event) => setTypedQuery(event.target.value)}
             onBlur={() => setTypedQuery(null)}
@@ -73,7 +79,7 @@ export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldP
               type="button"
               onClick={clearUser}
               aria-label="Clear selected user"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-destructive"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
             >
               <X className="size-4" />
             </button>

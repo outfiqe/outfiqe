@@ -191,6 +191,7 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
       "platform:users:manage",
       "platform:gamification:manage",
       "platform:xp:manage",
+      "platform:flags:manage",
     ),
     route("get", `/api/users/${SOME_ID}`, ...USERS_READ),
     route("post", `/api/platform/users/${SOME_ID}/suspend`, "platform:suspensions:manage"),

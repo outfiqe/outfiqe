@@ -1,6 +1,11 @@
 import { prisma } from "#db/prisma.js";
 
-import type { FeatureFlagSettings, FeatureFlagState } from "./feature-flags.types.js";
+import type {
+  AllowListedBrand,
+  AllowListedUser,
+  FeatureFlagSettings,
+  FeatureFlagState,
+} from "./feature-flags.types.js";
 
 const FLAG_STATE_SELECT = {
   key: true,
@@ -43,6 +48,22 @@ export const featureFlagsRepository = {
       select: { id: true },
     });
     return brands.map(({ id }) => id);
+  },
+
+  async listAllowListedUsers(userIds: string[]): Promise<AllowListedUser[]> {
+    if (userIds.length === 0) return [];
+    return prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, handle: true },
+    });
+  },
+
+  async listAllowListedBrands(brandIds: string[]): Promise<AllowListedBrand[]> {
+    if (brandIds.length === 0) return [];
+    return prisma.brand.findMany({
+      where: { id: { in: brandIds } },
+      select: { id: true, name: true },
+    });
   },
 
   async listBrandIdsForUser(userId: string): Promise<string[]> {

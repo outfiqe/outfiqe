@@ -114,6 +114,27 @@ describe("feature flags API", () => {
     });
   });
 
+  it("lists who is on each allow list by name, so admins never have to read raw ids", async () => {
+    const { authHeader } = await createAdminSession();
+    const { shopper } = await createShopper();
+    const brand = await createBrandWithMember(shopper.id);
+    await setOutfitBuilderFlag(authHeader, {
+      rollout: FeatureFlagRollout.ALLOW_LIST,
+      allowedUserIds: [shopper.id],
+      allowedBrandIds: [brand.id],
+    });
+
+    const response = await request(testApp).get(FLAGS_PATH).set("Authorization", authHeader);
+
+    const outfitBuilderFlag = response.body.data.find(
+      (flag: { key: string }) => flag.key === OUTFIT_BUILDER_FLAG,
+    );
+    expect(outfitBuilderFlag.allowedUsers).toEqual([
+      { id: shopper.id, name: shopper.name, handle: shopper.handle },
+    ]);
+    expect(outfitBuilderFlag.allowedBrands).toEqual([{ id: brand.id, name: brand.name }]);
+  });
+
   it("refuses allow-list ids for people or brands that don't exist", async () => {
     const { authHeader } = await createAdminSession();
     const unknownUserId = randomUUID();

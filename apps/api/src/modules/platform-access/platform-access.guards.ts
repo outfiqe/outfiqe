@@ -14,6 +14,7 @@ export const platformGuards = {
     "platform:users:manage",
     "platform:gamification:manage",
     "platform:xp:manage",
+    "platform:flags:manage",
   ),
   creatorsRead: requirePlatformRole("platform:creators:read", "platform:creators:manage"),
   creatorsManage: requirePlatformRole("platform:creators:manage"),
