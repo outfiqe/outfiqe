@@ -53,6 +53,7 @@ import {
   runOutfitWrite,
   toWriteRequest,
 } from "./outfit.write.js";
+import { loadCoversForBuilds } from "./outfit-photo.service.js";
 
 const FIRST_VERSION = 0;
 const EMPTY_TOTAL = 0;
@@ -223,11 +224,17 @@ export const outfitService = {
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
     const rows = await outfitRepository.listForMember(userId, { cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-    const roles = await Promise.all(
-      items.map((row) => outfitRepository.findMemberRole(prisma, row.id, userId)),
-    );
+    const [roles, coversByOutfitId] = await Promise.all([
+      Promise.all(items.map((row) => outfitRepository.findMemberRole(prisma, row.id, userId))),
+      loadCoversForBuilds(
+        userId,
+        items.map(({ id }) => id),
+      ),
+    ]);
     return {
-      items: items.map((row, index) => toSummaryView(row, toViewerRole(roles[index] ?? null))),
+      items: items.map((row, index) =>
+        toSummaryView(row, toViewerRole(roles[index] ?? null), coversByOutfitId.get(row.id) ?? []),
+      ),
       nextCursor,
     };
   },
@@ -238,8 +245,14 @@ export const outfitService = {
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
     const rows = await outfitRepository.listSharedWith(userId, { cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
+    const coversByOutfitId = await loadCoversForBuilds(
+      userId,
+      items.map(({ id }) => id),
+    );
     return {
-      items: items.map((row) => toSummaryView(row, OUTFIT_VIEWER_ROLE.VIEWER)),
+      items: items.map((row) =>
+        toSummaryView(row, OUTFIT_VIEWER_ROLE.VIEWER, coversByOutfitId.get(row.id) ?? []),
+      ),
       nextCursor,
     };
   },

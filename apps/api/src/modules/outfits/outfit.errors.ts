@@ -184,6 +184,53 @@ export const outfitErrors = {
       UNPROCESSABLE_STATUS,
     ),
 
+  photosUnavailable: () =>
+    new AppError("FEATURE_NOT_AVAILABLE", "Build photos aren't available yet.", NOT_FOUND_STATUS),
+
+  tryOnUnavailable: () =>
+    new AppError("FEATURE_NOT_AVAILABLE", "Try-on photos aren't available yet.", NOT_FOUND_STATUS),
+
+  photoNotFound: () =>
+    new AppError("PHOTO_NOT_FOUND", "That photo isn't on this build.", NOT_FOUND_STATUS),
+
+  photoAlreadyAdded: () =>
+    new AppError("PHOTO_ALREADY_ADDED", "That photo is already on a build.", CONFLICT_STATUS),
+
+  memberPhotoLimitReached: (maxPhotosPerMember: number) =>
+    new AppError(
+      "MEMBER_PHOTO_LIMIT_REACHED",
+      `You can add at most ${maxPhotosPerMember} photos to one build.`,
+      UNPROCESSABLE_STATUS,
+    ),
+
+  boardPhotoLimitReached: (maxPhotosPerBoard: number) =>
+    new AppError(
+      "BOARD_PHOTO_LIMIT_REACHED",
+      `A build can hold at most ${maxPhotosPerBoard} photos.`,
+      UNPROCESSABLE_STATUS,
+    ),
+
+  notPhotoUploader: () =>
+    new AppError(
+      "NOT_PHOTO_UPLOADER",
+      "Only the person who added a photo, or the build's owner, can remove it.",
+      FORBIDDEN_STATUS,
+    ),
+
+  tooManyCovers: (maxCoverPhotos: number) =>
+    new AppError(
+      "TOO_MANY_COVERS",
+      `Pick at most ${maxCoverPhotos} cover photos.`,
+      UNPROCESSABLE_STATUS,
+    ),
+
+  coverNotEligible: () =>
+    new AppError(
+      "COVER_NOT_ELIGIBLE",
+      "Only build photos on this build can be covers. Try-on photos can't.",
+      UNPROCESSABLE_STATUS,
+    ),
+
   lookFromVersionDeleted: () =>
     new AppError(
       "LOOK_FROM_VERSION_DELETED",

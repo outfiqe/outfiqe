@@ -987,6 +987,7 @@ enum ContentReportTarget {
   CREATOR_LOOK_COMMENT
   OUTFIT_BUILD
   OUTFIT_BUILD_COMMENT
+  OUTFIT_PHOTO
 }
 
 enum ContentReportReason {
@@ -2654,6 +2655,7 @@ enum OutfitEventType {
   SHARED
   PHOTO_ADDED
   PHOTO_REMOVED
+  COVERS_CHANGED
 }
 
 model Outfit {
@@ -2822,6 +2824,8 @@ model OutfitPhoto {
   kind         OutfitPhotoKind
   status       OutfitPhotoStatus    @default(PROCESSING)
   imageAssetId String               @unique @map("image_asset_id") @db.Uuid
+  imageUrl     String               @map("image_url")
+  coverPosition Int?                @map("cover_position")
   sortOrder    Int                  @default(0) @map("sort_order")
   removedAt    DateTime?            @map("removed_at")
   removedById  String?              @map("removed_by_id") @db.Uuid
@@ -2833,6 +2837,7 @@ model OutfitPhoto {
 
   @@index([outfitId, status, createdAt])
   @@index([uploaderId])
+  @@index([status, createdAt])
   @@map("outfit_photos")
 }
 

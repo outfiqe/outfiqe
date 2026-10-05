@@ -16,12 +16,14 @@ import {
   addBuildToCartSchema,
   addEditorsSchema,
   addOutfitCommentSchema,
+  addOutfitPhotosSchema,
   createOutfitSchema,
   listOutfitsQuerySchema,
   outfitCommentParamSchema,
   outfitEventsQuerySchema,
   outfitIdParamSchema,
   outfitMemberParamSchema,
+  outfitPhotoParamSchema,
   outfitSlotParamSchema,
   outfitSlotPositionParamSchema,
   placeItemSchema,
@@ -29,6 +31,7 @@ import {
   publishLookSchema,
   reorderSlotSchema,
   setHappySchema,
+  setOutfitCoversSchema,
   setVisibilitySchema,
   transferOwnershipSchema,
   updateOutfitSettingsSchema,
@@ -79,8 +82,16 @@ const buildCartRateLimit = rateLimit({
   message: "You're adding to your bag very quickly. Wait a moment and try again.",
 });
 
+const photoAddRateLimit = rateLimit({
+  namespace: "outfit-photo-adds",
+  ...OUTFIT_RATE_LIMITS.PHOTO_ADDS,
+  keyGenerator: perUserKey,
+  message: "You're adding photos very quickly. Wait a moment and try again.",
+});
+
 const outfitReadChain = [...requireActiveAuth, requireFeatureFlag("outfit_builder")];
 const outfitWriteChain = [...outfitReadChain, requireIdempotencyKey, boardEditRateLimit];
+const outfitPhotoWriteChain = [...outfitWriteChain, requireFeatureFlag("outfit_photos")];
 
 export const outfitRoutes = Router();
 
@@ -299,4 +310,23 @@ outfitRoutes.delete(
   ...outfitWriteChain,
   validate({ params: outfitMemberParamSchema }),
   outfitController.removeShare,
+);
+outfitRoutes.post(
+  "/:id/photos",
+  ...outfitPhotoWriteChain,
+  photoAddRateLimit,
+  validate({ params: outfitIdParamSchema, body: addOutfitPhotosSchema }),
+  outfitController.addPhotos,
+);
+outfitRoutes.delete(
+  "/:id/photos/:photoId",
+  ...outfitPhotoWriteChain,
+  validate({ params: outfitPhotoParamSchema }),
+  outfitController.removePhoto,
+);
+outfitRoutes.put(
+  "/:id/covers",
+  ...outfitPhotoWriteChain,
+  validate({ params: outfitIdParamSchema, body: setOutfitCoversSchema }),
+  outfitController.setCovers,
 );

@@ -1,13 +1,14 @@
 import { OUTFIT_ITEMS_PER_MEMBER_CHOICES } from "@outfiqe/utils";
 import { z } from "zod";
 
-import { OutfitVisibility } from "#generated/prisma/enums.js";
+import { OutfitPhotoKind, OutfitVisibility } from "#generated/prisma/enums.js";
 import {
   hasAlignedImageAssetIds,
   IMAGE_ASSET_ALIGNMENT_ISSUE,
   lookContentSchema,
   taggedProductsSchema,
 } from "#modules/creator-looks/creatorLook.schemas.js";
+import { PLATFORM_SETTING_REGISTRY } from "#modules/platform-settings/platform-settings.registry.js";
 
 import { OUTFIT_LIMITS } from "./outfit.constants.js";
 
@@ -190,6 +191,32 @@ export const listOutfitsQuerySchema = z.object({
     .default(LIST_DEFAULT_PAGE_SIZE),
 });
 
+const PHOTOS_PER_REQUEST_MAX = PLATFORM_SETTING_REGISTRY["outfit.maxPhotosPerMember"].maximum;
+const COVER_PHOTOS_MAX = PLATFORM_SETTING_REGISTRY["outfit.maxCoverPhotos"].maximum;
+
+export const outfitPhotoParamSchema = z.object({ id: z.uuid(), photoId: z.uuid() });
+
+export const addOutfitPhotosSchema = z.object({
+  kind: z.enum(OutfitPhotoKind),
+  photos: z
+    .array(z.object({ imageUrl: z.url(), imageAssetId: z.uuid() }))
+    .min(1)
+    .max(PHOTOS_PER_REQUEST_MAX)
+    .refine((photos) => hasNoDuplicates(photos.map(({ imageAssetId }) => imageAssetId)), {
+      message: "Add each photo only once.",
+    }),
+});
+
+export const setOutfitCoversSchema = z.object({
+  photoIds: z
+    .array(z.uuid())
+    .max(COVER_PHOTOS_MAX)
+    .refine(hasNoDuplicates, { message: "Pick each photo only once." }),
+});
+
+export type OutfitPhotoParam = z.infer<typeof outfitPhotoParamSchema>;
+export type AddOutfitPhotosBody = z.infer<typeof addOutfitPhotosSchema>;
+export type SetOutfitCoversBody = z.infer<typeof setOutfitCoversSchema>;
 export type OutfitIdParam = z.infer<typeof outfitIdParamSchema>;
 export type OutfitMemberParam = z.infer<typeof outfitMemberParamSchema>;
 export type OutfitSlotParam = z.infer<typeof outfitSlotParamSchema>;

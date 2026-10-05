@@ -6,6 +6,7 @@ import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+import { outfitPhotoService } from "#modules/outfits/outfit-photo.service.js";
 import { outfitSocialRepository } from "#modules/outfits/outfit-social.repository.js";
 import { outfitSocialService } from "#modules/outfits/outfit-social.service.js";
 import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
@@ -54,6 +55,9 @@ const removeReportedContent = async (
       await outfitSocialService.removeComment(principal, comment.outfitId, targetId);
       return;
     }
+    case ContentReportTarget.OUTFIT_PHOTO:
+      await outfitPhotoService.removeReportedPhoto(principal, targetId);
+      return;
   }
 };
 

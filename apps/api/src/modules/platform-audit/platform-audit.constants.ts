@@ -33,6 +33,7 @@ export const PLATFORM_AUDIT_ACTION = {
   OUTFIT_SLOT_TYPES_REORDERED: "outfit-slot-types.reordered",
   OUTFIT_BUILD_REMOVED_BY_ADMIN: "outfit-build.removed-by-admin",
   OUTFIT_BUILD_COMMENT_REMOVED_BY_ADMIN: "outfit-build-comment.removed-by-admin",
+  OUTFIT_PHOTO_REMOVED_BY_ADMIN: "outfit-photo.removed-by-admin",
   COMMISSION_TIER_CREATED: "commission-tier.created",
   COMMISSION_TIER_UPDATED: "commission-tier.updated",
   COMMISSION_TIER_DELETED: "commission-tier.deleted",

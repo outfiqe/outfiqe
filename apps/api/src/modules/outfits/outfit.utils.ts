@@ -32,6 +32,7 @@ import type {
   OutfitSummaryView,
   OutfitViewerRole,
 } from "./outfit.types.js";
+import type { OutfitCoverPhotoView } from "./outfit-photo.types.js";
 
 const NO_STOCK = 0;
 const EMPTY_TOTAL = 0;
@@ -109,7 +110,7 @@ const toIsoOrNull = (date: Date | null): string | null => date?.toISOString() ??
 export const toBoardView = (
   board: OutfitBoardRow,
   { myRole, limits }: { myRole: OutfitViewerRole; limits: OutfitBoardLimitsView },
-): OutfitBoardView => {
+): Omit<OutfitBoardView, "photos"> => {
   const { slots, members } = board;
   const [latestSnapshot] = board.snapshots;
   const boardItems = slots.flatMap((slot) =>
@@ -207,6 +208,7 @@ export const parseSnapshotItems = (storedItems: unknown): OutfitSnapshotItem[] =
 export const toSummaryView = (
   { _count, items, ...outfit }: OutfitSummaryRow,
   myRole: OutfitViewerRole,
+  coverPhotos: OutfitCoverPhotoView[],
 ): OutfitSummaryView => ({
   id: outfit.id,
   title: outfit.title,
@@ -218,6 +220,7 @@ export const toSummaryView = (
   previewImageUrls: items
     .map(({ product }) => product.imageUrl)
     .filter((imageUrl): imageUrl is string => imageUrl !== null),
+  coverPhotos,
   myRole,
   updatedAt: outfit.updatedAt.toISOString(),
 });

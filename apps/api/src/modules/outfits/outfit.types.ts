@@ -11,6 +11,11 @@ import type {
   OUTFIT_ITEM_AVAILABILITY,
   OUTFIT_VIEWER_ROLE,
 } from "./outfit.constants.js";
+import type {
+  OutfitCoverPhotoView,
+  OutfitPhotoLimitsView,
+  OutfitPhotoView,
+} from "./outfit-photo.types.js";
 
 export type OutfitViewerRole = (typeof OUTFIT_VIEWER_ROLE)[keyof typeof OUTFIT_VIEWER_ROLE];
 
@@ -72,7 +77,7 @@ export type OutfitMemberView = {
   canReceiveOffers: boolean;
 };
 
-export type OutfitBoardLimitsView = {
+export type OutfitBoardLimitsView = OutfitPhotoLimitsView & {
   maxItemsPerBoard: number;
   minItemsToLock: number;
   maxEditorsPerBoard: number;
@@ -103,6 +108,7 @@ export type OutfitBoardView = {
   isFullyAvailable: boolean;
   isEveryoneHappy: boolean;
   limits: OutfitBoardLimitsView;
+  photos: OutfitPhotoView[];
 };
 
 export type OutfitSnapshotItem = {
@@ -140,6 +146,7 @@ export type OutfitSummaryView = {
   itemCount: number;
   memberCount: number;
   previewImageUrls: string[];
+  coverPhotos: OutfitCoverPhotoView[];
   myRole: OutfitViewerRole;
   updatedAt: string;
 };

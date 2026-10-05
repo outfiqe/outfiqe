@@ -10,17 +10,20 @@ import { outfitErrors } from "./outfit.errors.js";
 import type {
   AddBuildToCartBody,
   AddEditorsBody,
+  AddOutfitPhotosBody,
   CreateOutfitBody,
   ListOutfitsQuery,
   OutfitEventsQuery,
   OutfitIdParam,
   OutfitMemberParam,
+  OutfitPhotoParam,
   OutfitSlotParam,
   OutfitSlotPositionParam,
   PlaceItemBody,
   PublishLookBody,
   ReorderSlotBody,
   SetHappyBody,
+  SetOutfitCoversBody,
   SetVisibilityBody,
   TransferOwnershipBody,
   UpdateOutfitSettingsBody,
@@ -30,6 +33,7 @@ import { parseVersionHeader, toETag } from "./outfit.utils.js";
 import type { OutfitWriteCall, OutfitWriteResult } from "./outfit.write.js";
 import { outfitCartService } from "./outfit-cart.service.js";
 import { outfitMemberService } from "./outfit-member.service.js";
+import { outfitPhotoService } from "./outfit-photo.service.js";
 import { outfitPublishService } from "./outfit-publish.service.js";
 import { outfitReplacementService } from "./outfit-replacements.service.js";
 import { outfitVisibilityService } from "./outfit-visibility.service.js";
@@ -224,5 +228,25 @@ export const outfitController = {
     const { id, userId } = validated.params<OutfitMemberParam>(res);
     const result = await outfitVisibilityService.removeShare(toWriteCall(req, res, id), userId);
     sendWriteResult(res, result, "Stopped sharing with that person.");
+  },
+
+  async addPhotos(req: Request, res: Response) {
+    const { id } = validated.params<OutfitIdParam>(res);
+    const body = validated.body<AddOutfitPhotosBody>(res);
+    const result = await outfitPhotoService.addPhotos(toWriteCall(req, res, id), body);
+    sendWriteResult(res, result, "Photos added.");
+  },
+
+  async removePhoto(req: Request, res: Response) {
+    const { id, photoId } = validated.params<OutfitPhotoParam>(res);
+    const result = await outfitPhotoService.removePhoto(toWriteCall(req, res, id), photoId);
+    sendWriteResult(res, result, "Photo removed.");
+  },
+
+  async setCovers(req: Request, res: Response) {
+    const { id } = validated.params<OutfitIdParam>(res);
+    const body = validated.body<SetOutfitCoversBody>(res);
+    const result = await outfitPhotoService.setCovers(toWriteCall(req, res, id), body);
+    sendWriteResult(res, result, "Cover photos saved.");
   },
 };

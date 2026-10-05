@@ -13,6 +13,7 @@ import {
   createAdminSession,
   createAdminSessionWithPlatformPermissions,
 } from "#test/integration/authHelpers.js";
+import { REAL_BROWSER_UA } from "#test/integration/browserUserAgent.js";
 import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -20,9 +21,6 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const REAL_BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36";
 
 const authFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
   const { accessToken } = generateTokenpair({ sub: userId, role });

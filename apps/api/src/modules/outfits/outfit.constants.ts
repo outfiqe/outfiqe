@@ -16,6 +16,15 @@ export const OUTFIT_IDEMPOTENCY_ENDPOINT = {
   TRANSFER_OWNERSHIP: "outfits:transfer-ownership",
   SET_VISIBILITY: "outfits:set-visibility",
   REMOVE_SHARE: "outfits:remove-share",
+  ADD_PHOTOS: "outfits:add-photos",
+  REMOVE_PHOTO: "outfits:remove-photo",
+  SET_COVERS: "outfits:set-covers",
+} as const;
+
+export const OUTFIT_PHOTO_CLEANUP = {
+  UNCONFIRMED_MAX_AGE_HOURS: 24,
+  SWEEP_INTERVAL_MS: minutesToMilliseconds(15),
+  SWEEP_BATCH_SIZE: 200,
 } as const;
 
 export const OUTFIT_LIMITS = {
@@ -37,6 +46,7 @@ export const OUTFIT_RATE_LIMITS = {
   SOCIAL_REACTIONS: { windowMs: minutesToMilliseconds(1), max: 60 },
   COMMENTS: { windowMs: minutesToMilliseconds(1), max: 10 },
   CART_ADDS: { windowMs: minutesToMilliseconds(1), max: 20 },
+  PHOTO_ADDS: { windowMs: minutesToMilliseconds(1), max: 10 },
 } as const;
 
 export const BUILD_ITEM_LEFT_OUT_REASON = {

@@ -93,11 +93,12 @@ different moderator deleted it directly moments earlier), it marks the report `A
 `contentRemoved: false` instead of throwing the `LOOK_NOT_FOUND`/`COMMENT_NOT_FOUND` that
 `creatorLookService` would otherwise raise.
 
-**Four target types, one queue.** `ContentReportTarget` covers `CREATOR_LOOK`,
-`CREATOR_LOOK_COMMENT`, `OUTFIT_BUILD` and `OUTFIT_BUILD_COMMENT`. `findReportableTarget` and the
-admin list's hydrate step branch on the type; each preview carries `lookId` or `outfitId` so the
-admin queue links to the right page. A build's "author" is its owner. Only shared or public,
-not-removed builds can be reported.
+**Five target types, one queue.** `ContentReportTarget` covers `CREATOR_LOOK`,
+`CREATOR_LOOK_COMMENT`, `OUTFIT_BUILD`, `OUTFIT_BUILD_COMMENT` and `OUTFIT_PHOTO`.
+`findReportableTarget` and the admin list's hydrate step branch on the type; each preview carries
+`lookId` or `outfitId` so the admin queue links to the right page. A build's "author" is its owner;
+a build photo's author is the person who added it. Only shared or public, not-removed builds (and
+their photos) can be reported.
 
 ## Automatic content check
 

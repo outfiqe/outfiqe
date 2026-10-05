@@ -5,6 +5,7 @@ import {
   ContentReportStatus,
   ContentReportTarget,
   OutfitMemberRole,
+  OutfitPhotoStatus,
   OutfitVisibility,
 } from "#generated/prisma/enums.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -180,6 +181,43 @@ const hydrateBuildCommentTargets = async (
   );
 };
 
+const hydratePhotoTargets = async (
+  photoIds: string[],
+): Promise<Map<string, ContentReportTargetPreview>> => {
+  if (photoIds.length === 0) return new Map();
+
+  const rows = await prisma.outfitPhoto.findMany({
+    where: { id: { in: photoIds } },
+    select: {
+      id: true,
+      outfitId: true,
+      imageUrl: true,
+      status: true,
+      uploader: { select: { id: true, name: true, handle: true, contentFlagCount: true } },
+    },
+  });
+
+  return new Map(
+    rows.flatMap((row) =>
+      row.uploader
+        ? [
+            [
+              row.id,
+              {
+                lookId: null,
+                outfitId: row.outfitId,
+                imageUrl: row.imageUrl,
+                snippet: "",
+                isRemoved: row.status === OutfitPhotoStatus.REMOVED,
+                author: row.uploader,
+              },
+            ],
+          ]
+        : [],
+    ),
+  );
+};
+
 const idsOfType = (
   rows: { targetType: ContentReportTarget; targetId: string }[],
   targetType: ContentReportTarget,
@@ -223,6 +261,20 @@ export const contentReportRepository = {
           select: { userId: true },
         });
         return comment ? { authorId: comment.userId } : null;
+      }
+      case ContentReportTarget.OUTFIT_PHOTO: {
+        const photo = await prisma.outfitPhoto.findFirst({
+          where: {
+            id: targetId,
+            status: { not: OutfitPhotoStatus.REMOVED },
+            outfit: {
+              removedAt: null,
+              visibility: { in: [OutfitVisibility.PUBLIC, OutfitVisibility.SHARED] },
+            },
+          },
+          select: { uploaderId: true },
+        });
+        return photo?.uploaderId ? { authorId: photo.uploaderId } : null;
       }
     }
   },
@@ -272,17 +324,20 @@ export const contentReportRepository = {
       encodeCursor<ReportCursor>({ c: row.createdAt.toISOString(), i: row.id }),
     );
 
-    const [lookTargets, commentTargets, buildTargets, buildCommentTargets] = await Promise.all([
-      hydrateLookTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK)),
-      hydrateCommentTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK_COMMENT)),
-      hydrateBuildTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD)),
-      hydrateBuildCommentTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD_COMMENT)),
-    ]);
+    const [lookTargets, commentTargets, buildTargets, buildCommentTargets, photoTargets] =
+      await Promise.all([
+        hydrateLookTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK)),
+        hydrateCommentTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK_COMMENT)),
+        hydrateBuildTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD)),
+        hydrateBuildCommentTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD_COMMENT)),
+        hydratePhotoTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_PHOTO)),
+      ]);
     const targetsByType: Record<ContentReportTarget, Map<string, ContentReportTargetPreview>> = {
       [ContentReportTarget.CREATOR_LOOK]: lookTargets,
       [ContentReportTarget.CREATOR_LOOK_COMMENT]: commentTargets,
       [ContentReportTarget.OUTFIT_BUILD]: buildTargets,
       [ContentReportTarget.OUTFIT_BUILD_COMMENT]: buildCommentTargets,
+      [ContentReportTarget.OUTFIT_PHOTO]: photoTargets,
     };
 
     const items: ContentReportListItem[] = pageRows.map((row) => {

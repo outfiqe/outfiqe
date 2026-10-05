@@ -1,6 +1,7 @@
 import type { UserRole } from "#generated/prisma/enums.js";
 
 import type { OutfitPersonView, OutfitSnapshotItem } from "./outfit.types.js";
+import type { OutfitCoverPhotoView, OutfitPhotoView } from "./outfit-photo.types.js";
 
 export type PublicBuildItem = OutfitSnapshotItem & {
   isInStock: boolean;
@@ -11,6 +12,7 @@ export type PublicBuildCard = {
   id: string;
   title: string | null;
   previewImageUrls: string[];
+  coverPhotos: OutfitCoverPhotoView[];
   itemCount: number;
   total: number;
   isFullyAvailable: boolean;
@@ -27,6 +29,7 @@ export type PublicBuildDetail = PublicBuildCard & {
   visibility: "SHARED" | "PUBLIC";
   items: PublicBuildItem[];
   lockedAt: string;
+  photos: OutfitPhotoView[];
   canComment: boolean;
 };
 

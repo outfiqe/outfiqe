@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { prisma } from "#db/prisma.js";
-import { OutfitVisibility } from "#generated/prisma/enums.js";
+import { OutfitPhotoKind, OutfitVisibility } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -17,6 +17,10 @@ import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitPersonView } from "./outfit.types.js";
 import { parseSnapshotItems } from "./outfit.utils.js";
 import { outfitCartRepository } from "./outfit-cart.repository.js";
+import { outfitPhotoRepository } from "./outfit-photo.repository.js";
+import { loadCoversForBuilds } from "./outfit-photo.service.js";
+import type { OutfitPhotoView } from "./outfit-photo.types.js";
+import { toOutfitPhotoView } from "./outfit-photo.utils.js";
 import {
   type OutfitCommentRow,
   outfitSocialRepository,
@@ -112,12 +116,13 @@ const buildCards = async (
   ];
   const outfitIds = publishedSnapshots.map(({ build }) => build.id);
 
-  const [inStockProductIds, people, reactions] = await Promise.all([
+  const [inStockProductIds, people, reactions, coversByOutfitId] = await Promise.all([
     outfitSocialRepository.listProductStock(productIds),
     outfitRepository.findPeople(prisma, contributorIds),
     viewerId
       ? outfitSocialRepository.listViewerReactions(viewerId, outfitIds)
       : Promise.resolve({ likedOutfitIds: new Set<string>(), savedOutfitIds: new Set<string>() }),
+    loadCoversForBuilds(viewerId, outfitIds),
   ]);
   const personById = new Map<string, OutfitPersonView>(people.map((person) => [person.id, person]));
 
@@ -129,6 +134,7 @@ const buildCards = async (
       previewImageUrls: items
         .flatMap(({ imageUrl }) => (imageUrl ? [imageUrl] : []))
         .slice(0, OUTFIT_LIMITS.CARD_PREVIEW_PRODUCT_COUNT),
+      coverPhotos: coversByOutfitId.get(build.id) ?? [],
       itemCount: items.length,
       total: snapshot.total,
       isFullyAvailable: items.every(({ productId }) => inStockProductIds.has(productId)),
@@ -144,6 +150,21 @@ const buildCards = async (
       madePublicAt: build.madePublicAt?.toISOString() ?? null,
     },
   }));
+};
+
+const listVisiblePhotos = async (
+  outfitId: string,
+  viewerId: string | null,
+): Promise<OutfitPhotoView[]> => {
+  const [isPhotosOn, isTryOnOn] = await Promise.all([
+    featureFlagsService.isEnabledForUser("outfit_photos", viewerId),
+    featureFlagsService.isEnabledForUser("outfit_try_on", viewerId),
+  ]);
+  if (!isPhotosOn) return [];
+  const photoRows = await outfitPhotoRepository.listForBoard(prisma, outfitId);
+  return photoRows
+    .filter(({ kind }) => isTryOnOn || kind !== OutfitPhotoKind.TRY_ON)
+    .map(toOutfitPhotoView);
 };
 
 const loadCardsInOrder = async (
@@ -214,9 +235,10 @@ export const outfitSocialService = {
     const snapshot = build.snapshots.find(({ version }) => version === build.publishedVersion);
     if (!snapshot) throw outfitErrors.notFound();
     const items = parseSnapshotItems(snapshot.items);
-    const buyableSizes = await outfitCartRepository.listBuyableSizes(
-      items.map(({ productId }) => productId),
-    );
+    const [buyableSizes, photos] = await Promise.all([
+      outfitCartRepository.listBuyableSizes(items.map(({ productId }) => productId)),
+      listVisiblePhotos(outfitId, viewerId),
+    ]);
     const sizesFor = (productId: string) =>
       buyableSizes
         .filter((size) => size.productId === productId)
@@ -229,6 +251,7 @@ export const outfitSocialService = {
         return { ...item, sizes, isInStock: sizes.some(({ isInStock }) => isInStock) };
       }),
       lockedAt: snapshot.createdAt.toISOString(),
+      photos,
       canComment: viewerId !== null,
     };
   },

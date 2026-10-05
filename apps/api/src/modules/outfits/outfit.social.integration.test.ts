@@ -6,6 +6,7 @@ import { ContentReportTarget, FeatureFlagRollout } from "#generated/prisma/enums
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { REAL_BROWSER_UA } from "#test/integration/browserUserAgent.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -24,8 +25,6 @@ const CREATED_STATUS = 201;
 const NO_CONTENT_STATUS = 204;
 const NOT_FOUND_STATUS = 404;
 const UNPROCESSABLE_STATUS = 422;
-const REAL_BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36";
 
 beforeEach(async () => {
   await redis.flushdb();

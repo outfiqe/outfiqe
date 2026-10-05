@@ -86,6 +86,11 @@ notifications. The web board and the rest of the feature are added on top (see
   own items" (`POST /:id/cart`): checks which version the shopper may buy from, adds the chosen
   sizes through `cartService.addItems`, explains every item left out, and records an
   `outfit_build_visits` row per added item for attribution. See "Buying from a build" below.
+- `outfit-photo.service.ts`, `outfit-photo.repository.ts`, `outfit-photo.utils.ts`,
+  `outfit-photo.types.ts` — build photos: adding them (`POST /:id/photos`), removing one
+  (`DELETE /:id/photos/:photoId`), picking covers (`PUT /:id/covers`), removal by a moderator,
+  the cleanup sweep (`runOutfitPhotoCleanupSweep`, wired in `src/jobs/scheduled-jobs.ts`), and
+  the cover photos shown on cards. See "Build photos" below.
 - `outfit.errors.ts`, `outfit.schemas.ts`, `outfit.types.ts`, `outfit.constants.ts`.
 - Tests: `outfit.board.integration.test.ts` (starting, items, slot rules, versions, retries,
   simultaneous edits, who can see what), `outfit.lifecycle.integration.test.ts` (agreeing,
@@ -94,7 +99,8 @@ notifications. The web board and the rest of the feature are added on top (see
   `outfit.stock.integration.test.ts` (sold-out alerts, replacements),
   `outfit.publish.integration.test.ts` (posting as a look), `outfit.social.integration.test.ts`
   (the feed, filters, likes, saves, comments, reports), `outfit.cart.integration.test.ts`
-  (buying from a build, Build commission split), `outfit.utils.test.ts`,
+  (buying from a build, Build commission split), `outfit.photos.integration.test.ts` (photo
+  limits, covers, moderation, cleanup), `outfit.utils.test.ts`, `outfit-photo.utils.test.ts`,
   `outfit.socket.test.ts`, `outfit.realtime.test.ts`.
 
 The tables (`apps/api/prisma/schema.prisma`, migration `20260929200000_add_outfit_build_data_model`):
@@ -124,6 +130,11 @@ Buying from a build (migration `20261003100000_add_outfit_build_commission`):
 `outfit_build_visits` (who added which product to their bag from which build version), and on the
 commission side `creator_commissions.recipient_brand_id` / `build_visit_id` and
 `order_items.attributed_outfit_id` / `attributed_outfit_version`.
+
+Build photos (migration `20261004120000_add_outfit_build_photos`): `outfit_photos.image_url` (the
+uploaded file, shown until the pipeline's sizes are ready) and `cover_position` (0-based, set
+only on build photos the owner picked; one photo per position per build; cleared when a photo is
+removed).
 
 ## Funnel
 
@@ -210,6 +221,27 @@ shopper accounts only, rate limited.
 
 `GET /:id/public` includes each item's buyable sizes so the web app can offer them; an item counts
 as in stock only if one of its buyable sizes is.
+
+**Build photos** (while `outfit_photos` is on; try-on photos also need `outfit_try_on`):
+
+1. The web app uploads each photo the same way as a Creator Look photo: crop in the browser, then
+   `POST /api/uploads/pipeline`, which keeps that route's own rules (5 MB, JPEG/PNG/WebP, rate
+   limit, queue back-pressure) and returns `{ url, assetId }`.
+2. `POST /:id/photos` with `{ kind: COVER | TRY_ON, photos: [{ imageUrl, imageAssetId }] }`
+   attaches them. It is a normal board write (`If-Match`, idempotency key, its own rate limit of 10
+   a minute). The photos must be the caller's own uploads (`assertAssetsOwnedBy`) and not already
+   on a build. Inside the write, the person's and the board's photo counts are checked against
+   `outfit.maxPhotosPerMember` / `outfit.maxPhotosPerBoard`.
+3. A photo whose file is still being processed is saved as `PROCESSING` and becomes `READY` when
+   the pipeline finishes. The cleanup sweep removes photos whose processing failed, or that never
+   finished within a day.
+4. The uploader or the owner can remove a photo. The owner picks up to `outfit.maxCoverPhotos`
+   build photos as covers, in order; try-on photos can't be covers.
+5. The board view carries every photo and the photo limits. Cards (My Builds, shared, public) carry
+   the covers; with no covers the web app shows the first three items. The public view carries
+   every photo, with try-on photos only while `outfit_try_on` is on.
+6. Photos on a shared or public build can be reported (`OUTFIT_PHOTO`). A moderator removing one
+   calls `outfitPhotoService.removeReportedPhoto`, which audits it.
 
 ## Non-obvious rationale
 

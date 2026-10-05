@@ -63,7 +63,7 @@ decide **how** it is built. Every rule in `CLAUDE.md` still applies on top of bo
 | Chat                     | One-to-one messages with sockets                                                                   | Add group chats, a build card message type, and system messages.                                                                                                                     |
 | Sockets                  | Socket.IO with the Redis adapter                                                                   | Add build rooms with a membership check before joining.                                                                                                                              |
 | Jobs                     | Interval and boundary schedulers in `apps/api/src/jobs/`, BullMQ in the image pipeline, bull-board | Reuse. New jobs and queues are wired in the same places.                                                                                                                             |
-| Image pipeline           | Checks the file type from its content, removes location data, makes several sizes                  | Reuse. Add the 10 MB limit and the build photo wiring.                                                                                                                               |
+| Image pipeline           | Checks the file type from its content, removes location data, makes several sizes                  | Reuse, with its existing upload limits. Add the build photo wiring.                                                                                                                  |
 | Idempotency              | `RequestIdempotency`, used by checkout and payments                                                | Extend it: detect a reused key with a different request, free the key when a request fails, clean up after 24 hours.                                                                 |
 | Stock                    | Race-safe conditional updates                                                                      | Add a stock ledger that records every change, and a database rule that stops stock going below zero.                                                                                 |
 | Rate limits              | Redis-backed middleware                                                                            | Reuse with new limits.                                                                                                                                                               |
@@ -277,8 +277,10 @@ commission rate.
 
 - Use the existing storage driver (local disk today) and the existing image pipeline. No new
   object storage driver is built in this version.
-- Upload through the existing flow and image pipeline, up to 10 MB each, with location data
-  removed and the file type checked from its content.
+- Upload through the existing flow and image pipeline, with that flow's own limits (5 MB each,
+  JPEG, PNG or WebP, cropped in the browser first), location data removed and the file type
+  checked from its content. Decided on 2026-10-03: use the existing upload rules rather than a
+  separate 10 MB limit for build photos.
 - Five photos per person and fifteen per board. The owner picks up to six cover photos. Without
   a cover, the card shows a grid of the first three items with a "+N items" tag.
 - A separate try-on gallery, so people can tell a real photo from a product shot.
