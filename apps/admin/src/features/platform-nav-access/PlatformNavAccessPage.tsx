@@ -46,7 +46,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   team: "Team",
   "outfit-builds": "Outfit builds",
   "platform-switches": "Feature switches",
-  "platform-settings": "Platform settings",
+  "platform-settings": "Limits",
   "platform-audit": "Audit log",
   "platform-jobs": "Jobs & health",
 };

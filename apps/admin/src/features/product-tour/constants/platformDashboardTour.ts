@@ -87,7 +87,7 @@ const GROUP_STEPS: PlatformTourStep[] = [
     groupKey: "platform-settings",
     anchorSelector: groupSelector("platform-settings"),
     title: "Platform Settings",
-    body: "Feature flags and switches that turn functionality on or off, platform settings, the audit log, background jobs and their health, and, for co-founders only, control over which parts of this navigation other admins can see.",
+    body: "Feature flags and switches that turn functionality on or off, platform-wide limits, the audit log, background jobs and their health, and, for co-founders only, control over which parts of this navigation other admins can see.",
   },
 ];
 
