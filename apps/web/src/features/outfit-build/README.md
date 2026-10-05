@@ -36,6 +36,11 @@ The whole feature sits behind the `outfit_builder` flag on the API.
   - `InviteEditorsModal`, `VisibilityModal`, `BoardSettingsModal` — owner tools; people are picked
     with the messaging `ContactPicker`.
   - `BuildCardMessage` — the card a chat shows for a build started in it; it loads the build live.
+  - `BoardPhotosPanel` and `AddBuildPhotosModal` — build photos on the board (see "Photos" below).
+  - `BuildCoverGrid` — the picture area of a build card: the cover photos, or the first three
+    items with "+N items". Used by `BuildSummaryCard` and `PublicBuildCardView`.
+  - `PublicBuildPhotos` — the photo and try-on galleries on a shared or public build, with a
+    report button on each photo.
   - `AvailabilityLabel`, `BudgetBar`, `PersonAvatar`, `ReconnectingBanner`, `BuildSummaryCard`.
 - `utils/` — `outfitBoardRules.ts` (the shared slot rules from `@outfiqe/utils`, run before a
   request is sent, and the instant local board changes), `outfitFormatting.ts` (lakh format,
@@ -92,6 +97,16 @@ Ways in from the rest of the app:
   `POST /api/outfits/:id/cart`, then the bag query is refreshed). The panel then says how many
   items were added, links to the bag, and lists anything left out with the reason. Signed-out
   visitors get a sign-in link; brand and staff accounts don't see the panel.
+- Photos (while `outfit_photos` is on): `BoardPhotosPanel` in the board's side column shows the
+  build's photos, lets members add more through `AddBuildPhotosModal` (the same cropper and
+  `resolvePendingPhotoAssets` upload as posting a look, then `outfitApi.addPhotos`), lets the
+  uploader or the owner remove one, and lets the owner star photos as covers in order. While
+  `outfit_try_on` is on, try-on photos have their own gallery and button. The board's `limits`
+  say how many photos are left. `PublishLookModal` starts with the build's cover photos, which
+  the creator can keep or remove.
+- Saving a board change: `useOutfitWrites().runWrite` resolves to whether the server took the
+  change, so `AddBuildPhotosModal`, `InviteEditorsModal`, `VisibilityModal` and
+  `BoardSettingsModal` stay open, with what was entered, when it is refused.
 
 ## Funnel
 

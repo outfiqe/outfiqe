@@ -11,7 +11,7 @@ type InviteEditorsModalProps = {
   memberIds: string[];
   openSeats: number;
   isSaving: boolean;
-  onInvite: (userIds: string[]) => Promise<void>;
+  onInvite: (userIds: string[]) => Promise<boolean>;
   onClose: () => void;
 };
 
@@ -28,8 +28,8 @@ export const InviteEditorsModal = ({
   const [selectedContacts, setSelectedContacts] = useState<ChatContact[]>([]);
 
   const inviteSelected = async () => {
-    await onInvite(selectedContacts.map(({ id }) => id));
-    onClose();
+    const isInvited = await onInvite(selectedContacts.map(({ id }) => id));
+    if (isInvited) onClose();
   };
 
   return (

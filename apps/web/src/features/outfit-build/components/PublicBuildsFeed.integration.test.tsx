@@ -20,6 +20,7 @@ const card = (overrides: Partial<PublicBuildCard> = {}): PublicBuildCard => ({
   id: "outfit-1",
   title: "Dashain look",
   previewImageUrls: [],
+  coverPhotos: [],
   itemCount: 2,
   total: 4_400,
   isFullyAvailable: true,
@@ -51,6 +52,7 @@ const detail = (overrides: Partial<PublicBuildDetail> = {}): PublicBuildDetail =
     },
   ],
   lockedAt: "2026-10-01T09:00:00.000Z",
+  photos: [],
   canComment: true,
   ...overrides,
 });

@@ -9,6 +9,7 @@ const contentReportTargetValues = [
   "CREATOR_LOOK_COMMENT",
   "OUTFIT_BUILD",
   "OUTFIT_BUILD_COMMENT",
+  "OUTFIT_PHOTO",
 ] satisfies ContentReportTarget[];
 const contentReportReasonValues = [
   "SPAM",

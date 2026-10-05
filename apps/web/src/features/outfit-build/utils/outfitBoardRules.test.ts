@@ -80,7 +80,15 @@ const board = (slots: OutfitSlot[]): OutfitBoard => ({
   isOverBudget: false,
   isFullyAvailable: true,
   isEveryoneHappy: true,
-  limits: { maxItemsPerBoard: 7, minItemsToLock: 2, maxEditorsPerBoard: 5 },
+  limits: {
+    maxItemsPerBoard: 7,
+    minItemsToLock: 2,
+    maxEditorsPerBoard: 5,
+    maxPhotosPerMember: 5,
+    maxPhotosPerBoard: 15,
+    maxCoverPhotos: 6,
+  },
+  photos: [],
 });
 
 const placedItem = (productId: string, position = 0) => ({

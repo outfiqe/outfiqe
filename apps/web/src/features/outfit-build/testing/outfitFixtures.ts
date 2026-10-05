@@ -53,7 +53,15 @@ export const buildBoard = (overrides: Partial<OutfitBoard> = {}): OutfitBoard =>
   isOverBudget: false,
   isFullyAvailable: true,
   isEveryoneHappy: false,
-  limits: { maxItemsPerBoard: 7, minItemsToLock: 2, maxEditorsPerBoard: 5 },
+  limits: {
+    maxItemsPerBoard: 7,
+    minItemsToLock: 2,
+    maxEditorsPerBoard: 5,
+    maxPhotosPerMember: 5,
+    maxPhotosPerBoard: 15,
+    maxCoverPhotos: 6,
+  },
+  photos: [],
   ...overrides,
 });
 
@@ -66,6 +74,7 @@ export const buildSummary = (overrides: Partial<OutfitSummary> = {}): OutfitSumm
   itemCount: 5,
   memberCount: 2,
   previewImageUrls: [],
+  coverPhotos: [],
   myRole: "OWNER",
   updatedAt: CREATED_AT,
   ...overrides,

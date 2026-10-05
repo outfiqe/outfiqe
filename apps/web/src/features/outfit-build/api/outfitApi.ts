@@ -11,6 +11,7 @@ import {
   outfitBoardSchema,
   type OutfitEventsPage,
   outfitEventsPageSchema,
+  type OutfitPhotoKind,
   type OutfitProduct,
   outfitReplacementsSchema,
   type OutfitSummaryPage,
@@ -37,6 +38,8 @@ export type AddBuildToCartInput = {
   isFullSet: boolean;
   sizes: { productId: string; sizeLabel: string }[];
 };
+
+export type NewOutfitPhoto = { imageUrl: string; imageAssetId: string };
 
 export type OutfitWrite = {
   outfitId: string;
@@ -155,6 +158,32 @@ export const outfitApi = {
     const res = await apiClient.patch(
       `/outfits/${write.outfitId}/settings`,
       changes,
+      writeHeaders(write),
+    );
+    return parseWrite(res.data);
+  },
+
+  async addPhotos(write: OutfitWrite, kind: OutfitPhotoKind, photos: NewOutfitPhoto[]) {
+    const res = await apiClient.post(
+      `/outfits/${write.outfitId}/photos`,
+      { kind, photos },
+      writeHeaders(write),
+    );
+    return parseWrite(res.data);
+  },
+
+  async removePhoto(write: OutfitWrite, photoId: string) {
+    const res = await apiClient.del(
+      `/outfits/${write.outfitId}/photos/${photoId}`,
+      writeHeaders(write),
+    );
+    return parseWrite(res.data);
+  },
+
+  async setCovers(write: OutfitWrite, photoIds: string[]) {
+    const res = await apiClient.put(
+      `/outfits/${write.outfitId}/covers`,
+      { photoIds },
       writeHeaders(write),
     );
     return parseWrite(res.data);

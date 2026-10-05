@@ -18,7 +18,10 @@ type VisibilityModalProps = {
   memberIds: string[];
   hasBeenLocked: boolean;
   isSaving: boolean;
-  onSave: (visibility: OutfitVisibility, shareWithUserIds: string[] | undefined) => Promise<void>;
+  onSave: (
+    visibility: OutfitVisibility,
+    shareWithUserIds: string[] | undefined,
+  ) => Promise<boolean>;
   onClose: () => void;
 };
 
@@ -40,8 +43,8 @@ export const VisibilityModal = ({
       visibility === "SHARED" && recipients.length > NO_RECIPIENTS
         ? recipients.map(({ id }) => id)
         : undefined;
-    await onSave(visibility, shareWithUserIds);
-    onClose();
+    const isSaved = await onSave(visibility, shareWithUserIds);
+    if (isSaved) onClose();
   };
 
   return (

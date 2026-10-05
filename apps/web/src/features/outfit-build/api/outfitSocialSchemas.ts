@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { outfitCoverPhotoSchema, outfitPhotoSchema } from "./outfitSchemas";
+
 const personSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -11,6 +13,7 @@ export const publicBuildCardSchema = z.object({
   id: z.string(),
   title: z.string().nullable(),
   previewImageUrls: z.array(z.string()),
+  coverPhotos: z.array(outfitCoverPhotoSchema),
   itemCount: z.number(),
   total: z.number(),
   isFullyAvailable: z.boolean(),
@@ -45,6 +48,7 @@ export const publicBuildDetailSchema = publicBuildCardSchema.extend({
   visibility: z.enum(["SHARED", "PUBLIC"]),
   items: z.array(publicBuildItemSchema),
   lockedAt: z.string(),
+  photos: z.array(outfitPhotoSchema),
   canComment: z.boolean(),
 });
 

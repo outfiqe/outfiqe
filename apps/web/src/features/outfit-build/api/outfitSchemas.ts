@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
+
 const outfitStatusSchema = z.enum(["DRAFT", "LOCKED", "ARCHIVED"]);
 const outfitVisibilitySchema = z.enum(["PRIVATE", "SHARED", "PUBLIC"]);
 const viewerRoleSchema = z.enum(["OWNER", "EDITOR", "VIEWER"]);
@@ -43,6 +45,20 @@ export const outfitSlotSchema = z.object({
   items: z.array(outfitItemSchema),
 });
 
+export const OUTFIT_PHOTO_KINDS = ["COVER", "TRY_ON"] as const;
+
+export const outfitPhotoSchema = z.object({
+  id: z.string(),
+  kind: z.enum(OUTFIT_PHOTO_KINDS),
+  status: z.enum(["PROCESSING", "READY"]),
+  image: responsiveImageSchema,
+  uploadedBy: personSchema.nullable(),
+  coverPosition: z.number().nullable(),
+  createdAt: z.string(),
+});
+
+export const outfitCoverPhotoSchema = z.object({ id: z.string(), image: responsiveImageSchema });
+
 export const outfitBoardSchema = z.object({
   id: z.string(),
   title: z.string().nullable(),
@@ -79,7 +95,11 @@ export const outfitBoardSchema = z.object({
     maxItemsPerBoard: z.number(),
     minItemsToLock: z.number(),
     maxEditorsPerBoard: z.number(),
+    maxPhotosPerMember: z.number(),
+    maxPhotosPerBoard: z.number(),
+    maxCoverPhotos: z.number(),
   }),
+  photos: z.array(outfitPhotoSchema),
 });
 
 const snapshotItemSchema = z.object({
@@ -152,6 +172,7 @@ export const outfitSummarySchema = z.object({
   itemCount: z.number(),
   memberCount: z.number(),
   previewImageUrls: z.array(z.string()),
+  coverPhotos: z.array(outfitCoverPhotoSchema),
   myRole: viewerRoleSchema,
   updatedAt: z.string(),
 });
@@ -176,6 +197,9 @@ export const outfitEventsPageSchema = z.object({
 });
 
 export type OutfitBoard = z.infer<typeof outfitBoardSchema>;
+export type OutfitPhoto = z.infer<typeof outfitPhotoSchema>;
+export type OutfitPhotoKind = OutfitPhoto["kind"];
+export type OutfitCoverPhoto = z.infer<typeof outfitCoverPhotoSchema>;
 export type OutfitSlot = z.infer<typeof outfitSlotSchema>;
 export type OutfitProduct = z.infer<typeof outfitProductSchema>;
 export type MyBuildLook = z.infer<typeof myBuildLookSchema>;

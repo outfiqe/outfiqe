@@ -1,14 +1,11 @@
 "use client";
 
-import { Heart, MessageCircle, Shirt } from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
-
-import { AppImage } from "@/shared/components/AppImage";
 
 import type { PublicBuildCard } from "../api/outfitSocialSchemas";
 import { formatLakhAmount } from "../utils/outfitFormatting";
-
-const NO_PREVIEWS = 0;
+import { BuildCoverGrid } from "./BuildCoverGrid";
 
 export const contributorNames = (card: PublicBuildCard): string =>
   card.contributors.map(({ name }) => name).join(", ");
@@ -33,18 +30,14 @@ export const PublicBuildCardView = ({
         aria-label={t("openBuild", { title })}
         className="block w-full cursor-pointer text-left"
       >
-        <div className="grid aspect-[4/3] grid-cols-3 gap-0.5 bg-muted">
-          {card.previewImageUrls.map((imageUrl) => (
-            <span key={imageUrl} className="relative">
-              <AppImage src={imageUrl} alt="" fill sizes="(min-width: 1024px) 110px, 33vw" />
-            </span>
-          ))}
-          {card.previewImageUrls.length === NO_PREVIEWS && (
-            <span className="col-span-3 flex items-center justify-center text-muted-foreground">
-              <Shirt className="size-8" aria-hidden />
-            </span>
-          )}
-        </div>
+        <BuildCoverGrid
+          coverPhotos={card.coverPhotos}
+          previewImageUrls={card.previewImageUrls}
+          itemCount={card.itemCount}
+          emptyLabel={t("noPreview")}
+          sizes="(min-width: 1024px) 160px, 50vw"
+          className="aspect-[4/3]"
+        />
         <div className="space-y-1 p-3">
           <h3 className="truncate text-sm font-semibold text-foreground">{title}</h3>
           <p className="truncate text-xs text-muted-foreground">

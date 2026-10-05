@@ -57,9 +57,12 @@ export const useOutfitWrites = (outfitId: string) => {
   );
 
   const sendOnce = useCallback(
-    async (send: SendOutfitWrite, applyChange: OptimisticBoardChange | undefined) => {
+    async (
+      send: SendOutfitWrite,
+      applyChange: OptimisticBoardChange | undefined,
+    ): Promise<boolean> => {
       const cachedView = queryClient.getQueryData<OutfitView>(queryKey);
-      if (cachedView?.kind !== "board") return;
+      if (cachedView?.kind !== "board") return false;
 
       const idempotencyKey = generateUuid();
       if (applyChange)
@@ -74,27 +77,30 @@ export const useOutfitWrites = (outfitId: string) => {
         if (board) queryClient.setQueryData(queryKey, { ...board, kind: "board" });
         else await queryClient.invalidateQueries({ queryKey });
         void queryClient.invalidateQueries({ queryKey: MY_BUILDS_QUERY_KEY });
+        return true;
       } catch (error) {
         queryClient.setQueryData(queryKey, cachedView);
         if (error instanceof ApiClientError && error.code === VERSION_CONFLICT_CODE) {
           const editorName = await findLatestEditorName(outfitId, cachedView.version, cachedView);
           await queryClient.invalidateQueries({ queryKey });
           toast.error(editorName ? t("conflictBy", { name: editorName }) : t("conflictBySomeone"));
-          return;
+          return false;
         }
         toast.error(describeRefusal(error));
+        return false;
       }
     },
     [describeRefusal, outfitId, queryClient, queryKey, t],
   );
 
   const runWrite = useCallback(
-    (send: SendOutfitWrite, applyChange?: OptimisticBoardChange): Promise<void> => {
+    (send: SendOutfitWrite, applyChange?: OptimisticBoardChange): Promise<boolean> => {
       setPendingWriteCount((count) => count + PENDING_WRITE_STEP);
-      writeQueueRef.current = writeQueueRef.current
-        .then(() => sendOnce(send, applyChange))
+      const isWriteSaved = writeQueueRef.current.then(() => sendOnce(send, applyChange));
+      writeQueueRef.current = isWriteSaved
+        .then(() => undefined)
         .finally(() => setPendingWriteCount((count) => count - PENDING_WRITE_STEP));
-      return writeQueueRef.current;
+      return isWriteSaved;
     },
     [sendOnce],
   );

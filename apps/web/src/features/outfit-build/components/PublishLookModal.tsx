@@ -32,6 +32,14 @@ type PublishLookModalProps = {
   onClose: () => void;
 };
 
+const coverImageUrls = (board: OutfitBoard): string[] =>
+  board.photos
+    .flatMap(({ coverPosition, image }) =>
+      coverPosition === null ? [] : [{ coverPosition, url: image.url }],
+    )
+    .sort((left, right) => left.coverPosition - right.coverPosition)
+    .map(({ url }) => url);
+
 const pickDefaultSize = (product: OutfitProduct, mySize: string | undefined): string => {
   const offeredLabels = product.sizes.map((size) => size.label);
   if (mySize && offeredLabels.includes(mySize)) return mySize;
@@ -44,7 +52,7 @@ export const PublishLookModal = ({ board, onPublished, onClose }: PublishLookMod
   const captionId = useId();
   const mySizeByProductType = useMySizeByProductType();
   const publishLook = usePublishBuildLook(board.id);
-  const pending = usePendingPhotos(MAX_PHOTOS);
+  const pending = usePendingPhotos(MAX_PHOTOS, coverImageUrls(board).slice(0, MAX_PHOTOS));
   const products = board.slots.flatMap((slot) => slot.items.map((item) => item.product));
 
   const [caption, setCaption] = useState(board.title ?? "");

@@ -19,7 +19,7 @@ type BoardSettings = {
 type BoardSettingsModalProps = {
   settings: BoardSettings;
   isSaving: boolean;
-  onSave: (changes: BoardSettings) => Promise<void>;
+  onSave: (changes: BoardSettings) => Promise<boolean>;
   onClose: () => void;
 };
 
@@ -48,12 +48,12 @@ export const BoardSettingsModal = ({
 
   const saveSettings = async () => {
     const trimmedTitle = title.trim();
-    await onSave({
+    const isSaved = await onSave({
       title: trimmedTitle.length > EMPTY_TITLE_LENGTH ? trimmedTitle : null,
       budget: toOptionalNumber(budgetText),
       maxItemsPerMember: toOptionalNumber(perPersonText),
     });
-    onClose();
+    if (isSaved) onClose();
   };
 
   return (

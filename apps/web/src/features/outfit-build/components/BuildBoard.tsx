@@ -19,6 +19,7 @@ import { BuildOffersSection } from "@/features/outfit-offers";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useMySizeByProductType } from "@/features/saved-sizes";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 
 import { outfitApi } from "../api/outfitApi";
 import type {
@@ -40,6 +41,7 @@ import {
 import { toOutfitProduct } from "../utils/toOutfitProduct";
 import { BoardActions } from "./BoardActions";
 import { BoardPeople } from "./BoardPeople";
+import { BoardPhotosPanel } from "./BoardPhotosPanel";
 import { BoardSettingsModal } from "./BoardSettingsModal";
 import { BudgetBar } from "./BudgetBar";
 import { BuyBuildPanel } from "./BuyBuildPanel";
@@ -88,6 +90,8 @@ export const BuildBoard = ({
   );
 
   const mySizeByProductType = useMySizeByProductType();
+  const isPhotosOn = useFeatureFlag("outfit_photos");
+  const isTryOnOn = useFeatureFlag("outfit_try_on");
   const canEdit = board.myRole !== "VIEWER" && board.status === "DRAFT";
   const soldOutItemCount = board.status === "DRAFT" ? countSoldOutItems(board) : NO_SOLD_OUT_ITEMS;
   const typeIdBySlug = new Map(
@@ -260,6 +264,22 @@ export const BuildBoard = ({
               onOpenSettings={() => setOpenModal("settings")}
               onOpenVisibility={() => setOpenModal("visibility")}
             />
+            {isPhotosOn && (
+              <BoardPhotosPanel
+                board={board}
+                currentUserId={currentUserId}
+                isTryOnOn={isTryOnOn}
+                onAddPhotos={(kind, photos) =>
+                  runWrite((write) => outfitApi.addPhotos(write, kind, photos))
+                }
+                onRemovePhoto={(photoId) =>
+                  void runWrite((write) => outfitApi.removePhoto(write, photoId))
+                }
+                onSetCovers={(photoIds) =>
+                  void runWrite((write) => outfitApi.setCovers(write, photoIds))
+                }
+              />
+            )}
             <PostAsLookPanel board={board} />
             {board.status === "LOCKED" && (
               <BuyBuildPanel

@@ -17,6 +17,7 @@ import { BuildComments } from "./BuildComments";
 import { BuildReactionsBar } from "./BuildReactionsBar";
 import { BuyBuildPanel } from "./BuyBuildPanel";
 import { PersonAvatar } from "./PersonAvatar";
+import { PublicBuildPhotos } from "./PublicBuildPhotos";
 
 type PublicBuildDetailViewProps = {
   build: PublicBuildDetail;
@@ -73,6 +74,8 @@ export const PublicBuildDetailView = ({
       </section>
 
       <BuildReactionsBar build={build} />
+
+      <PublicBuildPhotos photos={build.photos} canReport={isAuthenticated} />
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {build.items.map((item) => (
