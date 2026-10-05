@@ -20,6 +20,7 @@ import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useMySizeByProductType } from "@/features/saved-sizes";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 
 import { outfitApi } from "../api/outfitApi";
 import type {
@@ -73,6 +74,9 @@ const BOARD_TAB = {
   BUY_AND_DROP: "buy-and-drop",
 } as const;
 
+const BOARD_TABS_WITHOUT_PHOTOS = [BOARD_TAB.OUTFIT, BOARD_TAB.PEOPLE, BOARD_TAB.BUY_AND_DROP];
+const BOARD_TABS_WITH_PHOTOS = [...BOARD_TABS_WITHOUT_PHOTOS, BOARD_TAB.PHOTOS];
+
 const isPublicProduct = (value: unknown): value is PublicProduct =>
   typeof value === "object" && value !== null && "id" in value && "effectivePrice" in value;
 
@@ -99,6 +103,10 @@ export const BuildBoard = ({
   const mySizeByProductType = useMySizeByProductType();
   const isPhotosOn = useFeatureFlag("outfit_photos");
   const isTryOnOn = useFeatureFlag("outfit_try_on");
+  const { selectedTab, selectTab } = useTabSearchParam(
+    isPhotosOn ? BOARD_TABS_WITH_PHOTOS : BOARD_TABS_WITHOUT_PHOTOS,
+    BOARD_TAB.OUTFIT,
+  );
   const canEdit = board.myRole !== "VIEWER" && board.status === "DRAFT";
   const soldOutItemCount = board.status === "DRAFT" ? countSoldOutItems(board) : NO_SOLD_OUT_ITEMS;
   const typeIdBySlug = new Map(
@@ -241,7 +249,7 @@ export const BuildBoard = ({
           </p>
         )}
 
-        <Tabs defaultValue={BOARD_TAB.OUTFIT}>
+        <Tabs value={selectedTab} onValueChange={selectTab}>
           <TabsList aria-label={t("sectionsLabel")} className="overflow-x-auto">
             <TabsTrigger value={BOARD_TAB.OUTFIT}>{t("tabs.outfit")}</TabsTrigger>
             <TabsTrigger value={BOARD_TAB.PEOPLE}>

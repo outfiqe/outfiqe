@@ -23,6 +23,9 @@ import {
 import { BuildBoard } from "./BuildBoard";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 const ok = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
@@ -53,6 +56,7 @@ const renderBoard = (board: OutfitBoard) => {
 };
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/builds/outfit-1");
   vi.mocked(useAuth).mockReturnValue({
     state: { user: { id: SITA.id } },
   } as ReturnType<typeof useAuth>);
@@ -79,6 +83,16 @@ describe("BuildBoard", () => {
     await userEvent.setup().click(screen.getByRole("tab", { name: /People/ }));
 
     expect(screen.getByText("Sita Rai (you)")).toBeInTheDocument();
+    expect(screen.getByText("Ram Thapa")).toBeInTheDocument();
+    expect(window.location.search).toBe("?tab=people");
+  });
+
+  it("opens the tab named in the link", () => {
+    window.history.replaceState(null, "", "/builds/outfit-1?tab=people");
+
+    renderBoard(buildBoard());
+
+    expect(screen.getByRole("tab", { name: /People/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Ram Thapa")).toBeInTheDocument();
   });
 

@@ -5,28 +5,35 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 
 import type { PublicBuildFilters } from "../api/outfitSocialSchemas";
 import { PublicBuildsFeed } from "./PublicBuildsFeed";
 
-const PRIMARY_TAB = "primary";
 const BUILDS_TAB = "builds";
 
 type ProfileBuildsTabsProps = {
+  primaryTab: string;
   primaryLabel: string;
   buildFilters: Pick<PublicBuildFilters, "contributorId" | "brandId">;
   children: ReactNode;
 };
 
-const TabsWithBuilds = ({ primaryLabel, buildFilters, children }: ProfileBuildsTabsProps) => {
+const TabsWithBuilds = ({
+  primaryTab,
+  primaryLabel,
+  buildFilters,
+  children,
+}: ProfileBuildsTabsProps) => {
   const t = useTranslations("outfitBuild.public");
+  const { selectedTab, selectTab } = useTabSearchParam([primaryTab, BUILDS_TAB], primaryTab);
   return (
-    <Tabs defaultValue={PRIMARY_TAB}>
+    <Tabs value={selectedTab} onValueChange={selectTab}>
       <TabsList className="mb-4">
-        <TabsTrigger value={PRIMARY_TAB}>{primaryLabel}</TabsTrigger>
+        <TabsTrigger value={primaryTab}>{primaryLabel}</TabsTrigger>
         <TabsTrigger value={BUILDS_TAB}>{t("buildsTab")}</TabsTrigger>
       </TabsList>
-      <TabsContent value={PRIMARY_TAB}>{children}</TabsContent>
+      <TabsContent value={primaryTab}>{children}</TabsContent>
       <TabsContent value={BUILDS_TAB}>
         <PublicBuildsFeed fixedFilters={buildFilters} showFilters={false} />
       </TabsContent>

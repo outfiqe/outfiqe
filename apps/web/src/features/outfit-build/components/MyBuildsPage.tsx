@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 import { ApiClientError } from "@/shared/lib/apiClient";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -24,6 +25,13 @@ import { buildPath, BuildSummaryCard } from "./BuildSummaryCard";
 
 const SKELETON_CARD_COUNT = 4;
 const NO_BUILDS = 0;
+
+const MY_BUILDS_TAB = {
+  MINE: "mine",
+  SHARED: "shared",
+} as const;
+
+const MY_BUILDS_TABS = [MY_BUILDS_TAB.MINE, MY_BUILDS_TAB.SHARED];
 const FEATURE_NOT_AVAILABLE_CODE = "FEATURE_NOT_AVAILABLE";
 
 type BuildListQuery = ReturnType<typeof useMyBuilds>;
@@ -33,10 +41,10 @@ const isFeatureOff = (error: unknown) =>
 
 const BuildGrid = ({ query, emptyText }: { query: BuildListQuery; emptyText: string }) => {
   const t = useTranslations("outfitBuild.myBuilds");
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = query;
+  const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = query;
   const builds = data?.pages.flatMap((page: OutfitSummaryPage) => page.items) ?? [];
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div aria-busy className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
@@ -88,6 +96,7 @@ export const MyBuildsPage = () => {
   const router = useRouter();
   const myBuilds = useMyBuilds();
   const sharedBuilds = useBuildsSharedWithMe();
+  const { selectedTab, selectTab } = useTabSearchParam(MY_BUILDS_TABS, MY_BUILDS_TAB.MINE);
   const [isStarting, setIsStarting] = useState(false);
 
   const startBuild = async () => {
@@ -122,15 +131,15 @@ export const MyBuildsPage = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="mine">
+      <Tabs value={selectedTab} onValueChange={selectTab}>
         <TabsList>
-          <TabsTrigger value="mine">{t("tabs.mine")}</TabsTrigger>
-          <TabsTrigger value="shared">{t("tabs.shared")}</TabsTrigger>
+          <TabsTrigger value={MY_BUILDS_TAB.MINE}>{t("tabs.mine")}</TabsTrigger>
+          <TabsTrigger value={MY_BUILDS_TAB.SHARED}>{t("tabs.shared")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="mine" className="mt-4">
+        <TabsContent value={MY_BUILDS_TAB.MINE} className="mt-4">
           <BuildGrid query={myBuilds} emptyText={t("emptyMine")} />
         </TabsContent>
-        <TabsContent value="shared" className="mt-4">
+        <TabsContent value={MY_BUILDS_TAB.SHARED} className="mt-4">
           <BuildGrid query={sharedBuilds} emptyText={t("emptyShared")} />
         </TabsContent>
       </Tabs>

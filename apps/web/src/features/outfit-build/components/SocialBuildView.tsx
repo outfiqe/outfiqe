@@ -13,9 +13,9 @@ export const SocialBuildView = ({
   outfitId: string;
   fallback: ReactNode;
 }) => {
-  const { data: build, isLoading, isError } = usePublicBuild(outfitId);
+  const { data: build, isPending, isError } = usePublicBuild(outfitId);
 
-  if (isLoading) return <Skeleton className="mx-auto h-64 max-w-3xl rounded-xl" />;
+  if (isPending) return <Skeleton className="mx-auto h-64 max-w-3xl rounded-xl" />;
   if (isError || !build) return fallback;
   return (
     <div className="mx-auto max-w-3xl">

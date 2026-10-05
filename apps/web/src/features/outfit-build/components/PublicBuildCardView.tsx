@@ -1,6 +1,7 @@
 "use client";
 
-import { Heart, MessageCircle } from "lucide-react";
+import { CheriqIcon } from "@outfiqe/design-system";
+import { MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { PublicBuildCard } from "../api/outfitSocialSchemas";
@@ -56,7 +57,7 @@ export const PublicBuildCardView = ({
           </p>
           <p className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <Heart className="size-3.5" aria-hidden />
+              <CheriqIcon className="size-3.5" isCheriqed={card.isLiked} />
               <span className="sr-only">{t("likes")}</span>
               {card.likeCount}
             </span>

@@ -15,11 +15,11 @@ export const BuildDetailModal = ({
   onClose: () => void;
 }) => {
   const t = useTranslations("outfitBuild.public");
-  const { data: build, isLoading, isError } = usePublicBuild(outfitId);
+  const { data: build, isPending, isError } = usePublicBuild(outfitId);
 
   return (
     <Modal open onClose={onClose} title={build?.title ?? t("buildTitle")} className="sm:max-w-3xl">
-      {isLoading && <Skeleton className="h-64 w-full rounded-xl" />}
+      {isPending && <Skeleton className="h-64 w-full rounded-xl" />}
       {isError && <p className="text-sm text-destructive">{t("buildFailed")}</p>}
       {build && (
         <div className="space-y-3">
