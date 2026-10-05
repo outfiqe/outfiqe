@@ -33,7 +33,11 @@ once if something goes wrong.
 The two admin routes below require `platform:flags:manage`, which only super admins have unless a
 role grants it.
 
-- `GET /api/platform/feature-flags` — every flag with its rollout and allow lists.
+- `GET /api/platform/feature-flags` — every flag with its rollout and allow lists: the raw
+  `allowedUserIds` / `allowedBrandIds`, plus `allowedUsers` (`{ id, name, handle }`) and
+  `allowedBrands` (`{ id, name }`) in the same order, so the admin page can show names. Both are
+  looked up in one query each for all flags, and an id whose account or brand no longer exists is
+  left out (`pickInOrder` in `feature-flags.utils.ts`).
 - `PUT /api/platform/feature-flags/:key` with `{ rollout, allowedUserIds, allowedBrandIds }` —
   `rollout` is `OFF`, `ALLOW_LIST` or `EVERYONE`. Unknown user or brand ids are refused with `422`
   and listed in `details`. Every change is audited with the old and new settings.

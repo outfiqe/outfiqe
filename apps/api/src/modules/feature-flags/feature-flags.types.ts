@@ -11,7 +11,16 @@ export type FeatureFlagState = FeatureFlagSettings & {
   updatedAt: Date | null;
 };
 
-export type FeatureFlagView = FeatureFlagState & { label: string; description: string };
+export type AllowListedUser = { id: string; name: string; handle: string };
+
+export type AllowListedBrand = { id: string; name: string };
+
+export type FeatureFlagView = FeatureFlagState & {
+  label: string;
+  description: string;
+  allowedUsers: AllowListedUser[];
+  allowedBrands: AllowListedBrand[];
+};
 
 export type FeatureFlagViewer = { userId: string | null; brandIds: readonly string[] };
 

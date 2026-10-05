@@ -1,17 +1,24 @@
-import { Button, FormBanner, Select, Textarea } from "@outfiqe/design-system";
+import { Button, FormBanner, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
+import { BrandSearchField } from "@/components/BrandSearchField";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { UserSearchField } from "@/components/UserSearchField";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { AllowListChips } from "./AllowListChips";
 import { FEATURE_SWITCHES_QUERY_KEY, featureSwitchesApi } from "./api";
-import { FEATURE_ROLLOUTS, type FeatureRollout, type FeatureSwitch } from "./schemas";
+import {
+  type AllowListedBrand,
+  type AllowListedUser,
+  FEATURE_ROLLOUTS,
+  type FeatureRollout,
+  type FeatureSwitch,
+} from "./schemas";
 
 const SKELETON_ROW_COUNT = 4;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ID_SEPARATOR = /[\s,]+/;
 
 const ROLLOUT_LABEL: Record<FeatureRollout, string> = {
   OFF: "Off for everyone",
@@ -19,44 +26,35 @@ const ROLLOUT_LABEL: Record<FeatureRollout, string> = {
   EVERYONE: "On for everyone",
 };
 
-const parseIds = (text: string): string[] =>
-  text
-    .split(ID_SEPARATOR)
-    .map((id) => id.trim())
-    .filter((id) => id !== "");
-
 const isFeatureRollout = (value: string): value is FeatureRollout =>
   FEATURE_ROLLOUTS.some((rollout) => rollout === value);
+
+const addIfMissing = <Entry extends { id: string }>(entries: Entry[], added: Entry): Entry[] =>
+  entries.some(({ id }) => id === added.id) ? entries : [...entries, added];
 
 const FeatureSwitchCard = ({ featureSwitch }: { featureSwitch: FeatureSwitch }) => {
   const fieldId = useId();
   const [rollout, setRollout] = useState<FeatureRollout>(featureSwitch.rollout);
-  const [userIdsText, setUserIdsText] = useState(featureSwitch.allowedUserIds.join("\n"));
-  const [brandIdsText, setBrandIdsText] = useState(featureSwitch.allowedBrandIds.join("\n"));
-  const [formProblem, setFormProblem] = useState<string | null>(null);
+  const [allowedUsers, setAllowedUsers] = useState<AllowListedUser[]>(featureSwitch.allowedUsers);
+  const [allowedBrands, setAllowedBrands] = useState<AllowListedBrand[]>(
+    featureSwitch.allowedBrands,
+  );
 
   const save = useApiMutation({
     successMessage: `${featureSwitch.label} saved.`,
     mutationFn: () =>
       featureSwitchesApi.update(featureSwitch.key, {
         rollout,
-        allowedUserIds: parseIds(userIdsText),
-        allowedBrandIds: parseIds(brandIdsText),
+        allowedUserIds: allowedUsers.map(({ id }) => id),
+        allowedBrandIds: allowedBrands.map(({ id }) => id),
       }),
     invalidateKeys: [FEATURE_SWITCHES_QUERY_KEY],
   });
 
-  const saveIfValid = () => {
-    const invalidId = [...parseIds(userIdsText), ...parseIds(brandIdsText)].find(
-      (id) => !UUID_PATTERN.test(id),
-    );
-    if (invalidId) {
-      setFormProblem(`"${invalidId}" isn't a valid ID.`);
-      return;
-    }
-    setFormProblem(null);
-    save.mutate();
-  };
+  const removeUser = (userId: string) =>
+    setAllowedUsers((users) => users.filter(({ id }) => id !== userId));
+  const removeBrand = (brandId: string) =>
+    setAllowedBrands((brands) => brands.filter(({ id }) => id !== brandId));
 
   return (
     <section
@@ -92,35 +90,53 @@ const FeatureSwitchCard = ({ featureSwitch }: { featureSwitch: FeatureSwitch }) 
       </div>
 
       {rollout === "ALLOW_LIST" && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-users`} className="text-xs text-muted-foreground">
-              Person IDs (one per line)
-            </label>
-            <Textarea
-              id={`${fieldId}-users`}
-              rows={4}
-              value={userIdsText}
-              onChange={(event) => setUserIdsText(event.target.value)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <UserSearchField
+              id={`${fieldId}-add-person`}
+              label="Add a person"
+              value={null}
+              onChange={(user) => {
+                if (user) setAllowedUsers((users) => addIfMissing(users, user));
+              }}
+            />
+            <AllowListChips
+              listLabel={`People who have ${featureSwitch.label}`}
+              entries={allowedUsers.map(({ id, name, handle }) => ({
+                id,
+                name,
+                detail: `@${handle}`,
+              }))}
+              emptyText="No people added yet."
+              onRemove={removeUser}
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-brands`} className="text-xs text-muted-foreground">
-              Brand IDs (one per line)
-            </label>
-            <Textarea
-              id={`${fieldId}-brands`}
-              rows={4}
-              value={brandIdsText}
-              onChange={(event) => setBrandIdsText(event.target.value)}
+          <div className="space-y-2">
+            <BrandSearchField
+              id={`${fieldId}-add-brand`}
+              label="Add a brand (everyone on the brand's team gets it)"
+              placeholder="Search brands…"
+              value={null}
+              onChange={(brand) => {
+                if (brand) {
+                  setAllowedBrands((brands) =>
+                    addIfMissing(brands, { id: brand.id, name: brand.name }),
+                  );
+                }
+              }}
+            />
+            <AllowListChips
+              listLabel={`Brands that have ${featureSwitch.label}`}
+              entries={allowedBrands}
+              emptyText="No brands added yet."
+              onRemove={removeBrand}
             />
           </div>
         </div>
       )}
 
-      {formProblem && <FormBanner>{formProblem}</FormBanner>}
       {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
-      <Button size="sm" onClick={saveIfValid} isLoading={save.isPending}>
+      <Button size="sm" onClick={() => save.mutate()} isLoading={save.isPending}>
         Save
       </Button>
     </section>

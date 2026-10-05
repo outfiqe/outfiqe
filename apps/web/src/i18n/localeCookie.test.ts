@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { announceLocaleChange, readLocaleCookie, subscribeToLocaleChanges } from "./localeCookie";
+import {
+  announceLocaleChange,
+  readLocaleCookie,
+  subscribeToLocaleChanges,
+  writeLocaleCookie,
+} from "./localeCookie";
 import { LOCALE_COOKIE_NAME } from "./locales";
 
 const setLocaleCookie = (value: string) => {
@@ -36,6 +41,19 @@ describe("subscribeToLocaleChanges", () => {
     unsubscribe();
     announceLocaleChange();
 
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("writeLocaleCookie", () => {
+  it("saves the language in the browser and tells listeners straight away", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeToLocaleChanges(listener);
+
+    writeLocaleCookie("ne");
+    unsubscribe();
+
+    expect(readLocaleCookie()).toBe("ne");
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });

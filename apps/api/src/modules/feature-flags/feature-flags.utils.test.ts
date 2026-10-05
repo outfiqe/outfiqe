@@ -7,6 +7,7 @@ import {
   findMissingIds,
   isFlagOnFor,
   needsBrandMembershipLookup,
+  pickInOrder,
 } from "./feature-flags.utils.js";
 
 const ALLOWED_USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -74,6 +75,20 @@ describe("findMissingIds", () => {
   it("lists the requested ids that don't exist", () => {
     expect(findMissingIds([ALLOWED_USER_ID, OTHER_USER_ID], [ALLOWED_USER_ID])).toEqual([
       OTHER_USER_ID,
+    ]);
+  });
+});
+
+describe("pickInOrder", () => {
+  it("returns the entries in the allow list's order and skips ids that no longer exist", () => {
+    const entryById = new Map([
+      [ALLOWED_USER_ID, { id: ALLOWED_USER_ID, name: "Sita" }],
+      [ALLOWED_BRAND_ID, { id: ALLOWED_BRAND_ID, name: "Kastha" }],
+    ]);
+
+    expect(pickInOrder([ALLOWED_BRAND_ID, OTHER_USER_ID, ALLOWED_USER_ID], entryById)).toEqual([
+      { id: ALLOWED_BRAND_ID, name: "Kastha" },
+      { id: ALLOWED_USER_ID, name: "Sita" },
     ]);
   });
 });

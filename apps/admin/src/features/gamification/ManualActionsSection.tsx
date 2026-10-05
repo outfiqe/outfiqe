@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { UserSearchField } from "@/components/UserSearchField";
 import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
@@ -32,7 +33,6 @@ import {
   EMPTY_ADJUST_XP_FORM,
   EMPTY_AWARD_BADGE_FORM,
 } from "./manualActionForm.schema";
-import { UserSearchField } from "./UserSearchField";
 
 const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];

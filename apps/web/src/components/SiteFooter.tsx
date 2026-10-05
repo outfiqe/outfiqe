@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LanguageSwitch } from "@/i18n/LanguageSwitch";
+
 import { Logo } from "./Logo";
 import { FOOTER_LINK_GROUPS } from "./siteFooter.constants";
 
@@ -43,7 +45,10 @@ export const SiteFooter = () => {
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">Made for Nepal.</p>
+          <div className="flex items-center gap-4">
+            <LanguageSwitch />
+            <p className="text-xs text-muted-foreground">Made for Nepal.</p>
+          </div>
         </div>
       </div>
     </footer>
