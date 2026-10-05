@@ -22,6 +22,7 @@ export default defineConfig({
         "src/features/commissions/CommissionsListSection.tsx",
         "src/features/commissions/TierPriceTestBox.tsx",
         "src/features/commissions/TierChangeHistory.tsx",
+        "src/features/outfit-offers/**/*.{ts,tsx}",
         "src/features/withdraw-requests/WithdrawRequestsListSection.tsx",
         "src/features/tag-reports/**/*.{ts,tsx}",
         "src/features/content-reports/**/*.{ts,tsx}",

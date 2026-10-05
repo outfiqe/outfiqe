@@ -1,3 +1,5 @@
+import { OffersSection } from "@/features/outfit-offers/OffersSection";
+
 import { CommissionsListSection } from "./CommissionsListSection";
 import { CommissionTiersSection } from "./CommissionTiersSection";
 import { COMMISSION_SCOPE, type CommissionScopeValue } from "./schemas";
@@ -21,6 +23,7 @@ export const CommissionsPage = () => {
         </div>
       ))}
       <CommissionsListSection />
+      <OffersSection />
     </div>
   );
 };
