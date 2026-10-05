@@ -13,10 +13,12 @@ const API_BASE = "http://localhost:3000/api";
 
 const tier = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: "tier-1",
+  scope: "CREATOR_LOOK",
   minPrice: 0,
   maxPrice: 2000,
   amount: 100,
   sortOrder: 0,
+  overlapsWithTierIds: [],
   ...overrides,
 });
 
@@ -35,7 +37,35 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 const stubTiers = (tiers: ReturnType<typeof tier>[] = []) =>
   mswServer.use(http.get(`${API_BASE}/commissions/tiers`, () => okJson(tiers)));
 
+const renderCreatorLookTiers = () =>
+  render(<CommissionTiersSection scope="CREATOR_LOOK" />, { wrapper });
+
 describe("CommissionTiersSection", () => {
+  it("asks for the Build tiers when showing Build commission, and warns about overlapping bands", async () => {
+    let requestedScope: string | null = null;
+    mswServer.use(
+      http.get(`${API_BASE}/commissions/tiers`, ({ request }) => {
+        requestedScope = new URL(request.url).searchParams.get("scope");
+        return okJson([
+          tier({ id: "tier-1", scope: "OUTFIT_BUILD", overlapsWithTierIds: ["tier-2"] }),
+          tier({
+            id: "tier-2",
+            scope: "OUTFIT_BUILD",
+            minPrice: 1500,
+            overlapsWithTierIds: ["tier-1"],
+          }),
+        ]);
+      }),
+    );
+
+    render(<CommissionTiersSection scope="OUTFIT_BUILD" />, { wrapper });
+
+    expect(await screen.findByRole("heading", { name: "Build commission" })).toBeInTheDocument();
+    expect(await screen.findAllByText("Overlaps another price band")).toHaveLength(2);
+    expect(screen.getByText(/Some price bands overlap/)).toBeInTheDocument();
+    expect(requestedScope).toBe("OUTFIT_BUILD");
+  });
+
   it("names the missing fields inline, not in a browser popup, and sends nothing", async () => {
     stubTiers();
     const createRequested = vi.fn();
@@ -46,7 +76,7 @@ describe("CommissionTiersSection", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<CommissionTiersSection />, { wrapper });
+    renderCreatorLookTiers();
 
     await user.click(await screen.findByRole("button", { name: "Add tier" }));
 
@@ -65,7 +95,7 @@ describe("CommissionTiersSection", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<CommissionTiersSection />, { wrapper });
+    renderCreatorLookTiers();
 
     await user.type(await screen.findByLabelText("Min price (Rs.)"), "500");
     await user.type(screen.getByLabelText("Max price (Rs.)"), "400");
@@ -81,14 +111,16 @@ describe("CommissionTiersSection", () => {
   it("adds a tier, clears the form and shows a success toast", async () => {
     stubTiers();
     let createBody: unknown;
+    let createdScope: string | null = null;
     mswServer.use(
       http.post(`${API_BASE}/commissions/tiers`, async ({ request }) => {
         createBody = await request.json();
+        createdScope = new URL(request.url).searchParams.get("scope");
         return okJson(tier());
       }),
     );
     const user = userEvent.setup();
-    render(<CommissionTiersSection />, { wrapper });
+    renderCreatorLookTiers();
 
     const minField = await screen.findByLabelText("Min price (Rs.)");
     await user.type(minField, "0");
@@ -96,6 +128,7 @@ describe("CommissionTiersSection", () => {
     await user.click(screen.getByRole("button", { name: "Add tier" }));
 
     await waitFor(() => expect(createBody).toEqual({ minPrice: 0, amount: 100 }));
+    expect(createdScope).toBe("CREATOR_LOOK");
     expect(await screen.findByText("Commission tier added.")).toBeInTheDocument();
     await waitFor(() => expect(minField).toHaveValue(""));
   });
@@ -111,7 +144,7 @@ describe("CommissionTiersSection", () => {
       ),
     );
     const user = userEvent.setup();
-    render(<CommissionTiersSection />, { wrapper });
+    renderCreatorLookTiers();
 
     await user.type(await screen.findByLabelText("Min price (Rs.)"), "0");
     await user.type(screen.getByLabelText("Commission (Rs.)"), "100");

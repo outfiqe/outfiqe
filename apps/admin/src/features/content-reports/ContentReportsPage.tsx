@@ -8,11 +8,10 @@ import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { contentReportsApi } from "./api";
+import { reportedContentHref, TARGET_NOUN } from "./contentReportTarget";
 import { useInfiniteContentReports } from "./hooks/useInfiniteContentReports";
 import { ResolveContentReportModal } from "./ResolveContentReportModal";
 import type { ContentReport, ContentReportStatusValue, ResolveContentReportInput } from "./schemas";
-
-const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
 const TABS: ContentReportStatusValue[] = ["OPEN", "ACTIONED", "DISMISSED"];
 const CONTENT_REPORTS_STATUS_FILTER = oneOfFilter<ContentReportStatusValue>(TABS, "OPEN");
@@ -93,7 +92,8 @@ export const ContentReportsPage = () => {
 
         {reports.map((report) => {
           const { target } = report;
-          const targetNoun = report.targetType === "CREATOR_LOOK" ? "drop" : "chime";
+          const targetNoun = TARGET_NOUN[report.targetType];
+          const contentHref = target ? reportedContentHref(target) : null;
           return (
             <div key={report.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
               {target?.imageUrl && (
@@ -133,15 +133,19 @@ export const ContentReportsPage = () => {
                   <p className="mt-1 text-xs text-muted-foreground">
                     By @{target.author.handle}
                     {report.reporterName ? ` · Reported by ${report.reporterName}` : ""}
-                    {" · "}
-                    <a
-                      href={`${WEB_URL}/creator/${target.author.handle}?look=${target.lookId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline underline-offset-2 hover:text-foreground"
-                    >
-                      View {targetNoun}
-                    </a>
+                    {contentHref && (
+                      <>
+                        {" · "}
+                        <a
+                          href={contentHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2 hover:text-foreground"
+                        >
+                          View {targetNoun}
+                        </a>
+                      </>
+                    )}
                   </p>
                 ) : (
                   <p className="mt-1 text-xs text-muted-foreground">

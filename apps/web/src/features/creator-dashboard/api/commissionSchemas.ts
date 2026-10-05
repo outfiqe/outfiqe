@@ -8,6 +8,7 @@ export const CommissionSource = {
   TAG_CLICK: "TAG_CLICK",
   INTERNAL_LINK: "INTERNAL_LINK",
   EXTERNAL_LINK: "EXTERNAL_LINK",
+  OUTFIT_BUILD: "OUTFIT_BUILD",
 } as const satisfies Record<string, CommissionSourceType>;
 export type CommissionSourceValue = (typeof CommissionSource)[keyof typeof CommissionSource];
 
@@ -45,3 +46,6 @@ export const earningsSummarySchema = z.object({
   paid: z.number(),
 });
 export type EarningsSummary = z.infer<typeof earningsSummarySchema>;
+
+export const commissionEligibilitySchema = z.object({ canEarn: z.boolean() });
+export type CommissionEligibility = z.infer<typeof commissionEligibilitySchema>;

@@ -1,4 +1,5 @@
 export const WEB_NOTIFICATION_ROUTES = {
+  dashboardOverview: "/overview",
   dashboardProfile: "/profile",
   badges: "/badges",
   progress: "/progress",
@@ -9,6 +10,8 @@ export const WEB_NOTIFICATION_ROUTES = {
   brandProducts: "/products",
   tagReviews: "/tag-reviews",
   messagesList: "/messages",
+  buildsList: "/builds",
+  offers: "/offers",
   supportList: "/support",
 } as const;
 
@@ -40,6 +43,9 @@ export const productReviewPath = (productId: string): string =>
 
 export const conversationPath = (conversationId: string): string =>
   `${WEB_NOTIFICATION_ROUTES.messagesList}/${conversationId}`;
+
+export const outfitBuildPath = (outfitId: string): string =>
+  `${WEB_NOTIFICATION_ROUTES.buildsList}/${outfitId}`;
 
 export const customerSupportTicketPath = (ticketId: string | null): string =>
   ticketId

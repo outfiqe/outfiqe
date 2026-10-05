@@ -29,6 +29,43 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   ...overrides,
 });
 
+describe("resolveNotificationHref for outfit builds", () => {
+  it("opens the build, or My Builds when the build id is missing", () => {
+    for (const type of [
+      "OUTFIT_BOARD_ACTIVITY",
+      "OUTFIT_READY_TO_LOCK",
+      "OUTFIT_LOCKED",
+      "OUTFIT_INVITED",
+      "OUTFIT_SHARED",
+      "OUTFIT_MADE_PUBLIC",
+      "OUTFIT_ITEMS_SOLD_OUT",
+      "OUTFIT_NEW_VERSION_AVAILABLE",
+    ] as const) {
+      expect(
+        resolveNotificationHref(buildNotification({ type, entityId: "outfit-1" }), OWN_HANDLE),
+      ).toBe("/builds/outfit-1");
+      expect(resolveNotificationHref(buildNotification({ type }), OWN_HANDLE)).toBe("/builds");
+    }
+  });
+
+  it("opens Offers for offer updates and the wallet once offer money is released", () => {
+    for (const type of [
+      "OUTFIT_OFFER_RECEIVED",
+      "OUTFIT_OFFER_ACCEPTED",
+      "OUTFIT_OFFER_DECLINED",
+      "OUTFIT_OFFER_EXPIRED",
+      "OUTFIT_OFFER_REFUNDED",
+    ] as const) {
+      expect(
+        resolveNotificationHref(buildNotification({ type, entityId: "offer-1" }), OWN_HANDLE),
+      ).toBe("/offers");
+    }
+    expect(
+      resolveNotificationHref(buildNotification({ type: "OUTFIT_OFFER_RELEASED" }), OWN_HANDLE),
+    ).toBe("/wallet");
+  });
+});
+
 describe("resolveNotificationHref", () => {
   it("deep-links likes and comments on your own look to that drop on your profile", () => {
     const liked = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });
@@ -69,6 +106,12 @@ describe("resolveNotificationHref", () => {
 
     const noEntity = buildNotification({ type: "LOOK_LIKED", entityId: null });
     expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
+  });
+
+  it("sends an account-approved welcome to the dashboard overview", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "ACCOUNT_APPROVED" }), OWN_HANDLE),
+    ).toBe("/overview");
   });
 
   it("routes a new follower who is a muse to their muse profile", () => {

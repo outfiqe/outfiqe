@@ -18,6 +18,8 @@ import { cn } from "@/shared/lib/cn";
 
 const BRAND_PROFILE_BANNER_SIZES = "(min-width: 1152px) 1088px, 100vw";
 
+import { ProfileBuildsTabs } from "@/features/outfit-build/components/ProfileBuildsTabs";
+
 import type { BrandProfile as BrandProfileType } from "../api/brandProfileSchemas";
 import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
 
@@ -190,67 +192,73 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
         </div>
       </div>
 
-      {filters.length > 1 && (
-        <div className="mt-10 flex flex-wrap justify-center gap-2">
-          {filters.map(({ slug, label }) => {
-            const isActive = slug === activeType;
-            return (
+      <div className="mt-10">
+        <ProfileBuildsTabs primaryLabel="Products" buildFilters={{ brandId: id }}>
+          {filters.length > 1 && (
+            <div className="mt-10 flex flex-wrap justify-center gap-2">
+              {filters.map(({ slug, label }) => {
+                const isActive = slug === activeType;
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setActiveType(slug)}
+                    className={cn(
+                      "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {isLoading ? (
+            <ProductGridSkeleton className="mt-8 gap-x-4 gap-y-8" />
+          ) : brandProducts.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No products listed yet.
+            </p>
+          ) : activeType === ALL_PRODUCT_TYPE ? (
+            <div className="mt-8 space-y-10">
+              {sectionedTypes.map(({ slug, label }) => (
+                <section key={slug}>
+                  <h2 className="font-display text-lg font-bold text-foreground">{label}</h2>
+                  <div className={cn(PRODUCT_GRID_CLASS, "mt-4")}>
+                    {groupedByType.get(slug)?.map((product) => (
+                      <ProductCard key={product.id} product={toExploreProduct(product)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className={cn(PRODUCT_GRID_CLASS, "mt-8")}>
+              {brandProducts.map((product) => (
+                <ProductCard key={product.id} product={toExploreProduct(product)} />
+              ))}
+            </div>
+          )}
+
+          {hasNextPage && (
+            <div className="mt-8 flex justify-center">
               <button
-                key={slug}
                 type="button"
-                aria-pressed={isActive}
-                onClick={() => setActiveType(slug)}
-                className={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                )}
+                onClick={() => void fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="rounded-full border border-foreground px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
               >
-                {label}
+                {isFetchingNextPage ? "Loading…" : "Load more"}
               </button>
-            );
-          })}
-        </div>
-      )}
-
-      {isLoading ? (
-        <ProductGridSkeleton className="mt-8 gap-x-4 gap-y-8" />
-      ) : brandProducts.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">No products listed yet.</p>
-      ) : activeType === ALL_PRODUCT_TYPE ? (
-        <div className="mt-8 space-y-10">
-          {sectionedTypes.map(({ slug, label }) => (
-            <section key={slug}>
-              <h2 className="font-display text-lg font-bold text-foreground">{label}</h2>
-              <div className={cn(PRODUCT_GRID_CLASS, "mt-4")}>
-                {groupedByType.get(slug)?.map((product) => (
-                  <ProductCard key={product.id} product={toExploreProduct(product)} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className={cn(PRODUCT_GRID_CLASS, "mt-8")}>
-          {brandProducts.map((product) => (
-            <ProductCard key={product.id} product={toExploreProduct(product)} />
-          ))}
-        </div>
-      )}
-
-      {hasNextPage && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="rounded-full border border-foreground px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
-          >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
-          </button>
-        </div>
-      )}
+            </div>
+          )}
+        </ProfileBuildsTabs>
+      </div>
 
       {followersModalOpen && (
         <FollowersModal

@@ -9,7 +9,8 @@ export type ReportableTarget = {
 };
 
 export type ContentReportTargetPreview = {
-  lookId: string;
+  lookId: string | null;
+  outfitId: string | null;
   imageUrl: string | null;
   snippet: string;
   isRemoved: boolean;

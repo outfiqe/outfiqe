@@ -1,3 +1,4 @@
+import { closeOutboxQueues } from "#outbox/outbox.queues.js";
 import { disconnectRedis } from "#redis/redis.client.js";
 import { startBoundaryScheduler, startIntervalScheduler } from "#scheduling/interval.scheduler.js";
 
@@ -15,6 +16,7 @@ export const startSchedulerProcess = (): void => {
 
   registerGracefulShutdown([
     { name: "health-server", run: health.close },
+    { name: "outbox-queues", run: closeOutboxQueues },
     { name: "db", run: disconnectDb },
     { name: "redis", run: disconnectRedis },
   ]);

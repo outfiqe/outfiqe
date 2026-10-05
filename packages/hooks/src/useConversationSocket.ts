@@ -1,17 +1,22 @@
 "use client";
 
-import type { Message, MessagesPage } from "@outfiqe/types";
+import type { ChatSystemEvent, Message, MessageKind, MessagesPage } from "@outfiqe/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import type { EventSocket } from "./socketEventAdapter";
+import { conversationQueryKey } from "./useConversation";
 import { invalidateConversationsList } from "./useConversations";
 import { conversationMessagesQueryKey } from "./useConversationThread";
+import { forgetConversation, groupMembersQueryKey } from "./useGroupChat";
 
 const CONVERSATION_SOCKET_EVENTS = {
   MESSAGE_CREATED: "message:created",
   CONVERSATION_UPDATED: "conversation:updated",
+  CONVERSATION_REMOVED: "conversation:removed",
 } as const;
+
+const SYSTEM_MESSAGE_KIND: MessageKind = "SYSTEM";
 
 type MessageAttachmentBroadcast = {
   id: string;
@@ -28,10 +33,15 @@ type MessageBroadcast = {
   senderName: string;
   senderHandle: string;
   senderAvatarUrl: string | null;
+  kind: MessageKind;
+  systemEvent: ChatSystemEvent | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentBroadcast[];
   createdAt: string;
 };
+
+type ConversationRemovedBroadcast = { conversationId: string };
 
 type InfiniteMessagesData = {
   pages: MessagesPage[];
@@ -51,6 +61,9 @@ const toBroadcastMessage = (
     handle: payload.senderHandle,
     avatarUrl: payload.senderAvatarUrl,
   },
+  kind: payload.kind,
+  systemEvent: payload.systemEvent,
+  outfitId: payload.outfitId ?? null,
   body: payload.body,
   attachments: payload.attachments,
   createdAt: payload.createdAt,
@@ -83,18 +96,35 @@ export const useConversationSocket = (
           };
         },
       );
+
+      if (payload.kind === SYSTEM_MESSAGE_KIND) {
+        void queryClient.invalidateQueries({
+          queryKey: conversationQueryKey(payload.conversationId),
+          exact: true,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: groupMembersQueryKey(payload.conversationId),
+          exact: true,
+        });
+      }
     };
 
     const handleConversationUpdated = (): void => {
       void invalidateConversationsList(queryClient);
     };
 
+    const handleConversationRemoved = ({ conversationId }: ConversationRemovedBroadcast): void => {
+      forgetConversation(queryClient, conversationId);
+    };
+
     socket.on(CONVERSATION_SOCKET_EVENTS.MESSAGE_CREATED, handleMessageCreated);
     socket.on(CONVERSATION_SOCKET_EVENTS.CONVERSATION_UPDATED, handleConversationUpdated);
+    socket.on(CONVERSATION_SOCKET_EVENTS.CONVERSATION_REMOVED, handleConversationRemoved);
 
     return () => {
       socket.off(CONVERSATION_SOCKET_EVENTS.MESSAGE_CREATED, handleMessageCreated);
       socket.off(CONVERSATION_SOCKET_EVENTS.CONVERSATION_UPDATED, handleConversationUpdated);
+      socket.off(CONVERSATION_SOCKET_EVENTS.CONVERSATION_REMOVED, handleConversationRemoved);
     };
   }, [socket, queryClient, currentUserId]);
 };

@@ -4,7 +4,8 @@ import { Skeleton, Tooltip } from "@outfiqe/design-system";
 
 import { cn } from "@/shared/lib/cn";
 
-import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { useExploreTabs } from "../hooks/useExploreTabs";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 
 const TRENDING_TAG_PLACEHOLDER_COUNT = 4;
@@ -26,13 +27,14 @@ export const FeedFilterTabs = ({
   lockedTabs = [],
   lockedTabTooltip,
 }: FeedFilterTabsProps) => {
+  const exploreTabs = useExploreTabs();
   const { data: trendingTags, isLoading: isTrendingTagsLoading } = useTrendingTags();
 
   return (
     <div className="sticky top-[var(--site-header-height,0px)] z-30 bg-background px-4">
       <div className="mx-auto flex max-w-6xl items-center gap-3 py-3">
         <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto [scrollbar-width:none]">
-          {EXPLORE_FIXED_TABS.map(({ value, label }) => {
+          {exploreTabs.map(({ value, label }) => {
             const isLocked = lockedTabs.includes(value);
             const tabButton = (
               <button

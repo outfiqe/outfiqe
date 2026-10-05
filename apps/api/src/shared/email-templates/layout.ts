@@ -1,3 +1,7 @@
+import { EMAIL_LOGO_DISPLAY_SIZE, emailLogoUrl } from "@outfiqe/utils";
+
+import { env } from "#config/env.config.js";
+
 const FONT_STACK = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 const COLOR = {
@@ -11,7 +15,6 @@ const COLOR = {
   primaryText: "#0f2426",
   primaryStrong: "#157679",
   primaryTint: "#e2faf7",
-  secondary: "#1c262b",
   success: "#1c7c50",
   successTint: "#e5f4ec",
   destructive: "#cf3320",
@@ -128,9 +131,7 @@ export const renderEmailLayout = ({
     <tr><td align="center" style="padding:32px 16px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:${CARD_MAX_WIDTH}px;background:${COLOR.card};border:1px solid ${COLOR.border};border-radius:${CARD_RADIUS}px;">
         <tr><td style="padding:28px 32px 20px;">
-          <span style="font-family:${FONT_STACK};font-weight:800;font-size:20px;letter-spacing:-.02em;">
-            <span style="color:${COLOR.primaryStrong};">out</span><span style="color:${COLOR.secondary};">fiqe.</span>
-          </span>
+          <img src="${emailLogoUrl(env.FRONTEND_URL)}" width="${EMAIL_LOGO_DISPLAY_SIZE.width}" height="${EMAIL_LOGO_DISPLAY_SIZE.height}" alt="outfiqe." style="display:block;border:0;outline:none;text-decoration:none;color:${COLOR.primaryStrong};font-family:${FONT_STACK};font-weight:800;font-size:20px;letter-spacing:-.02em;" />
         </td></tr>
         <tr><td style="padding:0 32px 32px;color:${COLOR.ink};font-size:14.5px;line-height:1.6;">
           ${bodyHtml}

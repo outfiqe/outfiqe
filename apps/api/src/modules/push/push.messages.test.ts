@@ -8,6 +8,7 @@ import {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
+import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 import { toPushMessage } from "./push.messages.js";
 
@@ -50,6 +51,28 @@ describe("toPushMessage", () => {
     expect(message.body).toBe("4 people started following you");
   });
 
+  it("names the brand and build on a new offer and links to the offers page", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.OUTFIT_OFFER_RECEIVED,
+        entityType: NotificationEntityType.OUTFIT_OFFER,
+        metadata: { brandName: "Kastha", outfitTitle: "Dashain set" },
+      }),
+    );
+
+    expect(message.body).toBe('Kastha wants you to drop "Dashain set"');
+    expect(message.url).toBe("/offers");
+  });
+
+  it("falls back to a plain brand name and sends released money to the wallet", () => {
+    expect(
+      toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RECEIVED })).body,
+    ).toBe("A brand wants you to drop an outfit build");
+    expect(toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RELEASED })).url).toBe(
+      "/wallet",
+    );
+  });
+
   it("sends a follower notification to the follower's own profile", () => {
     const message = toPushMessage(aNotification({ type: NotificationType.NEW_FOLLOWER }));
 
@@ -90,6 +113,40 @@ describe("toPushMessage", () => {
 
     expect(approved.url).toBe("/wallet");
     expect(paid.url).toBe("/wallet");
+  });
+
+  it("welcomes a newly approved muse and sends them to their dashboard", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        actorId: null,
+        entityType: null,
+        entityId: null,
+        metadata: { approvedAccountKind: ApprovedAccountKind.CREATOR },
+      }),
+    );
+
+    expect(message.title).toBe("Welcome to Outfiqe");
+    expect(message.body).toBe("You're now an approved muse. Drop your first look");
+    expect(message.url).toBe("/overview");
+  });
+
+  it("welcomes a new brand by name, or generically when the name is missing", () => {
+    const named = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        metadata: { approvedAccountKind: ApprovedAccountKind.BRAND, brandName: "Meridian" },
+      }),
+    );
+    const unnamed = toPushMessage(
+      aNotification({
+        type: NotificationType.ACCOUNT_APPROVED,
+        metadata: { approvedAccountKind: ApprovedAccountKind.BRAND },
+      }),
+    );
+
+    expect(named.body).toBe("Meridian is set up. Add your first products");
+    expect(unnamed.body).toBe("Your brand is set up. Add your first products");
   });
 
   it("falls back to the notification list for a type with no dedicated page", () => {

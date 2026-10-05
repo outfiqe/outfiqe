@@ -1,11 +1,14 @@
 const scopes = require("./commitlint.scopes.cjs");
 
+const LEGACY_SQUASHED_PROMOTION_HEADER = /^chore\(SYNC\): promote dev to main \(#\d+\)/;
+
 /**
  * Conventional Commits, tightened for this repo. Enforced by the commit-msg
  * hook (.husky/commit-msg) on every commit.
  */
 module.exports = {
   extends: ["@commitlint/config-conventional"],
+  ignores: [(message) => LEGACY_SQUASHED_PROMOTION_HEADER.test(message)],
   rules: {
     // Restrict to the types we actually document in the README — trims the
     // conventional-commits default set down to what we use.

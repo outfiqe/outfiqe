@@ -15,6 +15,21 @@ const resolve = (
 ) => resolveNotificationTarget({ type, entityId, metadata, recipientIsStaff });
 
 describe("resolveNotificationTarget", () => {
+  it("sends offer updates to the offers page and released offer money to the wallet", () => {
+    expect(resolve(NotificationType.OUTFIT_OFFER_RECEIVED, "offer-1")).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/offers",
+    });
+    expect(resolve(NotificationType.OUTFIT_OFFER_REFUNDED, "offer-1")).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/offers",
+    });
+    expect(resolve(NotificationType.OUTFIT_OFFER_RELEASED, "offer-1")).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/wallet",
+    });
+  });
+
   it("deep-links a like or comment on your own look to that drop on your profile", () => {
     expect(resolve(NotificationType.LOOK_LIKED, "look-1", { lookOwnerHandle: "mun" })).toEqual({
       surface: NotificationSurface.WEB,
@@ -107,6 +122,13 @@ describe("resolveNotificationTarget", () => {
         ],
       }),
     ).toEqual({ surface: NotificationSurface.WEB, path: "/profile" });
+  });
+
+  it("sends a welcome after approval to the web dashboard overview", () => {
+    expect(resolve(NotificationType.ACCOUNT_APPROVED)).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/overview",
+    });
   });
 
   it("routes gamification, commission and order types to their web dashboard pages", () => {

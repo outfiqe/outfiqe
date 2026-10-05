@@ -25,15 +25,18 @@ import {
   PLATFORM_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
+import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
+import { overrideOutfitSetting } from "#test/integration/outfitFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 beforeEach(async () => {
   await redis.flushdb();
+  platformSettingsService.invalidate();
 });
 
 const createCreator = async (name: string, handle: string) =>
@@ -492,6 +495,33 @@ describe("POST /api/creator-looks", () => {
       .send({ imageUrls: ["https://cdn.outfiqe.test/a.jpg"], taggedProducts: [] });
 
     expect(response.status).toBe(401);
+  });
+
+  it("allows as many tagged products as a build can hold, and no more", async () => {
+    const creator = await createCreator("Tag Limit Creator", "tag-limit-creator");
+    const products = await Promise.all(
+      ["Kurta", "Trousers", "Juttis"].map((name) => createApprovedProduct(name)),
+    );
+    const postWith = (taggedProductCount: number) =>
+      request(testApp)
+        .post("/api/creator-looks")
+        .set("Authorization", authHeaderFor(creator.id))
+        .send({
+          imageUrls: ["https://cdn.outfiqe.test/a.jpg"],
+          taggedProducts: products
+            .slice(0, taggedProductCount)
+            .map((product) => ({ productId: product.id, sizeWorn: "M" })),
+        });
+    await overrideOutfitSetting("outfit.maxItemsPerBoard", 2);
+
+    const overLimit = await postWith(3);
+    const atLimit = await postWith(2);
+    const limits = await request(testApp).get("/api/creator-looks/limits");
+
+    expect(overLimit.status).toBe(422);
+    expect(overLimit.body.code).toBe("TOO_MANY_TAGGED_PRODUCTS");
+    expect(atLimit.status).toBe(201);
+    expect(limits.body.data).toEqual({ maxTaggedProducts: 2 });
   });
 
   it("rejects an empty imageUrls array", async () => {
@@ -2529,7 +2559,7 @@ describe("creatorLookService trending pipeline", () => {
   });
 });
 
-describe("GET /api/muses/by-handle/:handle/looks integration with feed", () => {
+describe("GET /api/creators/by-handle/:handle/looks integration with feed", () => {
   it("hydrates a muse's public drop list with tagged products and hashtags", async () => {
     const creator = await createCreator("Handle Feed Muse", "handle-feed-creator");
     const product = await createApprovedProduct("Handle Feed Product");

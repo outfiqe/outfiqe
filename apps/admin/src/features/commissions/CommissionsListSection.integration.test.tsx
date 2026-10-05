@@ -12,7 +12,8 @@ const API_BASE = "http://localhost:3000/api";
 
 const commission = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: "commission-1",
-  creatorName: "Asha Rai",
+  recipientName: "Asha Rai",
+  recipientKind: "PERSON" as const,
   productName: "Linen Shirt",
   brandName: "Studio Nine",
   source: "TAG_CLICK" as const,
@@ -66,6 +67,29 @@ describe("CommissionsListSection", () => {
     renderSection();
 
     expect(await screen.findByText("Asha Rai")).toBeInTheDocument();
+  });
+
+  it("marks a Build commission share that goes to a brand", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/commissions`, () =>
+        okJson({
+          items: [
+            commission({
+              recipientName: "Studio Nine",
+              recipientKind: "BRAND",
+              source: "OUTFIT_BUILD",
+            }),
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    renderSection();
+
+    expect(await screen.findByRole("heading", { name: "Studio Nine" })).toBeInTheDocument();
+    expect(screen.getByText("Brand")).toBeInTheDocument();
+    expect(screen.getByText(/Build$/)).toBeInTheDocument();
   });
 
   it("reads the status filter from the URL on load", async () => {
@@ -262,7 +286,7 @@ describe("CommissionsListSection", () => {
         const cursor = new URL(request.url).searchParams.get("cursor");
         return okJson({
           items: cursor
-            ? [commission({ id: "commission-2", creatorName: "Second Muse" })]
+            ? [commission({ id: "commission-2", recipientName: "Second Muse" })]
             : [commission()],
           nextCursor: cursor ? null : "cursor-1",
         });

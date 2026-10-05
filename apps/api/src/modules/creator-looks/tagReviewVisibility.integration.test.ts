@@ -191,7 +191,7 @@ describe("pending tags are invisible on public read paths", () => {
     });
 
     const whileApproved = await resolveAttribution(buyer.id, product.id, new Date());
-    expect(whileApproved?.creatorId).toBe(creator.id);
+    expect(whileApproved).toMatchObject({ creatorId: creator.id });
 
     await prisma.creatorLookProduct.updateMany({
       where: { creatorLookId: look.id, productId: product.id },

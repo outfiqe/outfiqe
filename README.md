@@ -206,6 +206,11 @@ validation. Set them via the UI or `gh variable set` / `gh secret set`.
   release branch and only ever receives the `dev → main` promotion PR; a merge to `main` deploys
   production. `Validate Branch Name` (`.github/workflows/validate-branch.yml`) enforces this:
   anything other than `dev` targeting `main` fails.
+  Merge the promotion PR with **"Create a merge commit"**, never squash. A squashed promotion gives
+  `main` copies of `dev`'s commits that git doesn't recognise as the same history, so the next
+  promotion conflicts with itself. Two early promotions (`chore(SYNC): promote dev to main`, #458
+  and #478) were squashed; `commitlint.config.js` ignores those two headers so they don't fail the
+  commit message check now that `dev` includes `main`'s history.
 
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org), enforced by a commit-msg hook (commitlint, config in `commitlint.config.js`):
 

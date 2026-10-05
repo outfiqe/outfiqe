@@ -4,14 +4,18 @@ import type { SidebarNavItem } from "@outfiqe/components";
 import {
   Award,
   BanknoteArrowUp,
+  HandCoins,
+  Languages,
   LayoutDashboard,
   LayoutGrid,
   LifeBuoy,
   MapPin,
   MessageCircleOff,
   Package,
+  Ruler,
   Share2,
   ShieldCheck,
+  Shirt,
   ShoppingBag,
   Sparkles,
   Store,
@@ -23,6 +27,8 @@ import {
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
+import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
 const SECURITY_NAV_ITEM: SidebarNavItem = {
@@ -37,6 +43,34 @@ const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
   href: "/settings/chat",
   label: "Chat",
   icon: MessageCircleOff,
+};
+
+const LANGUAGE_NAV_ITEM: SidebarNavItem = {
+  id: "language",
+  href: "/settings/language",
+  label: "Language",
+  icon: Languages,
+};
+
+const SIZES_NAV_ITEM: SidebarNavItem = {
+  id: "sizes",
+  href: "/settings/sizes",
+  label: "My sizes",
+  icon: Ruler,
+};
+
+const BUILDS_NAV_ITEM: SidebarNavItem = {
+  id: "builds",
+  href: "/builds",
+  label: "My Builds",
+  icon: Shirt,
+};
+
+const OFFERS_NAV_ITEM: SidebarNavItem = {
+  id: "offers",
+  href: "/offers",
+  label: "Offers",
+  icon: HandCoins,
 };
 
 const ADDRESSES_NAV_ITEM: SidebarNavItem = {
@@ -70,12 +104,22 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "badges", href: "/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/challenges", label: "Challenges", icon: Trophy },
   ADDRESSES_NAV_ITEM,
+  SIZES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
+  LANGUAGE_NAV_ITEM,
   SECURITY_NAV_ITEM,
   SUPPORT_NAV_ITEM,
 ];
 
 const APPROVED_CREATOR_ONLY_NAV_IDS = new Set(["share", "earnings", "withdraw"]);
+const EARNER_NAV_IDS = new Set(["earnings", "withdraw"]);
+
+const navItemsForShopper = (isCreator: boolean, canEarn: boolean): SidebarNavItem[] => {
+  if (isCreator) return CREATOR_NAV;
+  return CREATOR_NAV.filter(
+    ({ id }) => !APPROVED_CREATOR_ONLY_NAV_IDS.has(id) || (canEarn && EARNER_NAV_IDS.has(id)),
+  );
+};
 
 const BRAND_NAV: SidebarNavItem[] = [
   OVERVIEW_NAV_ITEM,
@@ -85,6 +129,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "orders", href: "/manage-orders", label: "Orders", icon: ShoppingBag },
   { id: "wallet", href: "/wallet", label: "Wallet", icon: Wallet },
   CHAT_SETTINGS_NAV_ITEM,
+  LANGUAGE_NAV_ITEM,
   SECURITY_NAV_ITEM,
   SUPPORT_NAV_ITEM,
 ];
@@ -105,12 +150,18 @@ type DashboardNav = {
 export const useDashboardNav = (): DashboardNav => {
   const { state, hasCrmAccess, isCreator } = useAuth();
   const isOnTenantHost = useTenantHost();
+  const isOutfitBuildOn = useFeatureFlag("outfit_builder");
+  const { canEarn } = useCommissionEligibility();
 
   const isBrand = state.user?.role === UserRole.BRAND_OWNER;
-  const creatorNavItems = isCreator
-    ? CREATOR_NAV
-    : CREATOR_NAV.filter((item) => !APPROVED_CREATOR_ONLY_NAV_IDS.has(item.id));
-  const baseNavItems = isBrand ? BRAND_NAV : creatorNavItems;
+  const roleNavItems = isBrand ? BRAND_NAV : navItemsForShopper(isCreator, canEarn);
+  const canUseOffers = isBrand || isCreator;
+  const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
+  const baseNavItems = isOutfitBuildOn
+    ? roleNavItems.flatMap((item) =>
+        item === OVERVIEW_NAV_ITEM ? [item, ...outfitBuildNavItems] : [item],
+      )
+    : roleNavItems;
   const showCrmLink = hasCrmAccess && isOnTenantHost;
   const navItems = showCrmLink ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
 

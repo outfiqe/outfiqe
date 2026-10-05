@@ -2,6 +2,7 @@ import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
 import type {
   CreatorLeaderboardCategory,
   FulfilmentStatus,
+  MessageKind,
   NotificationEntityType,
   NotificationSurface,
   NotificationType,
@@ -36,6 +37,8 @@ export type NotificationBroadcastPayload = {
   updatedAt: string;
 };
 
+export type ChatSystemEventBroadcast = { type: string } & Record<string, unknown>;
+
 export type MessageAttachmentBroadcast = {
   id: string;
   url: string;
@@ -51,6 +54,9 @@ export type MessageBroadcastPayload = {
   senderName: string;
   senderHandle: string;
   senderAvatarUrl: string | null;
+  kind: MessageKind;
+  systemEvent: ChatSystemEventBroadcast | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentBroadcast[];
   createdAt: string;
@@ -63,6 +69,7 @@ export type DomainEventPayloads = {
   [DomainEvents.USER_EMAIL_VERIFIED]: { userId: string; email: string };
   [DomainEvents.USER_PASSWORD_RESET]: { userId: string };
   [DomainEvents.BRAND_OWNER_REGISTERED]: { userId: string; brandId: string; email: string };
+  [DomainEvents.CREATOR_APPROVED]: { userId: string };
   [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
   [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
   [DomainEvents.LOOK_LIKED]: { lookId: string; creatorId: string; userId: string };
@@ -167,6 +174,7 @@ export type DomainEventPayloads = {
   [DomainEvents.CHAT_SETTINGS_UPDATED]: { userId: string; isChatEnabled: boolean };
   [DomainEvents.CHAT_BLOCK_LIST_UPDATED]: { userId: string };
   [DomainEvents.MESSAGE_CREATED]: MessageBroadcastPayload;
+  [DomainEvents.CONVERSATION_MEMBER_REMOVED]: { conversationId: string; userId: string };
   [DomainEvents.PRESENCE_CHANGED]: {
     userId: string;
     isOnline: boolean;

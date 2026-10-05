@@ -4,6 +4,23 @@ import type {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 
+import type { LEDGER_ROW_KIND } from "./withdraw.constants.js";
+
+export type LedgerRowKind = (typeof LEDGER_ROW_KIND)[keyof typeof LEDGER_ROW_KIND];
+
+export type LedgerRow = {
+  id: string;
+  kind: LedgerRowKind;
+  amount: number;
+  createdAt: Date;
+};
+
+export type ClaimedLedgerRows = {
+  creatorCommissionIds: string[];
+  brandPayoutIds: string[];
+  outfitOfferIds: string[];
+};
+
 export type WithdrawPolicyRecord = {
   id: string;
   ownerType: WithdrawOwnerType;

@@ -1,3 +1,4 @@
+import { IDEMPOTENCY_HEADER } from "@outfiqe/client";
 import { z } from "zod";
 
 import type { Order } from "@/features/orders";
@@ -6,8 +7,6 @@ import { apiClient } from "@/shared/lib/apiClient";
 import { getSessionId } from "@/shared/lib/sessionId";
 
 import type { BuyNowLine, CheckoutInput } from "./checkoutSchemas";
-
-const IDEMPOTENCY_HEADER = "Idempotency-Key";
 
 const buyNowCouponPreviewSchema = z.object({
   code: z.string(),

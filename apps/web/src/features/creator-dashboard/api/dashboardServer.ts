@@ -4,12 +4,26 @@ import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
 import { type BadgeCollectionEntry, badgeCollectionSchema } from "./badgeSchemas";
 import { type PublicChallenge, publicChallengeListSchema } from "./challengeSchemas";
-import { type EarningsSummary, earningsSummarySchema } from "./commissionSchemas";
+import {
+  type CommissionEligibility,
+  commissionEligibilitySchema,
+  type EarningsSummary,
+  earningsSummarySchema,
+} from "./commissionSchemas";
 import { type XpProgress, xpProgressSchema } from "./xpSchemas";
 
 export const getEarningsSummaryServer = async (accessToken: string): Promise<EarningsSummary> => {
   const raw = await serverApiRequest<EarningsSummary>("/commissions/me/summary", { accessToken });
   return earningsSummarySchema.parse(raw);
+};
+
+export const getCommissionEligibilityServer = async (
+  accessToken: string,
+): Promise<CommissionEligibility> => {
+  const raw = await serverApiRequest<CommissionEligibility>("/commissions/me/eligibility", {
+    accessToken,
+  });
+  return commissionEligibilitySchema.parse(raw);
 };
 
 export const getBadgeCollectionServer = async (

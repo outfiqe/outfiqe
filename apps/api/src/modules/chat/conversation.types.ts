@@ -1,4 +1,4 @@
-import type { ConversationType } from "#generated/prisma/enums.js";
+import type { ConversationMemberRole, ConversationType } from "#generated/prisma/enums.js";
 
 export type ConversationParticipantSummary = {
   id: string;
@@ -15,10 +15,18 @@ export type ConversationParticipantPresence = {
 export type ConversationParticipantView = ConversationParticipantSummary &
   ConversationParticipantPresence;
 
+export type ConversationGroupSummary = {
+  name: string;
+  memberCount: number;
+  members: ConversationParticipantSummary[];
+  myRole: ConversationMemberRole;
+};
+
 export type ConversationPreview = {
   id: string;
   type: ConversationType;
   otherParticipant: ConversationParticipantView | null;
+  group: ConversationGroupSummary | null;
   lastMessagePreview: string | null;
   lastMessageAt: string | null;
   unreadCount: number;

@@ -32,6 +32,7 @@ export const PLATFORM_SECTION_ACCESS: Record<PlatformNavKey, PlatformSectionAcce
   categories: CATALOG_ACCESS,
   "product-types": CATALOG_ACCESS,
   "size-options": CATALOG_ACCESS,
+  "outfit-slot-types": CATALOG_ACCESS,
   "hero-slides": CATALOG_ACCESS,
   trending: CATALOG_ACCESS,
   orders: ORDERS_ACCESS,
@@ -58,6 +59,11 @@ export const PLATFORM_SECTION_ACCESS: Record<PlatformNavKey, PlatformSectionAcce
   organizations: anyOf("platform:organizations:read", "platform:organizations:manage"),
   team: anyOf("platform:team:manage"),
   announcements: anyOf("platform:announcements:read", "platform:announcements:manage"),
+  "outfit-builds": anyOf("platform:builds:read", "platform:builds:manage"),
+  "platform-switches": anyOf("platform:flags:manage"),
+  "platform-settings": anyOf("platform:settings:manage"),
+  "platform-audit": anyOf("platform:audit:read"),
+  "platform-jobs": anyOf("platform:jobs:manage"),
 };
 
 export const PLATFORM_SECTION_KEYS = Object.keys(PLATFORM_SECTION_ACCESS) as PlatformNavKey[];

@@ -11,7 +11,7 @@ import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { commissionsApi } from "./api";
 import { useInfiniteCommissions } from "./hooks/useInfiniteCommissions";
-import type { CommissionStatusValue } from "./schemas";
+import type { CommissionSourceValue, CommissionStatusValue } from "./schemas";
 
 const TABS: CommissionStatusValue[] = ["PENDING", "APPROVED", "AVAILABLE", "PAID", "VOIDED"];
 const COMMISSIONS_STATUS_FILTER = oneOfFilter<CommissionStatusValue>(TABS, "PENDING");
@@ -24,10 +24,11 @@ const STATUS_TONE: Record<CommissionStatusValue, "neutral" | "positive" | "negat
   VOIDED: "negative",
 };
 
-const SOURCE_LABEL: Record<string, string> = {
+const SOURCE_LABEL: Record<CommissionSourceValue, string> = {
   TAG_CLICK: "Tagged drop",
   INTERNAL_LINK: "Muse link",
   EXTERNAL_LINK: "Shared link",
+  OUTFIT_BUILD: "Build",
 };
 
 export const CommissionsListSection = () => {
@@ -74,7 +75,7 @@ export const CommissionsListSection = () => {
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-foreground">Muse commissions</h2>
+      <h2 className="font-display text-lg font-bold text-foreground">Commissions earned</h2>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {TABS.map((status) => (
@@ -110,8 +111,17 @@ export const CommissionsListSection = () => {
         )}
 
         {commissions.map((commission) => {
-          const { id, creatorName, productName, brandName, source, status, amount, createdAt } =
-            commission;
+          const {
+            id,
+            recipientName,
+            recipientKind,
+            productName,
+            brandName,
+            source,
+            status,
+            amount,
+            createdAt,
+          } = commission;
 
           return (
             <div
@@ -121,8 +131,13 @@ export const CommissionsListSection = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-display text-base font-bold text-foreground">
-                    {creatorName}
+                    {recipientName}
                   </h3>
+                  {recipientKind === "BRAND" && (
+                    <Badge tone="neutral" showDot={false}>
+                      Brand
+                    </Badge>
+                  )}
                   <Badge tone={STATUS_TONE[status]} showDot={false}>
                     {status}
                   </Badge>

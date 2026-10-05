@@ -388,6 +388,11 @@ export const notificationRepository = {
     return { imageUrl: look.imageUrl, caption: look.caption, ownerHandle: look.creator.handle };
   },
 
+  async findBrandName(brandId: string): Promise<string | null> {
+    const brand = await prisma.brand.findUnique({ where: { id: brandId }, select: { name: true } });
+    return brand?.name ?? null;
+  },
+
   async findBrandMemberIds(brandId: string): Promise<string[]> {
     const rows = await prisma.brandMembership.findMany({
       where: { brandId },

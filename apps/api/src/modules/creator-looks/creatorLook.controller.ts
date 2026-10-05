@@ -111,6 +111,10 @@ export const creatorLookController = {
     sendSuccess(res, suggestions, "Suggestions.");
   },
 
+  async limits(_req: Request, res: Response) {
+    sendSuccess(res, await creatorLookService.readLimits(), "Look limits.");
+  },
+
   async trendingTags(_req: Request, res: Response) {
     const tags = await creatorLookService.trendingTags();
     sendSuccess(res, { tags }, "Trending tags.");

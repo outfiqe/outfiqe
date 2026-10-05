@@ -1,6 +1,12 @@
 import type { ResponsiveImage } from "@outfiqe/types";
 
-import type { DiscountType, ProductStatus, ThriftCondition } from "#generated/prisma/enums.js";
+import type {
+  DiscountType,
+  InventoryMovementKind,
+  InventoryMovementSource,
+  ProductStatus,
+  ThriftCondition,
+} from "#generated/prisma/enums.js";
 import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
 
 export type ProductTypeSummary = { slug: string; label: string };
@@ -99,6 +105,25 @@ export type ProductWithBrand = ProductRecord & {
 export type ProductWithStock = ProductWithBrand & { totalStock: number };
 
 export type BrandProductSize = { id: string; label: string; stock: number };
+
+export type StockLine = { sizeId: string; qty: number };
+
+export type StockMovement = {
+  kind: InventoryMovementKind;
+  sourceType: InventoryMovementSource;
+  sourceId: string;
+};
+
+export type SizeStockDelta = { sizeId: string; delta: number };
+
+export type InventoryLedgerEntryInput = StockMovement & SizeStockDelta;
+
+export type StockLedgerMismatch = { sizeId: string; stock: number; ledgerTotal: number };
+
+export type InventoryReconciliationSummary = {
+  mismatchedSizeCount: number;
+  adoptedUntrackedSizeCount: number;
+};
 
 export type ProductWithStockAndSizes = ProductWithStock & { sizes: BrandProductSize[] };
 

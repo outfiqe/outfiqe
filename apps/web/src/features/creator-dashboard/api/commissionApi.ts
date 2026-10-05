@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/lib/apiClient";
 
 import {
+  type CommissionEligibility,
+  commissionEligibilitySchema,
   type EarningsPage,
   earningsPageSchema,
   type EarningsSummary,
@@ -8,6 +10,11 @@ import {
 } from "./commissionSchemas";
 
 export const commissionApi = {
+  async getMyEligibility(): Promise<CommissionEligibility> {
+    const res = await apiClient.get<CommissionEligibility>("/commissions/me/eligibility");
+    return commissionEligibilitySchema.parse(res.data);
+  },
+
   async getMySummary(): Promise<EarningsSummary> {
     const res = await apiClient.get<EarningsSummary>("/commissions/me/summary");
     return earningsSummarySchema.parse(res.data);

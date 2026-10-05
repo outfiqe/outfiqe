@@ -11,7 +11,11 @@ export default defineConfig({
       include: [
         "src/studio-badge-visual.utils.ts",
         "src/form-banner.tsx",
+        "src/outfit-slot-icon.tsx",
         "src/cheriq-icon.tsx",
+        "src/logo-mark.tsx",
+        "src/logo.constants.ts",
+        "src/brand-palette.ts",
         "src/autocomplete.tsx",
         "src/chart.tsx",
         "src/chart-card.tsx",

@@ -11,7 +11,7 @@ import type {
   ConversationPreview,
   ConversationsPage,
 } from "./conversation.types.js";
-import { toConversationPreview } from "./conversation.utils.js";
+import { otherParticipantIdOf, toConversationPreview } from "./conversation.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
@@ -86,9 +86,7 @@ export const conversationService = {
       throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
     }
 
-    const otherParticipantId = conversation.participants.find(
-      (participant) => participant.userId !== callerId,
-    )?.userId;
+    const otherParticipantId = otherParticipantIdOf(conversation, callerId);
     const presenceByUserId = await buildPresenceMap(otherParticipantId ? [otherParticipantId] : []);
     return toConversationPreview(conversation, callerId, presenceByUserId);
   },
@@ -101,8 +99,8 @@ export const conversationService = {
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
     const otherParticipantIds = items
-      .map((row) => row.participants.find((participant) => participant.userId !== callerId)?.userId)
-      .filter((userId): userId is string => Boolean(userId));
+      .map((row) => otherParticipantIdOf(row, callerId))
+      .filter((userId): userId is string => userId !== null);
     const presenceByUserId = await buildPresenceMap(otherParticipantIds);
 
     return {

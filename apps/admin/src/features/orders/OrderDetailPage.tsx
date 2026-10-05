@@ -22,6 +22,10 @@ const NEXT_FULFILMENT_STATUS: Partial<Record<FulfilmentStatusValue, FulfilmentSt
 };
 
 const CANCELLABLE_STATUSES: FulfilmentStatusValue[] = ["PLACED", "PACKED"];
+const RETURNABLE_STATUSES: FulfilmentStatusValue[] = ["SHIPPED", "DELIVERED"];
+
+const CLAWBACK_WARNING =
+  "Some earnings from this order were already paid out. Recover them manually.";
 
 type OrderDetailPageProps = {
   orderId: string;
@@ -32,6 +36,8 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   const canManageOrders = canUse(PLATFORM_MANAGE_PERMISSION.ORDERS);
   const { data: order, isLoading, error } = useOrder(orderId);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [hasPaidOutEarnings, setHasPaidOutEarnings] = useState(false);
 
   const advance = useApiMutation({
     successMessage: (_updated, status) => `Order marked as ${status.toLowerCase()}.`,
@@ -45,6 +51,17 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
     invalidateKeys: [["admin-orders"]],
     onSuccess: () => setIsCancelModalOpen(false),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
+  });
+
+  const markReturned = useApiMutation({
+    successMessage: "Order marked as returned. Stock is back on sale.",
+    mutationFn: (reason: string) => ordersApi.markReturned(orderId, reason),
+    invalidateKeys: [["admin-orders"]],
+    onSuccess: ({ needsClawback }) => {
+      setIsReturnModalOpen(false);
+      setHasPaidOutEarnings(needsClawback);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -74,7 +91,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   } = order;
 
   const nextStatus = NEXT_FULFILMENT_STATUS[fulfilmentStatus];
-  const isActing = advance.isPending || cancel.isPending;
+  const isActing = advance.isPending || cancel.isPending || markReturned.isPending;
 
   return (
     <div>
@@ -123,7 +140,18 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
             Cancel order
           </Button>
         )}
+        {canManageOrders && RETURNABLE_STATUSES.includes(fulfilmentStatus) && (
+          <Button variant="outline" onClick={() => setIsReturnModalOpen(true)} disabled={isActing}>
+            Mark as returned
+          </Button>
+        )}
       </div>
+
+      {hasPaidOutEarnings && (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {CLAWBACK_WARNING}
+        </p>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-4">
@@ -214,6 +242,16 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
         isPending={cancel.isPending}
         onConfirm={(reason) => cancel.mutate(reason)}
         onCancel={() => setIsCancelModalOpen(false)}
+      />
+      <TextPromptModal
+        open={isReturnModalOpen}
+        title="Mark order as returned"
+        label="What happened to the parcel?"
+        confirmLabel="Mark as returned"
+        pendingLabel="Saving…"
+        isPending={markReturned.isPending}
+        onConfirm={(reason) => markReturned.mutate(reason)}
+        onCancel={() => setIsReturnModalOpen(false)}
       />
     </div>
   );

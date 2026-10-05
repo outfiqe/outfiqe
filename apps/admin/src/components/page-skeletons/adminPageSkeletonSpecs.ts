@@ -505,6 +505,14 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     ],
     sourceFiles: [`${FEATURES_DIR}/size-options/SizeOptionsPage.tsx`],
   },
+
+  "/outfit-slot-types": {
+    title: "Outfit slots",
+    description:
+      "The slots every new Outfit Build starts with, in this order. Each slot says which garment types can fill it and how many items it holds.",
+    blocks: [{ kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" }],
+    sourceFiles: [`${FEATURES_DIR}/outfit-slot-types/OutfitSlotTypesPage.tsx`],
+  },
   "/announcements": {
     title: "Announcements",
     blocks: [
@@ -532,9 +540,9 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     blocks: [
       {
         kind: "section",
-        title: "Commission tiers",
+        title: "Drop commission",
         description:
-          "Fixed commission a muse earns per attributed sale, by the sold item's price band.",
+          "Fixed commission a muse earns when someone buys from their drop or link, by the sold item's price band.",
         blocks: [
           {
             kind: "formCard",
@@ -551,7 +559,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       {
         kind: "section",
-        title: "Muse commissions",
+        title: "Commissions earned",
         blocks: [
           { kind: "filterTabs", labels: ["PENDING", "APPROVED", "AVAILABLE", "PAID", "VOIDED"] },
           { kind: "cardRows", count: ROW_COUNT, actionLabels: ["Approve", "Mark paid"] },
@@ -561,6 +569,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     sourceFiles: [
       `${FEATURES_DIR}/commissions/CommissionsPage.tsx`,
       `${FEATURES_DIR}/commissions/CommissionTiersSection.tsx`,
+      `${FEATURES_DIR}/commissions/commissionScopeCopy.ts`,
       `${FEATURES_DIR}/commissions/CommissionsListSection.tsx`,
     ],
   },

@@ -41,6 +41,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
   `/creator/:handle?look=:id` — shared with `notifications`' `resolveNotificationHref` so the two can
   never point at a different shape for the same thing.
 - `socketEvents.ts` — the client-side mirror of the API's `SOCKET_EVENTS`/payload shapes this feature listens for (`look:created`, `feed:sync:*`, `comments:*`, `comment:created`, `comment:reply:created`).
+- `hooks/useExploreTabs.ts` — the tab list both tab bars render: For You / Following / Trending, plus **Builds** while the `outfit_public_feed` flag is on for the viewer (`useFeatureFlag`). On the Builds tab `ExploreFeed` shows `PublicBuildsFeed` from `../outfit-build` instead of the look feed, and doesn't fetch looks at all. `ReportContentModal` and `useReportContent` are reused there for reporting builds and build comments (`targetLabel="build"`, targets `OUTFIT_BUILD` / `OUTFIT_BUILD_COMMENT`).
 
 ## Funnel
 

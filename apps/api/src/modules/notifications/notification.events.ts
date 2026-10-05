@@ -12,7 +12,11 @@ import {
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
-import { NOTIFICATION_CONSUMER_GROUP, NOTIFICATION_GROUP_KEYS } from "./notification.constants.js";
+import {
+  ApprovedAccountKind,
+  NOTIFICATION_CONSUMER_GROUP,
+  NOTIFICATION_GROUP_KEYS,
+} from "./notification.constants.js";
 import { notificationRepository } from "./notification.repository.js";
 import { notificationService } from "./notification.service.js";
 import type { CreateIndividualNotificationInput } from "./notification.types.js";
@@ -36,6 +40,37 @@ const LAPSED_SUBSCRIPTION_NOTIFICATION_TYPES = {
 } as const satisfies Record<CrmLapsedSubscriptionStatus, NotificationType>;
 
 export const registerNotificationEventConsumers = (): void => {
+  subscribeToDomainEvent({
+    event: DomainEvents.CREATOR_APPROVED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ userId }, { eventId }): Promise<void> => {
+      await notificationService.notifyIndividual({
+        recipientId: userId,
+        type: NotificationType.ACCOUNT_APPROVED,
+        sourceEventId: eventId,
+        metadata: { approvedAccountKind: ApprovedAccountKind.CREATOR },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.BRAND_OWNER_REGISTERED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ userId, brandId }, { eventId }): Promise<void> => {
+      const brandName = await notificationRepository.findBrandName(brandId);
+
+      await notificationService.notifyIndividual({
+        recipientId: userId,
+        type: NotificationType.ACCOUNT_APPROVED,
+        sourceEventId: eventId,
+        metadata: {
+          approvedAccountKind: ApprovedAccountKind.BRAND,
+          ...(brandName ? { brandName } : {}),
+        },
+      });
+    },
+  });
+
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_LIKED,
     groupName: NOTIFICATION_CONSUMER_GROUP,

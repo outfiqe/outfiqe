@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { type ProductPage, productPageSchema } from "@/features/products/api/productSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
 
@@ -11,7 +13,14 @@ import {
 
 const TAGGABLE_PRODUCTS_LIMIT = 20;
 
+const lookLimitsSchema = z.object({ maxTaggedProducts: z.number().int().positive() });
+
 export const creatorLooksApi = {
+  async getLimits(): Promise<{ maxTaggedProducts: number }> {
+    const res = await apiClient.get("/creator-looks/limits");
+    return lookLimitsSchema.parse(res.data);
+  },
+
   async create(input: LookFormInput): Promise<CreatorLook> {
     const res = await apiClient.post<CreatorLook>("/creator-looks", input);
     return creatorLookSchema.parse(res.data);

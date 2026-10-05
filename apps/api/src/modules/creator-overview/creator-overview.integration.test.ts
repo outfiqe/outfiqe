@@ -126,7 +126,7 @@ const seedCommission = async (
 const getOverview = (authHeader: string) =>
   request(testApp).get("/api/creators/me/overview").set("Authorization", authHeader);
 
-describe("GET /api/muses/me/overview", () => {
+describe("GET /api/creators/me/overview", () => {
   it("rejects a user who is not an approved muse", async () => {
     const shopper = await createUser();
 

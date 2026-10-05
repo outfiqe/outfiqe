@@ -8,6 +8,7 @@ export const FULFILMENT_STATUS_TONE: Record<FulfilmentStatusValue, BadgeTone> = 
   SHIPPED: "neutral",
   DELIVERED: "positive",
   CANCELLED: "negative",
+  RETURNED: "negative",
 };
 
 export const PAYMENT_STATUS_TONE: Record<PaymentStatusValue, BadgeTone> = {

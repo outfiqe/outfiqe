@@ -102,7 +102,12 @@ export const adjustStockSchema = z.object({
           .refine((value) => value !== 0, "Adjustment can't be zero"),
       }),
     )
-    .min(1),
+    .min(1)
+    .refine(
+      (adjustments) =>
+        new Set(adjustments.map((adjustment) => adjustment.sizeId)).size === adjustments.length,
+      "Each size can only be adjusted once per request.",
+    ),
 });
 
 export type ProductSizeInput = z.infer<typeof productSizeInputSchema>;

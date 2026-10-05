@@ -17,6 +17,7 @@ type ResolveNotificationTargetInput = {
 };
 
 const WEB_ROUTES = {
+  dashboardOverview: "/overview",
   dashboardProfile: "/profile",
   badges: "/badges",
   progress: "/progress",
@@ -27,6 +28,8 @@ const WEB_ROUTES = {
   brandProducts: "/products",
   messagesList: "/messages",
   supportList: "/support",
+  buildsList: "/builds",
+  offers: "/offers",
 } as const;
 
 const ADMIN_ROUTES = {
@@ -150,6 +153,8 @@ export const resolveNotificationTarget = ({
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return web(WEB_ROUTES.wallet);
+    case NotificationType.ACCOUNT_APPROVED:
+      return web(WEB_ROUTES.dashboardOverview);
     case NotificationType.NEW_MESSAGE:
       return entityId
         ? web(`${WEB_ROUTES.messagesList}/${entityId}`)
@@ -181,6 +186,23 @@ export const resolveNotificationTarget = ({
         : admin(ADMIN_ROUTES.coupons);
     case NotificationType.ANNOUNCEMENT:
       return announcementTarget(metadata);
+    case NotificationType.OUTFIT_BOARD_ACTIVITY:
+    case NotificationType.OUTFIT_READY_TO_LOCK:
+    case NotificationType.OUTFIT_LOCKED:
+    case NotificationType.OUTFIT_INVITED:
+    case NotificationType.OUTFIT_SHARED:
+    case NotificationType.OUTFIT_MADE_PUBLIC:
+    case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
+    case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
+      return entityId ? web(`${WEB_ROUTES.buildsList}/${entityId}`) : web(WEB_ROUTES.buildsList);
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return web(WEB_ROUTES.offers);
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return web(WEB_ROUTES.wallet);
     default:
       return null;
   }

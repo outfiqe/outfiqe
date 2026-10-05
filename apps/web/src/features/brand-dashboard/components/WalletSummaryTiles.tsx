@@ -13,6 +13,7 @@ const TILES: { key: keyof BrandPayoutSummary; label: string }[] = [
   { key: "pending", label: "Pending" },
   { key: "available", label: "Available" },
   { key: "withdrawn", label: "Withdrawn" },
+  { key: "buildCommissionEarnings", label: "From builds" },
 ];
 
 export const WalletSummaryTiles = ({ summary, isLoading, isError }: WalletSummaryTilesProps) => {
@@ -25,7 +26,7 @@ export const WalletSummaryTiles = ({ summary, isLoading, isError }: WalletSummar
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {TILES.map(({ key, label }) => (
         <div key={key} className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs text-muted-foreground">{label}</p>

@@ -1,0 +1,3 @@
+export const FEATURE_FLAG_CACHE_TTL_MS = 5_000;
+
+export const MAX_FEATURE_FLAG_ALLOW_LIST_SIZE = 500;

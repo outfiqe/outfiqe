@@ -2,6 +2,7 @@ import { isExternalNotificationPath } from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 export type PushMessage = {
   title: string;
@@ -23,6 +24,16 @@ const withOthers = (payload: NotificationBroadcastPayload, singular: string): st
 
 const couponCodeFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.couponCode === "string" ? payload.metadata.couponCode : "A coupon";
+
+const outfitNameFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.outfitTitle === "string" && payload.metadata.outfitTitle
+    ? `"${payload.metadata.outfitTitle}"`
+    : "an outfit build";
+
+const brandNameFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.brandName === "string" && payload.metadata.brandName
+    ? payload.metadata.brandName
+    : "A brand";
 
 const organizationNameFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.crmOrganizationName === "string"
@@ -189,6 +200,69 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) =>
       `The ${organizationNameFrom(payload)} subscription was canceled because it wasn't renewed`,
   },
+  [NotificationType.OUTFIT_BOARD_ACTIVITY]: {
+    title: "Build updated",
+    body: (payload) => `${withOthers(payload, "changed")} ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_READY_TO_LOCK]: {
+    title: "Ready to lock",
+    body: (payload) => `Everyone's happy with ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_LOCKED]: {
+    title: "Build locked",
+    body: (payload) => `${outfitNameFrom(payload)} was locked`,
+  },
+  [NotificationType.OUTFIT_INVITED]: {
+    title: "You're invited to a build",
+    body: (payload) => `Help put together ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_SHARED]: {
+    title: "A build was shared with you",
+    body: (payload) => `Take a look at ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_MADE_PUBLIC]: {
+    title: "Build is public",
+    body: (payload) => `${outfitNameFrom(payload)} is now public`,
+  },
+  [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: {
+    title: "Something in your build sold out",
+    body: (payload) => `Swap it in ${outfitNameFrom(payload)} before you lock`,
+  },
+  [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: {
+    title: "A build you dropped has changed",
+    body: (payload) => `Drop the new version of ${outfitNameFrom(payload)} as a look`,
+  },
+  [NotificationType.OUTFIT_OFFER_RECEIVED]: {
+    title: "You have a new offer",
+    body: (payload) => `${brandNameFrom(payload)} wants you to drop ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_OFFER_ACCEPTED]: {
+    title: "Offer accepted",
+    body: (payload) => `Your offer on ${outfitNameFrom(payload)} was accepted`,
+  },
+  [NotificationType.OUTFIT_OFFER_DECLINED]: {
+    title: "Offer declined",
+    body: (payload) => `Your offer on ${outfitNameFrom(payload)} was declined and will be refunded`,
+  },
+  [NotificationType.OUTFIT_OFFER_EXPIRED]: {
+    title: "Offer expired",
+    body: (payload) => `The offer on ${outfitNameFrom(payload)} ran out of time`,
+  },
+  [NotificationType.OUTFIT_OFFER_RELEASED]: {
+    title: "Offer money released",
+    body: (payload) => `Your money for ${outfitNameFrom(payload)} is ready to withdraw`,
+  },
+  [NotificationType.OUTFIT_OFFER_REFUNDED]: {
+    title: "Offer refunded",
+    body: (payload) => `Your money for the offer on ${outfitNameFrom(payload)} is on its way back`,
+  },
+  [NotificationType.ACCOUNT_APPROVED]: {
+    title: "Welcome to Outfiqe",
+    body: (payload) =>
+      payload.metadata.approvedAccountKind === ApprovedAccountKind.BRAND
+        ? `${typeof payload.metadata.brandName === "string" ? payload.metadata.brandName : "Your brand"} is set up. Add your first products`
+        : "You're now an approved muse. Drop your first look",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -219,8 +293,18 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return "/wallet";
+    case NotificationType.ACCOUNT_APPROVED:
+      return "/overview";
     case NotificationType.NEW_MESSAGE:
       return "/messages";
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return "/offers";
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return "/wallet";
     case NotificationType.SUPPORT_TICKET_REPLY:
     case NotificationType.SUPPORT_TICKET_RESOLVED:
       return payload.entityId ? `/support?ticket=${payload.entityId}` : "/support";

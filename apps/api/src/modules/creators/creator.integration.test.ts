@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
@@ -76,7 +77,7 @@ const createAdmin = async (name: string, handle: string) => {
   return admin;
 };
 
-describe("GET /api/muses/autocomplete", () => {
+describe("GET /api/creators/autocomplete", () => {
   it("returns approved muses ranked by name/handle match", async () => {
     await createApprovedCreator("Ava Martinez", "ava-martinez");
     await createApprovedCreator("Noah Chen", "noah-chen");
@@ -130,7 +131,7 @@ describe("GET /api/muses/autocomplete", () => {
   });
 });
 
-describe("PATCH /api/muses/me", () => {
+describe("PATCH /api/creators/me", () => {
   it("updates the muse's height and show-height preference", async () => {
     const creator = await createApprovedCreator("Height Setter", "height-setter");
 
@@ -167,7 +168,7 @@ describe("PATCH /api/muses/me", () => {
   });
 });
 
-describe("PATCH /api/muses/me — username change", () => {
+describe("PATCH /api/creators/me — username change", () => {
   it("updates the handle and records when it changed", async () => {
     const creator = await createApprovedCreator("Handle Changer", "handle-changer");
     const nextHandle = `freshhandle${randomUUID().slice(0, 8)}`;
@@ -274,7 +275,7 @@ describe("PATCH /api/muses/me — username change", () => {
   });
 });
 
-describe("GET /api/muses/by-handle/:handle", () => {
+describe("GET /api/creators/by-handle/:handle", () => {
   it("hides height from other viewers when the muse has not opted in", async () => {
     const creator = await createApprovedCreator("Hidden Height", "hidden-height", {
       heightCm: 165,
@@ -376,7 +377,7 @@ describe("GET /api/muses/by-handle/:handle", () => {
   });
 });
 
-describe("GET /api/muses/by-handle/:handle/looks", () => {
+describe("GET /api/creators/by-handle/:handle/looks", () => {
   it("returns the muse's published looks", async () => {
     const creator = await createApprovedCreator("Look Poster", "look-poster");
     await prisma.creatorLook.create({
@@ -402,7 +403,7 @@ describe("GET /api/muses/by-handle/:handle/looks", () => {
   });
 });
 
-describe("POST /api/muses/apply", () => {
+describe("POST /api/creators/apply", () => {
   it("moves a plain user into PENDING", async () => {
     const user = await createPlainUser("Applying User", "applying-user");
 
@@ -473,7 +474,7 @@ describe("POST /api/muses/apply", () => {
   });
 });
 
-describe("GET /api/muses/me", () => {
+describe("GET /api/creators/me", () => {
   it("returns the caller's own profile", async () => {
     const creator = await createApprovedCreator("Self Viewer", "self-viewer");
 
@@ -500,7 +501,7 @@ describe("GET /api/muses/me", () => {
   });
 });
 
-describe("GET /api/muses/search", () => {
+describe("GET /api/creators/search", () => {
   it("returns matches with a total count", async () => {
     await createApprovedCreator("Search Target One", "search-target-one");
 
@@ -547,7 +548,7 @@ describe("GET /api/muses/search", () => {
   });
 });
 
-describe("GET /api/muses (admin list)", () => {
+describe("GET /api/creators (admin list)", () => {
   it("lists muses filtered by status for an admin", async () => {
     const admin = await createAdmin("List Admin", "list-admin");
     const pending = await createPendingCreator("Listed Pending", "listed-pending");
@@ -580,10 +581,11 @@ describe("GET /api/muses (admin list)", () => {
   });
 });
 
-describe("POST /api/muses/:userId/approve", () => {
+describe("POST /api/creators/:userId/approve", () => {
   it("approves a pending muse", async () => {
     const admin = await createAdmin("Approving Admin", "approving-admin");
     const pending = await createPendingCreator("To Be Approved", "to-be-approved");
+    const publishSpy = vi.spyOn(eventBus, "publish");
 
     const response = await request(testApp)
       .post(`/api/creators/${pending.id}/approve`)
@@ -594,6 +596,8 @@ describe("POST /api/muses/:userId/approve", () => {
     const stored = await prisma.user.findUniqueOrThrow({ where: { id: pending.id } });
     expect(stored.creatorStatus).toBe(CreatorStatus.APPROVED);
     expect(stored.isCreator).toBe(true);
+    expect(publishSpy).toHaveBeenCalledWith(DomainEvents.CREATOR_APPROVED, { userId: pending.id });
+    publishSpy.mockRestore();
   });
 
   it("rejects approving a muse who isn't pending", async () => {
@@ -653,7 +657,7 @@ describe("POST /api/muses/:userId/approve", () => {
   });
 });
 
-describe("POST /api/muses/:userId/reject", () => {
+describe("POST /api/creators/:userId/reject", () => {
   it("rejects a pending muse", async () => {
     const admin = await createAdmin("Rejecting Admin", "rejecting-admin");
     const pending = await createPendingCreator("To Be Rejected", "to-be-rejected");

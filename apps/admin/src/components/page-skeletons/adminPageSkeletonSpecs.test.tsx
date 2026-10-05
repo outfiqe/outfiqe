@@ -6,7 +6,7 @@ import type { AdminPageSkeletonSpec, SkeletonBlock } from "./adminPageSkeleton.t
 import { ADMIN_PAGE_SKELETON_SPECS } from "./adminPageSkeletonSpecs";
 import { resolveAdminPageSkeletonSpec } from "./resolveAdminPageSkeleton";
 
-const PAGE_SOURCES_BY_PATH = import.meta.glob("/src/features/**/*.tsx", {
+const PAGE_SOURCES_BY_PATH = import.meta.glob("/src/features/**/*.{ts,tsx}", {
   query: "?raw",
   import: "default",
   eager: true,

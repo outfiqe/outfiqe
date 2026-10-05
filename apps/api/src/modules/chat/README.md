@@ -4,9 +4,10 @@
 
 Real-time chat: availability controls (global "turn off chat" + per-person mutual block, Phase 1),
 1:1 direct messaging with image attachments, real-time delivery, presence/last-seen, and
-sent/delivered/read receipts (Phase 2). `chatService.resolveChatAvailability` (Phase 1) gates every
-message send and conversation start, so nothing here has to re-derive the block/settings rule.
-Group chats and the Admin/Support conversation type are not built yet — see Follow-ups.
+sent/delivered/read receipts (Phase 2), and group chats with admins, member management and event
+lines ("Sita added Ram"). `chatService.resolveChatAvailability` (Phase 1) gates every direct message
+send, every conversation start and every person added to a group, so nothing here has to re-derive
+the block/settings rule. The Admin/Support conversation type is not built yet — see Follow-ups.
 
 ## Structure
 
@@ -65,6 +66,42 @@ false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the bl
   an offline-fallback `Notification` — `NotificationType.NEW_MESSAGE` — only for a recipient with no
   active socket connection right now), `registerPresenceSocketConsumer` (fans a `PRESENCE_CHANGED`
   event out to every conversation the affected user is part of).
+
+**Group chats**
+
+- `conversation.routes.ts` — the group routes sit next to the direct ones: `POST
+/conversations/groups` (idempotency key, create rate limit), `PATCH /conversations/:id` (rename),
+  `GET`/`POST /conversations/:id/members`, `PATCH`/`DELETE /conversations/:id/members/:userId`,
+  `POST /conversations/:id/leave`. Every change except leaving carries the group-manage rate limit.
+- `group.controller.ts`, `group.schemas.ts`, `group.types.ts`, `group.utils.ts` — request glue,
+  validation (names up to 60 characters, at most 50 people per request, unknown fields refused)
+  and the member view shape.
+- `group.service.ts` — every rule: who can be added, the member limit, admin-only actions, the
+  last-admin rules, and writing an event line for each change. Every change runs in one
+  transaction that locks the conversation row first.
+- `group.repository.ts` — conversation-row lock (`SELECT ... FOR UPDATE`), group creation, member
+  reads and writes, admin counts.
+- `message.repository.ts`'s `createSystemMessage` and `message.utils.ts`'s `describeSystemEvent`/
+  `parseSystemEvent` — event lines are ordinary `Message` rows with `kind: SYSTEM` and a
+  `systemEvent` JSON payload, checked against `chatSystemEventSchema` (`message.schemas.ts`)
+  every time one is read back.
+- `conversation.socket.ts`'s `registerConversationMembershipConsumer` — on
+  `CONVERSATION_MEMBER_REMOVED`, pulls every open socket of the removed person out of the
+  conversation room and tells their devices to drop the chat (`conversation:removed`).
+
+**Build chats (Outfit Build)**
+
+- `build-chat.service.ts` — `buildChatService`, used only by `../outfits` inside a build's
+  transaction: create the build's group chat when its first editor joins, add editors, remove a
+  removed or leaving editor, rename it with the build. Each change writes its event line and an
+  outbox row instead of publishing straight away.
+- `chat.outbox.ts` — the outbox handlers for `chat.message-created` and `chat.member-removed`.
+  They reload the event line (`messageRepository.findById`) and republish the ordinary
+  `MESSAGE_CREATED` / `CONVERSATION_MEMBER_REMOVED` domain events, so delivery, ticks and offline
+  notifications work exactly as for any group.
+- `group.service.ts` refuses every group-management action (rename, add, remove, change admin,
+  leave) on a build's chat with `409 BUILD_CHAT_MANAGED_BY_BUILD`; reading its members still works.
+- `chat.service.ts`'s `hasBlockBetween` — the block check builds use for invites and shares.
 
 **Presence (Phase 2, pulled forward from the original roadmap)**
 
@@ -150,6 +187,59 @@ defensive bound already used elsewhere in this codebase) is the natural fan-out 
 every conversation room reaches exactly the people who currently have an open thread with this
 user, which is also exactly who needs to see their presence change live.
 
+**Group chats follow chat's own delivery path, not the outbox.** Messages here are announced
+through Redis Streams (`eventBus`) after the transaction commits, and group event lines use the
+same path so one module doesn't mix two delivery mechanisms. The transactional outbox
+(`src/shared/outbox/README.md`) is for Outfit Build writes; moving all of chat onto it would be its
+own change.
+
+**Who can be added to a group is the same question as "could I message them directly?"** Adding
+someone runs `resolveChatAvailability(adder, person)` for each person. A block in either direction,
+chat turned off, a suspended account or a tenant-staff account all refuse the add. The refusal
+lists the ids that couldn't be added (`MEMBERS_UNREACHABLE`), the same level of detail a failed
+direct start already gives, without saying which reason applied. Once someone is in a group, a
+block between two members doesn't stop either of them sending there. That's the "a block only
+blocks new direct conversations" simplification the roadmap already called for. A member who turns
+their own chat off can't send in groups either (`resolveOwnChatAvailability`).
+
+**The member limit can't be raced.** `chat.maxGroupMembers` (platform settings, 50 by default)
+is checked inside the same transaction that locked the conversation row, so two admins adding
+people at the same moment run one after the other, and the second sees the first one's additions.
+A real test runs exactly that race.
+
+**A group always has an admin.** The last admin can't step down (`LAST_GROUP_ADMIN`). If the last
+admin leaves, the member who has been there longest becomes admin in the same transaction. When the
+last person leaves, the conversation and its messages are deleted.
+
+**Removal takes effect everywhere at once.** The removed person's participant row is deleted, so
+every REST read (`requireParticipant`) refuses them straight away, and the membership consumer
+pulls their open sockets out of the room so live messages stop too.
+
+**Read ticks in a group mean "everyone has read it".** `combineReaderCursors` takes the earliest
+read and delivered positions across every other member (anyone who hasn't read at all counts as
+unread), and the same function gives exactly the old answer in a direct chat, where there's only
+one other reader. Event lines never show ticks.
+
+**Event lines are notified sparingly.** A new message notifies every offline recipient as before.
+An event line only notifies the people it added ("Sita added you"), so a busy admin renaming a
+group or adding others doesn't buzz everyone.
+
+**Group previews name the sender.** A group's `lastMessagePreview` is stored as "Sita: see you
+there" (`conversationPreviewFor`), and event lines store their sentence ("Sita added Ram"), so the
+chat list reads well without the client knowing who sent the last message.
+
+**A build's chat belongs to the build.** Only the build's owner and editors are ever in it, and
+viewers must never get in, so membership changes only through the build
+(`buildChatService`). Letting a chat admin add someone from the chat side would quietly give a
+non-editor access to the working chat. Build chat changes go through the outbox because they
+happen inside the build's transaction; publishing straight away would announce changes that
+could still roll back.
+
+**Build invites don't need chat switched on.** The PRD sends a build invite "with a direct link —
+no chat needed", so invites and shares check only that the person is an active shopper or brand
+account and that neither side has blocked the other (`hasBlockBetween`), not the full
+`isChatAvailableBetween` rules.
+
 ## Follow-ups
 
 Roadmap, in build order — each phase reuses this module's `isChatAvailableBetween` and event/socket
@@ -160,9 +250,7 @@ plumbing rather than introducing a parallel mechanism:
    image attachments — done.
 3. Typing indicators (new Redis Pub/Sub channel — ephemeral/high-frequency, deliberately not routed
    through Redis Streams the way `MESSAGE_CREATED`/`PRESENCE_CHANGED` are).
-4. Group chats (`ConversationType.GROUP`) — add/leave participants; a block only blocks new DIRECT
-   conversations and sends, not an existing group membership (documented as an intentional v1
-   simplification when that phase lands).
+4. Group chats — done (see "Group chats" above).
 5. Admin/Support `ConversationType.SUPPORT` — queue-style, any Admin can view/reply, sender Admin id
    recorded per-message for audit, exempt from `ChatSettings`/`ChatBlock` (already true today via
    `isChatAvailableBetween`'s Admin short-circuit). First real chat UI in `apps/admin`.

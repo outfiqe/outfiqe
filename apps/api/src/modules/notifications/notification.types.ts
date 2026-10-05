@@ -4,6 +4,8 @@ import type {
   NotificationType,
 } from "#generated/prisma/enums.js";
 
+import type { ApprovedAccountKind } from "./notification.constants.js";
+
 export type NotificationActorSnapshot = {
   id: string;
   name: string;
@@ -34,6 +36,9 @@ export type NotificationMetadata = {
   withdrawAmount?: number;
   rejectionReason?: string;
   messagePreview?: string;
+  outfitTitle?: string | null;
+  soldOutItemCount?: number;
+  offerAmount?: number;
   crmItemKind?: "task" | "ticket";
   crmItemTitle?: string;
   crmOrganizationSubdomain?: string | null;
@@ -56,6 +61,7 @@ export type NotificationMetadata = {
   announcementTargetSurface?: NotificationSurface | null;
   announcementTargetPath?: string | null;
   announcementExpiresAt?: string | null;
+  approvedAccountKind?: ApprovedAccountKind;
 };
 
 export type NotificationRecord = {

@@ -72,6 +72,8 @@ const approvedCreators: AudienceRule = ({ isApprovedCreator }) => isApprovedCrea
 const businessAccounts: AudienceRule = ({ isBrandMember }) => isBrandMember;
 const creatorsAndBusinesses: AudienceRule = (audience) =>
   approvedCreators(audience) || businessAccounts(audience);
+const shoppersAndBusinesses: AudienceRule = (audience) =>
+  shopperAccounts(audience) || businessAccounts(audience);
 
 const platformStaffHolding =
   (permissionKeys: readonly string[]): AudienceRule =>
@@ -141,6 +143,21 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: organizationStaffHolding(
     TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_SUBSCRIPTION_CANCELED],
   ),
+  [NotificationType.OUTFIT_BOARD_ACTIVITY]: storefrontAccounts,
+  [NotificationType.OUTFIT_READY_TO_LOCK]: storefrontAccounts,
+  [NotificationType.OUTFIT_LOCKED]: storefrontAccounts,
+  [NotificationType.OUTFIT_INVITED]: storefrontAccounts,
+  [NotificationType.OUTFIT_SHARED]: storefrontAccounts,
+  [NotificationType.OUTFIT_MADE_PUBLIC]: storefrontAccounts,
+  [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: storefrontAccounts,
+  [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: storefrontAccounts,
+  [NotificationType.OUTFIT_OFFER_RECEIVED]: shopperAccounts,
+  [NotificationType.OUTFIT_OFFER_RELEASED]: shopperAccounts,
+  [NotificationType.OUTFIT_OFFER_ACCEPTED]: businessAccounts,
+  [NotificationType.OUTFIT_OFFER_DECLINED]: businessAccounts,
+  [NotificationType.OUTFIT_OFFER_REFUNDED]: businessAccounts,
+  [NotificationType.OUTFIT_OFFER_EXPIRED]: shoppersAndBusinesses,
+  [NotificationType.ACCOUNT_APPROVED]: creatorsAndBusinesses,
 };
 
 export const canReceiveNotificationType = (

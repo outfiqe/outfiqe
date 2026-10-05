@@ -1,5 +1,6 @@
 import { withSerwist } from "@serwist/turbopack";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 /*
  Server-only — never exposed to the browser. The API origin the Next
@@ -100,4 +101,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+export default withNextIntl(withSerwist(nextConfig));

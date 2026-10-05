@@ -16,6 +16,7 @@ import type {
 } from "./brandPayout.types.js";
 
 const TIER_ORDER_BY = { sortOrder: "asc" as const };
+const NO_PAYOUTS = 0;
 
 export const brandPayoutRepository = {
   async findActiveRuleWithTiers(
@@ -218,6 +219,27 @@ export const brandPayoutRepository = {
     return result.count;
   },
 
+  async voidUnwithdrawnForOrder(
+    client: DbClient,
+    orderId: string,
+    voidedReason: string,
+  ): Promise<number> {
+    const result = await client.brandPayout.updateMany({
+      where: {
+        orderItem: { orderId },
+        status: { in: [BrandPayoutStatus.PENDING, BrandPayoutStatus.AVAILABLE] },
+      },
+      data: { status: BrandPayoutStatus.VOIDED, voidedReason },
+    });
+    return result.count;
+  },
+
+  async countWithdrawnForOrder(client: DbClient, orderId: string): Promise<number> {
+    return client.brandPayout.count({
+      where: { orderItem: { orderId }, status: BrandPayoutStatus.WITHDRAWN },
+    });
+  },
+
   async sumByStatusForBrand(brandId: string): Promise<Partial<Record<BrandPayoutStatus, number>>> {
     const grouped = await prisma.brandPayout.groupBy({
       by: ["status"],
@@ -249,30 +271,24 @@ export const brandPayoutRepository = {
     });
   },
 
-  async claimAvailableForBrand(
+  async listAvailableForBrand(
     client: DbClient,
     brandId: string,
-    amount: number,
-  ): Promise<string[]> {
-    const candidates = await client.brandPayout.findMany({
+  ): Promise<{ id: string; amount: number; createdAt: Date }[]> {
+    const rows = await client.brandPayout.findMany({
       where: { brandId, status: BrandPayoutStatus.AVAILABLE },
       orderBy: { createdAt: "asc" },
-      select: { id: true, netAmount: true },
+      select: { id: true, netAmount: true, createdAt: true },
     });
+    return rows.map(({ id, netAmount, createdAt }) => ({ id, amount: netAmount, createdAt }));
+  },
 
-    const claimedIds: string[] = [];
-    let runningTotal = 0;
-    for (const candidate of candidates) {
-      if (runningTotal >= amount) break;
-      claimedIds.push(candidate.id);
-      runningTotal += candidate.netAmount;
-    }
-    if (runningTotal < amount) return [];
-
+  async markAvailableAsWithdrawn(client: DbClient, ids: string[]): Promise<number> {
+    if (ids.length === NO_PAYOUTS) return NO_PAYOUTS;
     const result = await client.brandPayout.updateMany({
-      where: { id: { in: claimedIds }, status: BrandPayoutStatus.AVAILABLE },
+      where: { id: { in: ids }, status: BrandPayoutStatus.AVAILABLE },
       data: { status: BrandPayoutStatus.WITHDRAWN, withdrawnAt: new Date() },
     });
-    return result.count === claimedIds.length ? claimedIds : [];
+    return result.count;
   },
 };

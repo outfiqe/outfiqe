@@ -23,6 +23,7 @@ const aReport = (overrides: Partial<ContentReport> = {}): ContentReport => ({
   reporterName: null,
   target: {
     lookId: "look-1",
+    outfitId: null,
     imageUrl: "https://cdn.test/look-1.jpg",
     snippet: "Buy followers at cheapfollowers.test",
     isRemoved: false,
@@ -59,6 +60,29 @@ describe("ContentReportsPage", () => {
     expect(screen.getByText(/This is a bot drop\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open (1)" })).toBeInTheDocument();
     expect(screen.getByText(/1 open\./)).toBeInTheDocument();
+  });
+
+  it("labels a reported build and links to its page on the storefront", async () => {
+    stub([
+      aReport({
+        targetType: "OUTFIT_BUILD",
+        targetId: "outfit-1",
+        target: {
+          lookId: null,
+          outfitId: "outfit-1",
+          imageUrl: null,
+          snippet: "Dashain look",
+          isRemoved: false,
+          author: { id: "owner-1", name: "Sita Rai", handle: "sita", contentFlagCount: 0 },
+        },
+      }),
+    ]);
+    renderPage();
+
+    expect(await screen.findByText("Reported build")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View build" }).getAttribute("href")).toMatch(
+      /\/builds\/outfit-1$/,
+    );
   });
 
   it("resolves a report by removing the content", async () => {

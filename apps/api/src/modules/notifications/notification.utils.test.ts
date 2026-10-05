@@ -169,6 +169,7 @@ describe("canReceiveNotificationType", () => {
     expect(types).not.toContain(NotificationType.LOOK_LIKED);
     expect(types).not.toContain(NotificationType.NEW_ORDER);
     expect(types).not.toContain(NotificationType.WITHDRAW_REQUEST_PAID);
+    expect(types).not.toContain(NotificationType.ACCOUNT_APPROVED);
   });
 
   it("adds looks, followers, commissions, tag results and withdrawals for an approved creator", () => {
@@ -181,6 +182,7 @@ describe("canReceiveNotificationType", () => {
       NotificationType.PRODUCT_TAG_APPROVED,
       NotificationType.WITHDRAW_REQUEST_PAID,
       NotificationType.ORDER_STATUS_CHANGED,
+      NotificationType.ACCOUNT_APPROVED,
     ]) {
       expect(types).toContain(creatorType);
     }
@@ -197,6 +199,7 @@ describe("canReceiveNotificationType", () => {
       NotificationType.PRODUCT_TAG_SUBMITTED,
       NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
       NotificationType.WITHDRAW_REQUEST_PAID,
+      NotificationType.ACCOUNT_APPROVED,
     ]) {
       expect(types).toContain(businessType);
     }
@@ -256,6 +259,19 @@ describe("canReceiveNotificationType", () => {
         staffWith(aGrant({ permissionKeys: ["tickets:read"] })),
       ),
     ).toBe(true);
+  });
+
+  it("sends offer notices to the side of the deal they are about", () => {
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RECEIVED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RELEASED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RECEIVED, business)).toBe(
+      false,
+    );
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_ACCEPTED, business)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_REFUNDED, business)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_ACCEPTED, shopper)).toBe(false);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_EXPIRED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_EXPIRED, business)).toBe(true);
   });
 
   it("gives a business that also runs a tenant both business and tenant notifications", () => {

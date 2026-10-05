@@ -9,12 +9,12 @@ dynamically imports exactly one starter from this folder, so a `worker` or
 
 ## Roles
 
-| `PROCESS_ROLE`  | Starter                 | Runs                                                                       | Replicas                          |
-| --------------- | ----------------------- | -------------------------------------------------------------------------- | --------------------------------- |
-| `all` (default) | `startCombinedProcess`  | everything, in one process — identical to the pre-split boot sequence      | 1 (local dev, single-box deploys) |
-| `api`           | `startApiProcess`       | HTTP + Socket.IO + realtime consumers + admin bootstrap                    | 1..N                              |
-| `worker`        | `startWorkerProcess`    | BullMQ image workers + background domain-event consumers + a health server | 1..N                              |
-| `scheduler`     | `startSchedulerProcess` | interval + boundary schedulers + a health server                           | exactly 1                         |
+| `PROCESS_ROLE`  | Starter                 | Runs                                                                                                                       | Replicas                          |
+| --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `all` (default) | `startCombinedProcess`  | everything, in one process — identical to the pre-split boot sequence                                                      | 1 (local dev, single-box deploys) |
+| `api`           | `startApiProcess`       | HTTP + Socket.IO + realtime consumers + the realtime outbox worker + admin bootstrap                                       | 1..N                              |
+| `worker`        | `startWorkerProcess`    | BullMQ image workers + the inventory/notify/analytics outbox workers + background domain-event consumers + a health server | 1..N                              |
+| `scheduler`     | `startSchedulerProcess` | interval + boundary schedulers + a health server                                                                           | exactly 1                         |
 
 `all` exists so local development (`pnpm dev`), the test suite, and a
 single-container deployment behave exactly as they did before the split.
@@ -67,6 +67,10 @@ it (directly or transitively) call `getIO()` from `#socket/socket.server.ts`?
 
 Putting a realtime consumer in `worker` would throw at registration (`getIO()`
 before `initSocket`). A test in `consumers.test.ts` pins the two lists.
+
+### Where the outbox workers run
+
+The outbox (`src/shared/outbox/README.md`) delivers through four BullMQ queues. The `realtime` queue's worker runs in the `api` role, because its handlers push to sockets, which follows the same `getIO()` rule as the consumers above. The `inventory`, `notify` and `analytics` workers run in the `worker` role. The relay that feeds all four is a scheduled job, so it runs in `scheduler`. Every role that opens a queue connection closes it in its shutdown steps.
 
 ### Scheduler replica count
 

@@ -10,10 +10,35 @@ import { conversationRepository } from "./conversation.repository.js";
 import { requireParticipant } from "./conversation.service.js";
 import { messageRepository } from "./message.repository.js";
 import type { MessageRecord, MessagesPage, NewMessageAttachmentInput } from "./message.types.js";
-import { toMessageRecord } from "./message.utils.js";
+import {
+  combineReaderCursors,
+  conversationPreviewFor,
+  toMessageBroadcast,
+  toMessageRecord,
+} from "./message.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST_STATUS = 400;
+
+const assertCanSendTo = async (
+  callerId: string,
+  conversationId: string,
+  conversationType: ConversationType,
+): Promise<void> => {
+  if (conversationType === ConversationType.GROUP) {
+    const availability = await chatService.resolveOwnChatAvailability(callerId);
+    if (!availability.isAvailable) throw chatUnavailableError(availability.reason);
+    return;
+  }
+
+  const otherParticipant = await conversationRepository.findOtherParticipant(
+    conversationId,
+    callerId,
+  );
+  if (!otherParticipant) return;
+  const availability = await chatService.resolveChatAvailability(callerId, otherParticipant.userId);
+  if (!availability.isAvailable) throw chatUnavailableError(availability.reason);
+};
 
 export const messageService = {
   async sendMessage(
@@ -37,52 +62,25 @@ export const messageService = {
     if (!conversation) {
       throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
     }
+    await assertCanSendTo(callerId, conversationId, conversation.type);
 
-    if (conversation.type === ConversationType.DIRECT) {
-      const otherParticipant = await conversationRepository.findOtherParticipant(
-        conversationId,
-        callerId,
-      );
-      if (otherParticipant) {
-        const availability = await chatService.resolveChatAvailability(
-          callerId,
-          otherParticipant.userId,
-        );
-        if (!availability.isAvailable) {
-          throw chatUnavailableError(availability.reason);
-        }
-      }
-    }
-
+    const groupSenderName =
+      conversation.type === ConversationType.GROUP
+        ? (conversation.participants.find(({ userId }) => userId === callerId)?.user.name ?? null)
+        : null;
     const message = await messageRepository.send(
       conversationId,
       callerId,
       trimmedBody,
       attachments,
+      conversationPreviewFor(trimmedBody, groupSenderName),
     );
 
     const recipientIds = conversation.participants
       .map((participant) => participant.userId)
       .filter((participantId) => participantId !== callerId);
 
-    await eventBus.publish(DomainEvents.MESSAGE_CREATED, {
-      id: message.id,
-      conversationId,
-      senderId: callerId,
-      senderName: message.sender.name,
-      senderHandle: message.sender.handle,
-      senderAvatarUrl: message.sender.avatarUrl,
-      body: message.body,
-      attachments: message.attachments.map((attachment) => ({
-        id: attachment.id,
-        url: attachment.url,
-        mimeType: attachment.mimeType,
-        width: attachment.width,
-        height: attachment.height,
-      })),
-      createdAt: message.createdAt.toISOString(),
-      recipientIds,
-    });
+    await eventBus.publish(DomainEvents.MESSAGE_CREATED, toMessageBroadcast(message, recipientIds));
 
     await Promise.all(
       recipientIds.map(async (recipientId) => {
@@ -107,9 +105,9 @@ export const messageService = {
   ): Promise<MessagesPage> {
     await requireParticipant(conversationId, callerId);
 
-    const [rows, otherParticipant] = await Promise.all([
+    const [rows, otherReaderCursors] = await Promise.all([
       messageRepository.listForConversation(conversationId, query),
-      conversationRepository.findOtherParticipant(conversationId, callerId),
+      messageRepository.listOtherReaderCursors(conversationId, callerId),
     ]);
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
@@ -125,8 +123,9 @@ export const messageService = {
       }
     }
 
+    const otherReaders = combineReaderCursors(otherReaderCursors);
     return {
-      items: items.map((row) => toMessageRecord(row, callerId, otherParticipant)),
+      items: items.map((row) => toMessageRecord(row, callerId, otherReaders)),
       nextCursor,
     };
   },

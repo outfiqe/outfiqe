@@ -1,7 +1,8 @@
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
-import { BrandPayoutStatus, PlatformFeeType } from "#generated/prisma/enums.js";
+import { BrandPayoutStatus, CommissionStatus, PlatformFeeType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { commissionRepository } from "#modules/commissions/commission.repository.js";
 
 import { brandPayoutRepository } from "./brandPayout.repository.js";
 import type {
@@ -26,6 +27,7 @@ import {
 } from "./brandPayout.utils.js";
 
 const NOT_FOUND_STATUS = 404;
+const NO_EARNINGS = 0;
 
 export const brandPayoutService = {
   async listRules(): Promise<PlatformCommissionRuleView[]> {
@@ -90,12 +92,30 @@ export const brandPayoutService = {
   },
 
   async getSummary(brandId: string): Promise<BrandPayoutSummary> {
-    const sums = await brandPayoutRepository.sumByStatusForBrand(brandId);
-    const pending = sums[BrandPayoutStatus.PENDING] ?? 0;
-    const available = sums[BrandPayoutStatus.AVAILABLE] ?? 0;
-    const withdrawn = sums[BrandPayoutStatus.WITHDRAWN] ?? 0;
+    const [payoutSums, buildCommissionSums] = await Promise.all([
+      brandPayoutRepository.sumByStatusForBrand(brandId),
+      commissionRepository.sumByStatusForBrand(brandId),
+    ]);
+    const buildCommissionPending =
+      (buildCommissionSums[CommissionStatus.PENDING] ?? NO_EARNINGS) +
+      (buildCommissionSums[CommissionStatus.APPROVED] ?? NO_EARNINGS);
+    const buildCommissionAvailable = buildCommissionSums[CommissionStatus.AVAILABLE] ?? NO_EARNINGS;
+    const buildCommissionPaid = buildCommissionSums[CommissionStatus.PAID] ?? NO_EARNINGS;
 
-    return { totalPayouts: pending + available + withdrawn, pending, available, withdrawn };
+    const pending = (payoutSums[BrandPayoutStatus.PENDING] ?? NO_EARNINGS) + buildCommissionPending;
+    const available =
+      (payoutSums[BrandPayoutStatus.AVAILABLE] ?? NO_EARNINGS) + buildCommissionAvailable;
+    const withdrawn =
+      (payoutSums[BrandPayoutStatus.WITHDRAWN] ?? NO_EARNINGS) + buildCommissionPaid;
+
+    return {
+      totalPayouts: pending + available + withdrawn,
+      pending,
+      available,
+      withdrawn,
+      buildCommissionEarnings:
+        buildCommissionPending + buildCommissionAvailable + buildCommissionPaid,
+    };
   },
 
   async listForBrand(

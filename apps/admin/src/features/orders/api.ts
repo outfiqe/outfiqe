@@ -7,6 +7,8 @@ import {
   adminOrderSchema,
   adminOrderSummarySchema,
   type FulfilmentStatusValue,
+  type OrderReturnOutcome,
+  orderReturnOutcomeSchema,
 } from "./schemas";
 
 const orderPageSchema = z.object({
@@ -37,5 +39,12 @@ export const ordersApi = {
 
   async cancel(orderId: string, reason: string): Promise<void> {
     await apiClient.post(`/orders/admin/${orderId}/cancel`, { reason });
+  },
+
+  async markReturned(orderId: string, reason: string): Promise<OrderReturnOutcome> {
+    const res = await apiClient.post<OrderReturnOutcome>(`/orders/admin/${orderId}/return`, {
+      reason,
+    });
+    return orderReturnOutcomeSchema.parse(res.data);
   },
 };

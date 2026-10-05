@@ -38,6 +38,7 @@ const ROUTES = [
   "/gamification/xp-levels",
   "/hero-slides",
   "/orders",
+  "/outfit-slot-types",
   "/organizations",
   "/platform",
   "/platform-commission",

@@ -4,7 +4,7 @@ import { FulfilmentStatus, OrderFulfilmentSummary } from "#generated/prisma/enum
 
 import { deriveOrderFulfilment } from "./order.utils.js";
 
-const { PLACED, PACKED, SHIPPED, DELIVERED, CANCELLED } = FulfilmentStatus;
+const { PLACED, PACKED, SHIPPED, DELIVERED, CANCELLED, RETURNED } = FulfilmentStatus;
 
 describe("deriveOrderFulfilment", () => {
   it("treats an order with no groups as placed and unfulfilled", () => {
@@ -82,6 +82,24 @@ describe("deriveOrderFulfilment", () => {
     expect(deriveOrderFulfilment([CANCELLED, CANCELLED])).toEqual({
       fulfilmentStatus: CANCELLED,
       fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+    });
+  });
+
+  it("is returned once every group still in the order has come back", () => {
+    expect(deriveOrderFulfilment([RETURNED, RETURNED])).toEqual({
+      fulfilmentStatus: RETURNED,
+      fulfilmentSummary: OrderFulfilmentSummary.RETURNED,
+    });
+    expect(deriveOrderFulfilment([CANCELLED, RETURNED])).toEqual({
+      fulfilmentStatus: RETURNED,
+      fulfilmentSummary: OrderFulfilmentSummary.RETURNED,
+    });
+  });
+
+  it("keeps tracking the groups still on their way when only some came back", () => {
+    expect(deriveOrderFulfilment([RETURNED, SHIPPED])).toEqual({
+      fulfilmentStatus: SHIPPED,
+      fulfilmentSummary: OrderFulfilmentSummary.SHIPPED,
     });
   });
 });

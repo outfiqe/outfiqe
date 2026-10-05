@@ -18,6 +18,7 @@
     "#socket/*": "./src/shared/socket/*",
     "#email-templates/*": "./src/shared/email-templates/*",
     "#scheduling/*": "./src/shared/scheduling/*",
+    "#outbox/*": "./src/shared/outbox/*",
     "#modules/*": "./src/modules/*",
     "#test/*": "./src/testing/*"
   },
@@ -51,6 +52,7 @@
     "db:seed:reviews": "tsx prisma/seedProductReviews.ts",
     "db:seed:thrift": "tsx prisma/seedThriftListings.ts",
     "db:seed:post-layouts": "tsx prisma/seedPostLayouts.ts",
+    "load:seed:outfit-boards": "tsx prisma/seed-load-outfit-boards.ts",
     "db:prune": "tsx prisma/prune.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset"

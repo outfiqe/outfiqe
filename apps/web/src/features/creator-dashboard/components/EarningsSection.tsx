@@ -2,7 +2,7 @@
 
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
-import { CreatorStatus } from "@/features/auth/types";
+import type { CreatorStatus } from "@/features/auth/types";
 
 import { useEarningsSummary } from "../hooks/useEarningsSummary";
 import { useMyEarnings } from "../hooks/useMyEarnings";
@@ -12,14 +12,15 @@ import { EarningsSummaryTiles } from "./EarningsSummaryTiles";
 
 type EarningsSectionProps = {
   creatorStatus: CreatorStatus;
+  canEarn: boolean;
 };
 
-export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
+export const EarningsSection = ({ creatorStatus, canEarn }: EarningsSectionProps) => {
   const {
     data: summary,
     isPending: isSummaryPending,
     isError: isSummaryError,
-  } = useEarningsSummary();
+  } = useEarningsSummary(canEarn);
   const {
     data,
     isPending,
@@ -27,10 +28,10 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useMyEarnings();
+  } = useMyEarnings(canEarn);
   const earnings = data?.pages.flatMap((page) => page.items) ?? [];
 
-  if (creatorStatus !== CreatorStatus.APPROVED) {
+  if (!canEarn) {
     return (
       <CreatorStatusGate
         creatorStatus={creatorStatus}
@@ -44,7 +45,7 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Earnings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Commission from sales attributed to your drops and links.
+          Commission from sales through your drops, links and the builds you helped make.
         </p>
       </div>
 

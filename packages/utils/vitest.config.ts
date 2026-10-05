@@ -8,10 +8,12 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/uuid/index.ts",
+        "src/email-logo/index.ts",
         "src/notifications/isExternalNotificationPath.ts",
         "src/post-layout/index.ts",
         "src/platform-access/index.ts",
         "src/user-role/index.ts",
+        "src/outfit-slots/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

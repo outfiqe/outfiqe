@@ -80,7 +80,15 @@ already-placed checkout is never retroactively affected — proven directly
 
 ## Idempotency is claim-first, not check-then-write
 
-`withIdempotency` inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.
+`withIdempotency` (`#lib/idempotency.utils.js`) inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic, done as an `INSERT ... ON CONFLICT DO NOTHING` so the loser finds out from the insert itself rather than from a second read. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.
+
+**A failed request frees its key only when the failure was a business rejection.** When the handler throws an `AppError` (items sold out, coupon exhausted, and so on), nothing was committed, so the claim is deleted and the shopper can retry with the same key. Before this, the pending row stayed forever and every retry with that key got a 409. Any other error keeps the claim: an unexpected failure might have happened after the order was already committed, and freeing the key then could create a second order on retry. Such keys expire with the 24-hour cleanup (`runIdempotencyKeyRetentionSweep`, wired in `src/jobs/scheduled-jobs.ts`).
+
+**Callers can also pass the request body**, which is stored as a hash. The same key sent with a different body is then refused with `422 IDEMPOTENCY_KEY_REUSED` instead of silently replaying the first answer. Checkout doesn't pass a body yet, so its behaviour is unchanged; new endpoints should.
+
+## Every stock change points back at its order
+
+Checkout generates the order id before its transaction starts, so the stock decrement it makes can be written to the inventory ledger against that order in the same transaction (`../products/README.md`, "Inventory ledger"). Payment settlement and cancellation record their stock changes against the same order id.
 
 ## Buy Now — a second, cart-bypassing line-item source
 
@@ -95,6 +103,21 @@ This exists because the checkout page only ever renders one persisted cart — a
 `AttributionCandidate.clickId` is the click/tap event (`CreatorLookTagClick.id` or `CreatorLinkClick.id`) and feeds `CreatorCommission.tagClickId`/`linkClickId`. `AttributionCandidate.referenceId` is what the click points to (`CreatorLook.id` or `CreatorLink.id`) and feeds `OrderItem.attributedCreatorLookId`/`attributedLinkId`. These are different rows with different foreign keys — conflating them was an actual bug caught by the verification script (foreign key violation), not a hypothetical one.
 
 A `CreatorLink` with `productId: null` is a general/profile link — it's treated as a candidate for whatever product was actually bought, not just one specific product. A product-scoped `CreatorLink` only counts for that product.
+
+## Attribution: shopping from a build
+
+`order.attribution.utils.ts` has three candidate sources: tag clicks, creator link clicks, and
+`OutfitBuildVisit` rows. A visit is written when a shopper adds an item to their bag from a build
+(`outfits/outfit-cart.service.ts`), recording the build and the locked version they saw. The
+latest candidate inside the attribution window wins across all three, so a build visit and a
+creator's link compete fairly. Builds removed by moderation no longer attribute.
+
+`AttributionCandidate` is a discriminated union on `source`. A build sale sets
+`OrderItem.attributedOutfitId`/`attributedOutfitVersion` (not `attributedCreatorId`, because a
+build has many contributors), uses the `OUTFIT_BUILD` commission tier, and is turned into one
+commission row per contributor by `resolveCommissionShares` (see `../commissions/README.md` for
+the split rules). `SALE_GENERATED` events go out for the people's shares only; brands follow
+their earnings in the wallet.
 
 ## Admin — fulfilment + cancel/refund (chunk 15)
 
@@ -150,11 +173,44 @@ order page still treated it as "awaiting payment" and offered Resume/Cancel butt
 409'd. `paymentService.initiate` also refuses outright once `fulfilmentStatus === CANCELLED`
 (`ORDER_CANCELLED`), so a stale client can't start a new attempt on a cancelled order.
 
-**Scope cut, not a gap**: only pre-shipment cancellation is handled. A post-delivery return/refund
-(order stays `DELIVERED`, only the payment side changes) isn't covered — the plan described this
-chunk as "manual refund/cancel recording" as one combined feature, and a standalone return flow
-would need its own decision about whether stock goes back to sellable inventory, which is a
-different question than "we never shipped it." Easy to add later as a separate action if needed.
+## Admin — "Returned / returned to origin"
+
+`POST /orders/admin/:orderId/return` with `{ reason }` handles a parcel that came back: refused
+at the door, returned by the courier, or sent back after delivery. It works on `SHIPPED` and
+`DELIVERED` orders only and moves the order and every group to `RETURNED` (the rollup treats a
+returned group like a cancelled one when working out progress).
+
+In one transaction it marks the order returned (a conditional update, so a double click returns
+`409` instead of restocking twice), puts the stock back through the stock ledger
+(`ORDER_RESTORE`), voids every commission row not yet paid, and voids the brand payouts that
+haven't been withdrawn yet. It then counts the commission already paid and the payouts already
+withdrawn; when either is above zero the response says `needsClawback: true`, and the admin
+screen tells finance to recover that money by hand.
+
+The refund runs **after** the transaction commits, unlike cancel. The status change is what
+decides which admin call wins, so only that one call refunds; refunding first would let two
+quick clicks refund twice. A failed or thrown refund sets `needsManualRefund` and emails ops.
+The action is written to `PlatformAuditLog` (`order.returned-to-origin`) with the reason and the
+counts.
+
+## Admin — Returned / returned to origin
+
+`POST /orders/admin/:orderId/return` (`ordersManage`, with a reason) handles a parcel that comes
+back after it left: refused at the door, undeliverable, or returned after delivery. There is no
+courier integration; an admin records it. Only `SHIPPED` or `DELIVERED` orders qualify.
+
+In one transaction it moves the order and its fulfilment groups to `RETURNED` (stamping
+`returnedAt`/`returnReason`, guarded by the status it is leaving, so a double click returns
+`409` the second time), puts the stock back through the ledger (`ORDER_RESTORE`), voids every
+commission row not yet paid, and voids the brand payout if it is still `PENDING` or `AVAILABLE`.
+Rows already paid out (`PAID` commission, `WITHDRAWN` payout) are counted, not touched; the
+response says `needsClawback` and the admin page shows a warning so finance can recover the
+money by hand.
+
+The refund runs **after** that transaction, and only for a `PAID` order. Unlike cancel, it does
+not refund first, because a return can only happen once and the guarded status change has to
+win before any money moves. A refund that fails or throws marks `needsManualRefund` and emails
+ops. Every return is written to `PlatformAuditLog` (`order.returned-to-origin`) with the counts.
 
 ## Buyer self-service cancellation
 

@@ -33,6 +33,7 @@ const ANNOUNCEMENTS_READ = [
   "platform:announcements:manage",
 ] as const;
 const BRANDS_READ = ["platform:brands:read", "platform:brands:manage"] as const;
+const BUILDS_READ = ["platform:builds:read", "platform:builds:manage"] as const;
 const CATALOG_READ = ["platform:catalog:read", "platform:catalog:manage"] as const;
 const COMMISSIONS_READ = ["platform:commissions:read", "platform:commissions:manage"] as const;
 const COUPONS_READ = ["platform:coupons:read", "platform:coupons:manage"] as const;
@@ -156,6 +157,10 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("get", "/api/size-options/admin", ...CATALOG_READ),
     route("post", "/api/size-options", "platform:catalog:manage"),
     route("delete", `/api/size-options/${SOME_ID}`, "platform:catalog:manage"),
+    route("get", "/api/outfit-slot-types/admin", ...CATALOG_READ),
+    route("post", "/api/outfit-slot-types", "platform:catalog:manage"),
+    route("post", "/api/outfit-slot-types/reorder", "platform:catalog:manage"),
+    route("patch", `/api/outfit-slot-types/${SOME_ID}`, "platform:catalog:manage"),
     route("get", "/api/products/review", ...CATALOG_READ),
     route("post", `/api/products/${SOME_ID}/approve`, "platform:catalog:manage"),
     route("post", `/api/products/${SOME_ID}/reject`, "platform:catalog:manage"),
@@ -243,6 +248,11 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
       `/api/platform/features/tenants/${SOME_ID}/some.feature`,
       "platform:features:manage",
     ),
+    route("get", "/api/platform/settings", "platform:settings:manage"),
+    route("put", "/api/platform/settings/outfit.maxItemsPerBoard", "platform:settings:manage"),
+    route("delete", "/api/platform/settings/outfit.maxItemsPerBoard", "platform:settings:manage"),
+    route("get", "/api/platform/feature-flags", "platform:flags:manage"),
+    route("put", "/api/platform/feature-flags/outfit_builder", "platform:flags:manage"),
     route("post", "/api/platform/impersonation", "platform:impersonate"),
     route("get", "/api/platform/impersonation/active", "platform:impersonate"),
     route("get", "/api/platform/impersonation/candidates", "platform:impersonate"),
@@ -255,6 +265,17 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("get", "/api/platform/permissions", "platform:team:manage"),
     route("get", "/api/platform/roles", "platform:team:manage"),
     route("get", "/api/platform/team", "platform:team:manage"),
+    route("get", "/api/platform/jobs", "platform:jobs:manage"),
+    route("post", `/api/platform/jobs/outbox/${SOME_ID}/retry`, "platform:jobs:manage"),
+    route("post", "/api/platform/jobs/queues/outbox-notify/retry-failed", "platform:jobs:manage"),
+  ],
+  outfitBuilds: [
+    route("get", "/api/platform/builds", ...BUILDS_READ),
+    route("get", "/api/platform/builds/metrics", ...BUILDS_READ),
+    route("get", `/api/platform/builds/${SOME_ID}`, ...BUILDS_READ),
+    route("get", `/api/platform/builds/${SOME_ID}/history`, ...BUILDS_READ),
+    route("post", `/api/platform/builds/${SOME_ID}/unlock`, "platform:builds:manage"),
+    route("post", `/api/platform/builds/${SOME_ID}/archive`, "platform:builds:manage"),
   ],
 };
 

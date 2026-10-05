@@ -9,6 +9,8 @@ export const listPlatformAuditQuerySchema = z.object({
   organizationId: z.uuid().optional(),
   actorUserId: z.uuid().optional(),
   action: z.string().trim().min(1).max(80).optional(),
+  targetType: z.string().trim().min(1).max(80).optional(),
+  targetId: z.string().trim().min(1).max(80).optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce
     .number()

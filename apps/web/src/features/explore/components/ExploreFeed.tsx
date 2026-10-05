@@ -8,6 +8,7 @@ import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
+import { PublicBuildsFeed } from "@/features/outfit-build/components/PublicBuildsFeed";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
@@ -109,7 +110,8 @@ export const ExploreFeed = () => {
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
   const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU && isForYouHintVisible;
   const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
-  const feedEnabled = isAuthResolved && (!isFollowingTab || isAuthenticated);
+  const isBuildsTab = tab === EXPLORE_TAB.BUILDS;
+  const feedEnabled = !isBuildsTab && isAuthResolved && (!isFollowingTab || isAuthenticated);
 
   const {
     data: exploreFeedPages,
@@ -190,7 +192,9 @@ export const ExploreFeed = () => {
             </button>
           )}
 
-          {followingGated ? (
+          {isBuildsTab ? (
+            <PublicBuildsFeed />
+          ) : followingGated ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <p className="text-sm text-muted-foreground">
                 Sign in to see looks from muses you follow.

@@ -1261,6 +1261,11 @@ const DEFAULT_SIZES_BY_TYPE: Record<string, string[]> = {
   outerwear: ["XS", "S", "M", "L", "XL"],
   pants: ["28", "30", "32", "34", "36"],
   headwear: ["One size"],
+  footwear: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
+  accessories: ["One size"],
+  saree: ["Free size"],
+  "kurta-set": ["XS", "S", "M", "L", "XL", "XXL"],
+  lehenga: ["XS", "S", "M", "L", "XL"],
 };
 
 const seedProductTypes = async (): Promise<Map<string, string>> => {

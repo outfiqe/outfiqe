@@ -11,9 +11,11 @@ import { Badge, cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Activity,
   Award,
   BanknoteArrowUp,
   BarChart3,
+  Blocks,
   Building2,
   ClipboardList,
   CreditCard,
@@ -40,6 +42,8 @@ import {
   QrCode,
   Ruler,
   ScrollText,
+  Settings2,
+  Shapes,
   ShieldAlert,
   ShieldCheck,
   Shirt,
@@ -48,6 +52,7 @@ import {
   Star,
   Tags,
   TicketPercent,
+  ToggleRight,
   TrendingUp,
   Trophy,
   UserCog,
@@ -223,6 +228,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   },
   { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler, group: "catalog" },
   {
+    id: "outfit-slot-types",
+    href: "/outfit-slot-types",
+    label: "Outfit slots",
+    icon: Shapes,
+    group: "catalog",
+  },
+  {
     id: "hero-slides",
     href: "/hero-slides",
     label: "Hero slides",
@@ -385,6 +397,41 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     group: "brand-tenants",
   },
   { id: "team", href: "/team", label: "Team", icon: UserCog, group: "brand-tenants" },
+  {
+    id: "outfit-builds",
+    href: "/outfit-builds",
+    label: "Outfit builds",
+    icon: Blocks,
+    group: "moderation",
+  },
+  {
+    id: "platform-switches",
+    href: "/platform/switches",
+    label: "Feature switches",
+    icon: ToggleRight,
+    group: "platform-settings",
+  },
+  {
+    id: "platform-settings",
+    href: "/platform/settings",
+    label: "Platform settings",
+    icon: Settings2,
+    group: "platform-settings",
+  },
+  {
+    id: "platform-audit",
+    href: "/platform/audit",
+    label: "Audit log",
+    icon: ScrollText,
+    group: "platform-settings",
+  },
+  {
+    id: "platform-jobs",
+    href: "/platform/jobs",
+    label: "Jobs & health",
+    icon: Activity,
+    group: "platform-settings",
+  },
 ];
 
 export const PLATFORM_NAV_GROUP_ICONS: Record<PlatformNavGroupKey, SidebarIcon> = {

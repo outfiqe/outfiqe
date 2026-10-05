@@ -29,6 +29,7 @@ export const FulfilmentStatus = {
   SHIPPED: "SHIPPED",
   DELIVERED: "DELIVERED",
   CANCELLED: "CANCELLED",
+  RETURNED: "RETURNED",
 } as const satisfies Record<string, FulfilmentStatusType>;
 export type FulfilmentStatusValue = (typeof FulfilmentStatus)[keyof typeof FulfilmentStatus];
 
@@ -50,6 +51,7 @@ export const ORDER_FULFILMENT_SUMMARY = [
   "SHIPPED",
   "FULFILLED",
   "CANCELLED",
+  "RETURNED",
 ] as const;
 
 export const paymentMethodSchema = z.enum(PaymentMethod);

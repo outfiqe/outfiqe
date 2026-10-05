@@ -7,7 +7,8 @@ import Link, { useLinkStatus } from "next/link";
 import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
-import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { useExploreTabs } from "../hooks/useExploreTabs";
 
 type ExploreSidebarNavProps = {
   tab: string;
@@ -52,9 +53,10 @@ export const ExploreSidebarNav = ({
   lockedTabs = [],
   lockedTabTooltip,
 }: ExploreSidebarNavProps) => {
+  const exploreTabs = useExploreTabs();
   return (
     <aside className="sticky top-[76px] hidden h-fit w-56 shrink-0 flex-col gap-1 rounded-xl border border-border p-3 lg:flex">
-      {EXPLORE_FIXED_TABS.map(({ value, label, icon: Icon }) => {
+      {exploreTabs.map(({ value, label, icon: Icon }) => {
         const isLocked = lockedTabs.includes(value);
         const navButton = (
           <button
