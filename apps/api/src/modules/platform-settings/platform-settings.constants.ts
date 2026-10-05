@@ -1,0 +1,1 @@
+export const PLATFORM_SETTINGS_CACHE_TTL_MS = 60_000;

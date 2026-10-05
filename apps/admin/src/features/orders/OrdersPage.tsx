@@ -18,6 +18,7 @@ const TABS: OrdersStatusTab[] = [
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
+  "RETURNED",
 ];
 
 const ORDERS_STATUS_FILTER = oneOfFilter<OrdersStatusTab>(TABS, ALL_STATUSES);

@@ -6,6 +6,7 @@ import type { DbClient } from "#types/db.types.js";
 
 import { DEFAULT_WITHDRAW_POLICY } from "./withdraw.constants.js";
 import type {
+  ClaimedLedgerRows,
   CreateWithdrawRequestInput,
   OwnerContext,
   WithdrawPolicyRecord,
@@ -280,17 +281,26 @@ export const withdrawRepository = {
   async createLedgerEntries(
     client: DbClient,
     withdrawRequestId: string,
-    entryKind: LedgerEntryKind,
-    claimedIds: string[],
+    { creatorCommissionIds, brandPayoutIds, outfitOfferIds }: ClaimedLedgerRows,
   ): Promise<void> {
     await client.withdrawRequestLedgerEntry.createMany({
-      data: claimedIds.map((claimedId) => ({
-        withdrawRequestId,
-        entryKind,
-        creatorCommissionId:
-          entryKind === LedgerEntryKind.CREATOR_COMMISSION ? claimedId : undefined,
-        brandPayoutId: entryKind === LedgerEntryKind.BRAND_PAYOUT ? claimedId : undefined,
-      })),
+      data: [
+        ...outfitOfferIds.map((outfitOfferId) => ({
+          withdrawRequestId,
+          entryKind: LedgerEntryKind.OFFER_PAYOUT,
+          outfitOfferId,
+        })),
+        ...creatorCommissionIds.map((creatorCommissionId) => ({
+          withdrawRequestId,
+          entryKind: LedgerEntryKind.CREATOR_COMMISSION,
+          creatorCommissionId,
+        })),
+        ...brandPayoutIds.map((brandPayoutId) => ({
+          withdrawRequestId,
+          entryKind: LedgerEntryKind.BRAND_PAYOUT,
+          brandPayoutId,
+        })),
+      ],
     });
   },
 };

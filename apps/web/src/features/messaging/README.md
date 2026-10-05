@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Real-time 1:1 messaging: a floating chat panel reachable from anywhere in the app, a full
-`/messages` page to "pop out" into, and the "Message" entry points on Creator/Business profiles
-that launch a conversation. Everything here is gated by Phase 1's `chatService
+Real-time 1:1 and group messaging: a floating chat panel reachable from anywhere in the app, a
+full `/messages` page to "pop out" into, the "Message" entry points on Creator/Business profiles
+that launch a conversation, and group chats with a "New group" form and a group info panel. Everything here is gated by Phase 1's `chatService
 .isChatAvailableBetween` server-side — this feature only renders what the API already allows.
 
 ## Structure
@@ -47,6 +47,19 @@ that launch a conversation. Everything here is gated by Phase 1's `chatService
 - `MessageComposer.tsx` — text + up to 6 photo attachments (uploaded through the existing
   `uploadsApi` before send, then referenced by URL) + `EmojiPicker.tsx` (a small curated grid built
   on the design system's `Popover` — not a new dependency).
+- `NewGroupModal.tsx` — the "New group" form (name plus people), opened from `ConversationList`.
+  It keeps one idempotency key per attempt and only makes a new one after success, so a double
+  click or a retry after a dropped connection can't create two groups.
+- `GroupInfoPanel.tsx` — the group info dialog, opened from the thread header. Everyone sees the
+  members; admins also get rename, "Make admin"/"Remove as admin", "Remove", "Add people", and a
+  "Step down as admin" for themselves. Anyone can leave, after a confirm step.
+- `ContactPicker.tsx` — search-and-tick people picker shared by both of the above (reuses
+  `useChatContactSearch`, so it only ever offers people the viewer could message).
+- `GroupAvatar.tsx` — two overlapping member faces for a group's avatar.
+- `SystemMessageLine.tsx` and `groupEventText.ts` — the centred event lines ("You added Ram"),
+  written on the client from the event's data so the viewer's own actions read "You".
+- `messaging.constants.ts` — the group name length, the per-request people limit and member role
+  values.
 - `messagingTime.ts` — `date-fns`-based formatting (`formatMessageClock`,
   `formatMessageDateSeparator`, `formatLastSeen`), reusing the app's existing
   `shared/lib/formatRelativeTime.ts` for the "Active 3h ago" text rather than re-deriving it.
@@ -62,6 +75,14 @@ experience as a dedicated two-pane page. Typing shows an emoji picker and a phot
 sent messages show a clock time and, for your own messages, a tick (sent → delivered → read,
 colored once read) under each bubble. The other participant's presence ("Active now" / "Active
 3h ago") shows in the thread header and updates live without a refresh.
+
+For groups: "New group" at the top of the list opens a form to name the group and tick people;
+creating it opens the new group straight away. Group rows show two member faces, the group name
+and "Sita: …" previews. Inside a group, other people's messages carry the sender's name at the
+start of each run, changes show as centred lines, and a tick turns read only once everyone has
+read the message. The info button in the header opens the group info panel. Someone removed from
+a group, or who leaves it, sees "This conversation isn't available any more" in place of the
+thread, and it disappears from their list.
 
 **Technical:** `ChatPanelProvider` acquires the shared `shared/lib/socketClient` connection once
 (reference-counted, same singleton `SiteNotificationBell`/`SiteChatAvailabilitySettings` already
@@ -155,5 +176,13 @@ the persistent bottom nav's hub button show through underneath it was confusing,
 bubbles, the typing/date-separator chips, and the composer are deliberately kept as local,
 chat-specific markup rather than forced into generic design-system primitives, per the explicit call
 on this build to keep bespoke chat UI local.
+
+**Group changes reach every open screen without a refresh.** `useConversationSocket` (in
+`@outfiqe/hooks`) treats a live event line as a sign that the group changed, and refetches that
+conversation's header and member list. A `conversation:removed` socket event (sent only to the
+person removed) clears that thread and its members from the cache and refetches the conversation,
+which now returns 403, so `MessageThread` shows its "isn't available" state. The group mutations
+(`useGroupActions`, `useCreateGroup`) update the member list from their own response and refresh
+the header, thread and list the same way.
 
 **The thread header never shows a placeholder word for a name.** `MessageThread` used to print "Conversation" and a "?" avatar until the conversation request came back. `useConversation` (in `@outfiqe/hooks`) now uses the matching item from any cached conversation list as placeholder data, so opening a thread from the list shows the real name at once, and `useStartConversation` seeds the conversation cache with the conversation it just created. When neither is available yet the header shows a name-and-avatar skeleton. "Conversation" is only used once the request has finished and the conversation truly has no other participant.

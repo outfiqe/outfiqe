@@ -17,6 +17,14 @@ vi.mock("@/shared/hooks/useTenantHost", () => ({
   useTenantHost: vi.fn(),
 }));
 
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({
+  useFeatureFlag: () => false,
+}));
+
+vi.mock("@/features/creator-dashboard/hooks/useCommissionEligibility", () => ({
+  useCommissionEligibility: () => ({ canEarn: false }),
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/profile",
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

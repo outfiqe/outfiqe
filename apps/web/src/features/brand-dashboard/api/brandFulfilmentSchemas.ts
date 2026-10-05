@@ -8,6 +8,7 @@ export const ORDER_FULFILMENT_SUMMARY = [
   "SHIPPED",
   "FULFILLED",
   "CANCELLED",
+  "RETURNED",
 ] as const;
 
 export const orderFulfilmentSummarySchema = z.enum(ORDER_FULFILMENT_SUMMARY);

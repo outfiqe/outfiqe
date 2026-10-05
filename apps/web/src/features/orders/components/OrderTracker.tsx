@@ -24,6 +24,13 @@ export const OrderTracker = ({ fulfilmentStatus }: OrderTrackerProps) => {
   if (fulfilmentStatus === FulfilmentStatus.CANCELLED) {
     return <p className="text-sm font-medium text-destructive">This order was cancelled.</p>;
   }
+  if (fulfilmentStatus === FulfilmentStatus.RETURNED) {
+    return (
+      <p className="text-sm font-medium text-muted-foreground">
+        This order was returned to the seller.
+      </p>
+    );
+  }
 
   const currentStep = FLOW.indexOf(fulfilmentStatus);
 

@@ -49,6 +49,7 @@ describe("EarningsLedgerRow", () => {
     [CommissionSource.TAG_CLICK, "via tagged drop"],
     [CommissionSource.INTERNAL_LINK, "via your link"],
     [CommissionSource.EXTERNAL_LINK, "via shared link"],
+    [CommissionSource.OUTFIT_BUILD, "from a build you helped make"],
   ])("labels the %s source as %s", (source, label) => {
     render(<EarningsLedgerRow commission={buildCommission({ source })} />);
 

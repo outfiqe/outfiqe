@@ -86,6 +86,11 @@ const computeChatAvailability = async (
 };
 
 export const chatService = {
+  async hasBlockBetween(userAId: string, userBId: string): Promise<boolean> {
+    const block = await chatRepository.findBlockBetween(userAId, userBId);
+    return block !== null;
+  },
+
   async getSettings(userId: string, role: UserRole): Promise<ChatSettingsView> {
     if (role === UserRole.ADMIN) return { isChatEnabled: true };
 
@@ -153,6 +158,13 @@ export const chatService = {
   },
 
   resolveChatAvailability: computeChatAvailability,
+
+  async resolveOwnChatAvailability(userId: string): Promise<ChatAvailability> {
+    const settings = await chatRepository.getSettings(userId);
+    return (settings?.isChatEnabled ?? true)
+      ? { isAvailable: true }
+      : { isAvailable: false, reason: ChatUnavailableReason.YOUR_CHAT_DISABLED };
+  },
 
   async isChatAvailableBetween(userAId: string, userBId: string): Promise<boolean> {
     return (await computeChatAvailability(userAId, userBId)).isAvailable;

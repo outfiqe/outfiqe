@@ -10,6 +10,7 @@ export const PLATFORM_NAV_KEYS = [
   "categories",
   "product-types",
   "size-options",
+  "outfit-slot-types",
   "hero-slides",
   "orders",
   "support",
@@ -32,6 +33,11 @@ export const PLATFORM_NAV_KEYS = [
   "organizations",
   "team",
   "announcements",
+  "outfit-builds",
+  "platform-switches",
+  "platform-settings",
+  "platform-audit",
+  "platform-jobs",
 ] as const;
 
 export type PlatformNavKey = (typeof PLATFORM_NAV_KEYS)[number];
@@ -50,6 +56,9 @@ export const SERVER_ENFORCED_PLATFORM_NAV_KEYS = [
   "team",
   "organizations",
   "announcements",
+  "platform-switches",
+  "platform-settings",
+  "platform-jobs",
 ] as const satisfies readonly PlatformNavKey[];
 
 export type ServerEnforcedPlatformNavKey = (typeof SERVER_ENFORCED_PLATFORM_NAV_KEYS)[number];

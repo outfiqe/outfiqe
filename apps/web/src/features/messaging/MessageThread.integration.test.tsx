@@ -5,12 +5,18 @@ import {
   createQueryClientWrapper,
   createTestQueryClient,
 } from "@test/integration/queryClientWrapper";
+import { createTranslatedQueryWrapper } from "@test/integration/translationsWrapper";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { useAuth } from "@/features/auth";
+import { buildBoard } from "@/features/outfit-build/testing/outfitFixtures";
 
 import { MessageThread } from "./MessageThread";
+
+vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 
 const CONVERSATION_ID = "conversation-1";
 
@@ -25,6 +31,7 @@ const buildConversation = (overrides: Partial<ConversationPreview> = {}): Conver
     isOnline: true,
     lastSeenAt: null,
   },
+  group: null,
   lastMessagePreview: "Hey there!",
   lastMessageAt: "2026-08-24T10:00:00.000Z",
   unreadCount: 0,
@@ -37,6 +44,9 @@ const buildMessage = (overrides: Partial<Message> = {}): Message => ({
   conversationId: CONVERSATION_ID,
   senderId: "user-2",
   sender: { id: "user-2", name: "Jane Doe", handle: "jane", avatarUrl: null },
+  kind: "USER",
+  systemEvent: null,
+  outfitId: null,
   body: "Hey there!",
   attachments: [],
   createdAt: "2026-08-24T10:00:00.000Z",
@@ -221,5 +231,127 @@ describe("MessageThread", () => {
     renderThread();
 
     expect(await screen.findByText("Conversation")).toBeInTheDocument();
+  });
+});
+
+describe("MessageThread in a group", () => {
+  const SITA = { id: "user-sita", name: "Sita Rai", handle: "sita", avatarUrl: null };
+  const RAM = { id: "user-ram", name: "Ram Thapa", handle: "ram", avatarUrl: null };
+
+  const buildGroupConversation = () =>
+    buildConversation({
+      type: "GROUP",
+      otherParticipant: null,
+      group: { name: "Dashain outfits", memberCount: 3, members: [SITA, RAM], myRole: "MEMBER" },
+    });
+
+  beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: { user: { id: "me" } },
+    } as ReturnType<typeof useAuth>);
+  });
+
+  it("shows the group's name and size in the header, with a way into group info", async () => {
+    mockConversation(buildGroupConversation());
+    mockMessages([]);
+    mockMarkRead();
+    renderThread();
+
+    expect(await screen.findByText("Dashain outfits")).toBeInTheDocument();
+    expect(screen.getByText("3 people")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Group info" })).toBeInTheDocument();
+    expect(await screen.findByText("This is the start of the group.")).toBeInTheDocument();
+  });
+
+  it("labels who is talking, once per run of messages, and shows group events as plain lines", async () => {
+    mockConversation(buildGroupConversation());
+    mockMessages([
+      buildMessage({
+        id: "message-3",
+        senderId: SITA.id,
+        sender: SITA,
+        body: "Or maroon?",
+        createdAt: "2026-08-24T10:03:00.000Z",
+      }),
+      buildMessage({
+        id: "message-2",
+        senderId: SITA.id,
+        sender: SITA,
+        body: "Gold kurta?",
+        createdAt: "2026-08-24T10:02:00.000Z",
+      }),
+      buildMessage({
+        id: "message-1",
+        senderId: SITA.id,
+        sender: SITA,
+        kind: "SYSTEM",
+        body: null,
+        systemEvent: { type: "MEMBERS_ADDED", members: [{ id: RAM.id, name: RAM.name }] },
+        createdAt: "2026-08-24T10:01:00.000Z",
+      }),
+    ]);
+    mockMarkRead();
+    renderThread();
+
+    expect(await screen.findByText("Sita Rai added Ram Thapa")).toBeInTheDocument();
+    expect(screen.getByText("Gold kurta?")).toBeInTheDocument();
+    expect(screen.getAllByText("Sita Rai")).toHaveLength(1);
+  });
+
+  it("shows a build card for an outfit build message instead of a plain event line", async () => {
+    mockConversation(buildGroupConversation());
+    mockMessages([
+      buildMessage({
+        id: "message-1",
+        senderId: SITA.id,
+        sender: SITA,
+        kind: "OUTFIT_CARD",
+        body: null,
+        outfitId: "outfit-1",
+      }),
+    ]);
+    mockMarkRead();
+    mswServer.use(
+      http.get("/api/outfits/outfit-1", () =>
+        HttpResponse.json({
+          success: true,
+          message: "Outfit.",
+          data: { ...buildBoard(), kind: "board" },
+        }),
+      ),
+    );
+    const { Wrapper } = createTranslatedQueryWrapper();
+    render(<MessageThread conversationId={CONVERSATION_ID} onBack={() => {}} />, {
+      wrapper: Wrapper,
+    });
+
+    expect(await screen.findByText("Sita Rai started an outfit build")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /Dashain look/ })).toHaveAttribute(
+      "href",
+      "/builds/outfit-1",
+    );
+  });
+
+  it("explains when the viewer is no longer in the conversation", async () => {
+    mswServer.use(
+      http.get(`/api/conversations/${CONVERSATION_ID}`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "You don't have access to this conversation.",
+            code: "NOT_A_PARTICIPANT",
+          },
+          { status: 403 },
+        ),
+      ),
+    );
+    mockMessages([]);
+    mockMarkRead();
+    renderThread();
+
+    expect(
+      await screen.findByText("This conversation isn't available any more"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 });

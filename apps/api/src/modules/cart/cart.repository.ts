@@ -28,6 +28,13 @@ export const cartRepository = {
     return prisma.cartItem.findUnique({ where: { cartId_sizeId: { cartId, sizeId } } });
   },
 
+  async findItemsBySizeIds(cartId: string, sizeIds: string[]) {
+    return prisma.cartItem.findMany({
+      where: { cartId, sizeId: { in: sizeIds } },
+      select: { sizeId: true, qty: true },
+    });
+  },
+
   async upsertItem(cartId: string, productId: string, sizeId: string, qty: number) {
     return prisma.cartItem.upsert({
       where: { cartId_sizeId: { cartId, sizeId } },

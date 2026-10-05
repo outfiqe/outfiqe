@@ -17,6 +17,7 @@ const DASHBOARD_PATHS = new Set([
   "/crm/reports",
   "/financial-rollup",
   "/gamification",
+  "/platform/jobs",
 ]);
 
 const DASHBOARD_PATH_PATTERNS = [/^\/platform\/metrics\/[^/]+$/];
@@ -39,6 +40,7 @@ const DETAIL_FORM_PATH_PATTERNS = [
   /^\/crm\/partners\/[^/]+$/,
   /^\/crm\/billing\/return\/[^/]+$/,
   /^\/gamification\/badges\/[^/]+\/edit$/,
+  /^\/outfit-builds\/[^/]+$/,
 ];
 
 const LIST_PATHS = new Set([
@@ -65,9 +67,14 @@ const LIST_PATHS = new Set([
   "/hero-slides",
   "/orders",
   "/organizations",
+  "/outfit-builds",
+  "/outfit-slot-types",
+  "/platform/audit",
   "/platform/brand-applications",
   "/platform/features",
   "/platform/impersonation",
+  "/platform/settings",
+  "/platform/switches",
   "/product-reviews",
   "/product-types",
   "/products",

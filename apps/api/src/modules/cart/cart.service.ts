@@ -14,6 +14,7 @@ import { cartRepository } from "./cart.repository.js";
 import type { AppliedCouponView, CartItemView, CartView } from "./cart.types.js";
 
 const NOT_FOUND_STATUS = 404;
+const NO_STOCK = 0;
 
 const buildCartLines = async (
   cartId: string,
@@ -153,6 +154,32 @@ export const cartService = {
       if (existing) await cartRepository.removeItem(cartId, existing.id);
     } else {
       await cartRepository.upsertItem(cartId, productId, sizeId, clampedQty);
+    }
+
+    return buildCartView(cartId, city, appliedCouponCode, userId);
+  },
+
+  async addItems(
+    userId: string,
+    lines: { productId: string; sizeId: string; qty: number }[],
+  ): Promise<CartView> {
+    const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
+    const sizeIds = lines.map(({ sizeId }) => sizeId);
+    const [existingItems, stockBySizeId] = await Promise.all([
+      cartRepository.findItemsBySizeIds(cartId, sizeIds),
+      productRepository.getStockBySizeIds(sizeIds),
+    ]);
+    const existingQtyBySizeId = new Map(existingItems.map(({ sizeId, qty }) => [sizeId, qty]));
+
+    for (const { productId, sizeId, qty } of lines) {
+      const availableStock = stockBySizeId.get(sizeId) ?? NO_STOCK;
+      const clampedQty = Math.min(
+        (existingQtyBySizeId.get(sizeId) ?? NO_STOCK) + qty,
+        availableStock,
+      );
+      if (clampedQty > NO_STOCK) {
+        await cartRepository.upsertItem(cartId, productId, sizeId, clampedQty);
+      }
     }
 
     return buildCartView(cartId, city, appliedCouponCode, userId);

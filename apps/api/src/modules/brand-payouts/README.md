@@ -25,7 +25,12 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
 - `brandPayout.repository.ts` — Prisma queries: rule + tier CRUD, gateway fee rate CRUD, exemption
   CRUD and the batched `findActiveExemptBrandIds` lookup, the checkout-time `createPending`, the
   lifecycle-sweep queries (`findApprovableIds`/`findVoidableFor*Ids`, `approve`, `void`), the
-  cancel-transaction `voidForOrder`, and the balance aggregation (`sumByStatusForBrand`).
+  cancel-transaction `voidForOrder`, the return-transaction `voidUnwithdrawnForOrder` /
+  `countWithdrawnForOrder`, the balance aggregation (`sumByStatusForBrand`), and the withdraw
+  claim helpers (`listAvailableForBrand`, `markAvailableAsWithdrawn`).
+  The wallet summary (`getSummary`) adds the brand's Build commission (rows with
+  `recipientBrandId`, see `../commissions/README.md`) into pending, available and withdrawn, and
+  also reports it on its own as `buildCommissionEarnings`.
 - `brandPayout.lifecycle.ts` — `runBrandPayoutLifecycleSweep`, this module's own
   `PENDING → AVAILABLE`/`VOIDED` sweep, wired into `apps/api/src/jobs/scheduled-jobs.ts` as a
   sibling `brand-payout-lifecycle` job entry running on the same `COMMISSION_SWEEP_INTERVAL_MS`

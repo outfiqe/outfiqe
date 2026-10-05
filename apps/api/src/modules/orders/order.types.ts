@@ -24,10 +24,22 @@ export type CreateOrderItemInput = {
   attributedCreatorId?: string;
   attributedCreatorLookId?: string;
   attributedLinkId?: string;
+  attributedOutfitId?: string;
+  attributedOutfitVersion?: number;
   attributionSource?: CommissionSource;
 };
 
+export type OrderReturnOutcome = {
+  voidedCommissionCount: number;
+  voidedPayoutCount: number;
+  paidCommissionCount: number;
+  withdrawnPayoutCount: number;
+  needsClawback: boolean;
+  refunded: boolean | null;
+};
+
 export type CreateOrderInput = {
+  id: string;
   userId: string;
   fullName: string;
   phone: string;

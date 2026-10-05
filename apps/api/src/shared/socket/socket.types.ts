@@ -132,6 +132,30 @@ export type AccountSuspendedPayload = {
 };
 
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
+export type OutfitSubscriptionPayload = { outfitId: string };
+
+export type OutfitSyncRequestPayload = { outfitId: string; sinceVersion: number };
+
+export type OutfitUpdatedPayload = {
+  outfitId: string;
+  version: number;
+  eventType: string;
+  actorId: string | null;
+};
+
+export type OutfitSyncResultPayload = {
+  outfitId: string;
+  currentVersion: number;
+  hasMore: boolean;
+  events: {
+    version: number;
+    type: string;
+    actorId: string | null;
+    payload: unknown;
+    createdAt: string;
+  }[];
+};
+
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
   "feed:sync:result": (payload: FeedSyncResultPayload) => void;
@@ -149,8 +173,13 @@ export type ServerToClientEvents = {
   "chat:block-list:updated": (payload: ChatBlockListUpdatedPayload) => void;
   "message:created": (payload: MessageBroadcastPayload) => void;
   "conversation:updated": (payload: MessageBroadcastPayload) => void;
+  "conversation:removed": (payload: ConversationSubscriptionPayload) => void;
   "presence:changed": (payload: PresenceChangedPayload) => void;
   "account:suspended": (payload: AccountSuspendedPayload) => void;
+  "outfit:updated": (payload: OutfitUpdatedPayload) => void;
+  "outfit:sync-result": (payload: OutfitSyncResultPayload) => void;
+  "outfit:removed": (payload: OutfitSubscriptionPayload) => void;
+  "outfit:availability-changed": (payload: OutfitSubscriptionPayload) => void;
 };
 
 export type ClientToServerEvents = {
@@ -163,6 +192,9 @@ export type ClientToServerEvents = {
   "comments:unsubscribe": (payload: CommentSubscriptionPayload) => void;
   "conversation:subscribe": (payload: ConversationSubscriptionPayload) => void;
   "conversation:unsubscribe": (payload: ConversationSubscriptionPayload) => void;
+  "outfit:subscribe": (payload: OutfitSubscriptionPayload) => void;
+  "outfit:unsubscribe": (payload: OutfitSubscriptionPayload) => void;
+  "outfit:sync": (payload: OutfitSyncRequestPayload) => void;
 };
 
 export type AppSocketServer = Server<

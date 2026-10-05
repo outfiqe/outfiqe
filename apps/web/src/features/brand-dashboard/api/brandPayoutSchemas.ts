@@ -5,5 +5,6 @@ export const brandPayoutSummarySchema = z.object({
   pending: z.number(),
   available: z.number(),
   withdrawn: z.number(),
+  buildCommissionEarnings: z.number().default(0),
 });
 export type BrandPayoutSummary = z.infer<typeof brandPayoutSummarySchema>;

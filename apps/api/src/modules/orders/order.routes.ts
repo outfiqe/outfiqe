@@ -21,6 +21,7 @@ import {
   listOrdersQuerySchema,
   orderIdParamSchema,
   requestGroupCancellationSchema,
+  returnOrderSchema,
 } from "./order.schemas.js";
 
 const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
@@ -30,6 +31,17 @@ const checkoutRateLimit = rateLimit({
   namespace: "checkout",
   windowMs: CHECKOUT_WINDOW_MS,
   max: CHECKOUT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many checkout attempts. Please wait a moment and try again.",
+});
+
+const CHECKOUT_BURST_WINDOW_MS = 60 * 1000;
+const CHECKOUT_BURST_MAX_REQUESTS = 5;
+
+const checkoutBurstRateLimit = rateLimit({
+  namespace: "checkout-burst",
+  windowMs: CHECKOUT_BURST_WINDOW_MS,
+  max: CHECKOUT_BURST_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many checkout attempts. Please wait a moment and try again.",
 });
@@ -93,6 +105,13 @@ orderRoutes.post(
   orderController.cancel,
 );
 
+orderRoutes.post(
+  "/admin/:orderId/return",
+  ...platformGuards.ordersManage,
+  validate({ params: orderIdParamSchema, body: returnOrderSchema }),
+  orderController.markReturned,
+);
+
 orderRoutes.get(
   "/brand/fulfilment-groups",
   ...requireBrandOwner,
@@ -126,6 +145,7 @@ orderRoutes.post(
 orderRoutes.post(
   "/checkout",
   ...requireShopper,
+  checkoutBurstRateLimit,
   checkoutRateLimit,
   validate({ body: checkoutBodySchema }),
   orderController.checkout,

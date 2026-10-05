@@ -8,10 +8,13 @@ import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-na
 import { commissionController } from "./commission.controller.js";
 import {
   commissionIdParamSchema,
+  commissionScopeQuerySchema,
   commissionTierIdParamSchema,
   createCommissionTierSchema,
   listAdminCommissionsQuerySchema,
+  listCommissionTierHistoryQuerySchema,
   listEarningsQuerySchema,
+  testCommissionTierPriceQuerySchema,
   updateCommissionTierSchema,
   voidCommissionSchema,
 } from "./commission.schemas.js";
@@ -27,6 +30,8 @@ const requireCommissionMutationAdmin = [
 
 export const commissionRoutes = Router();
 
+commissionRoutes.get("/me/eligibility", requireAuth, commissionController.getMyEligibility);
+
 commissionRoutes.get("/me/summary", requireAuth, commissionController.getMySummary);
 
 commissionRoutes.get(
@@ -36,26 +41,58 @@ commissionRoutes.get(
   commissionController.listMine,
 );
 
-commissionRoutes.get("/tiers", ...requireCommissionRead, commissionController.listTiers);
+commissionRoutes.get("/brand/summary", requireAuth, commissionController.getBrandBuildSummary);
+
+commissionRoutes.get(
+  "/brand",
+  requireAuth,
+  validate({ query: listEarningsQuerySchema }),
+  commissionController.listBrandBuildEarnings,
+);
+
+commissionRoutes.get(
+  "/tiers",
+  ...requireCommissionRead,
+  validate({ query: commissionScopeQuerySchema }),
+  commissionController.listTiers,
+);
+
+commissionRoutes.get(
+  "/tiers/price-test",
+  ...requireCommissionRead,
+  validate({ query: testCommissionTierPriceQuerySchema }),
+  commissionController.testTierPrice,
+);
+
+commissionRoutes.get(
+  "/tiers/history",
+  ...requireCommissionRead,
+  validate({ query: listCommissionTierHistoryQuerySchema }),
+  commissionController.listTierHistory,
+);
 
 commissionRoutes.post(
   "/tiers",
   ...requireCommissionMutationAdmin,
-  validate({ body: createCommissionTierSchema }),
+  validate({ query: commissionScopeQuerySchema, body: createCommissionTierSchema }),
   commissionController.createTier,
 );
 
 commissionRoutes.patch(
   "/tiers/:id",
   ...requireCommissionMutationAdmin,
-  validate({ params: commissionTierIdParamSchema, body: updateCommissionTierSchema }),
+  validate({
+    params: commissionTierIdParamSchema,
+    query: commissionScopeQuerySchema,
+    body: updateCommissionTierSchema,
+  }),
   commissionController.updateTier,
 );
 
 commissionRoutes.delete(
   "/tiers/:id",
   ...requireCommissionMutationAdmin,
-  validate({ params: commissionTierIdParamSchema }),
+  validate({ params: commissionTierIdParamSchema, query: commissionScopeQuerySchema }),
   commissionController.deleteTier,
 );
 

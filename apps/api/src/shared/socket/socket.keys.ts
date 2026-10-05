@@ -15,6 +15,8 @@ export const commentsRoom = (lookId: string): string => `comments:${lookId}`;
 export const conversationRoom = (conversationId: string): string =>
   `conversation:${conversationId}`;
 
+export const outfitRoom = (outfitId: string): string => `outfit:${outfitId}`;
+
 export const SOCKET_EVENTS = {
   LOOK_CREATED: "look:created",
   FEED_SYNC_REQUEST: "feed:sync:request",
@@ -41,8 +43,22 @@ export const SOCKET_EVENTS = {
   CONVERSATION_UNSUBSCRIBE: "conversation:unsubscribe",
   MESSAGE_CREATED: "message:created",
   CONVERSATION_UPDATED: "conversation:updated",
+  CONVERSATION_REMOVED: "conversation:removed",
   PRESENCE_CHANGED: "presence:changed",
   ACCOUNT_SUSPENDED: "account:suspended",
+  OUTFIT_SUBSCRIBE: "outfit:subscribe",
+  OUTFIT_UNSUBSCRIBE: "outfit:unsubscribe",
+  OUTFIT_SYNC: "outfit:sync",
+  OUTFIT_SYNC_RESULT: "outfit:sync-result",
+  OUTFIT_UPDATED: "outfit:updated",
+  OUTFIT_REMOVED: "outfit:removed",
+  OUTFIT_AVAILABILITY_CHANGED: "outfit:availability-changed",
+} as const;
+
+export const OUTFIT_SOCKET_RATE_LIMIT = {
+  NAMESPACE: "socket-outfit",
+  WINDOW_MS: 60_000,
+  MAX_MESSAGES: 60,
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

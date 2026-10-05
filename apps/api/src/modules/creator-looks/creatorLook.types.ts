@@ -39,8 +39,11 @@ export type ResolvedTagReview = {
 
 export type TaggedProductCreateInput = TaggedProductInput & ResolvedTagReview;
 
+export type LookOutfitSource = { outfitId: string; outfitVersion: number };
+
 export type CreateCreatorLookInput = {
   creatorId: string;
+  outfitSource?: LookOutfitSource;
   imageUrls: [string, ...string[]];
   imageAssetIds?: (string | null)[];
   caption?: string;

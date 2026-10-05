@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const linkStatus = { pending: false };
 
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: () => false }));
+
 vi.mock("next/link", () => ({
   __esModule: true,
   default: ({ href, children }: { href: string; children: ReactNode }) => (

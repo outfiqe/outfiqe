@@ -95,6 +95,7 @@ export type BrandPayoutSummary = {
   pending: number;
   available: number;
   withdrawn: number;
+  buildCommissionEarnings: number;
 };
 
 export type BrandPayoutView = {

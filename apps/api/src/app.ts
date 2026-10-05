@@ -7,8 +7,13 @@ import helmet from "helmet";
 import { env } from "#config/env.config.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { isAllowedOrigin } from "#lib/cors.utils.js";
+import {
+  createQueueDashboardRouter,
+  QUEUE_DASHBOARD_BASE_PATH,
+} from "#lib/queue-dashboard.utils.js";
 import { checkReadiness } from "#lib/readiness.utils.js";
 import logger from "#lib/winston.utils.js";
+import { listOutboxQueues } from "#outbox/outbox.queues.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
@@ -51,31 +56,42 @@ import { crmRelationshipsRoutes } from "./modules/crm-relationships/crm-relation
 import { crmReportingRoutes } from "./modules/crm-reporting/crm-reporting.routes.js";
 import { crmTicketsRoutes } from "./modules/crm-tickets/crm-tickets.routes.js";
 import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes.js";
+import {
+  featureFlagsRoutes,
+  viewerFeatureFlagsRoutes,
+} from "./modules/feature-flags/feature-flags.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
-import { createImageProcessingBullBoardRouter } from "./modules/image-processing/image-processing.bull-board.js";
+import { imageProcessingQueues } from "./modules/image-processing/image-processing.queue.js";
 import { imageProcessingRoutes } from "./modules/image-processing/image-processing.routes.js";
 import { resolvedImageStorageRootDir } from "./modules/image-processing/image-processing.storage.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
+import { outfitAdminRoutes } from "./modules/outfit-admin/outfit-admin.routes.js";
+import { outfitOfferRoutes } from "./modules/outfit-offers/outfit-offer.routes.js";
+import { outfitSlotTypeRoutes } from "./modules/outfit-slot-types/outfit-slot-type.routes.js";
+import { outfitRoutes } from "./modules/outfits/outfit.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.routes.js";
 import { platformFeaturesRoutes } from "./modules/platform-features/platform-features.routes.js";
 import { impersonationRequestAudit } from "./modules/platform-impersonation/platform-impersonation.audit.js";
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
+import { platformJobsRoutes } from "./modules/platform-jobs/platform-jobs.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { requireCoFounder } from "./modules/platform-nav-access/platform-nav-access.middleware.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
 import { platformRolesRoutes } from "./modules/platform-roles/platform-roles.routes.js";
+import { platformSettingsRoutes } from "./modules/platform-settings/platform-settings.routes.js";
 import { platformSuspensionsRoutes } from "./modules/platform-suspensions/platform-suspensions.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { pushRoutes } from "./modules/push/push.routes.js";
 import { saleRoutes } from "./modules/sale/sale.routes.js";
+import { savedSizeRoutes } from "./modules/saved-sizes/savedSize.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
@@ -143,7 +159,11 @@ export const createApp = () => {
       setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
     }),
   );
-  app.use("/internal/queues", ...requireCoFounder, createImageProcessingBullBoardRouter());
+  app.use(
+    QUEUE_DASHBOARD_BASE_PATH,
+    ...requireCoFounder,
+    createQueueDashboardRouter([...Object.values(imageProcessingQueues), ...listOutboxQueues()]),
+  );
 
   app.get("/health", (_req, res) => {
     sendSuccess(res, { status: "ok" }, "Service is healthy");
@@ -175,6 +195,10 @@ export const createApp = () => {
   app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
+  app.use("/api/feature-flags", viewerFeatureFlagsRoutes);
+  app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
+  app.use("/api/outfits", outfitRoutes);
+  app.use("/api/outfit-offers", outfitOfferRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/addresses", addressRoutes);
   app.use("/api/orders", orderRoutes);
@@ -195,6 +219,10 @@ export const createApp = () => {
   app.use("/api/platform", platformAuditRoutes);
   app.use("/api/platform", platformMetricsRoutes);
   app.use("/api/platform", platformFeaturesRoutes);
+  app.use("/api/platform", platformSettingsRoutes);
+  app.use("/api/platform", featureFlagsRoutes);
+  app.use("/api/platform", outfitAdminRoutes);
+  app.use("/api/platform", platformJobsRoutes);
   app.use("/api/platform", platformImpersonationRoutes);
   app.use("/api/platform", platformNavAccessRoutes);
   app.use("/api/platform", platformRolesRoutes);
@@ -206,6 +234,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/taste-preferences", tastePreferenceRoutes);
+  app.use("/api/saved-sizes", savedSizeRoutes);
   app.use("/api/tours", tourRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);

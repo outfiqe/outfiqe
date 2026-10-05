@@ -101,6 +101,13 @@ model User {
   oauthIdentities                          OAuthIdentity[]
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
+  savedSizes                               SavedSize[]
+  outfitLikes                              OutfitLike[]                @relation("OutfitLikes")
+  outfitSaves                              OutfitSave[]                @relation("OutfitSaves")
+  outfitComments                           OutfitComment[]             @relation("OutfitComments")
+  outfitBuildVisits                        OutfitBuildVisit[]
+  outfitOffersSent                         OutfitOffer[]               @relation("OutfitOffersSent")
+  outfitOffersReceived                     OutfitOffer[]               @relation("OutfitOffersReceived")
   tourProgress                             UserTourProgress[]
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
@@ -135,6 +142,18 @@ model User {
   pushSubscriptions                        PushSubscription[]
   contentReportsMade                       ContentReport[]             @relation("ContentReportReporter")
   contentReportsResolved                   ContentReport[]             @relation("ContentReportResolver")
+  appSettingEdits                          AppSetting[]                @relation("AppSettingUpdatedBy")
+  conversationsCreated                     Conversation[]              @relation("ConversationCreatedBy")
+  featureFlagEdits                         FeatureFlag[]               @relation("FeatureFlagUpdatedBy")
+  outfitsCreated                           Outfit[]                    @relation("OutfitsCreated")
+  outfitMemberships                        OutfitMember[]              @relation("OutfitMemberships")
+  outfitMemberInvites                      OutfitMember[]              @relation("OutfitMemberInvites")
+  outfitSharesReceived                     OutfitShare[]               @relation("OutfitSharesReceived")
+  outfitSharesSent                         OutfitShare[]               @relation("OutfitSharesSent")
+  outfitItemsAdded                         OutfitItem[]                @relation("OutfitItemsAdded")
+  outfitPhotosUploaded                     OutfitPhoto[]               @relation("OutfitPhotosUploaded")
+  outfitPhotosRemoved                      OutfitPhoto[]               @relation("OutfitPhotosRemoved")
+  outfitEventsActed                        OutfitEvent[]               @relation("OutfitEventsActed")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -301,6 +320,8 @@ model Brand {
   linkedOrganization   Organization?
   supportTickets       SupportTicket[]
   fulfilmentGroups     OrderFulfilmentGroup[]
+  buildCommissions     CreatorCommission[]        @relation("BrandBuildCommissions")
+  outfitOffers         OutfitOffer[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -345,6 +366,8 @@ model Product {
   trendMetrics  ProductTrendMetric[]
   reviews       ProductReview[]
   discounts     ProductDiscount[]
+  outfitItems   OutfitItem[]
+  buildVisits   OutfitBuildVisit[]
 
   searchVector Unsupported("tsvector")? @map("search_vector")
 
@@ -622,11 +645,26 @@ model ProductType {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  products    Product[]
-  sizeOptions SizeOption[]
+  products        Product[]
+  sizeOptions     SizeOption[]
+  outfitSlotTypes OutfitSlotTypeProductType[]
+  savedSizes      SavedSize[]
 
   @@index([isActive, sortOrder])
   @@map("product_types")
+}
+
+model SavedSize {
+  userId        String      @map("user_id") @db.Uuid
+  productTypeId String      @map("product_type_id") @db.Uuid
+  sizeLabel     String      @map("size_label")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productTypeId])
+  @@index([productTypeId])
+  @@map("saved_sizes")
 }
 
 model TastePreference {
@@ -723,18 +761,21 @@ model SizeOption {
 }
 
 model CreatorLook {
-  id           String     @id @default(uuid()) @db.Uuid
-  creatorId    String     @map("creator_id") @db.Uuid
-  creator      User       @relation("CreatorLooks", fields: [creatorId], references: [id], onDelete: Cascade)
-  imageUrl     String     @map("image_url")
-  layout       PostLayout @default(PORTRAIT)
-  caption      String?
-  likeCount    Int        @default(0) @map("like_count")
-  commentCount Int        @default(0) @map("comment_count")
-  saveCount    Int        @default(0) @map("save_count")
-  viewCount    Int        @default(0) @map("view_count")
-  deletedAt    DateTime?  @map("deleted_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id                  String     @id @default(uuid()) @db.Uuid
+  creatorId           String     @map("creator_id") @db.Uuid
+  creator             User       @relation("CreatorLooks", fields: [creatorId], references: [id], onDelete: Cascade)
+  sourceOutfitId      String?    @map("source_outfit_id") @db.Uuid
+  sourceOutfit        Outfit?    @relation(fields: [sourceOutfitId], references: [id], onDelete: SetNull)
+  sourceOutfitVersion Int?       @map("source_outfit_version")
+  imageUrl            String     @map("image_url")
+  layout              PostLayout @default(PORTRAIT)
+  caption             String?
+  likeCount           Int        @default(0) @map("like_count")
+  commentCount        Int        @default(0) @map("comment_count")
+  saveCount           Int        @default(0) @map("save_count")
+  viewCount           Int        @default(0) @map("view_count")
+  deletedAt           DateTime?  @map("deleted_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
 
   taggedProducts       CreatorLookProduct[]
   likes                CreatorLookLike[]
@@ -746,7 +787,10 @@ model CreatorLook {
   images               CreatorLookImage[]
   attributedOrderItems OrderItem[]
   trendMetrics         CreatorLookTrendMetric[]
+  fulfilledOffer       OutfitOffer?
 
+  @@unique([creatorId, sourceOutfitId, sourceOutfitVersion])
+  @@index([sourceOutfitId])
   @@index([deletedAt])
   @@index([createdAt])
   @@index([caption(ops: raw("gin_trgm_ops"))], type: Gin, map: "creator_looks_caption_trgm_idx")
@@ -941,6 +985,9 @@ model CreatorLookComment {
 enum ContentReportTarget {
   CREATOR_LOOK
   CREATOR_LOOK_COMMENT
+  OUTFIT_BUILD
+  OUTFIT_BUILD_COMMENT
+  OUTFIT_PHOTO
 }
 
 enum ContentReportReason {
@@ -1176,6 +1223,7 @@ enum FulfilmentStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  RETURNED
 }
 
 enum OrderFulfilmentSummary {
@@ -1184,6 +1232,7 @@ enum OrderFulfilmentSummary {
   SHIPPED
   FULFILLED
   CANCELLED
+  RETURNED
 }
 
 model Order {
@@ -1217,6 +1266,8 @@ model Order {
    */
   needsManualRefund Boolean   @default(false) @map("needs_manual_refund")
   deliveredAt       DateTime? @map("delivered_at")
+  returnedAt        DateTime? @map("returned_at")
+  returnReason      String?   @map("return_reason")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1248,6 +1299,7 @@ model OrderFulfilmentGroup {
   shippedAt   DateTime? @map("shipped_at")
   deliveredAt DateTime? @map("delivered_at")
   cancelledAt DateTime? @map("cancelled_at")
+  returnedAt  DateTime? @map("returned_at")
 
   cancellationRequestedAt DateTime? @map("cancellation_requested_at")
   cancellationReason      String?   @map("cancellation_reason")
@@ -1296,13 +1348,6 @@ model OrderItem {
   brandDiscountAmount    Int         @default(0) @map("brand_discount_amount")
   platformDiscountAmount Int         @default(0) @map("platform_discount_amount")
 
-  /**
-   * Attribution — resolved once, at order-creation time, across all three
-   * click sources (tag clicks + internal/external link clicks). Exactly one
-   * of attributedCreatorLookId / attributedLinkId is set, matching
-   * attributionSource; attributedCreatorId is always set when there's an
-   * attributed sale, regardless of which channel sourced it.
-   */
   attributedCreatorId     String?           @map("attributed_creator_id") @db.Uuid
   attributedCreator       User?             @relation("AttributedOrderItems", fields: [attributedCreatorId], references: [id], onDelete: SetNull)
   attributedCreatorLookId String?           @map("attributed_creator_look_id") @db.Uuid
@@ -1310,8 +1355,11 @@ model OrderItem {
   attributedLinkId        String?           @map("attributed_link_id") @db.Uuid
   attributedLink          CreatorLink?      @relation(fields: [attributedLinkId], references: [id], onDelete: SetNull)
   attributionSource       CommissionSource? @map("attribution_source")
+  attributedOutfitId      String?           @map("attributed_outfit_id") @db.Uuid
+  attributedOutfit        Outfit?           @relation(fields: [attributedOutfitId], references: [id], onDelete: SetNull)
+  attributedOutfitVersion Int?              @map("attributed_outfit_version")
 
-  commission  CreatorCommission?
+  commissions CreatorCommission[]
   brandPayout BrandPayout?
 
   fulfilmentGroupId String?               @map("fulfilment_group_id") @db.Uuid
@@ -1321,6 +1369,7 @@ model OrderItem {
 
   @@index([productId])
   @@index([attributedCreatorId])
+  @@index([attributedOutfitId])
   @@index([fulfilmentGroupId])
   @@index([orderId])
   @@map("order_items")
@@ -1367,12 +1416,84 @@ model RequestIdempotency {
   userId       String   @map("user_id") @db.Uuid
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   endpoint     String
+  requestHash  String?  @map("request_hash")
   statusCode   Int      @map("status_code")
   responseBody Json     @map("response_body")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@unique([userId, endpoint, key])
+  @@index([createdAt])
   @@map("request_idempotency")
+}
+
+model OutboxEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  topic       String
+  aggregateId String    @map("aggregate_id")
+  payload     Json
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt])
+  @@map("outbox_events")
+}
+
+enum InventoryMovementKind {
+  OPENING_BALANCE
+  SIZE_CREATED
+  ORDER_COMMIT
+  ORDER_RESTORE
+  BRAND_ADJUSTMENT
+}
+
+enum InventoryMovementSource {
+  PRODUCT_SIZE
+  ORDER
+  BRAND_ADJUSTMENT
+}
+
+model InventoryLedgerEntry {
+  id         String                  @id @default(uuid()) @db.Uuid
+  sizeId     String                  @map("size_id") @db.Uuid
+  delta      Int
+  kind       InventoryMovementKind
+  sourceType InventoryMovementSource @map("source_type")
+  sourceId   String                  @map("source_id")
+  createdAt  DateTime                @default(now()) @map("created_at")
+
+  @@unique([sourceType, sourceId, kind, sizeId])
+  @@index([sizeId, createdAt])
+  @@map("inventory_ledger_entries")
+}
+
+model AppSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedBy   User?    @relation("AppSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+enum FeatureFlagRollout {
+  OFF
+  ALLOW_LIST
+  EVERYONE
+}
+
+model FeatureFlag {
+  key             String             @id
+  rollout         FeatureFlagRollout @default(OFF)
+  allowedUserIds  String[]           @default([]) @map("allowed_user_ids") @db.Uuid
+  allowedBrandIds String[]           @default([]) @map("allowed_brand_ids") @db.Uuid
+  updatedById     String?            @map("updated_by_id") @db.Uuid
+  updatedBy       User?              @relation("FeatureFlagUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  @@map("feature_flags")
 }
 
 enum CommissionStatus {
@@ -1387,6 +1508,7 @@ enum CommissionSource {
   TAG_CLICK
   INTERNAL_LINK
   EXTERNAL_LINK
+  OUTFIT_BUILD
 }
 
 /**
@@ -1395,26 +1517,37 @@ enum CommissionSource {
  * snapshotted onto CreatorCommission at creation time, so editing a tier
  * here never retroactively changes an already-created commission.
  */
+enum CommissionScope {
+  CREATOR_LOOK
+  OUTFIT_BUILD
+}
+
 model CommissionTier {
-  id        String   @id @default(uuid()) @db.Uuid
-  minPrice  Int      @map("min_price")
-  maxPrice  Int?     @map("max_price")
+  id        String          @id @default(uuid()) @db.Uuid
+  scope     CommissionScope @default(CREATOR_LOOK)
+  minPrice  Int             @map("min_price")
+  maxPrice  Int?            @map("max_price")
   amount    Int
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
 
   commissions CreatorCommission[]
 
+  @@index([scope, minPrice])
   @@map("commission_tiers")
 }
 
 model CreatorCommission {
-  id          String    @id @default(uuid()) @db.Uuid
-  creatorId   String    @map("creator_id") @db.Uuid
-  creator     User      @relation("CreatorCommissions", fields: [creatorId], references: [id], onDelete: Cascade)
-  orderItemId String    @unique @map("order_item_id") @db.Uuid
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid()) @db.Uuid
+  creatorId        String?           @map("creator_id") @db.Uuid
+  creator          User?             @relation("CreatorCommissions", fields: [creatorId], references: [id], onDelete: Cascade)
+  recipientBrandId String?           @map("recipient_brand_id") @db.Uuid
+  recipientBrand   Brand?            @relation("BrandBuildCommissions", fields: [recipientBrandId], references: [id], onDelete: Cascade)
+  orderItemId      String            @map("order_item_id") @db.Uuid
+  orderItem        OrderItem         @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  buildVisitId     String?           @map("build_visit_id") @db.Uuid
+  buildVisit       OutfitBuildVisit? @relation(fields: [buildVisitId], references: [id], onDelete: SetNull)
 
   /**
    * Source is snapshotted explicitly (not inferred from which of
@@ -1446,6 +1579,8 @@ model CreatorCommission {
   ledgerEntry WithdrawRequestLedgerEntry?
 
   @@index([creatorId, status])
+  @@index([recipientBrandId, status])
+  @@index([orderItemId])
   @@index([status, createdAt])
   @@map("creator_commissions")
 }
@@ -1851,6 +1986,20 @@ enum NotificationType {
   CRM_INVOICE_DUE
   CRM_SUBSCRIPTION_PAST_DUE
   CRM_SUBSCRIPTION_CANCELED
+  OUTFIT_BOARD_ACTIVITY
+  OUTFIT_READY_TO_LOCK
+  OUTFIT_LOCKED
+  OUTFIT_INVITED
+  OUTFIT_SHARED
+  OUTFIT_MADE_PUBLIC
+  OUTFIT_ITEMS_SOLD_OUT
+  OUTFIT_NEW_VERSION_AVAILABLE
+  OUTFIT_OFFER_RECEIVED
+  OUTFIT_OFFER_ACCEPTED
+  OUTFIT_OFFER_DECLINED
+  OUTFIT_OFFER_EXPIRED
+  OUTFIT_OFFER_RELEASED
+  OUTFIT_OFFER_REFUNDED
   ACCOUNT_APPROVED
 }
 
@@ -1870,6 +2019,8 @@ enum NotificationEntityType {
   ANNOUNCEMENT
   CRM_SUBSCRIPTION
   CRM_SUBSCRIPTION_INVOICE
+  OUTFIT
+  OUTFIT_OFFER
 }
 
 enum NotificationSurface {
@@ -1899,9 +2050,9 @@ model Notification {
   createdAt      DateTime                @default(now()) @map("created_at")
   updatedAt      DateTime                @default(now()) @map("updated_at")
 
+  @@unique([recipientId, dedupeKey])
   @@index([recipientId, updatedAt])
   @@index([recipientId, isRead])
-  @@unique([recipientId, dedupeKey])
   @@index([recipientId, organizationId, updatedAt])
   @@map("notifications")
 }
@@ -2286,6 +2437,7 @@ model WithdrawRequest {
 enum LedgerEntryKind {
   CREATOR_COMMISSION
   BRAND_PAYOUT
+  OFFER_PAYOUT
 }
 
 model WithdrawRequestLedgerEntry {
@@ -2297,6 +2449,8 @@ model WithdrawRequestLedgerEntry {
   creatorCommission   CreatorCommission? @relation(fields: [creatorCommissionId], references: [id])
   brandPayoutId       String?            @unique @map("brand_payout_id") @db.Uuid
   brandPayout         BrandPayout?       @relation(fields: [brandPayoutId], references: [id])
+  outfitOfferId       String?            @unique @map("outfit_offer_id") @db.Uuid
+  outfitOffer         OutfitOffer?       @relation(fields: [outfitOfferId], references: [id], onDelete: SetNull)
   createdAt           DateTime           @default(now()) @map("created_at")
 
   @@index([withdrawRequestId])
@@ -2333,6 +2487,9 @@ enum ConversationType {
 model Conversation {
   id                 String                    @id @default(uuid()) @db.Uuid
   type               ConversationType          @default(DIRECT)
+  name               String?
+  createdById        String?                   @map("created_by_id") @db.Uuid
+  createdBy          User?                     @relation("ConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   directKey          String?                   @unique @map("direct_key")
   lastMessageAt      DateTime?                 @map("last_message_at")
   lastMessagePreview String?                   @map("last_message_preview")
@@ -2340,40 +2497,59 @@ model Conversation {
   updatedAt          DateTime                  @updatedAt @map("updated_at")
   participants       ConversationParticipant[]
   messages           Message[]
+  outfitsStartedHere Outfit[]                  @relation("OutfitSourceConversation")
+  outfit             Outfit?                   @relation("OutfitConversation")
 
   @@index([type, lastMessageAt])
   @@map("conversations")
 }
 
+enum ConversationMemberRole {
+  ADMIN
+  MEMBER
+}
+
 model ConversationParticipant {
-  conversationId         String       @map("conversation_id") @db.Uuid
-  userId                 String       @map("user_id") @db.Uuid
-  joinedAt               DateTime     @default(now()) @map("joined_at")
-  lastReadAt             DateTime?    @map("last_read_at")
-  lastReadMessageId      String?      @map("last_read_message_id") @db.Uuid
-  lastDeliveredAt        DateTime?    @map("last_delivered_at")
-  lastDeliveredMessageId String?      @map("last_delivered_message_id") @db.Uuid
-  unreadCount            Int          @default(0) @map("unread_count")
-  conversation           Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId         String                 @map("conversation_id") @db.Uuid
+  userId                 String                 @map("user_id") @db.Uuid
+  role                   ConversationMemberRole @default(MEMBER)
+  joinedAt               DateTime               @default(now()) @map("joined_at")
+  lastReadAt             DateTime?              @map("last_read_at")
+  lastReadMessageId      String?                @map("last_read_message_id") @db.Uuid
+  lastDeliveredAt        DateTime?              @map("last_delivered_at")
+  lastDeliveredMessageId String?                @map("last_delivered_message_id") @db.Uuid
+  unreadCount            Int                    @default(0) @map("unread_count")
+  conversation           Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user                   User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId, conversationId])
   @@map("conversation_participants")
 }
 
+enum MessageKind {
+  USER
+  SYSTEM
+  OUTFIT_CARD
+}
+
 model Message {
   id             String              @id @default(uuid()) @db.Uuid
   conversationId String              @map("conversation_id") @db.Uuid
   senderId       String              @map("sender_id") @db.Uuid
+  kind           MessageKind         @default(USER)
+  systemEvent    Json?               @map("system_event")
+  outfitId       String?             @map("outfit_id") @db.Uuid
   body           String?
   createdAt      DateTime            @default(now()) @map("created_at")
   deletedAt      DateTime?           @map("deleted_at")
   conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User                @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  outfit         Outfit?             @relation(fields: [outfitId], references: [id], onDelete: SetNull)
   attachments    MessageAttachment[]
 
   @@index([conversationId, createdAt])
+  @@index([outfitId])
   @@map("messages")
 }
 
@@ -2389,6 +2565,413 @@ model MessageAttachment {
 
   @@index([messageId])
   @@map("message_attachments")
+}
+
+model OutfitSlotType {
+  id                    String   @id @default(uuid()) @db.Uuid
+  key                   String   @unique
+  label                 String
+  icon                  String
+  maxItems              Int      @map("max_items")
+  acceptsAnyProductType Boolean  @default(false) @map("accepts_any_product_type")
+  sortOrder             Int      @default(0) @map("sort_order")
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  productTypes OutfitSlotTypeProductType[]
+  blocks       OutfitSlotTypeBlock[]       @relation("OutfitSlotTypeBlocks")
+  blockedBy    OutfitSlotTypeBlock[]       @relation("OutfitSlotTypeBlockedBy")
+
+  @@index([isActive, sortOrder])
+  @@map("outfit_slot_types")
+}
+
+model OutfitSlotTypeProductType {
+  slotTypeId    String         @map("slot_type_id") @db.Uuid
+  productTypeId String         @map("product_type_id") @db.Uuid
+  slotType      OutfitSlotType @relation(fields: [slotTypeId], references: [id], onDelete: Cascade)
+  productType   ProductType    @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+
+  @@id([slotTypeId, productTypeId])
+  @@index([productTypeId])
+  @@map("outfit_slot_type_product_types")
+}
+
+model OutfitSlotTypeBlock {
+  slotTypeId        String         @map("slot_type_id") @db.Uuid
+  blockedSlotTypeId String         @map("blocked_slot_type_id") @db.Uuid
+  slotType          OutfitSlotType @relation("OutfitSlotTypeBlocks", fields: [slotTypeId], references: [id], onDelete: Cascade)
+  blockedSlotType   OutfitSlotType @relation("OutfitSlotTypeBlockedBy", fields: [blockedSlotTypeId], references: [id], onDelete: Cascade)
+
+  @@id([slotTypeId, blockedSlotTypeId])
+  @@index([blockedSlotTypeId])
+  @@map("outfit_slot_type_blocks")
+}
+
+enum OutfitStatus {
+  DRAFT
+  LOCKED
+  ARCHIVED
+}
+
+enum OutfitVisibility {
+  PRIVATE
+  SHARED
+  PUBLIC
+}
+
+enum OutfitMemberRole {
+  OWNER
+  EDITOR
+}
+
+enum OutfitPhotoKind {
+  COVER
+  TRY_ON
+}
+
+enum OutfitPhotoStatus {
+  PROCESSING
+  READY
+  REMOVED
+}
+
+enum OutfitEventType {
+  CREATED
+  ITEM_ADDED
+  ITEM_SWAPPED
+  ITEM_REMOVED
+  EXTRAS_REORDERED
+  SETTINGS_CHANGED
+  MEMBER_HAPPY
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  MEMBER_LEFT
+  OWNERSHIP_TRANSFERRED
+  LOCKED
+  UNLOCKED
+  ARCHIVED
+  VISIBILITY_CHANGED
+  SHARED
+  PHOTO_ADDED
+  PHOTO_REMOVED
+  COVERS_CHANGED
+}
+
+model Outfit {
+  id                   String           @id @default(uuid()) @db.Uuid
+  title                String?
+  status               OutfitStatus     @default(DRAFT)
+  visibility           OutfitVisibility @default(PRIVATE)
+  version              Int              @default(0)
+  budget               Int?
+  maxItemsPerMember    Int?             @map("max_items_per_member")
+  publishedVersion     Int?             @map("published_version")
+  createdById          String?          @map("created_by_id") @db.Uuid
+  createdBy            User?            @relation("OutfitsCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  sourceConversationId String?          @map("source_conversation_id") @db.Uuid
+  sourceConversation   Conversation?    @relation("OutfitSourceConversation", fields: [sourceConversationId], references: [id], onDelete: SetNull)
+  conversationId       String?          @unique @map("conversation_id") @db.Uuid
+  conversation         Conversation?    @relation("OutfitConversation", fields: [conversationId], references: [id], onDelete: SetNull)
+  lockedAt             DateTime?        @map("locked_at")
+  archivedAt           DateTime?        @map("archived_at")
+  likeCount            Int              @default(0) @map("like_count")
+  saveCount            Int              @default(0) @map("save_count")
+  commentCount         Int              @default(0) @map("comment_count")
+  madePublicAt         DateTime?        @map("made_public_at")
+  removedAt            DateTime?        @map("removed_at")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  likes            OutfitLike[]
+  saves            OutfitSave[]
+  comments         OutfitComment[]
+  members          OutfitMember[]
+  shares           OutfitShare[]
+  slots            OutfitSlot[]
+  items            OutfitItem[]
+  photos           OutfitPhoto[]
+  events           OutfitEvent[]
+  snapshots        OutfitSnapshot[]
+  cardMessages     Message[]
+  publishedAsLooks CreatorLook[]
+  buildVisits      OutfitBuildVisit[]
+  attributedSales  OrderItem[]
+  offers           OutfitOffer[]
+
+  @@index([status, visibility, updatedAt])
+  @@index([createdById])
+  @@index([updatedAt(sort: Desc), id(sort: Desc)])
+  @@map("outfits")
+}
+
+model OutfitLike {
+  outfitId  String   @map("outfit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user      User     @relation("OutfitLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, userId])
+  @@index([userId, createdAt])
+  @@map("outfit_likes")
+}
+
+model OutfitSave {
+  outfitId  String   @map("outfit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user      User     @relation("OutfitSaves", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, userId])
+  @@index([userId, createdAt])
+  @@map("outfit_saves")
+}
+
+model OutfitComment {
+  id              String          @id @default(uuid()) @db.Uuid
+  outfitId        String          @map("outfit_id") @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
+  parentCommentId String?         @map("parent_comment_id") @db.Uuid
+  body            String
+  replyCount      Int             @default(0) @map("reply_count")
+  deletedAt       DateTime?       @map("deleted_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  outfit          Outfit          @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user            User            @relation("OutfitComments", fields: [userId], references: [id], onDelete: Cascade)
+  parentComment   OutfitComment?  @relation("OutfitCommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         OutfitComment[] @relation("OutfitCommentReplies")
+
+  @@index([parentCommentId, createdAt])
+  @@map("outfit_comments")
+}
+
+model OutfitMember {
+  outfitId    String           @map("outfit_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  role        OutfitMemberRole @default(EDITOR)
+  isHappy     Boolean          @default(false) @map("is_happy")
+  happyAt     DateTime?        @map("happy_at")
+  invitedById String?          @map("invited_by_id") @db.Uuid
+  joinedAt    DateTime         @default(now()) @map("joined_at")
+  outfit      Outfit           @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user        User             @relation("OutfitMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy   User?            @relation("OutfitMemberInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@id([outfitId, userId])
+  @@index([userId, joinedAt])
+  @@map("outfit_members")
+}
+
+model OutfitShare {
+  outfitId   String   @map("outfit_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  sharedById String?  @map("shared_by_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  outfit     Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  user       User     @relation("OutfitSharesReceived", fields: [userId], references: [id], onDelete: Cascade)
+  sharedBy   User?    @relation("OutfitSharesSent", fields: [sharedById], references: [id], onDelete: SetNull)
+
+  @@id([outfitId, userId])
+  @@index([userId, createdAt])
+  @@map("outfit_shares")
+}
+
+model OutfitSlot {
+  id                    String   @id @default(uuid()) @db.Uuid
+  outfitId              String   @map("outfit_id") @db.Uuid
+  key                   String
+  label                 String
+  icon                  String
+  maxItems              Int      @map("max_items")
+  acceptsAnyProductType Boolean  @map("accepts_any_product_type")
+  productTypeIds        String[] @map("product_type_ids") @db.Uuid
+  blocksSlotKeys        String[] @map("blocks_slot_keys")
+  sortOrder             Int      @map("sort_order")
+  outfit                Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+
+  items OutfitItem[]
+
+  @@unique([outfitId, key])
+  @@unique([id, outfitId])
+  @@map("outfit_slots")
+}
+
+model OutfitItem {
+  id               String     @id @default(uuid()) @db.Uuid
+  outfitId         String     @map("outfit_id") @db.Uuid
+  outfitSlotId     String     @map("outfit_slot_id") @db.Uuid
+  position         Int
+  productId        String     @map("product_id") @db.Uuid
+  addedById        String?    @map("added_by_id") @db.Uuid
+  addedAt          DateTime   @default(now()) @map("added_at")
+  soldOutAlertedAt DateTime?  @map("sold_out_alerted_at")
+  outfit           Outfit     @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  slot             OutfitSlot @relation(fields: [outfitSlotId, outfitId], references: [id, outfitId], onDelete: Cascade)
+  product          Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  addedBy          User?      @relation("OutfitItemsAdded", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([outfitSlotId, position])
+  @@unique([outfitId, productId])
+  @@index([productId])
+  @@map("outfit_items")
+}
+
+model OutfitPhoto {
+  id           String               @id @default(uuid()) @db.Uuid
+  outfitId     String               @map("outfit_id") @db.Uuid
+  uploaderId   String?              @map("uploader_id") @db.Uuid
+  kind         OutfitPhotoKind
+  status       OutfitPhotoStatus    @default(PROCESSING)
+  imageAssetId String               @unique @map("image_asset_id") @db.Uuid
+  imageUrl     String               @map("image_url")
+  coverPosition Int?                @map("cover_position")
+  sortOrder    Int                  @default(0) @map("sort_order")
+  removedAt    DateTime?            @map("removed_at")
+  removedById  String?              @map("removed_by_id") @db.Uuid
+  createdAt    DateTime             @default(now()) @map("created_at")
+  outfit       Outfit               @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  uploader     User?                @relation("OutfitPhotosUploaded", fields: [uploaderId], references: [id], onDelete: SetNull)
+  removedBy    User?                @relation("OutfitPhotosRemoved", fields: [removedById], references: [id], onDelete: SetNull)
+  imageAsset   ImageProcessingAsset @relation(fields: [imageAssetId], references: [id], onDelete: Cascade)
+
+  @@index([outfitId, status, createdAt])
+  @@index([uploaderId])
+  @@index([status, createdAt])
+  @@map("outfit_photos")
+}
+
+model OutfitEvent {
+  id        String          @id @default(uuid()) @db.Uuid
+  outfitId  String          @map("outfit_id") @db.Uuid
+  version   Int
+  actorId   String?         @map("actor_id") @db.Uuid
+  type      OutfitEventType
+  payload   Json
+  createdAt DateTime        @default(now()) @map("created_at")
+  outfit    Outfit          @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  actor     User?           @relation("OutfitEventsActed", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@unique([outfitId, version])
+  @@map("outfit_events")
+}
+
+model OutfitSnapshot {
+  id             String   @id @default(uuid()) @db.Uuid
+  outfitId       String   @map("outfit_id") @db.Uuid
+  version        Int
+  items          Json
+  total          Int
+  contributorIds String[] @map("contributor_ids") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  outfit         Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+
+  @@unique([outfitId, version])
+  @@map("outfit_snapshots")
+}
+
+model OutfitBuildVisit {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  outfitId      String   @map("outfit_id") @db.Uuid
+  outfitVersion Int      @map("outfit_version")
+  productId     String   @map("product_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfit        Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  commissions CreatorCommission[]
+
+  @@index([userId, productId, createdAt])
+  @@map("outfit_build_visits")
+}
+
+enum OutfitOfferStatus {
+  PAYMENT_PENDING
+  PAYMENT_FAILED
+  AWAITING_RESPONSE
+  ACCEPTED
+  POSTED
+  RELEASED
+  DECLINED
+  CANCELLED
+  EXPIRED
+  LOOK_REMOVED
+}
+
+enum OutfitOfferRefundStatus {
+  NOT_NEEDED
+  PENDING
+  REFUNDED
+  NEEDS_MANUAL_REFUND
+}
+
+enum OutfitOfferPayoutStatus {
+  NONE
+  AVAILABLE
+  PAID
+}
+
+model OutfitOffer {
+  id            String                  @id @default(uuid()) @db.Uuid
+  outfitId      String                  @map("outfit_id") @db.Uuid
+  outfitVersion Int                     @map("outfit_version")
+  brandId       String                  @map("brand_id") @db.Uuid
+  sentById      String?                 @map("sent_by_id") @db.Uuid
+  creatorId     String                  @map("creator_id") @db.Uuid
+  amount        Int
+  note          String?
+  paymentMethod PaymentMethod           @map("payment_method")
+  status        OutfitOfferStatus       @default(PAYMENT_PENDING)
+  refundStatus  OutfitOfferRefundStatus @default(NOT_NEEDED) @map("refund_status")
+  payoutStatus  OutfitOfferPayoutStatus @default(NONE) @map("payout_status")
+  paidAt        DateTime?               @map("paid_at")
+  acceptBy      DateTime?               @map("accept_by")
+  acceptedAt    DateTime?               @map("accepted_at")
+  postBy        DateTime?               @map("post_by")
+  lookId        String?                 @unique @map("look_id") @db.Uuid
+  postedAt      DateTime?               @map("posted_at")
+  releaseAt     DateTime?               @map("release_at")
+  releasedAt    DateTime?               @map("released_at")
+  paidOutAt     DateTime?               @map("paid_out_at")
+  refundedAt    DateTime?               @map("refunded_at")
+  closedAt      DateTime?               @map("closed_at")
+  closedReason  String?                 @map("closed_reason")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  outfit        Outfit                  @relation(fields: [outfitId], references: [id], onDelete: Restrict)
+  brand         Brand                   @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  sentBy        User?                   @relation("OutfitOffersSent", fields: [sentById], references: [id], onDelete: SetNull)
+  creator       User                    @relation("OutfitOffersReceived", fields: [creatorId], references: [id], onDelete: Restrict)
+  look          CreatorLook?            @relation(fields: [lookId], references: [id], onDelete: SetNull)
+
+  payments      OutfitOfferPayment[]
+  ledgerEntries WithdrawRequestLedgerEntry[]
+
+  @@index([creatorId, createdAt])
+  @@index([brandId, createdAt])
+  @@index([status, updatedAt])
+  @@index([creatorId, payoutStatus])
+  @@index([refundStatus])
+  @@map("outfit_offers")
+}
+
+model OutfitOfferPayment {
+  id             String                   @id @default(uuid()) @db.Uuid
+  offerId        String                   @map("offer_id") @db.Uuid
+  provider       PaymentMethod
+  type           PaymentTransactionType   @default(PAYMENT)
+  status         PaymentTransactionStatus @default(INITIATED)
+  transactionRef String?                  @unique @map("transaction_ref")
+  rawResponse    Json?                    @map("raw_response")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  offer          OutfitOffer              @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, status])
+  @@map("outfit_offer_payments")
 }
 
 // ---------------------------------------------------------------------------
@@ -2965,6 +3548,7 @@ model ImageProcessingAsset {
   productImages       ProductImage[]
   creatorLookImages   CreatorLookImage[]
   heroSlides          HeroSlide[]
+  outfitPhoto         OutfitPhoto?
   collections         Collection[]
   bannerForBrands     Brand[]              @relation("BrandBannerImage")
   avatarForBrands     Brand[]              @relation("BrandAvatarImage")

@@ -10,6 +10,7 @@ export const SHIPMENT_STATUS_LABEL: Record<FulfilmentStatusValue, string> = {
   SHIPPED: "Shipped",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
+  RETURNED: "Returned",
 };
 
 export const SHIPMENT_STATUS_TONE: Record<FulfilmentStatusValue, BadgeTone> = {
@@ -18,6 +19,7 @@ export const SHIPMENT_STATUS_TONE: Record<FulfilmentStatusValue, BadgeTone> = {
   SHIPPED: "progress",
   DELIVERED: "positive",
   CANCELLED: "negative",
+  RETURNED: "negative",
 };
 
 export const ORDER_SUMMARY_LABEL: Record<OrderFulfilmentSummary, string> = {
@@ -26,6 +28,7 @@ export const ORDER_SUMMARY_LABEL: Record<OrderFulfilmentSummary, string> = {
   SHIPPED: "All parcels shipped",
   FULFILLED: "All parcels delivered",
   CANCELLED: "Order cancelled",
+  RETURNED: "Order returned",
 };
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatusValue, string> = {

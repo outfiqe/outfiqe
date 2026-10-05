@@ -4,9 +4,14 @@ import { apiClient } from "@/lib/apiClient";
 
 import {
   adminCommissionSchema,
+  type CommissionScopeValue,
   type CommissionStatusValue,
   type CommissionTier,
   commissionTierSchema,
+  type TierChangePage,
+  tierChangePageSchema,
+  type TierPriceTest,
+  tierPriceTestSchema,
 } from "./schemas";
 
 const tierListSchema = z.array(commissionTierSchema);
@@ -25,24 +30,50 @@ export type CreateTierInput = {
 };
 export type UpdateTierInput = Partial<CreateTierInput>;
 
+const scopeQuery = (scope: CommissionScopeValue): string => `scope=${scope}`;
+
 export const commissionsApi = {
-  async listTiers(): Promise<CommissionTier[]> {
-    const res = await apiClient.get<CommissionTier[]>("/commissions/tiers");
+  async listTiers(scope: CommissionScopeValue): Promise<CommissionTier[]> {
+    const res = await apiClient.get<CommissionTier[]>(`/commissions/tiers?${scopeQuery(scope)}`);
     return tierListSchema.parse(res.data);
   },
 
-  async createTier(input: CreateTierInput): Promise<CommissionTier> {
-    const res = await apiClient.post<CommissionTier>("/commissions/tiers", input);
+  async createTier(scope: CommissionScopeValue, input: CreateTierInput): Promise<CommissionTier> {
+    const res = await apiClient.post<CommissionTier>(
+      `/commissions/tiers?${scopeQuery(scope)}`,
+      input,
+    );
     return commissionTierSchema.parse(res.data);
   },
 
-  async updateTier(id: string, input: UpdateTierInput): Promise<CommissionTier> {
-    const res = await apiClient.patch<CommissionTier>(`/commissions/tiers/${id}`, input);
+  async updateTier(
+    scope: CommissionScopeValue,
+    id: string,
+    input: UpdateTierInput,
+  ): Promise<CommissionTier> {
+    const res = await apiClient.patch<CommissionTier>(
+      `/commissions/tiers/${id}?${scopeQuery(scope)}`,
+      input,
+    );
     return commissionTierSchema.parse(res.data);
   },
 
-  async deleteTier(id: string): Promise<void> {
-    await apiClient.del(`/commissions/tiers/${id}`);
+  async deleteTier(scope: CommissionScopeValue, id: string): Promise<void> {
+    await apiClient.del(`/commissions/tiers/${id}?${scopeQuery(scope)}`);
+  },
+
+  async testTierPrice(scope: CommissionScopeValue, price: number): Promise<TierPriceTest> {
+    const res = await apiClient.get<TierPriceTest>(
+      `/commissions/tiers/price-test?${scopeQuery(scope)}&price=${price}`,
+    );
+    return tierPriceTestSchema.parse(res.data);
+  },
+
+  async listTierHistory(scope: CommissionScopeValue, cursor?: string): Promise<TierChangePage> {
+    const params = new URLSearchParams({ scope });
+    if (cursor) params.set("cursor", cursor);
+    const res = await apiClient.get<TierChangePage>(`/commissions/tiers/history?${params}`);
+    return tierChangePageSchema.parse(res.data);
   },
 
   async list(status?: CommissionStatusValue, cursor?: string): Promise<CommissionPage> {

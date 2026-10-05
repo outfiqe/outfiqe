@@ -1,8 +1,11 @@
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
+import { MessageKind } from "#generated/prisma/enums.js";
 
 import { participantUserSelect } from "./conversation.utils.js";
+import type { ChatSystemEvent } from "./message.schemas.js";
 import type { NewMessageAttachmentInput } from "./message.types.js";
-import { messagePreviewFor } from "./message.utils.js";
+import type { ReaderCursor } from "./message.utils.js";
 
 const messageInclude = {
   sender: { select: participantUserSelect },
@@ -11,12 +14,15 @@ const messageInclude = {
   },
 } as const;
 
+const UNREAD_STEP = 1;
+
 export const messageRepository = {
   async send(
     conversationId: string,
     senderId: string,
     body: string | null,
     attachments: NewMessageAttachmentInput[],
+    conversationPreview: string,
   ) {
     return prisma.$transaction(async (tx) => {
       const message = await tx.message.create({
@@ -31,7 +37,7 @@ export const messageRepository = {
 
       await tx.conversation.update({
         where: { id: conversationId },
-        data: { lastMessageAt: message.createdAt, lastMessagePreview: messagePreviewFor(body) },
+        data: { lastMessageAt: message.createdAt, lastMessagePreview: conversationPreview },
       });
 
       await tx.conversationParticipant.updateMany({
@@ -40,6 +46,61 @@ export const messageRepository = {
       });
 
       return message;
+    });
+  },
+
+  async createOutfitCard(
+    tx: Prisma.TransactionClient,
+    {
+      conversationId,
+      senderId,
+      outfitId,
+      preview,
+    }: { conversationId: string; senderId: string; outfitId: string; preview: string },
+  ) {
+    const message = await tx.message.create({
+      data: { conversationId, senderId, kind: MessageKind.OUTFIT_CARD, outfitId },
+      include: messageInclude,
+    });
+    await tx.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: message.createdAt, lastMessagePreview: preview },
+    });
+    await tx.conversationParticipant.updateMany({
+      where: { conversationId, userId: { not: senderId } },
+      data: { unreadCount: { increment: UNREAD_STEP } },
+    });
+    return message;
+  },
+
+  async createSystemMessage(
+    tx: Prisma.TransactionClient,
+    {
+      conversationId,
+      actorId,
+      systemEvent,
+      preview,
+    }: { conversationId: string; actorId: string; systemEvent: ChatSystemEvent; preview: string },
+  ) {
+    const message = await tx.message.create({
+      data: { conversationId, senderId: actorId, kind: MessageKind.SYSTEM, systemEvent },
+      include: messageInclude,
+    });
+    await tx.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: message.createdAt, lastMessagePreview: preview },
+    });
+    return message;
+  },
+
+  async findById(messageId: string) {
+    return prisma.message.findUnique({ where: { id: messageId }, include: messageInclude });
+  },
+
+  async listOtherReaderCursors(conversationId: string, callerId: string): Promise<ReaderCursor[]> {
+    return prisma.conversationParticipant.findMany({
+      where: { conversationId, userId: { not: callerId } },
+      select: { lastReadAt: true, lastDeliveredAt: true },
     });
   },
 

@@ -15,6 +15,7 @@ import type {
   ProductWithOptionalStock,
   ProductWithStockSizesAndImages,
   PublicProduct,
+  StockLine,
 } from "./product.types.js";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -47,6 +48,18 @@ export const isNew = (createdAt: Date): boolean =>
 
 export const sumStock = (sizes: { stock: number }[]): number =>
   sizes.reduce((total, size) => total + size.stock, 0);
+
+const NO_QTY_YET = 0;
+
+export const mergeStockLinesBySize = (lines: StockLine[]): StockLine[] => {
+  const qtyBySizeId = new Map<string, number>();
+  for (const { sizeId, qty } of lines) {
+    qtyBySizeId.set(sizeId, (qtyBySizeId.get(sizeId) ?? NO_QTY_YET) + qty);
+  }
+  return [...qtyBySizeId.entries()]
+    .map(([sizeId, qty]) => ({ sizeId, qty }))
+    .sort((left, right) => left.sizeId.localeCompare(right.sizeId));
+};
 
 export const isLowStock = (totalStock: number): boolean =>
   totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD;

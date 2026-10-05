@@ -11,6 +11,7 @@ import { useAuth } from "@/features/auth";
 import { useCart } from "@/features/cart";
 import { SiteNotificationBell } from "@/features/notifications";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
+import { LanguageSwitch } from "@/i18n/LanguageSwitch";
 import { cn } from "@/shared/lib/cn";
 import { isExploreRoute } from "@/shared/lib/exploreMode";
 
@@ -140,6 +141,7 @@ export const SiteHeader = () => {
         )}
 
         <SiteNotificationBell />
+        <LanguageSwitch className="hidden lg:inline-flex" />
         <ThemeToggle className="hidden lg:inline-flex" />
         <AccountMenu />
         <MobileNav />

@@ -1,9 +1,10 @@
 import { z } from "zod";
 
-import { CommissionStatus } from "#generated/prisma/enums.js";
+import { CommissionScope, CommissionStatus } from "#generated/prisma/enums.js";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
+const LARGEST_STORABLE_PRICE = 2_147_483_647;
 
 export const listEarningsQuerySchema = z.object({
   cursor: z.uuid().optional(),
@@ -11,6 +12,25 @@ export const listEarningsQuerySchema = z.object({
 });
 
 export type ListEarningsQuery = z.infer<typeof listEarningsQuerySchema>;
+
+export const commissionScopeQuerySchema = z.object({
+  scope: z.enum(CommissionScope).default(CommissionScope.CREATOR_LOOK),
+});
+
+export type CommissionScopeQuery = z.infer<typeof commissionScopeQuerySchema>;
+
+export const testCommissionTierPriceQuerySchema = commissionScopeQuerySchema.extend({
+  price: z.coerce.number().int().nonnegative().max(LARGEST_STORABLE_PRICE),
+});
+
+export type TestCommissionTierPriceQuery = z.infer<typeof testCommissionTierPriceQuerySchema>;
+
+export const listCommissionTierHistoryQuerySchema = commissionScopeQuerySchema.extend({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
+export type ListCommissionTierHistoryQuery = z.infer<typeof listCommissionTierHistoryQuerySchema>;
 
 const commissionTierFields = {
   minPrice: z.number().int().nonnegative(),

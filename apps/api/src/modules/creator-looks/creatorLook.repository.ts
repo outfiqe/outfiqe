@@ -1205,8 +1205,17 @@ export const creatorLookRepository = {
     return new Set(rows.map((row) => row.brand_id));
   },
 
+  async findSummaryById(lookId: string): Promise<CreatorLookSummary | null> {
+    const look = await prisma.creatorLook.findFirst({
+      where: { id: lookId, deletedAt: null },
+      include: taggedProductsInclude,
+    });
+    return look ? toSummary(look) : null;
+  },
+
   async create({
     creatorId,
+    outfitSource,
     imageUrls,
     imageAssetIds,
     caption,
@@ -1218,6 +1227,8 @@ export const creatorLookRepository = {
       const created = await tx.creatorLook.create({
         data: {
           creatorId,
+          sourceOutfitId: outfitSource?.outfitId,
+          sourceOutfitVersion: outfitSource?.outfitVersion,
           imageUrl: imageUrls[0],
           layout,
           caption,

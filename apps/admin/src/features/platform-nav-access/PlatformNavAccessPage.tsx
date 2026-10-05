@@ -21,6 +21,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   categories: "Categories",
   "product-types": "Garment types",
   "size-options": "Sizes",
+  "outfit-slot-types": "Outfit slots",
   "hero-slides": "Hero slides",
   orders: "Orders",
   support: "Support requests",
@@ -43,6 +44,11 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "delivery-zones": "Delivery zones",
   organizations: "Organizations",
   team: "Team",
+  "outfit-builds": "Outfit builds",
+  "platform-switches": "Feature switches",
+  "platform-settings": "Platform settings",
+  "platform-audit": "Audit log",
+  "platform-jobs": "Jobs & health",
 };
 
 const TOGGLEABLE_NAV_KEYS = PLATFORM_NAV_KEYS.filter((key) => key !== "platform-nav-access");

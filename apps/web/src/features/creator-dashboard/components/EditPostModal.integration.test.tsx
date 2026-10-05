@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
 import { EditPostModal } from "./EditPostModal";
@@ -23,6 +23,14 @@ const renderModal = (lookId: string | null, onClose = vi.fn()) => {
     </QueryClientProvider>,
   );
 };
+
+beforeEach(() => {
+  mswServer.use(
+    http.get("/api/creator-looks/limits", () =>
+      HttpResponse.json({ success: true, message: "Look limits.", data: { maxTaggedProducts: 7 } }),
+    ),
+  );
+});
 
 describe("EditPostModal", () => {
   it("renders nothing when lookId is null", () => {

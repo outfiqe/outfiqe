@@ -9,6 +9,7 @@ import { CreatorStatus, ProductStatus, UserRole } from "#generated/prisma/enums.
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { REAL_BROWSER_UA } from "#test/integration/browserUserAgent.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -78,9 +79,6 @@ const seedTag = async (reviewStatus: "PENDING" | "APPROVED" = "APPROVED") => {
   if (!tag) throw new Error("tag not created");
   return { creator, product, look, tag };
 };
-
-const REAL_BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36";
 
 describe("POST /api/tag-reports", () => {
   it("records a public report against a live tag", async () => {

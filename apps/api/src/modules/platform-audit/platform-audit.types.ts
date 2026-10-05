@@ -18,6 +18,9 @@ export type PlatformAuditListFilters = {
   organizationId?: string;
   actorUserId?: string;
   action?: string;
+  targetType?: string;
+  targetId?: string;
+  metadataMatch?: { key: string; value: string };
   cursor?: string;
   limit: number;
 };

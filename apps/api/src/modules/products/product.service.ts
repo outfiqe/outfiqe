@@ -1,10 +1,18 @@
+import { randomUUID } from "node:crypto";
+
 import { PRODUCT_SORT } from "@outfiqe/utils";
 import { LRUCache } from "lru-cache";
 
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
-import { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import type { Prisma } from "#generated/prisma/client.js";
+import {
+  DiscountType,
+  InventoryMovementKind,
+  InventoryMovementSource,
+  ProductStatus,
+} from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -23,12 +31,13 @@ import { saleService } from "#modules/sale/sale.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
+import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
+import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "./product.constants.js";
-import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
   AdjustStockBody,
@@ -55,9 +64,13 @@ import type {
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
+  SizeStockDelta,
+  StockLine,
+  StockMovement,
 } from "./product.types.js";
 import {
   isUuid,
+  mergeStockLinesBySize,
   toBrandSummary,
   toDiscountView,
   toPublicProduct,
@@ -115,6 +128,39 @@ const notifyBrand = async (
   await sendEmail({ to: brand.email, subject, body: fallbackBody, html });
 };
 
+const recordStockChanges = async (
+  tx: Prisma.TransactionClient,
+  movement: StockMovement,
+  sizeDeltas: SizeStockDelta[],
+): Promise<void> => {
+  if (sizeDeltas.length === 0) return;
+
+  await productRepository.recordInventoryMovements(
+    tx,
+    sizeDeltas.map(({ sizeId, delta }) => ({ ...movement, sizeId, delta })),
+  );
+  await enqueueOutboxEvent(tx, {
+    topic: OUTBOX_TOPIC.STOCK_CHANGED,
+    aggregateId: movement.sourceId,
+    payload: { sizeIds: sizeDeltas.map(({ sizeId }) => sizeId) },
+  });
+};
+
+const recordNewSizeStock = (
+  tx: Prisma.TransactionClient,
+  productId: string,
+  sizes: BrandProductSize[],
+): Promise<void> =>
+  recordStockChanges(
+    tx,
+    {
+      kind: InventoryMovementKind.SIZE_CREATED,
+      sourceType: InventoryMovementSource.PRODUCT_SIZE,
+      sourceId: productId,
+    },
+    sizes.map(({ id, stock }) => ({ sizeId: id, delta: stock })),
+  );
+
 const hydrateSavedFlags = async (
   products: PublicProduct[],
   viewerId?: string,
@@ -157,7 +203,7 @@ export const productService = {
     );
     const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
 
-    const product = await productRepository.create({
+    const productInput = {
       brandId,
       name,
       price,
@@ -180,6 +226,12 @@ export const productService = {
         }
         return { label: sizeOption.label, stock, sortOrder };
       }),
+    };
+
+    const product = await prisma.$transaction(async (tx) => {
+      const createdProduct = await productRepository.create(tx, productInput);
+      await recordNewSizeStock(tx, createdProduct.id, createdProduct.sizes);
+      return createdProduct;
     });
 
     return toBrandSummary(product);
@@ -246,20 +298,24 @@ export const productService = {
     }
 
     try {
-      const product = await productRepository.update(productId, {
-        name,
-        price,
-        productTypeId: targetProductType?.id,
-        categoryIds,
-        imageUrls,
-        imageAssetIds,
-        lowStock,
-        sizes: sizeChanges,
-        isThrift,
-        thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
-        thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
+      const updatedProduct = await prisma.$transaction(async (tx) => {
+        const savedProduct = await productRepository.update(tx, productId, {
+          name,
+          price,
+          productTypeId: targetProductType?.id,
+          categoryIds,
+          imageUrls,
+          imageAssetIds,
+          lowStock,
+          sizes: sizeChanges,
+          isThrift,
+          thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
+          thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
+        });
+        if (sizeChanges) await recordNewSizeStock(tx, savedProduct.id, savedProduct.sizes);
+        return savedProduct;
       });
-      return toBrandSummary(product);
+      return toBrandSummary(updatedProduct);
     } catch (error) {
       if (isForeignKeyConstraintError(error)) {
         throw new AppError(
@@ -677,26 +733,32 @@ export const productService = {
   },
 
   async decrementStockForItems(
-    client: DbClient,
-    lines: { sizeId: string; qty: number }[],
+    tx: Prisma.TransactionClient,
+    lines: StockLine[],
+    movement: StockMovement,
   ): Promise<string[]> {
-    const sorted = [...lines].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
     const insufficientSizeIds: string[] = [];
-    for (const line of sorted) {
-      const ok = await productRepository.decrementStock(client, line.sizeId, line.qty);
-      if (!ok) insufficientSizeIds.push(line.sizeId);
+    const committedDeltas: SizeStockDelta[] = [];
+    for (const { sizeId, qty } of mergeStockLinesBySize(lines)) {
+      const isDecremented = await productRepository.decrementStock(tx, sizeId, qty);
+      if (isDecremented) committedDeltas.push({ sizeId, delta: -qty });
+      else insufficientSizeIds.push(sizeId);
     }
+    await recordStockChanges(tx, movement, committedDeltas);
     return insufficientSizeIds;
   },
 
   async restoreStockForItems(
-    client: DbClient,
-    lines: { sizeId: string; qty: number }[],
+    tx: Prisma.TransactionClient,
+    lines: StockLine[],
+    movement: StockMovement,
   ): Promise<void> {
-    const sorted = [...lines].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
-    for (const line of sorted) {
-      await productRepository.restoreStock(client, line.sizeId, line.qty);
+    const restoredDeltas: SizeStockDelta[] = [];
+    for (const { sizeId, qty } of mergeStockLinesBySize(lines)) {
+      await productRepository.restoreStock(tx, sizeId, qty);
+      restoredDeltas.push({ sizeId, delta: qty });
     }
+    await recordStockChanges(tx, movement, restoredDeltas);
   },
 
   async adjustStock(
@@ -718,17 +780,19 @@ export const productService = {
       );
     }
 
-    const sorted = [...adjustments].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
+    const sortedAdjustments = [...adjustments].sort((left, right) =>
+      left.sizeId.localeCompare(right.sizeId),
+    );
 
     await prisma.$transaction(async (tx) => {
-      for (const { sizeId, delta } of sorted) {
+      for (const { sizeId, delta } of sortedAdjustments) {
         if (delta > 0) {
           await productRepository.restoreStock(tx, sizeId, delta);
           continue;
         }
 
-        const ok = await productRepository.decrementStock(tx, sizeId, -delta);
-        if (!ok) {
+        const isDecremented = await productRepository.decrementStock(tx, sizeId, -delta);
+        if (!isDecremented) {
           throw new AppError(
             "INSUFFICIENT_STOCK",
             "Can't reduce stock below what's available.",
@@ -737,6 +801,16 @@ export const productService = {
           );
         }
       }
+
+      await recordStockChanges(
+        tx,
+        {
+          kind: InventoryMovementKind.BRAND_ADJUSTMENT,
+          sourceType: InventoryMovementSource.BRAND_ADJUSTMENT,
+          sourceId: randomUUID(),
+        },
+        sortedAdjustments,
+      );
     });
 
     return productRepository.listSizesForProduct(productId);

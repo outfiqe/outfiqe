@@ -1,4 +1,8 @@
 import { CRM_COUNTER_RECONCILE_INTERVAL_MS, recomputeCrmCounters } from "#lib/crm-counters.js";
+import {
+  IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS,
+  runIdempotencyKeyRetentionSweep,
+} from "#lib/idempotency.utils.js";
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
@@ -37,14 +41,22 @@ import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { STALE_SHIPMENT_REMINDER_INTERVAL_MS } from "#modules/orders/order.constants.js";
 import { runStaleShipmentReminderDigest } from "#modules/orders/order.jobs.js";
+import { OFFER_LIFECYCLE_INTERVAL_MS } from "#modules/outfit-offers/outfit-offer.constants.js";
+import { runOutfitOfferLifecycleSweep } from "#modules/outfit-offers/outfit-offer.lifecycle.js";
+import { OUTFIT_PHOTO_CLEANUP } from "#modules/outfits/outfit.constants.js";
+import { runOutfitPhotoCleanupSweep } from "#modules/outfits/outfit-photo.service.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
 import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
+import { OUTBOX_BACKLOG_ALERT } from "#modules/platform-jobs/platform-jobs.constants.js";
+import { runOutboxBacklogCheck } from "#modules/platform-jobs/platform-jobs.monitor.js";
 import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import { SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS } from "#modules/platform-suspensions/platform-suspensions.constants.js";
 import { runSuspensionExpirySweep } from "#modules/platform-suspensions/platform-suspensions.expiry.js";
+import { INVENTORY_RECONCILIATION_INTERVAL_MS } from "#modules/products/product.constants.js";
+import { runInventoryLedgerReconciliation } from "#modules/products/product.jobs.js";
 import { SALE_SCORING_INTERVAL_MS } from "#modules/sale/sale.constants.js";
 import { saleService } from "#modules/sale/sale.service.js";
 import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
@@ -62,9 +74,39 @@ import {
   SCORING_INTERVAL_MS,
 } from "#modules/trending/trending.constants.js";
 import { trendingService } from "#modules/trending/trending.service.js";
+import {
+  OUTBOX_RELAY_INTERVAL_MS,
+  OUTBOX_RETENTION_SWEEP_INTERVAL_MS,
+} from "#outbox/outbox.constants.js";
+import { runOutboxRelay, runOutboxRetentionSweep } from "#outbox/outbox.service.js";
 import type { BoundaryJob, RecurringJob } from "#scheduling/scheduler.types.js";
 
 export const INTERVAL_JOBS: RecurringJob[] = [
+  {
+    name: "outbox-relay",
+    run: runOutboxRelay,
+    intervalMs: OUTBOX_RELAY_INTERVAL_MS,
+  },
+  {
+    name: "outbox-retention-sweep",
+    run: runOutboxRetentionSweep,
+    intervalMs: OUTBOX_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "outbox-backlog-check",
+    run: runOutboxBacklogCheck,
+    intervalMs: OUTBOX_BACKLOG_ALERT.CHECK_INTERVAL_MS,
+  },
+  {
+    name: "idempotency-key-retention-sweep",
+    run: runIdempotencyKeyRetentionSweep,
+    intervalMs: IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "inventory-ledger-reconciliation",
+    run: runInventoryLedgerReconciliation,
+    intervalMs: INVENTORY_RECONCILIATION_INTERVAL_MS,
+  },
   {
     name: "announcement-scheduled-dispatch",
     run: runAnnouncementScheduledDispatch,
@@ -84,6 +126,16 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "brand-payout-lifecycle",
     run: runBrandPayoutLifecycleSweep,
     intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "outfit-offer-lifecycle",
+    run: runOutfitOfferLifecycleSweep,
+    intervalMs: OFFER_LIFECYCLE_INTERVAL_MS,
+  },
+  {
+    name: "outfit-photo-cleanup",
+    run: runOutfitPhotoCleanupSweep,
+    intervalMs: OUTFIT_PHOTO_CLEANUP.SWEEP_INTERVAL_MS,
   },
   {
     name: "crm-subscription-renewal",

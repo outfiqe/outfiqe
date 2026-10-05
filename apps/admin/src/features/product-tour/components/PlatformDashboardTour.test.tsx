@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PLATFORM_NAV_ITEMS } from "@/components/AdminSidebar";
 import { useAuth } from "@/features/auth/AuthContext";
 
 import type { TourProgress } from "../api/toursSchemas";
@@ -143,7 +144,10 @@ describe("PlatformDashboardTour", () => {
   });
 
   it("skips a hidden group's step for a non-co-founder", async () => {
-    mockAuth({ hasPlatformAccess: true, hiddenPlatformNavKeys: ["platform-features"] });
+    const platformSettingsNavKeys = PLATFORM_NAV_ITEMS.filter(
+      (navItem) => navItem.group === "platform-settings",
+    ).map((navItem) => navItem.id);
+    mockAuth({ hasPlatformAccess: true, hiddenPlatformNavKeys: platformSettingsNavKeys });
 
     renderTour();
     await screen.findByRole("dialog", { name: WELCOME_TITLE });

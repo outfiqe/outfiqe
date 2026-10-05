@@ -21,6 +21,7 @@ import { resolveNotificationTarget } from "./notification.targets.js";
 import type {
   BroadcastNotificationInput,
   CreateIndividualNotificationInput,
+  NotificationActorSnapshot,
   NotificationChannelChanges,
   NotificationFeedCursor,
   NotificationMetadata,
@@ -211,6 +212,10 @@ export const notificationService = {
     if (!result) return;
 
     await (result.wasCreated ? broadcastCreated(result.record) : broadcastUpdated(result.record));
+  },
+
+  describeActor(userId: string): Promise<NotificationActorSnapshot | null> {
+    return notificationRepository.findActorSnapshot(userId);
   },
 
   async retractGroupActor(input: RetractGroupActorInput): Promise<void> {

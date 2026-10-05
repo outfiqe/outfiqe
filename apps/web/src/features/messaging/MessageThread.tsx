@@ -3,17 +3,21 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { useConversation, useConversationThread, useMarkConversationRead } from "@outfiqe/hooks";
 import type { Message } from "@outfiqe/types";
-import { ArrowLeft, Check, CheckCheck } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { ArrowLeft, Check, CheckCheck, Info } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { BuildCardMessage } from "@/features/outfit-build/components/BuildCardMessage";
 import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 
+import { GroupAvatar } from "./GroupAvatar";
+import { GroupInfoPanel } from "./GroupInfoPanel";
 import { MessageComposer } from "./MessageComposer";
 import { formatLastSeen, formatMessageClock, formatMessageDateSeparator } from "./messagingTime";
+import { SystemMessageLine } from "./SystemMessageLine";
 
 const SCROLL_TO_BOTTOM_THRESHOLD_PX = 150;
 const SKELETON_ROW_COUNT = 3;
@@ -23,8 +27,24 @@ type MessageThreadProps = {
   onBack: () => void;
 };
 
-const MessageBubble = ({ message }: { message: Message }) => (
+const USER_MESSAGE_KIND = "USER";
+const OUTFIT_CARD_MESSAGE_KIND = "OUTFIT_CARD";
+
+const ThreadMessage = ({ message, senderLabel }: { message: Message; senderLabel?: string }) => {
+  if (message.kind === USER_MESSAGE_KIND) {
+    return <MessageBubble message={message} senderLabel={senderLabel} />;
+  }
+  if (message.kind === OUTFIT_CARD_MESSAGE_KIND) return <BuildCardMessage message={message} />;
+  return <SystemMessageLine message={message} />;
+};
+
+const MessageBubble = ({ message, senderLabel }: { message: Message; senderLabel?: string }) => (
   <div className={cn("flex flex-col", message.isMine ? "items-end" : "items-start")}>
+    {senderLabel && (
+      <span className="mb-0.5 px-1 text-[11px] font-semibold text-muted-foreground">
+        {senderLabel}
+      </span>
+    )}
     {message.attachments.length > 0 && (
       <div className="mb-1 flex flex-wrap gap-1.5">
         {message.attachments.map((attachment) => (
@@ -87,6 +107,7 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
   const conversationQuery = useConversation(conversationsApi, conversationId);
   const threadQuery = useConversationThread(conversationsApi, conversationId);
   const markRead = useMarkConversationRead(conversationsApi, conversationId);
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number | null>(null);
@@ -140,7 +161,37 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
   }, [newestMessageId]);
 
   const participant = conversationQuery.data?.otherParticipant;
+  const group = conversationQuery.data?.group ?? null;
   const isParticipantLoading = conversationQuery.isPending;
+  const isUnavailable = conversationQuery.isError;
+
+  if (isUnavailable) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to conversations"
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+        </div>
+        <div
+          role="status"
+          className="flex flex-1 flex-col items-center justify-center gap-1 px-4 text-center"
+        >
+          <p className="text-sm font-medium text-foreground">
+            This conversation isn&apos;t available any more
+          </p>
+          <p className="text-xs text-muted-foreground">
+            You may have left it, or someone removed you from the group.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -155,6 +206,41 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
         </button>
         {isParticipantLoading ? (
           <ThreadHeaderSkeleton />
+        ) : group ? (
+          <>
+            <GroupAvatar
+              members={group.members}
+              fallbackKey={conversationId}
+              sizeClassName="size-9"
+            />
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[13.5px] font-semibold text-foreground">
+                {group.name}
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {group.memberCount} people
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsGroupInfoOpen(true)}
+              aria-label="Group info"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+            >
+              <Info className="size-4" />
+            </button>
+            <GroupInfoPanel
+              open={isGroupInfoOpen}
+              onClose={() => setIsGroupInfoOpen(false)}
+              conversationId={conversationId}
+              groupName={group.name}
+              myRole={group.myRole}
+              onLeft={() => {
+                setIsGroupInfoOpen(false);
+                onBack();
+              }}
+            />
+          </>
         ) : (
           <>
             <span className="relative shrink-0">
@@ -208,7 +294,11 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
         {!threadQuery.isLoading && messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-1 py-10 text-center">
             <p className="text-sm font-medium text-foreground">Say hello</p>
-            <p className="text-xs text-muted-foreground">This is the start of your conversation.</p>
+            <p className="text-xs text-muted-foreground">
+              {group
+                ? "This is the start of the group."
+                : "This is the start of your conversation."}
+            </p>
           </div>
         )}
 
@@ -218,11 +308,18 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
             !previous ||
             formatMessageDateSeparator(previous.createdAt) !==
               formatMessageDateSeparator(message.createdAt);
+          const isNewSpeaker =
+            !previous ||
+            previous.senderId !== message.senderId ||
+            previous.kind !== USER_MESSAGE_KIND ||
+            showDateSeparator;
+          const senderLabel =
+            group && !message.isMine && isNewSpeaker ? message.sender.name : undefined;
 
           return (
             <div key={message.id}>
               {showDateSeparator && <DateSeparator isoDate={message.createdAt} />}
-              <MessageBubble message={message} />
+              <ThreadMessage message={message} senderLabel={senderLabel} />
             </div>
           );
         })}

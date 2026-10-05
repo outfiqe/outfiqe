@@ -23,7 +23,8 @@ The signed-in brand owner's workspace: an at-a-glance overview, plus manage the 
 - `components/OrdersSection.tsx` — the `/manage-orders` page: a paginated list of this brand's **fulfilment groups** (one shipment per order), each row (`BrandShipmentRow`) linking to `/manage-orders/[groupId]`. Backed by `useBrandShipments` → `brandFulfilmentApi.list` → `GET /orders/brand/fulfilment-groups`.
 - `components/BrandShipmentDetail.tsx` + `MarkShipmentShippedModal.tsx` + `RequestShipmentCancellationModal.tsx` + `shipmentStatus.ts` — the `/manage-orders/[groupId]` shipment detail. Shows the buyer ship-to contact (name/phone/address), this brand's items with price breakdown, this brand's payout for the shipment, and the next fulfilment action: **Mark packed** / **Mark shipped** (carrier + tracking modal) / **Mark delivered** (`useAdvanceShipment` → `PATCH /orders/brand/fulfilment-groups/:groupId`), plus **Request cancellation** (`useRequestShipmentCancellation` → `POST …/request-cancellation`; the actual cancel + refund is an admin action). `shipmentStatus.ts` owns the status labels/tones and the `nextShipmentStatus` transition map. `api/brandFulfilmentApi.ts` / `brandFulfilmentSchemas.ts` and the `useBrandShipment(s)` / `useAdvanceShipment` / `useRequestShipmentCancellation` hooks mirror the other API/hook pairs.
 - `components/WalletSummaryTiles.tsx` — the settlement-ledger breakdown (total sales, pending,
-  available, withdrawn) shown at the top of `/wallet`, mirroring
+  available, withdrawn, and "From builds": the brand's share of Build commission, which the API
+  already folds into the other figures) shown at the top of `/wallet`, mirroring
   `creator-dashboard/EarningsSummaryTiles.tsx`. The wallet page's bank-account management and
   withdraw request flow itself isn't owned by this feature — see below.
 - `api/brandDashboardApi.ts`, `brandProductsApi.ts`, `brandFulfilmentApi.ts`, `brandPayoutApi.ts` (+

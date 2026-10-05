@@ -261,6 +261,19 @@ describe("canReceiveNotificationType", () => {
     ).toBe(true);
   });
 
+  it("sends offer notices to the side of the deal they are about", () => {
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RECEIVED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RELEASED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_RECEIVED, business)).toBe(
+      false,
+    );
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_ACCEPTED, business)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_REFUNDED, business)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_ACCEPTED, shopper)).toBe(false);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_EXPIRED, shopper)).toBe(true);
+    expect(canReceiveNotificationType(NotificationType.OUTFIT_OFFER_EXPIRED, business)).toBe(true);
+  });
+
   it("gives a business that also runs a tenant both business and tenant notifications", () => {
     const businessOwner = anAudience({
       isBrandMember: true,

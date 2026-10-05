@@ -20,6 +20,7 @@ import {
 import type {
   BrandProductSize,
   CreateProductInput,
+  InventoryLedgerEntryInput,
   ProductDiscountRecord,
   ProductFirstImageAsset,
   ProductRecord,
@@ -31,6 +32,7 @@ import type {
   ProductWithStockSizesAndImages,
   SeenOnCreator,
   SetProductDiscountInput,
+  StockLedgerMismatch,
   UpdateProductDiscountInput,
   UpdateProductInput,
 } from "./product.types.js";
@@ -200,9 +202,12 @@ const withTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>(
   rows.map(toWithTotalStockAndSizes);
 
 export const productRepository = {
-  async create(input: CreateProductInput): Promise<ProductWithStockSizesAndImages> {
+  async create(
+    client: DbClient,
+    input: CreateProductInput,
+  ): Promise<ProductWithStockSizesAndImages> {
     const { imageUrls, imageAssetIds, categoryIds, sizes: sizeInputs, ...rest } = input;
-    const product = await prisma.product.create({
+    const product = await client.product.create({
       data: {
         ...rest,
         categories: { connect: categoryIds.map((id) => ({ id })) },
@@ -230,9 +235,13 @@ export const productRepository = {
     return toWithTotalStockAndSizes(product);
   },
 
-  async update(id: string, input: UpdateProductInput): Promise<ProductWithStockSizesAndImages> {
+  async update(
+    client: DbClient,
+    id: string,
+    input: UpdateProductInput,
+  ): Promise<ProductWithStockSizesAndImages> {
     const { imageUrls, imageAssetIds, categoryIds, sizes, ...rest } = input;
-    const product = await prisma.product.update({
+    const product = await client.product.update({
       where: { id },
       data: {
         ...rest,
@@ -484,6 +493,36 @@ export const productRepository = {
       where: { id: sizeId },
       data: { stock: { increment: qty } },
     });
+  },
+
+  async recordInventoryMovements(
+    client: DbClient,
+    entries: InventoryLedgerEntryInput[],
+  ): Promise<void> {
+    if (entries.length === 0) return;
+    await client.inventoryLedgerEntry.createMany({ data: entries });
+  },
+
+  async findStockLedgerMismatches(limit: number): Promise<StockLedgerMismatch[]> {
+    return prisma.$queryRaw<StockLedgerMismatch[]>`
+      SELECT ps."id" AS "sizeId", ps."stock" AS "stock", COALESCE(SUM(entry."delta"), 0)::int AS "ledgerTotal"
+      FROM "product_sizes" ps
+      JOIN "inventory_ledger_entries" entry ON entry."size_id" = ps."id"
+      GROUP BY ps."id", ps."stock"
+      HAVING ps."stock" <> COALESCE(SUM(entry."delta"), 0)
+      ORDER BY ps."id"
+      LIMIT ${limit}`;
+  },
+
+  async recordOpeningBalancesForUntrackedSizes(): Promise<number> {
+    return prisma.$executeRaw`
+      INSERT INTO "inventory_ledger_entries" ("id", "size_id", "delta", "kind", "source_type", "source_id")
+      SELECT gen_random_uuid(), ps."id", ps."stock", 'OPENING_BALANCE', 'PRODUCT_SIZE', ps."id"::text
+      FROM "product_sizes" ps
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "inventory_ledger_entries" entry WHERE entry."size_id" = ps."id"
+      )
+      ON CONFLICT DO NOTHING`;
   },
 
   async findSizeIdsForProduct(productId: string, sizeIds: string[]): Promise<string[]> {

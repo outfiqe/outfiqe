@@ -35,6 +35,20 @@ export const NotificationType = {
   CRM_INVOICE_DUE: "CRM_INVOICE_DUE",
   CRM_SUBSCRIPTION_PAST_DUE: "CRM_SUBSCRIPTION_PAST_DUE",
   CRM_SUBSCRIPTION_CANCELED: "CRM_SUBSCRIPTION_CANCELED",
+  OUTFIT_BOARD_ACTIVITY: "OUTFIT_BOARD_ACTIVITY",
+  OUTFIT_READY_TO_LOCK: "OUTFIT_READY_TO_LOCK",
+  OUTFIT_LOCKED: "OUTFIT_LOCKED",
+  OUTFIT_INVITED: "OUTFIT_INVITED",
+  OUTFIT_SHARED: "OUTFIT_SHARED",
+  OUTFIT_MADE_PUBLIC: "OUTFIT_MADE_PUBLIC",
+  OUTFIT_ITEMS_SOLD_OUT: "OUTFIT_ITEMS_SOLD_OUT",
+  OUTFIT_NEW_VERSION_AVAILABLE: "OUTFIT_NEW_VERSION_AVAILABLE",
+  OUTFIT_OFFER_RECEIVED: "OUTFIT_OFFER_RECEIVED",
+  OUTFIT_OFFER_ACCEPTED: "OUTFIT_OFFER_ACCEPTED",
+  OUTFIT_OFFER_DECLINED: "OUTFIT_OFFER_DECLINED",
+  OUTFIT_OFFER_EXPIRED: "OUTFIT_OFFER_EXPIRED",
+  OUTFIT_OFFER_RELEASED: "OUTFIT_OFFER_RELEASED",
+  OUTFIT_OFFER_REFUNDED: "OUTFIT_OFFER_REFUNDED",
   ACCOUNT_APPROVED: "ACCOUNT_APPROVED",
 } as const;
 
@@ -56,6 +70,8 @@ export const NotificationEntityType = {
   ANNOUNCEMENT: "ANNOUNCEMENT",
   CRM_SUBSCRIPTION: "CRM_SUBSCRIPTION",
   CRM_SUBSCRIPTION_INVOICE: "CRM_SUBSCRIPTION_INVOICE",
+  OUTFIT: "OUTFIT",
+  OUTFIT_OFFER: "OUTFIT_OFFER",
 } as const;
 
 export type NotificationEntityType =
@@ -111,11 +127,14 @@ export type NotificationMetadata = {
   levelName?: string;
   levelIcon?: string | null;
   commissionAmount?: number;
+  offerAmount?: number;
   orderTotal?: number;
   brandName?: string;
   status?: string;
   productName?: string;
   productImageUrl?: string | null;
+  outfitTitle?: string | null;
+  soldOutItemCount?: number;
   rating?: number;
   withdrawAmount?: number;
   rejectionReason?: string;
