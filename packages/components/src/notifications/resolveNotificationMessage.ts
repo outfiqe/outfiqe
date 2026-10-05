@@ -143,13 +143,13 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
       return soldOutMessage(notification);
     case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
-      return `A new version of ${outfitName(notification)} is ready to post as a look`;
+      return `A new version of ${outfitName(notification)} is ready to drop as a look`;
     case NotificationType.OUTFIT_OFFER_RECEIVED:
-      return `${metadata.brandName ?? "A brand"} offered you ${offerAmount(notification)} to post ${outfitName(notification)}`;
+      return `${metadata.brandName ?? "A brand"} offered you ${offerAmount(notification)} to drop ${outfitName(notification)}`;
     case NotificationType.OUTFIT_OFFER_ACCEPTED:
-      return `${metadata.actor?.name ?? "The creator"} accepted your offer on ${outfitName(notification)}`;
+      return `${metadata.actor?.name ?? "The muse"} accepted your offer on ${outfitName(notification)}`;
     case NotificationType.OUTFIT_OFFER_DECLINED:
-      return `${metadata.actor?.name ?? "The creator"} declined your offer on ${outfitName(notification)}. It will be refunded`;
+      return `${metadata.actor?.name ?? "The muse"} declined your offer on ${outfitName(notification)}. It will be refunded`;
     case NotificationType.OUTFIT_OFFER_EXPIRED:
       return `The offer on ${outfitName(notification)} ran out of time`;
     case NotificationType.OUTFIT_OFFER_RELEASED:

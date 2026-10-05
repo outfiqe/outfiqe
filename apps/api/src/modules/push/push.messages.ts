@@ -229,12 +229,12 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) => `Swap it in ${outfitNameFrom(payload)} before you lock`,
   },
   [NotificationType.OUTFIT_NEW_VERSION_AVAILABLE]: {
-    title: "A build you posted has changed",
-    body: (payload) => `Post the new version of ${outfitNameFrom(payload)} as a look`,
+    title: "A build you dropped has changed",
+    body: (payload) => `Drop the new version of ${outfitNameFrom(payload)} as a look`,
   },
   [NotificationType.OUTFIT_OFFER_RECEIVED]: {
     title: "You have a new offer",
-    body: (payload) => `${brandNameFrom(payload)} wants you to post ${outfitNameFrom(payload)}`,
+    body: (payload) => `${brandNameFrom(payload)} wants you to drop ${outfitNameFrom(payload)}`,
   },
   [NotificationType.OUTFIT_OFFER_ACCEPTED]: {
     title: "Offer accepted",

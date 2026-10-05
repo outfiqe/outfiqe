@@ -81,7 +81,7 @@ export const outfitSocialController = {
     sendSuccess(
       res,
       await outfitSocialService.listComments(viewerIdFrom(res), id, query),
-      "Comments.",
+      "Chimes.",
     );
   },
 
@@ -102,7 +102,7 @@ export const outfitSocialController = {
     sendSuccess(
       res,
       await outfitSocialService.addComment(userId, id, body),
-      "Comment added.",
+      "Chime added.",
       CREATED_STATUS,
     );
   },

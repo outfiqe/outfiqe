@@ -60,14 +60,14 @@ describe("toPushMessage", () => {
       }),
     );
 
-    expect(message.body).toBe('Kastha wants you to post "Dashain set"');
+    expect(message.body).toBe('Kastha wants you to drop "Dashain set"');
     expect(message.url).toBe("/offers");
   });
 
   it("falls back to a plain brand name and sends released money to the wallet", () => {
     expect(
       toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RECEIVED })).body,
-    ).toBe("A brand wants you to post an outfit build");
+    ).toBe("A brand wants you to drop an outfit build");
     expect(toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RELEASED })).url).toBe(
       "/wallet",
     );

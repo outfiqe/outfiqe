@@ -62,18 +62,18 @@ describe("OffersPage", () => {
     expect(screen.getByText("Waiting for payment")).toBeInTheDocument();
   });
 
-  it("shows a creator the offers they received, with an empty state when there are none", async () => {
+  it("shows a muse the offers they received, with an empty state when there are none", async () => {
     mockAuth(false);
     mswServer.use(http.get(RECEIVED_URL, () => ok({ items: [], nextCursor: null })));
     renderPage();
 
     expect(
       await screen.findByText(
-        "No offers yet. When a brand offers to pay you to post a build, it shows up here.",
+        "No offers yet. When a brand offers to pay you to drop a build, it shows up here.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Brands offering to pay you to post builds as looks."),
+      screen.getByText("Brands offering to pay you to drop builds as looks."),
     ).toBeInTheDocument();
   });
 

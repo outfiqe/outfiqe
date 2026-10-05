@@ -18,14 +18,14 @@ const WEEK_COLUMNS = [
   "Started in a chat",
   "Locked",
   "Made public",
-  "Comments",
-  "Likes",
-  "Saves",
+  "Chimes",
+  "Cheriqs",
+  "Stashes",
   "Full-set orders",
   "Picked-item orders",
 ];
 
-const SCOPE_LABEL = { CREATOR_LOOK: "Creator Look", OUTFIT_BUILD: "Build" } as const;
+const SCOPE_LABEL = { CREATOR_LOOK: "Drop", OUTFIT_BUILD: "Build" } as const;
 
 const describeRange = (minPrice: number, maxPrice: number | null): string =>
   maxPrice === null ? `Rs. ${minPrice} and above` : `Rs. ${minPrice}–${maxPrice}`;

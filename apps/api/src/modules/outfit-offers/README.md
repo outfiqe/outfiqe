@@ -33,7 +33,7 @@ creator's earnings and can be withdrawn. In every other ending the brand is refu
 **User-facing.** A brand owner on a locked build opens "Send an offer", picks a creator on the
 build, enters an amount and a message, and pays. The creator gets a notification and sees the
 offer on the build and under Offers, with the date to answer by. Accepting starts the posting
-deadline; the creator then uses "Post as a look" on the build. After the holding period the
+deadline; the creator then uses "Drop as a look" on the build. After the holding period the
 amount shows up in the creator's earnings. Declining, cancelling, missing a deadline or deleting
 the look early refunds the brand.
 

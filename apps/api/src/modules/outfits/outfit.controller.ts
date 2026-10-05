@@ -101,7 +101,7 @@ export const outfitController = {
     sendSuccess(
       res,
       look,
-      isNew ? "Look posted." : "Look already posted.",
+      isNew ? "Look dropped." : "Look already dropped.",
       isNew ? CREATED_STATUS : OK_STATUS,
     );
   },

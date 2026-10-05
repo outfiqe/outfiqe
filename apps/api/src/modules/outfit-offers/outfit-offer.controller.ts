@@ -105,7 +105,7 @@ export const outfitOfferController = {
     const { offerId } = validated.params<OfferIdParam>(res);
     const body = validated.body<AdminOfferActionBody>(res);
     const offer = await outfitOfferService.adminRelease(userId, offerId, body);
-    sendSuccess(res, offer, "Offer released to the creator.");
+    sendSuccess(res, offer, "Offer released to the muse.");
   },
 
   async adminRefund(_req: Request, res: Response) {

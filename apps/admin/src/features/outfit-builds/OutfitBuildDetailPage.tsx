@@ -220,7 +220,7 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
           </ul>
         </Section>
 
-        <Section title="Looks posted from this build">
+        <Section title="Looks dropped from this build">
           {detail.looks.length === NOTHING && <EmptyLine text="No looks yet." />}
           <ul className="space-y-1 text-sm">
             {detail.looks.map((look) => (

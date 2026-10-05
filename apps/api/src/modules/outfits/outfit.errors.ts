@@ -161,12 +161,12 @@ export const outfitErrors = {
     new AppError("SHARE_NOT_FOUND", "This build wasn't sent to that person.", NOT_FOUND_STATUS),
 
   commentNotFound: () =>
-    new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS),
+    new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS),
 
   replyToReply: () =>
     new AppError(
       "COMMENT_NOT_TOP_LEVEL",
-      "You can only reply to a top-level comment.",
+      "You can only reply to a top-level chime.",
       UNPROCESSABLE_STATUS,
     ),
 
@@ -234,7 +234,7 @@ export const outfitErrors = {
   lookFromVersionDeleted: () =>
     new AppError(
       "LOOK_FROM_VERSION_DELETED",
-      "You deleted the look you made from this version. Lock a new version to post it again.",
+      "You deleted the look you made from this version. Lock a new version to drop it again.",
       CONFLICT_STATUS,
     ),
 };

@@ -18,22 +18,22 @@ const NO_OFFERS = 0;
 type OfferTab = { label: string; filter: OfferFilter };
 
 const WAITING_ON_CREATOR_TAB: OfferTab = {
-  label: "Waiting on creator",
+  label: "Waiting on muse",
   filter: { kind: "status", status: "AWAITING_RESPONSE" },
 };
 
 const FILTER_TABS: OfferTab[] = [
   WAITING_ON_CREATOR_TAB,
   { label: "Accepted", filter: { kind: "status", status: "ACCEPTED" } },
-  { label: "Posted", filter: { kind: "status", status: "POSTED" } },
+  { label: "Dropped", filter: { kind: "status", status: "POSTED" } },
   { label: "Released", filter: { kind: "status", status: "RELEASED" } },
   { label: "Needs manual refund", filter: { kind: "refund", refundStatus: "NEEDS_MANUAL_REFUND" } },
 ];
 
 const ACTION_COPY: Record<AdminOfferAction, { button: string; title: string; label: string }> = {
   release: {
-    button: "Release to creator",
-    title: "Release offer to the creator",
+    button: "Release to muse",
+    title: "Release offer to the muse",
     label: "Why are you releasing this offer?",
   },
   refund: {
@@ -89,7 +89,7 @@ export const OffersSection = () => {
     <div>
       <h2 className="font-display text-lg font-bold text-foreground">Build offers</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Money brands paid to creators for posting a build. Release or refund by hand when there is a
+        Money brands paid to muses for dropping a build. Release or refund by hand when there is a
         dispute; every action is audited.
       </p>
 

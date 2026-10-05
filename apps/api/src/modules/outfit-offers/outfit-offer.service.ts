@@ -520,9 +520,7 @@ export const outfitOfferService = {
       OFFER_CLOSED_REASON.CANCELLED_BY_BRAND,
     );
     if (!isCancelled) {
-      throw offerErrors.invalidTransition(
-        "Only offers the creator hasn't answered can be cancelled.",
-      );
+      throw offerErrors.invalidTransition("Only offers the muse hasn't answered can be cancelled.");
     }
     await refundOffer(offerId);
     return reloadView(offerId, OFFER_VIEWER_SIDE.BRAND);
@@ -574,12 +572,12 @@ export const outfitOfferService = {
       OutfitOfferStatus.POSTED,
     ]);
     if (!isReleased) {
-      throw offerErrors.invalidTransition("Only accepted or posted offers can be released.");
+      throw offerErrors.invalidTransition("Only accepted or dropped offers can be released.");
     }
     await platformAudit.record({
       actorUserId: adminUserId,
       action: PLATFORM_AUDIT_ACTION.OUTFIT_OFFER_RELEASED_BY_ADMIN,
-      summary: `Released Rs. ${offer.amount} from ${offer.brand.name} to the creator: ${reason}`,
+      summary: `Released Rs. ${offer.amount} from ${offer.brand.name} to the muse: ${reason}`,
       onBehalfOfUserId: offer.creatorId,
       targetType: OFFER_AUDIT_TARGET_TYPE,
       targetId: offerId,

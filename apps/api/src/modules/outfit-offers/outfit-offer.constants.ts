@@ -5,14 +5,14 @@ import { PaymentMethod } from "#generated/prisma/enums.js";
 export const OFFER_PAYMENT_METHODS = [PaymentMethod.ESEWA, PaymentMethod.KHALTI] as const;
 
 export const OFFER_CLOSED_REASON = {
-  DECLINED_BY_CREATOR: "The creator declined the offer.",
-  CANCELLED_BY_BRAND: "The brand cancelled the offer before the creator answered.",
-  NOT_ANSWERED_IN_TIME: "The creator didn't answer before the deadline.",
-  NOT_POSTED_IN_TIME: "The creator didn't post the look before the deadline.",
+  DECLINED_BY_CREATOR: "The muse declined the offer.",
+  CANCELLED_BY_BRAND: "The brand cancelled the offer before the muse answered.",
+  NOT_ANSWERED_IN_TIME: "The muse didn't answer before the deadline.",
+  NOT_POSTED_IN_TIME: "The muse didn't drop the look before the deadline.",
   LOOK_REMOVED_EARLY: "The look was deleted before the holding period ended.",
   PAYMENT_NOT_COMPLETED: "The payment wasn't completed.",
   REFUNDED_BY_ADMIN: "Refunded by an admin.",
-  RELEASED_BY_ADMIN: "Released to the creator by an admin.",
+  RELEASED_BY_ADMIN: "Released to the muse by an admin.",
 } as const;
 
 export const OFFER_RATE_LIMITS = {

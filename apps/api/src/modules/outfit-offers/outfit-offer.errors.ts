@@ -22,7 +22,7 @@ export const offerErrors = {
   creatorNotOnBuild: () =>
     new AppError(
       "CREATOR_NOT_ON_BUILD",
-      "Offers can only go to an approved creator who is on this build.",
+      "Offers can only go to an approved muse who is on this build.",
       UNPROCESSABLE_STATUS,
     ),
 
@@ -36,7 +36,7 @@ export const offerErrors = {
   alreadyOpen: () =>
     new AppError(
       "OFFER_ALREADY_OPEN",
-      "There's already an open offer to this creator for this build.",
+      "There's already an open offer to this muse for this build.",
       CONFLICT_STATUS,
     ),
 

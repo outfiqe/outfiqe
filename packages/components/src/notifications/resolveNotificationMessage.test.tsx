@@ -82,7 +82,7 @@ describe("resolveNotificationMessage for outfit builds", () => {
           metadata: { brandName: "Kastha", offerAmount: 12500, outfitTitle: "Dashain look" },
         }),
       ),
-    ).toBe('Kastha offered you Rs. 12,500 to post "Dashain look"');
+    ).toBe('Kastha offered you Rs. 12,500 to drop "Dashain look"');
     expect(resolveNotificationMessage(buildNotification({ type: "OUTFIT_OFFER_RELEASED" }))).toBe(
       "Your money for an outfit build is ready to withdraw",
     );
@@ -91,7 +91,7 @@ describe("resolveNotificationMessage for outfit builds", () => {
     );
   });
 
-  it("says a newer version of a posted build is ready", () => {
+  it("says a newer version of a dropped build is ready", () => {
     expect(
       resolveNotificationMessage(
         buildNotification({
@@ -99,7 +99,7 @@ describe("resolveNotificationMessage for outfit builds", () => {
           metadata: { outfitTitle: "Dashain look" },
         }),
       ),
-    ).toBe('A new version of "Dashain look" is ready to post as a look');
+    ).toBe('A new version of "Dashain look" is ready to drop as a look');
   });
 
   it("names the sold-out item, or counts them when several sold out together", () => {

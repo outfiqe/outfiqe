@@ -122,11 +122,11 @@ describe("PostAsLookPanel", () => {
     renderPanel(lockedBoard());
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole("button", { name: "Post as a look" }));
-    const modal = await screen.findByRole("dialog", { name: "Post this build as a look" });
+    await user.click(await screen.findByRole("button", { name: "Drop as a look" }));
+    const modal = await screen.findByRole("dialog", { name: "Drop this build as a look" });
     expect(within(modal).getByLabelText("Caption")).toHaveValue("Dashain look");
     await user.selectOptions(within(modal).getByLabelText("Size of Maroon Kurta"), "M");
-    await user.click(within(modal).getByRole("button", { name: "Post look" }));
+    await user.click(within(modal).getByRole("button", { name: "Drop look" }));
 
     await waitFor(() =>
       expect(postedBodies).toEqual([
@@ -144,7 +144,7 @@ describe("PostAsLookPanel", () => {
     );
   });
 
-  it("offers to post the new version when the build was locked again", async () => {
+  it("offers to drop the new version when the build was locked again", async () => {
     mswServer.use(
       http.get(MY_LOOK_URL, () =>
         ok({ lookId: "look-1", publishedVersion: 2, lastLockedVersion: 4, isOutdated: true }),
@@ -153,19 +153,19 @@ describe("PostAsLookPanel", () => {
     renderPanel(lockedBoard());
 
     expect(
-      await screen.findByText("This build has a newer locked version than the look you posted."),
+      await screen.findByText("This build has a newer locked version than the look you dropped."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Post the new version" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Drop the new version" })).toBeInTheDocument();
   });
 
   it("stays hidden for people who aren't creators and for builds that aren't locked", () => {
     mockAuth({ isCreator: false });
     const { unmount } = renderPanel(lockedBoard());
-    expect(screen.queryByRole("heading", { name: "Post as a look" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Drop as a look" })).not.toBeInTheDocument();
     unmount();
 
     mockAuth({ isCreator: true });
     renderPanel({ ...lockedBoard(), status: "DRAFT" });
-    expect(screen.queryByRole("heading", { name: "Post as a look" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Drop as a look" })).not.toBeInTheDocument();
   });
 });

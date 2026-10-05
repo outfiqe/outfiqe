@@ -90,7 +90,8 @@ admin under **Feature switches**, take effect within seconds, and every change i
    buying a full set and picked items, posting as a look, an offer end to end, photos.
 3. **Beta.** Add about five brands and the creators they build with to the allow lists, including
    `outfit_public_feed`. Collect feedback every week.
-4. **Everyone.** Switch each one to everyone once it has been stable for two weeks.
+4. **Everyone.** Switch each one to everyone once it has been stable for two weeks, and only after
+   the 500-person load test has passed on servers sized like production.
 
 **The safety switch.** Turning `outfit_builder` off stops every build route, socket join and job
 at once; the web app hides the screens. Chat, Creator Looks, checkout and existing orders keep
@@ -135,4 +136,6 @@ most:
 | A sixth checkout in one minute is refused                                                 | `modules/orders/order.checkout-limits.integration.test.ts`                                 |
 
 The load test (500 people using boards at once) is in `apps/api/load/outfit-boards.k6.js`; how to
-run it is in `apps/api/load/README.md`.
+run it is in `apps/api/load/README.md`. Run the full 500 only against servers sized like
+production. On a laptop or the small internal test server, run a smaller version (the README says
+which size where), because there it measures that machine's limits, not the code.

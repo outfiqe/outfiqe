@@ -34,6 +34,27 @@ k6 run outfit-boards.k6.js
 Settings, through environment variables: `LOAD_API_URL` (default `http://localhost:3000`),
 `LOAD_PEOPLE` (default 500), `LOAD_DURATION` (default `3m`), `BOARDS_FILE`.
 
+### Which size to run where
+
+The full 500 only means something against a server sized like production. Against a smaller box it
+measures that box's limits, not the code, and can take the box down.
+
+| Where                                                                 | People            | What it shows                                                             |
+| --------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------- |
+| A laptop with the local Postgres and Redis                            | 50–100            | No lost changes, no deadlocks, the connection pool holds                  |
+| The small internal test droplet                                       | about 25 for `1m` | A smoke test of the real deploy: no errors or crashes. Ignore the timings |
+| AWS staging sized like production, before the "everyone" launch stage | 500               | The real targets below                                                    |
+
+For example, the droplet smoke test:
+
+```bash
+k6 run -e LOAD_PEOPLE=25 -e LOAD_DURATION=1m -e LOAD_API_URL=https://<droplet-api> outfit-boards.k6.js
+```
+
+Seed with fewer boards for the smaller runs (five people per board, so `--boards=5` for 25 people).
+Run k6 from a different machine than the API, in the same region, so the load generator is never
+what runs out of CPU.
+
 ## What passing means
 
 - `accepted_edit_duration` p95 under 200 ms: most accepted changes finish in under 200 ms.

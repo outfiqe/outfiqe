@@ -81,12 +81,12 @@ Ways in from the rest of the app:
   above the normal search. `useOutfitLiveSync` refetches the board on
   `outfit:availability-changed`, so an item selling out shows up without a reload.
 - Posting as a look: on a locked build, `PostAsLookPanel` (in the board's side column) shows
-  creators who are on the build a "Post as a look" button. `PublishLookModal` reuses the creator
+  creators who are on the build a "Drop as a look" button. `PublishLookModal` reuses the creator
   photo cropper and upload (`../creator-dashboard/components/PostModal.constants`,
   `PhotoCropPane`, `usePendingPhotos`), prefills the caption with the build's name and each
   item's size from `useMySizeByProductType`, and sends `POST /api/outfits/:id/look`
   (`hooks/useBuildLook.ts`). Afterwards the panel links to the look; when a newer version has
-  been locked since, it offers "Post the new version".
+  been locked since, it offers "Drop the new version".
 - Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
   (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
 - Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes

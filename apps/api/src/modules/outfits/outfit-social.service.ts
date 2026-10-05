@@ -348,7 +348,7 @@ export const outfitSocialService = {
       await platformAudit.record({
         actorUserId: principal.userId,
         action: PLATFORM_AUDIT_ACTION.OUTFIT_BUILD_COMMENT_REMOVED_BY_ADMIN,
-        summary: `Removed a comment by ${comment.userId} on a build`,
+        summary: `Removed a chime by ${comment.userId} on a build`,
         onBehalfOfUserId: comment.userId,
         targetType: OUTFIT_COMMENT_AUDIT_TARGET_TYPE,
         targetId: commentId,

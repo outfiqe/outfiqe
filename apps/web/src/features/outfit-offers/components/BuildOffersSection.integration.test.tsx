@@ -61,10 +61,10 @@ describe("BuildOffersSection", () => {
     renderSection();
 
     expect(await screen.findByText("No offers on this build yet.")).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Creator" }), "creator-1");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Muse" }), "creator-1");
     await user.type(screen.getByRole("textbox", { name: "Amount (Rs)" }), "5000");
     await user.click(screen.getByRole("radio", { name: "eSewa" }));
-    await user.type(screen.getByRole("textbox", { name: /Note to the creator/ }), "Love this set");
+    await user.type(screen.getByRole("textbox", { name: /Note to the muse/ }), "Love this set");
     await user.click(screen.getByRole("button", { name: "Pay and send offer" }));
 
     await waitFor(() =>
@@ -85,9 +85,9 @@ describe("BuildOffersSection", () => {
     renderSection();
 
     await user.click(screen.getByRole("button", { name: "Pay and send offer" }));
-    expect(screen.getByText("Pick the creator you want to pay.")).toBeInTheDocument();
+    expect(screen.getByText("Pick the muse you want to pay.")).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Creator" }), "creator-1");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Muse" }), "creator-1");
     await user.type(screen.getByRole("textbox", { name: "Amount (Rs)" }), "12.5");
     await user.click(screen.getByRole("button", { name: "Pay and send offer" }));
     expect(screen.getByText("Enter the amount in whole rupees.")).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("BuildOffersSection", () => {
     renderSection({ people: [] });
 
     expect(
-      screen.getByText("There's no creator on this build to send an offer to."),
+      screen.getByText("There's no muse on this build to send an offer to."),
     ).toBeInTheDocument();
   });
 

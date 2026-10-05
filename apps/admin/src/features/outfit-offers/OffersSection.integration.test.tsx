@@ -96,13 +96,13 @@ describe("OffersSection", () => {
     renderSection();
 
     expect(await screen.findByRole("heading", { name: "Kastha → Asha Rai" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Release to creator" }));
-    const dialog = await screen.findByRole("dialog", { name: "Release offer to the creator" });
+    await userEvent.click(screen.getByRole("button", { name: "Release to muse" }));
+    const dialog = await screen.findByRole("dialog", { name: "Release offer to the muse" });
     await userEvent.type(
       within(dialog).getByLabelText("Why are you releasing this offer?"),
       "Look checked by hand.",
     );
-    await userEvent.click(within(dialog).getByRole("button", { name: "Release to creator" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Release to muse" }));
 
     await waitFor(() => expect(releaseBody).toEqual({ reason: "Look checked by hand." }));
     expect(await screen.findByText("Offer updated.")).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe("OffersSection", () => {
     renderSection();
 
     await userEvent.click(await screen.findByRole("button", { name: "Mark refunded" }));
-    expect(screen.queryByRole("button", { name: "Release to creator" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Release to muse" })).not.toBeInTheDocument();
     const dialog = await screen.findByRole("dialog", { name: "Record a manual refund" });
     await userEvent.type(
       within(dialog).getByLabelText("How was the brand refunded? (reference)"),
@@ -170,7 +170,7 @@ describe("OffersSection", () => {
     renderSection();
 
     expect(await screen.findByRole("heading", { name: "Kastha → Asha Rai" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Release to creator" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Release to muse" })).not.toBeInTheDocument();
   });
 
   it("loads more offers when there is a next page", async () => {

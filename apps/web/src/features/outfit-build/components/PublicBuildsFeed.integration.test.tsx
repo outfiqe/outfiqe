@@ -111,7 +111,7 @@ describe("PublicBuildsFeed", () => {
     );
   });
 
-  it("opens a build in a pop-up where people can like it and comment", async () => {
+  it("opens a build in a pop-up where people can cheriq it and chime", async () => {
     const postedComments: unknown[] = [];
     let likeCount = 3;
     mswServer.use(
@@ -141,14 +141,14 @@ describe("PublicBuildsFeed", () => {
     await user.click(await screen.findByRole("button", { name: "Open Dashain look" }));
     const popup = await screen.findByRole("dialog");
     expect(await within(popup).findByText("Maroon Kurta")).toBeInTheDocument();
-    await user.click(within(popup).getByRole("button", { name: /Like/ }));
-    expect(await within(popup).findByRole("button", { name: /Liked/ })).toHaveAttribute(
+    await user.click(within(popup).getByRole("button", { name: /Cheriq/ }));
+    expect(await within(popup).findByRole("button", { name: /Cheriqed/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
 
-    await user.type(within(popup).getByLabelText("Add a comment"), "Love it");
-    await user.click(within(popup).getByRole("button", { name: "Post" }));
+    await user.type(within(popup).getByLabelText("Add a chime"), "Love it");
+    await user.click(within(popup).getByRole("button", { name: "Chime" }));
     await waitFor(() => expect(postedComments).toEqual([{ body: "Love it" }]));
   });
 
