@@ -7,6 +7,8 @@ import {
   hasNarrowingFilters,
   PRICE_RANGE,
   PRICE_RANGE_BOUNDS,
+  readPublicBuildFilters,
+  writePublicBuildFilters,
 } from "./publicBuildFilters";
 
 describe("price ranges", () => {
@@ -31,6 +33,42 @@ describe("price ranges", () => {
       PRICE_RANGE.FROM_5K_TO_10K,
     );
     expect(findSelectedPriceRange({ minPrice: 1_234 })).toBeNull();
+  });
+});
+
+describe("filters in the URL", () => {
+  it("reads style, price range, stock and sort, ignoring values it doesn't know", () => {
+    expect(
+      readPublicBuildFilters(
+        new URLSearchParams("style=festive&price=5k-10k&inStock=true&sort=price-high"),
+      ),
+    ).toEqual({
+      category: "festive",
+      minPrice: 5_000,
+      maxPrice: 9_999,
+      isInStockOnly: true,
+      sort: PUBLIC_BUILD_SORT.PRICE_HIGH,
+    });
+    expect(
+      readPublicBuildFilters(new URLSearchParams("price=cheap&sort=random&inStock=yes")),
+    ).toEqual({
+      category: undefined,
+      isInStockOnly: undefined,
+      sort: undefined,
+    });
+  });
+
+  it("writes only what differs from the defaults and keeps unrelated params", () => {
+    const params = new URLSearchParams("tab=builds&style=formal&price=over-10k");
+
+    writePublicBuildFilters(params, {
+      minPrice: undefined,
+      maxPrice: 4_999,
+      isInStockOnly: false,
+      sort: PUBLIC_BUILD_SORT.NEWEST,
+    });
+
+    expect(params.toString()).toBe("tab=builds&price=under-5k");
   });
 });
 

@@ -91,6 +91,8 @@
       "searchPlaceholder": "सामान खोज्नुहोस्",
       "searchLabel": "सामान खोज्नुहोस्",
       "typeFilterLabel": "सामानको प्रकार",
+      "earlierTypes": "अघिल्ला प्रकार",
+      "moreTypes": "थप प्रकार",
       "allTypes": "सबै प्रकार",
       "loadFailed": "सामान लोड हुन सकेन। फेरि प्रयास गर्नुहोस्।",
       "noResults": "स्टकमा मिल्ने सामान छैन।",
