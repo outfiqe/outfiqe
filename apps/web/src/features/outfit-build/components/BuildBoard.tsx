@@ -250,7 +250,10 @@ export const BuildBoard = ({
         )}
 
         <Tabs value={selectedTab} onValueChange={selectTab}>
-          <TabsList aria-label={t("sectionsLabel")} className="overflow-x-auto">
+          <TabsList
+            aria-label={t("sectionsLabel")}
+            className="overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             <TabsTrigger value={BOARD_TAB.OUTFIT}>{t("tabs.outfit")}</TabsTrigger>
             <TabsTrigger value={BOARD_TAB.PEOPLE}>
               {t("tabs.people", { count: board.members.length })}

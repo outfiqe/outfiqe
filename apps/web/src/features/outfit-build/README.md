@@ -152,7 +152,11 @@ board at once, the loser's change is undone and they're told who got there first
 - **Tab switches write the URL with `history.replaceState`, not `router.replace`.** On the build
   page `router.replace` would re-run the server page (its session check and metadata fetch) on
   every tab click. `replaceState` keeps `useSearchParams` in sync without that, the same reason the
-  creator profile uses it for `?look=`. The hook also highlights the new tab at once through
+  creator profile uses it for `?look=`. The state passed to `replaceState` must be `null`
+  (`shared/lib/replaceUrlSearchParams.ts`): Next skips its URL sync when it is handed its own
+  history state (anything carrying `__NA`), so passing `window.history.state` changed the address
+  bar but not `useSearchParams`, and the chosen tab snapped back to the default once the pending
+  highlight expired. The hook also highlights the new tab at once through
   `usePendingSelection`, like Explore's tabs.
 - **The board is split into tabs so it fits on one screen.** Everything used to sit in one long
   right-hand column (finder, people, actions, photos, drop as look, buy, offers), so editing meant

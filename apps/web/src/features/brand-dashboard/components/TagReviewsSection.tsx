@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { replaceUrlSearchParams } from "@/shared/lib/replaceUrlSearchParams";
 
 import type { RejectTagInput, TagReviewQueueItem } from "../api/tagReviewSchemas";
 import {
@@ -46,11 +47,7 @@ export const TagReviewsSection = () => {
   const [tab, setTab] = useState(initialTab);
   const selectTab = (nextTab: typeof tab) => {
     setTab(nextTab);
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `?${TAG_REVIEW_QUERY_PARAM.STATUS}=${nextTab}`,
-    );
+    replaceUrlSearchParams((params) => params.set(TAG_REVIEW_QUERY_PARAM.STATUS, nextTab));
   };
 
   const [rejectingItem, setRejectingItem] = useState<TagReviewQueueItem | null>(null);

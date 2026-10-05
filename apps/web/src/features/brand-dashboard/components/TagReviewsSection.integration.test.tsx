@@ -201,7 +201,11 @@ describe("TagReviewsSection", () => {
 
     await clickTab("Approved");
 
-    expect(replaceStateSpy).toHaveBeenCalledWith(window.history.state, "", "?status=APPROVED");
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      `${window.location.pathname}?status=APPROVED`,
+    );
     expect(await screen.findByText(/bought on outfiqe/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Remove tag" }));
 
@@ -301,11 +305,16 @@ describe("TagReviewsSection", () => {
 
     expect(replaceStateSpy).toHaveBeenNthCalledWith(
       1,
-      window.history.state,
+      null,
       "",
-      "?status=APPROVED",
+      `${window.location.pathname}?status=APPROVED`,
     );
-    expect(replaceStateSpy).toHaveBeenNthCalledWith(2, window.history.state, "", "?status=PENDING");
+    expect(replaceStateSpy).toHaveBeenNthCalledWith(
+      2,
+      null,
+      "",
+      `${window.location.pathname}?status=PENDING`,
+    );
   });
 
   it("surfaces a load error with a retry", async () => {

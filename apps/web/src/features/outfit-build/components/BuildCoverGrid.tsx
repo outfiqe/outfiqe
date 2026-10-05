@@ -10,6 +10,7 @@ const PREVIEW_IMAGE_COUNT = 3;
 const LEAD_PREVIEW_INDEX = 0;
 const NO_IMAGES = 0;
 const SINGLE_IMAGE = 1;
+const TWO_IMAGES = 2;
 
 type BuildCoverGridProps = {
   coverPhotos: { id: string; image: ResponsiveImage }[];
@@ -35,10 +36,11 @@ export const BuildCoverGrid = ({
   const isShowingCovers = leadCovers.length > NO_IMAGES;
   const shownImageCount = isShowingCovers ? leadCovers.length : previewImages.length;
   const extraItemCount = itemCount - previewImages.length;
+  const isFullHeightCell = (index: number) =>
+    shownImageCount === TWO_IMAGES ||
+    (index === LEAD_PREVIEW_INDEX && shownImageCount > SINGLE_IMAGE);
   const leadCellClass = (index: number) =>
-    index === LEAD_PREVIEW_INDEX && shownImageCount > SINGLE_IMAGE
-      ? "relative row-span-2"
-      : "relative";
+    isFullHeightCell(index) ? "relative row-span-2" : "relative";
 
   return (
     <div
