@@ -15,7 +15,7 @@ export const PublishedBuildView = ({ build }: { build: OutfitPublished }) => {
   const locale = useLocale();
 
   return (
-    <article className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+    <article className="mx-auto max-w-3xl space-y-4">
       <header>
         <h1 className="font-display text-2xl font-bold text-foreground">
           {build.title ?? tBoard("untitled")}

@@ -8,7 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Badge, toast } from "@outfiqe/design-system";
+import { Badge, Tabs, TabsContent, TabsList, TabsTrigger, toast } from "@outfiqe/design-system";
 import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -65,6 +65,13 @@ type PickerTarget = {
 } | null;
 
 const NO_SOLD_OUT_ITEMS = 0;
+
+const BOARD_TAB = {
+  OUTFIT: "outfit",
+  PEOPLE: "people",
+  PHOTOS: "photos",
+  BUY_AND_DROP: "buy-and-drop",
+} as const;
 
 const isPublicProduct = (value: unknown): value is PublicProduct =>
   typeof value === "object" && value !== null && "id" in value && "effectivePrice" in value;
@@ -176,7 +183,7 @@ export const BuildBoard = ({
 
   return (
     <DndContext sensors={sensors} onDragEnd={dropProductOnSlot}>
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
+      <div className="space-y-4">
         <header className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-2xl font-bold text-foreground">
             {board.title ?? t("untitled")}
@@ -205,6 +212,19 @@ export const BuildBoard = ({
           </p>
         )}
 
+        <BoardActions
+          board={board}
+          currentUserId={currentUserId}
+          isSaving={isSaving}
+          onToggleHappy={toggleHappy}
+          onLock={() => runOwnerAction("lock")}
+          onUnlock={() => runOwnerAction("unlock")}
+          onArchive={() => runOwnerAction("archive")}
+          onLeave={() => void runWrite((write) => outfitApi.leave(write))}
+          onOpenSettings={() => setOpenModal("settings")}
+          onOpenVisibility={() => setOpenModal("visibility")}
+        />
+
         <BudgetBar
           total={board.total}
           budget={board.budget}
@@ -221,26 +241,39 @@ export const BuildBoard = ({
           </p>
         )}
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="grid content-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {board.slots.map((slot) => (
-              <SlotCard
-                key={slot.key}
-                slot={slot}
-                canEdit={canEdit}
-                mySizeByProductType={mySizeByProductType}
-                onAddAt={openPicker}
-                onRemoveAt={removeItem}
-              />
-            ))}
-          </div>
+        <Tabs defaultValue={BOARD_TAB.OUTFIT}>
+          <TabsList aria-label={t("sectionsLabel")} className="overflow-x-auto">
+            <TabsTrigger value={BOARD_TAB.OUTFIT}>{t("tabs.outfit")}</TabsTrigger>
+            <TabsTrigger value={BOARD_TAB.PEOPLE}>
+              {t("tabs.people", { count: board.members.length })}
+            </TabsTrigger>
+            {isPhotosOn && <TabsTrigger value={BOARD_TAB.PHOTOS}>{t("tabs.photos")}</TabsTrigger>}
+            <TabsTrigger value={BOARD_TAB.BUY_AND_DROP}>{t("tabs.buyAndDrop")}</TabsTrigger>
+          </TabsList>
 
-          <aside className="space-y-4">
-            {canEdit && (
-              <div className="hidden lg:block">
-                <ProductFinderPanel productTypes={productTypes} />
+          <TabsContent value={BOARD_TAB.OUTFIT} className="mt-4">
+            <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
+              <div className="grid content-start gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+                {board.slots.map((slot) => (
+                  <SlotCard
+                    key={slot.key}
+                    slot={slot}
+                    canEdit={canEdit}
+                    mySizeByProductType={mySizeByProductType}
+                    onAddAt={openPicker}
+                    onRemoveAt={removeItem}
+                  />
+                ))}
               </div>
-            )}
+              {canEdit && (
+                <aside className="hidden xl:block">
+                  <ProductFinderPanel productTypes={productTypes} />
+                </aside>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value={BOARD_TAB.PEOPLE} className="mt-4 max-w-xl">
             <BoardPeople
               board={board}
               currentUserId={currentUserId}
@@ -252,19 +285,10 @@ export const BuildBoard = ({
                 void runWrite((write) => outfitApi.transferOwnership(write, userId))
               }
             />
-            <BoardActions
-              board={board}
-              currentUserId={currentUserId}
-              isSaving={isSaving}
-              onToggleHappy={toggleHappy}
-              onLock={() => runOwnerAction("lock")}
-              onUnlock={() => runOwnerAction("unlock")}
-              onArchive={() => runOwnerAction("archive")}
-              onLeave={() => void runWrite((write) => outfitApi.leave(write))}
-              onOpenSettings={() => setOpenModal("settings")}
-              onOpenVisibility={() => setOpenModal("visibility")}
-            />
-            {isPhotosOn && (
+          </TabsContent>
+
+          {isPhotosOn && (
+            <TabsContent value={BOARD_TAB.PHOTOS} className="mt-4 max-w-2xl">
               <BoardPhotosPanel
                 board={board}
                 currentUserId={currentUserId}
@@ -279,14 +303,20 @@ export const BuildBoard = ({
                   void runWrite((write) => outfitApi.setCovers(write, photoIds))
                 }
               />
-            )}
-            <PostAsLookPanel board={board} />
+            </TabsContent>
+          )}
+
+          <TabsContent
+            value={BOARD_TAB.BUY_AND_DROP}
+            className="mt-4 grid items-start gap-4 lg:grid-cols-2"
+          >
             {board.status === "LOCKED" && (
               <BuyBuildPanel
                 outfitId={board.id}
                 items={toBuyableBuildItems(board, mySizeByProductType)}
               />
             )}
+            <PostAsLookPanel board={board} />
             <BuildOffersSection
               outfitId={board.id}
               isLocked={board.status === "LOCKED"}
@@ -295,8 +325,8 @@ export const BuildBoard = ({
                 .filter(({ canReceiveOffers }) => canReceiveOffers)
                 .map(({ user }) => ({ id: user.id, name: user.name }))}
             />
-          </aside>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {pickerTarget && (
