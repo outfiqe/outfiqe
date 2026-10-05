@@ -96,6 +96,18 @@ export default tseslint.config(
   },
 
   {
+    files: ["**/*.k6.js"],
+    languageOptions: {
+      globals: {
+        __ENV: "readonly",
+        __VU: "readonly",
+        __ITER: "readonly",
+        open: "readonly",
+      },
+    },
+  },
+
+  {
     files: ["apps/admin/**/*.{ts,tsx}"],
     plugins: {
       "react-refresh": reactRefresh,

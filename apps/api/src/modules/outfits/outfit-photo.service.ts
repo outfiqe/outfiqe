@@ -163,6 +163,7 @@ export const loadCoversForBuilds = async (
 };
 
 export const runOutfitPhotoCleanupSweep = async (): Promise<void> => {
+  if (!(await featureFlagsService.isRolledOutToAnyone("outfit_builder"))) return;
   try {
     const readyCount = await outfitPhotoRepository.markProcessedPhotosReady();
     const removedCount = await outfitPhotoRepository.removeUnconfirmedPhotos(

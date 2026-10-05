@@ -35,6 +35,17 @@ const checkoutRateLimit = rateLimit({
   message: "Too many checkout attempts. Please wait a moment and try again.",
 });
 
+const CHECKOUT_BURST_WINDOW_MS = 60 * 1000;
+const CHECKOUT_BURST_MAX_REQUESTS = 5;
+
+const checkoutBurstRateLimit = rateLimit({
+  namespace: "checkout-burst",
+  windowMs: CHECKOUT_BURST_WINDOW_MS,
+  max: CHECKOUT_BURST_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many checkout attempts. Please wait a moment and try again.",
+});
+
 const CANCEL_WINDOW_MS = 60 * 60 * 1000;
 const CANCEL_MAX_REQUESTS = 10;
 
@@ -134,6 +145,7 @@ orderRoutes.post(
 orderRoutes.post(
   "/checkout",
   ...requireShopper,
+  checkoutBurstRateLimit,
   checkoutRateLimit,
   validate({ body: checkoutBodySchema }),
   orderController.checkout,
