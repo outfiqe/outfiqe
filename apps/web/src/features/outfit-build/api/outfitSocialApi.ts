@@ -17,7 +17,7 @@ import {
 const TRUE_PARAM = "true";
 
 const toFilterParams = (
-  { category, minPrice, maxPrice, isInStockOnly, contributorId, brandId }: PublicBuildFilters,
+  { category, minPrice, maxPrice, isInStockOnly, contributorId, brandId, sort }: PublicBuildFilters,
   cursor: string | undefined,
 ) => ({
   category,
@@ -26,6 +26,7 @@ const toFilterParams = (
   inStockOnly: isInStockOnly ? TRUE_PARAM : undefined,
   contributorId,
   brandId,
+  sort,
   cursor,
 });
 

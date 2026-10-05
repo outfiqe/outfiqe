@@ -1,3 +1,4 @@
+import { PUBLIC_BUILD_SORT, type PublicBuildSort } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { prisma } from "#db/prisma.js";
@@ -15,7 +16,7 @@ import { OUTFIT_LIMITS } from "./outfit.constants.js";
 import { outfitErrors } from "./outfit.errors.js";
 import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitPersonView } from "./outfit.types.js";
-import { parseSnapshotItems } from "./outfit.utils.js";
+import { parseSnapshotItems, toPublicFeedCursorValue } from "./outfit.utils.js";
 import { outfitCartRepository } from "./outfit-cart.repository.js";
 import { outfitPhotoRepository } from "./outfit-photo.repository.js";
 import { loadCoversForBuilds } from "./outfit-photo.service.js";
@@ -48,7 +49,30 @@ const SOCIAL_ACCESS = {
 
 type SocialAccess = (typeof SOCIAL_ACCESS)[keyof typeof SOCIAL_ACCESS];
 
-const publicFeedCursorSchema = z.object({ madePublicAt: z.iso.datetime(), id: z.uuid() });
+const WHOLE_NUMBER_TEXT_PATTERN = /^\d+$/;
+
+const publicFeedCursorSchema = z.discriminatedUnion("sort", [
+  z.object({ sort: z.literal(PUBLIC_BUILD_SORT.NEWEST), value: z.iso.datetime(), id: z.uuid() }),
+  z.object({
+    sort: z.enum([
+      PUBLIC_BUILD_SORT.MOST_CHERIQED,
+      PUBLIC_BUILD_SORT.PRICE_LOW,
+      PUBLIC_BUILD_SORT.PRICE_HIGH,
+    ]),
+    value: z.string().regex(WHOLE_NUMBER_TEXT_PATTERN),
+    id: z.uuid(),
+  }),
+]);
+
+const toMatchingFeedCursor = (
+  encodedCursor: string | undefined,
+  sort: PublicBuildSort,
+): PublicFeedCursor | undefined => {
+  const parsedCursor = publicFeedCursorSchema.safeParse(
+    decodeCursor<PublicFeedCursor>(encodedCursor),
+  );
+  return parsedCursor.success && parsedCursor.data.sort === sort ? parsedCursor.data : undefined;
+};
 
 type LoadedPublicBuild = Awaited<
   ReturnType<typeof outfitSocialRepository.loadPublicBuilds>
@@ -186,14 +210,14 @@ export const outfitSocialService = {
     filters: PublicBuildFilters,
     { cursor, limit }: { cursor?: string; limit: number },
   ): Promise<PublicBuildPage> {
-    const parsedCursor = publicFeedCursorSchema.safeParse(decodeCursor<PublicFeedCursor>(cursor));
+    const { sort } = filters;
     const rows = await outfitSocialRepository.listPublicBuildIds(
       filters,
-      parsedCursor.success ? parsedCursor.data : undefined,
+      toMatchingFeedCursor(cursor, sort),
       limit + LOOKAHEAD_ROW,
     );
-    const { items, nextCursor } = buildCursorPage(rows, limit, ({ madePublicAt, id }) =>
-      encodeCursor({ madePublicAt: madePublicAt.toISOString(), id }),
+    const { items, nextCursor } = buildCursorPage(rows, limit, (row) =>
+      encodeCursor({ sort, value: toPublicFeedCursorValue(row, sort), id: row.id }),
     );
     return {
       items: await loadCardsInOrder(

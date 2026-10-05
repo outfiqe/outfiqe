@@ -1,3 +1,4 @@
+import type { PublicBuildSort } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { outfitCoverPhotoSchema, outfitPhotoSchema } from "./outfitSchemas";
@@ -84,4 +85,5 @@ export type PublicBuildFilters = {
   isInStockOnly?: boolean;
   contributorId?: string;
   brandId?: string;
+  sort?: PublicBuildSort;
 };

@@ -59,9 +59,13 @@ are indexed.
 
 Builds in public (`api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`, `hooks/useBuildSocial.ts`):
 
-- `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: style, price range, everything in stock),
-  a grid of `PublicBuildCardView`s, infinite scroll, empty, loading and error states, and the
-  `BuildDetailModal` pop-up. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
+- `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: a row of style chips that scrolls sideways
+  on phones, price range chips, an "everything in stock" chip, a clear button and a sort menu for
+  newest, most cheriqed, or price either way), a grid of `PublicBuildCardView`s, infinite scroll,
+  loading and error states, an empty state that says when the filters are the reason and offers to
+  clear them (the sort order is kept), and the `BuildDetailModal` pop-up. The price ranges and the
+  clear rules live in `utils/publicBuildFilters.ts`; each range stops one rupee below the next so a
+  build never falls in two. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
   Builds tab on creator profiles (builds they contributed to) and brand profiles (builds using
   their products). Both only while `outfit_public_feed` is on for the viewer.
 - `PublicBuildDetailView` — the locked items with live stock, contributors linking to their

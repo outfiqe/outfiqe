@@ -16,6 +16,7 @@ export * from "./cn";
 export * from "./crop-image";
 export * from "./crop-surface";
 export * from "./drawer";
+export * from "./filter-chip";
 export * from "./form";
 export * from "./form-banner";
 export * from "./hidden-file-input";

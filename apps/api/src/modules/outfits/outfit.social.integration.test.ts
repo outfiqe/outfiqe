@@ -127,6 +127,41 @@ describe("the public Builds feed", () => {
     expect(secondPage.body.data.nextCursor).toBeNull();
   });
 
+  it("sorts by price and by most cheriqed, paging each order with its own cursor", async () => {
+    const owner = await createOutfitUser("Sita");
+    const fan = await createOutfitUser("Ram");
+    const mid = await lockedBuild(owner, { title: "Mid", shirtPrice: 4_000 });
+    const cheap = await lockedBuild(owner, { title: "Cheap", shirtPrice: 1_000 });
+    const pricey = await lockedBuild(owner, { title: "Pricey", shirtPrice: 9_000 });
+    await makePublic(owner, mid.outfitId);
+    await makePublic(owner, cheap.outfitId);
+    await makePublic(owner, pricey.outfitId);
+    const likeResponse = await request(testApp)
+      .put(`/api/outfits/${mid.outfitId}/like`)
+      .set("Authorization", fan.auth);
+    expect(likeResponse.status).toBe(OK_STATUS);
+
+    const titlesOf = (response: request.Response) =>
+      response.body.data.items.map(({ title }: { title: string }) => title);
+    const lowFirstPage = await publicFeed("?sort=price-low&limit=2");
+    const lowSecondPage = await publicFeed(
+      `?sort=price-low&limit=2&cursor=${lowFirstPage.body.data.nextCursor}`,
+    );
+    const highFirst = await publicFeed("?sort=price-high");
+    const mostCheriqedFirstPage = await publicFeed("?sort=most-cheriqed&limit=1");
+    const newestWithPriceCursor = await publicFeed(
+      `?limit=2&cursor=${lowFirstPage.body.data.nextCursor}`,
+    );
+
+    expect(titlesOf(lowFirstPage)).toEqual(["Cheap", "Mid"]);
+    expect(titlesOf(lowSecondPage)).toEqual(["Pricey"]);
+    expect(lowSecondPage.body.data.nextCursor).toBeNull();
+    expect(titlesOf(highFirst)).toEqual(["Pricey", "Mid", "Cheap"]);
+    expect(titlesOf(mostCheriqedFirstPage)).toEqual(["Mid"]);
+    expect(titlesOf(newestWithPriceCursor)).toEqual(["Pricey", "Cheap"]);
+    expect((await publicFeed("?sort=random")).status).toBe(UNPROCESSABLE_STATUS);
+  });
+
   it("shows a contributor's and a brand's public builds", async () => {
     const owner = await createOutfitUser("Sita");
     const other = await createOutfitUser("Ram");
