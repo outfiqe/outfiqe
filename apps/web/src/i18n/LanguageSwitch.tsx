@@ -1,66 +1,47 @@
 "use client";
 
 import { cn } from "@outfiqe/design-system";
-import { useRouter } from "next/navigation";
-import { useSyncExternalStore, useTransition } from "react";
 
-import { announceLocaleChange, readLocaleCookie, subscribeToLocaleChanges } from "./localeCookie";
 import { type SupportedLocale } from "./locales";
-import { setLanguage } from "./setLanguage";
+import { useChosenLanguage } from "./useChosenLanguage";
 
 const LANGUAGE_OPTIONS: { locale: SupportedLocale; label: string; name: string }[] = [
-  { locale: "en", label: "EN", name: "English" },
+  { locale: "en", label: "English", name: "English" },
   { locale: "ne", label: "नेपाली", name: "नेपाली (Nepali)" },
 ];
 
-const readLocaleOnServer = (): SupportedLocale | null => null;
-
-export const useChosenLanguage = () => {
-  const router = useRouter();
-  const chosenLocale = useSyncExternalStore(
-    subscribeToLocaleChanges,
-    readLocaleCookie,
-    readLocaleOnServer,
-  );
-  const [isSwitching, startTransition] = useTransition();
-
-  const chooseLanguage = (locale: SupportedLocale) =>
-    startTransition(async () => {
-      await setLanguage(locale);
-      announceLocaleChange();
-      router.refresh();
-    });
-
-  return { chosenLocale, chooseLanguage, isSwitching };
-};
-
 export const LanguageSwitch = ({ className }: { className?: string }) => {
-  const { chosenLocale, chooseLanguage, isSwitching } = useChosenLanguage();
+  const { chosenLocale, chooseLanguage } = useChosenLanguage();
 
   return (
     <div
       role="group"
       aria-label="Language / भाषा"
-      className={cn("inline-flex rounded-full border border-border p-0.5 text-xs", className)}
+      className={cn("inline-flex items-center gap-1 text-xs", className)}
     >
-      {LANGUAGE_OPTIONS.map(({ locale, label, name }) => (
-        <button
-          key={locale}
-          type="button"
-          lang={locale}
-          aria-label={name}
-          aria-pressed={chosenLocale === locale}
-          disabled={isSwitching}
-          onClick={() => chooseLanguage(locale)}
-          className={cn(
-            "cursor-pointer rounded-full px-2.5 py-1 font-medium transition-colors",
-            chosenLocale === locale
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground",
+      {LANGUAGE_OPTIONS.map(({ locale, label, name }, index) => (
+        <span key={locale} className="inline-flex items-center gap-1">
+          {index > 0 && (
+            <span aria-hidden="true" className="text-muted-foreground">
+              ·
+            </span>
           )}
-        >
-          {label}
-        </button>
+          <button
+            type="button"
+            lang={locale}
+            aria-label={name}
+            aria-pressed={chosenLocale === locale}
+            onClick={() => chooseLanguage(locale)}
+            className={cn(
+              "cursor-pointer rounded-sm px-1 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              chosenLocale === locale
+                ? "font-semibold text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        </span>
       ))}
     </div>
   );
