@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -12,6 +13,9 @@ import {
   CommissionSource,
   CommissionStatus,
   LedgerEntryKind,
+  OutfitOfferPayoutStatus,
+  OutfitOfferStatus,
+  OutfitStatus,
   PaymentMethod,
   ProductStatus,
   UserRole,
@@ -167,6 +171,43 @@ const grantAvailableCommission = async (creatorId: string, amount: number) => {
       tierId: tier.id,
       amount,
       status: CommissionStatus.AVAILABLE,
+    },
+  });
+};
+
+const DAYS_SINCE_OFFER_RELEASED = 1;
+
+const grantReleasedOfferPayout = async (creatorId: string, amount: number) => {
+  const brand = await prisma.brand.create({
+    data: {
+      name: `Offer Brand ${randomUUID().slice(0, 6)}`,
+      contactName: "Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+  const outfit = await prisma.outfit.create({
+    data: {
+      title: "Offered build",
+      status: OutfitStatus.LOCKED,
+      version: 1,
+      createdById: creatorId,
+    },
+  });
+  const releasedAt = subDays(new Date(), DAYS_SINCE_OFFER_RELEASED);
+  return prisma.outfitOffer.create({
+    data: {
+      outfitId: outfit.id,
+      outfitVersion: 1,
+      brandId: brand.id,
+      creatorId,
+      amount,
+      paymentMethod: PaymentMethod.KHALTI,
+      status: OutfitOfferStatus.RELEASED,
+      payoutStatus: OutfitOfferPayoutStatus.AVAILABLE,
+      releasedAt,
+      createdAt: releasedAt,
     },
   });
 };
@@ -466,6 +507,45 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       where: { withdrawRequestId: withdrawRequest.id },
     });
     expect(ledgerEntries).toHaveLength(2);
+  });
+
+  it("claims released offer money together with commission, oldest first", async () => {
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
+    const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const creator = await createUser();
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    const releasedOffer = await grantReleasedOfferPayout(creator.id, 700);
+    const commission = await grantAvailableCommission(creator.id, 600);
+
+    const withdrawRequest = await createWithdrawRequest(creator, bankAccount.id, policy.id, 1200, {
+      status: WithdrawRequestStatus.APPROVED,
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/mark-paid`)
+      .set("Authorization", authHeader)
+      .send({ referenceNote: "TXN-OFFER" });
+
+    expect(response.status).toBe(OK_STATUS);
+    const [paidOffer, paidCommission, ledgerEntries] = await Promise.all([
+      prisma.outfitOffer.findUniqueOrThrow({ where: { id: releasedOffer.id } }),
+      prisma.creatorCommission.findUniqueOrThrow({ where: { id: commission.id } }),
+      prisma.withdrawRequestLedgerEntry.findMany({
+        where: { withdrawRequestId: withdrawRequest.id },
+      }),
+    ]);
+    expect(paidOffer.payoutStatus).toBe(OutfitOfferPayoutStatus.PAID);
+    expect(paidOffer.paidOutAt).not.toBeNull();
+    expect(paidCommission.status).toBe(CommissionStatus.PAID);
+    expect(ledgerEntries.map(({ entryKind }) => entryKind).sort()).toEqual([
+      LedgerEntryKind.CREATOR_COMMISSION,
+      LedgerEntryKind.OFFER_PAYOUT,
+    ]);
+    expect(ledgerEntries.find(({ outfitOfferId }) => outfitOfferId)?.outfitOfferId).toBe(
+      releasedOffer.id,
+    );
   });
 
   it("fails cleanly when there aren't enough available rows, leaving the request APPROVED", async () => {

@@ -276,30 +276,14 @@ export const commissionRepository = {
     return result.count > 0;
   },
 
-  async claimAvailableForCreator(
+  async listAvailableForCreator(
     client: DbClient,
     creatorId: string,
-    amount: number,
-  ): Promise<string[]> {
-    const candidates = await client.creatorCommission.findMany({
+  ): Promise<AvailableLedgerRow[]> {
+    return client.creatorCommission.findMany({
       where: { creatorId, status: CommissionStatus.AVAILABLE },
       orderBy: { createdAt: "asc" },
-      select: { id: true, amount: true },
+      select: { id: true, amount: true, createdAt: true },
     });
-
-    const claimedIds: string[] = [];
-    let runningTotal = 0;
-    for (const candidate of candidates) {
-      if (runningTotal >= amount) break;
-      claimedIds.push(candidate.id);
-      runningTotal += candidate.amount;
-    }
-    if (runningTotal < amount) return [];
-
-    const result = await client.creatorCommission.updateMany({
-      where: { id: { in: claimedIds }, status: CommissionStatus.AVAILABLE },
-      data: { status: CommissionStatus.PAID, paidAt: new Date() },
-    });
-    return result.count === claimedIds.length ? claimedIds : [];
   },
 };

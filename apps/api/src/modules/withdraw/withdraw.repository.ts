@@ -281,10 +281,15 @@ export const withdrawRepository = {
   async createLedgerEntries(
     client: DbClient,
     withdrawRequestId: string,
-    { creatorCommissionIds, brandPayoutIds }: ClaimedLedgerRows,
+    { creatorCommissionIds, brandPayoutIds, outfitOfferIds }: ClaimedLedgerRows,
   ): Promise<void> {
     await client.withdrawRequestLedgerEntry.createMany({
       data: [
+        ...outfitOfferIds.map((outfitOfferId) => ({
+          withdrawRequestId,
+          entryKind: LedgerEntryKind.OFFER_PAYOUT,
+          outfitOfferId,
+        })),
         ...creatorCommissionIds.map((creatorCommissionId) => ({
           withdrawRequestId,
           entryKind: LedgerEntryKind.CREATOR_COMMISSION,

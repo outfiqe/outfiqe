@@ -70,6 +70,7 @@ import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
+import { outfitOfferRoutes } from "./modules/outfit-offers/outfit-offer.routes.js";
 import { outfitSlotTypeRoutes } from "./modules/outfit-slot-types/outfit-slot-type.routes.js";
 import { outfitRoutes } from "./modules/outfits/outfit.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
@@ -195,6 +196,7 @@ export const createApp = () => {
   app.use("/api/feature-flags", viewerFeatureFlagsRoutes);
   app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
   app.use("/api/outfits", outfitRoutes);
+  app.use("/api/outfit-offers", outfitOfferRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/addresses", addressRoutes);
   app.use("/api/orders", orderRoutes);

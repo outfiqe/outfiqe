@@ -37,4 +37,7 @@ export const PLATFORM_AUDIT_ACTION = {
   COMMISSION_TIER_UPDATED: "commission-tier.updated",
   COMMISSION_TIER_DELETED: "commission-tier.deleted",
   ORDER_RETURNED_TO_ORIGIN: "order.returned-to-origin",
+  OUTFIT_OFFER_RELEASED_BY_ADMIN: "outfit-offer.released-by-admin",
+  OUTFIT_OFFER_REFUNDED_BY_ADMIN: "outfit-offer.refunded-by-admin",
+  OUTFIT_OFFER_MARKED_REFUNDED: "outfit-offer.marked-refunded",
 } as const;

@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { DiscountType, OutfitMemberRole } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  DiscountType,
+  OutfitMemberRole,
+  UserRole,
+} from "#generated/prisma/enums.js";
 
 import {
+  canReceiveOffers,
   hasStock,
   parseSnapshotItems,
   parseVersionHeader,
@@ -72,6 +79,27 @@ describe("stock and price", () => {
         ],
       }),
     ).toBe(1_500);
+  });
+});
+
+describe("canReceiveOffers", () => {
+  const approvedCreator = {
+    role: UserRole.CUSTOMER,
+    accountStatus: AccountStatus.ACTIVE,
+    isCreator: true,
+    creatorStatus: CreatorStatus.APPROVED,
+  };
+
+  it("lets only an active, approved creator shopper receive offers", () => {
+    expect(canReceiveOffers(approvedCreator)).toBe(true);
+    expect(canReceiveOffers({ ...approvedCreator, creatorStatus: CreatorStatus.PENDING })).toBe(
+      false,
+    );
+    expect(canReceiveOffers({ ...approvedCreator, isCreator: false })).toBe(false);
+    expect(canReceiveOffers({ ...approvedCreator, role: UserRole.BRAND_OWNER })).toBe(false);
+    expect(canReceiveOffers({ ...approvedCreator, accountStatus: AccountStatus.SUSPENDED })).toBe(
+      false,
+    );
   });
 });
 

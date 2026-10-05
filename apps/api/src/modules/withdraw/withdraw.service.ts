@@ -6,6 +6,7 @@ import { Prisma } from "#generated/prisma/client.js";
 import {
   BrandPayoutStatus,
   CommissionStatus,
+  OutfitOfferPayoutStatus,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
@@ -19,9 +20,10 @@ import { brandBankAccountRepository } from "#modules/brand-bank-accounts/brandBa
 import { brandPayoutRepository } from "#modules/brand-payouts/brandPayout.repository.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
-import { BRAND_LEDGER_ROW_KIND } from "./withdraw.constants.js";
+import { LEDGER_ROW_KIND } from "./withdraw.constants.js";
 import { withdrawRepository } from "./withdraw.repository.js";
 import type {
   ApproveWithdrawRequestBody,
@@ -33,6 +35,8 @@ import type {
 import type {
   AdminWithdrawRequestView,
   ClaimedLedgerRows,
+  LedgerRow,
+  LedgerRowKind,
   OwnerContext,
   WithdrawEligibilityView,
   WithdrawPolicyView,
@@ -40,6 +44,7 @@ import type {
   WithdrawRequestView,
 } from "./withdraw.types.js";
 import {
+  idsOfKind,
   pickOldestRowsCoveringAmount,
   toAdminWithdrawRequestView,
   toWithdrawPolicyView,
@@ -66,8 +71,14 @@ const resolveOwner = async (
 
 const getAvailableLedgerBalance = async (owner: OwnerContext): Promise<number> => {
   if (owner.ownerType === "CREATOR") {
-    const sums = await commissionRepository.sumByStatusForCreator(owner.creatorId);
-    return sums[CommissionStatus.AVAILABLE] ?? 0;
+    const [commissionSums, offerPayoutSums] = await Promise.all([
+      commissionRepository.sumByStatusForCreator(owner.creatorId),
+      outfitOfferRepository.sumPayoutsByStatusForCreator(owner.creatorId),
+    ]);
+    return (
+      (commissionSums[CommissionStatus.AVAILABLE] ?? 0) +
+      (offerPayoutSums[OutfitOfferPayoutStatus.AVAILABLE] ?? 0)
+    );
   }
   const [payoutSums, buildCommissionSums] = await Promise.all([
     brandPayoutRepository.sumByStatusForBrand(owner.brandId),
@@ -471,63 +482,61 @@ export const withdrawService = {
   },
 };
 
-const NO_CLAIMED_ROWS = 0;
+const withKind = <Row extends { id: string; amount: number; createdAt: Date }>(
+  rows: Row[],
+  kind: LedgerRowKind,
+): LedgerRow[] => rows.map(({ id, amount, createdAt }) => ({ id, amount, createdAt, kind }));
 
-const claimBrandLedgerRows = async (
+const listAvailableLedgerRows = async (
   tx: Prisma.TransactionClient,
-  brandId: string,
-  amount: number,
-): Promise<ClaimedLedgerRows | null> => {
-  const [payoutRows, buildCommissionRows] = await Promise.all([
-    brandPayoutRepository.listAvailableForBrand(tx, brandId),
-    commissionRepository.listAvailableForBrand(tx, brandId),
-  ]);
-  const pickedRows = pickOldestRowsCoveringAmount(
-    [
-      ...payoutRows.map((row) => ({ ...row, kind: BRAND_LEDGER_ROW_KIND.PAYOUT })),
-      ...buildCommissionRows.map((row) => ({
-        ...row,
-        kind: BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION,
-      })),
-    ],
-    amount,
-  );
-  if (!pickedRows) return null;
-
-  const brandPayoutIds = pickedRows
-    .filter(({ kind }) => kind === BRAND_LEDGER_ROW_KIND.PAYOUT)
-    .map(({ id }) => id);
-  const creatorCommissionIds = pickedRows
-    .filter(({ kind }) => kind === BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION)
-    .map(({ id }) => id);
-
-  const [withdrawnPayoutCount, paidCommissionCount] = await Promise.all([
-    brandPayoutRepository.markAvailableAsWithdrawn(tx, brandPayoutIds),
-    commissionRepository.markAvailableAsPaid(tx, creatorCommissionIds),
-  ]);
-  const isEveryRowClaimed =
-    withdrawnPayoutCount === brandPayoutIds.length &&
-    paidCommissionCount === creatorCommissionIds.length;
-  return isEveryRowClaimed ? { brandPayoutIds, creatorCommissionIds } : null;
+  { ownerType, creatorId, brandId }: WithdrawRequestRecord,
+): Promise<LedgerRow[] | null> => {
+  if (ownerType === "CREATOR" && creatorId) {
+    const [commissionRows, offerPayoutRows] = await Promise.all([
+      commissionRepository.listAvailableForCreator(tx, creatorId),
+      outfitOfferRepository.listAvailablePayoutsForCreator(tx, creatorId),
+    ]);
+    return [
+      ...withKind(commissionRows, LEDGER_ROW_KIND.COMMISSION),
+      ...withKind(offerPayoutRows, LEDGER_ROW_KIND.OFFER_PAYOUT),
+    ];
+  }
+  if (ownerType === "BUSINESS" && brandId) {
+    const [payoutRows, buildCommissionRows] = await Promise.all([
+      brandPayoutRepository.listAvailableForBrand(tx, brandId),
+      commissionRepository.listAvailableForBrand(tx, brandId),
+    ]);
+    return [
+      ...withKind(payoutRows, LEDGER_ROW_KIND.BRAND_PAYOUT),
+      ...withKind(buildCommissionRows, LEDGER_ROW_KIND.COMMISSION),
+    ];
+  }
+  return null;
 };
 
 const claimLedgerRows = async (
   tx: Prisma.TransactionClient,
   requestRecord: WithdrawRequestRecord,
 ): Promise<ClaimedLedgerRows | null> => {
-  const { ownerType, creatorId, brandId, amount } = requestRecord;
-  if (ownerType === "CREATOR" && creatorId) {
-    const creatorCommissionIds = await commissionRepository.claimAvailableForCreator(
-      tx,
-      creatorId,
-      amount,
-    );
-    return creatorCommissionIds.length === NO_CLAIMED_ROWS
-      ? null
-      : { creatorCommissionIds, brandPayoutIds: [] };
-  }
-  if (ownerType === "BUSINESS" && brandId) {
-    return claimBrandLedgerRows(tx, brandId, amount);
-  }
-  return null;
+  const availableRows = await listAvailableLedgerRows(tx, requestRecord);
+  if (!availableRows) return null;
+  const pickedRows = pickOldestRowsCoveringAmount(availableRows, requestRecord.amount);
+  if (!pickedRows) return null;
+
+  const claimedRows: ClaimedLedgerRows = {
+    brandPayoutIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.BRAND_PAYOUT),
+    creatorCommissionIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.COMMISSION),
+    outfitOfferIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.OFFER_PAYOUT),
+  };
+  const { brandPayoutIds, creatorCommissionIds, outfitOfferIds } = claimedRows;
+  const [withdrawnPayoutCount, paidCommissionCount, paidOfferCount] = await Promise.all([
+    brandPayoutRepository.markAvailableAsWithdrawn(tx, brandPayoutIds),
+    commissionRepository.markAvailableAsPaid(tx, creatorCommissionIds),
+    outfitOfferRepository.markPayoutsPaid(tx, outfitOfferIds),
+  ]);
+  const isEveryRowClaimed =
+    withdrawnPayoutCount === brandPayoutIds.length &&
+    paidCommissionCount === creatorCommissionIds.length &&
+    paidOfferCount === outfitOfferIds.length;
+  return isEveryRowClaimed ? claimedRows : null;
 };

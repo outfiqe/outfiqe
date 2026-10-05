@@ -1,6 +1,7 @@
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 const FORBIDDEN_STATUS = 403;
@@ -35,7 +36,11 @@ export const requireApprovedCreator = async (
 const canUserEarnCommission = async (user: GuardedUser): Promise<boolean> => {
   if (!user || user.role !== UserRole.CUSTOMER) return false;
   if (isApprovedCreator(user)) return true;
-  return commissionRepository.hasAnyForPerson(user.id);
+  const [hasCommission, hasOfferPayout] = await Promise.all([
+    commissionRepository.hasAnyForPerson(user.id),
+    outfitOfferRepository.hasPayoutForCreator(user.id),
+  ]);
+  return hasCommission || hasOfferPayout;
 };
 
 export const isCommissionEarner = async (userId: string): Promise<boolean> =>

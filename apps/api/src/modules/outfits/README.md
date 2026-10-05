@@ -274,6 +274,10 @@ as in stock only if one of its buyable sizes is.
   build started in sees the live board read-only, without the build's own chat. Someone a build
   was sent to (or anyone, once public) sees the published snapshot — never the working board.
   Everyone else gets 404, so they can't even tell the build exists.
+- **Each board member carries `canReceiveOffers`.** It's true for an active shopper account that
+  is an approved creator (`canReceiveOffers` in `outfit.utils.ts`), the same rule the
+  `outfit-offers` module checks before taking a brand's money. The web app uses it to list only
+  people an offer can actually go to.
 - **Sharing needs a lock, and public needs its own flag.** Shared and public builds show the most
   recent locked version (`published_version`); unlocking to make changes leaves that version
   showing until the owner sets who can see it again. Making a build public also needs the

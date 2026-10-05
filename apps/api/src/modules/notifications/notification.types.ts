@@ -36,6 +36,7 @@ export type NotificationMetadata = {
   messagePreview?: string;
   outfitTitle?: string | null;
   soldOutItemCount?: number;
+  offerAmount?: number;
   crmItemKind?: "task" | "ticket";
   crmItemTitle?: string;
   crmOrganizationSubdomain?: string | null;

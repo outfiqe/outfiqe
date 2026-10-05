@@ -28,6 +28,7 @@ const WEB_ROUTES = {
   messagesList: "/messages",
   supportList: "/support",
   buildsList: "/builds",
+  offers: "/offers",
 } as const;
 
 const ADMIN_ROUTES = {
@@ -191,6 +192,14 @@ export const resolveNotificationTarget = ({
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
     case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
       return entityId ? web(`${WEB_ROUTES.buildsList}/${entityId}`) : web(WEB_ROUTES.buildsList);
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return web(WEB_ROUTES.offers);
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return web(WEB_ROUTES.wallet);
     default:
       return null;
   }

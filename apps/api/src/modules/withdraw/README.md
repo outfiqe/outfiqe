@@ -90,15 +90,17 @@ UNDER_REVIEW, APPROVED))`. A `PAID` request doesn't need subtracting separately 
   two nullable FKs (`bankAccountId`/`brandBankAccountId`), matching the same "separate explicit
   FKs, not a polymorphic column" pattern `BrandBankAccount` itself follows.
 - **`mark-paid` is where the hard ledger claim happens** — one transaction selects the owner's
-  `AVAILABLE` `CreatorCommission`/`BrandPayout` rows oldest-first, accumulates until the running
-  total is `>= amount`, atomically flips them, and records one `WithdrawRequestLedgerEntry` per
-  claimed row. A person's claim uses `commissionRepository.claimAvailableForCreator` (rows go to
-  `PAID`). A brand's claim (`claimBrandLedgerRows`) lists its available payouts and build
-  commission together, picks the oldest across both until the amount is covered
-  (`pickOldestRowsCoveringAmount` in `withdraw.utils.ts`), then moves payouts to `WITHDRAWN` and
-  commission to `PAID`; if either update touched fewer rows than picked, the claim fails. The
-  ledger entries record each row with its own kind. A partial unique index on each of
-  `creatorCommissionId`/`brandPayoutId` (Postgres treats NULLs as distinct, so this only
+  available money rows oldest-first, accumulates until the running total is `>= amount`,
+  atomically flips them, and records one `WithdrawRequestLedgerEntry` per claimed row.
+  `listAvailableLedgerRows` gathers the rows: for a person, their `AVAILABLE` commission plus their
+  released Offer money (`OutfitOffer.payoutStatus = AVAILABLE`, dated by `releasedAt`); for a
+  brand, its available payouts plus its build commission. `pickOldestRowsCoveringAmount` (in
+  `withdraw.utils.ts`) picks the oldest across all of them until the amount is covered, then
+  payouts move to `WITHDRAWN`, commission to `PAID` and offers to `payoutStatus = PAID`; if any
+  update touched fewer rows than picked, the claim fails. The ledger entries record each row with
+  its own kind (`CREATOR_COMMISSION`, `BRAND_PAYOUT`, `OFFER_PAYOUT`). A partial unique index on
+  each of `creatorCommissionId`/`brandPayoutId` and a unique `outfitOfferId` (Postgres treats
+  NULLs as distinct, so this only
   constrains the non-null side) makes double-claiming a row impossible at the DB level even if the
   `WHERE status = AVAILABLE` guard somehow raced. If the claim can't find enough rows, the whole
   transaction aborts with `INSUFFICIENT_LEDGER_ROWS` (`409`) and the request stays `APPROVED` —

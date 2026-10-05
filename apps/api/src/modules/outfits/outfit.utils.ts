@@ -1,7 +1,12 @@
 import { findBlockedSlotKeys, type OutfitBoardItem, type OutfitSlotRule } from "@outfiqe/utils";
 import { z } from "zod";
 
-import { OutfitMemberRole } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  OutfitMemberRole,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import {
   resolveBrandFundedUnitPrice,
   toActiveBrandDiscount,
@@ -31,6 +36,17 @@ import type {
 const NO_STOCK = 0;
 const EMPTY_TOTAL = 0;
 const ETAG_VERSION_GROUP = 1;
+
+export const canReceiveOffers = (user: {
+  role: UserRole;
+  accountStatus: AccountStatus;
+  isCreator: boolean;
+  creatorStatus: CreatorStatus | null;
+}): boolean =>
+  user.role === UserRole.CUSTOMER &&
+  user.accountStatus === AccountStatus.ACTIVE &&
+  user.isCreator &&
+  user.creatorStatus === CreatorStatus.APPROVED;
 
 export const hasStock = (sizes: readonly { stock: number }[]): boolean =>
   sizes.some((size) => size.stock > NO_STOCK);
@@ -127,10 +143,11 @@ export const toBoardView = (
     updatedAt: board.updatedAt.toISOString(),
     myRole,
     members: members.map(({ user, role, isHappy, joinedAt }) => ({
-      user,
+      user: { id: user.id, name: user.name, handle: user.handle, avatarUrl: user.avatarUrl },
       role,
       isHappy,
       joinedAt: joinedAt.toISOString(),
+      canReceiveOffers: canReceiveOffers(user),
     })),
     slots: slots.map((slot) => ({
       key: slot.key,

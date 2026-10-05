@@ -6,34 +6,56 @@ import {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 
-import { BRAND_LEDGER_ROW_KIND } from "./withdraw.constants.js";
+import { LEDGER_ROW_KIND } from "./withdraw.constants.js";
 import type { WithdrawPolicyRecord, WithdrawRequestRecord } from "./withdraw.types.js";
 import {
+  idsOfKind,
   pickOldestRowsCoveringAmount,
   toAdminWithdrawRequestView,
   toWithdrawPolicyView,
   toWithdrawRequestView,
 } from "./withdraw.utils.js";
 
+const payout = {
+  id: "payout-old",
+  kind: LEDGER_ROW_KIND.BRAND_PAYOUT,
+  amount: 1000,
+  createdAt: new Date("2026-09-01T00:00:00.000Z"),
+};
+const buildCommission = {
+  id: "commission-middle",
+  kind: LEDGER_ROW_KIND.COMMISSION,
+  amount: 50,
+  createdAt: new Date("2026-09-05T00:00:00.000Z"),
+};
+const newerPayout = {
+  id: "payout-new",
+  kind: LEDGER_ROW_KIND.BRAND_PAYOUT,
+  amount: 800,
+  createdAt: new Date("2026-09-10T00:00:00.000Z"),
+};
+const offerPayout = {
+  id: "offer-newest",
+  kind: LEDGER_ROW_KIND.OFFER_PAYOUT,
+  amount: 2000,
+  createdAt: new Date("2026-09-12T00:00:00.000Z"),
+};
+
+describe("idsOfKind", () => {
+  it("keeps only the ids of rows of the asked kind, in order", () => {
+    const rows = [payout, buildCommission, newerPayout, offerPayout];
+    expect(idsOfKind(rows, LEDGER_ROW_KIND.BRAND_PAYOUT)).toEqual(["payout-old", "payout-new"]);
+    expect(idsOfKind(rows, LEDGER_ROW_KIND.OFFER_PAYOUT)).toEqual(["offer-newest"]);
+    expect(idsOfKind([payout], LEDGER_ROW_KIND.COMMISSION)).toEqual([]);
+  });
+});
+
 describe("pickOldestRowsCoveringAmount", () => {
-  const payout = {
-    id: "payout-old",
-    kind: BRAND_LEDGER_ROW_KIND.PAYOUT,
-    amount: 1000,
-    createdAt: new Date("2026-09-01T00:00:00.000Z"),
-  };
-  const buildCommission = {
-    id: "commission-middle",
-    kind: BRAND_LEDGER_ROW_KIND.BUILD_COMMISSION,
-    amount: 50,
-    createdAt: new Date("2026-09-05T00:00:00.000Z"),
-  };
-  const newerPayout = {
-    id: "payout-new",
-    kind: BRAND_LEDGER_ROW_KIND.PAYOUT,
-    amount: 800,
-    createdAt: new Date("2026-09-10T00:00:00.000Z"),
-  };
+  it("mixes commissions and offer payouts, oldest first", () => {
+    const picked = pickOldestRowsCoveringAmount([offerPayout, buildCommission], 2050);
+
+    expect(picked?.map(({ id }) => id)).toEqual(["commission-middle", "offer-newest"]);
+  });
 
   it("takes payouts and build commission together, oldest first, until the amount is covered", () => {
     const picked = pickOldestRowsCoveringAmount([newerPayout, buildCommission, payout], 1040);

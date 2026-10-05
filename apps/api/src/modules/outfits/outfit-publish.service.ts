@@ -4,6 +4,7 @@ import { OutfitStatus } from "#generated/prisma/enums.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import type { CreatorLookSummary } from "#modules/creator-looks/creatorLook.types.js";
+import { outfitOfferService } from "#modules/outfit-offers/outfit-offer.service.js";
 
 import { outfitErrors } from "./outfit.errors.js";
 import { outfitRepository } from "./outfit.repository.js";
@@ -83,6 +84,12 @@ export const outfitPublishService = {
         { taggedProducts: sizesWorn, imageUrls, imageAssetIds, caption, layout },
         { outfitId, outfitVersion: lockedVersion },
       );
+      await outfitOfferService.recordPostedLook(prisma, {
+        creatorId: userId,
+        outfitId,
+        outfitVersion: lockedVersion,
+        lookId: look.id,
+      });
       return { look, isNew: true };
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;

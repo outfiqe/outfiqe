@@ -96,6 +96,7 @@ export default defineConfig({
         "src/modules/product-types/**/*.ts",
         "src/modules/outfit-slot-types/**/*.ts",
         "src/modules/outfits/**/*.ts",
+        "src/modules/outfit-offers/**/*.ts",
         "src/shared/middlewares/require-idempotency-key.ts",
         "src/modules/taste-preferences/**/*.ts",
         "src/modules/saved-sizes/**/*.ts",

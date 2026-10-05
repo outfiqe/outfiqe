@@ -10,9 +10,10 @@ type WithdrawPolicyDefaults = {
   processingNoteText: string;
 };
 
-export const BRAND_LEDGER_ROW_KIND = {
-  PAYOUT: "PAYOUT",
-  BUILD_COMMISSION: "BUILD_COMMISSION",
+export const LEDGER_ROW_KIND = {
+  BRAND_PAYOUT: "BRAND_PAYOUT",
+  COMMISSION: "COMMISSION",
+  OFFER_PAYOUT: "OFFER_PAYOUT",
 } as const;
 
 export const DEFAULT_WITHDRAW_POLICY: Record<WithdrawOwnerType, WithdrawPolicyDefaults> = {

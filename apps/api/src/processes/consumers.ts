@@ -22,6 +22,7 @@ import {
 } from "#modules/leaderboard/leaderboard.socket.js";
 import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerNotificationSocketEventConsumer } from "#modules/notifications/notification.socket.js";
+import { registerOutfitOfferNotificationHandlers } from "#modules/outfit-offers/outfit-offer.notifications.js";
 import { registerOutfitNotificationHandlers } from "#modules/outfits/outfit.notifications.js";
 import { registerOutfitRealtimeHandlers } from "#modules/outfits/outfit.realtime.js";
 import { registerOutfitSocketHandlers } from "#modules/outfits/outfit.socket.js";
@@ -65,4 +66,5 @@ export const registerBackgroundConsumers = (): void => {
   registerSuspensionNotificationEventConsumers();
   registerOutfitNotificationHandlers();
   registerOutfitStockHandlers();
+  registerOutfitOfferNotificationHandlers();
 };

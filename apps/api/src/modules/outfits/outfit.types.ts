@@ -69,6 +69,7 @@ export type OutfitMemberView = {
   role: OutfitMemberRole;
   isHappy: boolean;
   joinedAt: string;
+  canReceiveOffers: boolean;
 };
 
 export type OutfitBoardLimitsView = {

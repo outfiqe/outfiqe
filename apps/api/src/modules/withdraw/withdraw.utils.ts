@@ -1,6 +1,7 @@
 import type {
   AdminWithdrawRequestView,
-  BrandLedgerRow,
+  LedgerRow,
+  LedgerRowKind,
   WithdrawPolicyRecord,
   WithdrawPolicyView,
   WithdrawRequestRecord,
@@ -46,13 +47,13 @@ type AdminWithdrawRequestRow = WithdrawRequestRecord & {
 const EMPTY_TOTAL = 0;
 
 export const pickOldestRowsCoveringAmount = (
-  rows: readonly BrandLedgerRow[],
+  rows: readonly LedgerRow[],
   amount: number,
-): BrandLedgerRow[] | null => {
+): LedgerRow[] | null => {
   const oldestFirst = [...rows].sort(
     (first, second) => first.createdAt.getTime() - second.createdAt.getTime(),
   );
-  const picked: BrandLedgerRow[] = [];
+  const picked: LedgerRow[] = [];
   let runningTotal = EMPTY_TOTAL;
   for (const row of oldestFirst) {
     if (runningTotal >= amount) break;
@@ -61,6 +62,9 @@ export const pickOldestRowsCoveringAmount = (
   }
   return runningTotal >= amount ? picked : null;
 };
+
+export const idsOfKind = (rows: readonly LedgerRow[], kind: LedgerRowKind): string[] =>
+  rows.filter((row) => row.kind === kind).map(({ id }) => id);
 
 export const toAdminWithdrawRequestView = (
   row: AdminWithdrawRequestRow,

@@ -29,6 +29,11 @@ const outfitNameFrom = (payload: NotificationBroadcastPayload): string =>
     ? `"${payload.metadata.outfitTitle}"`
     : "an outfit build";
 
+const brandNameFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.brandName === "string" && payload.metadata.brandName
+    ? payload.metadata.brandName
+    : "A brand";
+
 const organizationNameFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.crmOrganizationName === "string"
     ? payload.metadata.crmOrganizationName
@@ -226,6 +231,30 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "A build you posted has changed",
     body: (payload) => `Post the new version of ${outfitNameFrom(payload)} as a look`,
   },
+  [NotificationType.OUTFIT_OFFER_RECEIVED]: {
+    title: "You have a new offer",
+    body: (payload) => `${brandNameFrom(payload)} wants you to post ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_OFFER_ACCEPTED]: {
+    title: "Offer accepted",
+    body: (payload) => `Your offer on ${outfitNameFrom(payload)} was accepted`,
+  },
+  [NotificationType.OUTFIT_OFFER_DECLINED]: {
+    title: "Offer declined",
+    body: (payload) => `Your offer on ${outfitNameFrom(payload)} was declined and will be refunded`,
+  },
+  [NotificationType.OUTFIT_OFFER_EXPIRED]: {
+    title: "Offer expired",
+    body: (payload) => `The offer on ${outfitNameFrom(payload)} ran out of time`,
+  },
+  [NotificationType.OUTFIT_OFFER_RELEASED]: {
+    title: "Offer money released",
+    body: (payload) => `Your money for ${outfitNameFrom(payload)} is ready to withdraw`,
+  },
+  [NotificationType.OUTFIT_OFFER_REFUNDED]: {
+    title: "Offer refunded",
+    body: (payload) => `Your money for the offer on ${outfitNameFrom(payload)} is on its way back`,
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -258,6 +287,14 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
       return "/wallet";
     case NotificationType.NEW_MESSAGE:
       return "/messages";
+    case NotificationType.OUTFIT_OFFER_RECEIVED:
+    case NotificationType.OUTFIT_OFFER_ACCEPTED:
+    case NotificationType.OUTFIT_OFFER_DECLINED:
+    case NotificationType.OUTFIT_OFFER_EXPIRED:
+    case NotificationType.OUTFIT_OFFER_REFUNDED:
+      return "/offers";
+    case NotificationType.OUTFIT_OFFER_RELEASED:
+      return "/wallet";
     case NotificationType.SUPPORT_TICKET_REPLY:
     case NotificationType.SUPPORT_TICKET_RESOLVED:
       return payload.entityId ? `/support?ticket=${payload.entityId}` : "/support";

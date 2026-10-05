@@ -37,9 +37,14 @@ checkout transaction. Reads go route → controller → service (earner guard) �
 ## Who can see `/me`
 
 `/me` and `/me/summary` use `requireCommissionEarner` (`#lib/creator-guard.utils.js`): a shopper
-account that is an approved creator, or that has at least one commission row. Build commission
-goes to everyone on a build, creators or not, so a shopper who helped make a build that sold
-must be able to see and withdraw it. Anyone else gets `403 NOT_A_CREATOR`.
+account that is an approved creator, or that has at least one commission row, or that has been
+released Offer money (`outfit-offers` module). Build commission goes to everyone on a build,
+creators or not, so a shopper who helped make a build that sold must be able to see and withdraw
+it. Anyone else gets `403 NOT_A_CREATOR`.
+
+`/me/summary` also counts Offers: posted offers waiting out their hold add to `pending`, and
+released offer money adds to `available` (or `paid` once withdrawn). The `/me` row list stays
+commission-only; offers are listed on the Offers page.
 `/me/eligibility` answers the same question as `{ canEarn }` without failing, so the web app can
 decide whether to show Earnings and Withdraw. Staff and brand accounts are never earners here;
 a brand's share is read through `/brand` and the brand wallet instead.

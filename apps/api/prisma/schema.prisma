@@ -106,6 +106,8 @@ model User {
   outfitSaves                              OutfitSave[]                @relation("OutfitSaves")
   outfitComments                           OutfitComment[]             @relation("OutfitComments")
   outfitBuildVisits                        OutfitBuildVisit[]
+  outfitOffersSent                         OutfitOffer[]               @relation("OutfitOffersSent")
+  outfitOffersReceived                     OutfitOffer[]               @relation("OutfitOffersReceived")
   tourProgress                             UserTourProgress[]
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
@@ -319,6 +321,7 @@ model Brand {
   supportTickets       SupportTicket[]
   fulfilmentGroups     OrderFulfilmentGroup[]
   buildCommissions     CreatorCommission[]        @relation("BrandBuildCommissions")
+  outfitOffers         OutfitOffer[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -784,6 +787,7 @@ model CreatorLook {
   images               CreatorLookImage[]
   attributedOrderItems OrderItem[]
   trendMetrics         CreatorLookTrendMetric[]
+  fulfilledOffer       OutfitOffer?
 
   @@unique([creatorId, sourceOutfitId, sourceOutfitVersion])
   @@index([sourceOutfitId])
@@ -1989,6 +1993,12 @@ enum NotificationType {
   OUTFIT_MADE_PUBLIC
   OUTFIT_ITEMS_SOLD_OUT
   OUTFIT_NEW_VERSION_AVAILABLE
+  OUTFIT_OFFER_RECEIVED
+  OUTFIT_OFFER_ACCEPTED
+  OUTFIT_OFFER_DECLINED
+  OUTFIT_OFFER_EXPIRED
+  OUTFIT_OFFER_RELEASED
+  OUTFIT_OFFER_REFUNDED
 }
 
 enum NotificationEntityType {
@@ -2008,6 +2018,7 @@ enum NotificationEntityType {
   CRM_SUBSCRIPTION
   CRM_SUBSCRIPTION_INVOICE
   OUTFIT
+  OUTFIT_OFFER
 }
 
 enum NotificationSurface {
@@ -2424,6 +2435,7 @@ model WithdrawRequest {
 enum LedgerEntryKind {
   CREATOR_COMMISSION
   BRAND_PAYOUT
+  OFFER_PAYOUT
 }
 
 model WithdrawRequestLedgerEntry {
@@ -2435,6 +2447,8 @@ model WithdrawRequestLedgerEntry {
   creatorCommission   CreatorCommission? @relation(fields: [creatorCommissionId], references: [id])
   brandPayoutId       String?            @unique @map("brand_payout_id") @db.Uuid
   brandPayout         BrandPayout?       @relation(fields: [brandPayoutId], references: [id])
+  outfitOfferId       String?            @unique @map("outfit_offer_id") @db.Uuid
+  outfitOffer         OutfitOffer?       @relation(fields: [outfitOfferId], references: [id], onDelete: SetNull)
   createdAt           DateTime           @default(now()) @map("created_at")
 
   @@index([withdrawRequestId])
@@ -2681,6 +2695,7 @@ model Outfit {
   publishedAsLooks CreatorLook[]
   buildVisits      OutfitBuildVisit[]
   attributedSales  OrderItem[]
+  offers           OutfitOffer[]
 
   @@index([status, visibility, updatedAt])
   @@index([createdById])
@@ -2865,6 +2880,91 @@ model OutfitBuildVisit {
 
   @@index([userId, productId, createdAt])
   @@map("outfit_build_visits")
+}
+
+enum OutfitOfferStatus {
+  PAYMENT_PENDING
+  PAYMENT_FAILED
+  AWAITING_RESPONSE
+  ACCEPTED
+  POSTED
+  RELEASED
+  DECLINED
+  CANCELLED
+  EXPIRED
+  LOOK_REMOVED
+}
+
+enum OutfitOfferRefundStatus {
+  NOT_NEEDED
+  PENDING
+  REFUNDED
+  NEEDS_MANUAL_REFUND
+}
+
+enum OutfitOfferPayoutStatus {
+  NONE
+  AVAILABLE
+  PAID
+}
+
+model OutfitOffer {
+  id            String                  @id @default(uuid()) @db.Uuid
+  outfitId      String                  @map("outfit_id") @db.Uuid
+  outfitVersion Int                     @map("outfit_version")
+  brandId       String                  @map("brand_id") @db.Uuid
+  sentById      String?                 @map("sent_by_id") @db.Uuid
+  creatorId     String                  @map("creator_id") @db.Uuid
+  amount        Int
+  note          String?
+  paymentMethod PaymentMethod           @map("payment_method")
+  status        OutfitOfferStatus       @default(PAYMENT_PENDING)
+  refundStatus  OutfitOfferRefundStatus @default(NOT_NEEDED) @map("refund_status")
+  payoutStatus  OutfitOfferPayoutStatus @default(NONE) @map("payout_status")
+  paidAt        DateTime?               @map("paid_at")
+  acceptBy      DateTime?               @map("accept_by")
+  acceptedAt    DateTime?               @map("accepted_at")
+  postBy        DateTime?               @map("post_by")
+  lookId        String?                 @unique @map("look_id") @db.Uuid
+  postedAt      DateTime?               @map("posted_at")
+  releaseAt     DateTime?               @map("release_at")
+  releasedAt    DateTime?               @map("released_at")
+  paidOutAt     DateTime?               @map("paid_out_at")
+  refundedAt    DateTime?               @map("refunded_at")
+  closedAt      DateTime?               @map("closed_at")
+  closedReason  String?                 @map("closed_reason")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  outfit        Outfit                  @relation(fields: [outfitId], references: [id], onDelete: Restrict)
+  brand         Brand                   @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  sentBy        User?                   @relation("OutfitOffersSent", fields: [sentById], references: [id], onDelete: SetNull)
+  creator       User                    @relation("OutfitOffersReceived", fields: [creatorId], references: [id], onDelete: Restrict)
+  look          CreatorLook?            @relation(fields: [lookId], references: [id], onDelete: SetNull)
+
+  payments      OutfitOfferPayment[]
+  ledgerEntries WithdrawRequestLedgerEntry[]
+
+  @@index([creatorId, createdAt])
+  @@index([brandId, createdAt])
+  @@index([status, updatedAt])
+  @@index([creatorId, payoutStatus])
+  @@index([refundStatus])
+  @@map("outfit_offers")
+}
+
+model OutfitOfferPayment {
+  id             String                   @id @default(uuid()) @db.Uuid
+  offerId        String                   @map("offer_id") @db.Uuid
+  provider       PaymentMethod
+  type           PaymentTransactionType   @default(PAYMENT)
+  status         PaymentTransactionStatus @default(INITIATED)
+  transactionRef String?                  @unique @map("transaction_ref")
+  rawResponse    Json?                    @map("raw_response")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  offer          OutfitOffer              @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, status])
+  @@map("outfit_offer_payments")
 }
 
 // ---------------------------------------------------------------------------

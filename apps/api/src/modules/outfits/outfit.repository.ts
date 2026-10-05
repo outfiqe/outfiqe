@@ -24,6 +24,14 @@ export const outfitPersonSelect = {
   avatarUrl: true,
 } as const satisfies Prisma.UserSelect;
 
+const outfitMemberUserSelect = {
+  ...outfitPersonSelect,
+  role: true,
+  accountStatus: true,
+  isCreator: true,
+  creatorStatus: true,
+} as const satisfies Prisma.UserSelect;
+
 const LATEST_SNAPSHOT_ONLY = 1;
 
 const boardProductSelect = () =>
@@ -42,7 +50,7 @@ const boardProductSelect = () =>
 const boardInclude = () =>
   ({
     members: {
-      include: { user: { select: outfitPersonSelect } },
+      include: { user: { select: outfitMemberUserSelect } },
       orderBy: [{ joinedAt: "asc" }, { userId: "asc" }],
     },
     slots: {

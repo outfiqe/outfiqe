@@ -50,6 +50,28 @@ describe("toPushMessage", () => {
     expect(message.body).toBe("4 people started following you");
   });
 
+  it("names the brand and build on a new offer and links to the offers page", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.OUTFIT_OFFER_RECEIVED,
+        entityType: NotificationEntityType.OUTFIT_OFFER,
+        metadata: { brandName: "Kastha", outfitTitle: "Dashain set" },
+      }),
+    );
+
+    expect(message.body).toBe('Kastha wants you to post "Dashain set"');
+    expect(message.url).toBe("/offers");
+  });
+
+  it("falls back to a plain brand name and sends released money to the wallet", () => {
+    expect(
+      toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RECEIVED })).body,
+    ).toBe("A brand wants you to post an outfit build");
+    expect(toPushMessage(aNotification({ type: NotificationType.OUTFIT_OFFER_RELEASED })).url).toBe(
+      "/wallet",
+    );
+  });
+
   it("sends a follower notification to the follower's own profile", () => {
     const message = toPushMessage(aNotification({ type: NotificationType.NEW_FOLLOWER }));
 

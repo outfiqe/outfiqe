@@ -41,6 +41,8 @@ import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { STALE_SHIPMENT_REMINDER_INTERVAL_MS } from "#modules/orders/order.constants.js";
 import { runStaleShipmentReminderDigest } from "#modules/orders/order.jobs.js";
+import { OFFER_LIFECYCLE_INTERVAL_MS } from "#modules/outfit-offers/outfit-offer.constants.js";
+import { runOutfitOfferLifecycleSweep } from "#modules/outfit-offers/outfit-offer.lifecycle.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
@@ -115,6 +117,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "brand-payout-lifecycle",
     run: runBrandPayoutLifecycleSweep,
     intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "outfit-offer-lifecycle",
+    run: runOutfitOfferLifecycleSweep,
+    intervalMs: OFFER_LIFECYCLE_INTERVAL_MS,
   },
   {
     name: "crm-subscription-renewal",

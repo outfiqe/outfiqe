@@ -1,10 +1,15 @@
-import { type CommissionScope, CommissionStatus } from "#generated/prisma/enums.js";
+import {
+  type CommissionScope,
+  CommissionStatus,
+  OutfitOfferPayoutStatus,
+} from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { isCommissionEarner, requireCommissionEarner } from "#lib/creator-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
@@ -107,7 +112,19 @@ export const commissionService = {
 
   async getEarningsSummary(userId: string): Promise<CreatorEarningsSummary> {
     await requireCommissionEarner(userId, NOT_AN_EARNER_MESSAGE);
-    return summarizeEarnings(await commissionRepository.sumByStatusForCreator(userId));
+    const [commissionSums, offerPayoutSums, postedOfferTotal] = await Promise.all([
+      commissionRepository.sumByStatusForCreator(userId),
+      outfitOfferRepository.sumPayoutsByStatusForCreator(userId),
+      outfitOfferRepository.sumPostedForCreator(userId),
+    ]);
+    const commissionSummary = summarizeEarnings(commissionSums);
+    const pending = commissionSummary.pending + postedOfferTotal;
+    const available =
+      commissionSummary.available +
+      (offerPayoutSums[OutfitOfferPayoutStatus.AVAILABLE] ?? NO_EARNINGS);
+    const paid =
+      commissionSummary.paid + (offerPayoutSums[OutfitOfferPayoutStatus.PAID] ?? NO_EARNINGS);
+    return { totalEarnings: pending + available + paid, pending, available, paid };
   },
 
   async listEarnings(

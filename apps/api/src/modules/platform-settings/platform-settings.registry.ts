@@ -60,6 +60,46 @@ export const PLATFORM_SETTING_REGISTRY = {
     minimum: 0,
     maximum: 10,
   },
+  "outfit.offerAcceptWithinDays": {
+    label: "Days to answer an offer",
+    description: "How long a creator has to accept or decline a brand's paid offer.",
+    group: OUTFIT_BUILD_GROUP,
+    defaultValue: 3,
+    minimum: 1,
+    maximum: 30,
+  },
+  "outfit.offerPostWithinDays": {
+    label: "Days to post an accepted offer",
+    description: "How long a creator has to post the look after accepting an offer.",
+    group: OUTFIT_BUILD_GROUP,
+    defaultValue: 7,
+    minimum: 1,
+    maximum: 60,
+  },
+  "outfit.offerHoldDays": {
+    label: "Days a posted look must stay up",
+    description: "How long the look must stay up before the offer's money goes to the creator.",
+    group: OUTFIT_BUILD_GROUP,
+    defaultValue: 7,
+    minimum: 0,
+    maximum: 60,
+  },
+  "outfit.offerMinAmount": {
+    label: "Smallest offer (Rs)",
+    description: "The least a brand can offer a creator for posting a build.",
+    group: OUTFIT_BUILD_GROUP,
+    defaultValue: 500,
+    minimum: 1,
+    maximum: 1_000_000,
+  },
+  "outfit.offerMaxAmount": {
+    label: "Largest offer (Rs)",
+    description: "The most a brand can offer a creator for posting a build.",
+    group: OUTFIT_BUILD_GROUP,
+    defaultValue: 500_000,
+    minimum: 1,
+    maximum: 10_000_000,
+  },
   "chat.maxGroupMembers": {
     label: "People per group chat",
     description: "The most people one group chat can hold, including whoever started it.",
@@ -104,5 +144,11 @@ export const PLATFORM_SETTING_RULES: {
     isSatisfiedBy: (values) =>
       readSettingValue(values, "outfit.maxCoverPhotos") <=
       readSettingValue(values, "outfit.maxPhotosPerBoard"),
+  },
+  {
+    message: "The smallest offer can't be more than the largest offer.",
+    isSatisfiedBy: (values) =>
+      readSettingValue(values, "outfit.offerMinAmount") <=
+      readSettingValue(values, "outfit.offerMaxAmount"),
   },
 ];
