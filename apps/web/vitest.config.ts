@@ -271,6 +271,7 @@ export default defineConfig({
         "src/features/outfit-build/components/PublicBuildsFeed.tsx",
         "src/features/outfit-build/components/PublicBuildCardView.tsx",
         "src/features/outfit-build/components/PublicBuildFiltersBar.tsx",
+        "src/features/outfit-build/components/BoardActions.tsx",
         "src/features/outfit-build/components/PublicBuildDetailView.tsx",
         "src/features/outfit-build/components/BuildDetailModal.tsx",
         "src/features/outfit-build/components/BuildReactionsBar.tsx",

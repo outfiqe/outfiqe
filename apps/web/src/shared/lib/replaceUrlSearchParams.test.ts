@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { replaceUrlSearchParams } from "./replaceUrlSearchParams";
 
@@ -14,6 +14,15 @@ describe("replaceUrlSearchParams", () => {
     expect(window.location.search).toBe("?tab=builds&style=formal");
     expect(window.location.hash).toBe("#feed");
     expect(window.history.length).toBe(historyLength);
+  });
+
+  it("passes no state object, so Next's router picks up the new URL", () => {
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
+
+    replaceUrlSearchParams((params) => params.set("tab", "people"));
+
+    expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/explore?tab=people#feed");
+    replaceStateSpy.mockRestore();
   });
 
   it("drops the question mark when no params are left", () => {
