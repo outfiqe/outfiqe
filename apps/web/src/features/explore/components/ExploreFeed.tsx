@@ -1,6 +1,6 @@
 "use client";
 
-import { FormBanner } from "@outfiqe/design-system";
+import { Button, FormBanner } from "@outfiqe/design-system";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import { PublicBuildsFeed } from "@/features/outfit-build/components/PublicBuild
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import {
   EXPLORE_GRID_BREAKPOINT_COLUMNS,
@@ -119,6 +120,8 @@ export const ExploreFeed = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
+    error: feedError,
     refetch,
   } = useInfiniteExploreFeed(tab, feedEnabled, viewerId);
 
@@ -209,6 +212,15 @@ export const ExploreFeed = () => {
             </div>
           ) : posts.length === 0 && (isLoading || !isAuthResolved) ? (
             <ExploreFeedSkeleton layout={layout} compactGrid />
+          ) : posts.length === 0 && isError ? (
+            <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-sm text-muted-foreground">
+                Couldn&apos;t load the feed. {getErrorMessage(feedError)}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                Try again
+              </Button>
+            </div>
           ) : posts.length === 0 && isTrendingTab ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing is trending right now. Check back soon.

@@ -42,6 +42,11 @@ const fetchServerSession = cache(async (): Promise<SessionResponse | null> => {
   }
 });
 
+export const hasServerSessionCookie = async (): Promise<boolean> => {
+  const cookieStore = await cookies();
+  return Boolean(cookieStore.get(REFRESH_COOKIE_NAME)?.value);
+};
+
 export const getServerAccessToken = cache(async (): Promise<string | null> => {
   const session = await fetchServerSession();
   return session?.accessToken ?? null;

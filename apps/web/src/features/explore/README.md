@@ -18,6 +18,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `components/SuggestedCreatorRow.tsx` — one suggested-creator row (avatar, name, follower count, Follow button), shared by the sidebar rail and `SuggestedCreatorsModal` so the two surfaces never drift in markup.
 - `components/SuggestedCreatorsModal.tsx` — the expanded, scrollable "Creators to follow" modal opened from the sidebar's "Find more" button. Infinite-scrolls the same ranked pool the rail's first page comes from, via `useInfiniteSuggestedCreators` + the shared `useLoadMoreOnVisible` sentinel (same pattern as `BrandsGrid`/`ExploreFeed`).
 - `api/exploreFeedApi.ts`, `exploreFeedSchemas.ts` — feed/comment/reply fetches and the `FeedPost`/`FeedComment`/`FeedCommentReply` shapes everything above is built on.
+- `api/exploreFeedQueryKey.ts` — `buildExploreFeedQueryKey`, the one place the feed's cache key is built, shared by `useInfiniteExploreFeed` and the server-rendered `app/explore/page.tsx` so the two always match. See "First feed page is server-rendered" below.
 - `hooks/usePostCardState.ts` — the mutation/state bundle (`gated`, like/save/follow mutations, `useLookComments`) shared by `PostCard` and `PostDetailModal` so both stay in sync with the same query cache.
 - `hooks/useLookComments.ts` — the top-level comments query for one post, the `comments:<lookId>` socket room subscription (joined only while the comments panel is open), live-append handling for `comment:created`/`comment:reply:created`, and the optimistic `submitComment` — see "Real-time comments and replies" below.
 - `hooks/useCommentReplies.ts` — one comment thread's reply pagination (`useInfiniteCursorPage`) and the optimistic `submitReply`; instantiated per `CommentThread`, not shared across comments.
@@ -161,10 +162,18 @@ after the JS bundle downloaded, hydrated, and the feed query resolved. `app/expl
 `prefetchInfiniteQuery`s page one of the default/`for_you` (or `trending`) tab on the server via
 `api/serverExploreFeed.ts` and hands it down through a `HydrationBoundary`, so the grid renders in
 the initial HTML and the first few images carry `eager`. The server fetch is anonymous and cached
-(`revalidateSeconds: 30`) — every visitor's first paint shares it; a signed-in client still hydrates
-and refetches its personalised feed. `/creator-looks/feed` is `optionalAuth`, so the anonymous fetch
+(`revalidateSeconds: 30`). `/creator-looks/feed` is `optionalAuth`, so the anonymous fetch
 is a valid feed rather than an error. Reading `searchParams` makes the page dynamic (it is no longer
 in the prerendered browse-shell set), but the 30s fetch cache keeps origin load flat.
+
+The server and the browser must build the cache key the same way, so both use
+`buildExploreFeedQueryKey` (`api/exploreFeedQueryKey.ts`). That key ends with the viewer (`"anonymous"`
+for a logged-out visitor) so one person's feed is never shown to another. When the viewer was added to
+the browser's key, the page kept writing to the old two-part key. The server's data was never used,
+and every visit loaded the feed twice. The page now writes to the anonymous key, and only when the
+request has no `refresh_token` cookie (`hasServerSessionCookie`, `features/auth/api/serverAuth.ts`).
+Someone who may be signed in gets their own feed from the browser instead. That way they never see a
+logged-out feed first, then a skeleton, then their real feed.
 
 **Tab and layout switches highlight optimistically, via `usePendingSelection`.** `tab`/`layout` live
 in the URL (`?tab=`/`?layout=`), and `app/explore/page.tsx` reads `searchParams`, so a `router.replace`
@@ -232,6 +241,14 @@ from both without either hook needing to know the other exists.
 **Every Follow button in this feature is now `disabled` while its toggle is in flight, matching Like and Save.** `PostCardHeader`, and `SuggestedCreatorRow` (used by both `Sidebar`'s "Creators to follow" rail and `SuggestedCreatorsModal`'s "Find more" list) were all missing this guard — a rapid double-tap could fire two overlapping `follow`/`unfollow` mutations before React re-rendered with the first one's optimistic state, both still reading the same stale closure. The backend's `follow`/`unfollow` are genuinely idempotent (`follow.repository.ts` checks `findUnique` inside the transaction before writing, so a duplicate call returns the existing state rather than erroring or double-counting), so this was never a data-corruption risk — but it was a real, avoidable source of duplicate network calls and an inconsistency with the rest of each row. `PostCard`/`PostDetailModal` thread `followMutation.isPending` through as `isFollowToggling` the same way `isLiking`/`isSaving` already flow to `PostActionsRow`; `Sidebar`/`SuggestedCreatorsModal` thread it through as `isFollowPending` — `SuggestedCreatorRow` already accepted that prop, it just was never passed. Note this guard is shared across every row in a suggested-creators list at once (one `useFollowCreator()` mutation per list, not per row), so following one creator briefly disables the others too — an acceptable, pre-existing trade-off of that single-mutation-per-list design, not something newly introduced here.
 
 **`PostDetailModal` intentionally does not reuse `PostCard` directly.** Both are built from the same sub-components (`PostCardHeader`, `PostCarousel`, `PostActionsRow`, `PostTagPill`, `PostCommentsSection`) and the same `usePostCardState`, but `PostCard` is a page-flow block (header on top, image, then content stacked below) while `PostDetailModal` is a two-pane focused view (fixed image pane beside a scrollable content pane, sized like `creator-dashboard`'s `PostModal`/`MediaFormShell`). The detail modal was reshaped this way specifically so the caption and like/comment/save row are visible immediately next to the image — the previous single-column, page-scrolling layout let a tall image push that content below the fold with no visual hint that there was more to scroll to.
+
+**A failed feed request shows an error with "Try again", not the empty-feed line.** `ExploreFeed` used
+to show "Nothing here yet — try a different tab." whenever it had no posts and wasn't loading, and that
+included a request that had failed. A server error looked exactly like a feed with nothing in it. When
+the first page fails and there are no posts to show, it now shows "Couldn't load the feed." with the
+message from `getErrorMessage` and a `Try again` button that refetches. This is the same pattern the
+creator dashboard sections use (`ProgressSection`, `ShareSection`). `ExploreFeed.errorState.integration.test.tsx`
+covers both the error message and the retry.
 
 **The Following tab has its own empty state.** When `following` returns no posts, `ExploreFeed` tells the viewer to follow creators from the "Creators to follow" rail instead of showing the generic "Nothing here yet" line, because the API no longer substitutes trending posts (see `creator-looks/README.md`).
 
