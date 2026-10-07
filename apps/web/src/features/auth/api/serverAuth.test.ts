@@ -40,6 +40,18 @@ beforeEach(() => {
 });
 
 describe("serverAuth", () => {
+  it("reports a possible session only when a refresh token cookie is present, without calling the API", async () => {
+    const { hasServerSessionCookie } = await importServerAuth();
+
+    cookieGet.mockReturnValue(undefined);
+    await expect(hasServerSessionCookie()).resolves.toBe(false);
+
+    cookieGet.mockReturnValue({ value: "raw-refresh-token" });
+    await expect(hasServerSessionCookie()).resolves.toBe(true);
+    expect(cookieGet).toHaveBeenCalledWith("refresh_token");
+    expect(serverApiRequest).not.toHaveBeenCalled();
+  });
+
   it("returns null from both helpers when there is no refresh token cookie", async () => {
     cookieGet.mockReturnValue(undefined);
     const { getServerAccessToken, getServerSessionWithToken } = await importServerAuth();

@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { hasServerSessionCookie } from "@/features/auth/api/serverAuth";
 import { ExploreFeed } from "@/features/explore";
+import { buildExploreFeedQueryKey } from "@/features/explore/api/exploreFeedQueryKey";
 import { getExploreFeedFirstPageServer } from "@/features/explore/api/serverExploreFeed";
 import { EXPLORE_TAB } from "@/features/explore/explore.constants";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
@@ -38,13 +40,16 @@ const ExplorePage = async ({ searchParams }: ExplorePageProps) => {
       : EXPLORE_TAB.FOR_YOU;
 
   const queryClient = getQueryClient();
-  await queryClient
-    .prefetchInfiniteQuery({
-      queryKey: ["explore-feed", feedTab],
-      queryFn: () => getExploreFeedFirstPageServer(feedTab),
-      initialPageParam: undefined,
-    })
-    .catch(() => undefined);
+  const mayBeSignedIn = await hasServerSessionCookie();
+  if (!mayBeSignedIn) {
+    await queryClient
+      .prefetchInfiniteQuery({
+        queryKey: buildExploreFeedQueryKey(feedTab),
+        queryFn: () => getExploreFeedFirstPageServer(feedTab),
+        initialPageParam: undefined,
+      })
+      .catch(() => undefined);
+  }
 
   return (
     <div className="pb-20 lg:pb-0">
