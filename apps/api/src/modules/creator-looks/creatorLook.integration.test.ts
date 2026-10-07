@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -17,6 +18,7 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
+import { FOR_YOU_MAX_PER_CREATOR } from "#modules/creator-looks/creatorLook.constants.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import type { TrendingSnapshotCursor } from "#modules/creator-looks/creatorLook.utils.js";
@@ -33,6 +35,9 @@ import { overrideOutfitSetting } from "#test/integration/outfitFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
+
+const OLDER_DROP_AGE_DAYS = 30;
+const PROLIFIC_OLDER_DROP_COUNT = 5;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -2107,6 +2112,103 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data).toHaveProperty("posts");
     const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
     expect(posts.find((post) => post.id === look.id)?.isTrending).toBe(false);
+  });
+
+  it("fills for_you and trending with older drops when nothing was posted in the recent window, instead of going blank", async () => {
+    const creator = await createCreator("Quiet Spell Muse", "quiet-spell-creator");
+    const viewer = await createCreator("Quiet Spell Viewer", "quiet-spell-viewer");
+    const olderLook = await createLook(creator.id, "Drop from a month ago");
+    await prisma.creatorLook.update({
+      where: { id: olderLook.id },
+      data: { createdAt: subDays(new Date(), OLDER_DROP_AGE_DAYS) },
+    });
+
+    const anonymousForYou = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" });
+    const signedInForYou = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" })
+      .set("Authorization", authHeaderFor(viewer.id));
+    const trending = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending" });
+
+    for (const response of [anonymousForYou, signedInForYou, trending]) {
+      expect(response.status).toBe(200);
+      const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+      expect(posts.map((post) => post.id)).toEqual([olderLook.id]);
+      expect(posts[0]?.isTrending).toBe(false);
+    }
+  });
+
+  it("keeps deleted drops and drops from unapproved muses out of the older-drops fallback", async () => {
+    const approvedCreator = await createCreator("Fallback Approved Muse", "fallback-approved");
+    const pendingCreator = await createCreator("Fallback Pending Muse", "fallback-pending");
+    await prisma.user.update({
+      where: { id: pendingCreator.id },
+      data: { creatorStatus: CreatorStatus.PENDING },
+    });
+    const visibleLook = await createLook(approvedCreator.id, "Visible older drop");
+    const deletedLook = await createLook(approvedCreator.id, "Deleted older drop");
+    const pendingLook = await createLook(pendingCreator.id, "Pending muse older drop");
+    await prisma.creatorLook.updateMany({
+      where: { id: { in: [visibleLook.id, deletedLook.id, pendingLook.id] } },
+      data: { createdAt: subDays(new Date(), OLDER_DROP_AGE_DAYS) },
+    });
+    await prisma.creatorLook.update({
+      where: { id: deletedLook.id },
+      data: { deletedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending" });
+
+    const ids = (response.body.data.posts as { id: string }[]).map((post) => post.id);
+    expect(ids).toEqual([visibleLook.id]);
+  });
+
+  it("still caps each muse's older drops in for_you", async () => {
+    const prolificCreator = await createCreator("Prolific Older Muse", "prolific-older-creator");
+    const olderLooks = await Promise.all(
+      Array.from({ length: PROLIFIC_OLDER_DROP_COUNT }, (_, index) =>
+        createLook(prolificCreator.id, `Prolific older drop ${index}`),
+      ),
+    );
+    await prisma.creatorLook.updateMany({
+      where: { id: { in: olderLooks.map((look) => look.id) } },
+      data: { createdAt: subDays(new Date(), OLDER_DROP_AGE_DAYS) },
+    });
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 });
+
+    expect(response.body.data.posts).toHaveLength(FOR_YOU_MAX_PER_CREATOR);
+  });
+
+  it("does not cache an empty for_you ranking, so a drop posted right after shows up on the next load", async () => {
+    const creator = await createCreator("First Drop Muse", "first-drop-creator");
+    const viewer = await createCreator("First Drop Viewer", "first-drop-viewer");
+
+    const emptyResponse = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(emptyResponse.body.data.posts).toEqual([]);
+    expect(await redis.exists(redisKeys.cache("explore-for-you-stable-ranking", viewer.id))).toBe(
+      0,
+    );
+
+    const firstLook = await createLook(creator.id, "First ever drop");
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    const ids = (response.body.data.posts as { id: string }[]).map((post) => post.id);
+    expect(ids).toEqual([firstLook.id]);
   });
 
   it("paginates the trending tab with a stable snapshot across pages", async () => {

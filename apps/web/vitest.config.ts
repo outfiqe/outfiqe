@@ -258,6 +258,7 @@ export default defineConfig({
         "src/shared/hooks/usePendingPhotos.ts",
         "src/app/(dashboard)/share-target/ShareTargetComposer.tsx",
         "src/features/explore/hooks/useInfiniteExploreFeed.ts",
+        "src/features/explore/api/exploreFeedQueryKey.ts",
         "src/features/explore/hooks/usePublicLook.ts",
         "src/features/creator-profile/hooks/useInfiniteCreatorLooks.ts",
         "src/features/brands/api/serverBrands.ts",

@@ -34,6 +34,8 @@ import {
   FOR_YOU_LEGACY_POSITION_DECAY,
   FOR_YOU_MAX_PER_CREATOR,
   MAX_TAG_RE_REQUESTS,
+  OLDER_LOOKS_FALLBACK_LIMIT,
+  RECENT_LOOKS_MIN_POOL_SIZE,
   TAG_TREND_BASELINE_WINDOW_DAYS,
   TAG_TREND_RECENT_METRICS_WINDOW_HOURS,
   TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS,
@@ -298,6 +300,8 @@ const upsertPostMetricsForHour = (bucketStart: Date): Promise<unknown> => {
   ]);
 };
 
+const isEmptySnapshot = (snapshot: FeedCandidateSnapshot): boolean => snapshot.ids.length === 0;
+
 const trendingSnapshotKey = (sessionId: string) =>
   redisKeys.cache("explore-trending-snapshot", sessionId);
 
@@ -326,6 +330,7 @@ const cacheTrendingSnapshot = async (
   sessionId: string,
   snapshot: FeedCandidateSnapshot,
 ): Promise<void> => {
+  if (isEmptySnapshot(snapshot)) return;
   try {
     await cacheService.set(
       trendingSnapshotKey(sessionId),
@@ -342,6 +347,23 @@ const cacheTrendingSnapshot = async (
 const EXPLORE_TRENDING_SCORE_CACHE_KEY = redisKeys.cache("explore-trending-score", "global");
 const TRENDING_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("explore-trending-score-recompute");
 
+const listNewestApprovedLookIdsCreatedBefore = async (
+  before: Date,
+  limit: number,
+): Promise<string[]> => {
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT cl.id
+    FROM creator_looks cl
+    JOIN users u ON u.id = cl.creator_id
+    WHERE cl.deleted_at IS NULL
+      AND u.creator_status = 'APPROVED'
+      AND cl.created_at < ${before}
+    ORDER BY cl.created_at DESC, cl.id DESC
+    LIMIT ${limit}
+  `);
+  return rows.map((row) => row.id);
+};
+
 const buildLegacyTrendingSnapshot = async (): Promise<string[]> => {
   const since = new Date(Date.now() - TRENDING_WINDOW_MS);
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
@@ -353,7 +375,14 @@ const buildLegacyTrendingSnapshot = async (): Promise<string[]> => {
       AND cl.created_at >= ${since}
     ORDER BY (cl.like_count * 2 + cl.comment_count + cl.save_count) DESC, cl.created_at DESC, cl.id DESC
   `);
-  return rows.map((row) => row.id);
+  const recentLookIds = rows.map((row) => row.id);
+  if (recentLookIds.length >= RECENT_LOOKS_MIN_POOL_SIZE) return recentLookIds;
+
+  const olderLookIds = await listNewestApprovedLookIdsCreatedBefore(
+    since,
+    OLDER_LOOKS_FALLBACK_LIMIT,
+  );
+  return [...recentLookIds, ...olderLookIds];
 };
 
 const listRecentPostMetricBuckets = async (sinceDays: number): Promise<PostMetricBucket[]> => {
@@ -770,6 +799,7 @@ const cacheForYouSnapshot = async (
   sessionId: string,
   snapshot: FeedCandidateSnapshot,
 ): Promise<void> => {
+  if (isEmptySnapshot(snapshot)) return;
   try {
     await cacheService.set(
       forYouSnapshotKey(sessionId),
@@ -801,6 +831,7 @@ const resolveForYouCandidateIds = async (
   }
 
   const fresh = await buildPersonalizedSnapshot(viewerId, followedCreatorIds);
+  if (isEmptySnapshot(fresh)) return fresh;
   try {
     await cacheService.set(stableKey, fresh, CACHE_TTL.EXPLORE_FOR_YOU_STABLE_RANKING);
   } catch (error) {
