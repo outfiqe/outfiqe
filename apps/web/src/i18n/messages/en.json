@@ -330,7 +330,7 @@
       "posted": "Look dropped."
     },
     "buy": {
-      "panelTitle": "Buy this look",
+      "panelTitle": "Buy this build",
       "description": "Pick your size for each item. Buy the whole set, or only the items you tick.",
       "includeItem": "Add {product} to my bag",
       "sizeFor": "Size of {product}",

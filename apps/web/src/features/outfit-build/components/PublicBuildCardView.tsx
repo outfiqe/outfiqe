@@ -8,6 +8,8 @@ import type { PublicBuildCard } from "../api/outfitSocialSchemas";
 import { formatLakhAmount } from "../utils/outfitFormatting";
 import { BuildCoverGrid } from "./BuildCoverGrid";
 
+const NO_CONTRIBUTORS = 0;
+
 export const contributorNames = (card: PublicBuildCard): string =>
   card.contributors.map(({ name }) => name).join(", ");
 
@@ -22,6 +24,7 @@ export const PublicBuildCardView = ({
   const tBudget = useTranslations("outfitBuild.budget");
   const tBoard = useTranslations("outfitBuild.board");
   const title = card.title ?? tBoard("untitled");
+  const hasContributors = card.contributors.length > NO_CONTRIBUTORS;
 
   return (
     <article className="overflow-hidden rounded-xl border border-border bg-card">
@@ -41,9 +44,11 @@ export const PublicBuildCardView = ({
         />
         <div className="space-y-1 p-3">
           <h3 className="truncate text-sm font-semibold text-foreground">{title}</h3>
-          <p className="truncate text-xs text-muted-foreground">
-            {t("by", { names: contributorNames(card) })}
-          </p>
+          {hasContributors && (
+            <p className="truncate text-xs text-muted-foreground">
+              {t("by", { names: contributorNames(card) })}
+            </p>
+          )}
           <p className="text-xs text-foreground">
             {tBudget("rupees", { amount: formatLakhAmount(card.total) })} ·{" "}
             {t("itemCount", { count: card.itemCount })}
