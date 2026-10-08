@@ -104,6 +104,33 @@ describe("PublicBuildsFeed", () => {
     expect(screen.getByText("Fully available")).toBeInTheDocument();
   });
 
+  it("leaves out the byline when nobody is credited on the build any more", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: { user: { id: "viewer-1" } },
+      isAuthenticated: true,
+      isShopper: true,
+    } as ReturnType<typeof useAuth>);
+    mswServer.use(
+      http.get("/api/outfits/public", () =>
+        ok({ items: [card({ contributors: [] })], nextCursor: null }),
+      ),
+      http.get("/api/outfits/outfit-1/public", () => ok(detail({ contributors: [] }))),
+      http.get("/api/outfits/outfit-1/comments", () => ok({ items: [], nextCursor: null })),
+    );
+    renderFeed();
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole("heading", { name: "Dashain look" })).toBeInTheDocument();
+    expect(screen.queryByText(/^By\b/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Open Dashain look" }));
+    const popup = await screen.findByRole("dialog");
+    expect(
+      await within(popup).findByRole("heading", { name: "Buy this build" }),
+    ).toBeInTheDocument();
+    expect(within(popup).queryByRole("region", { name: "Built by" })).not.toBeInTheDocument();
+  });
+
   it("asks the server again with the chosen filters", async () => {
     const requestedSearches: string[] = [];
     mswServer.use(

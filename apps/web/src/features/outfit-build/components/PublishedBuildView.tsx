@@ -8,11 +8,14 @@ import type { OutfitPublished } from "../api/outfitSchemas";
 import { formatLakhAmount, formatNepalDateTime } from "../utils/outfitFormatting";
 import { PersonAvatar } from "./PersonAvatar";
 
+const NO_CONTRIBUTORS = 0;
+
 export const PublishedBuildView = ({ build }: { build: OutfitPublished }) => {
   const t = useTranslations("outfitBuild.published");
   const tBudget = useTranslations("outfitBuild.budget");
   const tBoard = useTranslations("outfitBuild.board");
   const locale = useLocale();
+  const hasContributors = build.contributors.length > NO_CONTRIBUTORS;
 
   return (
     <article className="mx-auto max-w-3xl space-y-4">
@@ -25,19 +28,21 @@ export const PublishedBuildView = ({ build }: { build: OutfitPublished }) => {
         </p>
       </header>
 
-      <section aria-labelledby="build-contributors-title">
-        <h2 id="build-contributors-title" className="sr-only">
-          {t("contributors")}
-        </h2>
-        <ul className="flex flex-wrap gap-3">
-          {build.contributors.map((contributor) => (
-            <li key={contributor.id} className="flex items-center gap-2 text-sm text-foreground">
-              <PersonAvatar person={contributor} className="size-7" />
-              {contributor.name}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {hasContributors && (
+        <section aria-labelledby="build-contributors-title">
+          <h2 id="build-contributors-title" className="sr-only">
+            {t("contributors")}
+          </h2>
+          <ul className="flex flex-wrap gap-3">
+            {build.contributors.map((contributor) => (
+              <li key={contributor.id} className="flex items-center gap-2 text-sm text-foreground">
+                <PersonAvatar person={contributor} className="size-7" />
+                {contributor.name}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {build.items.map((item) => (
