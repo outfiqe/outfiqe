@@ -19,6 +19,8 @@ import { BuyBuildPanel } from "./BuyBuildPanel";
 import { PersonAvatar } from "./PersonAvatar";
 import { PublicBuildPhotos } from "./PublicBuildPhotos";
 
+const NO_CONTRIBUTORS = 0;
+
 type PublicBuildDetailViewProps = {
   build: PublicBuildDetail;
   headingLevel?: "h1" | "h2";
@@ -37,6 +39,7 @@ export const PublicBuildDetailView = ({
   const [isReporting, setIsReporting] = useState(false);
   const reportBuild = useReportContent(() => setIsReporting(false));
   const Heading = headingLevel;
+  const hasContributors = build.contributors.length > NO_CONTRIBUTORS;
 
   return (
     <article className="space-y-4">
@@ -57,21 +60,23 @@ export const PublicBuildDetailView = ({
         )}
       </header>
 
-      <section aria-label={tPublished("contributors")}>
-        <ul className="flex flex-wrap gap-3">
-          {build.contributors.map((contributor) => (
-            <li key={contributor.id}>
-              <Link
-                href={`/creator/${contributor.handle}`}
-                className="flex items-center gap-2 text-sm text-foreground hover:underline"
-              >
-                <PersonAvatar person={contributor} className="size-7" />
-                {contributor.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {hasContributors && (
+        <section aria-label={tPublished("contributors")}>
+          <ul className="flex flex-wrap gap-3">
+            {build.contributors.map((contributor) => (
+              <li key={contributor.id}>
+                <Link
+                  href={`/creator/${contributor.handle}`}
+                  className="flex items-center gap-2 text-sm text-foreground hover:underline"
+                >
+                  <PersonAvatar person={contributor} className="size-7" />
+                  {contributor.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <BuildReactionsBar build={build} />
 

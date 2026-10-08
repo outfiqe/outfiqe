@@ -169,5 +169,10 @@ board at once, the loser's change is undone and they're told who got there first
   the event, so a missed event can never leave a stale board on screen.
 - **Rules are checked twice.** The same slot rules the API enforces run in the browser first, so
   "shoes don't go in Top" is explained instantly without a round trip; the server still decides.
+- **A locked version can end up crediting nobody.** People who leave a build come off the
+  credit of every version (see the API README), so a build made by one person who then hands it
+  over and leaves still shows its last locked version with an empty `contributors` list. The card
+  hides its "By" line, the build views drop the "Built by" list, and the page description leaves
+  out "put together by", instead of printing a byline with no names.
 - **Tap first, drag second.** Every action works by tapping (and so by keyboard); dragging from
   the desktop side panel is an extra, using dnd-kit's pointer and keyboard sensors.

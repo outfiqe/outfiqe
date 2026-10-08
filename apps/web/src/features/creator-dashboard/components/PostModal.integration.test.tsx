@@ -466,6 +466,7 @@ describe("PostModal", () => {
     await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it("shows a processing state while photos are being resolved", async () => {
@@ -502,6 +503,7 @@ describe("PostModal", () => {
     await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it("defaults to Portrait and lets the muse switch layout before adding a photo", async () => {

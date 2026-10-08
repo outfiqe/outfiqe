@@ -284,6 +284,7 @@ export default defineConfig({
         "src/features/outfit-build/components/BoardPhotosPanel.tsx",
         "src/features/outfit-build/components/BuildCoverGrid.tsx",
         "src/features/outfit-build/components/PublicBuildPhotos.tsx",
+        "src/features/outfit-build/components/PublishedBuildView.tsx",
         "src/features/outfit-offers/components/**/*.tsx",
         "src/features/outfit-offers/hooks/**/*.ts",
         "src/features/outfit-offers/api/**/*.ts",

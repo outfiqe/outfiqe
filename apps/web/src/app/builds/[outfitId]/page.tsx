@@ -12,8 +12,10 @@ const BUILD_FALLBACK_TITLE = "Outfit build";
 
 const PRIVATE_BUILD_METADATA: Metadata = { title: BUILD_FALLBACK_TITLE, robots: { index: false } };
 
-const describeBuild = (itemCount: number, total: number, contributorNames: string): string =>
-  `${itemCount} pieces, Rs ${total.toLocaleString("en-IN")} in all, put together by ${contributorNames} on Outfiqe. Tap any piece to shop it.`;
+const describeBuild = (itemCount: number, total: number, contributorNames: string): string => {
+  const credit = contributorNames ? `, put together by ${contributorNames}` : "";
+  return `${itemCount} pieces, Rs ${total.toLocaleString("en-IN")} in all${credit} on Outfiqe. Tap any piece to shop it.`;
+};
 
 export const generateMetadata = async ({ params }: BuildRouteProps): Promise<Metadata> => {
   const { outfitId } = await params;
