@@ -6,9 +6,9 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { DiscountType, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createBuyer = async () => {
   const suffix = randomUUID().slice(0, 8);

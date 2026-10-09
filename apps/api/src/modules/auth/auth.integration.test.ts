@@ -20,9 +20,9 @@ import {
   ensurePlatformOrganizationExists,
   seedPlatformOrganization,
   seedTenantOrganization,
-} from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import {
   FORGOT_PASSWORD_MAX_REQUESTS,

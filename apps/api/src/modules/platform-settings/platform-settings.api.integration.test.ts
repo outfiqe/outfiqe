@@ -6,8 +6,8 @@ import { prisma } from "#db/prisma.js";
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { PLATFORM_SETTING_REGISTRY } from "./platform-settings.registry.js";
 import { platformSettingsService } from "./platform-settings.service.js";

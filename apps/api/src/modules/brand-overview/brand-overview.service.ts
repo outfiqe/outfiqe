@@ -1,4 +1,4 @@
-import { brandPayoutService } from "#modules/brand-payouts/brandPayout.service.js";
+import { brandPayoutService } from "#modules/brand-payouts/brand-payout.service.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
 import { toBrandFulfilmentGroupSummaryView } from "#modules/orders/order.utils.js";
 

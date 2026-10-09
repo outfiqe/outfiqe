@@ -30,7 +30,7 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   accepted).
 - `crm-access.utils.ts` — pure mappers: `toMembershipSummary`, `toInviteSummary` (derives
   PENDING/ACCEPTED/REVOKED/EXPIRED from an invite's timestamps, the same shape as
-  `admin-invites/adminInvite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
+  `admin-invites/admin-invite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
   calling membership's own `viewerIsSuperAdmin`/`viewerRoleName`/`viewerPermissionKeys` plus any
   `pendingOwnershipTransfer` onto the organization response, so `apps/admin` can decide what to
   render — and what to label the account as in the sidebar — without guessing at a 403),

@@ -1,0 +1,55 @@
+import type { Request, Response } from "express";
+
+import { HTTP_STATUS } from "#constants/http.constants.js";
+import { sendSuccess } from "#lib/api-response.utils.js";
+import type {
+  BankAccountBody,
+  BankAccountIdParam,
+  ListAdminBankAccountsQuery,
+} from "#lib/bank-account-body.schemas.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
+
+import { bankAccountService } from "./bank-account.service.js";
+
+export const bankAccountController = {
+  async create(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const body = validated.body<BankAccountBody>(res);
+    const result = await bankAccountService.create(userId, body);
+    sendSuccess(res, result, "Bank account added.", HTTP_STATUS.CREATED);
+  },
+
+  async list(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const bankAccounts = await bankAccountService.listForUser(userId);
+    sendSuccess(res, bankAccounts, "Bank accounts.");
+  },
+
+  async setDefault(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<BankAccountIdParam>(res);
+    await bankAccountService.setDefault(userId, id);
+    sendSuccess(res, null, "Default bank account updated.");
+  },
+
+  async verify(_req: Request, res: Response) {
+    const { userId: adminId } = requireAuthPrincipal(res);
+    const { id } = validated.params<BankAccountIdParam>(res);
+    await bankAccountService.verify(id, adminId);
+    sendSuccess(res, null, "Bank account verified.");
+  },
+
+  async reveal(_req: Request, res: Response) {
+    const { userId: adminId } = requireAuthPrincipal(res);
+    const { id } = validated.params<BankAccountIdParam>(res);
+    const revealed = await bankAccountService.reveal(id, adminId);
+    sendSuccess(res, revealed, "Bank account number revealed.");
+  },
+
+  async listAllAdmin(_req: Request, res: Response) {
+    const query = validated.query<ListAdminBankAccountsQuery>(res);
+    const page = await bankAccountService.listAllAdmin(query);
+    sendSuccess(res, page, "Bank accounts.");
+  },
+};

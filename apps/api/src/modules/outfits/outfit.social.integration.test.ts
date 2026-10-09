@@ -6,8 +6,8 @@ import { prisma } from "#db/prisma.js";
 import { ContentReportTarget, FeatureFlagRollout } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { REAL_BROWSER_UA } from "#test/integration/browserUserAgent.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { REAL_BROWSER_UA } from "#test/integration/browser-user-agent.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -18,8 +18,8 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 beforeEach(async () => {
   await redis.flushdb();

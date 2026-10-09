@@ -16,10 +16,10 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { saleService } from "./sale.service.js";
 import type { ScoredSaleCandidate } from "./sale.types.js";

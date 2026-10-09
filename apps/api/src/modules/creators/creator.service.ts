@@ -10,7 +10,7 @@ import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { badgeService } from "#modules/badges/badge.service.js";
-import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
+import { creatorLookRepository } from "#modules/creator-looks/creator-look.repository.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productRepository } from "#modules/products/product.repository.js";

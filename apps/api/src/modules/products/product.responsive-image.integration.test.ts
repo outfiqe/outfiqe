@@ -11,9 +11,9 @@ import {
   ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const ORIGINAL_URL = "https://cdn.outfiqe.test/uploads/jacket-original.jpg";
 

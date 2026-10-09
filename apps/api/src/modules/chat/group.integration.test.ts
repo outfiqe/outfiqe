@@ -15,8 +15,8 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { CHAT_SYSTEM_EVENT } from "./chat.constants.js";
 

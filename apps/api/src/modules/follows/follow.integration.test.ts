@@ -12,11 +12,11 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
-import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+import { creatorLookService } from "#modules/creator-looks/creator-look.service.js";
 import { redis } from "#redis/redis.client.js";
 import { CREATOR_MOMENTUM_SCORE_CACHE_KEY, redisKeys } from "#redis/redis.keys.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import type { SuggestionSnapshotCursor } from "./follow.types.js";
 

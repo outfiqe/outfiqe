@@ -19,8 +19,8 @@ import {
 } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSessionWithPlatformPermissions } from "#test/integration/authHelpers.js";
-import { REAL_BROWSER_UA } from "#test/integration/browserUserAgent.js";
+import { createAdminSessionWithPlatformPermissions } from "#test/integration/auth-helpers.js";
+import { REAL_BROWSER_UA } from "#test/integration/browser-user-agent.js";
 import {
   createOutfitUser,
   currentBuildVersion,
@@ -32,8 +32,8 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { runOutfitPhotoCleanupSweep } from "./outfit-photo.service.js";
 

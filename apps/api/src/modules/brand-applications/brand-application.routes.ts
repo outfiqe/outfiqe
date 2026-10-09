@@ -1,0 +1,55 @@
+﻿import { Router } from "express";
+
+import { rateLimit } from "#middlewares/rate-limit.js";
+import { validate, validated } from "#middlewares/validate.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
+
+import { brandApplicationController } from "./brand-application.controller.js";
+import type { CreateBrandApplicationBody } from "./brand-application.schemas.js";
+import {
+  brandApplicationIdParamSchema,
+  createBrandApplicationSchema,
+  listBrandApplicationsQuerySchema,
+  rejectBrandApplicationSchema,
+} from "./brand-application.schemas.js";
+
+const WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_REQUESTS = 3;
+
+const brandApplicationRateLimit = rateLimit({
+  namespace: "brand-application",
+  windowMs: WINDOW_MS,
+  max: MAX_REQUESTS,
+  keyGenerator: (_req, res) => validated.body<CreateBrandApplicationBody>(res).phone,
+  message: "Too many applications from this number. Please try again tomorrow.",
+});
+
+export const brandApplicationRoutes = Router();
+
+brandApplicationRoutes.post(
+  "/",
+  validate({ body: createBrandApplicationSchema }),
+  brandApplicationRateLimit,
+  brandApplicationController.create,
+);
+
+brandApplicationRoutes.get(
+  "/",
+  ...platformGuards.brandsRead,
+  validate({ query: listBrandApplicationsQuerySchema }),
+  brandApplicationController.list,
+);
+
+brandApplicationRoutes.post(
+  "/:id/approve",
+  ...platformGuards.brandsManage,
+  validate({ params: brandApplicationIdParamSchema }),
+  brandApplicationController.approve,
+);
+
+brandApplicationRoutes.post(
+  "/:id/reject",
+  ...platformGuards.brandsManage,
+  validate({ params: brandApplicationIdParamSchema, body: rejectBrandApplicationSchema }),
+  brandApplicationController.reject,
+);

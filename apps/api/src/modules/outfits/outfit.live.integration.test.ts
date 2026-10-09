@@ -18,7 +18,7 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
+} from "#test/integration/outfit-fixtures.js";
 
 import { activityWindowGroupKey, notifyOutfitActivity } from "./outfit.notifications.js";
 

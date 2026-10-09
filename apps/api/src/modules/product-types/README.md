@@ -50,6 +50,6 @@ The search-vector trigger reads `products."type"`, so the `search_products` func
 the old `products."type"` column is dropped. The enum type itself is dropped last, once nothing
 references it.
 
-**Integration tests seed types with `#test/integration/productFixtures.ts#ensureProductType`.**
+**Integration tests seed types with `#test/integration/product-fixtures.ts#ensureProductType`.**
 `resetDatabase()` truncates every table between tests, including the rows the migration seeds, so
 tests that need a type upsert one rather than assuming the six defaults exist.

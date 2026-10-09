@@ -21,8 +21,8 @@ import { redis } from "#redis/redis.client.js";
 import {
   createAdminSessionWithPlatformPermissions,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
+} from "#test/integration/auth-helpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crm-fixtures.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -32,9 +32,9 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { runOutfitOfferLifecycleSweep } from "./outfit-offer.lifecycle.js";
 

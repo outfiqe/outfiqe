@@ -9,9 +9,9 @@ import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.co
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/auth-helpers.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const SLOT_TYPES_PATH = "/api/outfit-slot-types";
 const VALIDATION_FAILED_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;

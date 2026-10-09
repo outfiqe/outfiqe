@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { OutfitEventType, OutfitMemberRole, ProductStatus } from "#generated/prisma/enums.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createUser = () =>
   prisma.user.create({

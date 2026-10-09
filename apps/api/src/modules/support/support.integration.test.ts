@@ -12,9 +12,9 @@ import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
-import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
-import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
+import { seedPlatformOrganization } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) =>
   `Bearer ${generateTokenpair({ sub: userId, role }).accessToken}`;

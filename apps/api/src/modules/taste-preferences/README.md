@@ -7,15 +7,15 @@ _Explore your taste_ picker, and the reverse view for admins: how popular each c
 
 ## Structure
 
-- `tastePreference.routes.ts` — `GET /me`, `PUT /me`, `DELETE /me` (all `requireAuth`, mutations
+- `taste-preference.routes.ts` — `GET /me`, `PUT /me`, `DELETE /me` (all `requireAuth`, mutations
   rate-limited per user), `GET /popularity` (admin).
-- `tastePreference.controller.ts` — auth principal → service.
-- `tastePreference.service.ts` — `setForUser` de-dupes and treats an empty array as "no
+- `taste-preference.controller.ts` — auth principal → service.
+- `taste-preference.service.ts` — `setForUser` de-dupes and treats an empty array as "no
   preference" (deletes the row).
-- `tastePreference.repository.ts` — one row per user (`userId` is the PK). `listCategoryPopularity`
+- `taste-preference.repository.ts` — one row per user (`userId` is the PK). `listCategoryPopularity`
   is raw SQL (`unnest` on the array column) — the ORM can't express it.
-- `tastePreference.schemas.ts` — Zod for the `PUT` body.
-- `tastePreference.types.ts` — `TastePreferenceView`, `CategoryPopularity`.
+- `taste-preference.schemas.ts` — Zod for the `PUT` body.
+- `taste-preference.types.ts` — `TastePreferenceView`, `CategoryPopularity`.
 
 ## Funnel
 
@@ -24,8 +24,8 @@ they sign in, the web layer pushes that local choice here once (only if they hav
 record yet — see `apps/web/src/features/categories/README.md`). From then on the choice syncs
 across their devices. An admin sees "N shoppers" beside each category on the Categories page.
 
-**Technical:** `tastePreference.routes.ts` → `tastePreference.controller.ts` →
-`tastePreference.service.ts` → `tastePreference.repository.ts` → Postgres (`taste_preferences`,
+**Technical:** `taste-preference.routes.ts` → `taste-preference.controller.ts` →
+`taste-preference.service.ts` → `taste-preference.repository.ts` → Postgres (`taste_preferences`,
 `user_id` FK `ON DELETE CASCADE`).
 
 ## Non-obvious rationale

@@ -20,10 +20,10 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const STARTING_STOCK = 10;
 const RETURN_REASON = "Parcel came back from Pathao";

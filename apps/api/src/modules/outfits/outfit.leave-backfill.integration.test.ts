@@ -12,7 +12,7 @@ import {
   seedOutfitSlotTypes,
   startBuildOrFail,
   turnOutfitBuilderOn,
-} from "#test/integration/outfitFixtures.js";
+} from "#test/integration/outfit-fixtures.js";
 
 const BACKFILL_MIGRATION_PATH = join(
   process.cwd(),

@@ -13,9 +13,9 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { requireFeatureFlag } from "./feature-flags.middleware.js";
 import { FEATURE_FLAG_KEYS } from "./feature-flags.registry.js";

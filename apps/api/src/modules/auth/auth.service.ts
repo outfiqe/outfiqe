@@ -25,7 +25,7 @@ import { isPasswordBreached } from "#lib/password-breach.utils.js";
 import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
+import { adminInviteRepository } from "#modules/admin-invites/admin-invite.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { platformNavAccessService } from "#modules/platform-nav-access/platform-nav-access.service.js";

@@ -11,11 +11,11 @@ import {
 import {
   registerCreatorLeaderboardEventConsumer,
   registerCreatorLeaderboardSocketHandlers,
-} from "#modules/creator-leaderboard/creatorLeaderboard.socket.js";
+} from "#modules/creator-leaderboard/creator-leaderboard.socket.js";
 import {
   registerCommentEventConsumer,
   registerCreatorLookSocketHandlers,
-} from "#modules/creator-looks/creatorLook.socket.js";
+} from "#modules/creator-looks/creator-look.socket.js";
 import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
@@ -30,7 +30,7 @@ import { registerOutfitStockHandlers } from "#modules/outfits/outfit.stock.js";
 import { registerSuspensionNotificationEventConsumers } from "#modules/platform-suspensions/platform-suspensions.events.js";
 import { registerSuspensionSocketEventConsumer } from "#modules/platform-suspensions/platform-suspensions.socket.js";
 import { registerPushEventConsumer } from "#modules/push/push.events.js";
-import { registerTagReportEventConsumers } from "#modules/tag-reports/tagReport.events.js";
+import { registerTagReportEventConsumers } from "#modules/tag-reports/tag-report.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
 import { registerXpSocketEventConsumer } from "#modules/xp/xp.socket.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";

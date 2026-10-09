@@ -15,9 +15,9 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { isCheckConstraintViolation } from "#lib/prisma.utils.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { runInventoryLedgerReconciliation } from "./product.jobs.js";
 import { productService } from "./product.service.js";

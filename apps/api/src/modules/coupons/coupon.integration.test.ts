@@ -6,12 +6,12 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CouponType, PaymentMethod, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
-import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
+import { createAdminSession, grantPlatformPermissions } from "#test/integration/auth-helpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crm-fixtures.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });

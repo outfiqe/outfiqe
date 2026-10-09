@@ -29,7 +29,7 @@ const fns = vi.hoisted(() => ({
 vi.mock("#socket/socket.listeners.js", () => ({
   registerSocketListeners: fns.registerSocketListeners,
 }));
-vi.mock("#modules/creator-looks/creatorLook.socket.js", () => ({
+vi.mock("#modules/creator-looks/creator-look.socket.js", () => ({
   registerCreatorLookSocketHandlers: fns.registerCreatorLookSocketHandlers,
   registerCommentEventConsumer: fns.registerCommentEventConsumer,
 }));
@@ -37,7 +37,7 @@ vi.mock("#modules/leaderboard/leaderboard.socket.js", () => ({
   registerLeaderboardSocketHandlers: fns.registerLeaderboardSocketHandlers,
   registerLeaderboardEventConsumer: fns.registerLeaderboardEventConsumer,
 }));
-vi.mock("#modules/creator-leaderboard/creatorLeaderboard.socket.js", () => ({
+vi.mock("#modules/creator-leaderboard/creator-leaderboard.socket.js", () => ({
   registerCreatorLeaderboardSocketHandlers: fns.registerCreatorLeaderboardSocketHandlers,
   registerCreatorLeaderboardEventConsumer: fns.registerCreatorLeaderboardEventConsumer,
 }));

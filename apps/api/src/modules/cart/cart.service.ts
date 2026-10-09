@@ -2,7 +2,7 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import type { CouponLine } from "#modules/coupons/coupon.types.js";
-import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import {
   computeDiscountPercent,
   resolveBrandFundedUnitPrice,

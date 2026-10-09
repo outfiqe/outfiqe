@@ -18,9 +18,9 @@ import { trendingService } from "#modules/trending/trending.service.js";
 import type { TrendingSnapshotCursor } from "#modules/trending/trending.types.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const HOUR_MS = 60 * 60 * 1000;
 

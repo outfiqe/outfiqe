@@ -16,7 +16,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -27,9 +27,9 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { BUILD_ITEM_LEFT_OUT_REASON } from "./outfit.constants.js";
 

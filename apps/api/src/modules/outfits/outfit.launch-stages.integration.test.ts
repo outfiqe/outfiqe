@@ -10,16 +10,16 @@ import { FEATURE_FLAG_KEYS } from "#modules/feature-flags/feature-flags.registry
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
 import {
   createOutfitUser,
   type OutfitTestUser,
   readBuild,
   seedOutfitSlotTypes,
   startBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const OUTFIT_BUILDER_FLAG = "outfit_builder";
 

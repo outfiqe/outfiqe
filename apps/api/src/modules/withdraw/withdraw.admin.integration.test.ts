@@ -25,15 +25,15 @@ import {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
-import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
+import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
 import {
   createAdminSession,
   createAdminSessionWithPlatformPermissions,
-} from "#test/integration/authHelpers.js";
-import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/auth-helpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crm-fixtures.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 beforeEach(async () => {
   await redis.flushdb();

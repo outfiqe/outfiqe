@@ -2,7 +2,7 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
+import { adminInviteRepository } from "#modules/admin-invites/admin-invite.repository.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import type {

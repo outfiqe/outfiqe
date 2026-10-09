@@ -10,19 +10,19 @@ import { ANNOUNCEMENT_SCHEDULE_SWEEP_INTERVAL_MS } from "#modules/announcements/
 import { runAnnouncementScheduledDispatch } from "#modules/announcements/announcement.lifecycle.js";
 import { AUTH_RETENTION_SWEEP_INTERVAL_MS } from "#modules/auth/auth.constants.js";
 import { runAuthRetentionSweep } from "#modules/auth/auth.retention.js";
-import { runBrandPayoutLifecycleSweep } from "#modules/brand-payouts/brandPayout.lifecycle.js";
+import { runBrandPayoutLifecycleSweep } from "#modules/brand-payouts/brand-payout.lifecycle.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
-import { creatorCompetitionService } from "#modules/creator-competitions/creatorCompetition.service.js";
-import { CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS } from "#modules/creator-leaderboard/creatorLeaderboard.constants.js";
-import { creatorLeaderboardService } from "#modules/creator-leaderboard/creatorLeaderboard.service.js";
+import { creatorCompetitionService } from "#modules/creator-competitions/creator-competition.service.js";
+import { CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS } from "#modules/creator-leaderboard/creator-leaderboard.constants.js";
+import { creatorLeaderboardService } from "#modules/creator-leaderboard/creator-leaderboard.service.js";
 import {
   TAG_TREND_AGGREGATION_INTERVAL_MS,
   TAG_TREND_SCORING_INTERVAL_MS,
   TRENDING_AGGREGATION_INTERVAL_MS,
   TRENDING_SCORING_INTERVAL_MS,
-} from "#modules/creator-looks/creatorLook.constants.js";
-import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+} from "#modules/creator-looks/creator-look.constants.js";
+import { creatorLookService } from "#modules/creator-looks/creator-look.service.js";
 import {
   INVOICE_RECONCILE_INTERVAL_MS,
   RENEWAL_SWEEP_INTERVAL_MS,
@@ -64,11 +64,11 @@ import { runSupportAutoCloseSweep } from "#modules/support/support.lifecycle.js"
 import {
   TAG_REVIEW_REMINDER_INTERVAL_MS,
   TAG_REVIEW_SLA_SWEEP_INTERVAL_MS,
-} from "#modules/tag-reviews/tagReview.constants.js";
+} from "#modules/tag-reviews/tag-review.constants.js";
 import {
   runTagReviewReminderDigest,
   runTagReviewSlaSweep,
-} from "#modules/tag-reviews/tagReview.jobs.js";
+} from "#modules/tag-reviews/tag-review.jobs.js";
 import {
   AGGREGATION_INTERVAL_MS,
   SCORING_INTERVAL_MS,

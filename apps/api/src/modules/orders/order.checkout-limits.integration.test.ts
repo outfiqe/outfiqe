@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { redis } from "#redis/redis.client.js";
-import { createOutfitUser } from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+import { createOutfitUser } from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const CHECKOUTS_ALLOWED_PER_MINUTE = 5;
 

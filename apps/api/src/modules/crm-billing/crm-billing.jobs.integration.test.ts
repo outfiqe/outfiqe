@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { eventBus } from "#events/event-bus.js";
-import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
 
 import {
   runCrmBillingReconciliationSweep,

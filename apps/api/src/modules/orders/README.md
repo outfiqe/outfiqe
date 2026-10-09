@@ -301,7 +301,7 @@ can act on it.
 `Order.fulfilmentStatus`/`fulfilmentSummary` after any group changes — the admin advance path and
 `advanceBrandFulfilmentGroup` both funnel through it. It also stamps `Order.deliveredAt` the moment
 the recomputed rollup reaches `DELIVERED`, guarded by `deliveredAt: null` so it's only ever set
-once. This is the field `commission.repository.ts`/`brandPayout.repository.ts`'s
+once. This is the field `commission.repository.ts`/`brand-payout.repository.ts`'s
 `findApprovableIds` sweeps read (`fulfilmentStatus = DELIVERED AND deliveredAt <= cutoff`) to mature
 commissions and brand payouts — before this, a brand marking its own shipment delivered moved the
 order to `DELIVERED` without ever stamping the timestamp those sweeps depend on, so a brand-fulfilled

@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
-import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { grantPlatformPermissions } from "#test/integration/auth-helpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createUser = async (name: string) =>
   prisma.user.create({

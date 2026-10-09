@@ -9,7 +9,7 @@ import { redis } from "#redis/redis.client.js";
 import {
   createAdminSessionWithPlatformPermissions,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
+} from "#test/integration/auth-helpers.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -20,8 +20,8 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { outfitAdminRepository } from "./outfit-admin.repository.js";
 

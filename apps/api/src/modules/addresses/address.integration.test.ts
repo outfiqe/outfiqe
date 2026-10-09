@@ -8,7 +8,7 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
-import { testApp } from "#test/integration/testApp.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { addressRepository } from "./address.repository.js";
 import { MAX_SAVED_ADDRESSES_PER_USER } from "./address.service.js";
