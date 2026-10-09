@@ -71,7 +71,7 @@ vi.mock("#modules/outfits/outfit.realtime.js", () => ({
 vi.mock("#modules/outfits/outfit.notifications.js", () => ({
   registerOutfitNotificationHandlers: fns.registerOutfitNotificationHandlers,
 }));
-vi.mock("#modules/outfits/outfit.stock.js", () => ({
+vi.mock("#modules/outfits/stock/stock.events.js", () => ({
   registerOutfitStockHandlers: fns.registerOutfitStockHandlers,
 }));
 vi.mock("#modules/xp/xp.events.js", () => ({

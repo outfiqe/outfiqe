@@ -11,8 +11,8 @@ import { registerOutboxHandler } from "#outbox/outbox.handlers.js";
 import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 import type { OutboxJobData } from "#outbox/outbox.types.js";
 
-import { outfitRepository } from "./outfit.repository.js";
-import { outfitStockRepository, type StockAlertItemRow } from "./outfit-stock.repository.js";
+import { outfitRepository } from "../outfit.repository.js";
+import { outfitStockRepository, type StockAlertItemRow } from "./stock.repository.js";
 
 const NO_SIZES = 0;
 

@@ -9,7 +9,8 @@ import { withIdempotentTransaction } from "#lib/idempotency.utils.js";
 import { loadBoardView } from "./outfit.board.js";
 import { recordOutfitChange } from "./outfit.changes.js";
 import { outfitErrors } from "./outfit.errors.js";
-import { type OutfitAccessRow, outfitRepository } from "./outfit.repository.js";
+import { type OutfitAccessRow } from "./outfit.query-helpers.js";
+import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitActor, OutfitBoardView } from "./outfit.types.js";
 import { toViewerRole } from "./outfit.utils.js";
 

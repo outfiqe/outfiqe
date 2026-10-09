@@ -1,6 +1,7 @@
 import { minutesToMilliseconds } from "date-fns/minutesToMilliseconds";
 
 import { OutfitOfferStatus } from "#generated/prisma/enums.js";
+import { OutfitStatus } from "#generated/prisma/enums.js";
 
 export const OUTFIT_IDEMPOTENCY_ENDPOINT = {
   CREATE: "outfits:create",
@@ -79,3 +80,7 @@ export const OUTFIT_ITEM_AVAILABILITY = {
 } as const;
 
 export const OUTFIT_VERSION_HEADER_PATTERN = /^"?(\d+)"?$/;
+
+export const NONE = 0;
+
+export const DRAFT_ONLY = [OutfitStatus.DRAFT] as const;

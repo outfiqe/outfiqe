@@ -1,7 +1,7 @@
 import type { UserRole } from "#generated/prisma/enums.js";
 
-import type { OutfitPersonView, OutfitSnapshotItem } from "./outfit.types.js";
-import type { OutfitCoverPhotoView, OutfitPhotoView } from "./outfit-photo.types.js";
+import type { OutfitPersonView, OutfitSnapshotItem } from "../outfit.types.js";
+import type { OutfitCoverPhotoView, OutfitPhotoView } from "../photos/photo.types.js";
 
 export type PublicBuildItem = OutfitSnapshotItem & {
   isInStock: boolean;

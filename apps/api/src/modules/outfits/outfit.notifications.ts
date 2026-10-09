@@ -24,7 +24,7 @@ import {
   readDetailStrings,
 } from "./outfit.announcement.js";
 import { outfitRepository } from "./outfit.repository.js";
-import { outfitPublishRepository } from "./outfit-publish.repository.js";
+import { outfitPublishRepository } from "./publish/publish.repository.js";
 
 export const OUTFIT_ACTIVITY_WINDOW_MS = secondsToMilliseconds(30);
 

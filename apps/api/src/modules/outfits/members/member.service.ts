@@ -2,22 +2,25 @@ import { OutfitEventType, OutfitMemberRole, OutfitStatus } from "#generated/pris
 import { buildChatService } from "#modules/chat/build-chat.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
-import { OUTFIT_CHAT_FALLBACK_NAME, OUTFIT_IDEMPOTENCY_ENDPOINT } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import { requireReachablePeople } from "./outfit.people.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { AddEditorsBody, TransferOwnershipBody } from "./outfit.schemas.js";
+import {
+  NONE,
+  OUTFIT_CHAT_FALLBACK_NAME,
+  OUTFIT_IDEMPOTENCY_ENDPOINT,
+} from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { requireReachablePeople } from "../outfit.people.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { AddEditorsBody, TransferOwnershipBody } from "../outfit.schemas.js";
 import {
   OUTFIT_WRITE_ACCESS,
   type OutfitWriteCall,
   type OutfitWriteResult,
   runOutfitWrite,
   toWriteRequest,
-} from "./outfit.write.js";
+} from "../outfit.write.js";
 
 const DRAFT_ONLY = [OutfitStatus.DRAFT] as const;
 const NOT_ARCHIVED = [OutfitStatus.DRAFT, OutfitStatus.LOCKED] as const;
-const NONE = 0;
 
 export const outfitMemberService = {
   addEditors(call: OutfitWriteCall, { userIds }: AddEditorsBody): Promise<OutfitWriteResult> {

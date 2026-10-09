@@ -12,22 +12,22 @@ import { platformAccessService } from "#modules/platform-access/platform-access.
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
-import { OUTFIT_LIMITS } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { OutfitPersonView } from "./outfit.types.js";
-import { parseSnapshotItems, toPublicFeedCursorValue } from "./outfit.utils.js";
-import { outfitCartRepository } from "./outfit-cart.repository.js";
-import { outfitPhotoRepository } from "./outfit-photo.repository.js";
-import { loadCoversForBuilds } from "./outfit-photo.service.js";
-import type { OutfitPhotoView } from "./outfit-photo.types.js";
-import { toOutfitPhotoView } from "./outfit-photo.utils.js";
+import { outfitCartRepository } from "../cart/cart.repository.js";
+import { OUTFIT_LIMITS } from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { OutfitPersonView } from "../outfit.types.js";
+import { parseSnapshotItems, toPublicFeedCursorValue } from "../outfit.utils.js";
+import { outfitPhotoRepository } from "../photos/photo.repository.js";
+import { loadCoversForBuilds } from "../photos/photo.service.js";
+import type { OutfitPhotoView } from "../photos/photo.types.js";
+import { toOutfitPhotoView } from "../photos/photo.utils.js";
 import {
   type OutfitCommentRow,
   outfitSocialRepository,
   type PublicBuildFilters,
   type PublicFeedCursor,
-} from "./outfit-social.repository.js";
+} from "./social.repository.js";
 import type {
   ModerationPrincipal,
   OutfitCommentPage,
@@ -35,7 +35,7 @@ import type {
   PublicBuildCard,
   PublicBuildDetail,
   PublicBuildPage,
-} from "./outfit-social.types.js";
+} from "./social.types.js";
 
 const LOOKAHEAD_ROW = 1;
 const NO_STOCK = 0;

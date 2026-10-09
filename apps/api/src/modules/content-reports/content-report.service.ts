@@ -7,9 +7,9 @@ import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { creatorLookRepository } from "#modules/creator-looks/creator-look.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creator-look.service.js";
-import { outfitPhotoService } from "#modules/outfits/outfit-photo.service.js";
-import { outfitSocialRepository } from "#modules/outfits/outfit-social.repository.js";
-import { outfitSocialService } from "#modules/outfits/outfit-social.service.js";
+import { outfitPhotoService } from "#modules/outfits/photos/photo.service.js";
+import { outfitSocialRepository } from "#modules/outfits/social/social.repository.js";
+import { outfitSocialService } from "#modules/outfits/social/social.service.js";
 import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 

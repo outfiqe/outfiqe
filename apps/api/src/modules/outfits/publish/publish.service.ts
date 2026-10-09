@@ -6,11 +6,11 @@ import { creatorLookService } from "#modules/creator-looks/creator-look.service.
 import type { CreatorLookSummary } from "#modules/creator-looks/creator-look.types.js";
 import { outfitOfferService } from "#modules/outfit-offers/outfit-offer.service.js";
 
-import { outfitErrors } from "./outfit.errors.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { PublishLookBody } from "./outfit.schemas.js";
-import { parseSnapshotItems } from "./outfit.utils.js";
-import { outfitPublishRepository } from "./outfit-publish.repository.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { PublishLookBody } from "../outfit.schemas.js";
+import { parseSnapshotItems } from "../outfit.utils.js";
+import { outfitPublishRepository } from "./publish.repository.js";
 
 const UNIQUE_CONSTRAINT_VIOLATION = "P2002";
 

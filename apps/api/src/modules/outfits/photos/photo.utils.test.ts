@@ -6,8 +6,8 @@ import {
   OutfitPhotoStatus,
 } from "#generated/prisma/enums.js";
 
-import type { OutfitPhotoRow } from "./outfit-photo.repository.js";
-import { groupCoversByOutfit, toOutfitPhotoView } from "./outfit-photo.utils.js";
+import type { OutfitPhotoRow } from "./photo.repository.js";
+import { groupCoversByOutfit, toOutfitPhotoView } from "./photo.utils.js";
 
 const photoRow = (overrides: Partial<OutfitPhotoRow> = {}): OutfitPhotoRow => ({
   id: "photo-1",

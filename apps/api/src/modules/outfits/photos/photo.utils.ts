@@ -1,7 +1,7 @@
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 
-import type { OutfitPhotoRow } from "./outfit-photo.repository.js";
-import type { OutfitCoverPhotoView, OutfitPhotoView } from "./outfit-photo.types.js";
+import type { OutfitPhotoRow } from "./photo.repository.js";
+import type { OutfitCoverPhotoView, OutfitPhotoView } from "./photo.types.js";
 
 export const toOutfitPhotoView = ({
   id,

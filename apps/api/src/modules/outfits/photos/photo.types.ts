@@ -2,7 +2,7 @@ import type { ResponsiveImage } from "@outfiqe/types";
 
 import type { OutfitPhotoKind, OutfitPhotoStatus } from "#generated/prisma/enums.js";
 
-import type { OutfitPersonView } from "./outfit.types.js";
+import type { OutfitPersonView } from "../outfit.types.js";
 
 export type OutfitPhotoView = {
   id: string;

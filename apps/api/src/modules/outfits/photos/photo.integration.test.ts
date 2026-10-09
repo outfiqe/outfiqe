@@ -35,7 +35,7 @@ import {
 } from "#test/integration/outfit-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
-import { runOutfitPhotoCleanupSweep } from "./outfit-photo.service.js";
+import { runOutfitPhotoCleanupSweep } from "./photo.service.js";
 
 const CONCURRENT_ATTEMPTS = 6;
 const HOURS_PAST_CLEANUP = 25;

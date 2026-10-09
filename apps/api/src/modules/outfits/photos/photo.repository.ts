@@ -8,7 +8,7 @@ import {
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { outfitPersonSelect } from "./outfit.repository.js";
+import { outfitPersonSelect } from "../outfit.query-helpers.js";
 
 const ACTIVE_PHOTO_STATUSES = [OutfitPhotoStatus.PROCESSING, OutfitPhotoStatus.READY];
 const NO_ROWS = 0;

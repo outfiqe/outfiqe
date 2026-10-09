@@ -1,11 +1,10 @@
 import type { Prisma } from "#generated/prisma/client.js";
 import { chatService } from "#modules/chat/chat.service.js";
 
+import { NONE } from "./outfit.constants.js";
 import { outfitErrors } from "./outfit.errors.js";
 import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitActor } from "./outfit.types.js";
-
-const NONE = 0;
 
 export const requireReachablePeople = async (
   tx: Prisma.TransactionClient,

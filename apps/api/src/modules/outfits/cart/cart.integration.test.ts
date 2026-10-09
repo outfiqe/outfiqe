@@ -31,7 +31,7 @@ import {
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
-import { BUILD_ITEM_LEFT_OUT_REASON } from "./outfit.constants.js";
+import { BUILD_ITEM_LEFT_OUT_REASON } from "../outfit.constants.js";
 
 const BUILD_COMMISSION_AMOUNT = 90;
 const SOLD_OUT_STOCK = 0;

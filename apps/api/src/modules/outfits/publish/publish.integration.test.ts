@@ -19,7 +19,7 @@ import {
 } from "#test/integration/outfit-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
-import { notifyOutfitActivity } from "./outfit.notifications.js";
+import { notifyOutfitActivity } from "../outfit.notifications.js";
 
 const LOOK_IMAGE_URL = "https://cdn.outfiqe.test/looks/dashain.jpg";
 

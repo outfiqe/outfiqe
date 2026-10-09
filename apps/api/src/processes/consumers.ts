@@ -26,7 +26,7 @@ import { registerOutfitOfferNotificationHandlers } from "#modules/outfit-offers/
 import { registerOutfitNotificationHandlers } from "#modules/outfits/outfit.notifications.js";
 import { registerOutfitRealtimeHandlers } from "#modules/outfits/outfit.realtime.js";
 import { registerOutfitSocketHandlers } from "#modules/outfits/outfit.socket.js";
-import { registerOutfitStockHandlers } from "#modules/outfits/outfit.stock.js";
+import { registerOutfitStockHandlers } from "#modules/outfits/stock/stock.events.js";
 import { registerSuspensionNotificationEventConsumers } from "#modules/platform-suspensions/platform-suspensions.events.js";
 import { registerSuspensionSocketEventConsumer } from "#modules/platform-suspensions/platform-suspensions.socket.js";
 import { registerPushEventConsumer } from "#modules/push/push.events.js";

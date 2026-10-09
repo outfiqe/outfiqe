@@ -6,6 +6,8 @@ import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { readRequiredIdempotencyKey } from "#middlewares/require-idempotency-key.js";
 import { validated } from "#middlewares/validate.js";
 
+import { outfitCartService } from "./cart/cart.service.js";
+import { outfitMemberService } from "./members/member.service.js";
 import { outfitErrors } from "./outfit.errors.js";
 import type {
   AddBuildToCartBody,
@@ -31,12 +33,10 @@ import type {
 import { outfitService } from "./outfit.service.js";
 import { parseVersionHeader, toVersionHeaderValue } from "./outfit.utils.js";
 import type { OutfitWriteCall, OutfitWriteResult } from "./outfit.write.js";
-import { outfitCartService } from "./outfit-cart.service.js";
-import { outfitMemberService } from "./outfit-member.service.js";
-import { outfitPhotoService } from "./outfit-photo.service.js";
-import { outfitPublishService } from "./outfit-publish.service.js";
-import { outfitReplacementService } from "./outfit-replacements.service.js";
-import { outfitVisibilityService } from "./outfit-visibility.service.js";
+import { outfitPhotoService } from "./photos/photo.service.js";
+import { outfitPublishService } from "./publish/publish.service.js";
+import { outfitReplacementService } from "./stock/replacement.service.js";
+import { outfitVisibilityService } from "./visibility/visibility.service.js";
 
 const readExpectedVersion = (req: Request): number => {
   const headerValue = req.get(OUTFIT_VERSION_HEADER);

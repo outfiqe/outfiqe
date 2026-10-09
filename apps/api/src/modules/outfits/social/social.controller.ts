@@ -11,8 +11,8 @@ import type {
   OutfitCommentParam,
   OutfitIdParam,
   PublicBuildsQuery,
-} from "./outfit.schemas.js";
-import { outfitSocialService } from "./outfit-social.service.js";
+} from "../outfit.schemas.js";
+import { outfitSocialService } from "./social.service.js";
 
 const viewerIdFrom = (res: Response): string | null => getAuthPrincipal(res)?.userId ?? null;
 

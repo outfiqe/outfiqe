@@ -2,21 +2,20 @@ import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/pris
 import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
-import { OUTFIT_IDEMPOTENCY_ENDPOINT } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import { requireReachablePeople } from "./outfit.people.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { SetVisibilityBody } from "./outfit.schemas.js";
+import { NONE, OUTFIT_IDEMPOTENCY_ENDPOINT } from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { requireReachablePeople } from "../outfit.people.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { SetVisibilityBody } from "../outfit.schemas.js";
 import {
   OUTFIT_WRITE_ACCESS,
   type OutfitWriteCall,
   type OutfitWriteResult,
   runOutfitWrite,
   toWriteRequest,
-} from "./outfit.write.js";
+} from "../outfit.write.js";
 
 const NOT_ARCHIVED = [OutfitStatus.DRAFT, OutfitStatus.LOCKED] as const;
-const NONE = 0;
 const NO_SHARES_REMOVED = 0;
 
 export const outfitVisibilityService = {

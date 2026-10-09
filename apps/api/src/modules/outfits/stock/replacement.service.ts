@@ -1,10 +1,10 @@
-import { resolveLiveBoardRole } from "./outfit.access.js";
-import { OUTFIT_LIMITS, OUTFIT_VIEWER_ROLE } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { OutfitProductView } from "./outfit.types.js";
-import { toProductView } from "./outfit.utils.js";
-import { outfitStockRepository } from "./outfit-stock.repository.js";
+import { resolveLiveBoardRole } from "../outfit.access.js";
+import { OUTFIT_LIMITS, OUTFIT_VIEWER_ROLE } from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { OutfitProductView } from "../outfit.types.js";
+import { toProductView } from "../outfit.utils.js";
+import { outfitStockRepository } from "./stock.repository.js";
 
 export const outfitReplacementService = {
   async listReplacements(

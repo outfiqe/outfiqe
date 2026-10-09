@@ -2,14 +2,14 @@ import { prisma } from "#db/prisma.js";
 import { cartService } from "#modules/cart/cart.service.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
-import { BUILD_ITEM_LEFT_OUT_REASON } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import { outfitRepository } from "./outfit.repository.js";
-import type { AddBuildToCartBody } from "./outfit.schemas.js";
-import type { BuildCartResult, BuildItemLeftOutReason } from "./outfit.types.js";
-import { parseSnapshotItems } from "./outfit.utils.js";
-import { type BuyableSize, outfitCartRepository } from "./outfit-cart.repository.js";
-import { requireSocialAccess } from "./outfit-social.service.js";
+import { BUILD_ITEM_LEFT_OUT_REASON } from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import { outfitRepository } from "../outfit.repository.js";
+import type { AddBuildToCartBody } from "../outfit.schemas.js";
+import type { BuildCartResult, BuildItemLeftOutReason } from "../outfit.types.js";
+import { parseSnapshotItems } from "../outfit.utils.js";
+import { requireSocialAccess } from "../social/social.service.js";
+import { type BuyableSize, outfitCartRepository } from "./cart.repository.js";
 
 const NO_STOCK = 0;
 const NO_ITEMS = 0;

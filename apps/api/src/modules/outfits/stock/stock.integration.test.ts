@@ -21,7 +21,7 @@ import {
 } from "#test/integration/outfit-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
-import { flagSoldOutBoardItems, notifyItemsSoldOut } from "./outfit.stock.js";
+import { flagSoldOutBoardItems, notifyItemsSoldOut } from "./stock.events.js";
 
 const SOLD_OUT_STOCK = 0;
 const RESTOCKED_STOCK = 3;

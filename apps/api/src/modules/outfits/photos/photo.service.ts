@@ -18,20 +18,20 @@ import { platformAudit } from "#modules/platform-audit/platform-audit.service.js
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
-import { OUTFIT_IDEMPOTENCY_ENDPOINT, OUTFIT_PHOTO_CLEANUP } from "./outfit.constants.js";
-import { outfitErrors } from "./outfit.errors.js";
-import type { AddOutfitPhotosBody, SetOutfitCoversBody } from "./outfit.schemas.js";
+import { OUTFIT_IDEMPOTENCY_ENDPOINT, OUTFIT_PHOTO_CLEANUP } from "../outfit.constants.js";
+import { outfitErrors } from "../outfit.errors.js";
+import type { AddOutfitPhotosBody, SetOutfitCoversBody } from "../outfit.schemas.js";
 import {
   OUTFIT_WRITE_ACCESS,
   type OutfitWriteCall,
   type OutfitWriteResult,
   runOutfitWrite,
   toWriteRequest,
-} from "./outfit.write.js";
-import { outfitPhotoRepository } from "./outfit-photo.repository.js";
-import type { OutfitCoverPhotoView } from "./outfit-photo.types.js";
-import { groupCoversByOutfit } from "./outfit-photo.utils.js";
-import type { ModerationPrincipal } from "./outfit-social.types.js";
+} from "../outfit.write.js";
+import type { ModerationPrincipal } from "../social/social.types.js";
+import { outfitPhotoRepository } from "./photo.repository.js";
+import type { OutfitCoverPhotoView } from "./photo.types.js";
+import { groupCoversByOutfit } from "./photo.utils.js";
 
 const NOT_ARCHIVED = [OutfitStatus.DRAFT, OutfitStatus.LOCKED] as const;
 const NO_ROWS = 0;

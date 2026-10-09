@@ -5,8 +5,8 @@ import { outfitErrors } from "./outfit.errors.js";
 import { outfitRepository } from "./outfit.repository.js";
 import type { OutfitBoardLimitsView, OutfitBoardView, OutfitViewerRole } from "./outfit.types.js";
 import { toBoardView } from "./outfit.utils.js";
-import { outfitPhotoRepository } from "./outfit-photo.repository.js";
-import { toOutfitPhotoView } from "./outfit-photo.utils.js";
+import { outfitPhotoRepository } from "./photos/photo.repository.js";
+import { toOutfitPhotoView } from "./photos/photo.utils.js";
 
 export const loadBoardLimits = async (): Promise<OutfitBoardLimitsView> => {
   const [
