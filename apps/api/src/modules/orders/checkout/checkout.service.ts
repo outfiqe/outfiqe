@@ -30,7 +30,8 @@ import {
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { couponRepository } from "#modules/coupons/coupon.repository.js";
-import { buildCouponLinesForPricedLines, couponService } from "#modules/coupons/coupon.service.js";
+import { couponService } from "#modules/coupons/coupon.service.js";
+import { buildCouponLinesForPricedLines } from "#modules/coupons/redemption/redemption.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creator-link.repository.js";
 import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import {

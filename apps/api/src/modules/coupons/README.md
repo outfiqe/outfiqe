@@ -41,7 +41,11 @@ for the brand-funded counterpart (Phase 1) this module deliberately never touche
   brand payouts for GMV/spend/commission/new-vs-returning/repeat-purchase aggregates),
   `searchRedemptions` (support lookup by code/user/order), `countRecentRedemptionsForContact`/
   `flagRedemptionForReview` (the velocity-fraud signal — see Funnel).
-- `coupon.service.ts` — `resolveForContext` is the one function that decides whether a code is
+- `coupon.service.ts` — `couponService`, the only object other modules import: admin management
+  (`create`, `list`, `getById`, `updateStatus`, `approve`, `updateBudget`, `getPerformance`,
+  `searchRedemptions`), with `couponRedemptionService` spread in. `REFUSAL_MESSAGES` lives in
+  `coupon.constants.ts` because both halves use it.
+- `redemption/redemption.service.ts` — `resolveForContext` is the one function that decides whether a code is
   usable right now for a given set of lines: not-found → window → prepaid-only → first-order-only →
   already-redeemed → minimum subtotal → eligibility → valuation, in that order, each with its own
   `AppError` code. Called identically from `cart`'s apply endpoint (preview, nothing committed) and
