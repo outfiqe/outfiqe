@@ -43,14 +43,13 @@ for the brand-funded counterpart (Phase 1) this module deliberately never touche
   `flagRedemptionForReview` (the velocity-fraud signal — see Funnel).
 - `coupon.service.ts` — `couponService`, the only object other modules import: admin management
   (`create`, `list`, `getById`, `updateStatus`, `approve`, `updateBudget`, `getPerformance`,
-  `searchRedemptions`), with `couponRedemptionService` spread in. `REFUSAL_MESSAGES` lives in
+  `searchRedemptions`), with `couponRedemptionService` spread in. `approve`/`updateBudget` own the second-admin approval workflow. `REFUSAL_MESSAGES` lives in
   `coupon.constants.ts` because both halves use it.
 - `redemption/redemption.service.ts` — `resolveForContext` is the one function that decides whether a code is
   usable right now for a given set of lines: not-found → window → prepaid-only → first-order-only →
   already-redeemed → minimum subtotal → eligibility → valuation, in that order, each with its own
   `AppError` code. Called identically from `cart`'s apply endpoint (preview, nothing committed) and
-  from `orders`' checkout (the real, race-safe attempt) — see Funnel. `approve`/`updateBudget` own the
-  second-admin approval workflow; `afterRedemptionCommitted` (called by `orders` after its checkout
+  from `orders`' checkout (the real, race-safe attempt) — see Funnel. `afterRedemptionCommitted` (called by `orders` after its checkout
   transaction commits) owns budget-alert firing and 100%-budget auto-pause.
 - `coupon.controller.ts`/`coupon.routes.ts` — admin-only CRUD (`create`, `list` — filterable by
   `status`, `getById`, `updateStatus`, `approve`, `updateBudget`, `getPerformance`,
