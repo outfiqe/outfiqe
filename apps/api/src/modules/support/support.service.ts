@@ -4,7 +4,7 @@ import {
   supportRequestReceivedTemplate,
   supportResolvedTemplate,
   supportStaffReplyTemplate,
-} from "#email-templates/templates.js";
+} from "#email-templates/support.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
   CreatorStatus,

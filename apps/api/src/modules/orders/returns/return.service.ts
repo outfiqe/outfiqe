@@ -1,7 +1,7 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { refundFailedTemplate } from "#email-templates/templates.js";
+import { refundFailedTemplate } from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { PaymentMethod } from "#generated/prisma/enums.js";
 import {

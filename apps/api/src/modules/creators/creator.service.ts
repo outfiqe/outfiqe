@@ -1,7 +1,10 @@
 import { LRUCache } from "lru-cache";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
+import {
+  creatorApprovedTemplate,
+  creatorRejectedTemplate,
+} from "#email-templates/account.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";

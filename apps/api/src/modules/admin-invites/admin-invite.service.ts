@@ -1,6 +1,6 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { adminInviteTemplate } from "#email-templates/templates.js";
+import { adminInviteTemplate } from "#email-templates/account.templates.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";

@@ -1,7 +1,7 @@
 import { env } from "#config/env.config.js";
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { passwordResetTemplate } from "#email-templates/templates.js";
+import { passwordResetTemplate } from "#email-templates/account.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { hashToken } from "#lib/opaque-token.utils.js";

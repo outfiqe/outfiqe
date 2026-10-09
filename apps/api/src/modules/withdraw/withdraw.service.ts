@@ -1,7 +1,7 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { withdrawRequestReceivedInternalTemplate } from "#email-templates/templates.js";
+import { withdrawRequestReceivedInternalTemplate } from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { Prisma } from "#generated/prisma/client.js";
 import {

@@ -6,7 +6,7 @@ import { prisma } from "#db/prisma.js";
 import {
   newOrderNotificationTemplate,
   orderConfirmationTemplate,
-} from "#email-templates/templates.js";
+} from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
   CommissionScope,

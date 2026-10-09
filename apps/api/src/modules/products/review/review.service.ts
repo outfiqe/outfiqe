@@ -1,5 +1,8 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
+import {
+  productApprovedTemplate,
+  productRejectedTemplate,
+} from "#email-templates/brand.templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";

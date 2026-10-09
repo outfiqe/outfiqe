@@ -1,7 +1,7 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { orderCancelledTemplate, refundFailedTemplate } from "#email-templates/templates.js";
+import { orderCancelledTemplate, refundFailedTemplate } from "#email-templates/order.templates.js";
 import {
   CouponRedemptionStatus,
   FulfilmentStatus,

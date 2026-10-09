@@ -4,7 +4,7 @@ import {
   brandApplicationReceivedInternalTemplate,
   brandApprovedTemplate,
   brandRejectedTemplate,
-} from "#email-templates/templates.js";
+} from "#email-templates/brand.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { BrandApplicationStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";

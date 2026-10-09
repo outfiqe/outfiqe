@@ -3,7 +3,7 @@ import { isStaffUserRole } from "@outfiqe/utils";
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { crmOrganizationInviteTemplate } from "#email-templates/templates.js";
+import { crmOrganizationInviteTemplate } from "#email-templates/crm.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";

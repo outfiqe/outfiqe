@@ -1,6 +1,6 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { crmOwnershipTransferRequestTemplate } from "#email-templates/templates.js";
+import { crmOwnershipTransferRequestTemplate } from "#email-templates/crm.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
