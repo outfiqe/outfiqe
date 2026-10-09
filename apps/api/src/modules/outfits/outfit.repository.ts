@@ -8,7 +8,7 @@ import {
   ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
-import { withActiveDiscount } from "#modules/products/product.repository.js";
+import { withActiveDiscount } from "#modules/products/product.query-helpers.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { OFFER_STATUSES_AWAITING_CREATOR, OUTFIT_LIMITS } from "./outfit.constants.js";

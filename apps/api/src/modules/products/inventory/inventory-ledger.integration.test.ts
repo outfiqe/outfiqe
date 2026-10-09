@@ -19,9 +19,9 @@ import { ensureProductType } from "#test/integration/product-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
-import { runInventoryLedgerReconciliation } from "./product.jobs.js";
-import { productService } from "./product.service.js";
-import type { StockMovement } from "./product.types.js";
+import { runInventoryLedgerReconciliation } from "../product.jobs.js";
+import { productService } from "../product.service.js";
+import type { StockMovement } from "../product.types.js";
 
 const STOCK_NON_NEGATIVE_CONSTRAINT = "product_sizes_stock_non_negative";
 const INITIAL_STOCK = 4;
