@@ -24,10 +24,24 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   `BUILT_IN_ROLE_PERMISSIONS` (the Admin/Member built-in role presets derived from it).
   `TICKET_ASSIGNMENT_PERMISSION_KEYS`, `MEMBER_MANAGEMENT_PERMISSION_KEYS` and
   `BILLING_MANAGEMENT_PERMISSION_KEYS` name the tenant permissions the notification rules use.
-- `crm-access.repository.ts` — Prisma queries, every one scoped by `organizationId` where
-  applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction, as
-  does `acceptOwnershipTransfer` (moves `Organization.superAdminMembershipId` + marks the request
+- `crm-access.repository.ts` — `crmAccessRepository`: membership reads and writes and the access
+  checks, plus every topic repository spread in. Every query is scoped by `organizationId` where
+  applicable. `invites/invite.repository.ts`'s `acceptInvite` wraps the Membership-create +
+  invite-accept pair in a transaction, as does `ownership-transfer/ownership-transfer.repository.ts`'s
+  `acceptOwnershipTransfer` (moves `Organization.superAdminMembershipId` + marks the request
   accepted).
+- `crm-access.query-helpers.ts` — `roleWithPermissionsInclude`/`toRoleWithPermissions`, shared by
+  role and membership reads.
+- `crm-access.guards.ts` — `assertPermissionKeysWithinActorGrant`, the "you can't grant more than
+  you hold" check used by role, membership and invite writes.
+- `organizations/` — `organization.service.ts` (create, suggest-from-brand with a unique subdomain,
+  list, rename) and `organization.repository.ts`.
+- `roles/` — `role.service.ts` (custom roles: create/update/delete and the permission catalog) and
+  `role.repository.ts`.
+- `invites/` — `invite.service.ts` (invite, revoke, accept, and the registration-page lookup used by
+  `../auth`) and `invite.repository.ts`.
+- `ownership-transfer/` — `ownership-transfer.service.ts` (create/accept/decline/revoke one pending
+  transfer at a time) and `ownership-transfer.repository.ts`.
 - `crm-access.utils.ts` — pure mappers: `toMembershipSummary`, `toInviteSummary` (derives
   PENDING/ACCEPTED/REVOKED/EXPIRED from an invite's timestamps, the same shape as
   `admin-invites/admin-invite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
@@ -41,7 +55,9 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   one definition of a valid tenant subdomain — unit-tested via `extractSubdomain` in
   `crm-access.utils.test.ts`), and `buildOrganizationAdminUrl` (see "Non-obvious rationale" for why
   invite/ownership-transfer emails need it instead of the raw `env.ADMIN_URL`).
-- `crm-access.service.ts` — business rules: one pending invite per email, a seat-limit check
+- `crm-access.service.ts` — `crmAccessService`, the only object other modules import: platform/CRM
+  access resolution and membership updates here, with the four topic services spread in. Business
+  rules across the module: one pending invite per email, a seat-limit check
   against the org's `crm-billing` subscription (see Non-obvious rationale), accept requires the
   invite's email to match the accepting account, the SUPERADMIN membership can't be edited via
   `updateMembership` (use ownership transfer instead — see Non-obvious rationale), a member can't
@@ -68,7 +84,7 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   (`org:update`, delegates to `platformImpersonationService.endAllForOrganization`) — the
   tenant's own kill switch for a support session touching its data.
 - `crm-access.schemas.ts` — Zod request validation.
-- `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database.
+- `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database for membership updates, tenant resolution, platform access and the permission-escalation guards; each topic folder holds its own `*.integration.test.ts`, sharing setup through `src/testing/integration/crm-access-fixtures.ts`.
 
 `apps/api/prisma/seed-crm.ts` seeds the permission catalog, the single Organization, the built-in
 roles, the `platform:access` grant on the built-in Admin role, the first SUPERADMIN membership (on
