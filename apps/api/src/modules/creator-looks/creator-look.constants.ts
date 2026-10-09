@@ -1,3 +1,9 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
+
+export const HOUR_MS = 60 * 60 * 1000;
+
+export const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
+
 export const TRENDING_AGGREGATION_INTERVAL_MS = 15 * 60 * 1000;
 export const TRENDING_SCORING_INTERVAL_MS = 30 * 60 * 1000;
 

@@ -1,92 +1,35 @@
-import { LRUCache } from "lru-cache";
-
-import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
-import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
+import { TagReviewStatus } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
-import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
-import { truncateToHour } from "#lib/trend-scoring.utils.js";
-import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
-import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
-import { orderRepository } from "#modules/orders/order.repository.js";
-import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
-import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import type { ProductRecord } from "#modules/products/product.types.js";
-import { cacheService } from "#redis/cache.service.js";
-import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
-import { describeError } from "#redis/redis.utils.js";
 
-import {
-  AUTOCOMPLETE_LIMIT,
-  TAG_TREND_METRIC_RETENTION_DAYS,
-  TREND_METRIC_RETENTION_DAYS,
-} from "./creator-look.constants.js";
+import { creatorLookCommentService } from "./comments/comment.service.js";
+import { VALIDATION_STATUS } from "./creator-look.constants.js";
+import { isPlatformModerator } from "./creator-look.guards.js";
 import { creatorLookRepository } from "./creator-look.repository.js";
-import type {
-  AdminListLooksQuery,
-  AutocompleteQuery,
-  CreateCreatorLookBody,
-  ListCreatorLooksQuery,
-  ListSavedQuery,
-  RecordViewBody,
-  SearchCreatorLooksQuery,
-  TagClickBody,
-} from "./creator-look.schemas.js";
-import { resolveTagReviewStatus } from "./creator-look.tag-review.js";
+import type { AdminListLooksQuery, CreateCreatorLookBody } from "./creator-look.schemas.js";
 import type {
   AdminLookPage,
-  CommentPage,
-  CommentReplyPage,
   CreatorLookEditDetail,
-  CreatorLookFeedPost,
   CreatorLookSummary,
-  CreatorMomentumEntry,
-  FeedPage,
   LookOutfitSource,
-  LookSearchPage,
-  PostSuggestion,
-  PostTrendingEntry,
   ResolvedTagReview,
-  TagScoreBreakdown,
-  TrendingTag,
 } from "./creator-look.types.js";
-import { toSuggestion } from "./creator-look.utils.js";
-
-const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
-const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
-const MS_PER_SECOND = 1000;
-
-const autocompleteMemoryCache = new LRUCache<string, PostSuggestion[]>({
-  max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.LOOK_AUTOCOMPLETE * MS_PER_SECOND,
-});
-const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
-
-const FOLLOWING_TAB = "following";
-const TRENDING_TAB = "trending";
-const FOR_YOU_TAB = "for_you";
-
-const isPlatformModerator = (principal: { userId: string; role: UserRole }): Promise<boolean> =>
-  platformAccessService.principalHasPermission(principal, CONTENT_MODERATE_PERMISSION_KEY);
-
-const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
-  const look = await creatorLookRepository.findActiveById(lookId);
-  if (!look)
-    throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", HTTP_STATUS.NOT_FOUND);
-  return look;
-};
+import { creatorLookEngagementService } from "./engagement/engagement.service.js";
+import { creatorLookFeedService } from "./feed/feed.service.js";
+import { resolveTagReviewForProducts } from "./tag-review/tag-review.service.js";
+import { creatorLookTrendingService } from "./trending/trending.service.js";
 
 const requireOwnedLook = async (lookId: string, userId: string): Promise<CreatorLookEditDetail> => {
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
@@ -109,24 +52,6 @@ const assertWithinTagLimit = async (taggedProductCount: number): Promise<void> =
   }
 };
 
-const requireTopLevelComment = async (
-  lookId: string,
-  commentId: string,
-): Promise<{ id: string; creatorLookId: string; userId: string }> => {
-  const comment = await creatorLookRepository.findCommentById(commentId);
-  if (!comment || comment.creatorLookId !== lookId) {
-    throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", HTTP_STATUS.NOT_FOUND);
-  }
-  if (comment.parentCommentId !== null) {
-    throw new AppError(
-      "COMMENT_NOT_TOP_LEVEL",
-      "You can only reply to a top-level chime.",
-      VALIDATION_STATUS,
-    );
-  }
-  return comment;
-};
-
 const requireApprovedProducts = async (
   productIds: string[],
 ): Promise<Map<string, ProductRecord>> => {
@@ -139,52 +64,6 @@ const requireApprovedProducts = async (
     );
   }
   return new Map(products.map((product) => [product.id, product]));
-};
-
-type ResolvedTag = ResolvedTagReview & { productId: string; brandId: string };
-
-const resolveTagReviewForProducts = async (
-  creatorId: string,
-  productIds: string[],
-  productsById: Map<string, ProductRecord>,
-): Promise<Map<string, ResolvedTag>> => {
-  const resolved = new Map<string, ResolvedTag>();
-  if (productIds.length === 0) return resolved;
-
-  const brandIds: string[] = [];
-  for (const productId of productIds) {
-    const brandId = productsById.get(productId)?.brandId;
-    if (brandId && !brandIds.includes(brandId)) brandIds.push(brandId);
-  }
-
-  const [policies, settledPurchasedProductIds, trustedBrandIds] = await Promise.all([
-    creatorLookRepository.listBrandTagPolicies(brandIds),
-    orderRepository.listSettledPurchasedProductIds(creatorId, productIds),
-    creatorLookRepository.listTrustedBrandIds(creatorId, brandIds),
-  ]);
-  const policyByBrandId = new Map(policies.map((policy) => [policy.id, policy]));
-  const verifiedBuyerProductIds = new Set(settledPurchasedProductIds);
-
-  for (const productId of productIds) {
-    const brandId = productsById.get(productId)?.brandId;
-    if (!brandId) continue;
-    const policy = policyByBrandId.get(brandId);
-    if (!policy) continue;
-
-    resolved.set(productId, {
-      productId,
-      brandId,
-      ...resolveTagReviewStatus({
-        featureEnabled: env.TAG_REVIEW_ENABLED,
-        brandPolicy: policy.tagReviewPolicy,
-        autoApproveVerifiedBuyers: policy.autoApproveVerifiedBuyers,
-        isVerifiedBuyer: verifiedBuyerProductIds.has(productId),
-        isTrustedCreator: trustedBrandIds.has(brandId),
-      }),
-    });
-  }
-
-  return resolved;
 };
 
 export const creatorLookService = {
@@ -375,384 +254,15 @@ export const creatorLookService = {
     }
   },
 
-  async removeComment(
-    lookId: string,
-    commentId: string,
-    principal: { userId: string; role: UserRole },
-  ): Promise<void> {
-    const comment = await creatorLookRepository.findCommentById(commentId);
-    if (!comment || comment.creatorLookId !== lookId) {
-      throw new AppError(
-        "COMMENT_NOT_FOUND",
-        "This chime no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
-    }
-
-    const isOwner = comment.userId === principal.userId;
-    const isModerator = !isOwner && (await isPlatformModerator(principal));
-    if (!isOwner && !isModerator) {
-      throw new AppError(
-        "COMMENT_NOT_FOUND",
-        "This chime no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
-    }
-
-    await creatorLookRepository.softDeleteComment({
-      commentId,
-      lookId,
-      parentCommentId: comment.parentCommentId,
-    });
-
-    if (isModerator) {
-      await platformAudit.record({
-        actorUserId: principal.userId,
-        action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN,
-        summary: `Removed a chime by ${comment.userId}`,
-        onBehalfOfUserId: comment.userId,
-        targetType: "CreatorLookComment",
-        targetId: commentId,
-      });
-    }
-  },
-
-  async listMySaved(userId: string, query: ListSavedQuery): Promise<FeedPage> {
-    return creatorLookRepository.listSaved(userId, {
-      cursor: query.cursor,
-      limit: query.limit,
-    });
-  },
-
-  async listPublic(query: ListCreatorLooksQuery): Promise<FeedPage> {
-    return creatorLookRepository.listFeaturedLooks(query);
-  },
-
-  async listPublicByCreator(
-    creatorId: string,
-    query: ListCreatorLooksQuery,
-    viewerId?: string,
-  ): Promise<FeedPage> {
-    return creatorLookRepository.feedByCreatorId({
-      creatorId,
-      cursor: query.cursor,
-      limit: query.limit,
-      viewerId,
-    });
-  },
-
-  async getPublicById(lookId: string, viewerId: string | undefined): Promise<CreatorLookFeedPost> {
-    await requireActiveLook(lookId);
-    const post = await creatorLookRepository.findPublicById(lookId, viewerId);
-    if (!post) throw new AppError("NOT_FOUND", "Drop not found.", HTTP_STATUS.NOT_FOUND);
-    return post;
-  },
-
-  async feed(
-    viewerId: string | undefined,
-    { tab, cursor, limit }: { tab: string; cursor?: string; limit: number },
-  ): Promise<FeedPage> {
-    if (tab === FOLLOWING_TAB) {
-      if (!viewerId) {
-        throw new AppError(
-          "UNAUTHORIZED",
-          "Sign in to see drops from muses you follow.",
-          HTTP_STATUS.UNAUTHORIZED,
-        );
-      }
-
-      const followingCreatorIds = await followRepository.listFollowingIds(
-        viewerId,
-        FollowTargetType.USER,
-      );
-      if (followingCreatorIds.length === 0) {
-        return { posts: [], nextCursor: null };
-      }
-
-      return creatorLookRepository.feed({
-        tab: FOLLOWING_TAB,
-        cursor,
-        limit,
-        viewerId,
-        followingCreatorIds,
-      });
-    }
-
-    if (tab === FOR_YOU_TAB) {
-      const followedCreatorIds = viewerId
-        ? await followRepository.listFollowingIds(viewerId, FollowTargetType.USER)
-        : [];
-
-      return creatorLookRepository.feed({
-        tab: FOR_YOU_TAB,
-        cursor,
-        limit,
-        viewerId,
-        followingCreatorIds: followedCreatorIds,
-      });
-    }
-
-    return creatorLookRepository.feed({
-      tab,
-      cursor,
-      limit,
-      viewerId,
-      followingCreatorIds: [],
-    });
-  },
-
-  async search(
-    viewerId: string | undefined,
-    { q, cursor, limit }: SearchCreatorLooksQuery,
-  ): Promise<LookSearchPage> {
-    return creatorLookRepository.searchLooks(q, { cursor, limit }, viewerId);
-  },
-
   async adminListLooks(query: AdminListLooksQuery): Promise<AdminLookPage> {
     return creatorLookRepository.adminListLooks(query);
   },
 
-  async autocomplete({ q }: AutocompleteQuery): Promise<PostSuggestion[]> {
-    const normalizedQuery = q.trim().toLowerCase();
+  ...creatorLookFeedService,
 
-    const memoryHit = autocompleteMemoryCache.get(normalizedQuery);
-    if (memoryHit) return memoryHit;
+  ...creatorLookTrendingService,
 
-    const cacheKey = redisKeys.cache(AUTOCOMPLETE_CACHE_NAMESPACE, normalizedQuery);
-    try {
-      const cached = await cacheService.get<PostSuggestion[]>(cacheKey);
-      if (cached) {
-        autocompleteMemoryCache.set(normalizedQuery, cached);
-        return cached;
-      }
-    } catch (error) {
-      logger.warn(`Cache read failed for "${cacheKey}": ${describeError(error)}`);
-    }
+  ...creatorLookEngagementService,
 
-    const posts = await creatorLookRepository.searchLookSuggestions(q, AUTOCOMPLETE_LIMIT);
-    const suggestions = posts.map(toSuggestion);
-
-    autocompleteMemoryCache.set(normalizedQuery, suggestions);
-    try {
-      await cacheService.set(cacheKey, suggestions, CACHE_TTL.LOOK_AUTOCOMPLETE);
-    } catch (error) {
-      logger.warn(`Cache write failed for "${cacheKey}": ${describeError(error)}`);
-    }
-
-    return suggestions;
-  },
-
-  async countNewSince(
-    viewerId: string | undefined,
-    { tab, since }: { tab: string; since: Date },
-  ): Promise<number> {
-    if (tab === FOLLOWING_TAB) {
-      if (!viewerId) return 0;
-
-      const followingCreatorIds = await followRepository.listFollowingIds(
-        viewerId,
-        FollowTargetType.USER,
-      );
-      if (followingCreatorIds.length === 0) return 0;
-
-      return creatorLookRepository.countNewSince({
-        tab: FOLLOWING_TAB,
-        since,
-        followingCreatorIds,
-      });
-    }
-
-    const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
-    return creatorLookRepository.countNewSince({ tab: tabToUse, since, followingCreatorIds: [] });
-  },
-
-  async trendingTags(): Promise<TrendingTag[]> {
-    return creatorLookRepository.trendingTags();
-  },
-
-  async runTrendingAggregation(): Promise<{ bucketStart: Date; deletedBuckets: number }> {
-    const bucketStart = truncateToHour(new Date());
-    await creatorLookRepository.upsertHourlyPostMetrics(bucketStart);
-
-    const retentionCutoff = new Date(
-      Date.now() - TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-    );
-    const deletedBuckets = await creatorLookRepository.deleteTrendMetricsOlderThan(retentionCutoff);
-
-    return { bucketStart, deletedBuckets };
-  },
-
-  async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
-    const { postScores, creatorMomentum } =
-      await creatorLookRepository.computeRankedTrendingScoreAndCreatorMomentum();
-    if (postScores.length === 0) {
-      logger.warn("explore-trending-scoring produced zero scored drops this cycle");
-    }
-    await Promise.all([
-      creatorLookRepository.cacheRankedTrendingScore(postScores),
-      creatorLookRepository.cacheRankedCreatorMomentumScores(creatorMomentum),
-    ]);
-    return { ranked: postScores };
-  },
-
-  async runCreatorMomentumScoring(): Promise<{ ranked: CreatorMomentumEntry[] }> {
-    const ranked = await creatorLookRepository.computeRankedCreatorMomentumScores();
-    await creatorLookRepository.cacheRankedCreatorMomentumScores(ranked);
-    return { ranked };
-  },
-
-  async runTagTrendingAggregation(): Promise<{ bucketStart: Date; deletedBuckets: number }> {
-    const bucketStart = truncateToHour(new Date());
-    await creatorLookRepository.upsertHourlyTagMetrics(bucketStart);
-
-    const retentionCutoff = new Date(
-      Date.now() - TAG_TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-    );
-    const deletedBuckets =
-      await creatorLookRepository.deleteTagTrendMetricsOlderThan(retentionCutoff);
-
-    return { bucketStart, deletedBuckets };
-  },
-
-  async runTagTrendingScoring(): Promise<{ ranked: TagScoreBreakdown[] }> {
-    const ranked = await creatorLookRepository.computeRankedTrendingTags();
-    if (ranked.length === 0) {
-      logger.warn("tag-trend-scoring produced zero scored tags this cycle");
-    }
-    await creatorLookRepository.cacheRankedTrendingTags(ranked);
-    return { ranked };
-  },
-
-  async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    await assertCanEngage(userId);
-    const look = await requireActiveLook(lookId);
-    const { likeCount } = await creatorLookRepository.like(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, creatorId: look.creatorId, userId });
-    return { liked: true, likeCount };
-  },
-
-  async unlike(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    const look = await requireActiveLook(lookId);
-    const { likeCount, unliked } = await creatorLookRepository.unlike(lookId, userId);
-    if (unliked) {
-      await eventBus.publish(DomainEvents.LOOK_UNLIKED, {
-        lookId,
-        creatorId: look.creatorId,
-        userId,
-      });
-    }
-    return { liked: false, likeCount };
-  },
-
-  async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
-    const look = await requireActiveLook(lookId);
-    const { saveCount } = await creatorLookRepository.save(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, creatorId: look.creatorId, userId });
-    return { saved: true, saveCount };
-  },
-
-  async unsave(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
-    await requireActiveLook(lookId);
-    const { saveCount } = await creatorLookRepository.unsave(lookId, userId);
-    return { saved: false, saveCount };
-  },
-
-  async listComments(
-    lookId: string,
-    query: { cursor?: string; limit: number },
-  ): Promise<CommentPage> {
-    await requireActiveLook(lookId);
-    return creatorLookRepository.listComments(lookId, query);
-  },
-
-  async addComment(lookId: string, userId: string, body: string) {
-    await assertCanEngage(userId);
-    assertContentAllowed(body);
-    const look = await requireActiveLook(lookId);
-    const comment = await creatorLookRepository.createComment(lookId, userId, body);
-    await eventBus.publish(DomainEvents.LOOK_COMMENTED, {
-      lookId,
-      creatorId: look.creatorId,
-      commentId: comment.id,
-      userId,
-    });
-    return comment;
-  },
-
-  async listReplies(
-    lookId: string,
-    commentId: string,
-    query: { cursor?: string; limit: number },
-  ): Promise<CommentReplyPage> {
-    await requireActiveLook(lookId);
-    await requireTopLevelComment(lookId, commentId);
-    return creatorLookRepository.listReplies(commentId, query);
-  },
-
-  async addReply(lookId: string, commentId: string, userId: string, body: string) {
-    await assertCanEngage(userId);
-    assertContentAllowed(body);
-    const look = await requireActiveLook(lookId);
-    const parentComment = await requireTopLevelComment(lookId, commentId);
-    const reply = await creatorLookRepository.createReply(lookId, commentId, userId, body);
-    await eventBus.publish(DomainEvents.LOOK_COMMENT_REPLIED, {
-      lookId,
-      creatorId: look.creatorId,
-      parentCommentId: commentId,
-      parentCommentAuthorId: parentComment.userId,
-      replyId: reply.id,
-      userId,
-    });
-    return reply;
-  },
-
-  async recordTagClick(
-    lookId: string,
-    productId: string,
-    userId: string | undefined,
-    body: TagClickBody,
-  ): Promise<void> {
-    await requireActiveLook(lookId);
-
-    const tagged = await creatorLookRepository.tagExists(lookId, productId);
-    if (!tagged) {
-      throw new AppError(
-        "TAG_NOT_FOUND",
-        "This product isn't tagged in this look.",
-        HTTP_STATUS.NOT_FOUND,
-      );
-    }
-
-    await creatorLookRepository.recordTagClick({
-      lookId,
-      productId,
-      userId,
-      sessionId: body.sessionId,
-      source: body.source,
-    });
-  },
-
-  async recordView(
-    lookId: string,
-    viewerId: string | undefined,
-    userAgent: string | undefined,
-    body: RecordViewBody,
-  ): Promise<void> {
-    const look = await requireActiveLook(lookId);
-    if (viewerId === look.creatorId) return;
-    if (isLikelyBotUserAgent(userAgent)) return;
-
-    const { counted } = await creatorLookRepository.recordView({
-      lookId,
-      viewerId,
-      sessionId: body.sessionId,
-    });
-    if (!counted) return;
-
-    await eventBus.publish(DomainEvents.LOOK_VIEWED, {
-      lookId,
-      creatorId: look.creatorId,
-      viewerId,
-    });
-  },
+  ...creatorLookCommentService,
 };

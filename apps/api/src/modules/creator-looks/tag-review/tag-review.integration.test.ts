@@ -16,7 +16,7 @@ import { redis } from "#redis/redis.client.js";
 import { ensureProductType } from "#test/integration/product-fixtures.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
-import { creatorLookService } from "./creator-look.service.js";
+import { creatorLookService } from "../creator-look.service.js";
 
 let originalFlag: boolean;
 

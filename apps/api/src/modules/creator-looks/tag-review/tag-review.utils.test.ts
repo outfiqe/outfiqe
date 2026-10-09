@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveTagReviewStatus } from "./creator-look.tag-review.js";
+import { resolveTagReviewStatus } from "./tag-review.utils.js";
 
 const base = {
   featureEnabled: true,
