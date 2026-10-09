@@ -45,7 +45,7 @@ HTTP status codes always come from `HTTP_STATUS` in `#constants/http.constants.j
 
 ### When a module grows: topic folders
 
-A file is split once it passes roughly 300 lines. It's split by **topic** (a part of the feature, such as comments or the feed), not by layer. Each topic gets its own folder, holding that topic's layer files:
+A file is split once it passes about 400 lines, or earlier when it plainly holds more than one topic. It's split by **topic** (a part of the feature, such as comments or the feed), not by layer. Each topic gets its own folder, holding that topic's layer files:
 
 ```
 creator-looks/
@@ -71,7 +71,7 @@ creator-looks/
 The rules that keep this the same everywhere:
 
 - **Small modules stay flat.** No folders until a file actually needs splitting.
-- **Only the big files split.** Routes, controller, schemas, types and constants stay whole at the root until they pass about 300 lines themselves.
+- **Only the big files split.** Routes, controller, schemas, types and constants stay whole at the root until they pass about 400 lines themselves.
 - **The root objects stay the public entry point.** `creatorLookService` and `creatorLookRepository` keep the same names and methods. They're the core methods plus every topic object spread in (`...creatorLookCommentService`). Other modules, the controller, sockets and jobs import only the root objects, so splitting a module never changes its callers.
 - **Inside the module, a topic service calls its own topic repository** (`creatorLookCommentRepository.listComments`), not the root object.
 - **Topic objects are named `<module><Topic><Layer>`**: `creatorLookFeedService`, `creatorLookCommentRepository`.
