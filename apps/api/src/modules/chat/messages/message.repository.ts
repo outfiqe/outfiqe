@@ -2,7 +2,7 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { MessageKind } from "#generated/prisma/enums.js";
 
-import { participantUserSelect } from "./conversation.utils.js";
+import { participantUserSelect } from "../conversations/conversation.utils.js";
 import type { ChatSystemEvent } from "./message.schemas.js";
 import type { NewMessageAttachmentInput } from "./message.types.js";
 import type { ReaderCursor } from "./message.utils.js";

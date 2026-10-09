@@ -7,7 +7,7 @@ import {
   registerConversationSocketHandlers,
   registerMessageEventConsumer,
   registerPresenceSocketConsumer,
-} from "#modules/chat/conversation.socket.js";
+} from "#modules/chat/conversations/conversation.socket.js";
 import {
   registerCreatorLeaderboardEventConsumer,
   registerCreatorLeaderboardSocketHandlers,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CONVERSATIONS_DEFAULT_PAGE_SIZE, CONVERSATIONS_MAX_PAGE_SIZE } from "./chat.constants.js";
+import { CONVERSATIONS_DEFAULT_PAGE_SIZE, CONVERSATIONS_MAX_PAGE_SIZE } from "../chat.constants.js";
 
 export const startConversationBodySchema = z.object({
   userId: z.uuid(),

@@ -4,8 +4,8 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
-import { chatService } from "./chat.service.js";
-import { chatUnavailableError } from "./chat.utils.js";
+import { chatService } from "../chat.service.js";
+import { chatUnavailableError } from "../chat.utils.js";
 import { conversationRepository } from "./conversation.repository.js";
 import type {
   ConversationParticipantPresence,

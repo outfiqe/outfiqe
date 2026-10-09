@@ -7,18 +7,18 @@ import { withIdempotency } from "#lib/idempotency.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
-import { CHAT_SYSTEM_EVENT, CREATE_GROUP_IDEMPOTENCY_ENDPOINT } from "./chat.constants.js";
-import { chatService } from "./chat.service.js";
-import { chatUnavailableError } from "./chat.utils.js";
-import { conversationService } from "./conversation.service.js";
-import type { ConversationPreview } from "./conversation.types.js";
+import { CHAT_SYSTEM_EVENT, CREATE_GROUP_IDEMPOTENCY_ENDPOINT } from "../chat.constants.js";
+import { chatService } from "../chat.service.js";
+import { chatUnavailableError } from "../chat.utils.js";
+import { conversationService } from "../conversations/conversation.service.js";
+import type { ConversationPreview } from "../conversations/conversation.types.js";
+import { messageRepository } from "../messages/message.repository.js";
+import type { ChatMemberReference, ChatSystemEvent } from "../messages/message.schemas.js";
+import { describeSystemEvent, toMessageBroadcast } from "../messages/message.utils.js";
 import { groupRepository } from "./group.repository.js";
 import type { CreateGroupBody } from "./group.schemas.js";
 import type { GroupMembersView } from "./group.types.js";
 import { toConversationMemberView } from "./group.utils.js";
-import { messageRepository } from "./message.repository.js";
-import type { ChatMemberReference, ChatSystemEvent } from "./message.schemas.js";
-import { describeSystemEvent, toMessageBroadcast } from "./message.utils.js";
 
 const GROUP_CREATOR_COUNT = 1;
 const NO_MEMBERS_LEFT = 0;

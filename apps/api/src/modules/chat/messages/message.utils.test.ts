@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { MessageKind } from "#generated/prisma/enums.js";
 
-import { CHAT_SYSTEM_EVENT } from "./chat.constants.js";
-import type { ConversationParticipantSummary } from "./conversation.types.js";
+import { CHAT_SYSTEM_EVENT } from "../chat.constants.js";
+import type { ConversationParticipantSummary } from "../conversations/conversation.types.js";
 import {
   combineReaderCursors,
   conversationPreviewFor,

@@ -1,6 +1,6 @@
 import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
-import { buildChatService } from "#modules/chat/build-chat.service.js";
+import { buildChatService } from "#modules/chat/build-chat/build-chat.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
 import { outfitItemRepository } from "../items/item.repository.js";

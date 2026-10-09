@@ -16,10 +16,10 @@ vi.mock("#events/event-bus.js", () => ({
   },
   eventBus: { publish: mocks.publish },
 }));
-vi.mock("./message.repository.js", () => ({
+vi.mock("./messages/message.repository.js", () => ({
   messageRepository: { findById: mocks.findById },
 }));
-vi.mock("./message.utils.js", () => ({ toMessageBroadcast: mocks.toMessageBroadcast }));
+vi.mock("./messages/message.utils.js", () => ({ toMessageBroadcast: mocks.toMessageBroadcast }));
 
 const { announceChatMemberRemoved, announceChatMessageCreated } = await import("./chat.outbox.js");
 

@@ -37,7 +37,7 @@ notifications. The web board and the rest of the feature are added on top (see
 - `items/item.service.ts` — placing, removing and reordering items, and "I'm happy".
 - `lifecycle/lifecycle.service.ts` — settings, lock, unlock and archive.
 - `members/member.service.ts` — adding and removing editors, leaving, handing over ownership, and
-  keeping the build's group chat in step (through `../chat/build-chat.service.ts`).
+  keeping the build's group chat in step (through `../chat/build-chat/build-chat.service.ts`).
 - `visibility/visibility.service.ts` — private, shared and public, and who a build was sent to.
 - `outfit.people.ts` — who can be invited or sent a build: an active shopper or brand account
   that hasn't blocked the owner and isn't blocked by them.

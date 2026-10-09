@@ -6,7 +6,7 @@ import {
   MESSAGE_MAX_LENGTH,
   MESSAGES_DEFAULT_PAGE_SIZE,
   MESSAGES_MAX_PAGE_SIZE,
-} from "./chat.constants.js";
+} from "../chat.constants.js";
 
 const chatMemberReferenceSchema = z.object({ id: z.string(), name: z.string() });
 

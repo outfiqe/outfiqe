@@ -9,14 +9,14 @@ import { isUserOnline } from "#socket/socket.presence.js";
 import { getIO } from "#socket/socket.server.js";
 import type { ConversationSubscriptionPayload } from "#socket/socket.types.js";
 
-import { CHAT_SOCKET_CONSUMER_GROUP, OUTFIT_CARD_PREVIEW_TEXT } from "./chat.constants.js";
-import { conversationRepository } from "./conversation.repository.js";
+import { CHAT_SOCKET_CONSUMER_GROUP, OUTFIT_CARD_PREVIEW_TEXT } from "../chat.constants.js";
 import {
   describeSystemEvent,
   messagePreviewFor,
   parseSystemEvent,
   usersNotifiedBySystemEvent,
-} from "./message.utils.js";
+} from "../messages/message.utils.js";
+import { conversationRepository } from "./conversation.repository.js";
 
 export const registerConversationSocketHandlers = (): void => {
   getIO().on("connection", (socket) => {

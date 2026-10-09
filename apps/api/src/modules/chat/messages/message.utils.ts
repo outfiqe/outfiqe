@@ -1,8 +1,8 @@
 import type { MessageBroadcastPayload } from "#events/event-bus.types.js";
 import { MessageKind } from "#generated/prisma/enums.js";
 
-import { CHAT_SYSTEM_EVENT } from "./chat.constants.js";
-import type { ConversationParticipantSummary } from "./conversation.types.js";
+import { CHAT_SYSTEM_EVENT } from "../chat.constants.js";
+import type { ConversationParticipantSummary } from "../conversations/conversation.types.js";
 import {
   type ChatMemberReference,
   type ChatSystemEvent,

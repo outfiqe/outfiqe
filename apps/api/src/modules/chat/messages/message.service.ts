@@ -5,10 +5,10 @@ import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
-import { chatService } from "./chat.service.js";
-import { chatUnavailableError } from "./chat.utils.js";
-import { conversationRepository } from "./conversation.repository.js";
-import { requireParticipant } from "./conversation.service.js";
+import { chatService } from "../chat.service.js";
+import { chatUnavailableError } from "../chat.utils.js";
+import { conversationRepository } from "../conversations/conversation.repository.js";
+import { requireParticipant } from "../conversations/conversation.service.js";
 import { messageRepository } from "./message.repository.js";
 import type { MessageRecord, MessagesPage, NewMessageAttachmentInput } from "./message.types.js";
 import {

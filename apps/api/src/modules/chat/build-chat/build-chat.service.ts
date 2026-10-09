@@ -2,11 +2,11 @@ import type { Prisma } from "#generated/prisma/client.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 
-import { CHAT_SYSTEM_EVENT, OUTFIT_CARD_PREVIEW_TEXT } from "./chat.constants.js";
-import { groupRepository } from "./group.repository.js";
-import { messageRepository } from "./message.repository.js";
-import type { ChatMemberReference, ChatSystemEvent } from "./message.schemas.js";
-import { describeSystemEvent } from "./message.utils.js";
+import { CHAT_SYSTEM_EVENT, OUTFIT_CARD_PREVIEW_TEXT } from "../chat.constants.js";
+import { groupRepository } from "../groups/group.repository.js";
+import { messageRepository } from "../messages/message.repository.js";
+import type { ChatMemberReference, ChatSystemEvent } from "../messages/message.schemas.js";
+import { describeSystemEvent } from "../messages/message.utils.js";
 
 const writeAnnouncedSystemMessage = async (
   tx: Prisma.TransactionClient,

@@ -3,9 +3,9 @@ import type { Prisma } from "#generated/prisma/client.js";
 import { ConversationMemberRole, ConversationType } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { participantUserSelect } from "./conversation.utils.js";
+import { participantUserSelect } from "../conversations/conversation.utils.js";
+import type { ChatMemberReference } from "../messages/message.schemas.js";
 import type { LockedConversation } from "./group.types.js";
-import type { ChatMemberReference } from "./message.schemas.js";
 
 const memberWithUserInclude = { user: { select: participantUserSelect } } as const;
 

@@ -1,6 +1,6 @@
 import { type ConversationMemberRole, ConversationType } from "#generated/prisma/enums.js";
 
-import { GROUP_PREVIEW_MEMBER_COUNT } from "./chat.constants.js";
+import { GROUP_PREVIEW_MEMBER_COUNT } from "../chat.constants.js";
 import type {
   ConversationGroupSummary,
   ConversationParticipantPresence,

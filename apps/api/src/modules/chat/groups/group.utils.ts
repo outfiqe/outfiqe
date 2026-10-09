@@ -1,6 +1,6 @@
 import type { ConversationMemberRole } from "#generated/prisma/enums.js";
 
-import type { ConversationParticipantSummary } from "./conversation.types.js";
+import type { ConversationParticipantSummary } from "../conversations/conversation.types.js";
 import type { ConversationMemberView } from "./group.types.js";
 
 export const toConversationMemberView = ({

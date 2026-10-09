@@ -35,7 +35,7 @@ import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { challengeRoutes } from "./modules/challenges/challenge.routes.js";
 import { chatRoutes } from "./modules/chat/chat.routes.js";
-import { conversationRoutes } from "./modules/chat/conversation.routes.js";
+import { conversationRoutes } from "./modules/chat/conversations/conversation.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
 import { contentReportRoutes } from "./modules/content-reports/content-report.routes.js";

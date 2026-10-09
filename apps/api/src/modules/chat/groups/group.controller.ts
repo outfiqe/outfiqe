@@ -5,7 +5,7 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { ConversationIdParam } from "./conversation.schemas.js";
+import type { ConversationIdParam } from "../conversations/conversation.schemas.js";
 import type {
   AddGroupMembersBody,
   ChangeMemberRoleBody,

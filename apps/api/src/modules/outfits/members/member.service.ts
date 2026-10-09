@@ -1,5 +1,5 @@
 import { OutfitEventType, OutfitMemberRole, OutfitStatus } from "#generated/prisma/enums.js";
-import { buildChatService } from "#modules/chat/build-chat.service.js";
+import { buildChatService } from "#modules/chat/build-chat/build-chat.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
 import {

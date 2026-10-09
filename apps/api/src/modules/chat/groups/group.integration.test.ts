@@ -18,7 +18,7 @@ import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
-import { CHAT_SYSTEM_EVENT } from "./chat.constants.js";
+import { CHAT_SYSTEM_EVENT } from "../chat.constants.js";
 
 const SMALL_GROUP_LIMIT = 4;
 const MAX_GROUP_MEMBERS_SETTING = "chat.maxGroupMembers";

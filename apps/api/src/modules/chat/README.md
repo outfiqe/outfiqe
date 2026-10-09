@@ -11,6 +11,11 @@ the block/settings rule. The Admin/Support conversation type is not built yet �
 
 ## Structure
 
+The `chat.*` files at the root are the shared availability and settings layer. Each part of
+messaging has its own folder holding its routes, controller, service, repository, schemas, types,
+utils and tests: `conversations/`, `messages/`, `groups/`, and `build-chat/` (the group chat that
+belongs to an outfit build).
+
 **Availability (Phase 1)**
 
 - `chat.routes.ts`, `chat.controller.ts` — settings/block route table and thin request/response
@@ -34,32 +39,32 @@ false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the bl
 
 **Messaging (Phase 2)**
 
-- `conversation.routes.ts`, `conversation.controller.ts`, `message.controller.ts` — `POST`/`GET
+- `conversations/conversation.routes.ts`, `conversations/conversation.controller.ts`, `messages/message.controller.ts` — `POST`/`GET
 /conversations`, `GET /conversations/:id`, `GET`/`POST /conversations/:id/messages`, `PATCH
 /conversations/:id/read`. All `requireAuth`; message-send carries `rateLimit()` from day one
   (`MESSAGE_SEND_RATE_LIMIT_*` in `chat.constants.ts`).
-- `conversation.service.ts` — `startDirectConversation` (self/target/availability checks, then
+- `conversations/conversation.service.ts` — `startDirectConversation` (self/target/availability checks, then
   atomic find-or-create), `getConversation`, `listConversations` (cursor-paginated, batches
   presence lookups for the page rather than one Redis check per row), plus the shared
-  `requireParticipant` guard `message.service.ts` also uses.
-- `conversation.repository.ts` — `Conversation`/`ConversationParticipant` access. `findOrCreateDirect`
+  `requireParticipant` guard `messages/message.service.ts` also uses.
+- `conversations/conversation.repository.ts` — `Conversation`/`ConversationParticipant` access. `findOrCreateDirect`
   is an atomic upsert on `Conversation.directKey` (sorted `"userA:userB"`, unique) — a race between
   two concurrent starts is resolved by catching the unique-constraint violation and re-reading,
   not a check-then-create race.
-- `message.service.ts` — `sendMessage` (participant + per-send availability re-check — a
+- `messages/message.service.ts` — `sendMessage` (participant + per-send availability re-check — a
   conversation can already exist from before either side blocked the other — then persist, publish
   `MESSAGE_CREATED`, mark delivered for any recipient who's online right now), `listMessages`
   (marks delivered-up-to-latest for the caller as a side effect of fetching page one — fetching the
   thread _is_ delivery), `markRead`.
-- `message.repository.ts` — `Message`/`MessageAttachment` access; `send` is one transaction
+- `messages/message.repository.ts` — `Message`/`MessageAttachment` access; `send` is one transaction
   (insert message + attachments, bump `Conversation.lastMessageAt`/`lastMessagePreview`, increment
   every other participant's `unreadCount`).
-- `conversation.types.ts`, `message.types.ts`, `conversation.schemas.ts`, `message.schemas.ts`,
-  `conversation.utils.ts`, `message.utils.ts` — DTOs, Zod validation (`sendMessageBodySchema`
+- `conversations/conversation.types.ts`, `messages/message.types.ts`, `conversations/conversation.schemas.ts`, `messages/message.schemas.ts`,
+  `conversations/conversation.utils.ts`, `messages/message.utils.ts` — DTOs, Zod validation (`sendMessageBodySchema`
   requires `body` or at least one attachment), and the row→DTO mappers, including the
   `isDeliveredToOthers`/`isReadByOthers` computation (cursor-timestamp comparison, not a
   per-message read-receipt row).
-- `conversation.socket.ts` — three concerns: `registerConversationSocketHandlers` (join/leave a
+- `conversations/conversation.socket.ts` — three concerns: `registerConversationSocketHandlers` (join/leave a
   `conversationRoom`, checking real participant membership before joining — this room carries
   private message content, unlike the public `commentsRoom`), `registerMessageEventConsumer`
   (broadcasts `MESSAGE_CREATED` to the conversation room + each recipient's `userRoom`, and creates
@@ -69,29 +74,29 @@ false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the bl
 
 **Group chats**
 
-- `conversation.routes.ts` — the group routes sit next to the direct ones: `POST
+- `conversations/conversation.routes.ts` — the group routes sit next to the direct ones: `POST
 /conversations/groups` (idempotency key, create rate limit), `PATCH /conversations/:id` (rename),
   `GET`/`POST /conversations/:id/members`, `PATCH`/`DELETE /conversations/:id/members/:userId`,
   `POST /conversations/:id/leave`. Every change except leaving carries the group-manage rate limit.
-- `group.controller.ts`, `group.schemas.ts`, `group.types.ts`, `group.utils.ts` — request glue,
+- `groups/group.controller.ts`, `groups/group.schemas.ts`, `groups/group.types.ts`, `groups/group.utils.ts` — request glue,
   validation (names up to 60 characters, at most 50 people per request, unknown fields refused)
   and the member view shape.
-- `group.service.ts` — every rule: who can be added, the member limit, admin-only actions, the
+- `groups/group.service.ts` — every rule: who can be added, the member limit, admin-only actions, the
   last-admin rules, and writing an event line for each change. Every change runs in one
   transaction that locks the conversation row first.
-- `group.repository.ts` — conversation-row lock (`SELECT ... FOR UPDATE`), group creation, member
+- `groups/group.repository.ts` — conversation-row lock (`SELECT ... FOR UPDATE`), group creation, member
   reads and writes, admin counts.
-- `message.repository.ts`'s `createSystemMessage` and `message.utils.ts`'s `describeSystemEvent`/
+- `messages/message.repository.ts`'s `createSystemMessage` and `messages/message.utils.ts`'s `describeSystemEvent`/
   `parseSystemEvent` — event lines are ordinary `Message` rows with `kind: SYSTEM` and a
-  `systemEvent` JSON payload, checked against `chatSystemEventSchema` (`message.schemas.ts`)
+  `systemEvent` JSON payload, checked against `chatSystemEventSchema` (`messages/message.schemas.ts`)
   every time one is read back.
-- `conversation.socket.ts`'s `registerConversationMembershipConsumer` — on
+- `conversations/conversation.socket.ts`'s `registerConversationMembershipConsumer` — on
   `CONVERSATION_MEMBER_REMOVED`, pulls every open socket of the removed person out of the
   conversation room and tells their devices to drop the chat (`conversation:removed`).
 
 **Build chats (Outfit Build)**
 
-- `build-chat.service.ts` — `buildChatService`, used only by `../outfits` inside a build's
+- `build-chat/build-chat.service.ts` — `buildChatService`, used only by `../outfits` inside a build's
   transaction: create the build's group chat when its first editor joins, add editors, remove a
   removed or leaving editor, rename it with the build. Each change writes its event line and an
   outbox row instead of publishing straight away.
@@ -99,7 +104,7 @@ false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the bl
   They reload the event line (`messageRepository.findById`) and republish the ordinary
   `MESSAGE_CREATED` / `CONVERSATION_MEMBER_REMOVED` domain events, so delivery, ticks and offline
   notifications work exactly as for any group.
-- `group.service.ts` refuses every group-management action (rename, add, remove, change admin,
+- `groups/group.service.ts` refuses every group-management action (rename, add, remove, change admin,
   leave) on a build's chat with `409 BUILD_CHAT_MANAGED_BY_BUILD`; reading its members still works.
 - `chat.service.ts`'s `hasBlockBetween` — the block check builds use for invites and shares.
 
@@ -126,7 +131,7 @@ frontend README for the full UI-side funnel.
 
 **Technical:** `conversation.routes`/`message.controller` → `conversation.service`/`message.service`
 → their repositories → Postgres. Every send publishes `MESSAGE_CREATED` (Redis Streams,
-`shared/events`) after the DB transaction commits; `conversation.socket.ts` is the only consumer,
+`shared/events`) after the DB transaction commits; `conversations/conversation.socket.ts` is the only consumer,
 decoupling "was this delivered live" from "was this persisted" the same way `notifications`
 decouples notification-row-creation from its own socket broadcast. Presence follows the identical
 persist-then-publish-then-broadcast shape, just triggered by connection lifecycle instead of a

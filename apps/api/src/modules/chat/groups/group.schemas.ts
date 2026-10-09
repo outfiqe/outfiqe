@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { ConversationMemberRole } from "#generated/prisma/enums.js";
 
-import { GROUP_MEMBER_CHANGE_MAX_USERS, GROUP_NAME_MAX_LENGTH } from "./chat.constants.js";
+import { GROUP_MEMBER_CHANGE_MAX_USERS, GROUP_NAME_MAX_LENGTH } from "../chat.constants.js";
 
 const groupNameSchema = z.string().trim().min(1).max(GROUP_NAME_MAX_LENGTH);
 const memberIdsSchema = z.array(z.uuid()).min(1).max(GROUP_MEMBER_CHANGE_MAX_USERS);

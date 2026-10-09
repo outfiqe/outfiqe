@@ -3,7 +3,7 @@ import type { Prisma } from "#generated/prisma/client.js";
 import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
 import { withIdempotentTransaction } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { buildChatService } from "#modules/chat/build-chat.service.js";
+import { buildChatService } from "#modules/chat/build-chat/build-chat.service.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
 import { outfitItemService } from "./items/item.service.js";

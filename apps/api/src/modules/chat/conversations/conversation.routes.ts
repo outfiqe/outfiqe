@@ -15,23 +15,23 @@ import {
   MESSAGE_SEND_RATE_LIMIT_MAX_REQUESTS,
   MESSAGE_SEND_RATE_LIMIT_NAMESPACE,
   MESSAGE_SEND_RATE_LIMIT_WINDOW_MS,
-} from "./chat.constants.js";
-import { conversationController } from "./conversation.controller.js";
-import {
-  conversationIdParamSchema,
-  listConversationsQuerySchema,
-  startConversationBodySchema,
-} from "./conversation.schemas.js";
-import { groupController } from "./group.controller.js";
+} from "../chat.constants.js";
+import { groupController } from "../groups/group.controller.js";
 import {
   addGroupMembersBodySchema,
   changeMemberRoleBodySchema,
   createGroupBodySchema,
   groupMemberParamsSchema,
   renameGroupBodySchema,
-} from "./group.schemas.js";
-import { messageController } from "./message.controller.js";
-import { listMessagesQuerySchema, sendMessageBodySchema } from "./message.schemas.js";
+} from "../groups/group.schemas.js";
+import { messageController } from "../messages/message.controller.js";
+import { listMessagesQuerySchema, sendMessageBodySchema } from "../messages/message.schemas.js";
+import { conversationController } from "./conversation.controller.js";
+import {
+  conversationIdParamSchema,
+  listConversationsQuerySchema,
+  startConversationBodySchema,
+} from "./conversation.schemas.js";
 
 const perUserKey = (_req: Request, res: Response) => getAuthPrincipal(res)?.userId;
 

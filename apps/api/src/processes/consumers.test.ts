@@ -53,7 +53,7 @@ vi.mock("#modules/notifications/notification.socket.js", () => ({
 vi.mock("#modules/chat/chat.socket.js", () => ({
   registerChatSocketEventConsumer: fns.registerChatSocketEventConsumer,
 }));
-vi.mock("#modules/chat/conversation.socket.js", () => ({
+vi.mock("#modules/chat/conversations/conversation.socket.js", () => ({
   registerConversationSocketHandlers: fns.registerConversationSocketHandlers,
   registerMessageEventConsumer: fns.registerMessageEventConsumer,
   registerConversationMembershipConsumer: fns.registerConversationMembershipConsumer,

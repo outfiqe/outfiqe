@@ -1,6 +1,6 @@
 import type { MessageKind } from "#generated/prisma/enums.js";
 
-import type { ConversationParticipantSummary } from "./conversation.types.js";
+import type { ConversationParticipantSummary } from "../conversations/conversation.types.js";
 import type { ChatSystemEvent } from "./message.schemas.js";
 
 export type MessageAttachmentRecord = {
