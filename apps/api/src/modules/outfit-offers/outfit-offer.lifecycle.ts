@@ -13,12 +13,8 @@ import {
 } from "./outfit-offer.constants.js";
 import { queueOfferNotice } from "./outfit-offer.notifications.js";
 import { outfitOfferRepository } from "./outfit-offer.repository.js";
-import {
-  closeWithRefund,
-  refundOffer,
-  releaseToCreator,
-  verifyPendingPayment,
-} from "./outfit-offer.service.js";
+import { closeWithRefund, refundOffer, releaseToCreator } from "./outfit-offer.settlement.js";
+import { verifyPendingPayment } from "./sending/sending.service.js";
 
 export type OfferLifecycleSweepResult = {
   paymentsChecked: number;

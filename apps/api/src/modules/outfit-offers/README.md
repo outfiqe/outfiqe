@@ -18,8 +18,20 @@ creator's earnings and can be withdrawn. In every other ending the brand is refu
   - admin: `GET /admin`, `POST /admin/:offerId/release|refund|mark-refunded` (Finance:
     `platform:commissions:read` / `:manage`).
 - `outfit-offer.controller.ts` — reads input and the signed-in person, calls the service.
-- `outfit-offer.service.ts` — who may do what, every status change, the refund flow, and the
+- `outfit-offer.service.ts` — `outfitOfferService`, the only object the controller and other
+  modules import: reading one offer and the sent/received/per-build lists, with the topic services
+  below spread in.
+- `sending/sending.service.ts` — a brand sends an offer, retries its payment, and confirms it
+  (`send`, `retryPayment`, `verifyPayment`).
+- `responses/response.service.ts` — the creator accepts or declines, the brand cancels, and the
   hook `recordPostedLook` that `outfits/outfit-publish.service.ts` calls when a look is posted.
+- `admin/admin.service.ts` — the admin dispute list and the release, refund and mark-refunded
+  actions.
+- `outfit-offer.guards.ts` — which side of an offer the viewer is on, and the brand/creator-side
+  checks every action uses.
+- `outfit-offer.settlement.ts` — the refund flow (`refundOffer`, `closeWithRefund`, the manual-refund
+  alert) and `releaseToCreator`, shared by responses and admin.
+- `outfit-offer.views.ts` — reloading an offer as the viewer sees it, and paging offer lists.
 - `outfit-offer.payments.ts` — starts, checks and refunds a payment through the existing eSewa
   and Khalti providers (`../payments/providers`).
 - `outfit-offer.lifecycle.ts` — the sweep wired in `src/jobs/scheduled-jobs.ts`.
