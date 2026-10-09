@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -15,8 +15,6 @@ import type {
 } from "./group.schemas.js";
 import { groupService } from "./group.service.js";
 
-const CREATED_STATUS = 201;
-
 export const groupController = {
   async create(req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
@@ -27,7 +25,7 @@ export const groupController = {
       body,
       req.header(IDEMPOTENCY_HEADER),
     );
-    sendSuccess(res, conversation, "Group created.", CREATED_STATUS);
+    sendSuccess(res, conversation, "Group created.", HTTP_STATUS.CREATED);
   },
 
   async rename(_req: Request, res: Response) {

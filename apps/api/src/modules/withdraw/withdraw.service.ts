@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { withdrawRequestReceivedInternalTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
@@ -52,9 +53,6 @@ import {
 } from "./withdraw.utils.js";
 import { computeWithdrawWindow } from "./withdraw.window.utils.js";
 
-const BAD_REQUEST_STATUS = 400;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const resolveOwner = async (
@@ -200,7 +198,7 @@ export const withdrawService = {
       throw new AppError(
         "BANK_ACCOUNT_NOT_VERIFIED",
         "Add and verify a bank account before requesting a withdrawal.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -215,7 +213,7 @@ export const withdrawService = {
             throw new AppError(
               "WINDOW_CLOSED",
               "The withdrawal window isn't open right now.",
-              BAD_REQUEST_STATUS,
+              HTTP_STATUS.BAD_REQUEST,
             );
           }
 
@@ -228,7 +226,7 @@ export const withdrawService = {
             throw new AppError(
               "ATTEMPTS_EXHAUSTED",
               "You've reached the withdrawal limit for this window.",
-              BAD_REQUEST_STATUS,
+              HTTP_STATUS.BAD_REQUEST,
             );
           }
 
@@ -242,7 +240,7 @@ export const withdrawService = {
               throw new AppError(
                 "COOLDOWN_ACTIVE",
                 "You're still in the cooldown period after a recent rejection.",
-                BAD_REQUEST_STATUS,
+                HTTP_STATUS.BAD_REQUEST,
               );
             }
           }
@@ -251,7 +249,7 @@ export const withdrawService = {
             throw new AppError(
               "AMOUNT_TOO_LOW",
               `The minimum withdrawal amount is Rs. ${policy.minAmount}.`,
-              BAD_REQUEST_STATUS,
+              HTTP_STATUS.BAD_REQUEST,
             );
           }
 
@@ -260,7 +258,7 @@ export const withdrawService = {
             throw new AppError(
               "AMOUNT_TOO_HIGH",
               `The maximum withdrawal amount is Rs. ${policy.maxAmount}.`,
-              BAD_REQUEST_STATUS,
+              HTTP_STATUS.BAD_REQUEST,
             );
           }
 
@@ -270,7 +268,7 @@ export const withdrawService = {
             throw new AppError(
               "INSUFFICIENT_BALANCE",
               "This amount exceeds your available balance.",
-              BAD_REQUEST_STATUS,
+              HTTP_STATUS.BAD_REQUEST,
             );
           }
 
@@ -311,7 +309,7 @@ export const withdrawService = {
         throw new AppError(
           "WITHDRAW_REQUEST_CONFLICT",
           "Please try again — something else changed your balance just now.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -346,7 +344,7 @@ export const withdrawService = {
     const { isFinalApproval, requestRecord } = await prisma.$transaction(async (tx) => {
       const requestRecord = await withdrawRepository.findById(requestId, tx);
       if (!requestRecord) {
-        throw new AppError("NOT_FOUND", "Withdraw request not found.", NOT_FOUND_STATUS);
+        throw new AppError("NOT_FOUND", "Withdraw request not found.", HTTP_STATUS.NOT_FOUND);
       }
 
       if (
@@ -357,7 +355,7 @@ export const withdrawService = {
         throw new AppError(
           "SAME_ADMIN_SIGN_OFF",
           "A second sign-off must come from a different admin.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 
@@ -367,7 +365,11 @@ export const withdrawService = {
       if (isFinalApproval) {
         const bankAccountId = requestRecord.bankAccountId ?? requestRecord.brandBankAccountId;
         if (!bankAccountId) {
-          throw new AppError("NOT_FOUND", "This request has no bank account.", NOT_FOUND_STATUS);
+          throw new AppError(
+            "NOT_FOUND",
+            "This request has no bank account.",
+            HTTP_STATUS.NOT_FOUND,
+          );
         }
 
         const alreadyCrossChecked =
@@ -381,7 +383,7 @@ export const withdrawService = {
           throw new AppError(
             "IDENTITY_CROSS_CHECK_REQUIRED",
             "Confirm the identity/bank-name cross-check before approving this account's first payout.",
-            BAD_REQUEST_STATUS,
+            HTTP_STATUS.BAD_REQUEST,
           );
         }
 
@@ -404,7 +406,7 @@ export const withdrawService = {
         throw new AppError(
           "INVALID_TRANSITION",
           "This request can no longer be approved from its current state.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 
@@ -426,7 +428,7 @@ export const withdrawService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This request can no longer be rejected from its current state.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -445,13 +447,13 @@ export const withdrawService = {
     const requestRecord = await prisma.$transaction(async (tx) => {
       const requestRecord = await withdrawRepository.findById(requestId, tx);
       if (!requestRecord) {
-        throw new AppError("NOT_FOUND", "Withdraw request not found.", NOT_FOUND_STATUS);
+        throw new AppError("NOT_FOUND", "Withdraw request not found.", HTTP_STATUS.NOT_FOUND);
       }
       if (requestRecord.status !== WithdrawRequestStatus.APPROVED) {
         throw new AppError(
           "INVALID_TRANSITION",
           "Only approved requests can be marked paid.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 
@@ -460,7 +462,7 @@ export const withdrawService = {
         throw new AppError(
           "INSUFFICIENT_LEDGER_ROWS",
           "Couldn't find enough available ledger rows to cover this amount — reject or adjust instead.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 
@@ -471,7 +473,7 @@ export const withdrawService = {
         throw new AppError(
           "INVALID_TRANSITION",
           "This request can no longer be marked paid.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 

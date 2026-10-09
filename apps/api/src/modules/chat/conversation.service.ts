@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -13,17 +14,13 @@ import type {
 } from "./conversation.types.js";
 import { otherParticipantIdOf, toConversationPreview } from "./conversation.utils.js";
 
-const BAD_REQUEST_STATUS = 400;
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-
 export const requireParticipant = async (conversationId: string, userId: string) => {
   const participant = await conversationRepository.findParticipant(conversationId, userId);
   if (!participant) {
     throw new AppError(
       "NOT_A_PARTICIPANT",
       "You don't have access to this conversation.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
   return participant;
@@ -60,13 +57,13 @@ export const conversationService = {
       throw new AppError(
         "CANNOT_MESSAGE_SELF",
         "You can't start a conversation with yourself.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
     const target = await userRepository.findById(targetUserId);
     if (!target) {
-      throw new AppError("NOT_FOUND", "User not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "User not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const availability = await chatService.resolveChatAvailability(callerId, targetUserId);
@@ -83,7 +80,7 @@ export const conversationService = {
     await requireParticipant(conversationId, callerId);
     const conversation = await conversationRepository.getById(conversationId);
     if (!conversation) {
-      throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Conversation not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const otherParticipantId = otherParticipantIdOf(conversation, callerId);

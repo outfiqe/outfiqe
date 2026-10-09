@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { ContentReportStatus, ContentReportTarget } from "#generated/prisma/enums.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
@@ -20,10 +21,6 @@ import {
   type SubmitContentReportBody,
 } from "./contentReport.schemas.js";
 import type { ContentReportPage } from "./contentReport.types.js";
-
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const FORBIDDEN_STATUS = 403;
 
 type SubmitReportContext = {
   reporterUserId: string | undefined;
@@ -78,7 +75,11 @@ export const contentReportService = {
 
     const target = await contentReportRepository.findReportableTarget(targetType, targetId);
     if (!target) {
-      throw new AppError("CONTENT_NOT_FOUND", "This content no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "CONTENT_NOT_FOUND",
+        "This content no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     await contentReportRepository.create({
@@ -109,14 +110,14 @@ export const contentReportService = {
       throw new AppError(
         "CONTENT_REPORT_NOT_FOUND",
         "This report no longer exists.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
     if (report.status !== ContentReportStatus.OPEN) {
       throw new AppError(
         "CONTENT_REPORT_ALREADY_RESOLVED",
         "This report has already been resolved.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -132,7 +133,7 @@ export const contentReportService = {
         throw new AppError(
           "FORBIDDEN",
           "You don't have permission to remove content.",
-          FORBIDDEN_STATUS,
+          HTTP_STATUS.FORBIDDEN,
         );
       }
 

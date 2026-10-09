@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   FeatureFlagRollout,
@@ -25,12 +26,6 @@ import {
   writeToBuild,
 } from "#test/integration/outfitFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -57,7 +52,7 @@ const placeOrFail = async (
     await currentBuildVersion(outfitId),
     { productId },
   );
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
   return response;
 };
 
@@ -84,14 +79,14 @@ describe("agreeing and locking", () => {
     const { outfitId } = await buildWithTwoItems(owner);
 
     const notHappyYet = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-    expect(notHappyYet.status).toBe(UNPROCESSABLE_STATUS);
+    expect(notHappyYet.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(notHappyYet.body.code).toBe("NOT_EVERYONE_HAPPY");
 
     const happy = await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
     expect(happy.body.data.board.isEveryoneHappy).toBe(true);
 
     const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-    expect(locked.status).toBe(OK_STATUS);
+    expect(locked.status).toBe(HTTP_STATUS.OK);
     expect(locked.body.data.board.status).toBe("LOCKED");
 
     const snapshot = await prisma.outfitSnapshot.findFirstOrThrow({ where: { outfitId } });
@@ -118,7 +113,7 @@ describe("agreeing and locking", () => {
     await prisma.productSize.updateMany({ where: { productId: shirt.id }, data: { stock: 0 } });
 
     const soldOut = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-    expect(soldOut.status).toBe(UNPROCESSABLE_STATUS);
+    expect(soldOut.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(soldOut.body).toMatchObject({
       code: "ITEMS_SOLD_OUT",
       details: { soldOutProductIds: [shirt.id] },
@@ -152,7 +147,7 @@ describe("agreeing and locking", () => {
         productId: shoes.id,
       },
     );
-    expect(lockedEdit.status).toBe(CONFLICT_STATUS);
+    expect(lockedEdit.status).toBe(HTTP_STATUS.CONFLICT);
     expect(lockedEdit.body.code).toBe("OUTFIT_NOT_EDITABLE");
 
     const unlocked = await writeAtCurrentVersion(owner, "post", outfitId, "/unlock");
@@ -185,7 +180,7 @@ describe("people on a build", () => {
     const added = await writeAtCurrentVersion(owner, "post", outfitId, "/members", {
       userIds: [editor.id],
     });
-    expect(added.status).toBe(OK_STATUS);
+    expect(added.status).toBe(HTTP_STATUS.OK);
     const { conversationId } = added.body.data.board;
     expect(conversationId).toEqual(expect.any(String));
 
@@ -221,7 +216,7 @@ describe("people on a build", () => {
       .set("Authorization", owner.auth)
       .send({ userIds: [outsider.id] });
 
-    expect(chatAdd.status).toBe(CONFLICT_STATUS);
+    expect(chatAdd.status).toBe(HTTP_STATUS.CONFLICT);
     expect(chatAdd.body.code).toBe("BUILD_CHAT_MANAGED_BY_BUILD");
   });
 
@@ -239,12 +234,12 @@ describe("people on a build", () => {
     const editorInvite = await writeAtCurrentVersion(editor, "post", outfitId, "/members", {
       userIds: [thirdPerson.id],
     });
-    expect(editorInvite.status).toBe(FORBIDDEN_STATUS);
+    expect(editorInvite.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const overCap = await writeAtCurrentVersion(owner, "post", outfitId, "/members", {
       userIds: [thirdPerson.id, fourthPerson.id],
     });
-    expect(overCap.status).toBe(UNPROCESSABLE_STATUS);
+    expect(overCap.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(overCap.body.code).toBe("TOO_MANY_EDITORS");
   });
 
@@ -258,7 +253,7 @@ describe("people on a build", () => {
       userIds: [blocker.id],
     });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body).toMatchObject({
       code: "PEOPLE_UNAVAILABLE",
       details: { unavailableUserIds: [blocker.id] },
@@ -285,7 +280,7 @@ describe("people on a build", () => {
       { productId: shoes.id },
     );
 
-    expect(secondItem.status).toBe(UNPROCESSABLE_STATUS);
+    expect(secondItem.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(secondItem.body.code).toBe("MEMBER_ITEM_LIMIT_REACHED");
   });
 
@@ -307,10 +302,10 @@ describe("people on a build", () => {
       outfitId,
       `/members/${firstEditor.id}`,
     );
-    expect(removed.status).toBe(OK_STATUS);
+    expect(removed.status).toBe(HTTP_STATUS.OK);
 
     const left = await writeAtCurrentVersion(secondEditor, "post", outfitId, "/leave");
-    expect(left.status).toBe(OK_STATUS);
+    expect(left.status).toBe(HTTP_STATUS.OK);
     expect(left.body.data.board).toBeNull();
 
     const ownerLeaves = await writeAtCurrentVersion(owner, "post", outfitId, "/leave");
@@ -356,8 +351,8 @@ describe("people on a build", () => {
       `/members/${removedEditor.id}`,
     );
 
-    expect(left.status).toBe(OK_STATUS);
-    expect(removed.status).toBe(OK_STATUS);
+    expect(left.status).toBe(HTTP_STATUS.OK);
+    expect(removed.status).toBe(HTTP_STATUS.OK);
     const snapshots = await prisma.outfitSnapshot.findMany({
       where: { outfitId },
       orderBy: { version: "asc" },
@@ -392,7 +387,7 @@ describe("people on a build", () => {
 
     const blocked = await writeAtCurrentVersion(creator, "post", outfitId, "/leave");
 
-    expect(blocked.status).toBe(CONFLICT_STATUS);
+    expect(blocked.status).toBe(HTTP_STATUS.CONFLICT);
     expect(blocked.body.code).toBe("OPEN_OFFER_BLOCKS_LEAVE");
     expect(await prisma.outfitMember.count({ where: { outfitId, userId: creator.id } })).toBe(1);
     expect(
@@ -405,7 +400,7 @@ describe("people on a build", () => {
     });
     const leftAfterSettling = await writeAtCurrentVersion(creator, "post", outfitId, "/leave");
 
-    expect(leftAfterSettling.status).toBe(OK_STATUS);
+    expect(leftAfterSettling.status).toBe(HTTP_STATUS.OK);
   });
 
   it("hands ownership over to an editor", async () => {
@@ -435,7 +430,7 @@ describe("sharing and publishing", () => {
       shareWithUserIds: [friend.id],
     });
 
-    expect(response.status).toBe(CONFLICT_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
     expect(response.body.code).toBe("OUTFIT_NEVER_LOCKED");
   });
 
@@ -451,7 +446,7 @@ describe("sharing and publishing", () => {
       visibility: "SHARED",
       shareWithUserIds: [friend.id],
     });
-    expect(shared.status).toBe(OK_STATUS);
+    expect(shared.status).toBe(HTTP_STATUS.OK);
 
     const friendView = await readBuild(friend, outfitId);
     expect(friendView.body.data).toMatchObject({
@@ -464,7 +459,7 @@ describe("sharing and publishing", () => {
       friendView.body.data.items.map((item: { productId: string }) => item.productId),
     ).toContain(shirt.id);
 
-    expect((await readBuild(stranger, outfitId)).status).toBe(NOT_FOUND_STATUS);
+    expect((await readBuild(stranger, outfitId)).status).toBe(HTTP_STATUS.NOT_FOUND);
 
     const sharedWithFriend = await request(testApp)
       .get("/api/outfits/shared-with-me")
@@ -484,13 +479,13 @@ describe("sharing and publishing", () => {
     const withoutFlag = await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
       visibility: "PUBLIC",
     });
-    expect(withoutFlag.status).toBe(NOT_FOUND_STATUS);
+    expect(withoutFlag.status).toBe(HTTP_STATUS.NOT_FOUND);
 
     await setFeatureFlagRollout("outfit_public_feed", FeatureFlagRollout.EVERYONE);
     const madePublic = await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
       visibility: "PUBLIC",
     });
-    expect(madePublic.status).toBe(OK_STATUS);
+    expect(madePublic.status).toBe(HTTP_STATUS.OK);
     expect((await readBuild(stranger, outfitId)).body.data.kind).toBe("published");
   });
 });

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { ConversationType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
@@ -16,9 +17,6 @@ import {
   toMessageBroadcast,
   toMessageRecord,
 } from "./message.utils.js";
-
-const NOT_FOUND_STATUS = 404;
-const BAD_REQUEST_STATUS = 400;
 
 const assertCanSendTo = async (
   callerId: string,
@@ -52,7 +50,7 @@ export const messageService = {
       throw new AppError(
         "EMPTY_MESSAGE",
         "A message needs text or at least one photo.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -60,7 +58,7 @@ export const messageService = {
 
     const conversation = await conversationRepository.getById(conversationId);
     if (!conversation) {
-      throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Conversation not found.", HTTP_STATUS.NOT_FOUND);
     }
     await assertCanSendTo(callerId, conversationId, conversation.type);
 

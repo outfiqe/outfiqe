@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -11,9 +12,6 @@ import type {
 } from "./crm-contacts.schemas.js";
 import type { ContactListPage, ContactWithRelations } from "./crm-contacts.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-
 const assertOwnerMembership = async (
   organizationId: string,
   ownerMembershipId: string | null | undefined,
@@ -24,7 +22,7 @@ const assertOwnerMembership = async (
     throw new AppError(
       "OWNER_NOT_FOUND",
       "The contact owner isn't a member of this organization.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
 };
@@ -36,7 +34,7 @@ const assertLinkedUser = async (linkedUserId: string | null | undefined): Promis
     throw new AppError(
       "LINKED_USER_NOT_FOUND",
       "The linked account doesn't exist.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
 };
@@ -46,7 +44,7 @@ const asEmailConflict = (error: unknown): unknown =>
     ? new AppError(
         "CONTACT_EMAIL_TAKEN",
         "A contact with that email already exists in this organization.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       )
     : error;
 
@@ -62,7 +60,8 @@ export const crmContactsService = {
 
   async getContact(organizationId: string, contactId: string): Promise<ContactWithRelations> {
     const contact = await crmContactsRepository.findById(organizationId, contactId);
-    if (!contact) throw new AppError("CONTACT_NOT_FOUND", "Contact not found.", NOT_FOUND_STATUS);
+    if (!contact)
+      throw new AppError("CONTACT_NOT_FOUND", "Contact not found.", HTTP_STATUS.NOT_FOUND);
     return contact;
   },
 

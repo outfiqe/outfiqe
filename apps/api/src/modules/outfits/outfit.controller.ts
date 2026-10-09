@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { readRequiredIdempotencyKey } from "#middlewares/require-idempotency-key.js";
@@ -38,9 +38,6 @@ import { outfitPublishService } from "./outfit-publish.service.js";
 import { outfitReplacementService } from "./outfit-replacements.service.js";
 import { outfitVisibilityService } from "./outfit-visibility.service.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-
 const readExpectedVersion = (req: Request): number => {
   const headerValue = req.get(OUTFIT_VERSION_HEADER);
   if (!headerValue) throw outfitErrors.versionRequired();
@@ -67,7 +64,7 @@ export const outfitController = {
     const body = validated.body<CreateOutfitBody>(res);
     const board = await outfitService.create(userId, body, readRequiredIdempotencyKey(req));
     res.setHeader(OUTFIT_VERSION_HEADER, toVersionHeaderValue(board.version));
-    sendSuccess(res, board, "Build started.", CREATED_STATUS);
+    sendSuccess(res, board, "Build started.", HTTP_STATUS.CREATED);
   },
 
   async get(_req: Request, res: Response) {
@@ -104,7 +101,7 @@ export const outfitController = {
       res,
       look,
       isNew ? "Look dropped." : "Look already dropped.",
-      isNew ? CREATED_STATUS : OK_STATUS,
+      isNew ? HTTP_STATUS.CREATED : HTTP_STATUS.OK,
     );
   },
 

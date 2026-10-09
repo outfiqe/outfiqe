@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CreatorLinkStatus, CreatorLinkType } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
@@ -9,12 +10,14 @@ import { creatorLinkRepository } from "./creatorLink.repository.js";
 import type { CreatorLinkView } from "./creatorLink.types.js";
 import { buildTargetUrl, toCreatorLinkView } from "./creatorLink.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-
 const requireApprovedProduct = async (productId: string): Promise<{ name: string }> => {
   const [product] = await productRepository.findApprovedByIds([productId]);
   if (!product) {
-    throw new AppError("PRODUCT_NOT_AVAILABLE", "This product isn't available.", NOT_FOUND_STATUS);
+    throw new AppError(
+      "PRODUCT_NOT_AVAILABLE",
+      "This product isn't available.",
+      HTTP_STATUS.NOT_FOUND,
+    );
   }
   return product;
 };
@@ -76,7 +79,11 @@ export const creatorLinkService = {
     await requireApprovedCreator(creatorId, "Only approved muses can manage links.");
     const link = await creatorLinkRepository.findOwned(linkId, creatorId);
     if (!link) {
-      throw new AppError("LINK_NOT_FOUND", "This link is no longer available.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "LINK_NOT_FOUND",
+        "This link is no longer available.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     await creatorLinkRepository.revoke(link.id);
@@ -89,7 +96,11 @@ export const creatorLinkService = {
   ): Promise<{ targetUrl: string }> {
     const link = await creatorLinkRepository.findByToken(token);
     if (!link || link.status === CreatorLinkStatus.REVOKED) {
-      throw new AppError("LINK_NOT_FOUND", "This link is no longer available.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "LINK_NOT_FOUND",
+        "This link is no longer available.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     const shouldRecordClick =

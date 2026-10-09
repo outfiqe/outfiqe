@@ -4,6 +4,7 @@ import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BankType,
@@ -33,10 +34,6 @@ import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK_STATUS = 200;
-const BAD_REQUEST_STATUS = 400;
-const CONFLICT_STATUS = 409;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -246,14 +243,14 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", authHeader)
       .send({});
-    expect(withoutConfirmation.status).toBe(BAD_REQUEST_STATUS);
+    expect(withoutConfirmation.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(withoutConfirmation.body.code).toBe("IDENTITY_CROSS_CHECK_REQUIRED");
 
     const withConfirmation = await request(testApp)
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", authHeader)
       .send({ identityCrossCheckConfirmed: true });
-    expect(withConfirmation.status).toBe(OK_STATUS);
+    expect(withConfirmation.status).toBe(HTTP_STATUS.OK);
 
     const updatedRequest = await prisma.withdrawRequest.findUniqueOrThrow({
       where: { id: withdrawRequest.id },
@@ -331,14 +328,14 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", authHeader)
       .send({});
-    expect(withoutConfirmation.status).toBe(BAD_REQUEST_STATUS);
+    expect(withoutConfirmation.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(withoutConfirmation.body.code).toBe("IDENTITY_CROSS_CHECK_REQUIRED");
 
     const withConfirmation = await request(testApp)
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", authHeader)
       .send({ identityCrossCheckConfirmed: true });
-    expect(withConfirmation.status).toBe(OK_STATUS);
+    expect(withConfirmation.status).toBe(HTTP_STATUS.OK);
 
     const updatedAccount = await prisma.brandBankAccount.findUniqueOrThrow({
       where: { id: brandBankAccount.id },
@@ -366,7 +363,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .set("Authorization", authHeader)
       .send({});
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
   });
 
   it("requires a second, different admin for a soft-ceiling request", async () => {
@@ -390,7 +387,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", admin1.authHeader)
       .send({ identityCrossCheckConfirmed: true });
-    expect(firstSignOff.status).toBe(OK_STATUS);
+    expect(firstSignOff.status).toBe(HTTP_STATUS.OK);
 
     const stillUnderReview = await prisma.withdrawRequest.findUniqueOrThrow({
       where: { id: withdrawRequest.id },
@@ -402,14 +399,14 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", admin1.authHeader)
       .send({});
-    expect(sameAdminAgain.status).toBe(CONFLICT_STATUS);
+    expect(sameAdminAgain.status).toBe(HTTP_STATUS.CONFLICT);
     expect(sameAdminAgain.body.code).toBe("SAME_ADMIN_SIGN_OFF");
 
     const secondAdmin = await request(testApp)
       .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
       .set("Authorization", admin2.authHeader)
       .send({ identityCrossCheckConfirmed: true });
-    expect(secondAdmin.status).toBe(OK_STATUS);
+    expect(secondAdmin.status).toBe(HTTP_STATUS.OK);
 
     const finalRequest = await prisma.withdrawRequest.findUniqueOrThrow({
       where: { id: withdrawRequest.id },
@@ -437,7 +434,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       .set("Authorization", authHeader)
       .send({});
 
-    expect(response.status).toBe(CONFLICT_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
     expect(response.body.code).toBe("INVALID_TRANSITION");
   });
 });
@@ -457,7 +454,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/reject", () => {
       .set("Authorization", authHeader)
       .send({ reason: "Suspicious activity" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const updated = await prisma.withdrawRequest.findUniqueOrThrow({
       where: { id: withdrawRequest.id },
     });
@@ -486,7 +483,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN123" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
 
     const updatedRequest = await prisma.withdrawRequest.findUniqueOrThrow({
       where: { id: withdrawRequest.id },
@@ -528,7 +525,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN-OFFER" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const [paidOffer, paidCommission, ledgerEntries] = await Promise.all([
       prisma.outfitOffer.findUniqueOrThrow({ where: { id: releasedOffer.id } }),
       prisma.creatorCommission.findUniqueOrThrow({ where: { id: commission.id } }),
@@ -566,7 +563,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN123" });
 
-    expect(response.status).toBe(CONFLICT_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
     expect(response.body.code).toBe("INSUFFICIENT_LEDGER_ROWS");
 
     const updated = await prisma.withdrawRequest.findUniqueOrThrow({
@@ -589,7 +586,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN123" });
 
-    expect(response.status).toBe(CONFLICT_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
     expect(response.body.code).toBe("INVALID_TRANSITION");
   });
 
@@ -707,7 +704,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN456" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const updatedPayout = await prisma.brandPayout.findUniqueOrThrow({
       where: { id: brandPayout.id },
     });
@@ -741,7 +738,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       .set("Authorization", authHeader)
       .send({ referenceNote: "TXN789" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const [updatedPayout, updatedCommission, ledgerEntries] = await Promise.all([
       prisma.brandPayout.findUniqueOrThrow({ where: { id: brandPayout.id } }),
       prisma.creatorCommission.findUniqueOrThrow({ where: { id: buildCommission.id } }),
@@ -776,7 +773,7 @@ describe("GET /api/withdraw/admin/requests", () => {
       .query({ status: "PENDING" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.items).toHaveLength(1);
     expect(response.body.data.items[0].ownerName).toBe(creator.name);
     expect(response.body.data.items[0].bankAccountLast4).toBe("1234");
@@ -833,7 +830,7 @@ describe("GET /api/withdraw/admin/requests", () => {
       .get("/api/withdraw/admin/requests")
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.items).toHaveLength(2);
     const businessItem = response.body.data.items.find(
       (item: { ownerType: string }) => item.ownerType === "BUSINESS",
@@ -855,7 +852,7 @@ describe("GET /api/withdraw/admin/requests", () => {
       .query({ limit: 1 })
       .set("Authorization", authHeader);
 
-    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.status).toBe(HTTP_STATUS.OK);
     expect(firstPage.body.data.items).toHaveLength(1);
     expect(firstPage.body.data.nextCursor).not.toBeNull();
 
@@ -864,7 +861,7 @@ describe("GET /api/withdraw/admin/requests", () => {
       .query({ limit: 1, cursor: firstPage.body.data.nextCursor })
       .set("Authorization", authHeader);
 
-    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.status).toBe(HTTP_STATUS.OK);
     expect(secondPage.body.data.items).toHaveLength(1);
     expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
   });
@@ -894,7 +891,7 @@ describe("PUT /api/withdraw/admin/policy", () => {
         processingNoteText: "Updated note.",
       });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.minAmount).toBe(1000);
 
     const previous = await prisma.withdrawPolicy.findUniqueOrThrow({ where: { id: original.id } });

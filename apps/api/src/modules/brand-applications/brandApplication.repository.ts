@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { BrandApplicationStatus } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -8,14 +9,12 @@ import type {
   CreateBrandApplicationInput,
 } from "./brandApplication.types.js";
 
-const CONFLICT_STATUS = 409;
-
 const requireClaimedPendingRow = (claimedCount: number): void => {
   if (claimedCount === 0) {
     throw new AppError(
       "ALREADY_REVIEWED",
       "This application has already been reviewed.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 };

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 
@@ -10,13 +11,11 @@ import type {
 } from "./heroSlide.schemas.js";
 import { heroSlideService } from "./heroSlide.service.js";
 
-const CREATED_STATUS = 201;
-
 export const heroSlideController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateHeroSlideBody>(res);
     const slide = await heroSlideService.create(body);
-    sendSuccess(res, slide, "Hero slide created.", CREATED_STATUS);
+    sendSuccess(res, slide, "Hero slide created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

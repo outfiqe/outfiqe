@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   FulfilmentStatus,
@@ -16,9 +17,6 @@ import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const MY_SIZES_PATH = "/api/saved-sizes/me";
-const OK_STATUS = 200;
-const UNAUTHORIZED_STATUS = 401;
-const UNPROCESSABLE_STATUS = 422;
 const UNIT_PRICE = 2_000;
 
 type SavedSizeRow = {
@@ -100,7 +98,7 @@ const buySize = async (
 
 const readMySizes = async (caller: OutfitTestUser): Promise<SavedSizeRow[]> => {
   const response = await request(testApp).get(MY_SIZES_PATH).set("Authorization", caller.auth);
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
   return response.body.data;
 };
 
@@ -152,7 +150,7 @@ describe("saved sizes", () => {
       .set("Authorization", shopper.auth)
       .send({ sizeLabel: "L" });
 
-    expect(changed.status).toBe(OK_STATUS);
+    expect(changed.status).toBe(HTTP_STATUS.OK);
     expect(findRow(changed.body.data, kurta.id)?.savedSize).toBe("L");
     expect(findRow(await readMySizes(otherShopper), kurta.id)?.savedSize).toBeNull();
 
@@ -169,13 +167,13 @@ describe("saved sizes", () => {
       .set("Authorization", shopper.auth)
       .send({ sizeLabel: "XXL" });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("UNKNOWN_SIZE");
   });
 
   it("needs a signed-in person", async () => {
     const response = await request(testApp).get(MY_SIZES_PATH);
 
-    expect(response.status).toBe(UNAUTHORIZED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
   });
 });

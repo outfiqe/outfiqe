@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -12,8 +13,6 @@ import type {
 } from "./tagReport.schemas.js";
 import { tagReportService } from "./tagReport.service.js";
 
-const ACCEPTED_STATUS = 202;
-
 export const tagReportController = {
   async submit(req: Request, res: Response) {
     const body = validated.body<SubmitTagReportBody>(res);
@@ -22,7 +21,7 @@ export const tagReportController = {
       reporterIp: req.ip,
       userAgent: req.headers["user-agent"],
     });
-    sendSuccess(res, null, "Thanks — we'll take a look.", ACCEPTED_STATUS);
+    sendSuccess(res, null, "Thanks — we'll take a look.", HTTP_STATUS.ACCEPTED);
   },
 
   async list(_req: Request, res: Response) {

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
@@ -14,8 +15,6 @@ import type {
   ListBrandPayoutsQuery,
 } from "./brandPayout.schemas.js";
 import { brandPayoutService } from "./brandPayout.service.js";
-
-const CREATED_STATUS = 201;
 
 export const brandPayoutController = {
   async getMySummary(_req: Request, res: Response) {
@@ -42,7 +41,7 @@ export const brandPayoutController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreatePlatformCommissionRuleBody>(res);
     const rule = await brandPayoutService.createRule(body, userId);
-    sendSuccess(res, rule, "Platform commission rate updated.", CREATED_STATUS);
+    sendSuccess(res, rule, "Platform commission rate updated.", HTTP_STATUS.CREATED);
   },
 
   async listGatewayFeeRates(_req: Request, res: Response) {
@@ -54,7 +53,7 @@ export const brandPayoutController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateGatewayFeeRateBody>(res);
     const rate = await brandPayoutService.createGatewayFeeRate(body, userId);
-    sendSuccess(res, rate, "Gateway fee rate updated.", CREATED_STATUS);
+    sendSuccess(res, rate, "Gateway fee rate updated.", HTTP_STATUS.CREATED);
   },
 
   async listExemptions(_req: Request, res: Response) {
@@ -67,7 +66,7 @@ export const brandPayoutController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateBrandCommissionExemptionBody>(res);
     const exemption = await brandPayoutService.createExemption(body, userId);
-    sendSuccess(res, exemption, "Brand commission exemption created.", CREATED_STATUS);
+    sendSuccess(res, exemption, "Brand commission exemption created.", HTTP_STATUS.CREATED);
   },
 
   async revokeExemption(_req: Request, res: Response) {

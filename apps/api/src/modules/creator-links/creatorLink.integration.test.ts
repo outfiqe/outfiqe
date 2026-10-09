@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   CreatorLinkStatus,
@@ -13,10 +14,6 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-const OK_STATUS = 200;
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
@@ -51,7 +48,7 @@ describe("DELETE /api/creator-links/:id", () => {
 
     const response = await deleteLink(link.id, authHeaderFor(creator.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const stored = await prisma.creatorLink.findUniqueOrThrow({ where: { id: link.id } });
     expect(stored.status).toBe(CreatorLinkStatus.REVOKED);
 
@@ -64,7 +61,7 @@ describe("DELETE /api/creator-links/:id", () => {
     const clickResponse = await request(testApp)
       .post(`/api/creator-links/${link.token}/click`)
       .send({ sessionId: randomUUID() });
-    expect(clickResponse.status).toBe(NOT_FOUND_STATUS);
+    expect(clickResponse.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("keeps the clicks already recorded on the deleted link", async () => {
@@ -92,7 +89,7 @@ describe("DELETE /api/creator-links/:id", () => {
 
     const response = await deleteLink(link.id, authHeaderFor(creator.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const stored = await prisma.creatorLink.findUniqueOrThrow({ where: { id: link.id } });
     expect(stored.status).toBe(CreatorLinkStatus.REVOKED);
   });
@@ -104,7 +101,7 @@ describe("DELETE /api/creator-links/:id", () => {
     await deleteLink(link.id, authHeaderFor(creator.id));
     const secondResponse = await deleteLink(link.id, authHeaderFor(creator.id));
 
-    expect(secondResponse.status).toBe(OK_STATUS);
+    expect(secondResponse.status).toBe(HTTP_STATUS.OK);
   });
 
   it("answers 404 and leaves the link alone when it belongs to another muse", async () => {
@@ -114,7 +111,7 @@ describe("DELETE /api/creator-links/:id", () => {
 
     const response = await deleteLink(link.id, authHeaderFor(otherCreator.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
     const stored = await prisma.creatorLink.findUniqueOrThrow({ where: { id: link.id } });
     expect(stored.status).toBe(CreatorLinkStatus.ACTIVE);
   });
@@ -124,7 +121,7 @@ describe("DELETE /api/creator-links/:id", () => {
 
     const response = await deleteLink(randomUUID(), authHeaderFor(creator.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("rejects a malformed link id", async () => {
@@ -144,7 +141,7 @@ describe("DELETE /api/creator-links/:id", () => {
 
     const response = await deleteLink(link.id, authHeaderFor(pendingCreator.id));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("requires a signed-in user", async () => {
@@ -166,7 +163,7 @@ describe("DELETE /api/creator-links/:id", () => {
       .set("Authorization", authHeaderFor(creator.id))
       .send({});
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.id).not.toBe(oldLink.id);
     expect(response.body.data.status).toBe(CreatorLinkStatus.ACTIVE);
   });

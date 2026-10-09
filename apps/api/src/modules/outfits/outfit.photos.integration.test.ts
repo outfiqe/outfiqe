@@ -4,6 +4,7 @@ import { subHours } from "date-fns/subHours";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   ContentReportReason,
@@ -36,11 +37,6 @@ import { testApp } from "#test/integration/testApp.js";
 
 import { runOutfitPhotoCleanupSweep } from "./outfit-photo.service.js";
 
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const CONCURRENT_ATTEMPTS = 6;
 const HOURS_PAST_CLEANUP = 25;
 
@@ -92,7 +88,7 @@ const buildWithEditor = async () => {
     await currentBuildVersion(outfitId),
     { userIds: [editor.id] },
   );
-  expect(added.status).toBe(OK_STATUS);
+  expect(added.status).toBe(HTTP_STATUS.OK);
   return { owner, editor, outfitId };
 };
 
@@ -103,7 +99,7 @@ describe("adding build photos", () => {
 
     const response = await addPhotos(owner, outfitId, [photo]);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { photos, limits } = response.body.data.board;
     expect(photos).toHaveLength(1);
     expect(photos[0]).toMatchObject({
@@ -126,15 +122,15 @@ describe("adding build photos", () => {
     const outsider = await createOutfitUser("Hari");
 
     const someoneElses = await addPhotos(owner, outfitId, [editorsPhoto]);
-    expect(someoneElses.status).toBe(NOT_FOUND_STATUS);
+    expect(someoneElses.status).toBe(HTTP_STATUS.NOT_FOUND);
 
-    expect((await addPhotos(editor, outfitId, [editorsPhoto])).status).toBe(OK_STATUS);
+    expect((await addPhotos(editor, outfitId, [editorsPhoto])).status).toBe(HTTP_STATUS.OK);
     const reused = await addPhotos(editor, outfitId, [editorsPhoto]);
-    expect(reused.status).toBe(CONFLICT_STATUS);
+    expect(reused.status).toBe(HTTP_STATUS.CONFLICT);
     expect(reused.body.code).toBe("PHOTO_ALREADY_ADDED");
 
     const fromOutsider = await addPhotos(outsider, outfitId, [await createUploadedAsset(outsider)]);
-    expect(fromOutsider.status).toBe(NOT_FOUND_STATUS);
+    expect(fromOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("keeps each person and the whole board within their photo limits", async () => {
@@ -147,7 +143,7 @@ describe("adding build photos", () => {
       await createUploadedAsset(owner),
       await createUploadedAsset(owner),
     ]);
-    expect(tooMany.status).toBe(UNPROCESSABLE_STATUS);
+    expect(tooMany.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(tooMany.body.code).toBe("MEMBER_PHOTO_LIMIT_REACHED");
 
     await addPhotos(owner, outfitId, [
@@ -158,7 +154,7 @@ describe("adding build photos", () => {
       await createUploadedAsset(editor),
       await createUploadedAsset(editor),
     ]);
-    expect(boardFull.status).toBe(UNPROCESSABLE_STATUS);
+    expect(boardFull.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(boardFull.body.code).toBe("BOARD_PHOTO_LIMIT_REACHED");
   });
 
@@ -191,7 +187,7 @@ describe("adding build photos", () => {
       [await createUploadedAsset(owner)],
       OutfitPhotoKind.TRY_ON,
     );
-    expect(whileOff.status).toBe(NOT_FOUND_STATUS);
+    expect(whileOff.status).toBe(HTTP_STATUS.NOT_FOUND);
 
     await setFeatureFlagRollout("outfit_try_on", FeatureFlagRollout.EVERYONE);
     const whileOn = await addPhotos(
@@ -200,7 +196,7 @@ describe("adding build photos", () => {
       [await createUploadedAsset(owner)],
       OutfitPhotoKind.TRY_ON,
     );
-    expect(whileOn.status).toBe(OK_STATUS);
+    expect(whileOn.status).toBe(HTTP_STATUS.OK);
   });
 
   it("refuses every photo route while build photos are switched off", async () => {
@@ -209,7 +205,7 @@ describe("adding build photos", () => {
 
     const response = await addPhotos(owner, outfitId, [await createUploadedAsset(owner)]);
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -231,7 +227,7 @@ describe("removing photos and picking covers", () => {
       `/${outfitId}/photos/${photo.id}`,
       await currentBuildVersion(outfitId),
     );
-    expect(byOtherEditor.status).toBe(FORBIDDEN_STATUS);
+    expect(byOtherEditor.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const byOwner = await writeToBuild(
       owner,
@@ -239,7 +235,7 @@ describe("removing photos and picking covers", () => {
       `/${outfitId}/photos/${photo.id}`,
       await currentBuildVersion(outfitId),
     );
-    expect(byOwner.status).toBe(OK_STATUS);
+    expect(byOwner.status).toBe(HTTP_STATUS.OK);
     expect(byOwner.body.data.board.photos).toHaveLength(0);
     const removed = await prisma.outfitPhoto.findUniqueOrThrow({ where: { id: photo.id } });
     expect(removed).toMatchObject({ status: OutfitPhotoStatus.REMOVED, removedById: owner.id });
@@ -269,14 +265,14 @@ describe("removing photos and picking covers", () => {
         photoIds,
       });
 
-    expect((await setCovers(editor, [first.id])).status).toBe(FORBIDDEN_STATUS);
+    expect((await setCovers(editor, [first.id])).status).toBe(HTTP_STATUS.FORBIDDEN);
     expect((await setCovers(owner, [first.id, second.id, third.id])).body.code).toBe(
       "TOO_MANY_COVERS",
     );
     expect((await setCovers(owner, [tryOnPhoto.id])).body.code).toBe("COVER_NOT_ELIGIBLE");
 
     const picked = await setCovers(owner, [second.id, first.id]);
-    expect(picked.status).toBe(OK_STATUS);
+    expect(picked.status).toBe(HTTP_STATUS.OK);
     const coverPositions = Object.fromEntries(
       picked.body.data.board.photos.map(
         ({ id, coverPosition }: { id: string; coverPosition: number | null }) => [
@@ -288,7 +284,7 @@ describe("removing photos and picking covers", () => {
     expect(coverPositions).toMatchObject({ [second.id]: 0, [first.id]: 1, [third.id]: null });
 
     const repicked = await setCovers(owner, [third.id]);
-    expect(repicked.status).toBe(OK_STATUS);
+    expect(repicked.status).toBe(HTTP_STATUS.OK);
     expect(
       await prisma.outfitPhoto.count({ where: { outfitId, coverPosition: { not: null } } }),
     ).toBe(1);
@@ -335,7 +331,7 @@ describe("covers on cards and reported photos", () => {
       .post(`/api/content-reports/${reportId}/resolve`)
       .set("Authorization", authHeader)
       .send({ action: "REMOVE_CONTENT" });
-    expect(resolved.status).toBe(OK_STATUS);
+    expect(resolved.status).toBe(HTTP_STATUS.OK);
 
     const board = await readBuild(owner, outfitId);
     expect(board.body.data.photos).toHaveLength(0);

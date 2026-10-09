@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { adminInviteTemplate } from "#email-templates/templates.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -13,8 +14,6 @@ import type { AdminInviteListResult } from "./adminInvite.types.js";
 import { toSummary } from "./adminInvite.utils.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const CONFLICT_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
 
 export const adminInviteService = {
   async invite(email: string, name: string, roleId: string, invitedById: string): Promise<void> {
@@ -23,7 +22,7 @@ export const adminInviteService = {
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -32,7 +31,7 @@ export const adminInviteService = {
       throw new AppError(
         "INVITE_ALREADY_PENDING",
         "An invite is already pending for this email.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -41,7 +40,7 @@ export const adminInviteService = {
       platformOrganization &&
       (await crmAccessRepository.findRoleById(platformOrganization.id, roleId));
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "That role could not be found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "That role could not be found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const rawToken = generateOpaqueToken();

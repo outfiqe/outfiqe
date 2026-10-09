@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { BankType, BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -10,11 +11,6 @@ import { redis } from "#redis/redis.client.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -93,7 +89,7 @@ describe("POST /api/brand-bank-accounts", () => {
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
       .send(validBody(bank.id));
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.bankAccount.accountNumberLast4).toBe("7890");
     expect(response.body.data.bankAccount.isDefault).toBe(true);
     expect(response.body.data.nameMismatch).toBe(false);
@@ -112,7 +108,7 @@ describe("POST /api/brand-bank-accounts", () => {
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
       .send(validBody(bank.id, { accountName: "Someone Else" }));
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.nameMismatch).toBe(true);
   });
 
@@ -125,7 +121,7 @@ describe("POST /api/brand-bank-accounts", () => {
       .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER))
       .send(validBody(bank.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -145,7 +141,7 @@ describe("GET /api/brand-bank-accounts", () => {
       .get("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(staff.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toHaveLength(1);
   });
 });
@@ -197,7 +193,7 @@ describe("PATCH /api/brand-bank-accounts/:id/default", () => {
       .patch(`/api/brand-bank-accounts/${created.body.data.bankAccount.id}/default`)
       .set("Authorization", authHeaderFor(otherMember.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -217,12 +213,12 @@ describe("admin brand bank account actions", () => {
     const forbidden = await request(testApp)
       .patch(`/api/brand-bank-accounts/${id}/verify`)
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER));
-    expect(forbidden.status).toBe(FORBIDDEN_STATUS);
+    expect(forbidden.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const response = await request(testApp)
       .patch(`/api/brand-bank-accounts/${id}/verify`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
 
     const stored = await prisma.brandBankAccount.findUniqueOrThrow({ where: { id } });
     expect(stored.isVerified).toBe(true);
@@ -244,7 +240,7 @@ describe("admin brand bank account actions", () => {
       .get(`/api/brand-bank-accounts/${id}/reveal`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.accountNumber).toBe("1234567890");
 
     const logs = await prisma.brandBankAccountAccessLog.findMany({
@@ -261,7 +257,7 @@ describe("admin brand bank account actions", () => {
       .patch(`/api/brand-bank-accounts/${randomUUID()}/verify`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("404s revealing a brand bank account that doesn't exist", async () => {
@@ -271,7 +267,7 @@ describe("admin brand bank account actions", () => {
       .get(`/api/brand-bank-accounts/${randomUUID()}/reveal`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -291,7 +287,7 @@ describe("GET /api/brand-bank-accounts/admin", () => {
     const pending = await request(testApp)
       .get("/api/brand-bank-accounts/admin?verified=false")
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
-    expect(pending.status).toBe(OK_STATUS);
+    expect(pending.status).toBe(HTTP_STATUS.OK);
     const row = pending.body.data.items.find((item: { id: string }) => item.id === id);
     expect(row).toMatchObject({
       ownerName: brand.name,
@@ -316,6 +312,6 @@ describe("GET /api/brand-bank-accounts/admin", () => {
       .get("/api/brand-bank-accounts/admin")
       .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -7,15 +8,13 @@ import { validated } from "#middlewares/validate.js";
 import type { CreateAdminInviteBody } from "./adminInvite.schemas.js";
 import { adminInviteService } from "./adminInvite.service.js";
 
-const CREATED_STATUS = 201;
-
 export const adminInviteController = {
   async create(_req: Request, res: Response) {
     const { email, name, roleId } = validated.body<CreateAdminInviteBody>(res);
     const principal = requireAuthPrincipal(res);
 
     await adminInviteService.invite(email, name, roleId, principal.userId);
-    sendSuccess(res, null, "Invite sent.", CREATED_STATUS);
+    sendSuccess(res, null, "Invite sent.", HTTP_STATUS.CREATED);
   },
 
   async list(_req: Request, res: Response) {

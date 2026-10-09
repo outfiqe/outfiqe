@@ -1,12 +1,11 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { redis } from "#redis/redis.client.js";
 import { createOutfitUser } from "#test/integration/outfitFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
-const UNPROCESSABLE_STATUS = 422;
-const TOO_MANY_REQUESTS_STATUS = 429;
 const CHECKOUTS_ALLOWED_PER_MINUTE = 5;
 
 beforeEach(async () => {
@@ -20,11 +19,11 @@ describe("checkout rate limit", () => {
       request(testApp).post("/api/orders/checkout").set("Authorization", shopper.auth).send({});
 
     for (let attempt = 0; attempt < CHECKOUTS_ALLOWED_PER_MINUTE; attempt += 1) {
-      expect((await attemptCheckout()).status).toBe(UNPROCESSABLE_STATUS);
+      expect((await attemptCheckout()).status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     }
     const overTheLimit = await attemptCheckout();
 
-    expect(overTheLimit.status).toBe(TOO_MANY_REQUESTS_STATUS);
+    expect(overTheLimit.status).toBe(HTTP_STATUS.TOO_MANY_REQUESTS);
   });
 
   it("counts each shopper separately", async () => {
@@ -42,6 +41,6 @@ describe("checkout rate limit", () => {
       .set("Authorization", otherShopper.auth)
       .send({});
 
-    expect(otherAttempt.status).toBe(UNPROCESSABLE_STATUS);
+    expect(otherAttempt.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
   });
 });

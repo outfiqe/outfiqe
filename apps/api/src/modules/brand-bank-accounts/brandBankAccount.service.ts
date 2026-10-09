@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   decryptAccountNumber,
@@ -23,14 +24,12 @@ import type {
 } from "./brandBankAccount.types.js";
 import { toAdminBrandBankAccountView, toPublicBrandBankAccount } from "./brandBankAccount.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-
 export const brandBankAccountService = {
   async create(brandId: string, body: BankAccountBody): Promise<CreateBrandBankAccountResult> {
     await nepalBankService.requireActiveBank(body.bankId);
 
     const brand = await brandRepository.findById(brandId);
-    if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+    if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", HTTP_STATUS.NOT_FOUND);
 
     const bankAccount = await prisma.$transaction(async (tx) => {
       const existingCount = await brandBankAccountRepository.countForBrand(brandId, tx);
@@ -63,19 +62,19 @@ export const brandBankAccountService = {
   async setDefault(brandId: string, id: string): Promise<void> {
     const updated = await brandBankAccountRepository.setDefault(brandId, id);
     if (!updated) {
-      throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
     }
   },
 
   async verify(id: string, adminId: string): Promise<void> {
     const account = await brandBankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
     await brandBankAccountRepository.verify(id, adminId);
   },
 
   async reveal(id: string, adminId: string): Promise<RevealedBrandBankAccount> {
     const account = await brandBankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
 
     await brandBankAccountRepository.createAccessLog(id, adminId);
     return { accountNumber: decryptAccountNumber(account.accountNumberCiphertext) };

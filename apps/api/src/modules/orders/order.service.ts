@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   newOrderNotificationTemplate,
@@ -89,11 +90,8 @@ import {
 } from "./order.utils.js";
 
 const CHECKOUT_ENDPOINT = "orders.checkout";
-const CART_EMPTY_STATUS = 400;
-const ITEMS_UNAVAILABLE_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const SERVICE_UNAVAILABLE_STATUS = 503;
+const CART_EMPTY_STATUS = HTTP_STATUS.BAD_REQUEST;
+const ITEMS_UNAVAILABLE_STATUS = HTTP_STATUS.CONFLICT;
 
 const FULFILMENT_ADVANCE_FROM: Partial<Record<FulfilmentStatus, FulfilmentStatus[]>> = {
   [FulfilmentStatus.PACKED]: [FulfilmentStatus.PLACED],
@@ -195,13 +193,17 @@ const checkoutOnce = async (
   if (buyNow) {
     const product = await productRepository.findById(buyNow.productId);
     if (!product || product.status !== ProductStatus.APPROVED || product.deletedAt) {
-      throw new AppError("NOT_FOUND", "This product is no longer available.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "NOT_FOUND",
+        "This product is no longer available.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     const ownedSizeIds = await productRepository.findSizeIdsForProduct(buyNow.productId, [
       buyNow.sizeId,
     ]);
     if (ownedSizeIds.length === 0) {
-      throw new AppError("NOT_FOUND", "This size is no longer available.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "This size is no longer available.", HTTP_STATUS.NOT_FOUND);
     }
     lines = [
       {
@@ -363,7 +365,7 @@ const checkoutOnce = async (
     throw new AppError(
       "COMMISSION_RULE_NOT_CONFIGURED",
       "Checkout isn't available right now. Please try again shortly.",
-      SERVICE_UNAVAILABLE_STATUS,
+      HTTP_STATUS.SERVICE_UNAVAILABLE,
     );
   }
 
@@ -434,7 +436,7 @@ const checkoutOnce = async (
         throw new AppError(
           "COUPON_EXHAUSTED",
           "This coupon has reached its limit.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       try {
@@ -450,7 +452,7 @@ const checkoutOnce = async (
           throw new AppError(
             "COUPON_ALREADY_USED",
             "You've already used this coupon.",
-            CONFLICT_STATUS,
+            HTTP_STATUS.CONFLICT,
           );
         }
         throw error;
@@ -558,14 +560,14 @@ export const orderService = {
   ): Promise<OrderView> {
     return withIdempotency(userId, CHECKOUT_ENDPOINT, idempotencyKey, async () => {
       const user = await userRepository.findById(userId);
-      if (!user) throw new AppError("NOT_FOUND", "Account not found.", NOT_FOUND_STATUS);
+      if (!user) throw new AppError("NOT_FOUND", "Account not found.", HTTP_STATUS.NOT_FOUND);
       return checkoutOnce(userId, user.email, body);
     });
   },
 
   async getOrder(userId: string, orderId: string): Promise<OrderView> {
     const order = await orderRepository.findByIdForUser(userId, orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     return toOrderView(order);
   },
 
@@ -588,13 +590,13 @@ export const orderService = {
 
   async getOrderAdmin(orderId: string): Promise<OrderAdminView> {
     const order = await orderRepository.findByIdAdmin(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     return toOrderAdminView(order);
   },
 
   async advanceFulfilment(orderId: string, { status }: AdvanceFulfilmentBody): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
 
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const deliveredAt = status === FulfilmentStatus.DELIVERED ? new Date() : undefined;
@@ -609,7 +611,7 @@ export const orderService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This order can't move to that status from where it is.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -638,15 +640,15 @@ export const orderService = {
 
   async cancel(orderId: string, actor: CancelOrderActor, reason: string): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     if (actor.type === "BUYER" && order.userId !== actor.userId) {
-      throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (!CANCELLABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
         "INVALID_TRANSITION",
         "Only orders that haven't shipped yet can be cancelled.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -721,7 +723,7 @@ export const orderService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This order's status changed — refresh and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -761,12 +763,12 @@ export const orderService = {
     reason: string,
   ): Promise<OrderReturnOutcome> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     if (!RETURNABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
         "INVALID_TRANSITION",
         "Only orders that have shipped or been delivered can be marked as returned.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -810,7 +812,7 @@ export const orderService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This order's status changed — refresh and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -860,7 +862,7 @@ export const orderService = {
   ): Promise<BrandFulfilmentGroupDetailView> {
     const brandId = await requireBrandId(userId);
     const group = await orderRepository.findFulfilmentGroupForBrand(groupId, brandId);
-    if (!group) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!group) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     return toBrandFulfilmentGroupDetailView(group);
   },
 
@@ -871,7 +873,7 @@ export const orderService = {
   ): Promise<BrandFulfilmentGroupDetailView> {
     const brandId = await requireBrandId(userId);
     const existing = await orderRepository.findFulfilmentGroupStatusForBrand(groupId, brandId);
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
 
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const advanced = await orderRepository.advanceFulfilmentGroup(
@@ -885,7 +887,7 @@ export const orderService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This shipment can't move to that status from where it is.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -907,7 +909,7 @@ export const orderService = {
     }
 
     const updatedGroup = await orderRepository.findFulfilmentGroupForBrand(groupId, brandId);
-    if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     return toBrandFulfilmentGroupDetailView(updatedGroup);
   },
 
@@ -918,7 +920,7 @@ export const orderService = {
   ): Promise<void> {
     const brandId = await requireBrandId(userId);
     const existing = await orderRepository.findFulfilmentGroupStatusForBrand(groupId, brandId);
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
 
     const flagged = await orderRepository.flagFulfilmentGroupCancellationRequest(
       groupId,
@@ -930,7 +932,7 @@ export const orderService = {
       throw new AppError(
         "INVALID_STATE",
         "This shipment already has a cancellation request, or is already cancelled.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

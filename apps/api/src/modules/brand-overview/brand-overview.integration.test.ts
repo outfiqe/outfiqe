@@ -5,6 +5,7 @@ import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
@@ -24,8 +25,6 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { RECENT_ORDER_LIMIT } from "./brand-overview.constants.js";
 
-const OK_STATUS = 200;
-const NOT_FOUND_STATUS = 404;
 const TREND_WINDOW_DAYS = 30;
 const LAST_WINDOW_ORDER_DAYS_AGO = 5;
 const PREVIOUS_WINDOW_ORDER_DAYS_AGO = 40;
@@ -190,7 +189,7 @@ describe("GET /api/brands/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(orphan.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("returns a full zero-filled trend for a brand with no products or orders", async () => {
@@ -198,7 +197,7 @@ describe("GET /api/brands/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(member.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { kpis, trend, recentOrders } = response.body.data;
     expect(kpis).toMatchObject({
       lifetimeRevenue: 0,
@@ -261,7 +260,7 @@ describe("GET /api/brands/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(member.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { kpis, trend, recentOrders } = response.body.data;
 
     expect(kpis.lifetimeRevenue).toBe((2 + 1 + 9) * 1000);
@@ -299,7 +298,7 @@ describe("GET /api/brands/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(member.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.kpis.pendingPayout).toBe(4252 + 1000);
     expect(response.body.data.kpis.availablePayout).toBe(800);
   });

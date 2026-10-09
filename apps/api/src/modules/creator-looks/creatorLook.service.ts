@@ -1,6 +1,7 @@
 import { LRUCache } from "lru-cache";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
@@ -63,9 +64,6 @@ import type {
 } from "./creatorLook.types.js";
 import { toSuggestion } from "./creatorLook.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const UNAUTHORIZED_STATUS = 401;
-
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
 const MS_PER_SECOND = 1000;
@@ -74,7 +72,7 @@ const autocompleteMemoryCache = new LRUCache<string, PostSuggestion[]>({
   max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
   ttl: CACHE_TTL.LOOK_AUTOCOMPLETE * MS_PER_SECOND,
 });
-const VALIDATION_STATUS = 422;
+const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const FOLLOWING_TAB = "following";
 const TRENDING_TAB = "trending";
@@ -85,13 +83,15 @@ const isPlatformModerator = (principal: { userId: string; role: UserRole }): Pro
 
 const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
-  if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
+  if (!look)
+    throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", HTTP_STATUS.NOT_FOUND);
   return look;
 };
 
 const requireOwnedLook = async (lookId: string, userId: string): Promise<CreatorLookEditDetail> => {
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
-  if (!look) throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
+  if (!look)
+    throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
   return look;
 };
 
@@ -115,7 +115,7 @@ const requireTopLevelComment = async (
 ): Promise<{ id: string; creatorLookId: string; userId: string }> => {
   const comment = await creatorLookRepository.findCommentById(commentId);
   if (!comment || comment.creatorLookId !== lookId) {
-    throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
+    throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", HTTP_STATUS.NOT_FOUND);
   }
   if (comment.parentCommentId !== null) {
     throw new AppError(
@@ -135,7 +135,7 @@ const requireApprovedProducts = async (
     throw new AppError(
       "PRODUCT_NOT_AVAILABLE",
       "One or more tagged products aren't available.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return new Map(products.map((product) => [product.id, product]));
@@ -348,13 +348,13 @@ export const creatorLookService = {
   async remove(lookId: string, principal: { userId: string; role: UserRole }): Promise<void> {
     const existing = await creatorLookRepository.findActiveByIdForRemoval(lookId);
     if (!existing) {
-      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
     }
 
     const isOwner = existing.creatorId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
     if (!isOwner && !isModerator) {
-      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
     }
 
     await creatorLookRepository.softDelete(lookId);
@@ -382,13 +382,21 @@ export const creatorLookService = {
   ): Promise<void> {
     const comment = await creatorLookRepository.findCommentById(commentId);
     if (!comment || comment.creatorLookId !== lookId) {
-      throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "COMMENT_NOT_FOUND",
+        "This chime no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     const isOwner = comment.userId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
     if (!isOwner && !isModerator) {
-      throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "COMMENT_NOT_FOUND",
+        "This chime no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     await creatorLookRepository.softDeleteComment({
@@ -436,7 +444,7 @@ export const creatorLookService = {
   async getPublicById(lookId: string, viewerId: string | undefined): Promise<CreatorLookFeedPost> {
     await requireActiveLook(lookId);
     const post = await creatorLookRepository.findPublicById(lookId, viewerId);
-    if (!post) throw new AppError("NOT_FOUND", "Drop not found.", NOT_FOUND_STATUS);
+    if (!post) throw new AppError("NOT_FOUND", "Drop not found.", HTTP_STATUS.NOT_FOUND);
     return post;
   },
 
@@ -449,7 +457,7 @@ export const creatorLookService = {
         throw new AppError(
           "UNAUTHORIZED",
           "Sign in to see drops from muses you follow.",
-          UNAUTHORIZED_STATUS,
+          HTTP_STATUS.UNAUTHORIZED,
         );
       }
 
@@ -711,7 +719,7 @@ export const creatorLookService = {
       throw new AppError(
         "TAG_NOT_FOUND",
         "This product isn't tagged in this look.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 

@@ -5,6 +5,7 @@ import express from "express";
 import helmet from "helmet";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { isAllowedOrigin } from "#lib/cors.utils.js";
 import {
@@ -109,7 +110,6 @@ import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
-const SERVICE_UNAVAILABLE_STATUS = 503;
 
 export const createApp = () => {
   const app = express();
@@ -176,7 +176,7 @@ export const createApp = () => {
     } catch (error) {
       logger.error(`Readiness check failed: ${describeError(error)}`);
       res
-        .status(SERVICE_UNAVAILABLE_STATUS)
+        .status(HTTP_STATUS.SERVICE_UNAVAILABLE)
         .json({ success: false, message: "Service is not ready", data: null });
     }
   });

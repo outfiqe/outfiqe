@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandRole,
@@ -32,10 +33,6 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { BUILD_ITEM_LEFT_OUT_REASON } from "./outfit.constants.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
 const BUILD_COMMISSION_AMOUNT = 90;
 const SOLD_OUT_STOCK = 0;
 
@@ -70,7 +67,7 @@ const lockedBuild = async (owner: OutfitTestUser, editors: OutfitTestUser[] = []
     const added = await writeAtCurrentVersion(owner, "post", outfitId, "/members", {
       userIds: editors.map(({ id }) => id),
     });
-    expect(added.status).toBe(OK_STATUS);
+    expect(added.status).toBe(HTTP_STATUS.OK);
   }
   const shirt = await createOutfitProduct("tops", { price: 3_200 });
   const trousers = await createOutfitProduct("bottoms", { price: 1_200 });
@@ -84,7 +81,7 @@ const lockedBuild = async (owner: OutfitTestUser, editors: OutfitTestUser[] = []
     await writeAtCurrentVersion(member, "put", outfitId, "/happy", { isHappy: true });
   }
   const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-  expect(locked.status).toBe(OK_STATUS);
+  expect(locked.status).toBe(HTTP_STATUS.OK);
   return { outfitId, shirt, trousers };
 };
 
@@ -92,7 +89,7 @@ const makePublic = async (owner: OutfitTestUser, outfitId: string) => {
   const response = await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
     visibility: "PUBLIC",
   });
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
 };
 
 const addBuildToCart = (
@@ -181,7 +178,7 @@ describe("buying from a build", () => {
       ],
     });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.addedProductIds).toEqual([shirt.id]);
     expect(response.body.data.leftOut).toEqual([
       { productId: trousers.id, reason: BUILD_ITEM_LEFT_OUT_REASON.SOLD_OUT },
@@ -211,7 +208,7 @@ describe("buying from a build", () => {
       sizes: [{ productId: shirt.id, sizeLabel: "M" }],
     });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.addedProductIds).toEqual([]);
     expect(response.body.data.leftOut).toEqual([
       { productId: shirt.id, reason: BUILD_ITEM_LEFT_OUT_REASON.SIZE_NOT_OFFERED },
@@ -233,8 +230,8 @@ describe("buying from a build", () => {
     const asOutsider = await addBuildToCart(outsider, outfitId, body);
     const asBrand = await addBuildToCart(brandOwner, outfitId, body);
 
-    expect(asOutsider.status).toBe(NOT_FOUND_STATUS);
-    expect(asBrand.status).toBe(FORBIDDEN_STATUS);
+    expect(asOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(asBrand.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });
 
@@ -257,8 +254,8 @@ describe("Build commission", () => {
     });
     const checkout = await checkOutCart(buyer);
 
-    expect(added.status).toBe(OK_STATUS);
-    expect(checkout.status).toBe(CREATED_STATUS);
+    expect(added.status).toBe(HTTP_STATUS.OK);
+    expect(checkout.status).toBe(HTTP_STATUS.CREATED);
     const shirtLine = await prisma.orderItem.findFirstOrThrow({
       where: { orderId: checkout.body.data.id, productId: shirt.id },
       include: { commissions: true },
@@ -293,7 +290,7 @@ describe("Build commission", () => {
     });
     const checkout = await checkOutCart(editor);
 
-    expect(checkout.status).toBe(CREATED_STATUS);
+    expect(checkout.status).toBe(HTTP_STATUS.CREATED);
     const commissions = await prisma.creatorCommission.findMany({
       where: { orderItem: { orderId: checkout.body.data.id } },
     });
@@ -327,9 +324,9 @@ describe("Build commission", () => {
       .get("/api/commissions/me/eligibility")
       .set("Authorization", owner.auth);
 
-    expect(beforeAnySale.status).toBe(FORBIDDEN_STATUS);
+    expect(beforeAnySale.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(eligibilityBeforeSale.body.data).toEqual({ canEarn: false });
-    expect(afterSale.status).toBe(OK_STATUS);
+    expect(afterSale.status).toBe(HTTP_STATUS.OK);
     expect(afterSale.body.data.pending).toBe(BUILD_COMMISSION_AMOUNT);
     expect(eligibilityAfterSale.body.data).toEqual({ canEarn: true });
   });

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getPlatformPrincipal } from "#modules/platform-access/platform-access.middleware.js";
@@ -12,8 +13,6 @@ import type {
   UpdateAnnouncementBody,
 } from "./announcement.schemas.js";
 import { announcementService } from "./announcement.service.js";
-
-const CREATED_STATUS = 201;
 
 export const announcementController = {
   async create(_req: Request, res: Response) {
@@ -29,7 +28,7 @@ export const announcementController = {
       expiresAt: body.expiresAt ?? null,
       createdByAdminId: actorUserId,
     });
-    sendSuccess(res, announcement, "Announcement drafted.", CREATED_STATUS);
+    sendSuccess(res, announcement, "Announcement drafted.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

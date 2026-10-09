@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   createAdminSession,
@@ -16,9 +17,6 @@ const ITEMS_PER_BOARD_KEY = "outfit.maxItemsPerBoard";
 const { defaultValue: defaultItemsPerBoard, maximum: maxItemsPerBoard } =
   PLATFORM_SETTING_REGISTRY[ITEMS_PER_BOARD_KEY];
 const CHANGED_ITEMS_PER_BOARD = 9;
-const OK_STATUS = 200;
-const UNPROCESSABLE_STATUS = 422;
-const FORBIDDEN_STATUS = 403;
 
 const findSetting = (settings: { key: string }[], key: string) =>
   settings.find((setting) => setting.key === key);
@@ -33,7 +31,7 @@ describe("platform settings API", () => {
 
     const response = await request(testApp).get(SETTINGS_PATH).set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(findSetting(response.body.data, ITEMS_PER_BOARD_KEY)).toMatchObject({
       value: defaultItemsPerBoard,
       defaultValue: defaultItemsPerBoard,
@@ -50,7 +48,7 @@ describe("platform settings API", () => {
       .set("Authorization", authHeader)
       .send({ value: CHANGED_ITEMS_PER_BOARD });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toEqual({
       key: ITEMS_PER_BOARD_KEY,
       before: defaultItemsPerBoard,
@@ -76,7 +74,7 @@ describe("platform settings API", () => {
       .set("Authorization", authHeader)
       .send({ value: maxItemsPerBoard + 1 });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.message).toBe(
       `Items per board must be a whole number from 1 to ${maxItemsPerBoard}.`,
     );
@@ -94,7 +92,7 @@ describe("platform settings API", () => {
       .set("Authorization", authHeader)
       .send({ value: 3 });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.message).toMatch(/Items needed to lock/);
     expect(await platformSettingsService.get(ITEMS_PER_BOARD_KEY)).toBe(defaultItemsPerBoard);
   });
@@ -110,7 +108,7 @@ describe("platform settings API", () => {
       .delete(`${SETTINGS_PATH}/${ITEMS_PER_BOARD_KEY}`)
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toMatchObject({
       before: CHANGED_ITEMS_PER_BOARD,
       after: defaultItemsPerBoard,
@@ -144,7 +142,7 @@ describe("platform settings API", () => {
       .set("Authorization", authHeader)
       .send({ value: CHANGED_ITEMS_PER_BOARD });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });
 

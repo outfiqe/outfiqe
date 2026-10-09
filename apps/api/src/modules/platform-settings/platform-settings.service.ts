@@ -1,6 +1,7 @@
 import { addMilliseconds } from "date-fns/addMilliseconds";
 import { isFuture } from "date-fns/isFuture";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
@@ -27,8 +28,6 @@ import {
   withSettingValue,
 } from "./platform-settings.utils.js";
 
-const UNPROCESSABLE_STATUS = 422;
-
 let cachedSettings: { values: PlatformSettingValues; expiresAt: Date } | null = null;
 
 const loadSettingValues = async (client: DbClient): Promise<PlatformSettingValues> => {
@@ -44,7 +43,7 @@ const loadSettingValues = async (client: DbClient): Promise<PlatformSettingValue
 const assertNoBrokenRule = (values: PlatformSettingValues): void => {
   const brokenRuleMessage = findBrokenSettingRule(values);
   if (brokenRuleMessage) {
-    throw new AppError("SETTING_RULE_BROKEN", brokenRuleMessage, UNPROCESSABLE_STATUS);
+    throw new AppError("SETTING_RULE_BROKEN", brokenRuleMessage, HTTP_STATUS.UNPROCESSABLE_ENTITY);
   }
 };
 
@@ -115,7 +114,11 @@ export const platformSettingsService = {
   ): Promise<PlatformSettingChange> {
     const parsedValue = settingValueSchema(key).safeParse(requestedValue);
     if (!parsedValue.success) {
-      throw new AppError("INVALID_SETTING_VALUE", describeAllowedRange(key), UNPROCESSABLE_STATUS);
+      throw new AppError(
+        "INVALID_SETTING_VALUE",
+        describeAllowedRange(key),
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      );
     }
 
     const change = await applySettingChange(key, parsedValue.data, updatedById);

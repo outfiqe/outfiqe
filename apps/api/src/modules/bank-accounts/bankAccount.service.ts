@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   decryptAccountNumber,
@@ -23,14 +24,12 @@ import type {
 } from "./bankAccount.types.js";
 import { toAdminBankAccountView, toPublicBankAccount } from "./bankAccount.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-
 export const bankAccountService = {
   async create(userId: string, body: BankAccountBody): Promise<CreateBankAccountResult> {
     await nepalBankService.requireActiveBank(body.bankId);
 
     const user = await userRepository.findById(userId);
-    if (!user) throw new AppError("NOT_FOUND", "Account not found.", NOT_FOUND_STATUS);
+    if (!user) throw new AppError("NOT_FOUND", "Account not found.", HTTP_STATUS.NOT_FOUND);
 
     const bankAccount = await prisma.$transaction(async (tx) => {
       const existingCount = await bankAccountRepository.countForUser(userId, tx);
@@ -63,19 +62,19 @@ export const bankAccountService = {
   async setDefault(userId: string, id: string): Promise<void> {
     const updated = await bankAccountRepository.setDefault(userId, id);
     if (!updated) {
-      throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
     }
   },
 
   async verify(id: string, adminId: string): Promise<void> {
     const account = await bankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
     await bankAccountRepository.verify(id, adminId);
   },
 
   async reveal(id: string, adminId: string): Promise<RevealedBankAccount> {
     const account = await bankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
+    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
 
     await bankAccountRepository.createAccessLog(id, adminId);
     return { accountNumber: decryptAccountNumber(account.accountNumberCiphertext) };

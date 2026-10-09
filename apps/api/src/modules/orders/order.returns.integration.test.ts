@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
@@ -24,9 +25,6 @@ import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const CONFLICT_STATUS = 409;
 const STARTING_STOCK = 10;
 const RETURN_REASON = "Parcel came back from Pathao";
 
@@ -114,7 +112,7 @@ const placeCodOrder = async (adminId: string) => {
       paymentMethod: PaymentMethod.COD,
       buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
     });
-  expect(checkout.status).toBe(CREATED_STATUS);
+  expect(checkout.status).toBe(HTTP_STATUS.CREATED);
   const orderItem = await prisma.orderItem.findFirstOrThrow({
     where: { orderId: checkout.body.data.id },
   });
@@ -127,7 +125,7 @@ const advanceTo = async (authHeader: string, orderId: string, statuses: Fulfilme
       .patch(`/api/orders/admin/${orderId}/fulfilment`)
       .set("Authorization", authHeader)
       .send({ status });
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
   }
 };
 
@@ -171,7 +169,7 @@ describe("POST /api/orders/admin/:orderId/return", () => {
 
     const response = await markReturned(authHeader, orderId);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toMatchObject({
       voidedCommissionCount: 1,
       voidedPayoutCount: 1,
@@ -207,7 +205,7 @@ describe("POST /api/orders/admin/:orderId/return", () => {
 
     const response = await markReturned(authHeader, orderId);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toMatchObject({ paidCommissionCount: 1, needsClawback: true });
     const untouched = await prisma.creatorCommission.findUniqueOrThrow({
       where: { id: paidCommission.id },
@@ -224,9 +222,9 @@ describe("POST /api/orders/admin/:orderId/return", () => {
     const firstReturn = await markReturned(authHeader, orderId);
     const secondReturn = await markReturned(authHeader, orderId);
 
-    expect(beforeShipping.status).toBe(CONFLICT_STATUS);
-    expect(firstReturn.status).toBe(OK_STATUS);
-    expect(secondReturn.status).toBe(CONFLICT_STATUS);
+    expect(beforeShipping.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(firstReturn.status).toBe(HTTP_STATUS.OK);
+    expect(secondReturn.status).toBe(HTTP_STATUS.CONFLICT);
     const restockEntries = await prisma.inventoryLedgerEntry.count({
       where: { sourceId: orderId, kind: InventoryMovementKind.ORDER_RESTORE },
     });

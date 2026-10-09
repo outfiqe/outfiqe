@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { TagRejectionReason } from "#generated/prisma/enums.js";
 import { TagApprovalSource, TagReviewStatus } from "#generated/prisma/enums.js";
@@ -9,9 +10,7 @@ import { tagReviewRepository } from "./tagReview.repository.js";
 import type { ApproveTagBody, ListTagReviewsQuery, RejectTagBody } from "./tagReview.schemas.js";
 import type { ReviewableTag, TagReviewMetrics, TagReviewQueuePage } from "./tagReview.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const INVALID_TRANSITION_STATUS = 422;
-const CONFLICT_STATUS = 409;
+const INVALID_TRANSITION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const requireReviewableTag = async (userId: string, tagId: string): Promise<ReviewableTag> => {
   const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
@@ -20,7 +19,7 @@ const requireReviewableTag = async (userId: string, tagId: string): Promise<Revi
     throw new AppError(
       "TAG_REVIEW_NOT_FOUND",
       "This tag review no longer exists.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return tag;
@@ -117,7 +116,7 @@ const requireAppliedTransition = (applied: boolean): void => {
   throw new AppError(
     "TAG_REVIEW_ALREADY_RESOLVED",
     "Someone already reviewed this tag — refresh to see its current status.",
-    CONFLICT_STATUS,
+    HTTP_STATUS.CONFLICT,
   );
 };
 

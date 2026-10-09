@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BankType,
@@ -23,11 +24,6 @@ import { redis } from "#redis/redis.client.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const BAD_REQUEST_STATUS = 400;
-const CONFLICT_STATUS = 409;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -302,7 +298,7 @@ describe("GET /api/withdraw/policy", () => {
       .query({ ownerType: "CREATOR" })
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.ownerType).toBe("CREATOR");
     expect(response.body.data.minAmount).toBe(500);
   });
@@ -315,7 +311,7 @@ describe("GET /api/withdraw/policy", () => {
       .query({ ownerType: "CREATOR" })
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.minAmount).toBe(500);
     expect(response.body.data.maxAmount).toBe(100_000);
 
@@ -349,7 +345,7 @@ describe("GET /api/withdraw/eligibility", () => {
       .query({ ownerType: "CREATOR" })
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.availableBalance).toBe(5000);
     expect(response.body.data.hasVerifiedBankAccount).toBe(false);
     expect(response.body.data.windowOpen).toBe(true);
@@ -364,7 +360,7 @@ describe("GET /api/withdraw/eligibility", () => {
       .query({ ownerType: "CREATOR" })
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.windowOpen).toBe(false);
   });
 
@@ -406,7 +402,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 1000 });
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.status).toBe(WithdrawRequestStatus.PENDING);
     expect(response.body.data.requiresSecondSignOff).toBe(false);
   });
@@ -421,7 +417,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: randomUUID(), amount: 1000 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("BANK_ACCOUNT_NOT_VERIFIED");
   });
 
@@ -436,7 +432,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 100 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("AMOUNT_TOO_LOW");
   });
 
@@ -451,7 +447,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 2000 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("AMOUNT_TOO_HIGH");
   });
 
@@ -466,7 +462,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 1000 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("INSUFFICIENT_BALANCE");
   });
 
@@ -481,7 +477,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 1000 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("WINDOW_CLOSED");
   });
 
@@ -496,14 +492,14 @@ describe("POST /api/withdraw/requests — muse", () => {
       .post("/api/withdraw/requests")
       .set("Authorization", authHeader)
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 500 });
-    expect(first.status).toBe(CREATED_STATUS);
+    expect(first.status).toBe(HTTP_STATUS.CREATED);
 
     const second = await request(testApp)
       .post("/api/withdraw/requests")
       .set("Authorization", authHeader)
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 500 });
 
-    expect(second.status).toBe(BAD_REQUEST_STATUS);
+    expect(second.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(second.body.code).toBe("ATTEMPTS_EXHAUSTED");
   });
 
@@ -535,7 +531,7 @@ describe("POST /api/withdraw/requests — muse", () => {
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER))
       .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 500 });
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("COOLDOWN_ACTIVE");
   });
 });
@@ -552,7 +548,7 @@ describe("POST /api/withdraw/requests — business soft ceiling", () => {
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
       .send({ ownerType: "BUSINESS", bankAccountId: bankAccount.id, amount: 550_000 });
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.status).toBe(WithdrawRequestStatus.UNDER_REVIEW);
     expect(response.body.data.requiresSecondSignOff).toBe(true);
   });
@@ -568,7 +564,7 @@ describe("POST /api/withdraw/requests — business soft ceiling", () => {
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
       .send({ ownerType: "BUSINESS", bankAccountId: bankAccount.id, amount: 5_000 });
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.status).toBe(WithdrawRequestStatus.PENDING);
     expect(response.body.data.requiresSecondSignOff).toBe(false);
   });
@@ -583,7 +579,7 @@ describe("POST /api/withdraw/requests — business soft ceiling", () => {
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
       .send({ ownerType: "BUSINESS", bankAccountId: bankAccount.id, amount: 5_000 });
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.status).toBe(WithdrawRequestStatus.PENDING);
 
     const persisted = await prisma.withdrawPolicy.findFirst({
@@ -612,8 +608,8 @@ describe("POST /api/withdraw/requests — concurrent double-spend guard", () => 
     const [first, second] = await Promise.all([submitWithdrawRequest(), submitWithdrawRequest()]);
 
     const statuses = [first.status, second.status].sort();
-    expect(statuses[0]).toBe(CREATED_STATUS);
-    expect([BAD_REQUEST_STATUS, CONFLICT_STATUS]).toContain(statuses[1]);
+    expect(statuses[0]).toBe(HTTP_STATUS.CREATED);
+    expect([HTTP_STATUS.BAD_REQUEST, HTTP_STATUS.CONFLICT]).toContain(statuses[1]);
 
     const reservedRequests = await prisma.withdrawRequest.findMany({
       where: {
@@ -651,7 +647,7 @@ describe("GET /api/withdraw/requests", () => {
       .query({ ownerType: "CREATOR" })
       .set("Authorization", authHeaderFor(creator.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.items).toHaveLength(1);
     expect(response.body.data.items[0].amount).toBe(500);
   });
@@ -677,7 +673,7 @@ describe("GET /api/withdraw/requests", () => {
       .query({ ownerType: "CREATOR", limit: 1 })
       .set("Authorization", authHeader);
 
-    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.status).toBe(HTTP_STATUS.OK);
     expect(firstPage.body.data.items).toHaveLength(1);
     expect(firstPage.body.data.nextCursor).not.toBeNull();
 
@@ -686,7 +682,7 @@ describe("GET /api/withdraw/requests", () => {
       .query({ ownerType: "CREATOR", limit: 1, cursor: firstPage.body.data.nextCursor })
       .set("Authorization", authHeader);
 
-    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.status).toBe(HTTP_STATUS.OK);
     expect(secondPage.body.data.items).toHaveLength(1);
     expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
   });

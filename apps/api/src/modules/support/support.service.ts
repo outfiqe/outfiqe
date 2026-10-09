@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
   supportRequestReceivedTemplate,
   supportResolvedTemplate,
@@ -42,15 +43,10 @@ import type {
   SupportTicketWithThread,
 } from "./support.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const BAD_REQUEST_STATUS = 400;
-const FORBIDDEN_STATUS = 403;
-const CONFLICT_STATUS = 409;
-
 type RequestContext = { sourceIp: string | null; userAgent: string | null };
 
 const ticketNotFound = (): AppError =>
-  new AppError("SUPPORT_TICKET_NOT_FOUND", "Support request not found.", NOT_FOUND_STATUS);
+  new AppError("SUPPORT_TICKET_NOT_FOUND", "Support request not found.", HTTP_STATUS.NOT_FOUND);
 
 const resolveSegment = (user: {
   role: UserRole;
@@ -82,7 +78,7 @@ const requireLegalTransition = (from: SupportStatus, to: SupportStatus): void =>
     throw new AppError(
       "INVALID_SUPPORT_TRANSITION",
       `A ${from.toLowerCase()} request can't move to ${to.toLowerCase()}.`,
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 };
@@ -113,7 +109,7 @@ export const supportService = {
         throw new AppError(
           "ORDER_NOT_FOUND",
           "That order isn't on your account.",
-          BAD_REQUEST_STATUS,
+          HTTP_STATUS.BAD_REQUEST,
         );
       }
     }
@@ -197,13 +193,13 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_REOPEN_INVALID",
         "This reopen link is no longer valid.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     if (!REOPENABLE_STATUSES.includes(found.status)) {
       throw new AppError(
         "SUPPORT_REOPEN_INVALID",
         "This request has already been reopened.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -293,7 +289,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_STATUS_CHANGED",
         "This request's status changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     if (input.status === ticket.status) return ticket;
@@ -305,7 +301,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_STATUS_CHANGED",
         "This request's status changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -352,7 +348,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_ASSIGNEE_CHANGED",
         "This request's assignee changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -360,7 +356,7 @@ export const supportService = {
       throw new AppError(
         "FORBIDDEN",
         "You can only assign support requests to yourself.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -376,7 +372,7 @@ export const supportService = {
         throw new AppError(
           "SUPPORT_ASSIGNEE_INVALID",
           "That account can't be assigned support requests.",
-          BAD_REQUEST_STATUS,
+          HTTP_STATUS.BAD_REQUEST,
         );
       }
     }
@@ -390,7 +386,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_ASSIGNEE_CHANGED",
         "This request's assignee changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -421,7 +417,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_PRIORITY_CHANGED",
         "This request's priority changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -430,7 +426,7 @@ export const supportService = {
       throw new AppError(
         "SUPPORT_PRIORITY_CHANGED",
         "This request's priority changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

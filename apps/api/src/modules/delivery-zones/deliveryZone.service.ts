@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
@@ -19,13 +20,10 @@ import type {
 } from "./deliveryZone.types.js";
 import { normalizeCityName, toFeeValues, toSnapshot, toView } from "./deliveryZone.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const SERVER_ERROR_STATUS = 500;
-
 const requireZone = async (id: string): Promise<DeliveryZoneRecord> => {
   const zone = await deliveryZoneRepository.findById(id);
-  if (!zone) throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", NOT_FOUND_STATUS);
+  if (!zone)
+    throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", HTTP_STATUS.NOT_FOUND);
   return zone;
 };
 
@@ -35,7 +33,7 @@ const requireDefaultZone = async (): Promise<DeliveryZoneRecord> => {
     throw new AppError(
       "NO_DEFAULT_ZONE",
       "No default delivery zone is configured.",
-      SERVER_ERROR_STATUS,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
     );
   }
   return zone;
@@ -49,7 +47,7 @@ const withCityConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
       throw new AppError(
         "CITY_ALREADY_ASSIGNED",
         "One of these cities already belongs to another zone.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -136,7 +134,7 @@ export const deliveryZoneService = {
 
       const zone = await deliveryZoneRepository.findById(zoneId, tx);
       if (!zone) {
-        throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", NOT_FOUND_STATUS);
+        throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", HTTP_STATUS.NOT_FOUND);
       }
 
       await deliveryZoneRepository.recordHistory(tx, {
@@ -158,7 +156,7 @@ export const deliveryZoneService = {
       throw new AppError(
         "DEFAULT_ZONE_UNDELETABLE",
         "The default zone can't be deleted. Set another zone as default first.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     await deliveryZoneRepository.delete(id);

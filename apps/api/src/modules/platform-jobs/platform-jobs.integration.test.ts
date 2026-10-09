@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   OUTBOX_MAX_PUBLISH_ATTEMPTS,
@@ -15,11 +16,6 @@ import {
   createRoleLimitedStaffSession,
 } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const UNPROCESSABLE_STATUS = 422;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -52,7 +48,7 @@ describe("jobs and health", () => {
 
     const health = await asStaff(authHeader).get("/jobs");
 
-    expect(health.status).toBe(OK_STATUS);
+    expect(health.status).toBe(HTTP_STATUS.OK);
     expect(health.body.data.outbox).toMatchObject({ unpublishedCount: 2, stuckCount: 1 });
     expect(health.body.data.outbox.oldestUnpublishedAt).not.toBeNull();
     expect(health.body.data.stuckEvents).toEqual([
@@ -70,7 +66,7 @@ describe("jobs and health", () => {
 
     const retried = await asStaff(authHeader).post(`/jobs/outbox/${stuck.id}/retry`);
 
-    expect(retried.status).toBe(OK_STATUS);
+    expect(retried.status).toBe(HTTP_STATUS.OK);
     const event = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: stuck.id } });
     expect(event).toMatchObject({ attempts: 0, lastError: null });
     const audit = await prisma.platformAuditLog.findFirstOrThrow({
@@ -85,7 +81,7 @@ describe("jobs and health", () => {
 
     const retried = await asStaff(authHeader).post(`/jobs/outbox/${sent.id}/retry`);
 
-    expect(retried.status).toBe(NOT_FOUND_STATUS);
+    expect(retried.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("retries failed jobs only on a known queue", async () => {
@@ -93,11 +89,11 @@ describe("jobs and health", () => {
     const staff = asStaff(authHeader);
 
     const known = await staff.post(`/jobs/queues/${OUTBOX_QUEUE_NAME.NOTIFY}/retry-failed`);
-    expect(known.status).toBe(OK_STATUS);
+    expect(known.status).toBe(HTTP_STATUS.OK);
     expect(known.body.data).toEqual({ retriedCount: 0 });
 
     const unknown = await staff.post("/jobs/queues/not-a-queue/retry-failed");
-    expect(unknown.status).toBe(UNPROCESSABLE_STATUS);
+    expect(unknown.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
   });
 
   it("keeps every job route from staff without the jobs permission", async () => {
@@ -105,10 +101,10 @@ describe("jobs and health", () => {
     const { authHeader } = await createRoleLimitedStaffSession("platform:builds:manage");
     const staff = asStaff(authHeader);
 
-    expect((await staff.get("/jobs")).status).toBe(FORBIDDEN_STATUS);
-    expect((await staff.post(`/jobs/outbox/${stuck.id}/retry`)).status).toBe(FORBIDDEN_STATUS);
+    expect((await staff.get("/jobs")).status).toBe(HTTP_STATUS.FORBIDDEN);
+    expect((await staff.post(`/jobs/outbox/${stuck.id}/retry`)).status).toBe(HTTP_STATUS.FORBIDDEN);
     expect((await staff.post(`/jobs/queues/${OUTBOX_QUEUE_NAME.NOTIFY}/retry-failed`)).status).toBe(
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   });
 });

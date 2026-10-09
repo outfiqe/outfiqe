@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandRole,
@@ -19,13 +20,6 @@ import { createAdminSession } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK = 200;
-const CREATED = 201;
-const UNPROCESSABLE = 422;
-const FORBIDDEN = 403;
-const NOT_FOUND = 404;
-const CONFLICT = 409;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -125,7 +119,7 @@ const checkoutBuyNow = async (buyerId: string, productId: string, sizeId: string
       paymentMethod: PaymentMethod.COD,
       buyNow: { productId, sizeId, qty: 2 },
     });
-  expect(response.status).toBe(CREATED);
+  expect(response.status).toBe(HTTP_STATUS.CREATED);
   return response.body.data.id as string;
 };
 
@@ -164,7 +158,7 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
     await checkoutBuyNow(buyerTwo.id, theirs.product.id, theirs.size.id);
 
     const all = await getGroups(owner.id);
-    expect(all.status).toBe(OK);
+    expect(all.status).toBe(HTTP_STATUS.OK);
     expect(all.body.data.items).toHaveLength(1);
     expect(all.body.data.items[0]).toMatchObject({
       status: FulfilmentStatus.PLACED,
@@ -182,13 +176,13 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
     const response = await request(testApp)
       .get("/api/orders/brand/fulfilment-groups")
       .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
-    expect(response.status).toBe(FORBIDDEN);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("returns an empty page for a brand with no shipments at all", async () => {
     const { owner } = await createBrandWithOwner();
     const response = await getGroups(owner.id);
-    expect(response.status).toBe(OK);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toMatchObject({ items: [], nextCursor: null });
   });
 
@@ -208,7 +202,7 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
     );
 
     const single = await getGroups(owner.id, { limit: "1" });
-    expect(single.status).toBe(OK);
+    expect(single.status).toBe(HTTP_STATUS.OK);
     expect(single.body.data.items).toHaveLength(1);
     expect(single.body.data.nextCursor).not.toBeNull();
 
@@ -220,7 +214,7 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
         owner.id,
         cursor ? { limit: "1", cursor } : { limit: "1" },
       );
-      expect(response.status).toBe(OK);
+      expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body.data.items).toHaveLength(1);
       seenGroupIds.push(response.body.data.items[0].id);
       lastNextCursor = response.body.data.nextCursor;
@@ -249,7 +243,7 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
 
     const response = await getGroup(owner.id, group.id);
 
-    expect(response.status).toBe(OK);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const detail = response.body.data;
     expect(detail.items).toHaveLength(1);
     expect(detail.items[0]).toMatchObject({ qty: 2, unitPrice: 1000, listUnitPrice: 1000 });
@@ -274,8 +268,8 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
     const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
     const group = await groupFor(orderId, brand.id);
 
-    expect((await getGroup(otherOwner.id, group.id)).status).toBe(NOT_FOUND);
-    expect((await getGroup(owner.id, randomUUID())).status).toBe(NOT_FOUND);
+    expect((await getGroup(otherOwner.id, group.id)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await getGroup(owner.id, randomUUID())).status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -290,18 +284,18 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
     const group = await groupFor(orderId, brand.id);
 
     expect((await patchGroup(owner.id, group.id, { status: FulfilmentStatus.PACKED })).status).toBe(
-      OK,
+      HTTP_STATUS.OK,
     );
 
     const noTracking = await patchGroup(owner.id, group.id, { status: FulfilmentStatus.SHIPPED });
-    expect(noTracking.status).toBe(UNPROCESSABLE);
+    expect(noTracking.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
     const shipped = await patchGroup(owner.id, group.id, {
       status: FulfilmentStatus.SHIPPED,
       carrier: "Pathao",
       trackingNumber: "PA-99881",
     });
-    expect(shipped.status).toBe(OK);
+    expect(shipped.status).toBe(HTTP_STATUS.OK);
     expect(shipped.body.data).toMatchObject({
       status: FulfilmentStatus.SHIPPED,
       carrier: "Pathao",
@@ -314,7 +308,7 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
 
     expect(
       (await patchGroup(owner.id, group.id, { status: FulfilmentStatus.DELIVERED })).status,
-    ).toBe(OK);
+    ).toBe(HTTP_STATUS.OK);
     const orderAfterDelivery = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     expect(orderAfterDelivery.fulfilmentSummary).toBe(OrderFulfilmentSummary.FULFILLED);
     expect(orderAfterDelivery.fulfilmentStatus).toBe(FulfilmentStatus.DELIVERED);
@@ -347,7 +341,7 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
         city: "Kathmandu",
         paymentMethod: PaymentMethod.COD,
       });
-    expect(checkout.status).toBe(CREATED);
+    expect(checkout.status).toBe(HTTP_STATUS.CREATED);
     const orderId = checkout.body.data.id as string;
 
     const groupA = await groupFor(orderId, brandA.id);
@@ -389,10 +383,10 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
       carrier: "Pathao",
       trackingNumber: "PA-1",
     });
-    expect(skip.status).toBe(CONFLICT);
+    expect(skip.status).toBe(HTTP_STATUS.CONFLICT);
 
     const foreign = await patchGroup(otherOwner.id, group.id, { status: FulfilmentStatus.PACKED });
-    expect(foreign.status).toBe(NOT_FOUND);
+    expect(foreign.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("rejects advancing a group that already has a pending cancellation request", async () => {
@@ -405,21 +399,21 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
     const group = await groupFor(orderId, brand.id);
 
     expect((await patchGroup(owner.id, group.id, { status: FulfilmentStatus.PACKED })).status).toBe(
-      OK,
+      HTTP_STATUS.OK,
     );
 
     const cancellationRequest = await request(testApp)
       .post(`/api/orders/brand/fulfilment-groups/${group.id}/request-cancellation`)
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
       .send({ reason: "Ran out of stock before packing" });
-    expect(cancellationRequest.status).toBe(OK);
+    expect(cancellationRequest.status).toBe(HTTP_STATUS.OK);
 
     const advanceAfterRequest = await patchGroup(owner.id, group.id, {
       status: FulfilmentStatus.SHIPPED,
       carrier: "Pathao",
       trackingNumber: "PA-2",
     });
-    expect(advanceAfterRequest.status).toBe(CONFLICT);
+    expect(advanceAfterRequest.status).toBe(HTTP_STATUS.CONFLICT);
 
     const stillPacked = await prisma.orderFulfilmentGroup.findUniqueOrThrow({
       where: { id: group.id },
@@ -446,7 +440,7 @@ describe("POST /api/orders/brand/fulfilment-groups/:groupId/request-cancellation
     const group = await groupFor(orderId, brand.id);
 
     const first = await requestCancellation(owner.id, group.id, "Out of stock after all");
-    expect(first.status).toBe(OK);
+    expect(first.status).toBe(HTTP_STATUS.OK);
 
     const flagged = await prisma.orderFulfilmentGroup.findUniqueOrThrow({
       where: { id: group.id },
@@ -455,6 +449,6 @@ describe("POST /api/orders/brand/fulfilment-groups/:groupId/request-cancellation
     expect(flagged.cancellationReason).toBe("Out of stock after all");
 
     const second = await requestCancellation(owner.id, group.id, "Still out of stock");
-    expect(second.status).toBe(CONFLICT);
+    expect(second.status).toBe(HTTP_STATUS.CONFLICT);
   });
 });

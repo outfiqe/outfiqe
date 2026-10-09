@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { heroSlideRepository } from "./heroSlide.repository.js";
@@ -5,11 +6,9 @@ import type { CreateHeroSlideBody, UpdateHeroSlideBody } from "./heroSlide.schem
 import type { HeroSlideRecord, PublicHeroSlide } from "./heroSlide.types.js";
 import { toPublicHeroSlide } from "./heroSlide.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-
 const requireHeroSlide = async (id: string): Promise<HeroSlideRecord> => {
   const slide = await heroSlideRepository.findById(id);
-  if (!slide) throw new AppError("NOT_FOUND", "Hero slide not found.", NOT_FOUND_STATUS);
+  if (!slide) throw new AppError("NOT_FOUND", "Hero slide not found.", HTTP_STATUS.NOT_FOUND);
   return slide;
 };
 

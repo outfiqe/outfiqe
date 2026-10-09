@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
   brandApplicationReceivedInternalTemplate,
   brandApprovedTemplate,
@@ -22,22 +23,20 @@ import type {
 } from "./brandApplication.types.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const CONFLICT_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
 
 const requirePendingApplication = async (
   applicationId: string,
 ): Promise<BrandApplicationRecord> => {
   const application = await brandApplicationRepository.findById(applicationId);
   if (!application) {
-    throw new AppError("NOT_FOUND", "Brand application not found.", NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", "Brand application not found.", HTTP_STATUS.NOT_FOUND);
   }
 
   if (application.status !== BrandApplicationStatus.PENDING) {
     throw new AppError(
       "ALREADY_REVIEWED",
       "This application has already been reviewed.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 
@@ -88,7 +87,7 @@ export const brandApplicationService = {
       throw new AppError(
         "EMAIL_ALREADY_REGISTERED",
         "This email already belongs to an Outfiqe account, so brand setup can't be completed. Reject this application and ask the applicant to reapply with an email that isn't registered.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

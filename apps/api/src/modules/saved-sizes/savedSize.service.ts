@@ -1,9 +1,8 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { savedSizeRepository } from "./savedSize.repository.js";
 import type { SavedSizeView } from "./savedSize.types.js";
-
-const UNPROCESSABLE_STATUS = 422;
 
 export const savedSizeService = {
   async listForUser(userId: string): Promise<SavedSizeView[]> {
@@ -30,7 +29,7 @@ export const savedSizeService = {
       throw new AppError(
         "UNKNOWN_SIZE",
         "That size isn't offered for this kind of clothing.",
-        UNPROCESSABLE_STATUS,
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
       );
     }
     await savedSizeRepository.upsert(userId, productTypeId, sizeLabel);

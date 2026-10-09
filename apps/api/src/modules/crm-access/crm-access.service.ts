@@ -1,6 +1,7 @@
 import { isStaffUserRole } from "@outfiqe/utils";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   crmOrganizationInviteTemplate,
@@ -60,10 +61,6 @@ import {
   toPendingOwnershipTransferSummary,
 } from "./crm-access.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const FORBIDDEN_STATUS = 403;
-const BAD_REQUEST_STATUS = 400;
 const MAX_SUBDOMAIN_SUGGESTION_ATTEMPTS = 5;
 const FIRST_SUGGESTION_ATTEMPT = 0;
 
@@ -88,7 +85,7 @@ const generateUniqueSubdomain = async (brandName: string): Promise<string> => {
   throw new AppError(
     "SUBDOMAIN_SUGGESTION_FAILED",
     "Couldn't find an available subdomain for this brand. Enter one manually.",
-    CONFLICT_STATUS,
+    HTTP_STATUS.CONFLICT,
   );
 };
 
@@ -101,7 +98,7 @@ const assertPermissionKeysSelectable = (permissionKeys: string[]): void => {
     throw new AppError(
       "INVALID_PERMISSION_KEYS",
       "One or more of the selected permissions can't be granted to a custom role.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 };
@@ -119,14 +116,14 @@ const assertPermissionKeysWithinActorGrant = (
     throw new AppError(
       "PERMISSION_EXCEEDS_ACTOR_GRANT",
       "You can't grant a permission you don't hold yourself.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
 
 const asRoleNameConflict = (err: unknown): unknown =>
   isUniqueConstraintError(err)
-    ? new AppError("ROLE_NAME_TAKEN", "A role with that name already exists.", CONFLICT_STATUS)
+    ? new AppError("ROLE_NAME_TAKEN", "A role with that name already exists.", HTTP_STATUS.CONFLICT)
     : err;
 
 const withLinkedBrandName = async (
@@ -167,7 +164,7 @@ export const crmAccessService = {
       throw new AppError(
         "SUBDOMAIN_RESERVED",
         "This subdomain is reserved and can't be used.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -187,11 +184,15 @@ export const crmAccessService = {
         throw new AppError(
           "BRAND_ALREADY_LINKED",
           "This business is already linked to another organization.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       if (isUniqueConstraintError(err)) {
-        throw new AppError("SUBDOMAIN_TAKEN", "This subdomain is already in use.", CONFLICT_STATUS);
+        throw new AppError(
+          "SUBDOMAIN_TAKEN",
+          "This subdomain is already in use.",
+          HTTP_STATUS.CONFLICT,
+        );
       }
       throw err;
     }
@@ -224,7 +225,7 @@ export const crmAccessService = {
   async suggestOrganizationFromBrand(brandId: string): Promise<OrganizationCreationSuggestion> {
     const brand = await brandRepository.findById(brandId);
     if (!brand) {
-      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const ownerUserId = await brandRepository.findOwnerUserId(brandId);
@@ -233,7 +234,7 @@ export const crmAccessService = {
       throw new AppError(
         "BRAND_HAS_NO_OWNER",
         "This brand has no owner account to invite.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -309,10 +310,14 @@ export const crmAccessService = {
   ): Promise<RoleWithPermissions> {
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (role.isBuiltIn) {
-      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be edited.", FORBIDDEN_STATUS);
+      throw new AppError(
+        "ROLE_IS_BUILT_IN",
+        "Built-in roles can't be edited.",
+        HTTP_STATUS.FORBIDDEN,
+      );
     }
     if (input.permissionKeys !== undefined) {
       assertPermissionKeysSelectable(input.permissionKeys);
@@ -332,10 +337,14 @@ export const crmAccessService = {
   async deleteRole(organizationId: string, roleId: string): Promise<void> {
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (role.isBuiltIn) {
-      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be deleted.", FORBIDDEN_STATUS);
+      throw new AppError(
+        "ROLE_IS_BUILT_IN",
+        "Built-in roles can't be deleted.",
+        HTTP_STATUS.FORBIDDEN,
+      );
     }
 
     const memberCount = await crmAccessRepository.countMembershipsForRole(organizationId, roleId);
@@ -343,7 +352,7 @@ export const crmAccessService = {
       throw new AppError(
         "ROLE_IN_USE",
         "Reassign every member on this role before deleting it.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -354,7 +363,7 @@ export const crmAccessService = {
         throw new AppError(
           "ROLE_IN_USE",
           "Reassign every member on this role before deleting it.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw err;
@@ -386,7 +395,7 @@ export const crmAccessService = {
       throw new AppError(
         "MEMBERSHIP_SELF_UPDATE_FORBIDDEN",
         "You can't change your own role or access. Ask another admin to do it.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -394,19 +403,19 @@ export const crmAccessService = {
       throw new AppError(
         "SUPERADMIN_MEMBERSHIP_LOCKED",
         "The SUPERADMIN membership can't be edited this way. Use ownership transfer instead.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
     const membership = await crmAccessRepository.findMembershipById(organization.id, membershipId);
     if (!membership) {
-      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", NOT_FOUND_STATUS);
+      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     if (data.roleId) {
       const role = await crmAccessRepository.findRoleById(organization.id, data.roleId);
       if (!role) {
-        throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+        throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
       }
       assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
     }
@@ -444,7 +453,7 @@ export const crmAccessService = {
   ): Promise<void> {
     const role = await crmAccessRepository.findRoleById(organization.id, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
     }
     assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
 
@@ -453,7 +462,7 @@ export const crmAccessService = {
       throw new AppError(
         "EMAIL_IN_USE",
         "That email already belongs to a non-staff Outfiqe account and can't be added as staff.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -473,7 +482,7 @@ export const crmAccessService = {
             throw new AppError(
               "MEMBER_EXISTS",
               "This person already has CRM access.",
-              CONFLICT_STATUS,
+              HTTP_STATUS.CONFLICT,
             );
           }
         }
@@ -487,7 +496,7 @@ export const crmAccessService = {
           throw new AppError(
             "INVITE_ALREADY_PENDING",
             "An invite is already pending for this email.",
-            CONFLICT_STATUS,
+            HTTP_STATUS.CONFLICT,
           );
         }
 
@@ -505,7 +514,7 @@ export const crmAccessService = {
             throw new AppError(
               "SEAT_LIMIT_REACHED",
               "You've used every seat on your current plan. Upgrade your plan or free up a seat to invite someone new.",
-              CONFLICT_STATUS,
+              HTTP_STATUS.CONFLICT,
             );
           }
         }
@@ -557,13 +566,13 @@ export const crmAccessService = {
   async findAcceptableInvite(rawToken: string): Promise<OrganizationInviteRecord> {
     const invite = await crmAccessRepository.findInviteByTokenHash(hashToken(rawToken));
     if (!invite) {
-      throw new AppError("INVITE_INVALID", "This invite link is invalid.", NOT_FOUND_STATUS);
+      throw new AppError("INVITE_INVALID", "This invite link is invalid.", HTTP_STATUS.NOT_FOUND);
     }
     if (invite.acceptedAt || invite.revokedAt || invite.expiresAt.getTime() <= Date.now()) {
       throw new AppError(
         "INVITE_INVALID",
         "This invite link has expired or was already used.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     return invite;
@@ -608,7 +617,7 @@ export const crmAccessService = {
       throw new AppError(
         "INVITE_EMAIL_MISMATCH",
         "This invite was sent to a different account.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -617,7 +626,7 @@ export const crmAccessService = {
       invite.organizationId,
     );
     if (existingMembership) {
-      throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
+      throw new AppError("MEMBER_EXISTS", "You already have CRM access.", HTTP_STATUS.CONFLICT);
     }
 
     let membership: MembershipRecord;
@@ -625,7 +634,7 @@ export const crmAccessService = {
       membership = await crmAccessRepository.acceptInvite(invite, acceptingUserId);
     } catch (err) {
       if (isUniqueConstraintError(err)) {
-        throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
+        throw new AppError("MEMBER_EXISTS", "You already have CRM access.", HTTP_STATUS.CONFLICT);
       }
       throw err;
     }
@@ -651,7 +660,7 @@ export const crmAccessService = {
       throw new AppError(
         "NOT_SUPERADMIN",
         "Only the current owner can transfer ownership.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -659,7 +668,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_SELF",
         "Can't transfer ownership to yourself.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -668,7 +677,7 @@ export const crmAccessService = {
       toMembershipId,
     );
     if (!toMembership || toMembership.status !== "ACTIVE") {
-      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", NOT_FOUND_STATUS);
+      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const pendingTransfer = await crmAccessRepository.findPendingOwnershipTransfer(organization.id);
@@ -676,7 +685,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_ALREADY_PENDING",
         "An ownership transfer is already pending for this organization.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -718,7 +727,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_INVALID",
         "This ownership transfer is no longer available.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -730,14 +739,14 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_USER_MISMATCH",
         "This ownership transfer wasn't addressed to you.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
     if (toMembership.status !== "ACTIVE") {
       throw new AppError(
         "MEMBERSHIP_NOT_FOUND",
         "Your membership is no longer active.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -766,7 +775,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_INVALID",
         "This ownership transfer is no longer available.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -778,7 +787,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_USER_MISMATCH",
         "This ownership transfer wasn't addressed to you.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -794,7 +803,7 @@ export const crmAccessService = {
       throw new AppError(
         "TRANSFER_INVALID",
         "This ownership transfer is no longer pending.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

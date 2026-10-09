@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { PaymentMethod, ProductStatus } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
@@ -40,10 +41,7 @@ import {
   valuateCoupon,
 } from "./coupon.utils.js";
 
-const NOT_FOUND_STATUS = 404;
 const MS_PER_HOUR = 60 * 60 * 1000;
-const BAD_REQUEST_STATUS = 400;
-const CONFLICT_STATUS = 409;
 
 export const buildCouponLinesForPricedLines = async (
   pricedLines: {
@@ -97,20 +95,24 @@ export const couponService = {
   ): Promise<{ coupon: CouponWithEligibility; valuation: CouponValuation }> {
     const coupon = await couponRepository.findByCode(code.trim().toUpperCase());
     if (!coupon) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (!isCouponWithinWindow(coupon, context.at)) {
       throw new AppError(
         "COUPON_NOT_ACTIVE",
         REFUSAL_MESSAGES.COUPON_NOT_ACTIVE,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
     if (coupon.prepaidOnly && context.paymentMethod === PaymentMethod.COD) {
       throw new AppError(
         "COUPON_REQUIRES_PREPAID",
         REFUSAL_MESSAGES.COUPON_REQUIRES_PREPAID,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
     if (coupon.firstOrderOnly) {
@@ -119,7 +121,7 @@ export const couponService = {
         throw new AppError(
           "COUPON_FIRST_ORDER_ONLY",
           REFUSAL_MESSAGES.COUPON_FIRST_ORDER_ONLY,
-          BAD_REQUEST_STATUS,
+          HTTP_STATUS.BAD_REQUEST,
         );
       }
     }
@@ -131,7 +133,7 @@ export const couponService = {
       throw new AppError(
         "COUPON_ALREADY_USED",
         REFUSAL_MESSAGES.COUPON_ALREADY_USED,
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -140,7 +142,7 @@ export const couponService = {
       throw new AppError(
         "COUPON_MIN_SUBTOTAL_NOT_MET",
         REFUSAL_MESSAGES.COUPON_MIN_SUBTOTAL_NOT_MET,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -150,7 +152,7 @@ export const couponService = {
       throw new AppError(
         "COUPON_NOT_ELIGIBLE_FOR_ITEMS",
         REFUSAL_MESSAGES.COUPON_NOT_ELIGIBLE_FOR_ITEMS,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -163,7 +165,11 @@ export const couponService = {
   ): Promise<{ code: string; discountAmount: number; prepaidOnly: boolean }> {
     const product = await productRepository.findById(body.productId);
     if (!product || product.status !== ProductStatus.APPROVED || product.deletedAt) {
-      throw new AppError("NOT_FOUND", "This product is no longer available.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "NOT_FOUND",
+        "This product is no longer available.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     const activeDiscountsByProductId = await productRepository.findActiveDiscountsByProductIds(
@@ -240,7 +246,7 @@ export const couponService = {
         throw new AppError(
           "COUPON_CODE_ALREADY_EXISTS",
           "A coupon with this code already exists.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -265,20 +271,28 @@ export const couponService = {
   async getById(id: string): Promise<CouponView> {
     const coupon = await couponRepository.findById(id);
     if (!coupon)
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     return toCouponView(coupon);
   },
 
   async updateStatus(id: string, body: UpdateCouponStatusBody): Promise<CouponView> {
     const existing = await couponRepository.findById(id);
     if (!existing) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (existing.requiresApproval && existing.approvedById === null) {
       throw new AppError(
         "COUPON_APPROVAL_REQUIRED",
         "This coupon needs a second admin's approval before it can go active.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
     await couponRepository.updateStatus(id, body.status);
@@ -289,20 +303,24 @@ export const couponService = {
   async approve(id: string, adminId: string): Promise<CouponView> {
     const existing = await couponRepository.findById(id);
     if (!existing) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (!existing.requiresApproval || existing.approvedById !== null) {
       throw new AppError(
         "INVALID_TRANSITION",
         "This coupon doesn't need approval right now.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     if (existing.createdById === adminId) {
       throw new AppError(
         "SAME_ADMIN_SIGN_OFF",
         "Approval must come from a different admin than the one who created this coupon.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -311,13 +329,17 @@ export const couponService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This coupon can no longer be approved from its current state.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
     const coupon = await couponRepository.findById(id);
     if (!coupon) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     return toCouponView(coupon);
   },
@@ -325,7 +347,11 @@ export const couponService = {
   async updateBudget(id: string, body: UpdateCouponBudgetBody): Promise<CouponView> {
     const existing = await couponRepository.findById(id);
     if (!existing) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     const totalBudgetAmount = body.totalBudgetAmount ?? null;
@@ -340,7 +366,11 @@ export const couponService = {
     if (!isBudgetRaised || !requiresApproval) {
       const coupon = await couponRepository.findById(id);
       if (!coupon) {
-        throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+        throw new AppError(
+          "COUPON_NOT_FOUND",
+          REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+          HTTP_STATUS.NOT_FOUND,
+        );
       }
       return toCouponView(coupon);
     }
@@ -358,7 +388,11 @@ export const couponService = {
   async getPerformance(id: string): Promise<CouponPerformanceView> {
     const coupon = await couponRepository.findById(id);
     if (!coupon) {
-      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      throw new AppError(
+        "COUPON_NOT_FOUND",
+        REFUSAL_MESSAGES.COUPON_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     return couponRepository.getPerformanceMetrics(id);
   },

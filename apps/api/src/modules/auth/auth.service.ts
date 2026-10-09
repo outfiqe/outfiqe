@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 
 import { env } from "#config/env.config.js";
 import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
@@ -61,11 +62,6 @@ import type {
 } from "./auth.types.js";
 import { toAuthUser } from "./auth.utils.js";
 
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
-const UNAUTHORIZED_STATUS = 401;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
 const MS_PER_SECOND = 1000;
 
 const EMAIL_VERIFICATION_TTL = "24h";
@@ -90,18 +86,18 @@ const verifyPurposeTokenOrThrow = async (
     tokenPayload = verifyPurposeToken(token);
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
-      throw new AppError("TOKEN_EXPIRED", copy.expired, BAD_REQUEST_STATUS);
+      throw new AppError("TOKEN_EXPIRED", copy.expired, HTTP_STATUS.BAD_REQUEST);
     }
-    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+    throw new AppError("INVALID_TOKEN", copy.invalid, HTTP_STATUS.BAD_REQUEST);
   }
 
   if (tokenPayload.purpose !== purpose) {
-    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+    throw new AppError("INVALID_TOKEN", copy.invalid, HTTP_STATUS.BAD_REQUEST);
   }
 
   const alreadyUsed = await authRepository.findUsedPurposeToken(tokenPayload.jti);
   if (alreadyUsed) {
-    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+    throw new AppError("INVALID_TOKEN", copy.invalid, HTTP_STATUS.BAD_REQUEST);
   }
 
   return tokenPayload;
@@ -130,7 +126,11 @@ const redeemPurposeTokenOrThrow = async (
     });
   } catch (err) {
     if (isUniqueConstraintViolation(err)) {
-      throw new AppError("INVALID_TOKEN", PURPOSE_ERROR_COPY[purpose].invalid, BAD_REQUEST_STATUS);
+      throw new AppError(
+        "INVALID_TOKEN",
+        PURPOSE_ERROR_COPY[purpose].invalid,
+        HTTP_STATUS.BAD_REQUEST,
+      );
     }
     throw err;
   }
@@ -247,7 +247,7 @@ export const authService = {
         email,
         ip: remoteIp,
       });
-      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
     }
 
     const existingByEmail = await userRepository.findByEmail(email);
@@ -260,7 +260,7 @@ export const authService = {
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -274,12 +274,12 @@ export const authService = {
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
     if (await isPasswordBreached(password)) {
-      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
     }
 
     const passwordHash = await hashPassword(password);
@@ -313,7 +313,7 @@ export const authService = {
       throw new AppError(
         "INVALID_TOKEN",
         PURPOSE_ERROR_COPY[TokenPurpose.EMAIL_VERIFICATION].invalid,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -360,7 +360,11 @@ export const authService = {
         email,
         ip: remoteIp,
       });
-      throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+      throw new AppError(
+        "INVALID_CREDENTIALS",
+        INVALID_CREDENTIALS_MESSAGE,
+        HTTP_STATUS.UNAUTHORIZED,
+      );
     }
 
     const failedLoginCount = await getFailedLoginCount(email);
@@ -373,7 +377,7 @@ export const authService = {
         email,
         ip: remoteIp,
       });
-      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
     }
 
     const user = await userRepository.findByEmail(email);
@@ -386,7 +390,11 @@ export const authService = {
         email,
         ip: remoteIp,
       });
-      throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+      throw new AppError(
+        "INVALID_CREDENTIALS",
+        INVALID_CREDENTIALS_MESSAGE,
+        HTTP_STATUS.UNAUTHORIZED,
+      );
     }
 
     await resetFailedLogins(email);
@@ -407,7 +415,7 @@ export const authService = {
       throw new AppError(
         "EMAIL_NOT_VERIFIED",
         "Please verify your email before signing in.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -421,7 +429,7 @@ export const authService = {
       throw new AppError(
         "ACCOUNT_SUSPENDED",
         "This account has been suspended.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
         { reason: user.suspensionReason, expiresAt: user.suspensionExpiresAt },
       );
     }
@@ -447,12 +455,12 @@ export const authService = {
 
   async refresh(rawRefreshToken: string | undefined, remoteIp?: string): Promise<IssuedTokens> {
     if (!rawRefreshToken) {
-      throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
+      throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
     if (!stored) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
@@ -467,7 +475,7 @@ export const authService = {
       throw new AppError(
         "TOKEN_REUSE_DETECTED",
         "This session may have been compromised. Please sign in again.",
-        UNAUTHORIZED_STATUS,
+        HTTP_STATUS.UNAUTHORIZED,
       );
     }
 
@@ -476,14 +484,14 @@ export const authService = {
       throw new AppError(
         "TOKEN_EXPIRED",
         "Refresh token has expired. Please sign in again.",
-        UNAUTHORIZED_STATUS,
+        HTTP_STATUS.UNAUTHORIZED,
       );
     }
 
     const user = await userRepository.findById(userId);
     if (!user) {
       await authRepository.deleteRefreshTokenById(storedId);
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const rawNewRefreshToken = generateOpaqueToken();
@@ -517,25 +525,25 @@ export const authService = {
     rawRefreshToken: string | undefined,
   ): Promise<{ accessToken: string; user: AuthUser | BrandAuthUser }> {
     if (!rawRefreshToken) {
-      throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
+      throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
     if (!stored || stored.revokedAt) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     if (isPast(stored.expiresAt)) {
       throw new AppError(
         "TOKEN_EXPIRED",
         "Refresh token has expired. Please sign in again.",
-        UNAUTHORIZED_STATUS,
+        HTTP_STATUS.UNAUTHORIZED,
       );
     }
 
     const userExists = await userRepository.findById(stored.userId);
     if (!userExists) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const user = await authService.getCurrentUser(stored.userId);
@@ -596,12 +604,12 @@ export const authService = {
       throw new AppError(
         "INVALID_TOKEN",
         PURPOSE_ERROR_COPY[TokenPurpose.PASSWORD_RESET].invalid,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
     if (await isPasswordBreached(password)) {
-      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
     }
 
     const passwordHash = await hashPassword(password);
@@ -630,14 +638,14 @@ export const authService = {
 
     const user = await userRepository.findById(userId);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
     }
 
     if (!user.passwordHash) {
       throw new AppError(
         "NO_PASSWORD_SET",
         "Your account signs in with a connected account. Use the 'Forgot password' link to set a password first.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -652,7 +660,7 @@ export const authService = {
       throw new AppError(
         "INVALID_CURRENT_PASSWORD",
         "Your current password is incorrect.",
-        UNAUTHORIZED_STATUS,
+        HTTP_STATUS.UNAUTHORIZED,
       );
     }
 
@@ -660,12 +668,12 @@ export const authService = {
       throw new AppError(
         "PASSWORD_UNCHANGED",
         "Your new password must be different from your current password.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
     if (await isPasswordBreached(newPassword)) {
-      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
     }
 
     const passwordHash = await hashPassword(newPassword);
@@ -690,14 +698,18 @@ export const authService = {
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError("INVALID_INVITE", "This invite link is not valid.", BAD_REQUEST_STATUS);
+      throw new AppError(
+        "INVALID_INVITE",
+        "This invite link is not valid.",
+        HTTP_STATUS.BAD_REQUEST,
+      );
     }
 
     if (invite.expiresAt.getTime() <= Date.now()) {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -705,7 +717,7 @@ export const authService = {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -715,7 +727,7 @@ export const authService = {
   async getCurrentUser(userId: string): Promise<AuthUser | BrandAuthUser> {
     const user = await userRepository.findById(userId);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
     }
 
     const { id, name, email, phone, role } = user;
@@ -757,7 +769,7 @@ export const authService = {
       throw new AppError(
         "INVALID_INVITE",
         "This invite link is not valid or has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -767,7 +779,7 @@ export const authService = {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -775,7 +787,7 @@ export const authService = {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -784,7 +796,7 @@ export const authService = {
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -793,7 +805,7 @@ export const authService = {
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -854,14 +866,18 @@ export const authService = {
   async getAdminInvite(inviteToken: string): Promise<AdminInviteInfo> {
     const invite = await adminInviteRepository.findByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError("INVALID_INVITE", "This invite link is not valid.", BAD_REQUEST_STATUS);
+      throw new AppError(
+        "INVALID_INVITE",
+        "This invite link is not valid.",
+        HTTP_STATUS.BAD_REQUEST,
+      );
     }
 
     if (invite.expiresAt.getTime() <= Date.now()) {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -869,7 +885,7 @@ export const authService = {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -884,7 +900,7 @@ export const authService = {
       throw new AppError(
         "INVALID_INVITE",
         "This invite link is not valid or has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -894,7 +910,7 @@ export const authService = {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -902,7 +918,7 @@ export const authService = {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -911,7 +927,7 @@ export const authService = {
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -920,7 +936,7 @@ export const authService = {
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -985,7 +1001,7 @@ export const authService = {
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists. Sign in and open the invite link to accept it.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -994,7 +1010,7 @@ export const authService = {
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

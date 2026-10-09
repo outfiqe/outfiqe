@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import logger from "#lib/winston.utils.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
@@ -37,7 +38,7 @@ export const financialRollupController = {
     );
 
     res
-      .status(200)
+      .status(HTTP_STATUS.OK)
       .set("Content-Type", CSV_CONTENT_TYPE)
       .set("Content-Disposition", `attachment; filename="financial-ledger-${Date.now()}.csv"`)
       .send(csv);

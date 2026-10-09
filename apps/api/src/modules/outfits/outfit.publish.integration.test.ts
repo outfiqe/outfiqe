@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, NotificationType } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
@@ -20,12 +21,6 @@ import { testApp } from "#test/integration/testApp.js";
 
 import { notifyOutfitActivity } from "./outfit.notifications.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const LOOK_IMAGE_URL = "https://cdn.outfiqe.test/looks/dashain.jpg";
 
 beforeEach(async () => {
@@ -63,7 +58,7 @@ const lockedBuild = async (owner: OutfitTestUser) => {
   });
   await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
   const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-  expect(locked.status).toBe(OK_STATUS);
+  expect(locked.status).toBe(HTTP_STATUS.OK);
   return { outfitId, shirt, trousers };
 };
 
@@ -94,8 +89,8 @@ describe("posting a build as a Creator Look", () => {
     const first = await postLook(owner, outfitId, body);
     const repeated = await postLook(owner, outfitId, body);
 
-    expect(first.status).toBe(CREATED_STATUS);
-    expect(repeated.status).toBe(OK_STATUS);
+    expect(first.status).toBe(HTTP_STATUS.CREATED);
+    expect(repeated.status).toBe(HTTP_STATUS.OK);
     expect(repeated.body.data.id).toBe(first.body.data.id);
     const look = await prisma.creatorLook.findUniqueOrThrow({
       where: { id: first.body.data.id },
@@ -131,14 +126,14 @@ describe("posting a build as a Creator Look", () => {
     const asOutsider = await postLook(outsider, outfitId, fullSizes);
     const asShopper = await postLook(shopper, shopperBuild.outfitId, shopperSizes);
 
-    expect(missingSize.status).toBe(UNPROCESSABLE_STATUS);
+    expect(missingSize.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(missingSize.body.code).toBe("SIZES_WORN_MISMATCH");
-    expect(asOutsider.status).toBe(NOT_FOUND_STATUS);
-    expect(asShopper.status).toBe(FORBIDDEN_STATUS);
+    expect(asOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(asShopper.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     await writeAtCurrentVersion(owner, "post", outfitId, "/unlock");
     const whileUnlocked = await postLook(owner, outfitId, fullSizes);
-    expect(whileUnlocked.status).toBe(CONFLICT_STATUS);
+    expect(whileUnlocked.status).toBe(HTTP_STATUS.CONFLICT);
     expect(whileUnlocked.body.code).toBe("OUTFIT_NOT_LOCKED");
   });
 
@@ -186,7 +181,7 @@ describe("posting a build as a Creator Look", () => {
     ).toBe(1);
 
     const secondLook = await postLook(creator, outfitId, lookBody(sizes));
-    expect(secondLook.status).toBe(CREATED_STATUS);
+    expect(secondLook.status).toBe(HTTP_STATUS.CREATED);
     expect(secondLook.body.data.id).not.toBe(firstLook.body.data.id);
     expect((await readMyLook(creator, outfitId)).body.data).toMatchObject({
       lookId: secondLook.body.data.id,
@@ -200,7 +195,7 @@ describe("posting a build as a Creator Look", () => {
 
     const response = await readMyLook(owner, outfitId);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toBeNull();
   });
 });

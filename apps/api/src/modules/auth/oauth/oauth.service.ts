@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { OAuthProvider } from "#generated/prisma/enums.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
@@ -32,10 +33,6 @@ import { sanitizeOAuthRedirectPath } from "./oauth.utils.js";
 import { exchangeFacebookAuthorizationCode } from "./providers/facebook.provider.js";
 import { exchangeGoogleAuthorizationCode } from "./providers/google.provider.js";
 
-const BAD_REQUEST_STATUS = 400;
-const UNAUTHORIZED_STATUS = 401;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
 const CODE_VERIFIER_BYTES = 48;
 const OAUTH_LINK_PENDING_TTL_MS = OAUTH_STATE_TTL_MS;
 
@@ -126,7 +123,7 @@ const consumeOAuthState = async (
     throw new AppError(
       "OAUTH_STATE_INVALID",
       "This sign-in attempt has expired or was already used. Please try again.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
@@ -135,7 +132,7 @@ const consumeOAuthState = async (
     throw new AppError(
       "OAUTH_STATE_INVALID",
       "This sign-in attempt is invalid. Please try again.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
@@ -157,7 +154,7 @@ const exchangeAndVerifyProfile = async (
     throw new AppError(
       "OAUTH_EMAIL_UNVERIFIED",
       "Your account's email isn't verified with this provider. Please verify it and try again.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
@@ -179,7 +176,7 @@ const createOrReviveOAuthIdentity = async (
     throw new AppError(
       "OAUTH_IDENTITY_ALREADY_LINKED",
       "This account is already connected to a different Outfiqe account.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 
@@ -213,7 +210,7 @@ const resolveSignInIdentity = async (
       throw new AppError(
         "OAUTH_EXCHANGE_FAILED",
         "Could not sign you in. Please try again.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -244,7 +241,7 @@ const resolveSignInIdentity = async (
     throw new AppError(
       "OAUTH_IDENTITY_ALREADY_LINKED",
       "This account was previously disconnected from Outfiqe. Please sign in with your password or contact support.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 
@@ -281,7 +278,7 @@ const resolveLinkIdentity = async (
     throw new AppError(
       "OAUTH_EXCHANGE_FAILED",
       "Could not connect this account. Please try again.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
@@ -343,7 +340,7 @@ export const oauthService = {
       throw new AppError(
         "OAUTH_LINK_TOKEN_INVALID",
         "This link confirmation has expired. Please try connecting again.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -352,17 +349,17 @@ export const oauthService = {
       throw new AppError(
         "OAUTH_LINK_TOKEN_INVALID",
         "This link confirmation is invalid. Please try connecting again.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
     const user = await userRepository.findById(pendingRecord.userId);
     if (!user) {
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     if (await isLockedOut(user.email)) {
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     const isPasswordValid = user.passwordHash
@@ -371,7 +368,7 @@ export const oauthService = {
 
     if (!isPasswordValid) {
       await recordFailedLogin(user.email);
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", UNAUTHORIZED_STATUS);
+      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     await resetFailedLogins(user.email);
@@ -394,13 +391,13 @@ export const oauthService = {
   ): Promise<void> {
     const user = await userRepository.findById(userId);
     if (!user) {
-      throw new AppError("UNAUTHORIZED", "Authentication required.", UNAUTHORIZED_STATUS);
+      throw new AppError("UNAUTHORIZED", "Authentication required.", HTTP_STATUS.UNAUTHORIZED);
     }
 
     if (user.passwordHash) {
       const isPasswordValid = password ? await verifyPassword(password, user.passwordHash) : false;
       if (!isPasswordValid) {
-        throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", UNAUTHORIZED_STATUS);
+        throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
       }
     }
 
@@ -413,7 +410,7 @@ export const oauthService = {
       throw new AppError(
         "OAUTH_IDENTITY_NOT_FOUND",
         "This provider isn't connected to your account.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -423,7 +420,7 @@ export const oauthService = {
       throw new AppError(
         "ONLY_AUTH_METHOD",
         "Connect another sign-in method before disconnecting this one.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

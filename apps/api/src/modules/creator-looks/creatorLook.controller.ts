@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -24,15 +25,13 @@ import type {
 } from "./creatorLook.schemas.js";
 import { creatorLookService } from "./creatorLook.service.js";
 
-const CREATED_STATUS = 201;
-
 export const creatorLookController = {
   async create(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateCreatorLookBody>(res);
 
     const look = await creatorLookService.create(userId, body);
-    sendSuccess(res, look, "Look dropped.", CREATED_STATUS);
+    sendSuccess(res, look, "Look dropped.", HTTP_STATUS.CREATED);
   },
 
   async getOwn(_req: Request, res: Response) {
@@ -166,7 +165,7 @@ export const creatorLookController = {
     const { body } = validated.body<CreateCommentBody>(res);
 
     const comment = await creatorLookService.addComment(lookId, userId, body);
-    sendSuccess(res, comment, "Chime added.", CREATED_STATUS);
+    sendSuccess(res, comment, "Chime added.", HTTP_STATUS.CREATED);
   },
 
   async listReplies(_req: Request, res: Response) {
@@ -183,7 +182,7 @@ export const creatorLookController = {
     const { body } = validated.body<CreateReplyBody>(res);
 
     const reply = await creatorLookService.addReply(lookId, commentId, userId, body);
-    sendSuccess(res, reply, "Reply added.", CREATED_STATUS);
+    sendSuccess(res, reply, "Reply added.", HTTP_STATUS.CREATED);
   },
 
   async removeComment(_req: Request, res: Response) {

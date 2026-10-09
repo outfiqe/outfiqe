@@ -3,14 +3,12 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const UNAUTHORIZED_STATUS = 401;
-const OK_STATUS = 200;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -50,7 +48,7 @@ const createBank = (
 describe("GET /api/banks", () => {
   it("rejects an unauthenticated request", async () => {
     const response = await request(testApp).get("/api/banks");
-    expect(response.status).toBe(UNAUTHORIZED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
   });
 
   it("lists only active banks, sorted by name", async () => {
@@ -63,7 +61,7 @@ describe("GET /api/banks", () => {
       .get("/api/banks")
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const names = response.body.data.map((bank: { name: string }) => bank.name);
     expect(names).not.toContain("Mmm Integration Hidden Bank");
     const firstActiveIndex = names.indexOf("Aaa Integration Active Bank");

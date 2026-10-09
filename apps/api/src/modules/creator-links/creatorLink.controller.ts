@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -14,14 +15,12 @@ import type {
 } from "./creatorLink.schemas.js";
 import { creatorLinkService } from "./creatorLink.service.js";
 
-const CREATED_STATUS = 201;
-
 export const creatorLinkController = {
   async createInternal(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { productId } = validated.body<CreateInternalLinkBody>(res);
     const link = await creatorLinkService.createInternal(userId, productId);
-    sendSuccess(res, link, "Link created.", CREATED_STATUS);
+    sendSuccess(res, link, "Link created.", HTTP_STATUS.CREATED);
   },
 
   async getOrCreateExternal(_req: Request, res: Response) {

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandRole,
@@ -28,10 +29,6 @@ const RESTOCK_AMOUNT = 3;
 const OVERSELL_STOCK = 12;
 const OVERSELL_BUYER_COUNT = 20;
 const SINGLE_UNIT = 1;
-const CREATED_STATUS = 201;
-const OK_STATUS = 200;
-const BAD_REQUEST_STATUS = 400;
-const SERVER_ERROR_STATUS = 500;
 const EMPTY_LEDGER_TOTAL = 0;
 
 const createBrandOwner = async () => {
@@ -79,7 +76,7 @@ const createProductThroughApi = async (authHeader: string) => {
       categories: [categorySlug],
       sizes: [{ sizeOptionId: sizeOption.id, stock: INITIAL_STOCK }],
     });
-  expect(response.status).toBe(CREATED_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.CREATED);
   const productId: string = response.body.data.id;
   const size = await prisma.productSize.findFirstOrThrow({ where: { productId } });
   return { productId, sizeId: size.id };
@@ -158,8 +155,8 @@ describe("inventory ledger", () => {
       .set("Authorization", authHeader)
       .send({ adjustments: [{ sizeId, delta: -(INITIAL_STOCK + RESTOCK_AMOUNT + 1) }] });
 
-    expect(restock.status).toBe(OK_STATUS);
-    expect(overdraw.status).toBe(BAD_REQUEST_STATUS);
+    expect(restock.status).toBe(HTTP_STATUS.OK);
+    expect(overdraw.status).toBe(HTTP_STATUS.BAD_REQUEST);
     const adjustments = await prisma.inventoryLedgerEntry.findMany({
       where: { sizeId, kind: InventoryMovementKind.BRAND_ADJUSTMENT },
     });
@@ -181,8 +178,8 @@ describe("inventory ledger", () => {
         ],
       });
 
-    expect(response.status).toBeGreaterThanOrEqual(BAD_REQUEST_STATUS);
-    expect(response.status).toBeLessThan(SERVER_ERROR_STATUS);
+    expect(response.status).toBeGreaterThanOrEqual(HTTP_STATUS.BAD_REQUEST);
+    expect(response.status).toBeLessThan(HTTP_STATUS.INTERNAL_SERVER_ERROR);
   });
 
   it("sells exactly the stock there is when more buyers race for it, and the ledger agrees", async () => {

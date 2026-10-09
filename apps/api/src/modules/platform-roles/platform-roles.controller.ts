@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
@@ -14,8 +15,6 @@ import type {
   UpdatePlatformTeamMemberBody,
 } from "./platform-roles.schemas.js";
 import { platformRolesService } from "./platform-roles.service.js";
-
-const CREATED_STATUS = 201;
 
 export const platformRolesController = {
   async listPermissions(_req: Request, res: Response) {
@@ -41,7 +40,7 @@ export const platformRolesController = {
       metadata: { permissionKeys: role.permissionKeys },
     });
 
-    sendSuccess(res, role, "Platform role created.", CREATED_STATUS);
+    sendSuccess(res, role, "Platform role created.", HTTP_STATUS.CREATED);
   },
 
   async updateRole(_req: Request, res: Response) {

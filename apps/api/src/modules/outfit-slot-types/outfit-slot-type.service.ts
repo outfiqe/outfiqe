@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -11,15 +12,12 @@ import type {
 import type { OutfitSlotTypeChange, OutfitSlotTypeView } from "./outfit-slot-type.types.js";
 import { toOutfitSlotTypeView } from "./outfit-slot-type.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const NO_LINKED_PRODUCT_TYPES = 0;
 
 const requireSlotType = async (client: DbClient, id: string): Promise<OutfitSlotTypeView> => {
   const row = await outfitSlotTypeRepository.findById(client, id);
   if (!row) {
-    throw new AppError("SLOT_TYPE_NOT_FOUND", "Slot type not found.", NOT_FOUND_STATUS);
+    throw new AppError("SLOT_TYPE_NOT_FOUND", "Slot type not found.", HTTP_STATUS.NOT_FOUND);
   }
   return toOutfitSlotTypeView(row);
 };
@@ -30,7 +28,7 @@ const assertProductTypesExist = async (client: DbClient, productTypeIds: string[
     throw new AppError(
       "UNKNOWN_PRODUCT_TYPES",
       "One or more of the chosen garment types no longer exist.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
   }
 };
@@ -44,7 +42,7 @@ const assertBlockedSlotTypesExist = async (
     throw new AppError(
       "SLOT_TYPE_BLOCKS_ITSELF",
       "A slot type can't block itself.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
   }
   const foundCount = await outfitSlotTypeRepository.countSlotTypes(client, blocksSlotTypeIds);
@@ -52,7 +50,7 @@ const assertBlockedSlotTypesExist = async (
     throw new AppError(
       "UNKNOWN_SLOT_TYPES",
       "One or more of the slot types to block no longer exist.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
   }
 };
@@ -62,7 +60,7 @@ const assertSlotCanBeFilled = (acceptsAnyProductType: boolean, productTypeCount:
     throw new AppError(
       "SLOT_TYPE_NEEDS_PRODUCT_TYPES",
       "Pick at least one garment type, or let this slot take any garment type.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
   }
 };
@@ -75,7 +73,7 @@ const withSlotKeyConflictHandling = async <Result>(run: () => Promise<Result>): 
       throw new AppError(
         "SLOT_KEY_TAKEN",
         "A slot type with this key already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -129,7 +127,7 @@ export const outfitSlotTypeService = {
       throw new AppError(
         "INVALID_ORDER",
         "The reorder request must list every slot type exactly once.",
-        UNPROCESSABLE_STATUS,
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
       );
     }
 

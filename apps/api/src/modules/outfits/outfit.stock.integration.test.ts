@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { NotificationType, OutfitStatus } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
@@ -22,8 +23,6 @@ import { testApp } from "#test/integration/testApp.js";
 
 import { flagSoldOutBoardItems, notifyItemsSoldOut } from "./outfit.stock.js";
 
-const OK_STATUS = 200;
-const NOT_FOUND_STATUS = 404;
 const SOLD_OUT_STOCK = 0;
 const RESTOCKED_STOCK = 3;
 
@@ -47,7 +46,7 @@ const placeOrFail = async (
     await currentBuildVersion(outfitId),
     { productId },
   );
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
 };
 
 const buildWithShirt = async (owner: OutfitTestUser) => {
@@ -138,7 +137,7 @@ describe("sold-out alerts", () => {
       await currentBuildVersion(outfitId),
       { userIds: [editor.id] },
     );
-    expect(added.status).toBe(OK_STATUS);
+    expect(added.status).toBe(HTTP_STATUS.OK);
 
     await notifyItemsSoldOut({
       outboxEventId: randomUUID(),
@@ -180,7 +179,7 @@ describe("GET /api/outfits/:id/slots/:slotKey/positions/:position/replacements",
       .get(replacementsPath(outfitId, "top", 0))
       .set("Authorization", owner.auth);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.products.map((product: { id: string }) => product.id)).toEqual([
       sameBrandShirt.id,
       closePriceShirt.id,
@@ -200,8 +199,8 @@ describe("GET /api/outfits/:id/slots/:slotKey/positions/:position/replacements",
       .get(replacementsPath(outfitId, "bottom", 0))
       .set("Authorization", owner.auth);
 
-    expect(asOutsider.status).toBe(NOT_FOUND_STATUS);
-    expect(emptyPlace.status).toBe(NOT_FOUND_STATUS);
+    expect(asOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(emptyPlace.status).toBe(HTTP_STATUS.NOT_FOUND);
     expect(emptyPlace.body.code).toBe("ITEM_NOT_FOUND");
   });
 });

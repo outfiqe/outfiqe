@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
   TagRejectionReason,
   TagReportReason,
@@ -19,9 +20,6 @@ import type {
 } from "./tagReport.schemas.js";
 import type { TagReportPage } from "./tagReport.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-
 type SubmitReportContext = {
   reporterUserId: string | undefined;
   reporterIp: string | undefined;
@@ -40,7 +38,7 @@ export const tagReportService = {
       throw new AppError(
         "TAG_NOT_FOUND",
         "That product isn't tagged in this look.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -85,13 +83,17 @@ export const tagReportService = {
   ): Promise<{ tagTakenDown: boolean }> {
     const report = await tagReportRepository.findResolvableReport(reportId);
     if (!report) {
-      throw new AppError("TAG_REPORT_NOT_FOUND", "This report no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "TAG_REPORT_NOT_FOUND",
+        "This report no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (report.status !== TagReportStatus.OPEN) {
       throw new AppError(
         "TAG_REPORT_ALREADY_RESOLVED",
         "This report has already been resolved.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

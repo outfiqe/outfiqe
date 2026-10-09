@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -12,8 +13,6 @@ import type {
 } from "./brandApplication.schemas.js";
 import { brandApplicationService } from "./brandApplication.service.js";
 
-const CREATED_STATUS = 201;
-
 export const brandApplicationController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateBrandApplicationBody>(res);
@@ -23,7 +22,7 @@ export const brandApplicationController = {
       res,
       null,
       "Application received. We'll be in touch within a week.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 

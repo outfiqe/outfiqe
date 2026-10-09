@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -12,9 +13,6 @@ import type {
   PublicBuildsQuery,
 } from "./outfit.schemas.js";
 import { outfitSocialService } from "./outfit-social.service.js";
-
-const CREATED_STATUS = 201;
-const NO_CONTENT_STATUS = 204;
 
 const viewerIdFrom = (res: Response): string | null => getAuthPrincipal(res)?.userId ?? null;
 
@@ -113,7 +111,7 @@ export const outfitSocialController = {
       res,
       await outfitSocialService.addComment(userId, id, body),
       "Chime added.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 
@@ -121,6 +119,6 @@ export const outfitSocialController = {
     const principal = requireAuthPrincipal(res);
     const { id, commentId } = validated.params<OutfitCommentParam>(res);
     await outfitSocialService.removeComment(principal, id, commentId);
-    res.status(NO_CONTENT_STATUS).end();
+    res.status(HTTP_STATUS.NO_CONTENT).end();
   },
 };

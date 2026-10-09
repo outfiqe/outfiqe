@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { manualRefundNeededTemplate, paymentSettledTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
@@ -25,10 +26,6 @@ import { PaymentVerifyStatus } from "./payment.types.js";
 import { esewaProvider } from "./providers/esewa.provider.js";
 import { extractKhaltiTransactionId, khaltiProvider } from "./providers/khalti.provider.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
-
 const providers: Partial<Record<PaymentMethod, PaymentProvider>> = {
   [PaymentMethod.ESEWA]: esewaProvider,
   [PaymentMethod.KHALTI]: khaltiProvider,
@@ -40,7 +37,7 @@ const requireProvider = (method: PaymentMethod): PaymentProvider => {
     throw new AppError(
       "UNSUPPORTED_PAYMENT_METHOD",
       "This payment method isn't available yet.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
   return provider;
@@ -137,26 +134,34 @@ const runVerify = async (
 export const paymentService = {
   async initiate(userId: string, orderId: string): Promise<PaymentInitiateResult> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
     if (order.paymentMethod === PaymentMethod.COD) {
       throw new AppError(
         "INVALID_PAYMENT_METHOD",
         "This order is cash on delivery.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     if (order.fulfilmentStatus === FulfilmentStatus.CANCELLED) {
-      throw new AppError("ORDER_CANCELLED", "This order was cancelled.", CONFLICT_STATUS);
+      throw new AppError("ORDER_CANCELLED", "This order was cancelled.", HTTP_STATUS.CONFLICT);
     }
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
-      throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
+      throw new AppError(
+        "ALREADY_SETTLED",
+        "This order has already been paid.",
+        HTTP_STATUS.CONFLICT,
+      );
     }
 
     const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
     if (priorAttempt?.transactionRef) {
       const priorAttemptStatus = await runVerify(order);
       if (priorAttemptStatus === PaymentVerifyStatus.COMPLETE) {
-        throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
+        throw new AppError(
+          "ALREADY_SETTLED",
+          "This order has already been paid.",
+          HTTP_STATUS.CONFLICT,
+        );
       }
       await paymentRepository.failTransaction(priorAttempt.id, { supersededByRetry: true });
     }
@@ -188,7 +193,7 @@ export const paymentService = {
 
   async verify(userId: string, orderId: string): Promise<{ status: PaymentVerifyStatusValue }> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
 
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       return {

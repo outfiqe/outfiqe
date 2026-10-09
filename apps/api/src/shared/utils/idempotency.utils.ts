@@ -3,15 +3,14 @@ import { createHash } from "node:crypto";
 import { hoursToMilliseconds } from "date-fns/hoursToMilliseconds";
 import { subHours } from "date-fns/subHours";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 const PROCESSING_STATUS_CODE = 0;
-const COMPLETED_STATUS_CODE = 200;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
+const COMPLETED_STATUS_CODE = HTTP_STATUS.OK;
 
 export const IDEMPOTENCY_KEY_RETENTION_HOURS = 24;
 export const IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS = hoursToMilliseconds(1);
@@ -39,13 +38,17 @@ export const hashIdempotentRequest = (endpoint: string, requestBody: unknown): s
     .digest("hex");
 
 const duplicateRequestError = () =>
-  new AppError("DUPLICATE_REQUEST", "This request is already being processed.", CONFLICT_STATUS);
+  new AppError(
+    "DUPLICATE_REQUEST",
+    "This request is already being processed.",
+    HTTP_STATUS.CONFLICT,
+  );
 
 const keyReusedError = () =>
   new AppError(
     "IDEMPOTENCY_KEY_REUSED",
     "This request key was already used for a different request.",
-    UNPROCESSABLE_STATUS,
+    HTTP_STATUS.UNPROCESSABLE_ENTITY,
   );
 
 const claimKey = async (

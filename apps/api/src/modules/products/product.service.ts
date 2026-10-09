@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { PRODUCT_SORT } from "@outfiqe/utils";
 import { LRUCache } from "lru-cache";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
@@ -77,10 +78,6 @@ import {
   toSuggestion,
 } from "./product.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
-
 const DISCOUNT_CEILING_PERCENT = MAX_BRAND_DISCOUNT_BASIS_POINTS / BASIS_POINTS_PER_PERCENT;
 const DISCOUNT_EXCEEDS_CEILING_MESSAGE = `A brand discount can't be worth more than ${DISCOUNT_CEILING_PERCENT}% of the product's price.`;
 
@@ -96,7 +93,7 @@ const autocompleteMemoryCache = new LRUCache<string, ProductSuggestion[]>({
 const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
   if (!product || product.brandId !== brandId || product.deletedAt) {
-    throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
   }
   return product;
 };
@@ -104,13 +101,13 @@ const requireOwnedProduct = async (productId: string, brandId: string): Promise<
 const requirePendingProduct = async (productId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
   if (!product || product.deletedAt) {
-    throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
   }
   if (product.status !== ProductStatus.PENDING) {
     throw new AppError(
       "ALREADY_REVIEWED",
       "This product has already been reviewed.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
   return product;
@@ -221,7 +218,7 @@ export const productService = {
           throw new AppError(
             "SIZE_OPTION_NOT_FOUND",
             "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
+            HTTP_STATUS.NOT_FOUND,
           );
         }
         return { label: sizeOption.label, stock, sortOrder };
@@ -274,7 +271,7 @@ export const productService = {
         throw new AppError(
           "SIZES_REQUIRED",
           "Add at least one size for the new product type.",
-          BAD_REQUEST_STATUS,
+          HTTP_STATUS.BAD_REQUEST,
         );
       }
 
@@ -290,7 +287,7 @@ export const productService = {
           throw new AppError(
             "SIZE_OPTION_NOT_FOUND",
             "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
+            HTTP_STATUS.NOT_FOUND,
           );
         }
         return { label: sizeOption.label, stock, sortOrder };
@@ -321,7 +318,7 @@ export const productService = {
         throw new AppError(
           "SIZES_IN_USE",
           "Can't change product type — some of its current sizes already have orders and can't be removed.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -351,7 +348,7 @@ export const productService = {
       throw new AppError(
         "DISCOUNT_EXCEEDS_CEILING",
         DISCOUNT_EXCEEDS_CEILING_MESSAGE,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -380,7 +377,7 @@ export const productService = {
       throw new AppError(
         "DISCOUNT_NOT_FOUND",
         "This product has no active discount to edit.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -404,14 +401,14 @@ export const productService = {
       throw new AppError(
         "DISCOUNT_AMOUNT_REQUIRED",
         "Switching to a percent discount needs percentBasisPoints.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
     if (nextDiscountType === DiscountType.FIXED && nextFixedAmount === null) {
       throw new AppError(
         "DISCOUNT_AMOUNT_REQUIRED",
         "Switching to a fixed discount needs fixedAmount.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -421,7 +418,7 @@ export const productService = {
       throw new AppError(
         "INVALID_DISCOUNT_WINDOW",
         "endsAt must be after startsAt.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -434,7 +431,7 @@ export const productService = {
       throw new AppError(
         "DISCOUNT_EXCEEDS_CEILING",
         DISCOUNT_EXCEEDS_CEILING_MESSAGE,
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -458,7 +455,7 @@ export const productService = {
       throw new AppError(
         "DISCOUNT_NOT_FOUND",
         "This product has no active discount to remove.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
     await productRepository.deactivateDiscount(existing.id);
@@ -654,7 +651,7 @@ export const productService = {
 
   async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
     const product = await productRepository.findPublicById(id);
-    if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+    if (!product) throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
 
     const { brandId, brand, sizes, images, wornByCount } = product;
 
@@ -776,7 +773,7 @@ export const productService = {
       throw new AppError(
         "SIZE_NOT_FOUND",
         "One or more sizes weren't found on this product.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -796,7 +793,7 @@ export const productService = {
           throw new AppError(
             "INSUFFICIENT_STOCK",
             "Can't reduce stock below what's available.",
-            BAD_REQUEST_STATUS,
+            HTTP_STATUS.BAD_REQUEST,
             { sizeId },
           );
         }

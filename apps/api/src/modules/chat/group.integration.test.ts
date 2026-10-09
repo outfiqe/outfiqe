@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
@@ -20,13 +20,6 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { CHAT_SYSTEM_EVENT } from "./chat.constants.js";
 
-const CREATED_STATUS = 201;
-const OK_STATUS = 200;
-const BAD_REQUEST_STATUS = 400;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const SMALL_GROUP_LIMIT = 4;
 const MAX_GROUP_MEMBERS_SETTING = "chat.maxGroupMembers";
 
@@ -68,7 +61,7 @@ const createGroup = (
 
 const createGroupOrFail = async (owner: TestUser, name: string, members: TestUser[]) => {
   const response = await createGroup(owner, name, members);
-  expect(response.status).toBe(CREATED_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.CREATED);
   return response.body.data.id as string;
 };
 
@@ -127,7 +120,7 @@ describe("POST /api/conversations/groups", () => {
 
     const response = await createGroup(owner, "Wedding looks", [ram, hari]);
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data).toMatchObject({
       type: ConversationType.GROUP,
       otherParticipant: null,
@@ -169,7 +162,7 @@ describe("POST /api/conversations/groups", () => {
 
     const response = await createGroup(owner, "Nope", [reachable, blocker, staff]);
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("MEMBERS_UNREACHABLE");
     expect(response.body.details.unreachableUserIds.sort()).toEqual([blocker.id, staff.id].sort());
     expect(await prisma.conversation.count()).toBe(0);
@@ -184,7 +177,7 @@ describe("POST /api/conversations/groups", () => {
 
     const response = await createGroup(owner, "Too big", members);
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("GROUP_FULL");
   });
 
@@ -193,7 +186,7 @@ describe("POST /api/conversations/groups", () => {
 
     const response = await createGroup(owner, "Just me", [owner]);
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("GROUP_NEEDS_MEMBERS");
   });
 });
@@ -213,7 +206,7 @@ describe("managing a group", () => {
     const remove = await removeMember(member, groupId, owner);
 
     for (const response of [rename, add, remove]) {
-      expect(response.status).toBe(FORBIDDEN_STATUS);
+      expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
       expect(response.body.code).toBe("NOT_GROUP_ADMIN");
     }
   });
@@ -228,7 +221,7 @@ describe("managing a group", () => {
       .set("Authorization", owner.auth)
       .send({ name: "New name" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.group.name).toBe("New name");
     expect(response.body.data.lastMessagePreview).toBe('Renamer renamed the group to "New name"');
   });
@@ -241,7 +234,7 @@ describe("managing a group", () => {
 
     const response = await addMembers(owner, groupId, [ram, sita]);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.members.map(({ id }: { id: string }) => id).sort()).toEqual(
       [owner.id, ram.id, sita.id].sort(),
     );
@@ -266,7 +259,10 @@ describe("managing a group", () => {
       addMembers(coAdmin, groupId, secondPair),
     ]);
 
-    expect(outcomes.map(({ status }) => status).sort()).toEqual([OK_STATUS, UNPROCESSABLE_STATUS]);
+    expect(outcomes.map(({ status }) => status).sort()).toEqual([
+      HTTP_STATUS.OK,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    ]);
     expect(await prisma.conversationParticipant.count({ where: { conversationId: groupId } })).toBe(
       SMALL_GROUP_LIMIT,
     );
@@ -281,8 +277,8 @@ describe("managing a group", () => {
 
     const response = await removeMember(owner, groupId, removed);
 
-    expect(response.status).toBe(OK_STATUS);
-    expect((await listMessages(removed, groupId)).status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    expect((await listMessages(removed, groupId)).status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(publishSpy).toHaveBeenCalledWith(DomainEvents.CONVERSATION_MEMBER_REMOVED, {
       conversationId: groupId,
       userId: removed.id,
@@ -296,7 +292,7 @@ describe("managing a group", () => {
 
     const response = await removeMember(owner, groupId, owner);
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(response.body.code).toBe("USE_LEAVE_TO_EXIT");
   });
 
@@ -307,7 +303,7 @@ describe("managing a group", () => {
 
     const response = await changeRole(owner, groupId, owner, ConversationMemberRole.MEMBER);
 
-    expect(response.status).toBe(CONFLICT_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
     expect(response.body.code).toBe("LAST_GROUP_ADMIN");
     expect(await roleOf(groupId, owner)).toBe(ConversationMemberRole.ADMIN);
   });
@@ -320,7 +316,7 @@ describe("managing a group", () => {
 
     const response = await changeRole(owner, groupId, owner, ConversationMemberRole.MEMBER);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(await roleOf(groupId, owner)).toBe(ConversationMemberRole.MEMBER);
     expect(await roleOf(groupId, member)).toBe(ConversationMemberRole.ADMIN);
     const [latestLine] = (await listMessages(member, groupId)).body.data.items;
@@ -337,7 +333,7 @@ describe("managing a group", () => {
 
     const response = await changeRole(member, groupId, member, ConversationMemberRole.ADMIN);
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(await roleOf(groupId, member)).toBe(ConversationMemberRole.MEMBER);
   });
 
@@ -356,8 +352,8 @@ describe("managing a group", () => {
       .set("Authorization", outsider.auth);
     const onDirectChat = await addMembers(owner, direct.body.data.id, [outsider]);
 
-    expect(asOutsider.status).toBe(NOT_FOUND_STATUS);
-    expect(onDirectChat.status).toBe(NOT_FOUND_STATUS);
+    expect(asOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(onDirectChat.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -371,7 +367,7 @@ describe("the last admin", () => {
 
     const response = await leaveGroup(owner, groupId);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(await roleOf(groupId, first)).toBe(ConversationMemberRole.ADMIN);
     expect(await roleOf(groupId, later)).toBe(ConversationMemberRole.MEMBER);
   });
@@ -426,7 +422,7 @@ describe("messaging in a group", () => {
       .set("Authorization", ram.auth)
       .send({ body: "Still here" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const conversation = await prisma.conversation.findUniqueOrThrow({ where: { id: groupId } });
     expect(conversation.lastMessagePreview).toBe("Block Ram: Still here");
   });
@@ -442,7 +438,7 @@ describe("messaging in a group", () => {
       .set("Authorization", ram.auth)
       .send({ body: "Hello?" });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("finds a group by its name in the conversation search", async () => {

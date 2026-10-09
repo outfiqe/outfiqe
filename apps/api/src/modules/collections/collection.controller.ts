@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 
@@ -14,13 +15,11 @@ import type {
 } from "./collection.schemas.js";
 import { collectionService } from "./collection.service.js";
 
-const CREATED_STATUS = 201;
-
 export const collectionController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateCollectionBody>(res);
     const collection = await collectionService.create(body);
-    sendSuccess(res, collection, "Collection created.", CREATED_STATUS);
+    sendSuccess(res, collection, "Collection created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

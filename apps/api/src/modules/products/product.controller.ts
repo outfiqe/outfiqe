@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -18,15 +19,13 @@ import type {
 } from "./product.schemas.js";
 import { productService } from "./product.service.js";
 
-const CREATED_STATUS = 201;
-
 export const productController = {
   async create(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateProductBody>(res);
 
     const product = await productService.create(userId, body);
-    sendSuccess(res, product, "Product submitted for review.", CREATED_STATUS);
+    sendSuccess(res, product, "Product submitted for review.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {
@@ -61,7 +60,7 @@ export const productController = {
     const body = validated.body<SetProductDiscountBody>(res);
 
     const discount = await productService.setDiscount(userId, id, body);
-    sendSuccess(res, discount, "Discount created.", CREATED_STATUS);
+    sendSuccess(res, discount, "Discount created.", HTTP_STATUS.CREATED);
   },
 
   async updateDiscount(_req: Request, res: Response) {

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { BrandPayoutStatus, CommissionStatus, PlatformFeeType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
@@ -26,7 +27,6 @@ import {
   toPlatformCommissionRuleView,
 } from "./brandPayout.utils.js";
 
-const NOT_FOUND_STATUS = 404;
 const NO_EARNINGS = 0;
 
 export const brandPayoutService = {
@@ -87,7 +87,11 @@ export const brandPayoutService = {
   async revokeExemption(id: string, adminId: string): Promise<void> {
     const revoked = await brandPayoutRepository.revokeExemption(id, adminId);
     if (!revoked) {
-      throw new AppError("NOT_FOUND", "Exemption not found or already revoked.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "NOT_FOUND",
+        "Exemption not found or already revoked.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
   },
 

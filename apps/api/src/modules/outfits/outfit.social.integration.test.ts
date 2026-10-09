@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { ContentReportTarget, FeatureFlagRollout } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
@@ -19,12 +20,6 @@ import {
   writeToBuild,
 } from "#test/integration/outfitFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const NO_CONTENT_STATUS = 204;
-const NOT_FOUND_STATUS = 404;
-const UNPROCESSABLE_STATUS = 422;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -65,7 +60,7 @@ const makePublic = async (owner: OutfitTestUser, outfitId: string) => {
   const response = await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
     visibility: "PUBLIC",
   });
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
 };
 
 const publicFeed = (query = "") => request(testApp).get(`/api/outfits/public${query}`);
@@ -81,7 +76,7 @@ describe("the public Builds feed", () => {
 
     const response = await publicFeed();
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.items.map(({ title }: { title: string }) => title)).toEqual([
       "Second",
       "First",
@@ -139,7 +134,7 @@ describe("the public Builds feed", () => {
     const likeResponse = await request(testApp)
       .put(`/api/outfits/${mid.outfitId}/like`)
       .set("Authorization", fan.auth);
-    expect(likeResponse.status).toBe(OK_STATUS);
+    expect(likeResponse.status).toBe(HTTP_STATUS.OK);
 
     const titlesOf = (response: request.Response) =>
       response.body.data.items.map(({ title }: { title: string }) => title);
@@ -159,7 +154,7 @@ describe("the public Builds feed", () => {
     expect(titlesOf(highFirst)).toEqual(["Pricey", "Mid", "Cheap"]);
     expect(titlesOf(mostCheriqedFirstPage)).toEqual(["Mid"]);
     expect(titlesOf(newestWithPriceCursor)).toEqual(["Pricey", "Cheap"]);
-    expect((await publicFeed("?sort=random")).status).toBe(UNPROCESSABLE_STATUS);
+    expect((await publicFeed("?sort=random")).status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
   });
 
   it("shows a contributor's and a brand's public builds", async () => {
@@ -185,7 +180,7 @@ describe("the public Builds feed", () => {
       visibility: "PUBLIC",
     });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("CONTENT_NOT_ALLOWED");
   });
 });
@@ -233,8 +228,8 @@ describe("likes, saves and comments", () => {
     });
     const spam = await comment(fan, { body: "cheaper at knockoffs.shop" });
 
-    expect(topLevel.status).toBe(CREATED_STATUS);
-    expect(replyToReply.status).toBe(UNPROCESSABLE_STATUS);
+    expect(topLevel.status).toBe(HTTP_STATUS.CREATED);
+    expect(replyToReply.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(spam.body.code).toBe("CONTENT_NOT_ALLOWED");
 
     const comments = await request(testApp).get(`/api/outfits/${outfitId}/comments`);
@@ -252,7 +247,7 @@ describe("likes, saves and comments", () => {
     const removed = await request(testApp)
       .delete(`/api/outfits/${outfitId}/comments/${topLevel.body.data.id}`)
       .set("Authorization", fan.auth);
-    expect(removed.status).toBe(NO_CONTENT_STATUS);
+    expect(removed.status).toBe(HTTP_STATUS.NO_CONTENT);
     expect((await prisma.outfit.findUniqueOrThrow({ where: { id: outfitId } })).commentCount).toBe(
       0,
     );
@@ -273,10 +268,10 @@ describe("likes, saves and comments", () => {
         .set("Authorization", caller.auth)
         .send({ body: "Nice" });
 
-    expect((await commentAs(recipient)).status).toBe(CREATED_STATUS);
-    expect((await commentAs(stranger)).status).toBe(NOT_FOUND_STATUS);
+    expect((await commentAs(recipient)).status).toBe(HTTP_STATUS.CREATED);
+    expect((await commentAs(stranger)).status).toBe(HTTP_STATUS.NOT_FOUND);
     expect((await request(testApp).get(`/api/outfits/${outfitId}/comments`)).status).toBe(
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   });
 });
@@ -311,11 +306,11 @@ describe("reports and removal", () => {
       .post(`/api/content-reports/${report.id}/resolve`)
       .set("Authorization", adminAuth)
       .send({ action: "REMOVE_CONTENT" });
-    expect(resolved.status).toBe(OK_STATUS);
+    expect(resolved.status).toBe(HTTP_STATUS.OK);
 
     expect((await publicFeed()).body.data.items).toEqual([]);
     expect((await request(testApp).get(`/api/outfits/${outfitId}/public`)).status).toBe(
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   });
 });

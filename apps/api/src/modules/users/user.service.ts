@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { buildCursorPage, type CursorPage } from "#lib/pagination.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
@@ -15,7 +16,6 @@ import type {
 } from "./user.types.js";
 import { toPublicUser } from "./user.utils.js";
 
-const CONFLICT_STATUS = 409;
 const USER_SEARCH_LIMIT = 10;
 const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -23,7 +23,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const assertHandleAvailable = async (handle: string, excludingUserId: string): Promise<void> => {
   const existing = await userRepository.findByHandle(handle);
   if (existing && existing.id !== excludingUserId) {
-    throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
+    throw new AppError("HANDLE_TAKEN", "That username is already taken.", HTTP_STATUS.CONFLICT);
   }
 };
 
@@ -48,7 +48,7 @@ const assertHandleChangeAllowed = (handleChangedAt: Date | null): void => {
     throw new AppError(
       "HANDLE_CHANGE_COOLING_DOWN",
       `You can change your username again on ${eligibleAt.toISOString().slice(0, 10)}.`,
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 };
@@ -68,13 +68,13 @@ const writeProfile = async (userId: string, input: UpdateUserProfileInput): Prom
     return await userRepository.updateProfile(userId, input);
   } catch (error) {
     if (uniqueConstraintTargetIncludes(error, "handle")) {
-      throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
+      throw new AppError("HANDLE_TAKEN", "That username is already taken.", HTTP_STATUS.CONFLICT);
     }
     if (uniqueConstraintTargetIncludes(error, "phone")) {
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -128,7 +128,7 @@ export const userService = {
         throw new AppError(
           "PHONE_EXISTS",
           "An account with this phone number already exists.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
     }

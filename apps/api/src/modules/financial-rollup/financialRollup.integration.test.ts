@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
@@ -20,10 +21,6 @@ import { createAdminSession } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
-const BAD_REQUEST_STATUS = 400;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -422,7 +419,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .get("/api/admin/financial-rollup/ledger")
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("returns an empty page with a null cursor when there are no ledger rows", async () => {
@@ -433,7 +430,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ paymentMethod: "KHALTI" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toEqual({ entries: [], nextCursor: null });
   });
 
@@ -450,7 +447,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .get("/api/admin/financial-rollup/ledger")
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { entries, nextCursor } = response.body.data;
     expect(nextCursor).toBeNull();
     expect(entries).toHaveLength(1);
@@ -476,7 +473,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .get("/api/admin/financial-rollup/ledger")
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.entries[0]).toMatchObject({
       grossAmount: null,
       brandPayoutStatus: null,
@@ -497,7 +494,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ limit: 2 })
       .set("Authorization", authHeader);
 
-    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.status).toBe(HTTP_STATUS.OK);
     expect(firstPage.body.data.entries).toHaveLength(2);
     expect(
       firstPage.body.data.entries.map((entry: { orderItemId: string }) => entry.orderItemId),
@@ -509,7 +506,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ limit: 2, cursor: firstPage.body.data.nextCursor })
       .set("Authorization", authHeader);
 
-    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.status).toBe(HTTP_STATUS.OK);
     expect(secondPage.body.data.entries).toHaveLength(1);
     expect(secondPage.body.data.entries[0].orderItemId).toBe(items[0]?.orderItemId);
     expect(secondPage.body.data.nextCursor).toBeNull();
@@ -538,7 +535,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ cursor: "not-a-real-cursor" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(BAD_REQUEST_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
   });
 
   it("filters by payment method and brand payout status", async () => {
@@ -560,7 +557,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ paymentMethod: "ESEWA", brandPayoutStatus: "PENDING" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.entries).toHaveLength(1);
     expect(response.body.data.entries[0].paymentMethod).toBe("ESEWA");
   });
@@ -577,7 +574,7 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .query({ dateFrom: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.entries).toHaveLength(1);
   });
 });
@@ -589,7 +586,7 @@ describe("GET /api/admin/financial-rollup/ledger/export", () => {
       .get("/api/admin/financial-rollup/ledger/export")
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("streams a CSV matching the filtered ledger rows, with the right headers", async () => {
@@ -607,7 +604,7 @@ describe("GET /api/admin/financial-rollup/ledger/export", () => {
       .query({ paymentMethod: "COD" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.headers["content-type"]).toMatch(/text\/csv/);
     expect(response.headers["content-disposition"]).toMatch(
       /attachment; filename="financial-ledger-/,
@@ -709,7 +706,7 @@ describe("GET /api/admin/financial-rollup attribution", () => {
       .query({ range: "all" })
       .set("Authorization", authHeader);
 
-    expect(after.status).toBe(OK_STATUS);
+    expect(after.status).toBe(HTTP_STATUS.OK);
     const totalDelta =
       after.body.data.attribution.totalItems - before.body.data.attribution.totalItems;
     const attributedDelta =
@@ -730,7 +727,7 @@ describe("GET /api/admin/financial-rollup", () => {
       .get("/api/admin/financial-rollup")
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("computes gateway gross/refunded/net and ledger sums for range=all", async () => {
@@ -755,7 +752,7 @@ describe("GET /api/admin/financial-rollup", () => {
       .query({ range: "all" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { gateway, ledger } = response.body.data;
     expect(gateway.grossCollected).toBeGreaterThanOrEqual(1500);
     expect(gateway.refunded).toBeGreaterThanOrEqual(300);
@@ -783,7 +780,7 @@ describe("GET /api/admin/financial-rollup", () => {
       .query({ range: "30d" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.gateway.grossCollected).toBe(500);
   });
 
@@ -800,7 +797,7 @@ describe("GET /api/admin/financial-rollup", () => {
       .query({ range: "cycle" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.gateway.grossCollected).toBe(500);
   });
 
@@ -824,7 +821,7 @@ describe("GET /api/admin/financial-rollup", () => {
       .query({ range: "all" })
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { byPaymentMethod } = response.body.data;
 
     expect(byPaymentMethod.COD).toEqual({

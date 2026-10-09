@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -12,11 +13,7 @@ import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtur
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-const VALIDATION_ERROR_STATUS = 422;
+const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -78,7 +75,7 @@ describe("POST /api/bank-accounts", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
       .send(validBody(bank.id));
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.bankAccount.accountNumberLast4).toBe("7890");
     expect(response.body.data.bankAccount.isDefault).toBe(true);
     expect(response.body.data.nameMismatch).toBe(false);
@@ -97,7 +94,7 @@ describe("POST /api/bank-accounts", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
       .send(validBody(bank.id, { accountName: "Someone Else" }));
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.nameMismatch).toBe(true);
   });
 
@@ -129,7 +126,7 @@ describe("POST /api/bank-accounts", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
       .send(validBody(bank.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("404s when the authenticated user no longer exists", async () => {
@@ -140,7 +137,7 @@ describe("POST /api/bank-accounts", () => {
       .set("Authorization", authHeaderFor(randomUUID(), UserRole.CUSTOMER))
       .send(validBody(bank.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -163,7 +160,7 @@ describe("GET /api/bank-accounts", () => {
       .get("/api/bank-accounts")
       .set("Authorization", authHeaderFor(owner.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].accountNumberLast4).toBe("7890");
   });
@@ -213,7 +210,7 @@ describe("PATCH /api/bank-accounts/:id/default", () => {
       .patch(`/api/bank-accounts/${created.body.data.bankAccount.id}/default`)
       .set("Authorization", authHeaderFor(otherUser.id, UserRole.CUSTOMER));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -232,12 +229,12 @@ describe("admin bank account actions", () => {
     const forbidden = await request(testApp)
       .patch(`/api/bank-accounts/${id}/verify`)
       .set("Authorization", authHeaderFor(owner.id, UserRole.CUSTOMER));
-    expect(forbidden.status).toBe(FORBIDDEN_STATUS);
+    expect(forbidden.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const response = await request(testApp)
       .patch(`/api/bank-accounts/${id}/verify`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
 
     const stored = await prisma.bankAccount.findUniqueOrThrow({ where: { id } });
     expect(stored.isVerified).toBe(true);
@@ -259,7 +256,7 @@ describe("admin bank account actions", () => {
       .get(`/api/bank-accounts/${id}/reveal`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.accountNumber).toBe("1234567890");
 
     const logs = await prisma.bankAccountAccessLog.findMany({ where: { bankAccountId: id } });
@@ -274,7 +271,7 @@ describe("admin bank account actions", () => {
       .patch(`/api/bank-accounts/${randomUUID()}/verify`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("404s revealing a bank account that doesn't exist", async () => {
@@ -284,7 +281,7 @@ describe("admin bank account actions", () => {
       .get(`/api/bank-accounts/${randomUUID()}/reveal`)
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("blocks a platform staffer without platform:withdraw:manage", async () => {
@@ -302,12 +299,12 @@ describe("admin bank account actions", () => {
     const verifyResponse = await request(testApp)
       .patch(`/api/bank-accounts/${id}/verify`)
       .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN));
-    expect(verifyResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(verifyResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const revealResponse = await request(testApp)
       .get(`/api/bank-accounts/${id}/reveal`)
       .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN));
-    expect(revealResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(revealResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });
 
@@ -326,7 +323,7 @@ describe("GET /api/bank-accounts/admin", () => {
     const pending = await request(testApp)
       .get("/api/bank-accounts/admin?verified=false")
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
-    expect(pending.status).toBe(OK_STATUS);
+    expect(pending.status).toBe(HTTP_STATUS.OK);
     const row = pending.body.data.items.find((item: { id: string }) => item.id === id);
     expect(row).toMatchObject({
       ownerName: "Priya Gurung",
@@ -357,6 +354,6 @@ describe("GET /api/bank-accounts/admin", () => {
       .get("/api/bank-accounts/admin")
       .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });

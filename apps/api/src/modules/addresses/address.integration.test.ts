@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -12,14 +13,7 @@ import { testApp } from "#test/integration/testApp.js";
 import { addressRepository } from "./address.repository.js";
 import { MAX_SAVED_ADDRESSES_PER_USER } from "./address.service.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const UNAUTHORIZED_STATUS = 401;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const VALIDATION_ERROR_STATUS = 422;
-const RATE_LIMITED_STATUS = 429;
+const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -73,7 +67,7 @@ const postAddress = (userId: string, overrides: Record<string, unknown> = {}) =>
 describe("GET /api/addresses", () => {
   it("401s without a token", async () => {
     const response = await request(testApp).get("/api/addresses");
-    expect(response.status).toBe(UNAUTHORIZED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNAUTHORIZED);
   });
 
   it("403s a brand-owner account — saved addresses are for shoppers only", async () => {
@@ -82,13 +76,13 @@ describe("GET /api/addresses", () => {
     const listResponse = await request(testApp)
       .get("/api/addresses")
       .set("Authorization", authHeaderForRole(brandOwner.id, UserRole.BRAND_OWNER));
-    expect(listResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(listResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const createResponse = await request(testApp)
       .post("/api/addresses")
       .set("Authorization", authHeaderForRole(brandOwner.id, UserRole.BRAND_OWNER))
       .send(validBody());
-    expect(createResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(createResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("lists only the caller's addresses, default first", async () => {
@@ -103,7 +97,7 @@ describe("GET /api/addresses", () => {
       .get("/api/addresses")
       .set("Authorization", authHeaderFor(owner.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toHaveLength(2);
     expect(response.body.data[0].isDefault).toBe(true);
     expect(response.body.data.map((address: { label: string }) => address.label).sort()).toEqual([
@@ -142,7 +136,7 @@ describe("POST /api/addresses", () => {
 
     const response = await postAddress(owner.id);
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.isDefault).toBe(true);
     expect(response.body.data.city).toBe("Kathmandu");
 
@@ -179,7 +173,7 @@ describe("POST /api/addresses", () => {
         .post("/api/addresses")
         .set("Authorization", authHeader)
         .send(validBody({ label: `Address ${index}` }));
-      expect(created.status).toBe(CREATED_STATUS);
+      expect(created.status).toBe(HTTP_STATUS.CREATED);
     }
 
     const overflow = await request(testApp)
@@ -187,7 +181,7 @@ describe("POST /api/addresses", () => {
       .set("Authorization", authHeader)
       .send(validBody({ label: "One too many" }));
 
-    expect(overflow.status).toBe(CONFLICT_STATUS);
+    expect(overflow.status).toBe(HTTP_STATUS.CONFLICT);
     expect(overflow.body.code).toBe("ADDRESS_LIMIT_REACHED");
   });
 
@@ -201,7 +195,7 @@ describe("POST /api/addresses", () => {
         .patch(`/api/addresses/${randomUUID()}`)
         .set("Authorization", authHeader)
         .send({ label: `attempt ${index}` });
-      if (response.status === RATE_LIMITED_STATUS) {
+      if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
         sawRateLimit = true;
         break;
       }
@@ -220,7 +214,7 @@ describe("PATCH /api/addresses/:id", () => {
       .set("Authorization", authHeaderFor(owner.id))
       .send({ landmark: "Opposite the temple", label: "" });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.landmark).toBe("Opposite the temple");
     expect(response.body.data.label).toBeNull();
   });
@@ -243,7 +237,7 @@ describe("PATCH /api/addresses/:id", () => {
         isDefault: true,
       });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toMatchObject({
       label: "Office",
       fullName: "Hari Prasad",
@@ -279,7 +273,7 @@ describe("PATCH /api/addresses/:id", () => {
       .set("Authorization", authHeaderFor(other.id))
       .send({ city: "Pokhara" });
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -308,7 +302,7 @@ describe("PATCH /api/addresses/:id/default", () => {
       .patch(`/api/addresses/${created.body.data.id}/default`)
       .set("Authorization", authHeaderFor(other.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("never leaves two addresses marked default when two set-default requests race", async () => {
@@ -351,8 +345,8 @@ describe("PATCH /api/addresses/:id/default", () => {
 
     const [firstResponse, secondResponse] = await Promise.all([firstRequest, secondRequest]);
 
-    expect(firstResponse.status).toBe(OK_STATUS);
-    expect(secondResponse.status).toBe(OK_STATUS);
+    expect(firstResponse.status).toBe(HTTP_STATUS.OK);
+    expect(secondResponse.status).toBe(HTTP_STATUS.OK);
 
     const stored = await prisma.savedAddress.findMany({ where: { userId: owner.id } });
     expect(stored.filter((address) => address.isDefault)).toHaveLength(1);
@@ -411,7 +405,7 @@ describe("DELETE /api/addresses/:id", () => {
       .delete(`/api/addresses/${created.body.data.id}`)
       .set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const stored = await prisma.savedAddress.findMany({ where: { userId: owner.id } });
     expect(stored).toHaveLength(0);
   });
@@ -425,6 +419,6 @@ describe("DELETE /api/addresses/:id", () => {
       .delete(`/api/addresses/${created.body.data.id}`)
       .set("Authorization", authHeaderFor(other.id));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
@@ -16,7 +17,6 @@ type RateLimitOptions = {
 };
 
 const DEFAULT_MESSAGE = "Too many requests. Please try again later.";
-const TOO_MANY_REQUESTS_STATUS = 429;
 const MS_PER_SECOND = 1000;
 
 export const rateLimit = ({
@@ -40,7 +40,7 @@ export const rateLimit = ({
         res.setHeader("Retry-After", Math.ceil((ttlMs > 0 ? ttlMs : windowMs) / MS_PER_SECOND));
 
         return next(
-          new AppError("RATE_LIMITED", message ?? DEFAULT_MESSAGE, TOO_MANY_REQUESTS_STATUS),
+          new AppError("RATE_LIMITED", message ?? DEFAULT_MESSAGE, HTTP_STATUS.TOO_MANY_REQUESTS),
         );
       }
 

@@ -4,7 +4,7 @@ import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandRole,
@@ -56,12 +56,6 @@ vi.mock("#modules/payments/providers/esewa.provider.js", () => ({
   esewaProvider: { initiate: esewaInitiate, verify: esewaVerify },
 }));
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const OFFER_AMOUNT = 5_000;
 const LOOK_IMAGE_URL = "https://cdn.outfiqe.test/looks/offer.jpg";
 
@@ -141,7 +135,7 @@ const lockedBuildWith = async (owner: OutfitTestUser, editors: OutfitTestUser[])
     await writeAtCurrentVersion(member, "put", outfitId, "/happy", { isHappy: true });
   }
   const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-  expect(locked.status).toBe(OK_STATUS);
+  expect(locked.status).toBe(HTTP_STATUS.OK);
   return { outfitId, shirt, trousers };
 };
 
@@ -170,7 +164,7 @@ const paidOffer = async (paymentMethod: "KHALTI" | "ESEWA" = "KHALTI") => {
     paymentMethod,
     note: "Style it your way",
   });
-  expect(sent.status).toBe(CREATED_STATUS);
+  expect(sent.status).toBe(HTTP_STATUS.CREATED);
   const offerId: string = sent.body.data.offer.id;
   const verified = await callOffer(brandOwner, offerId, "/payment/verify");
   expect(verified.body.data.isPaid).toBe(true);
@@ -228,12 +222,12 @@ describe("sending an offer", () => {
     const first = await sendOffer(brandOwner, outfitId, validBody);
     const second = await sendOffer(brandOwner, outfitId, validBody);
 
-    expect(fromOutsider.status).toBe(NOT_FOUND_STATUS);
-    expect(toShopper.status).toBe(UNPROCESSABLE_STATUS);
-    expect(tooSmall.status).toBe(UNPROCESSABLE_STATUS);
-    expect(fromCreator.status).toBe(FORBIDDEN_STATUS);
-    expect(first.status).toBe(CREATED_STATUS);
-    expect(second.status).toBe(CONFLICT_STATUS);
+    expect(fromOutsider.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(toShopper.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(tooSmall.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(fromCreator.status).toBe(HTTP_STATUS.FORBIDDEN);
+    expect(first.status).toBe(HTTP_STATUS.CREATED);
+    expect(second.status).toBe(HTTP_STATUS.CONFLICT);
     expect(second.body.code).toBe("OFFER_ALREADY_OPEN");
   });
 });
@@ -252,8 +246,8 @@ describe("answering and posting", () => {
     await runOutfitOfferLifecycleSweep();
     const afterHold = await offerRow(offerId);
 
-    expect(accepted.status).toBe(OK_STATUS);
-    expect(posted.status).toBe(CREATED_STATUS);
+    expect(accepted.status).toBe(HTTP_STATUS.OK);
+    expect(posted.status).toBe(HTTP_STATUS.CREATED);
     expect(afterPosting.status).toBe(OutfitOfferStatus.POSTED);
     expect(afterPosting.lookId).toBe(posted.body.data.id);
     expect(afterHold.status).toBe(OutfitOfferStatus.RELEASED);
@@ -270,16 +264,16 @@ describe("answering and posting", () => {
     const declined = await callOffer(creator, offerId, "/decline");
     const offer = await offerRow(offerId);
 
-    expect(declined.status).toBe(OK_STATUS);
+    expect(declined.status).toBe(HTTP_STATUS.OK);
     expect(offer.status).toBe(OutfitOfferStatus.DECLINED);
     expect(offer.refundStatus).toBe(OutfitOfferRefundStatus.REFUNDED);
     expect(khaltiRefund).toHaveBeenCalledWith(
       expect.objectContaining({ gatewayTransactionId: "khalti-txn-1" }),
     );
     const sameDeclineAgain = await callOffer(creator, offerId, "/decline");
-    expect(sameDeclineAgain.status).toBe(CONFLICT_STATUS);
+    expect(sameDeclineAgain.status).toBe(HTTP_STATUS.CONFLICT);
     const cancelAfterwards = await callOffer(brandOwner, offerId, "/cancel");
-    expect(cancelAfterwards.status).toBe(CONFLICT_STATUS);
+    expect(cancelAfterwards.status).toBe(HTTP_STATUS.CONFLICT);
   });
 
   it("flags an eSewa refund for a person to make, since eSewa can't refund automatically", async () => {
@@ -288,7 +282,7 @@ describe("answering and posting", () => {
     const cancelled = await callOffer(brandOwner, offerId, "/cancel");
     const offer = await offerRow(offerId);
 
-    expect(cancelled.status).toBe(OK_STATUS);
+    expect(cancelled.status).toBe(HTTP_STATUS.OK);
     expect(offer.status).toBe(OutfitOfferStatus.CANCELLED);
     expect(offer.refundStatus).toBe(OutfitOfferRefundStatus.NEEDS_MANUAL_REFUND);
   });
@@ -340,7 +334,7 @@ describe("admin settling a dispute", () => {
       .set("Authorization", authHeader)
       .send({ reason: "Creator posted elsewhere by mistake; brand agreed" });
 
-    expect(released.status).toBe(OK_STATUS);
+    expect(released.status).toBe(HTTP_STATUS.OK);
     expect((await offerRow(offerId)).payoutStatus).toBe(OutfitOfferPayoutStatus.AVAILABLE);
     const auditEntry = await prisma.platformAuditLog.findFirst({
       where: { action: PLATFORM_AUDIT_ACTION.OUTFIT_OFFER_RELEASED_BY_ADMIN, targetId: offerId },
@@ -360,7 +354,7 @@ describe("admin settling a dispute", () => {
       .set("Authorization", authHeader)
       .send({ reason: "eSewa transfer ref 123" });
 
-    expect(marked.status).toBe(OK_STATUS);
+    expect(marked.status).toBe(HTTP_STATUS.OK);
     expect((await offerRow(offerId)).refundStatus).toBe(OutfitOfferRefundStatus.REFUNDED);
   });
 
@@ -373,6 +367,6 @@ describe("admin settling a dispute", () => {
       .set("Authorization", authHeader)
       .send({ reason: "Trying" });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });

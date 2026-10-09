@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
@@ -19,11 +20,6 @@ import { messageRepository } from "./message.repository.js";
 import type { ChatMemberReference, ChatSystemEvent } from "./message.schemas.js";
 import { describeSystemEvent, toMessageBroadcast } from "./message.utils.js";
 
-const BAD_REQUEST_STATUS = 400;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const GROUP_CREATOR_COUNT = 1;
 const NO_MEMBERS_LEFT = 0;
 const NO_ADMINS_LEFT = 0;
@@ -32,7 +28,8 @@ const MINIMUM_ADMIN_COUNT = 1;
 type SystemMessage = Awaited<ReturnType<typeof messageRepository.createSystemMessage>>;
 type PendingBroadcast = { message: SystemMessage; recipientIds: string[] };
 
-const groupNotFound = () => new AppError("GROUP_NOT_FOUND", "Group not found.", NOT_FOUND_STATUS);
+const groupNotFound = () =>
+  new AppError("GROUP_NOT_FOUND", "Group not found.", HTTP_STATUS.NOT_FOUND);
 
 const dedupeOtherIds = (callerId: string, userIds: string[]): string[] =>
   [...new Set(userIds)].filter((userId) => userId !== callerId);
@@ -52,7 +49,7 @@ const requireGroupMembership = async (
     throw new AppError(
       "BUILD_CHAT_MANAGED_BY_BUILD",
       "This chat belongs to an outfit build. Change who is in it from the build instead.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
   return callerMember;
@@ -65,7 +62,7 @@ const requireGroupAdmin = async (
 ) => {
   const callerMember = await requireGroupMembership(tx, conversationId, callerId);
   if (callerMember.role !== ConversationMemberRole.ADMIN) {
-    throw new AppError("NOT_GROUP_ADMIN", "Only a group admin can do that.", FORBIDDEN_STATUS);
+    throw new AppError("NOT_GROUP_ADMIN", "Only a group admin can do that.", HTTP_STATUS.FORBIDDEN);
   }
   return callerMember;
 };
@@ -77,7 +74,11 @@ const requireOtherMember = async (
 ) => {
   const member = await groupRepository.findMember(tx, conversationId, userId);
   if (!member) {
-    throw new AppError("MEMBER_NOT_FOUND", "That person isn't in this group.", NOT_FOUND_STATUS);
+    throw new AppError(
+      "MEMBER_NOT_FOUND",
+      "That person isn't in this group.",
+      HTTP_STATUS.NOT_FOUND,
+    );
   }
   return member;
 };
@@ -94,7 +95,7 @@ const assertReachable = async (callerId: string, userIds: string[]): Promise<voi
     throw new AppError(
       "MEMBERS_UNREACHABLE",
       "Some of these people can't be added to a group right now.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
       { unreachableUserIds },
     );
   }
@@ -106,7 +107,7 @@ const assertWithinMemberLimit = async (memberCount: number): Promise<void> => {
     throw new AppError(
       "GROUP_FULL",
       `A group can have at most ${maxGroupMembers} people.`,
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
     );
   }
 };
@@ -152,7 +153,7 @@ const createGroupOnce = async (
     throw new AppError(
       "GROUP_NEEDS_MEMBERS",
       "Add at least one other person to the group.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
   await assertWithinMemberLimit(otherMemberIds.length + GROUP_CREATOR_COUNT);
@@ -270,7 +271,7 @@ export const groupService = {
       throw new AppError(
         "USE_LEAVE_TO_EXIT",
         "To take yourself out of a group, leave it instead.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -313,7 +314,7 @@ export const groupService = {
         throw new AppError(
           "LAST_GROUP_ADMIN",
           "A group needs at least one admin. Make someone else an admin first.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 

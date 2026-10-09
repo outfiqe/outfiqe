@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
@@ -20,11 +21,6 @@ import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
-
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -149,7 +145,7 @@ describe("platform commission rules (admin)", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.BRAND_OWNER))
       .send({ tiers: SINGLE_FLAT_TIER });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("creates a new active rule and deactivates the previous one", async () => {
@@ -158,7 +154,7 @@ describe("platform commission rules (admin)", () => {
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
       .send({ tiers: SINGLE_FLAT_TIER });
-    expect(first.status).toBe(CREATED_STATUS);
+    expect(first.status).toBe(HTTP_STATUS.CREATED);
     expect(first.body.data.tiers).toHaveLength(1);
     expect(first.body.data.tiers[0]).toMatchObject({ feeType: "FLAT", flatAmount: 30 });
 
@@ -166,7 +162,7 @@ describe("platform commission rules (admin)", () => {
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
       .send({ tiers: TWO_TIER_LADDER });
-    expect(second.status).toBe(CREATED_STATUS);
+    expect(second.status).toBe(HTTP_STATUS.CREATED);
     expect(second.body.data.tiers).toHaveLength(2);
     expect(second.body.data.isActive).toBe(true);
 
@@ -180,7 +176,7 @@ describe("platform commission rules (admin)", () => {
     const listResponse = await request(testApp)
       .get("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader);
-    expect(listResponse.status).toBe(OK_STATUS);
+    expect(listResponse.status).toBe(HTTP_STATUS.OK);
     expect(listResponse.body.data).toHaveLength(2);
   });
 
@@ -232,7 +228,7 @@ describe("gateway fee rates (admin)", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.BRAND_OWNER))
       .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("creates a new active rate and deactivates only the previous rate for that provider", async () => {
@@ -242,19 +238,19 @@ describe("gateway fee rates (admin)", () => {
       .post("/api/brand-payouts/gateway-fee-rates")
       .set("Authorization", authHeader)
       .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
-    expect(firstEsewa.status).toBe(CREATED_STATUS);
+    expect(firstEsewa.status).toBe(HTTP_STATUS.CREATED);
 
     const khalti = await request(testApp)
       .post("/api/brand-payouts/gateway-fee-rates")
       .set("Authorization", authHeader)
       .send({ paymentMethod: PaymentMethod.KHALTI, ratePercent: 2.5 });
-    expect(khalti.status).toBe(CREATED_STATUS);
+    expect(khalti.status).toBe(HTTP_STATUS.CREATED);
 
     const secondEsewa = await request(testApp)
       .post("/api/brand-payouts/gateway-fee-rates")
       .set("Authorization", authHeader)
       .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 3 });
-    expect(secondEsewa.status).toBe(CREATED_STATUS);
+    expect(secondEsewa.status).toBe(HTTP_STATUS.CREATED);
     expect(secondEsewa.body.data.isActive).toBe(true);
 
     const rates = await prisma.gatewayFeeRate.findMany({
@@ -270,7 +266,7 @@ describe("gateway fee rates (admin)", () => {
     const listResponse = await request(testApp)
       .get("/api/brand-payouts/gateway-fee-rates")
       .set("Authorization", authHeader);
-    expect(listResponse.status).toBe(OK_STATUS);
+    expect(listResponse.status).toBe(HTTP_STATUS.OK);
     expect(listResponse.body.data).toHaveLength(3);
   });
 });
@@ -290,7 +286,7 @@ describe("brand commission exemptions (admin)", () => {
         reason: "Launch cohort",
       });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("creates, lists, and revokes an exemption", async () => {
@@ -306,7 +302,7 @@ describe("brand commission exemptions (admin)", () => {
         endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
         reason: "Launch cohort, first 10 brands",
       });
-    expect(createResponse.status).toBe(CREATED_STATUS);
+    expect(createResponse.status).toBe(HTTP_STATUS.CREATED);
     expect(createResponse.body.data.brandName).toBe(brand.name);
     expect(createResponse.body.data.revokedAt).toBeNull();
     const exemptionId = createResponse.body.data.id;
@@ -314,13 +310,13 @@ describe("brand commission exemptions (admin)", () => {
     const listResponse = await request(testApp)
       .get(`/api/brand-payouts/exemptions?brandId=${brand.id}`)
       .set("Authorization", authHeader);
-    expect(listResponse.status).toBe(OK_STATUS);
+    expect(listResponse.status).toBe(HTTP_STATUS.OK);
     expect(listResponse.body.data).toHaveLength(1);
 
     const revokeResponse = await request(testApp)
       .patch(`/api/brand-payouts/exemptions/${exemptionId}/revoke`)
       .set("Authorization", authHeader);
-    expect(revokeResponse.status).toBe(OK_STATUS);
+    expect(revokeResponse.status).toBe(HTTP_STATUS.OK);
 
     const revoked = await prisma.brandCommissionExemption.findUniqueOrThrow({
       where: { id: exemptionId },
@@ -330,7 +326,7 @@ describe("brand commission exemptions (admin)", () => {
     const secondRevoke = await request(testApp)
       .patch(`/api/brand-payouts/exemptions/${exemptionId}/revoke`)
       .set("Authorization", authHeader);
-    expect(secondRevoke.status).toBe(NOT_FOUND_STATUS);
+    expect(secondRevoke.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("does not alter an already-created brand payout when its brand's exemption is revoked", async () => {
@@ -354,7 +350,7 @@ describe("brand commission exemptions (admin)", () => {
     const revokeResponse = await request(testApp)
       .patch(`/api/brand-payouts/exemptions/${exemption.id}/revoke`)
       .set("Authorization", authHeader);
-    expect(revokeResponse.status).toBe(OK_STATUS);
+    expect(revokeResponse.status).toBe(HTTP_STATUS.OK);
 
     const unchangedPayout = await prisma.brandPayout.findUniqueOrThrow({
       where: { id: payout.id },
@@ -373,13 +369,13 @@ describe("brand-payout mutations require platform:commissions:manage", () => {
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
       .send({ tiers: SINGLE_FLAT_TIER });
-    expect(commissionRuleResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(commissionRuleResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const gatewayFeeResponse = await request(testApp)
       .post("/api/brand-payouts/gateway-fee-rates")
       .set("Authorization", authHeader)
       .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
-    expect(gatewayFeeResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(gatewayFeeResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const exemptionResponse = await request(testApp)
       .post("/api/brand-payouts/exemptions")
@@ -390,12 +386,12 @@ describe("brand-payout mutations require platform:commissions:manage", () => {
         endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
         reason: "Launch cohort",
       });
-    expect(exemptionResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(exemptionResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
 
     const revokeResponse = await request(testApp)
       .patch(`/api/brand-payouts/exemptions/${randomUUID()}/revoke`)
       .set("Authorization", authHeader);
-    expect(revokeResponse.status).toBe(FORBIDDEN_STATUS);
+    expect(revokeResponse.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });
 
@@ -430,7 +426,7 @@ describe("GET /api/brand-payouts/me/summary", () => {
       .get("/api/brand-payouts/me/summary")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toEqual({
       totalPayouts: 1600,
       pending: 500,
@@ -447,7 +443,7 @@ describe("GET /api/brand-payouts/me/summary", () => {
       .get("/api/brand-payouts/me/summary")
       .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });
 
@@ -466,7 +462,7 @@ describe("GET /api/brand-payouts/me", () => {
       .get("/api/brand-payouts/me")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.items).toHaveLength(2);
     expect(response.body.data.items[0].id).toBe(second.id);
     expect(response.body.data.items[0].productName).toBe("Ledger Item");
@@ -488,7 +484,7 @@ describe("GET /api/brand-payouts/me", () => {
       .query({ limit: 1 })
       .set("Authorization", authHeader);
 
-    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.status).toBe(HTTP_STATUS.OK);
     expect(firstPage.body.data.items).toHaveLength(1);
     expect(firstPage.body.data.nextCursor).not.toBeNull();
 
@@ -497,7 +493,7 @@ describe("GET /api/brand-payouts/me", () => {
       .query({ limit: 1, cursor: firstPage.body.data.nextCursor })
       .set("Authorization", authHeader);
 
-    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.status).toBe(HTTP_STATUS.OK);
     expect(secondPage.body.data.items).toHaveLength(1);
     expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
   });
@@ -509,6 +505,6 @@ describe("GET /api/brand-payouts/me", () => {
       .get("/api/brand-payouts/me")
       .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER));
 
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });

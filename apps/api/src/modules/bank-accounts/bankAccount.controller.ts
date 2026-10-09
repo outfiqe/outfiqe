@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import type {
   BankAccountBody,
@@ -11,14 +12,12 @@ import { validated } from "#middlewares/validate.js";
 
 import { bankAccountService } from "./bankAccount.service.js";
 
-const CREATED_STATUS = 201;
-
 export const bankAccountController = {
   async create(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<BankAccountBody>(res);
     const result = await bankAccountService.create(userId, body);
-    sendSuccess(res, result, "Bank account added.", CREATED_STATUS);
+    sendSuccess(res, result, "Bank account added.", HTTP_STATUS.CREATED);
   },
 
   async list(_req: Request, res: Response) {
