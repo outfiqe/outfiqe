@@ -25,19 +25,27 @@ This is **not** `crm-tickets` — that module is a CRM _tenant's_ support desk, 
   status-guarded `updateMany` that stamps/clears `resolvedAt`, so a concurrent status change
   loses cleanly. `listForAdmin`/`listForRequester` are cursor-paginated; requester reads are
   scoped in the `where` and only return `PUBLIC` messages.
-- `support.service.ts` — segment resolution from the account (`BRAND_OWNER` &rarr; `BRAND`,
-  approved creator &rarr; `CREATOR`, else `SHOPPER`), the transition-legality check, the domain
-  events, and all outbound email.
+- `support.service.ts` — `supportService`, the only object the controller imports: the two topic
+  services below spread together.
+- `requester/requester.service.ts` — the person asking for help: create a ticket (with segment
+  resolution from the account: `BRAND_OWNER` &rarr; `BRAND`, approved creator &rarr; `CREATOR`, else
+  `SHOPPER`), list and read their own tickets, reply, and reopen by token.
+- `agent/agent.service.ts` — the support team: the admin list and detail, replies, status changes,
+  assignment, priority, stats and the agent list.
+- `support.guards.ts` — the ticket-not-found error, the transition-legality check, and the
+  best-effort status move both sides use. Domain events and outbound email are sent from the
+  service that triggers them.
 - `support.controller.ts` / `support.routes.ts` — `/api/support`. Requester routes are behind
   `requireAuth` + a per-user rate limit; admin routes behind `requirePlatformRole(<key>)` and
   every admin mutation writes a `platformAudit` entry.
-- `support.emails.ts` templates live in `#email-templates/templates.ts` alongside every other
+- `support.emails.ts` templates live in `#email-templates/support.templates.ts` alongside every other
   transactional template (`supportRequestReceivedTemplate`, `supportStaffReplyTemplate`,
   `supportResolvedTemplate`).
 - `support.rate-limit.ts` — `supportCreateRateLimit` (5 / 24h per user) and `supportReplyRateLimit`.
 - `support.lifecycle.ts` — `runSupportAutoCloseSweep`, wired into `src/jobs/scheduled-jobs.ts`:
   closes `RESOLVED` requests older than 14 days and clears their reopen token.
-- `support.integration.test.ts` — the forward-only lifecycle + stamps, the guarded transitions,
+- `requester/requester.integration.test.ts` and `agent/agent.integration.test.ts` (shared setup in
+  `src/testing/integration/support-fixtures.ts`) — the forward-only lifecycle + stamps, the guarded transitions,
   requester isolation, admin key-gating, the assignment event, and the reopen token.
 
 ## Funnel
