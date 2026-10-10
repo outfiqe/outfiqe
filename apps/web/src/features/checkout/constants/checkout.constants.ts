@@ -1,4 +1,4 @@
-import { PaymentMethod } from "./api/checkoutSchemas";
+import { PaymentMethod } from "../api/checkoutSchemas";
 
 export const PAYMENT_METHODS = [
   {

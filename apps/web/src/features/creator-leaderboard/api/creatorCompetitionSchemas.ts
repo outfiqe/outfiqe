@@ -5,7 +5,7 @@ import {
   BadgeRarity,
 } from "@/features/creator-dashboard/api/badgeSchemas";
 
-import { CREATOR_LEADERBOARD_CATEGORY } from "../creatorLeaderboard.constants";
+import { CREATOR_LEADERBOARD_CATEGORY } from "../constants/creatorLeaderboard.constants";
 
 export const creatorCompetitionSchema = z.object({
   id: z.string(),

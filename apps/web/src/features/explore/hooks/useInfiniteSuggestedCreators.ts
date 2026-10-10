@@ -3,7 +3,7 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { SUGGESTED_CREATORS_MODAL_PAGE_SIZE } from "../explore.constants";
+import { SUGGESTED_CREATORS_MODAL_PAGE_SIZE } from "../constants/explore.constants";
 
 export const useInfiniteSuggestedCreators = (enabled: boolean) => {
   return useInfiniteCursorPage(

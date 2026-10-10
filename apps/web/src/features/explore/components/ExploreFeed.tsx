@@ -23,7 +23,7 @@ import {
   type FeedLayout,
   STAFF_LOCKED_EXPLORE_TABS,
   STAFF_LOCKED_TAB_TOOLTIP,
-} from "../explore.constants";
+} from "../constants/explore.constants";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";

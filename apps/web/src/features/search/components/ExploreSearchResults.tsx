@@ -9,7 +9,7 @@ import Masonry from "react-masonry-css";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { PostDetailModal } from "@/features/explore/components/PostDetailModal";
 import { PostGridCard } from "@/features/explore/components/PostGridCard";
-import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/explore.constants";
+import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/constants/explore.constants";
 import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";

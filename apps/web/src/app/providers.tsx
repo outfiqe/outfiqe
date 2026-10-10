@@ -1,6 +1,6 @@
 "use client";
 
-import "@/features/explore/offlineActionHandlers";
+import "@/features/explore/utils/offlineActionHandlers";
 
 import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

@@ -7,7 +7,7 @@ import Link, { useLinkStatus } from "next/link";
 import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
-import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../constants/explore.constants";
 import { useExploreTabs } from "../hooks/useExploreTabs";
 
 type ExploreSidebarNavProps = {

@@ -22,6 +22,12 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
+import {
+  cropBoxStyleForAspect,
+  DEFAULT_IMAGE_MIME_TYPE,
+  MAX_PHOTOS,
+  SEARCH_DEBOUNCE_MS,
+} from "../constants/postModal.constants";
 import { useMaxTaggedProducts } from "../hooks/useMaxTaggedProducts";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { useUpdateLook } from "../hooks/useUpdateLook";
@@ -30,12 +36,6 @@ import {
   collectTaggedProductSizeErrors,
   summarizeTaggedProductErrors,
 } from "../utils/taggedProductSizeErrors";
-import {
-  cropBoxStyleForAspect,
-  DEFAULT_IMAGE_MIME_TYPE,
-  MAX_PHOTOS,
-  SEARCH_DEBOUNCE_MS,
-} from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
 
 type NewLookPhoto = {

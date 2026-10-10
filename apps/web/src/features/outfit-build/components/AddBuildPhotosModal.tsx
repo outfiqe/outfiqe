@@ -9,7 +9,7 @@ import {
   cropBoxStyleForAspect,
   DEFAULT_IMAGE_MIME_TYPE,
   DEFAULT_POST_LAYOUT,
-} from "@/features/creator-dashboard/components/PostModal.constants";
+} from "@/features/creator-dashboard/constants/postModal.constants";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";

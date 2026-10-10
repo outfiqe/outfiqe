@@ -17,7 +17,7 @@ export {
   FEED_LAYOUT,
   FEED_LAYOUT_OPTIONS,
   type FeedLayout,
-} from "./explore.constants";
+} from "./constants/explore.constants";
 export { useInfiniteExploreFeed } from "./hooks/useInfiniteExploreFeed";
 export { useInfiniteSavedPosts } from "./hooks/useInfiniteSavedPosts";
 export { usePublicLook } from "./hooks/usePublicLook";

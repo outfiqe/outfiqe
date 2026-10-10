@@ -16,6 +16,13 @@ import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/useP
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import {
+  cropBoxStyleForAspect,
+  DEFAULT_IMAGE_MIME_TYPE,
+  DEFAULT_POST_LAYOUT,
+  MAX_PHOTOS,
+  SEARCH_DEBOUNCE_MS,
+} from "../constants/postModal.constants";
 import { useCreateLook } from "../hooks/useCreateLook";
 import { useMaxTaggedProducts } from "../hooks/useMaxTaggedProducts";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
@@ -25,13 +32,6 @@ import {
   summarizeTaggedProductErrors,
 } from "../utils/taggedProductSizeErrors";
 import { LayoutPicker } from "./LayoutPicker";
-import {
-  cropBoxStyleForAspect,
-  DEFAULT_IMAGE_MIME_TYPE,
-  DEFAULT_POST_LAYOUT,
-  MAX_PHOTOS,
-  SEARCH_DEBOUNCE_MS,
-} from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
 
 type PostModalProps = {

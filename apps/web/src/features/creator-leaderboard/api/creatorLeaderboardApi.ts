@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/lib/apiClient";
 
-import type { CreatorLeaderboardCategory } from "../creatorLeaderboard.constants";
+import type { CreatorLeaderboardCategory } from "../constants/creatorLeaderboard.constants";
 import {
   creatorLeaderboardCategoryListSchema,
   type CreatorLeaderboardCategoryState,

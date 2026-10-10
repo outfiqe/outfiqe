@@ -2,13 +2,13 @@ import { z } from "zod";
 
 import { registerOfflineActionHandler } from "@/features/pwa";
 
-import { exploreFeedApi } from "./api/exploreFeedApi";
-import { patchCreatorInFeedCaches, patchPostInFeedCaches } from "./utils/feedCacheUpdate";
+import { exploreFeedApi } from "../api/exploreFeedApi";
+import { patchCreatorInFeedCaches, patchPostInFeedCaches } from "./feedCacheUpdate";
 import {
   FOLLOW_CREATOR_ACTION_TYPE,
   LIKE_LOOK_ACTION_TYPE,
   SAVE_LOOK_ACTION_TYPE,
-} from "./utils/offlineActionTypes";
+} from "./offlineActionTypes";
 
 const likeLookPayloadSchema = z.object({ lookId: z.string(), liked: z.boolean() });
 

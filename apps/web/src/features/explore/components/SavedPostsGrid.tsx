@@ -5,7 +5,7 @@ import Masonry from "react-masonry-css";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
-import { MASONRY_BREAKPOINT_COLUMNS } from "../explore.constants";
+import { MASONRY_BREAKPOINT_COLUMNS } from "../constants/explore.constants";
 import { useInfiniteSavedPosts } from "../hooks/useInfiniteSavedPosts";
 import { PostCard } from "./PostCard";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";

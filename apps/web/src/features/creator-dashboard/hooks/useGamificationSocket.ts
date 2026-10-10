@@ -10,7 +10,7 @@ import {
   type AchievementUnlockedPayload,
   GAMIFICATION_SOCKET_EVENTS,
   type LevelUpPayload,
-} from "../socketEvents";
+} from "../constants/socketEvents";
 
 const RECENTLY_SHOWN_TOAST_LIMIT = 20;
 

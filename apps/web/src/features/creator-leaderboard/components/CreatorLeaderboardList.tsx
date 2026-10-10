@@ -2,7 +2,7 @@
 
 import { LeaderboardListSkeleton } from "@/features/leaderboard";
 
-import type { CreatorLeaderboardCategory } from "../creatorLeaderboard.constants";
+import type { CreatorLeaderboardCategory } from "../constants/creatorLeaderboard.constants";
 import { useCreatorLeaderboard } from "../hooks/useCreatorLeaderboard";
 import { CreatorLeaderboardPodium } from "./CreatorLeaderboardPodium";
 import { CreatorLeaderboardRow } from "./CreatorLeaderboardRow";

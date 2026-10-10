@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { FEED_LAYOUT } from "../explore.constants";
+import { FEED_LAYOUT } from "../constants/explore.constants";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 
 describe("ExploreFeedSkeleton", () => {

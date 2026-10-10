@@ -15,7 +15,7 @@ import {
   type CommentCreatedSocketPayload,
   type CommentReplyCreatedSocketPayload,
   EXPLORE_SOCKET_EVENTS,
-} from "../socketEvents";
+} from "../constants/socketEvents";
 import {
   appendCommentIfNew,
   applyReplyToCommentCaches,

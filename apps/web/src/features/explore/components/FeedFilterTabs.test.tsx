@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 
-import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../explore.constants";
+import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../constants/explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 

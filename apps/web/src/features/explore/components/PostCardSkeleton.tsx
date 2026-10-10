@@ -1,6 +1,6 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-import { FEED_LAYOUT, type FeedLayout } from "../explore.constants";
+import { FEED_LAYOUT, type FeedLayout } from "../constants/explore.constants";
 
 export const PostCardSkeleton = () => {
   return (

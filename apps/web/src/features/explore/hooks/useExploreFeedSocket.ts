@@ -10,8 +10,8 @@ import {
   releaseSocketConnection,
 } from "@/shared/lib/socketClient";
 
-import { EXPLORE_TAB } from "../explore.constants";
-import { EXPLORE_SOCKET_EVENTS, type FeedSyncResultPayload } from "../socketEvents";
+import { EXPLORE_TAB } from "../constants/explore.constants";
+import { EXPLORE_SOCKET_EVENTS, type FeedSyncResultPayload } from "../constants/socketEvents";
 
 const LAST_SEEN_LOOK_AT_STORAGE_KEY = "outfiqe:explore:last-seen-look-at";
 const LOOK_CREATED_RESYNC_DEBOUNCE_MS = 1500;

@@ -9,7 +9,7 @@ import { hasServerSessionCookie } from "@/features/auth/api/serverAuth";
 import { ExploreFeed } from "@/features/explore";
 import { buildExploreFeedQueryKey } from "@/features/explore/api/exploreFeedQueryKey";
 import { getExploreFeedFirstPageServer } from "@/features/explore/api/serverExploreFeed";
-import { EXPLORE_TAB } from "@/features/explore/explore.constants";
+import { EXPLORE_TAB } from "@/features/explore/constants/explore.constants";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 

@@ -6,7 +6,7 @@ import type {
   FeedComment,
   FeedCommentReply,
 } from "../api/exploreFeedSchemas";
-import { COMMENT_REPLY_PREVIEW_COUNT } from "../explore.constants";
+import { COMMENT_REPLY_PREVIEW_COUNT } from "../constants/explore.constants";
 
 export const lookCommentsQueryKey = (lookId: string) => ["look-comments", lookId] as const;
 

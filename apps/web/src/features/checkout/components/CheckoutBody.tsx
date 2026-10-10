@@ -12,7 +12,7 @@ import { useDeliveryZones } from "@/features/delivery-zones";
 
 import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { useBuyNowPayload } from "../hooks/useBuyNowPayload";
-import { buildBuyNowCart } from "../lib/buildBuyNowCart";
+import { buildBuyNowCart } from "../utils/buildBuyNowCart";
 import { CheckoutForm } from "./CheckoutForm";
 
 export const CheckoutBody = () => {

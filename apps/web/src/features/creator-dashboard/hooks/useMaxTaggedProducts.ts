@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { creatorLooksApi } from "../api/creatorLooksApi";
-import { FALLBACK_MAX_TAGGED_PRODUCTS } from "../components/PostModal.constants";
+import { FALLBACK_MAX_TAGGED_PRODUCTS } from "../constants/postModal.constants";
 
 export const LOOK_LIMITS_QUERY_KEY = ["creator-looks", "limits"];
 

@@ -4,7 +4,7 @@ import { Skeleton, Tooltip } from "@outfiqe/design-system";
 
 import { cn } from "@/shared/lib/cn";
 
-import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import { FEED_LAYOUT_OPTIONS, type FeedLayout } from "../constants/explore.constants";
 import { useExploreTabs } from "../hooks/useExploreTabs";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 

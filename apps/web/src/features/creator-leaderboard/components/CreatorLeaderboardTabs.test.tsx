@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CREATOR_LEADERBOARD_CATEGORY } from "../creatorLeaderboard.constants";
+import { CREATOR_LEADERBOARD_CATEGORY } from "../constants/creatorLeaderboard.constants";
 import { useCreatorLeaderboardCategories } from "../hooks/useCreatorLeaderboardCategories";
 import { CreatorLeaderboardTabs } from "./CreatorLeaderboardTabs";
 

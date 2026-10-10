@@ -3,7 +3,7 @@ import { toast } from "@outfiqe/design-system";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AchievementUnlockedPayload } from "../socketEvents";
+import type { AchievementUnlockedPayload } from "../constants/socketEvents";
 import { formatAchievementToast, useGamificationSocket } from "./useGamificationSocket";
 
 vi.mock("@outfiqe/design-system", async (importOriginal) => {
