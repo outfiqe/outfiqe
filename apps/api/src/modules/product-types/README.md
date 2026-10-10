@@ -11,23 +11,26 @@ never define themselves.
 ## Structure
 
 - `product-type.routes.ts` — `GET /admin` (admin, every type incl. inactive), `GET /` (public,
-  Redis-cached, active only), `GET /assignable` (brand-owner, active types that already have at
-  least one `SizeOption`), `POST /` + `POST /reorder` + `PATCH /:id` (admin, each refreshing the
+  Redis-cached, active only), `GET /assignable` (brand-owner, every active type, each with
+  `supportsFitRanges`), `POST /` + `POST /reorder` + `PATCH /:id` (admin, each refreshing the
   public cache).
 - `product-type.controller.ts` / `product-type.service.ts` / `product-type.repository.ts` —
   standard module layering.
 - `product-type.schemas.ts` — `createProductTypeSchema` (`label`, lowercase-hyphen `slug`,
-  `sortOrder?`, `isActive?`), `updateProductTypeSchema`, `reorderProductTypesSchema`.
+  `sortOrder?`, `isActive?`, `supportsFitRanges?`), `updateProductTypeSchema`, `reorderProductTypesSchema`.
 - `product-type.types.ts` — `ProductTypeRecord`, `ProductTypeWithCounts` (adds `productCount` +
   `sizeOptionCount`).
 - `product-type.utils.ts` — `toPublicProductType` mapper (`{ id, slug, label }`, the
-  `@outfiqe/types` `PublicProductType` shape).
+  `@outfiqe/types` `PublicProductType` shape) and `toAssignableProductType`, which adds
+  `supportsFitRanges` for the brand product form.
 
 ## Funnel
 
 **User-facing**: an admin manages the list on the "Garment types" page — add a type, drag to
-reorder, toggle it on/off. A new type only appears in a brand's product form once it is active
-**and** the admin has added sizes for it on the Sizes page. Turning a type off hides it from the
+reorder, toggle it on/off. A new type appears in a brand's product form as soon as it is active; the brand's own size
+standards supply its sizes (see `../size-standards`). Each type also says whether it takes a size
+chart (`supportsFitRanges`): headwear, footwear and accessories don't, because height and weight
+say nothing about their size, so the brand form hides the chart and stretch fields for them. Turning a type off hides it from the
 storefront filter, the per-type storefront sections, and the brand product form; existing products
 of that type stay in the database and reappear if the type is switched back on.
 

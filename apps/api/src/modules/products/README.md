@@ -60,9 +60,11 @@ Like the `totalStock` gap above, `collections` and `wishlist` don't call `withSa
 
 `Product.avgRating`/`reviewCount`/`rating{1-5}Count` follow the exact same pattern as `wornByCount` above: `refreshRatingSummary` re-`groupBy`s the product's non-deleted `ProductReview` rows and overwrites all six columns in one query, rather than incrementing/decrementing them as reviews are created/updated/deleted. Triggered from the owning `product-reviews` module (`productService.recomputeRatingSummary` → this method) after every write there, the same "cross-module denormalized field refreshed by calling back into `products`' own repository/service" shape `recountWornBy` already established. See `../product-reviews/README.md` for why a running increment/decrement was rejected here specifically (an edited review's _rating_ changing can't be kept correct by a simple increment/decrement pair the way a plain count can).
 
-## Sizes come from the admin-owned catalog, not free text
+## Sizes come from the brand's own size standard, not free text
 
-`createProductSchema.sizes` is `{ sizeOptionId, stock }[]`, resolved server-side against `sizeOptionService.getManyByIds` (see `../size-options/README.md`) — a brand picks from the admin's per-product-type size list, it doesn't type a label. `ProductSize.label` is still a plain denormalized string, though: `create()` copies the `SizeOption.label` onto the new `ProductSize` row once and never links back to it. Renaming or deleting a `SizeOption` later never mutates an already-created product's sizes — matches how a product's name/price also don't retroactively change when unrelated catalog data changes.
+A product's sizes are picked from one of its brand's size standards: `sizeStandardId` plus `sizes: { standardLabelId, stock, fitRange? }[]`, resolved server-side through `sizeStandardService.getOwnedLabelsInStandardOrder` (see `../size-standards/README.md`). A label from another brand's standard, or from an archived one, is a 404. The sizes are stored in the standard's order whatever order the brand ticked them in. `ProductSize.label` is a plain copy made once: renaming or removing a standard's size later never changes a product that already exists.
+
+The old admin catalog shape, `{ sizeOptionId, stock }[]` without a `sizeStandardId`, is still accepted until the brand form switches over; mixing the two shapes in one request is refused by the schema.
 
 ## Size charts — fit ranges, stretch and brand size standards
 
@@ -72,7 +74,11 @@ Every `ProductSize` can carry the height (cm) and weight (kg) range the brand cu
 
 **Existing products were moved onto brand standards by the migration.** `20261010120000_add_brand_size_standards_and_fit_ranges` gives each brand one standard per product type it sells (named "`<type label>` sizes", with the type's slug appended when two types share a label), holding exactly the labels that brand's products of that type already use. Labels keep the order the old admin catalog gave them, then the products' own order. Every product of that brand and type is linked to it. `product.fit-range.integration.test.ts` runs that same backfill SQL against fixtures, so the migration's logic is tested rather than a copy of it.
 
-**Product types decide whether a chart makes sense.** `ProductType.supportsFitRanges` is false for headwear, footwear and accessories (`DEFAULT_PRODUCT_TYPES` in `@outfiqe/utils`), where height and weight say nothing about size.
+**Editing a chart never replaces sizes.** `PUT /products/:id/size-chart` takes `{ isStretchable, sizes: [{ sizeId, fitRange | null }] }` and updates those rows in place, so it works on sizes that have already sold (unlike a type change, which replaces sizes and can hit `SIZES_IN_USE`). Every `sizeId` must belong to the product; one that doesn't rolls the whole edit back with `404 SIZE_NOT_FOUND`. `PATCH /products/:id` can also change `isStretchable` on its own; a type change to a type without charts clears it.
+
+**What shoppers see.** `GET /products/:id` adds `fitRange` to each size, plus `isStretchable` and `hasSizeChart` (the type takes charts and every size has a range). When an admin turns charts off for a type, stored ranges and stretch stay in the database but the product page gets `null`s, so switching it back on restores them.
+
+**Product types decide whether a chart makes sense.** `ProductType.supportsFitRanges` is false for headwear, footwear and accessories (`DEFAULT_PRODUCT_TYPES` in `@outfiqe/utils`), where height and weight say nothing about size. Sending a range or a stretch value for such a type is refused with `422 FIT_RANGES_NOT_SUPPORTED`. Charts are optional for now; making them required for new products is a later rollout step (see the size-fit PRD).
 
 ## Restocking, editing, and deleting all work regardless of status
 

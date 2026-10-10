@@ -1,9 +1,12 @@
+import type { PublicProductType } from "@outfiqe/types";
+
 export type ProductTypeRecord = {
   id: string;
   slug: string;
   label: string;
   sortOrder: number;
   isActive: boolean;
+  supportsFitRanges: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -18,6 +21,9 @@ export type CreateProductTypeInput = {
   label: string;
   sortOrder?: number;
   isActive?: boolean;
+  supportsFitRanges?: boolean;
 };
+
+export type AssignableProductType = PublicProductType & { supportsFitRanges: boolean };
 
 export type UpdateProductTypeInput = Partial<CreateProductTypeInput>;

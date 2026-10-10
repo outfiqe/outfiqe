@@ -71,7 +71,7 @@ export const productTypeRepository = {
 
   async listAssignable(): Promise<ProductTypeRecord[]> {
     return prisma.productType.findMany({
-      where: { isActive: true, sizeOptions: { some: {} } },
+      where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   },

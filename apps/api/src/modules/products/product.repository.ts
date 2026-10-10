@@ -19,6 +19,7 @@ import {
 } from "./product.constants.js";
 import type {
   BrandProductSize,
+  BrandProductSizeWithFit,
   CreateProductInput,
   InventoryLedgerEntryInput,
   ProductDiscountRecord,
@@ -27,16 +28,19 @@ import type {
   ProductSalesStats,
   ProductSearchParams,
   ProductSearchResult,
+  ProductSizeFitColumns,
   ProductSizeRecord,
+  ProductTypeSummary,
   ProductWithStock,
   ProductWithStockSizesAndImages,
   SeenOnCreator,
   SetProductDiscountInput,
+  SizeChartEntry,
   StockLedgerMismatch,
   UpdateProductDiscountInput,
   UpdateProductInput,
 } from "./product.types.js";
-import { sumStock } from "./product.utils.js";
+import { sumStock, toFitColumns, toFitRange } from "./product.utils.js";
 
 export type { DbClient } from "#types/db.types.js";
 
@@ -58,11 +62,21 @@ export const withActiveDiscount = () => {
   };
 };
 
+const sizeFitColumnsSelect = {
+  minHeightCm: true,
+  maxHeightCm: true,
+  minWeightKg: true,
+  maxWeightKg: true,
+} as const;
+
 const withBrandAndCategories = {
   brand: { select: { name: true } },
   categories: { select: { slug: true, name: true } },
   productType: { select: { slug: true, label: true } },
-  sizes: { select: { id: true, label: true, stock: true }, orderBy: { sortOrder: "asc" as const } },
+  sizes: {
+    select: { id: true, label: true, stock: true, ...sizeFitColumnsSelect },
+    orderBy: { sortOrder: "asc" as const },
+  },
 };
 
 const withImages = {
@@ -187,18 +201,25 @@ const withSalesStats = async <T extends { id: string }>(
   return rows.map((row) => ({ ...row, ...(stats.get(row.id) ?? EMPTY_SALES_STATS) }));
 };
 
-const toWithTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>({
+type BrandProductSizeRow = BrandProductSize & ProductSizeFitColumns;
+
+const toWithTotalStockAndSizes = <T extends { sizes: BrandProductSizeRow[] }>({
   sizes,
   ...rest
-}: T): Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] } => ({
+}: T): Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSizeWithFit[] } => ({
   ...rest,
   totalStock: sumStock(sizes),
-  sizes: sizes.map(({ id, label, stock }) => ({ id, label, stock })),
+  sizes: sizes.map(({ id, label, stock, ...fitColumns }) => ({
+    id,
+    label,
+    stock,
+    fitRange: toFitRange(fitColumns),
+  })),
 });
 
-const withTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>(
+const withTotalStockAndSizes = <T extends { sizes: BrandProductSizeRow[] }>(
   rows: T[],
-): (Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] })[] =>
+): (Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSizeWithFit[] })[] =>
   rows.map(toWithTotalStockAndSizes);
 
 export const productRepository = {
@@ -222,11 +243,12 @@ export const productRepository = {
             }
           : undefined,
         sizes: {
-          create: sizeInputs.map(({ label, stock, sortOrder }) => ({
+          create: sizeInputs.map(({ label, stock, sortOrder, fitRange }) => ({
             label,
             stock,
             inStock: stock > 0,
             sortOrder,
+            ...toFitColumns(fitRange),
           })),
         },
       },
@@ -263,11 +285,12 @@ export const productRepository = {
           ? {
               sizes: {
                 deleteMany: {},
-                create: sizes.map(({ label, stock, sortOrder }) => ({
+                create: sizes.map(({ label, stock, sortOrder, fitRange }) => ({
                   label,
                   stock,
                   inStock: stock > 0,
                   sortOrder,
+                  ...toFitColumns(fitRange),
                 })),
               },
             }
@@ -451,6 +474,7 @@ export const productRepository = {
         brandId: string;
         sizes: ProductSizeRecord[];
         images: (ProductFirstImageAsset & { url: string })[];
+        productType: ProductTypeSummary & { supportsFitRanges: boolean };
       })
     | null
   > {
@@ -464,8 +488,11 @@ export const productRepository = {
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
-        productType: { select: { slug: true, label: true } },
-        sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
+        productType: { select: { slug: true, label: true, supportsFitRanges: true } },
+        sizes: {
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, label: true, stock: true, ...sizeFitColumnsSelect },
+        },
         ...withGalleryImageAssets,
         ...withActiveDiscount(),
       },
@@ -476,8 +503,35 @@ export const productRepository = {
     return {
       ...rest,
       totalStock: sumStock(sizes),
-      sizes: sizes.map(({ id, label, stock }) => ({ id, label, inStock: stock > 0 })),
+      sizes: sizes.map(({ id, label, stock, ...fitColumns }) => ({
+        id,
+        label,
+        inStock: stock > 0,
+        fitRange: toFitRange(fitColumns),
+      })),
     };
+  },
+
+  async updateSizeChart(
+    client: DbClient,
+    productId: string,
+    isStretchable: boolean | null,
+    sizeChartEntries: SizeChartEntry[],
+  ): Promise<{ updatedSizeCount: number; product: ProductWithStockSizesAndImages }> {
+    let updatedSizeCount = 0;
+    for (const { sizeId, fitRange } of sizeChartEntries) {
+      const { count } = await client.productSize.updateMany({
+        where: { id: sizeId, productId },
+        data: toFitColumns(fitRange),
+      });
+      updatedSizeCount += count;
+    }
+    const product = await client.product.update({
+      where: { id: productId },
+      data: { isStretchable },
+      include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
+    });
+    return { updatedSizeCount, product: toWithTotalStockAndSizes(product) };
   },
 
   async decrementStock(client: DbClient, sizeId: string, qty: number): Promise<boolean> {

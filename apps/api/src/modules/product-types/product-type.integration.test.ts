@@ -40,7 +40,12 @@ const adminAuthHeader = async () => {
 
 const createProductType = async (
   slug: string,
-  overrides: { label?: string; sortOrder?: number; isActive?: boolean } = {},
+  overrides: {
+    label?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+    supportsFitRanges?: boolean;
+  } = {},
 ) =>
   prisma.productType.create({
     data: {
@@ -48,11 +53,9 @@ const createProductType = async (
       label: overrides.label ?? slug,
       sortOrder: overrides.sortOrder ?? 0,
       isActive: overrides.isActive ?? true,
+      supportsFitRanges: overrides.supportsFitRanges ?? true,
     },
   });
-
-const addSizeOption = (productTypeId: string, label: string) =>
-  prisma.sizeOption.create({ data: { productTypeId, label } });
 
 describe("POST /api/product-types", () => {
   it("creates a garment type as an admin", async () => {
@@ -109,6 +112,18 @@ describe("PATCH /api/product-types/:id", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.isActive).toBe(false);
+  });
+
+  it("turns size charts off for a garment type", async () => {
+    const productType = await createProductType(`fit-off-${randomUUID().slice(0, 6)}`);
+
+    const response = await request(testApp)
+      .patch(`/api/product-types/${productType.id}`)
+      .set("Authorization", await adminAuthHeader())
+      .send({ supportsFitRanges: false });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.supportsFitRanges).toBe(false);
   });
 });
 
@@ -186,17 +201,16 @@ describe("GET /api/product-types", () => {
 });
 
 describe("GET /api/product-types/assignable", () => {
-  it("only lists active types that already have at least one size option", async () => {
-    const withSizes = await createProductType(`asg-yes-${randomUUID().slice(0, 6)}`, {
-      label: "Has sizes",
+  it("lists every active type, saying which ones take a size chart", async () => {
+    await createProductType(`asg-fit-${randomUUID().slice(0, 6)}`, { label: "Kurtas" });
+    await createProductType(`asg-bag-${randomUUID().slice(0, 6)}`, {
+      label: "Bags",
+      supportsFitRanges: false,
     });
-    await addSizeOption(withSizes.id, "One size");
-    await createProductType(`asg-no-${randomUUID().slice(0, 6)}`, { label: "No sizes" });
-    const inactiveWithSizes = await createProductType(`asg-off-${randomUUID().slice(0, 6)}`, {
-      label: "Off but sized",
+    await createProductType(`asg-off-${randomUUID().slice(0, 6)}`, {
+      label: "Switched off",
       isActive: false,
     });
-    await addSizeOption(inactiveWithSizes.id, "One size");
 
     const brandOwner = await createUser(UserRole.BRAND_OWNER);
     const response = await request(testApp)
@@ -204,7 +218,15 @@ describe("GET /api/product-types/assignable", () => {
       .set("Authorization", authHeaderFor(brandOwner.id, UserRole.BRAND_OWNER));
 
     expect(response.status).toBe(200);
-    const labels = response.body.data.map((productType: { label: string }) => productType.label);
-    expect(labels).toEqual(["Has sizes"]);
+    const assignableTypes = response.body.data.map(
+      ({ label, supportsFitRanges }: { label: string; supportsFitRanges: boolean }) => ({
+        label,
+        supportsFitRanges,
+      }),
+    );
+    expect(assignableTypes).toEqual([
+      { label: "Kurtas", supportsFitRanges: true },
+      { label: "Bags", supportsFitRanges: false },
+    ]);
   });
 });

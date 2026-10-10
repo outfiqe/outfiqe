@@ -15,6 +15,7 @@ import type {
   SetProductDiscountBody,
   UpdateProductBody,
   UpdateProductDiscountBody,
+  UpdateSizeChartBody,
 } from "./product.schemas.js";
 import { productService } from "./product.service.js";
 
@@ -36,6 +37,15 @@ export const productController = {
 
     const product = await productService.update(userId, id, body);
     sendSuccess(res, product, "Product updated.");
+  },
+
+  async updateSizeChart(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+    const body = validated.body<UpdateSizeChartBody>(res);
+
+    const product = await productService.updateSizeChart(userId, id, body);
+    sendSuccess(res, product, "Size chart saved.");
   },
 
   async adjustStock(_req: Request, res: Response) {

@@ -19,6 +19,7 @@ import {
   setProductDiscountSchema,
   updateProductDiscountSchema,
   updateProductSchema,
+  updateSizeChartSchema,
 } from "./product.schemas.js";
 
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
@@ -70,6 +71,12 @@ productRoutes.patch(
   ...requireBrandOwner,
   validate({ params: productIdParamSchema, body: updateProductSchema }),
   productController.update,
+);
+productRoutes.put(
+  "/:id/size-chart",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema, body: updateSizeChartSchema }),
+  productController.updateSizeChart,
 );
 productRoutes.patch(
   "/:id/stock",

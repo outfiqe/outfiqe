@@ -5,8 +5,12 @@ import { AppError } from "#middlewares/error-handler.js";
 
 import { productTypeRepository } from "./product-type.repository.js";
 import type { CreateProductTypeBody, UpdateProductTypeBody } from "./product-type.schemas.js";
-import type { ProductTypeRecord, ProductTypeWithCounts } from "./product-type.types.js";
-import { toPublicProductType } from "./product-type.utils.js";
+import type {
+  AssignableProductType,
+  ProductTypeRecord,
+  ProductTypeWithCounts,
+} from "./product-type.types.js";
+import { toAssignableProductType, toPublicProductType } from "./product-type.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -70,9 +74,13 @@ export const productTypeService = {
     return productTypes.map(toPublicProductType);
   },
 
-  async listAssignable(): Promise<PublicProductType[]> {
+  async listAssignable(): Promise<AssignableProductType[]> {
     const productTypes = await productTypeRepository.listAssignable();
-    return productTypes.map(toPublicProductType);
+    return productTypes.map(toAssignableProductType);
+  },
+
+  async getById(id: string): Promise<ProductTypeRecord> {
+    return requireProductType(id);
   },
 
   async getBySlug(slug: string): Promise<ProductTypeRecord> {

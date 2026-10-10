@@ -12,6 +12,7 @@ type ProductFixture = Omit<ProductWithStockSizesAndImages, "images"> & {
   images: (ProductFirstImageAsset & { url: string })[];
 };
 import {
+  hasCompleteSizeChart,
   isLowStock,
   isNew,
   isThriftSoldOut,
@@ -19,6 +20,8 @@ import {
   sumStock,
   toBrandSummary,
   toDiscountView,
+  toFitColumns,
+  toFitRange,
   toPublicProduct,
   toSuggestion,
 } from "./product.utils.js";
@@ -59,11 +62,13 @@ const buildProduct = (overrides: Partial<ProductFixture> = {}): ProductFixture =
   isThrift: false,
   thriftConditionRating: null,
   thriftConditionNotes: null,
+  isStretchable: null,
+  sizeStandardId: null,
   brand: { name: "Acme" },
   categories: [{ slug: "outerwear", name: "Outerwear" }],
   productType: { slug: "jacket", label: "Jacket" },
   totalStock: 10,
-  sizes: [{ id: "size-1", label: "M", stock: 10 }],
+  sizes: [{ id: "size-1", label: "M", stock: 10, fitRange: null }],
   images: [{ url: "jacket.png" }],
   ...overrides,
 });
@@ -295,5 +300,46 @@ describe("toBrandSummary", () => {
     const summary = toBrandSummary(buildProduct({ isThrift: true, totalStock: 0 }));
     expect(summary.isThrift).toBe(true);
     expect(summary.isSoldOut).toBe(true);
+  });
+});
+
+const MEDIUM_FIT_RANGE = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
+
+describe("toFitRange", () => {
+  it("builds a range when all four ends are stored", () => {
+    expect(toFitRange(MEDIUM_FIT_RANGE)).toEqual(MEDIUM_FIT_RANGE);
+  });
+
+  it("returns null when any end is missing", () => {
+    expect(toFitRange({ ...MEDIUM_FIT_RANGE, maxWeightKg: null })).toBeNull();
+  });
+});
+
+describe("toFitColumns", () => {
+  it("spreads a range into its four columns", () => {
+    expect(toFitColumns(MEDIUM_FIT_RANGE)).toEqual(MEDIUM_FIT_RANGE);
+  });
+
+  it("clears all four columns for no range", () => {
+    expect(toFitColumns(null)).toEqual({
+      minHeightCm: null,
+      maxHeightCm: null,
+      minWeightKg: null,
+      maxWeightKg: null,
+    });
+  });
+});
+
+describe("hasCompleteSizeChart", () => {
+  it("is true when the type takes charts and every size has a range", () => {
+    expect(hasCompleteSizeChart(true, [{ fitRange: MEDIUM_FIT_RANGE }])).toBe(true);
+  });
+
+  it.each([
+    ["the type doesn't take charts", false, [{ fitRange: MEDIUM_FIT_RANGE }]],
+    ["a size has no range", true, [{ fitRange: MEDIUM_FIT_RANGE }, { fitRange: null }]],
+    ["there are no sizes", true, []],
+  ])("is false when %s", (_description, supportsFitRanges, sizes) => {
+    expect(hasCompleteSizeChart(supportsFitRanges, sizes)).toBe(false);
   });
 });

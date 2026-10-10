@@ -29,6 +29,7 @@ import { productTypeService } from "#modules/product-types/product-type.service.
 import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
 import { saleService } from "#modules/sale/sale.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
+import { sizeStandardService } from "#modules/size-standards/sizeStandard.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
@@ -47,9 +48,12 @@ import type {
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
+  ProductSizeInput,
   SetProductDiscountBody,
+  StandardSizeInput,
   UpdateProductBody,
   UpdateProductDiscountBody,
+  UpdateSizeChartBody,
 } from "./product.schemas.js";
 import type {
   BrandProductSize,
@@ -69,6 +73,7 @@ import type {
   StockMovement,
 } from "./product.types.js";
 import {
+  hasCompleteSizeChart,
   isUuid,
   mergeStockLinesBySize,
   toBrandSummary,
@@ -80,6 +85,8 @@ import {
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
+const UNPROCESSABLE_STATUS = 422;
+const NO_STOCK = 0;
 
 const DISCOUNT_CEILING_PERCENT = MAX_BRAND_DISCOUNT_BASIS_POINTS / BASIS_POINTS_PER_PERCENT;
 const DISCOUNT_EXCEEDS_CEILING_MESSAGE = `A brand discount can't be worth more than ${DISCOUNT_CEILING_PERCENT}% of the product's price.`;
@@ -161,6 +168,90 @@ const recordNewSizeStock = (
     sizes.map(({ id, stock }) => ({ sizeId: id, delta: stock })),
   );
 
+const isStandardSizeInputs = (
+  sizes: ProductSizeInput[] | StandardSizeInput[],
+): sizes is StandardSizeInput[] => sizes.every((size) => "standardLabelId" in size);
+
+const resolveCatalogSizeInputs = async (
+  productTypeId: string,
+  sizes: ProductSizeInput[],
+): Promise<CreateProductSizeInput[]> => {
+  const sizeOptions = await sizeOptionService.getManyByIds(
+    sizes.map((size) => size.sizeOptionId),
+    productTypeId,
+  );
+  const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
+
+  return sizes.map(({ sizeOptionId, stock }, sortOrder) => {
+    const sizeOption = sizeOptionById.get(sizeOptionId);
+    if (!sizeOption) {
+      throw new AppError(
+        "SIZE_OPTION_NOT_FOUND",
+        "One or more selected sizes weren't found.",
+        NOT_FOUND_STATUS,
+      );
+    }
+    return { label: sizeOption.label, stock, sortOrder, fitRange: null };
+  });
+};
+
+const resolveStandardSizeInputs = async (
+  brandId: string,
+  sizeStandardId: string | undefined,
+  sizes: StandardSizeInput[],
+): Promise<CreateProductSizeInput[]> => {
+  if (!sizeStandardId) {
+    throw new AppError(
+      "SIZE_STANDARD_REQUIRED",
+      "Pick the size standard these sizes come from.",
+      UNPROCESSABLE_STATUS,
+    );
+  }
+  const sizeInputByLabelId = new Map(sizes.map((size) => [size.standardLabelId, size]));
+  const ownedLabels = await sizeStandardService.getOwnedLabelsInStandardOrder(
+    brandId,
+    sizeStandardId,
+    [...sizeInputByLabelId.keys()],
+  );
+
+  return ownedLabels.map(({ id, label }, sortOrder) => {
+    const sizeInput = sizeInputByLabelId.get(id);
+    return {
+      label,
+      sortOrder,
+      stock: sizeInput?.stock ?? NO_STOCK,
+      fitRange: sizeInput?.fitRange ?? null,
+    };
+  });
+};
+
+const resolveSizeInputs = (
+  brandId: string,
+  productTypeId: string,
+  sizeStandardId: string | undefined,
+  sizes: ProductSizeInput[] | StandardSizeInput[],
+): Promise<CreateProductSizeInput[]> =>
+  isStandardSizeInputs(sizes)
+    ? resolveStandardSizeInputs(brandId, sizeStandardId, sizes)
+    : resolveCatalogSizeInputs(productTypeId, sizes);
+
+const assertFitDataAllowed = (
+  supportsFitRanges: boolean,
+  isStretchable: boolean | null | undefined,
+  sizes: { fitRange: CreateProductSizeInput["fitRange"] }[],
+): void => {
+  const hasFitData =
+    (isStretchable !== undefined && isStretchable !== null) ||
+    sizes.some(({ fitRange }) => fitRange !== null);
+  if (!supportsFitRanges && hasFitData) {
+    throw new AppError(
+      "FIT_RANGES_NOT_SUPPORTED",
+      "This kind of clothing doesn't take a size chart or a stretch setting.",
+      UNPROCESSABLE_STATUS,
+    );
+  }
+};
+
 const hydrateSavedFlags = async (
   products: PublicProduct[],
   viewerId?: string,
@@ -186,6 +277,8 @@ export const productService = {
       imageAssetIds,
       lowStock,
       sizes,
+      sizeStandardId,
+      isStretchable,
       isThrift,
       thriftConditionRating,
       thriftConditionNotes,
@@ -197,11 +290,8 @@ export const productService = {
     }
     const productType = await productTypeService.getActiveBySlug(type);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
-    const sizeOptions = await sizeOptionService.getManyByIds(
-      sizes.map((size) => size.sizeOptionId),
-      productType.id,
-    );
-    const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
+    const resolvedSizes = await resolveSizeInputs(brandId, productType.id, sizeStandardId, sizes);
+    assertFitDataAllowed(productType.supportsFitRanges, isStretchable, resolvedSizes);
 
     const productInput = {
       brandId,
@@ -215,17 +305,9 @@ export const productService = {
       isThrift,
       thriftConditionRating: isThrift ? thriftConditionRating : undefined,
       thriftConditionNotes: isThrift ? thriftConditionNotes : undefined,
-      sizes: sizes.map(({ sizeOptionId, stock }, sortOrder) => {
-        const sizeOption = sizeOptionById.get(sizeOptionId);
-        if (!sizeOption) {
-          throw new AppError(
-            "SIZE_OPTION_NOT_FOUND",
-            "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
-          );
-        }
-        return { label: sizeOption.label, stock, sortOrder };
-      }),
+      sizeStandardId,
+      isStretchable,
+      sizes: resolvedSizes,
     };
 
     const product = await prisma.$transaction(async (tx) => {
@@ -249,6 +331,8 @@ export const productService = {
       imageAssetIds,
       lowStock,
       sizes,
+      sizeStandardId,
+      isStretchable,
       isThrift,
       thriftConditionRating,
       thriftConditionNotes,
@@ -277,25 +361,23 @@ export const productService = {
           BAD_REQUEST_STATUS,
         );
       }
-
-      const sizeOptions = await sizeOptionService.getManyByIds(
-        sizes.map((size) => size.sizeOptionId),
-        targetProductType.id,
-      );
-      const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
-
-      sizeChanges = sizes.map(({ sizeOptionId, stock }, sortOrder) => {
-        const sizeOption = sizeOptionById.get(sizeOptionId);
-        if (!sizeOption) {
-          throw new AppError(
-            "SIZE_OPTION_NOT_FOUND",
-            "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
-          );
-        }
-        return { label: sizeOption.label, stock, sortOrder };
-      });
+      sizeChanges = await resolveSizeInputs(brandId, targetProductType.id, sizeStandardId, sizes);
     }
+
+    const effectiveProductType =
+      targetProductType ??
+      (isStretchable === undefined
+        ? undefined
+        : await productTypeService.getById(product.productTypeId));
+    if (effectiveProductType) {
+      assertFitDataAllowed(
+        effectiveProductType.supportsFitRanges,
+        isStretchable,
+        sizeChanges ?? [],
+      );
+    }
+    const stretchAfterTypeChange =
+      isTypeChange && !targetProductType.supportsFitRanges ? null : isStretchable;
 
     try {
       const updatedProduct = await prisma.$transaction(async (tx) => {
@@ -308,6 +390,8 @@ export const productService = {
           imageAssetIds,
           lowStock,
           sizes: sizeChanges,
+          sizeStandardId: isTypeChange ? sizeStandardId : undefined,
+          isStretchable: stretchAfterTypeChange,
           isThrift,
           thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
           thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
@@ -652,11 +736,47 @@ export const productService = {
     };
   },
 
+  async updateSizeChart(
+    userId: string,
+    productId: string,
+    { isStretchable, sizes: sizeChartEntries }: UpdateSizeChartBody,
+  ): Promise<ProductBrandSummary> {
+    const brandId = await requireBrandId(userId);
+    const product = await requireOwnedProduct(productId, brandId);
+    const productType = await productTypeService.getById(product.productTypeId);
+    if (!productType.supportsFitRanges) {
+      throw new AppError(
+        "FIT_RANGES_NOT_SUPPORTED",
+        "This kind of clothing doesn't take a size chart or a stretch setting.",
+        UNPROCESSABLE_STATUS,
+      );
+    }
+
+    const updatedProduct = await prisma.$transaction(async (tx) => {
+      const { updatedSizeCount, product: savedProduct } = await productRepository.updateSizeChart(
+        tx,
+        productId,
+        isStretchable,
+        sizeChartEntries,
+      );
+      if (updatedSizeCount !== sizeChartEntries.length) {
+        throw new AppError(
+          "SIZE_NOT_FOUND",
+          "One or more sizes weren't found on this product.",
+          NOT_FOUND_STATUS,
+        );
+      }
+      return savedProduct;
+    });
+    return toBrandSummary(updatedProduct);
+  },
+
   async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
     const product = await productRepository.findPublicById(id);
     if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
 
-    const { brandId, brand, sizes, images, wornByCount } = product;
+    const { brandId, brand, sizes, images, wornByCount, productType, isStretchable } = product;
+    const { supportsFitRanges } = productType;
 
     const [seenOnCreators, isSaved] = await Promise.all([
       productRepository.listSeenOnCreators(id),
@@ -666,7 +786,9 @@ export const productService = {
     return {
       ...toPublicProduct(product),
       brand: { id: brandId, name: brand.name },
-      sizes,
+      sizes: supportsFitRanges ? sizes : sizes.map((size) => ({ ...size, fitRange: null })),
+      isStretchable: supportsFitRanges ? isStretchable : null,
+      hasSizeChart: hasCompleteSizeChart(supportsFitRanges, sizes),
       images: images.map((image) => image.url),
       wornByCount,
       seenOnCreators,

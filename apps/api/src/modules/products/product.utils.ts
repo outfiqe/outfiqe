@@ -1,3 +1,5 @@
+import type { FitRange } from "@outfiqe/utils";
+
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import {
   computeDiscountPercent,
@@ -10,6 +12,7 @@ import type {
   ProductBrandSummary,
   ProductDiscountRecord,
   ProductDiscountView,
+  ProductSizeFitColumns,
   ProductSuggestion,
   ProductWithBrand,
   ProductWithOptionalStock,
@@ -153,3 +156,26 @@ export const toBrandSummary = ({
     isSoldOut: isThriftSoldOut(isThrift, totalStock),
   };
 };
+
+export const toFitRange = ({
+  minHeightCm,
+  maxHeightCm,
+  minWeightKg,
+  maxWeightKg,
+}: ProductSizeFitColumns): FitRange | null =>
+  minHeightCm === null || maxHeightCm === null || minWeightKg === null || maxWeightKg === null
+    ? null
+    : { minHeightCm, maxHeightCm, minWeightKg, maxWeightKg };
+
+export const toFitColumns = (fitRange: FitRange | null): ProductSizeFitColumns => ({
+  minHeightCm: fitRange?.minHeightCm ?? null,
+  maxHeightCm: fitRange?.maxHeightCm ?? null,
+  minWeightKg: fitRange?.minWeightKg ?? null,
+  maxWeightKg: fitRange?.maxWeightKg ?? null,
+});
+
+export const hasCompleteSizeChart = (
+  supportsFitRanges: boolean,
+  sizes: { fitRange: FitRange | null }[],
+): boolean =>
+  supportsFitRanges && sizes.length > 0 && sizes.every(({ fitRange }) => fitRange !== null);
