@@ -2,9 +2,13 @@ import { cn, layerBorderWidthPx, layerFontSizePx, SHAPE_CLIP_PATH } from "@outfi
 import { ImageIcon } from "lucide-react";
 import { Rnd } from "react-rnd";
 
-import type { BadgeLayer } from "../../schemas";
-import { BADGE_FONT_WEIGHT, BADGE_LAYER_TYPE, CANVAS_SIZE_PX } from "./studioLayer.constants";
-import { percentToPx, pxToPercent } from "./studioLayer.utils";
+import type { BadgeLayer } from "../../../schemas";
+import {
+  BADGE_FONT_WEIGHT,
+  BADGE_LAYER_TYPE,
+  CANVAS_SIZE_PX,
+} from "../constants/studioLayer.constants";
+import { percentToPx, pxToPercent } from "../utils/studioLayer.utils";
 
 const CHECKERBOARD_STYLE = {
   backgroundImage:

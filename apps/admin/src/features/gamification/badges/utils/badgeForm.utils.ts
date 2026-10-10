@@ -1,21 +1,21 @@
 import type { BadgeDesignConfig } from "@outfiqe/types";
 
-import type { BadgeFormInput } from "../api";
+import type { BadgeFormInput } from "../../api";
 import {
   AUTO_ANIMATION_OPTION,
   BADGE_DESIGN_MODE,
   DEFAULT_BADGE_ICON,
-} from "../badgeOptions.constants";
-import { EMPTY_CONDITION } from "../conditions/condition.constants";
-import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
+} from "../../badgeOptions.constants";
+import { EMPTY_CONDITION } from "../../conditions/condition.constants";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
 import {
   isStudioDesignConfig,
   legacyImageUrlOf,
   legacyShapeAndColorOf,
   studioLayersOf,
-} from "../designConfig.utils";
-import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../schemas";
-import type { BadgeFormState } from "./badgeForm.types";
+} from "../../designConfig.utils";
+import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../../schemas";
+import type { BadgeFormState } from "../types/badgeForm.types";
 
 export const toPreviewDesignConfig = (form: BadgeFormState): BadgeDesignConfig => {
   if (form.designMode === BADGE_DESIGN_MODE.STUDIO && form.studioLayers.length > 0) {

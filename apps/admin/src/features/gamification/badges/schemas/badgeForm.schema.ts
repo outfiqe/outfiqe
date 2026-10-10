@@ -7,8 +7,8 @@ import {
   badgeXpRewardText,
   isEndAfterStart,
   optionalAssignmentLimitText,
-} from "../badgeFormFields.schema";
-import { conditionsSchema } from "../conditions/conditionForm.schema";
+} from "../../badgeFormFields.schema";
+import { conditionsSchema } from "../../conditions/conditionForm.schema";
 
 const sharedBadgeFields = {
   name: badgeNameText("a badge name"),

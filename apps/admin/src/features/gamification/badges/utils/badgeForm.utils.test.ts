@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { BadgeAdmin } from "../schemas";
-import { EMPTY_FORM } from "./badgeForm.constants";
+import type { BadgeAdmin } from "../../schemas";
+import { EMPTY_FORM } from "../constants/badgeForm.constants";
 import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
 
 const baseBadge: BadgeAdmin = {

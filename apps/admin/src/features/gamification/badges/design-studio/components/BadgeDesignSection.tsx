@@ -9,22 +9,22 @@ import {
   BADGE_DESIGN_MODE,
   DEFAULT_BADGE_ICON,
   SHAPE_OPTIONS,
-} from "../../badgeOptions.constants";
-import type { BadgeLayer, BadgeShapeValue } from "../../schemas";
-import type { BadgeFormState } from "../badgeForm.types";
-import { toPreviewDesignConfig } from "../badgeForm.utils";
-import { BadgeIconUploader } from "../BadgeIconUploader";
-import { DesignCanvas } from "./DesignCanvas";
-import { LayerList } from "./LayerList";
-import { LayerPropertiesPanel } from "./LayerPropertiesPanel";
+} from "../../../badgeOptions.constants";
+import type { BadgeLayer, BadgeShapeValue } from "../../../schemas";
+import { BadgeIconUploader } from "../../components/BadgeIconUploader";
+import type { BadgeFormState } from "../../types/badgeForm.types";
+import { toPreviewDesignConfig } from "../../utils/badgeForm.utils";
 import {
   createDefaultBackgroundLayer,
   createDefaultIconLayer,
   createDefaultImageLayer,
   createDefaultTextLayer,
   MAX_BADGE_LAYERS,
-} from "./studioLayer.constants";
-import { moveLayerDown, moveLayerUp } from "./studioLayer.utils";
+} from "../constants/studioLayer.constants";
+import { moveLayerDown, moveLayerUp } from "../utils/studioLayer.utils";
+import { DesignCanvas } from "./DesignCanvas";
+import { LayerList } from "./LayerList";
+import { LayerPropertiesPanel } from "./LayerPropertiesPanel";
 import { StudioSection } from "./StudioSection";
 
 const AnimationField = ({

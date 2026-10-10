@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
-import { challengeFormSchema } from "../ChallengesSection/challengeForm.schema";
+import { challengeFormSchema } from "../../ChallengesSection/challengeForm.schema";
 import { pickBadgeFormSchema } from "./badgeForm.schema";
 
 const ruleBasedBadge = {

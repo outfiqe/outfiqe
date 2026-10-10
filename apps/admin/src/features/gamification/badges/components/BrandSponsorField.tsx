@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 
-import { gamificationApi } from "../api";
+import { gamificationApi } from "../../api";
 
 const BRAND_SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;

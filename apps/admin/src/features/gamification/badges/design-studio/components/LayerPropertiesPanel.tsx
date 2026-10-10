@@ -4,17 +4,17 @@ import {
   IMAGE_FIT_OPTION_LABEL,
   IMAGE_FIT_OPTIONS,
   SHAPE_OPTIONS,
-} from "../../badgeOptions.constants";
-import type { BadgeImageFitValue, BadgeLayer, BadgeShapeValue } from "../../schemas";
-import { BadgeIconUploader } from "../BadgeIconUploader";
-import { LayerNumberInput } from "./LayerNumberInput";
+} from "../../../badgeOptions.constants";
+import type { BadgeImageFitValue, BadgeLayer, BadgeShapeValue } from "../../../schemas";
+import { BadgeIconUploader } from "../../components/BadgeIconUploader";
 import {
   BADGE_FONT_WEIGHT,
   BADGE_LAYER_TYPE,
   MAX_LAYER_BORDER_WIDTH,
   MAX_LAYER_FONT_SIZE,
   MIN_LAYER_FONT_SIZE,
-} from "./studioLayer.constants";
+} from "../constants/studioLayer.constants";
+import { LayerNumberInput } from "./LayerNumberInput";
 
 const DEFAULT_BORDER_COLOR = "#000000";
 const DEFAULT_BORDER_WIDTH_PX = 2;

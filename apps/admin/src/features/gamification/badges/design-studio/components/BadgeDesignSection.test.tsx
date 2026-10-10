@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_FORM } from "../badgeForm.constants";
-import type { BadgeFormState } from "../badgeForm.types";
+import { EMPTY_FORM } from "../../constants/badgeForm.constants";
+import type { BadgeFormState } from "../../types/badgeForm.types";
 import { BadgeDesignSection } from "./BadgeDesignSection";
 
 const Harness = ({ initialForm = EMPTY_FORM }: { initialForm?: BadgeFormState }) => {

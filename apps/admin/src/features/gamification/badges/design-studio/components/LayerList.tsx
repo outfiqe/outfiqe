@@ -9,8 +9,8 @@ import {
   Type,
 } from "lucide-react";
 
-import type { BadgeLayer } from "../../schemas";
-import { BADGE_LAYER_TYPE, LAYER_TYPE_LABEL } from "./studioLayer.constants";
+import type { BadgeLayer } from "../../../schemas";
+import { BADGE_LAYER_TYPE, LAYER_TYPE_LABEL } from "../constants/studioLayer.constants";
 
 const layerLabel = (layer: BadgeLayer): string => {
   if (layer.type === BADGE_LAYER_TYPE.TEXT) return layer.content || LAYER_TYPE_LABEL.text;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { BadgeLayer } from "../../schemas";
-import { CANVAS_SIZE_PX } from "./studioLayer.constants";
+import type { BadgeLayer } from "../../../schemas";
+import { CANVAS_SIZE_PX } from "../constants/studioLayer.constants";
 import { moveLayerDown, moveLayerUp, percentToPx, pxToPercent } from "./studioLayer.utils";
 
 describe("pxToPercent / percentToPx", () => {

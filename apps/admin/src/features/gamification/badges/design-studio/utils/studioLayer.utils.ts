@@ -1,5 +1,5 @@
-import type { BadgeLayer } from "../../schemas";
-import { CANVAS_SIZE_PX } from "./studioLayer.constants";
+import type { BadgeLayer } from "../../../schemas";
+import { CANVAS_SIZE_PX } from "../constants/studioLayer.constants";
 
 export const pxToPercent = (px: number): number => (px / CANVAS_SIZE_PX) * 100;
 

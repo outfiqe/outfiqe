@@ -21,18 +21,18 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
-import type { UpdateBadgeFormInput } from "../api";
-import { gamificationApi } from "../api";
-import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../badgeOptions.constants";
-import type { BadgeAdmin } from "../schemas";
+import type { UpdateBadgeFormInput } from "../../api";
+import { gamificationApi } from "../../api";
+import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../../badgeOptions.constants";
+import type { BadgeAdmin } from "../../schemas";
+import { BADGES_QUERY_KEY, EMPTY_FORM } from "../constants/badgeForm.constants";
+import { BadgeDesignSection } from "../design-studio/components/BadgeDesignSection";
+import { BADGE_LAYER_TYPE } from "../design-studio/constants/studioLayer.constants";
+import { pickBadgeFormSchema } from "../schemas/badgeForm.schema";
+import type { BadgeFormState } from "../types/badgeForm.types";
+import { formForBadge, toFormInput, toPreviewDesignConfig } from "../utils/badgeForm.utils";
 import { BadgeDetailsFields } from "./BadgeDetailsFields";
-import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
-import { pickBadgeFormSchema } from "./badgeForm.schema";
-import type { BadgeFormState } from "./badgeForm.types";
-import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
 import { BadgeFormSkeleton } from "./BadgeFormSkeleton";
-import { BadgeDesignSection } from "./DesignStudio/BadgeDesignSection";
-import { BADGE_LAYER_TYPE } from "./DesignStudio/studioLayer.constants";
 
 const DUPLICATE_NAME_PREFIX = "Copy of ";
 const BADGE_FORM_ID = "badge-form";
