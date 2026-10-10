@@ -11,7 +11,7 @@ first-party support requests raised by shoppers, creators and brands. Backed by
 - `api/supportSchemas.ts` — Zod for every API response plus the client-side copy of
   `ALLOWED_SUPPORT_TRANSITIONS` (so the ticket page only enables legal status moves).
 - `api/supportApi.ts` — the `/support/admin/*` client.
-- `hooks/supportHooks.ts` — `useSupportInbox` (cursor-paginated), `useSupportTicket`, `useSupportStats`,
+- `hooks/` — one hook per file: `useSupportInbox` (cursor-paginated), `useSupportTicket`, `useSupportStats`,
   `useSupportAgents`, and the reply/status/assign/priority mutations (each applies its change to
   the cached ticket optimistically, then caches the server's actual response, invalidates the
   inbox + stats, and toasts — see Non-obvious rationale for the rollback).
@@ -34,7 +34,7 @@ first-party support requests raised by shoppers, creators and brands. Backed by
 it (status auto-moves `NEW &rarr; OPEN`), reply (emailed to the customer) or add an internal note,
 move status, and resolve (sends the customer a closing email with a reopen link).
 
-**Technical:** page &rarr; `hooks/supportHooks.ts` &rarr; `api/supportApi.ts` &rarr; `/api/support/admin/*`. The status,
+**Technical:** page &rarr; `hooks/useSupport*.ts` &rarr; `api/supportApi.ts` &rarr; `/api/support/admin/*`. The status,
 assignee, and priority actions each post their new value plus the value the page currently has
 (`expectedStatus` / `expectedAssigneeUserId` / `expectedPriority`) so a concurrent change from
 another agent fails with a clear `409` rather than clobbering.
@@ -49,7 +49,7 @@ another agent fails with a clear `409` rather than clobbering.
   non-manager who tries gets a server `403` surfaced as a toast, rather than the option being
   hidden (the client has no fine-grained key list).
 - **Status/assignee/priority/reply all apply optimistically and roll back on failure**
-  (`useTicketMutation`'s `onMutate`/`onError` in `hooks/supportHooks.ts`). Each click updates the ticket detail
+  (`useTicketMutation`'s `onMutate`/`onError` in `hooks/useTicketMutation.ts`, shared by the four mutation hooks; query keys in `constants/supportQueryKeys.ts`). Each click updates the ticket detail
   page's own React Query cache immediately — a status badge flips, the assignee `Select` shows the
   new value, a reply appears in the thread — before the server has answered, since the round trip
   otherwise makes the whole page feel like it's ignoring the click. `onMutate` snapshots the
