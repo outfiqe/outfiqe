@@ -12,10 +12,10 @@ import {
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
   SHAPE_OPTIONS,
-} from "../badgeOptions.constants";
-import { ConditionsEditor } from "../conditions/ConditionsEditor";
-import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
-import type { ChallengeFormState } from "./challengeForm.types";
+} from "../../badgeOptions.constants";
+import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
+import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../../schemas";
+import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const ChallengeFields = ({
   idPrefix,

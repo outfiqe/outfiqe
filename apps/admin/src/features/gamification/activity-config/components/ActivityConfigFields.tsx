@@ -9,7 +9,7 @@ import {
 } from "@outfiqe/design-system";
 import type { UseFormReturn } from "react-hook-form";
 
-import type { ActivityConfigFormState } from "./activityConfigForm.types";
+import type { ActivityConfigFormState } from "../types/activityConfigForm.types";
 
 type ActivityConfigNumberField = "xpAmount" | "dailyLimit" | "cooldownSeconds" | "maxPerEntity";
 

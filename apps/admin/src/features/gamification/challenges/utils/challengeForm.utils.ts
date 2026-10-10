@@ -1,9 +1,9 @@
-import type { ChallengeFormInput } from "../api";
-import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
-import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
-import { legacyShapeAndColorOf } from "../designConfig.utils";
-import type { ChallengeAdmin } from "../schemas";
-import type { ChallengeFormState } from "./challengeForm.types";
+import type { ChallengeFormInput } from "../../api";
+import { AUTO_ANIMATION_OPTION } from "../../badgeOptions.constants";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
+import { legacyShapeAndColorOf } from "../../designConfig.utils";
+import type { ChallengeAdmin } from "../../schemas";
+import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const formForChallenge = (challenge: ChallengeAdmin): ChallengeFormState => ({
   name: challenge.badge.name,

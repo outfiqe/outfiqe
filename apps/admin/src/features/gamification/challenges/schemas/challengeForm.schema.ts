@@ -6,8 +6,8 @@ import {
   badgeXpRewardText,
   isEndAfterStart,
   requiredBadgeIconText,
-} from "../badgeFormFields.schema";
-import { conditionsSchema } from "../conditions/conditionForm.schema";
+} from "../../badgeFormFields.schema";
+import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
 
 export const challengeFormSchema = z
   .object({

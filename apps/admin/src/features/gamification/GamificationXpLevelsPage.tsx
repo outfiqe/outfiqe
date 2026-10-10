@@ -1,4 +1,4 @@
-import { ActivityConfigSection } from "./ActivityConfigSection";
+import { ActivityConfigSection } from "./activity-config/components/ActivityConfigSection";
 import { LevelsSection } from "./LevelsSection";
 import { MultipliersSection } from "./MultipliersSection";
 

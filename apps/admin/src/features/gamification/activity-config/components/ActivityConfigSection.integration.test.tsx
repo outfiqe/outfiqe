@@ -7,7 +7,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ActivityConfigSection } from "./index";
+import { ActivityConfigSection } from "./ActivityConfigSection";
 
 const API_BASE = "*/api";
 

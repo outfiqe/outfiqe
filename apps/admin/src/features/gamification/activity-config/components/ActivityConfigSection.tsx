@@ -5,10 +5,10 @@ import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../api";
-import type { ActivityXpConfig } from "../schemas";
+import { gamificationApi } from "../../api";
+import type { ActivityXpConfig } from "../../schemas";
+import { ACTIVITY_CONFIG_QUERY_KEY } from "../constants/activityConfigForm.constants";
 import { ActivityConfigCard } from "./ActivityConfigCard";
-import { ACTIVITY_CONFIG_QUERY_KEY } from "./activityConfigForm.constants";
 import { EditActivityConfigModal } from "./EditActivityConfigModal";
 
 export const ActivityConfigSection = () => {

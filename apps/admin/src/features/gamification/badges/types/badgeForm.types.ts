@@ -3,7 +3,7 @@ import type {
   BADGE_DESIGN_MODE,
   RULE_BASED_REQUIREMENT_TYPES,
 } from "../../badgeOptions.constants";
-import type { ConditionFormState } from "../../conditions/condition.types";
+import type { ConditionFormState } from "../../conditions/types/condition.types";
 import type {
   BadgeAnimationValue,
   BadgeCategoryValue,

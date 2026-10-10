@@ -1,5 +1,5 @@
-import type { AchievementMetricValue, ConditionOperatorValue } from "../schemas";
-import type { ConditionFormState } from "./condition.types";
+import type { AchievementMetricValue, ConditionOperatorValue } from "../../schemas";
+import type { ConditionFormState } from "../types/condition.types";
 
 export const METRIC_OPTIONS: AchievementMetricValue[] = [
   "level",

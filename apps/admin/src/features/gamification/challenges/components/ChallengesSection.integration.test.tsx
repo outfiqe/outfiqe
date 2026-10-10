@@ -7,7 +7,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { ChallengesSection } from "./index";
+import { ChallengesSection } from "./ChallengesSection";
 
 const API_BASE = "*/api";
 

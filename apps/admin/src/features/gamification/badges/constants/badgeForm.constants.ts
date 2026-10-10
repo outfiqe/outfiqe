@@ -1,5 +1,5 @@
 import { AUTO_ANIMATION_OPTION, BADGE_DESIGN_MODE } from "../../badgeOptions.constants";
-import { EMPTY_CONDITION } from "../../conditions/condition.constants";
+import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
 import type { BadgeFormState } from "../types/badgeForm.types";
 
 export const BADGES_QUERY_KEY = ["admin-badges"];

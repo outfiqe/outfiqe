@@ -5,12 +5,15 @@ import { useState } from "react";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../api";
-import type { ChallengeAdmin } from "../schemas";
-import { TitleActionCardSkeleton } from "../skeletons";
+import { gamificationApi } from "../../api";
+import type { ChallengeAdmin } from "../../schemas";
+import { TitleActionCardSkeleton } from "../../skeletons";
+import {
+  CHALLENGES_QUERY_KEY,
+  createEmptyChallengeForm,
+} from "../constants/challengeForm.constants";
+import type { ChallengeFormState } from "../types/challengeForm.types";
 import { ChallengeCard } from "./ChallengeCard";
-import { CHALLENGES_QUERY_KEY, createEmptyChallengeForm } from "./challengeForm.constants";
-import type { ChallengeFormState } from "./challengeForm.types";
 import { CreateChallengeModal } from "./CreateChallengeModal";
 import { EditChallengeModal } from "./EditChallengeModal";
 

@@ -1,7 +1,7 @@
-import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
-import { EMPTY_CONDITION } from "../conditions/condition.constants";
-import { toDatetimeLocalValue } from "../datetime.utils";
-import type { ChallengeFormState } from "./challengeForm.types";
+import { AUTO_ANIMATION_OPTION } from "../../badgeOptions.constants";
+import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
+import { toDatetimeLocalValue } from "../../datetime.utils";
+import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const CHALLENGES_QUERY_KEY = ["admin-challenges"];
 

@@ -1,5 +1,5 @@
 import { BadgesSection } from "./badges/components/BadgesSection";
-import { ChallengesSection } from "./ChallengesSection";
+import { ChallengesSection } from "./challenges/components/ChallengesSection";
 
 export const GamificationBadgesPage = () => {
   return (

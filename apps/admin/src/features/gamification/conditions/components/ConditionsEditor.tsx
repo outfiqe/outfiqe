@@ -3,10 +3,14 @@ import { Button, Input, Select } from "@outfiqe/design-system";
 import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 import type { FieldErrorMap } from "@/lib/zodFieldErrors";
 
-import type { AchievementMetricValue, ConditionOperatorValue } from "../schemas";
-import { EMPTY_CONDITION, METRIC_OPTIONS, OPERATOR_OPTIONS } from "./condition.constants";
-import type { ConditionFormState } from "./condition.types";
-import { conditionValueErrorKey } from "./conditionForm.schema";
+import type { AchievementMetricValue, ConditionOperatorValue } from "../../schemas";
+import {
+  EMPTY_CONDITION,
+  METRIC_OPTIONS,
+  OPERATOR_OPTIONS,
+} from "../constants/condition.constants";
+import { conditionValueErrorKey } from "../schemas/conditionForm.schema";
+import type { ConditionFormState } from "../types/condition.types";
 
 export const ConditionsEditor = ({
   idPrefix,

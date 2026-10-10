@@ -5,12 +5,12 @@ import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
-import { gamificationApi } from "../api";
+import { gamificationApi } from "../../api";
+import { CHALLENGES_QUERY_KEY } from "../constants/challengeForm.constants";
+import { challengeFormSchema } from "../schemas/challengeForm.schema";
+import type { ChallengeFormState } from "../types/challengeForm.types";
+import { toChallengeFormInput } from "../utils/challengeForm.utils";
 import { ChallengeFields } from "./ChallengeFields";
-import { CHALLENGES_QUERY_KEY } from "./challengeForm.constants";
-import { challengeFormSchema } from "./challengeForm.schema";
-import type { ChallengeFormState } from "./challengeForm.types";
-import { toChallengeFormInput } from "./challengeForm.utils";
 
 const CREATE_CHALLENGE_FORM_ID = "create-challenge-form";
 

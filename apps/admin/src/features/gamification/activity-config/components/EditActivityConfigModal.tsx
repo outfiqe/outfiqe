@@ -5,13 +5,16 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { gamificationApi } from "../api";
-import type { ActivityXpConfig } from "../schemas";
+import { gamificationApi } from "../../api";
+import type { ActivityXpConfig } from "../../schemas";
+import { ACTIVITY_CONFIG_QUERY_KEY } from "../constants/activityConfigForm.constants";
+import { activityConfigFormSchema } from "../schemas/activityConfigForm.schema";
+import type { ActivityConfigFormState } from "../types/activityConfigForm.types";
+import {
+  formForActivityConfig,
+  toUpdateActivityConfigInput,
+} from "../utils/activityConfigForm.utils";
 import { ActivityConfigFields } from "./ActivityConfigFields";
-import { ACTIVITY_CONFIG_QUERY_KEY } from "./activityConfigForm.constants";
-import { activityConfigFormSchema } from "./activityConfigForm.schema";
-import type { ActivityConfigFormState } from "./activityConfigForm.types";
-import { formForActivityConfig, toUpdateActivityConfigInput } from "./activityConfigForm.utils";
 
 export const EditActivityConfigModal = ({
   config,

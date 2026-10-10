@@ -6,7 +6,7 @@ import {
   BADGE_DESIGN_MODE,
   DEFAULT_BADGE_ICON,
 } from "../../badgeOptions.constants";
-import { EMPTY_CONDITION } from "../../conditions/condition.constants";
+import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
 import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
 import {
   isStudioDesignConfig,

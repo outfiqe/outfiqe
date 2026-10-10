@@ -9,7 +9,7 @@ import {
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
 } from "../../badgeOptions.constants";
-import { ConditionsEditor } from "../../conditions/ConditionsEditor";
+import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
 import type { BadgeCategoryValue, BadgeRarityValue } from "../../schemas";
 import type { BadgeFormState } from "../types/badgeForm.types";
 import { BrandSponsorField } from "./BrandSponsorField";

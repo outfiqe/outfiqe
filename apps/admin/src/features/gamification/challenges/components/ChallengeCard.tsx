@@ -1,6 +1,6 @@
 import { Button } from "@outfiqe/design-system";
 
-import type { ChallengeAdmin } from "../schemas";
+import type { ChallengeAdmin } from "../../schemas";
 
 const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 

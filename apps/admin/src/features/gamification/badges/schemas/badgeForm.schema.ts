@@ -8,7 +8,7 @@ import {
   isEndAfterStart,
   optionalAssignmentLimitText,
 } from "../../badgeFormFields.schema";
-import { conditionsSchema } from "../../conditions/conditionForm.schema";
+import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
 
 const sharedBadgeFields = {
   name: badgeNameText("a badge name"),
