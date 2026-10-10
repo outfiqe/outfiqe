@@ -22,13 +22,13 @@ the landing page's _Explore your taste_ picker.
   record exists yet). Either way it also mirrors the resolved pick into the
   `outfiqe_taste_categories` cookie so server components can read it at request time. Returns
   `{ storedSlugs, isCustomized, save, reset }`.
-- `lib/visibleTasteCategories.ts` — pure: given the full list and the stored slugs, returns the
+- `utils/visibleTasteCategories.ts` — pure: given the full list and the stored slugs, returns the
   categories to render (stored order, stale slugs dropped, falls back to the first
   `LANDING_TASTE_CATEGORY_COUNT` when nothing valid is stored).
-- `lib/tasteSlugs.ts` — pure: the `localStorage` key, cookie name, `taste-preferences` query key,
+- `utils/tasteSlugs.ts` — pure: the `localStorage` key, cookie name, `taste-preferences` query key,
   and the parse/serialize helpers shared by the hook (localStorage) and server components
   (`parseTasteCookie`, which URL-decodes first).
-- `lib/resolveStoredTasteSlugs.ts` — pure: given a signed-in visitor's server record and the
+- `utils/resolveStoredTasteSlugs.ts` — pure: given a signed-in visitor's server record and the
   cookie value, returns the pick to use (server record wins, else the cookie, else `null`).
 
 ## Funnel

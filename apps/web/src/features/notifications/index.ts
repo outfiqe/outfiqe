@@ -1,2 +1,2 @@
-export * from "./resolveNotificationHref";
-export * from "./SiteNotificationBell";
+export * from "./components/SiteNotificationBell";
+export * from "./utils/resolveNotificationHref";

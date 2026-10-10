@@ -1,4 +1,4 @@
-import { type FeedPage, feedPageSchema } from "@/features/explore/api/exploreFeedSchemas";
+import { type FeedPage, feedPageSchema } from "@/features/explore/feed/api/exploreFeedSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import { type CreatorProfile, creatorProfileSchema } from "./creatorProfileSchemas";

@@ -1,6 +1,6 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-import { BRAND_GRID_CLASS, BRAND_GRID_SKELETON_COUNT } from "../brands.constants";
+import { BRAND_GRID_CLASS, BRAND_GRID_SKELETON_COUNT } from "../constants/brands.constants";
 
 export const BrandGridSkeleton = () => {
   return (

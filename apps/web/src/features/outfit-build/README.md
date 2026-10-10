@@ -9,46 +9,64 @@ The whole feature sits behind the `outfit_builder` flag on the API.
 
 ## Structure
 
-- `api/outfitApi.ts`, `api/outfitSchemas.ts` — the `/api/outfits` client and zod schemas for every
-  response. Every write sends the build version it last saw (`X-Outfit-Version`) and a fresh
-  `Idempotency-Key`.
-- `hooks/`
-  - `useOutfit` — the build (`["outfit", id]`), either the live board or the published version.
-  - `useOutfitWrites` — `runWrite(send, applyChange)`: writes go out one at a time, each applies
-    its change to the cached board straight away and rolls it back if the server refuses. A
-    version conflict refetches the board and says who changed it ("Board updated by Sita,
+The feature is split into topic folders, each with the usual layer folders inside (`api/`,
+`components/`, `hooks/`, `utils/`, `constants/`). Code several topics share stays in the feature
+root's own layer folders.
+
+- Feature root — `api/outfitApi.ts`, `api/outfitSchemas.ts` (the `/api/outfits` client and zod
+  schemas for every response; every write sends the build version it last saw
+  (`X-Outfit-Version`) and a fresh `Idempotency-Key`), `hooks/outfitQueryKeys.ts`,
+  `hooks/useBuyFromBuild.ts`, `components/BuildCardMessage.tsx` (the card a chat shows for a build
+  started in it; it loads the build live), `components/BuildCoverGrid.tsx` (the picture area of a
+  build card: the cover photos, or the first three items with "+N items"; used by
+  `BuildSummaryCard` and `PublicBuildCardView`), `components/BuyBuildPanel.tsx`,
+  `components/PersonAvatar.tsx`, `utils/outfitFormatting.ts` (lakh format, Nepal time) and
+  `testing/outfitFixtures.ts`.
+- `board/` — the live build board.
+  - `hooks/useOutfit` — the build (`["outfit", id]`), either the live board or the published version.
+  - `hooks/useOutfitWrites` — `runWrite(send, applyChange)`: writes go out one at a time, each
+    applies its change to the cached board straight away and rolls it back if the server refuses.
+    A version conflict refetches the board and says who changed it ("Board updated by Sita,
     showing latest"); other refusals are explained by error code in the viewer's language.
-  - `useOutfitLiveSync` — joins the build's socket room, asks to catch up after every
+  - `hooks/useOutfitLiveSync` — joins the build's socket room, asks to catch up after every
     (re)connect, refetches when `outfit:updated` announces a newer version, and reports
     "Reconnecting…" and removal from the build.
-  - `useMyBuilds` / `useBuildsSharedWithMe`, `useSlotProductSearch` (product search filtered to a
-    slot's garment types and to items in stock).
-- `components/`
-  - `MyBuildsPage` — My builds / Shared with me tabs, New build, empty/loading/error states, and a
-    "coming soon" state while the flag is off.
-  - `BuildPage` — loads a build and shows `BuildBoard` or `PublishedBuildView`.
-  - `BuildBoard` — the header (title, status, visibility, open chat), `BoardActions` as a toolbar,
-    `BudgetBar`, then tabs: **Outfit** (the `SlotCard` grid with `ProductFinderPanel` beside it on
-    wide screens), **People** (`BoardPeople`), **Photos** (`BoardPhotosPanel`, only while photos are
-    switched on) and **Buy & drop** (`BuyBuildPanel`, `PostAsLookPanel`, offers). Also the picker
-    and modals. Wraps everything in a dnd-kit `DndContext`.
-  - `SlotCard` — one slot: its items (image, price, stock in words, who added it) and empty
-    places to tap. It is also the drop target when dragging.
-  - `ProductPickerModal` — tap a slot → search products of that slot's garment types → tap one.
-  - `ProductFinderPanel` — draggable search results beside the slots on extra-wide screens
-    (`xl`); on smaller screens people add items by tapping a slot instead.
-  - `InviteEditorsModal`, `VisibilityModal`, `BoardSettingsModal` — owner tools; people are picked
-    with the messaging `ContactPicker`.
-  - `BuildCardMessage` — the card a chat shows for a build started in it; it loads the build live.
-  - `BoardPhotosPanel` and `AddBuildPhotosModal` — build photos on the board (see "Photos" below).
-  - `BuildCoverGrid` — the picture area of a build card: the cover photos, or the first three
-    items with "+N items". Used by `BuildSummaryCard` and `PublicBuildCardView`.
-  - `PublicBuildPhotos` — the photo and try-on galleries on a shared or public build, with a
-    report button on each photo.
-  - `AvailabilityLabel`, `BudgetBar`, `PersonAvatar`, `ReconnectingBanner`, `BuildSummaryCard`.
-- `utils/` — `outfitBoardRules.ts` (the shared slot rules from `@outfiqe/utils`, run before a
-  request is sent, and the instant local board changes), `outfitFormatting.ts` (lakh format,
-  Nepal time), `toOutfitProduct.ts`.
+  - `hooks/useSlotProductSearch` (product search filtered to a slot's garment types and to items in
+    stock), `hooks/useReplacementSuggestions`.
+  - `components/BuildPage` — loads a build and shows `BuildBoard` or `PublishedBuildView`.
+  - `components/BuildBoard` — `BoardHeader` (title, status, visibility, open chat), `BoardActions` as a toolbar,
+    `BudgetBar`, then tabs (`board/constants/boardTabs.ts`): **Outfit** (the `SlotCard` grid with
+    `ProductFinderPanel` beside it on wide screens), **People** (`BoardPeople`), **Photos**
+    (`BoardPhotosPanel`, only while photos are switched on) and **Buy & drop** (`BuyBuildPanel`,
+    `PostAsLookPanel`, offers). Also the picker and modals. Wraps everything in a dnd-kit
+    `DndContext`. Placing, replacing, removing and dropping items, and the open picker, live in
+    `useBoardItemPlacement`.
+  - `components/SlotCard` — one slot: its items (image, price, stock in words, who added it) and
+    empty places to tap. It is also the drop target when dragging.
+  - `components/ProductPickerModal` — tap a slot → search products of that slot's garment types →
+    tap one.
+  - `components/ProductFinderPanel` — draggable search results beside the slots on extra-wide
+    screens (`xl`); on smaller screens people add items by tapping a slot instead.
+  - `components/InviteEditorsModal`, `VisibilityModal`, `BoardSettingsModal` — owner tools; people
+    are picked with the messaging `ContactPicker`.
+  - `components/BoardPhotosPanel` and `AddBuildPhotosModal` — build photos on the board (see
+    "Photos" below).
+  - `components/AvailabilityLabel`, `BudgetBar`, `ReconnectingBanner`, `BoardPeople`.
+  - `utils/outfitBoardRules.ts` (the shared slot rules from `@outfiqe/utils`, run before a request
+    is sent, and the instant local board changes), `utils/toOutfitProduct.ts`.
+- `my-builds/` — `components/MyBuildsPage` (My builds / Shared with me tabs, New build,
+  empty/loading/error states, and a "coming soon" state while the flag is off),
+  `components/ProfileBuildsTabs`, `components/BuildSummaryCard`, `hooks/useMyBuilds` (with
+  `useBuildsSharedWithMe`).
+- `publishing/` — posting a locked build as a look: `PostAsLookPanel`, `PublishLookModal`,
+  `PublishedBuildView`, `hooks/useBuildLook`.
+- `public-builds/` — the public builds feed and a public build's page: `PublicBuildsFeed`,
+  `PublicBuildCardView`, `PublicBuildFiltersBar`, `PublicBuildDetailView`, `BuildDetailModal`,
+  `PublicBuildPage`, `PublicBuildPhotos` (the photo and try-on galleries on a shared or public
+  build, with a report button on each photo), `api/getPublicBuildServer.ts`,
+  `utils/publicBuildFilters.ts`.
+- `social/` — likes, saves and comments on a locked build: `SocialBuildView`, `BuildReactionsBar`,
+  `BuildComments`, `hooks/useBuildSocial`, `api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`.
 
 Routes: `app/(dashboard)/builds/page.tsx` (My Builds, signed in only) and
 `app/builds/[outfitId]/page.tsx` (a build), each with a `loading.tsx` skeleton. Every tab group in
@@ -56,11 +74,11 @@ this feature keeps its tab in the URL as `?tab=` through `@/shared/hooks/useTabS
 Builds (`mine`, `shared`), the board (`outfit`, `people`, `photos`, `buy-and-drop`) and the profile
 Builds tab (`drops` or `products`, and `builds`), so a link or a refresh opens the same tab. The build page shows a signed-in person their board, or the locked version with likes,
 saves and comments (`SocialBuildView`). A signed-out visitor sees a public build server-rendered
-(`PublicBuildPage`, loaded by `api/getPublicBuildServer.ts`) with its own title, description and
+(`PublicBuildPage`, loaded by `public-builds/api/getPublicBuildServer.ts`) with its own title, description and
 image for search engines and shared links. Anything else sends them to sign in. Only public builds
 are indexed.
 
-Builds in public (`api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`, `hooks/useBuildSocial.ts`):
+Builds in public (`social/api/outfitSocialApi.ts`, `social/api/outfitSocialSchemas.ts`, `social/hooks/useBuildSocial.ts`):
 
 - `PublicBuildsFeed` — filters (`PublicBuildFiltersBar`: one toolbar of a Style menu, a Price
   menu, an "everything in stock" chip, a clear button and a Sort menu for newest, most cheriqed, or
@@ -70,7 +88,7 @@ Builds in public (`api/outfitSocialApi.ts`, `api/outfitSocialSchemas.ts`, `hooks
   clear them (the sort order is kept), and the `BuildDetailModal` pop-up. The filters live in the
   URL (`?style=festive&price=5k-10k&inStock=true&sort=price-low`, defaults left out), so a link or a
   refresh shows the same feed; the profile Builds tab shows no filters and ignores them. The price
-  ranges, the clear rules and reading and writing the URL live in `utils/publicBuildFilters.ts`;
+  ranges, the clear rules and reading and writing the URL live in `public-builds/utils/publicBuildFilters.ts`;
   each range stops one rupee below the next so a build never falls in two. Shown on Explore's Builds tab and, through `ProfileBuildsTabs`, as a
   Builds tab on creator profiles (builds they contributed to) and brand profiles (builds using
   their products). Both only while `outfit_public_feed` is on for the viewer.
@@ -99,10 +117,10 @@ Ways in from the rest of the app:
   photo cropper and upload (`../creator-dashboard/components/PostModal.constants`,
   `PhotoCropPane`, `usePendingPhotos`), prefills the caption with the build's name and each
   item's size from `useMySizeByProductType`, and sends `POST /api/outfits/:id/look`
-  (`hooks/useBuildLook.ts`). Afterwards the panel links to the look; when a newer version has
+  (`publishing/hooks/useBuildLook.ts`). Afterwards the panel links to the look; when a newer version has
   been locked since, it offers "Drop the new version".
 - Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
-  (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
+  (`useMySizeByProductType`), using `describeSizeFit` in `board/utils/outfitBoardRules.ts`.
 - Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes
   prefilled from the person's saved sizes) and under a shared or public build
   (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). Each item has a tick and a

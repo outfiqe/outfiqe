@@ -7,7 +7,7 @@ import { cn } from "@/shared/lib/cn";
 import {
   CREATOR_LEADERBOARD_CATEGORY_LABEL,
   type CreatorLeaderboardCategory,
-} from "../creatorLeaderboard.constants";
+} from "../constants/creatorLeaderboard.constants";
 import { useCreatorLeaderboardCategories } from "../hooks/useCreatorLeaderboardCategories";
 
 type CreatorLeaderboardTabsProps = {

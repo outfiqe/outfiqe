@@ -3,4 +3,4 @@ export { PaymentVerifyStatus, type PaymentVerifyStatusValue } from "./api/paymen
 export { PaymentCallbackScreen } from "./components/PaymentCallbackScreen";
 export { isAlreadyPaidError, useInitiatePayment } from "./hooks/useInitiatePayment";
 export { useVerifyPayment } from "./hooks/useVerifyPayment";
-export { redirectToPaymentGateway } from "./paymentRedirect.utils";
+export { redirectToPaymentGateway } from "./utils/paymentRedirect.utils";

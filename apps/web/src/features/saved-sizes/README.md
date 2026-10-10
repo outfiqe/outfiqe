@@ -31,7 +31,7 @@ M: sold out", or "Not made in your size (M)".
 
 **Technical:** `MySizesSettings` → `useSavedSizes` / `useChangeSavedSize` → `savedSizesApi` →
 `/api/saved-sizes/me` → `apps/api/src/modules/saved-sizes`. The board reads
-`useMySizeByProductType` in `outfit-build/components/BuildBoard.tsx` and passes it to `SlotCard`.
+`useMySizeByProductType` in `outfit-build/board/components/BuildBoard.tsx` and passes it to `SlotCard`.
 
 ## Non-obvious rationale
 

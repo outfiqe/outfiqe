@@ -25,14 +25,17 @@ export const DashboardNavCustomizeSheet = ({
   onReset,
   onClose,
 }: DashboardNavCustomizeSheetProps) => {
-  const itemById = useMemo(() => new Map(allItems.map((item) => [item.id, item])), [allItems]);
+  const itemById = useMemo(
+    () => new Map(allItems.map((navItem) => [navItem.id, navItem])),
+    [allItems],
+  );
 
   const [draft, setDraft] = useState<string[]>(() => pinnedIds.filter((id) => itemById.has(id)));
 
   const pinned = draft
     .map((id) => itemById.get(id))
-    .filter((item): item is SidebarNavItem => item !== undefined);
-  const available = allItems.filter((item) => !draft.includes(item.id));
+    .filter((navItem): navItem is SidebarNavItem => navItem !== undefined);
+  const available = allItems.filter((navItem) => !draft.includes(navItem.id));
   const isFull = draft.length >= PINNED_SLOT_COUNT;
 
   const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
@@ -82,16 +85,16 @@ export const DashboardNavCustomizeSheet = ({
             <p className="mt-2 text-sm text-muted-foreground">Add four from the list below.</p>
           ) : (
             <ul className="mt-2 space-y-1.5">
-              {pinned.map((item, index) => {
-                const Icon = item.icon;
+              {pinned.map((navItem, index) => {
+                const Icon = navItem.icon;
                 return (
                   <li
-                    key={item.id}
-                    {...getDragProps(item.id)}
+                    key={navItem.id}
+                    {...getDragProps(navItem.id)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 transition-colors",
-                      draggingId === item.id && "opacity-50",
-                      dragOverId === item.id && "border-foreground",
+                      draggingId === navItem.id && "opacity-50",
+                      dragOverId === navItem.id && "border-foreground",
                     )}
                   >
                     <span
@@ -105,7 +108,7 @@ export const DashboardNavCustomizeSheet = ({
                         variant="ghost"
                         size="icon"
                         className="size-6"
-                        aria-label={`Move ${item.label} up`}
+                        aria-label={`Move ${navItem.label} up`}
                         disabled={index === 0}
                         onClick={() => moveEntry(index, index - 1)}
                       >
@@ -115,7 +118,7 @@ export const DashboardNavCustomizeSheet = ({
                         variant="ghost"
                         size="icon"
                         className="size-6"
-                        aria-label={`Move ${item.label} down`}
+                        aria-label={`Move ${navItem.label} down`}
                         disabled={index === pinned.length - 1}
                         onClick={() => moveEntry(index, index + 1)}
                       >
@@ -124,14 +127,14 @@ export const DashboardNavCustomizeSheet = ({
                     </div>
                     {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                      {item.label}
+                      {navItem.label}
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="size-8"
-                      aria-label={`Remove ${item.label}`}
-                      onClick={() => removeItem(item.id)}
+                      aria-label={`Remove ${navItem.label}`}
+                      onClick={() => removeItem(navItem.id)}
                     >
                       <X />
                     </Button>
@@ -151,21 +154,21 @@ export const DashboardNavCustomizeSheet = ({
               <p className="mt-1 text-xs text-muted-foreground">Remove one to add another.</p>
             )}
             <ul className="mt-2 space-y-1.5">
-              {available.map((item) => {
-                const Icon = item.icon;
+              {available.map((navItem) => {
+                const Icon = navItem.icon;
                 return (
-                  <li key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
+                  <li key={navItem.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
                     {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      {item.label}
+                      {navItem.label}
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="gap-1.5"
-                      aria-label={`Add ${item.label}`}
+                      aria-label={`Add ${navItem.label}`}
                       disabled={isFull}
-                      onClick={() => addItem(item.id)}
+                      onClick={() => addItem(navItem.id)}
                     >
                       <Plus className="size-4" />
                       Add

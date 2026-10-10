@@ -14,7 +14,7 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 vi.mock("../hooks/useExploreAuthGate", () => ({
   useExploreAuthGate: vi.fn(),
 }));
-vi.mock("@/features/creator-dashboard/components/PostModal", () => ({
+vi.mock("@/features/creator-dashboard/looks/components/PostModal", () => ({
   PostModal: ({ open }: { open: boolean }) => (open ? <div>post-modal</div> : null),
 }));
 vi.mock("@/features/creator-dashboard/components/ApplyAsCreatorButton", () => ({

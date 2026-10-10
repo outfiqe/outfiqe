@@ -3,13 +3,19 @@ import "server-only";
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
 import {
+  type BrandProductPage,
+  brandProductPageSchema,
+} from "../products/api/brandProductsSchemas";
+import {
   type BrandShipmentDetail,
   brandShipmentDetailSchema,
   type BrandShipmentsPage,
   brandShipmentsPageSchema,
-} from "./brandFulfilmentSchemas";
-import { type BrandPayoutSummary, brandPayoutSummarySchema } from "./brandPayoutSchemas";
-import { type BrandProductPage, brandProductPageSchema } from "./brandProductsSchemas";
+} from "../shipments/api/brandFulfilmentSchemas";
+import {
+  type BrandPayoutSummary,
+  brandPayoutSummarySchema,
+} from "../wallet/api/brandPayoutSchemas";
 
 export const getBrandPayoutSummaryServer = async (
   accessToken: string,

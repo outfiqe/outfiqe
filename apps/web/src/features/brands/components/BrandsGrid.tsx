@@ -3,7 +3,7 @@
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
-import { BRAND_GRID_CLASS } from "../brands.constants";
+import { BRAND_GRID_CLASS } from "../constants/brands.constants";
 import { useInfiniteBrands } from "../hooks/useInfiniteBrands";
 import { BrandCard } from "./BrandCard";
 import { BrandGridSkeleton } from "./BrandGridSkeleton";

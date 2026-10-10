@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { cartApi } from "../api/cartApi";
-import { CART_QUERY_KEY } from "../cart.constants";
+import { CART_QUERY_KEY } from "../constants/cart.constants";
 
 export const useRemoveCoupon = () => {
   const queryClient = useQueryClient();

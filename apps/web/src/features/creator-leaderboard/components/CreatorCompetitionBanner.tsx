@@ -2,7 +2,7 @@
 
 import { AchievementBadgeIcon } from "@outfiqe/design-system";
 
-import type { CreatorLeaderboardCategory } from "../creatorLeaderboard.constants";
+import type { CreatorLeaderboardCategory } from "../constants/creatorLeaderboard.constants";
 import { useActiveCreatorCompetitions } from "../hooks/useActiveCreatorCompetitions";
 
 export const CreatorCompetitionBanner = ({

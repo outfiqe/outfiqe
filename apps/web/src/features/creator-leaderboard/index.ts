@@ -6,4 +6,4 @@ export { CreatorLeaderboardView } from "./components/CreatorLeaderboardView";
 export {
   CREATOR_LEADERBOARD_CATEGORY,
   type CreatorLeaderboardCategory,
-} from "./creatorLeaderboard.constants";
+} from "./constants/creatorLeaderboard.constants";

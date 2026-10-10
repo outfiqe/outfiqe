@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 import { cartApi } from "../api/cartApi";
-import { CART_QUERY_KEY } from "../cart.constants";
+import { CART_QUERY_KEY } from "../constants/cart.constants";
 
 export const useCart = () => {
   const { isShopper } = useAuth();

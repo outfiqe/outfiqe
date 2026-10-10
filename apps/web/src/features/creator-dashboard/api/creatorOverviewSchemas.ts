@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { creatorCommissionSchema } from "./commissionSchemas";
+import { creatorCommissionSchema } from "../earnings/api/commissionSchemas";
 
 export const creatorOverviewKpisSchema = z.object({
   totalEarnings: z.number(),

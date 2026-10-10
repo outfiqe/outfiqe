@@ -15,13 +15,13 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: vi.fn(),
 }));
 
-vi.mock("@/features/explore/components/PostGridCard", () => ({
+vi.mock("@/features/explore/posts/components/PostGridCard", () => ({
   PostGridCard: ({ post }: { post: { id: string; caption: string | null } }) => (
     <div data-testid="post-grid-card">{post.caption}</div>
   ),
 }));
 
-vi.mock("@/features/explore/components/PostDetailModal", () => ({
+vi.mock("@/features/explore/posts/components/PostDetailModal", () => ({
   PostDetailModal: () => null,
 }));
 
