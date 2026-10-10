@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { feedPostSchema } from "@/features/explore/api/exploreFeedSchemas";
+import { feedPostSchema } from "@/features/explore/feed/api/exploreFeedSchemas";
 
 export const creatorSearchResultSchema = z.object({
   userId: z.string(),

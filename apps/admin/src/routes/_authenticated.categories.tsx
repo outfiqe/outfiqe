@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CategoriesPage } from "@/features/categories/CategoriesPage";
+import { CategoriesPage } from "@/features/categories/components/CategoriesPage";
 
 export const Route = createFileRoute("/_authenticated/categories")({
   component: CategoriesPage,

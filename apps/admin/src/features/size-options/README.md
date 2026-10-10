@@ -6,9 +6,9 @@ Admin CRUD for the size catalog a brand picks from when adding a product (`S`/`M
 
 ## Structure
 
-- `SizeOptionsPage.tsx` — the page: a product-type tab selector, an add-size form, and a delete-able list scoped to the selected type.
-- `api.ts` — `sizeOptionsApi` (`list`/`create`/`remove`).
-- `schemas.ts` — `SizeOption` zod schema and the shared `ProductTypeSlug` re-export.
+- `components/SizeOptionsPage.tsx` — the page: a product-type tab selector, an add-size form, and a delete-able list scoped to the selected type.
+- `api/sizeOptionsApi.ts` — `sizeOptionsApi` (`list`/`create`/`remove`).
+- `api/sizeOptionsSchemas.ts` — `SizeOption` zod schema and the shared `ProductTypeSlug` re-export.
 
 ## Funnel
 

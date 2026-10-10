@@ -8,7 +8,7 @@ import {
   EMAIL_LOGO_FONT_FAMILY,
   EMAIL_LOGO_FONT_WEIGHT,
   EmailLogoLockup,
-} from "@/features/email-logo/EmailLogoLockup";
+} from "@/features/email-logo/components/EmailLogoLockup";
 
 export const dynamic = "force-static";
 

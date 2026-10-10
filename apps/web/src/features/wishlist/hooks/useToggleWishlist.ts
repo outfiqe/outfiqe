@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { wishlistApi } from "../api/wishlistApi";
-import { STASH_STATE_PRODUCT_QUERY_ROOTS } from "../wishlist.constants";
+import { STASH_STATE_PRODUCT_QUERY_ROOTS } from "../constants/wishlist.constants";
 
 export const useToggleWishlist = () => {
   const queryClient = useQueryClient();

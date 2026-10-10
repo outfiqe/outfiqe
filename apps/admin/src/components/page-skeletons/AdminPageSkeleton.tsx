@@ -17,7 +17,7 @@ import {
   BadgeCardSkeleton,
   CategoryToggleRowSkeleton,
   TitleActionCardSkeleton,
-} from "@/features/gamification/skeletons";
+} from "@/features/gamification/components/GamificationSkeletons";
 
 import type {
   AdminPageSkeletonSpec,

@@ -9,11 +9,11 @@ ceiling).
 
 ## Structure
 
-- `api.ts` / `schemas.ts` — `GET /withdraw/admin/requests`, `PATCH /:id/approve|reject|mark-paid`.
+- `api/withdrawRequestsApi.ts` / `api/withdrawRequestsSchemas.ts` — `GET /withdraw/admin/requests`, `PATCH /:id/approve|reject|mark-paid`.
 - `hooks/useInfiniteWithdrawRequests.ts` — the paginated, status-tabbed queue.
-- `WithdrawRequestsListSection.tsx` — the queue: tabs by status, per-row actions, and a
+- `components/WithdrawRequestsListSection.tsx` — the queue: tabs by status, per-row actions, and a
   "View bank details" reveal borrowed from `../bank-accounts` (see below).
-- `WithdrawRequestsPage.tsx` — the route's top-level wrapper.
+- `components/WithdrawRequestsPage.tsx` — the route's top-level wrapper.
 
 ## Funnel
 

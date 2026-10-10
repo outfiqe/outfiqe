@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { featuredBadgeSchema } from "@/features/creator-dashboard/api/badgeSchemas";
+import { featuredBadgeSchema } from "@/features/creator-dashboard/badges/api/badgeSchemas";
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 
 export const creatorProfileSchema = z.object({

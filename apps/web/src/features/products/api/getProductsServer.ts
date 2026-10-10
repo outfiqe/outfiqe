@@ -8,7 +8,7 @@ import {
   type FeedPage,
   feedPageSchema,
   type FeedPost,
-} from "@/features/explore/api/exploreFeedSchemas";
+} from "@/features/explore/feed/api/exploreFeedSchemas";
 import type { ExploreProduct } from "@/features/landing/components/ProductCard";
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 

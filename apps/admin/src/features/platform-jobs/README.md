@@ -7,10 +7,10 @@ buttons to send it again.
 
 ## Structure
 
-- `JobsHealthPage.tsx` — waiting count, oldest waiting time and stuck count; each outbox queue's
+- `components/JobsHealthPage.tsx` — waiting count, oldest waiting time and stuck count; each outbox queue's
   waiting, running, delayed and failed jobs with "Retry failed jobs"; the stuck events with their
   last error and "Send again". Refreshes every 15 seconds.
-- `api.ts`, `schemas.ts` — calls to `/api/platform/jobs…` and their Zod mirrors.
+- `api/platformJobsApi.ts`, `api/platformJobsSchemas.ts` — calls to `/api/platform/jobs…` and their Zod mirrors.
 
 Route: `_authenticated.platform.jobs.index.tsx` (`/platform/jobs`). The "Jobs & health" sidebar
 item is in `PLATFORM_NAV_ITEMS`.

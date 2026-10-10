@@ -1,7 +1,7 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { ordersApi } from "../api";
-import type { FulfilmentStatusValue } from "../schemas";
+import { ordersApi } from "../api/ordersApi";
+import type { FulfilmentStatusValue } from "../api/ordersSchemas";
 
 export const useInfiniteOrders = (status?: FulfilmentStatusValue) => {
   return useInfiniteCursorPage(["admin-orders", status ?? "ALL"], (cursor) =>

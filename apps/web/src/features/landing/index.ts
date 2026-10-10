@@ -6,5 +6,8 @@ export { NewArrivals } from "./components/NewArrivals";
 export { SaleRail } from "./components/SaleRail";
 export { TasteCategories } from "./components/TasteCategories";
 export { TrendingNow } from "./components/TrendingNow";
-export { CategorySelectionProvider } from "./lib/CategorySelectionContext";
-export { resolveActiveCategorySlug, resolveDisplayCategories } from "./lib/resolveTasteCategories";
+export { CategorySelectionProvider } from "./context/CategorySelectionContext";
+export {
+  resolveActiveCategorySlug,
+  resolveDisplayCategories,
+} from "./utils/resolveTasteCategories";

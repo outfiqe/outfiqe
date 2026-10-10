@@ -1,16 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Checkbox,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from "@outfiqe/design-system";
+import { Checkbox, Form } from "@outfiqe/design-system";
 import { toast } from "@outfiqe/design-system";
 import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -27,7 +18,7 @@ import {
 } from "@/features/addresses";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
-import { CityAutocomplete, type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
+import { type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -35,9 +26,10 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { useCheckout } from "../hooks/useCheckout";
-import type { BuyNowPayload } from "../lib/buyNowStorage";
-import { clearBuyNowPayload } from "../lib/buyNowStorage";
+import type { BuyNowPayload } from "../utils/buyNowStorage";
+import { clearBuyNowPayload } from "../utils/buyNowStorage";
 import { BuyNowCouponForm } from "./BuyNowCouponForm";
+import { CheckoutAddressFields } from "./CheckoutAddressFields";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
 
@@ -198,8 +190,8 @@ export const CheckoutForm = ({
         return;
       }
 
-      const result = await initiatePayment.mutateAsync(order.id);
-      redirectToPaymentGateway(result);
+      const paymentInitiation = await initiatePayment.mutateAsync(order.id);
+      redirectToPaymentGateway(paymentInitiation);
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
@@ -235,87 +227,7 @@ export const CheckoutForm = ({
               </button>
             )}
 
-            {showAddressFields && (
-              <>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full name</FormLabel>
-                        <FormControl>
-                          <Input autoComplete="name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem className="mt-0">
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input type="tel" autoComplete="tel" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Tole, ward, landmark" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field: { ref, name, value, onChange, onBlur } }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <CityAutocomplete
-                            ref={ref}
-                            name={name}
-                            value={value}
-                            onChange={onChange}
-                            onBlur={onBlur}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="landmark"
-                    render={({ field }) => (
-                      <FormItem className="mt-0">
-                        <FormLabel>Landmark (optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Near Shankhamul bridge" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </>
-            )}
+            {showAddressFields && <CheckoutAddressFields control={form.control} />}
 
             {isNewAddress && (
               <label className="mt-4 flex items-center gap-2.5 text-sm text-foreground">

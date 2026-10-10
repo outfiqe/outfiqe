@@ -13,11 +13,11 @@ import {
   RolesRouteSkeleton,
   TasksRouteSkeleton,
   TicketsRouteSkeleton,
-} from "@/features/crm/skeletons";
-import { BadgeFormSkeleton } from "@/features/gamification/BadgesSection/BadgeFormSkeleton";
-import { OrderDetailSkeleton } from "@/features/orders/OrderDetailSkeleton";
-import { TenantMetricsSkeleton } from "@/features/platform-metrics/TenantMetricsSkeleton";
-import { SupportTicketSkeleton } from "@/features/support/SupportTicketSkeleton";
+} from "@/features/crm/components/CrmSkeletons";
+import { BadgeFormSkeleton } from "@/features/gamification/badges/components/BadgeFormSkeleton";
+import { OrderDetailSkeleton } from "@/features/orders/components/OrderDetailSkeleton";
+import { TenantMetricsSkeleton } from "@/features/platform-metrics/components/TenantMetricsSkeleton";
+import { SupportTicketSkeleton } from "@/features/support/components/SupportTicketSkeleton";
 
 import { PagePendingSkeleton } from "../PagePendingSkeleton";
 import { AdminPageSkeleton } from "./AdminPageSkeleton";

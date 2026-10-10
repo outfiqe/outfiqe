@@ -8,14 +8,14 @@ brands. Backed by `apps/api/src/modules/tag-reports`.
 
 ## Structure
 
-- `TagReportsPage.tsx` — the `/tag-reports` route. Open / Actioned / Dismissed tabs
+- `components/TagReportsPage.tsx` — the `/tag-reports` route. Open / Actioned / Dismissed tabs
   (`useInfiniteTagReports` per status), an open-count line + tab badge (`tagReportsApi.openCount`),
   one card per report (look thumbnail, product + brand, reason, source, the reporter's note, and
   the creator's counterfeit-flag count when non-zero), and a "Resolve" action on open reports.
-- `ResolveReportModal.tsx` — pick Actioned vs Dismissed, an optional resolution note, and — only
+- `components/ResolveReportModal.tsx` — pick Actioned vs Dismissed, an optional resolution note, and — only
   when the tag is still live and the outcome is Actioned — a "Remove this tag" checkbox that sets
   `takeDownTag`.
-- `api.ts` / `schemas.ts` — `GET /tag-reports` (`?status=`), `GET /tag-reports/open-count`,
+- `api/tagReportsApi.ts` / `api/tagReportsSchemas.ts` — `GET /tag-reports` (`?status=`), `GET /tag-reports/open-count`,
   `POST /tag-reports/:id/resolve`.
 - `hooks/useInfiniteTagReports.ts` — cursor-paginated list per status.
 

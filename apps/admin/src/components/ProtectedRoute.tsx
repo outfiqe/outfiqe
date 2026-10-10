@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect } from "react";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 import { ImpersonationLinkExpired } from "./ImpersonationLinkExpired";
 import { resolveLoginOrigin } from "./ProtectedRoute.utils";

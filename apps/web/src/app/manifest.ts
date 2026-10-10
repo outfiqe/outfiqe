@@ -7,7 +7,7 @@ import {
   SHARE_TARGET_PHOTO_FIELD_NAME,
   toManifestIcons,
 } from "@/features/pwa";
-import { toManifestScreenshots } from "@/features/pwa/utils/manifestScreenshots";
+import { toManifestScreenshots } from "@/features/pwa/app-manifest/utils/manifestScreenshots";
 import { siteName, siteTagline } from "@/shared/seo";
 
 const PWA_APP_ID = "/";

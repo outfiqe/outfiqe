@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CommissionsPage } from "@/features/commissions/CommissionsPage";
+import { CommissionsPage } from "@/features/commissions/components/CommissionsPage";
 
 export const Route = createFileRoute("/_authenticated/commissions")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

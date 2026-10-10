@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
-import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
+import { useCommissionEligibility } from "@/features/creator-dashboard/earnings/hooks/useCommissionEligibility";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
@@ -12,7 +12,7 @@ import { useDashboardNav } from "./useDashboardNav";
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 vi.mock("@/shared/hooks/useTenantHost", () => ({ useTenantHost: vi.fn() }));
 vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: vi.fn() }));
-vi.mock("@/features/creator-dashboard/hooks/useCommissionEligibility", () => ({
+vi.mock("@/features/creator-dashboard/earnings/hooks/useCommissionEligibility", () => ({
   useCommissionEligibility: vi.fn(),
 }));
 

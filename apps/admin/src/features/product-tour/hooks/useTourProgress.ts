@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 import { toursApi } from "../api/toursApi";
 import { TOUR_PROGRESS_QUERY_KEY } from "../constants/tourProgressQueryKey";

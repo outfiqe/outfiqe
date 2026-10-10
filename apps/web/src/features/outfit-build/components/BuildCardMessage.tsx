@@ -8,9 +8,9 @@ import { useTranslations } from "next-intl";
 
 import { AppImage } from "@/shared/components/AppImage";
 
-import { useOutfit } from "../hooks/useOutfit";
+import { useOutfit } from "../board/hooks/useOutfit";
+import { buildPath } from "../my-builds/components/BuildSummaryCard";
 import { formatLakhAmount } from "../utils/outfitFormatting";
-import { buildPath } from "./BuildSummaryCard";
 
 const PREVIEW_IMAGE_COUNT = 3;
 const NO_ITEMS = 0;
@@ -28,8 +28,8 @@ const BuildCardBody = ({ outfitId }: { outfitId: string }) => {
 
   const productImages =
     outfit.kind === "board"
-      ? outfit.slots.flatMap((slot) => slot.items.map((item) => item.product.imageUrl))
-      : outfit.items.map((item) => item.imageUrl);
+      ? outfit.slots.flatMap((slot) => slot.items.map((slotItem) => slotItem.product.imageUrl))
+      : outfit.items.map((buildItem) => buildItem.imageUrl);
   const previewImages = productImages
     .filter((imageUrl): imageUrl is string => imageUrl !== null)
     .slice(0, PREVIEW_IMAGE_COUNT);

@@ -1,4 +1,4 @@
-export { productTypesApi } from "./api";
-export { ProductTypesPage } from "./ProductTypesPage";
-export type { ProductType } from "./schemas";
-export { productTypeSchema } from "./schemas";
+export { productTypesApi } from "./api/productTypesApi";
+export type { ProductType } from "./api/productTypesSchemas";
+export { productTypeSchema } from "./api/productTypesSchemas";
+export { ProductTypesPage } from "./components/ProductTypesPage";

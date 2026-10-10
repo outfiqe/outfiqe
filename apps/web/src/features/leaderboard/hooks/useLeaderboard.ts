@@ -11,7 +11,10 @@ import {
 
 import { leaderboardApi } from "../api/leaderboardApi";
 import type { LeaderboardSnapshot } from "../api/leaderboardSchemas";
-import { LEADERBOARD_SOCKET_EVENTS, type LeaderboardCategory } from "../leaderboard.constants";
+import {
+  LEADERBOARD_SOCKET_EVENTS,
+  type LeaderboardCategory,
+} from "../constants/leaderboard.constants";
 
 const leaderboardQueryKey = (category: LeaderboardCategory) => ["leaderboard", category] as const;
 

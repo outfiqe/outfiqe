@@ -1,6 +1,6 @@
 "use client";
 
-import "@/features/explore/offlineActionHandlers";
+import "@/features/explore/utils/offlineActionHandlers";
 
 import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { type ReactNode, useState } from "react";
 
 import { AccountSuspensionSocketListener, AuthProvider } from "@/features/auth";
-import { GamificationSocketListener } from "@/features/creator-dashboard/components/GamificationSocketListener";
+import { GamificationSocketListener } from "@/features/creator-dashboard/progress/components/GamificationSocketListener";
 import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/messaging";
 import {
   AppBadgeSync,
