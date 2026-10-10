@@ -5,7 +5,7 @@ import {
   resolveBrandFundedUnitPrice,
   toActiveBrandDiscount,
 } from "#modules/discounts/discount.utils.js";
-import { withActiveDiscount } from "#modules/products/product.repository.js";
+import { withActiveDiscount } from "#modules/products/product.query-helpers.js";
 
 import { PURCHASE_HISTORY_LOOKUP_LIMIT, VIEWER_SIGNAL_LOOKBACK_LIMIT } from "./sale.constants.js";
 import type { AffinitySignal, SaleCandidate, ViewerShoppingSignals } from "./sale.types.js";

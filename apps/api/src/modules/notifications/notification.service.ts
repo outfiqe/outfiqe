@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { NotificationEntityType } from "#generated/prisma/enums.js";
 import { NotificationType } from "#generated/prisma/enums.js";
@@ -34,8 +35,6 @@ import type {
   UpsertGroupInput,
 } from "./notification.types.js";
 import { canReceiveNotificationType, toBroadcastPayload } from "./notification.utils.js";
-
-const NOT_FOUND_STATUS = 404;
 
 const broadcastCreated = (record: NotificationRecord): Promise<void> =>
   eventBus.publish(DomainEvents.NOTIFICATION_CREATED, toBroadcastPayload(record));
@@ -245,7 +244,7 @@ export const notificationService = {
 
   async markRead(recipientId: string, notificationId: string): Promise<void> {
     const record = await notificationRepository.markRead(recipientId, notificationId);
-    if (!record) throw new AppError("NOT_FOUND", "Notification not found.", NOT_FOUND_STATUS);
+    if (!record) throw new AppError("NOT_FOUND", "Notification not found.", HTTP_STATUS.NOT_FOUND);
 
     try {
       getIO().to(userRoom(recipientId)).emit(SOCKET_EVENTS.NOTIFICATION_READ, { id: record.id });

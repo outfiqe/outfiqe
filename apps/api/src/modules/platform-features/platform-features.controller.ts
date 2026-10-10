@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { validated } from "#middlewares/validate.js";
@@ -15,12 +16,10 @@ import type {
 } from "./platform-features.schemas.js";
 import { platformFeaturesService } from "./platform-features.service.js";
 
-const NOT_FOUND_STATUS = 404;
-
 const requireOrganization = async (organizationId: string): Promise<void> => {
   const plan = await platformFeaturesRepository.findOrganizationPlan(organizationId);
   if (plan === null) {
-    throw new AppError("ORGANIZATION_NOT_FOUND", "Organization not found.", NOT_FOUND_STATUS);
+    throw new AppError("ORGANIZATION_NOT_FOUND", "Organization not found.", HTTP_STATUS.NOT_FOUND);
   }
 };
 

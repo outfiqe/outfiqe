@@ -11,9 +11,12 @@ import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.j
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { seedPlatformOrganization, seedTenantOrganization } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/auth-helpers.js";
+import {
+  seedPlatformOrganization,
+  seedTenantOrganization,
+} from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const createUserSession = async (
   overrides: Partial<{ role: UserRole; isApprovedCreator: boolean }> = {},

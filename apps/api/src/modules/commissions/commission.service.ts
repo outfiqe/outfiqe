@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
   type CommissionScope,
   CommissionStatus,
@@ -38,8 +39,6 @@ import {
   toCreatorCommissionView,
 } from "./commission.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
 const NO_EARNINGS = 0;
 const NO_COMMISSION_AMOUNT = 0;
 const NOT_AN_EARNER_MESSAGE = "You don't have any commission earnings yet.";
@@ -48,7 +47,7 @@ const AUDIT_SCOPE_KEY = "scope";
 const requireTier = async (id: string, scope: CommissionScope): Promise<CommissionTierRow> => {
   const tier = await commissionRepository.findTierById(id);
   if (!tier || tier.scope !== scope) {
-    throw new AppError("TIER_NOT_FOUND", "Commission tier not found.", NOT_FOUND_STATUS);
+    throw new AppError("TIER_NOT_FOUND", "Commission tier not found.", HTTP_STATUS.NOT_FOUND);
   }
   return tier;
 };
@@ -210,7 +209,7 @@ export const commissionService = {
       throw new AppError(
         "INVALID_TIER_RANGE",
         "Max price must be greater than min price.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -234,7 +233,7 @@ export const commissionService = {
         throw new AppError(
           "TIER_IN_USE",
           "This tier has commissions attached and can't be deleted.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -262,7 +261,7 @@ export const commissionService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "Only pending commissions can be approved.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     logger.info(`Commission ${id} manually approved by admin ${adminUserId}`);
@@ -274,7 +273,7 @@ export const commissionService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "This commission can no longer be voided.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     logger.info(`Commission ${id} voided by admin ${adminUserId}: ${reason}`);
@@ -286,7 +285,7 @@ export const commissionService = {
       throw new AppError(
         "INVALID_TRANSITION",
         "Only available commissions can be marked paid.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     logger.info(`Commission ${id} marked paid by admin ${adminUserId}`);

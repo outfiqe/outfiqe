@@ -1,5 +1,6 @@
 import type { PublicProductType } from "@outfiqe/types";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
@@ -7,10 +8,6 @@ import { productTypeRepository } from "./product-type.repository.js";
 import type { CreateProductTypeBody, UpdateProductTypeBody } from "./product-type.schemas.js";
 import type { ProductTypeRecord, ProductTypeWithCounts } from "./product-type.types.js";
 import { toPublicProductType } from "./product-type.utils.js";
-
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -20,7 +17,7 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
       throw new AppError(
         "SLUG_TAKEN",
         "A garment type with this slug already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -30,7 +27,7 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
 const requireProductType = async (id: string): Promise<ProductTypeRecord> => {
   const productType = await productTypeRepository.findById(id);
   if (!productType) {
-    throw new AppError("NOT_FOUND", "Garment type not found.", NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", "Garment type not found.", HTTP_STATUS.NOT_FOUND);
   }
   return productType;
 };
@@ -54,7 +51,7 @@ export const productTypeService = {
       throw new AppError(
         "INVALID_ORDER",
         "The reorder request must list each garment type id once, and only known types.",
-        UNPROCESSABLE_STATUS,
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
       );
     }
 
@@ -78,7 +75,11 @@ export const productTypeService = {
   async getBySlug(slug: string): Promise<ProductTypeRecord> {
     const productType = await productTypeRepository.findBySlug(slug);
     if (!productType) {
-      throw new AppError("PRODUCT_TYPE_NOT_FOUND", "Garment type not found.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "PRODUCT_TYPE_NOT_FOUND",
+        "Garment type not found.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     return productType;
   },
@@ -89,7 +90,7 @@ export const productTypeService = {
       throw new AppError(
         "PRODUCT_TYPE_INACTIVE",
         "That garment type is currently switched off.",
-        UNPROCESSABLE_STATUS,
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
       );
     }
     return productType;

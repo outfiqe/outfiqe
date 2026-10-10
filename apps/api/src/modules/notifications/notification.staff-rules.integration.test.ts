@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { NotificationEntityType, NotificationType, UserRole } from "#generated/prisma/enums.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
-import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
+import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
 import {
   ensurePlatformOrganizationExists,
   seedTenantOrganization,
-} from "#test/integration/crmFixtures.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/crm-fixtures.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { notificationService } from "./notification.service.js";
 

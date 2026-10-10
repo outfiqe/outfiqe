@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { readRequiredIdempotencyKey } from "#middlewares/require-idempotency-key.js";
@@ -15,8 +16,6 @@ import type {
 } from "./outfit-offer.schemas.js";
 import { outfitOfferService } from "./outfit-offer.service.js";
 
-const CREATED_STATUS = 201;
-
 export const outfitOfferController = {
   async send(req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
@@ -28,7 +27,12 @@ export const outfitOfferController = {
       body,
       readRequiredIdempotencyKey(req),
     );
-    sendSuccess(res, sentOffer, "Offer created. Finish the payment to send it.", CREATED_STATUS);
+    sendSuccess(
+      res,
+      sentOffer,
+      "Offer created. Finish the payment to send it.",
+      HTTP_STATUS.CREATED,
+    );
   },
 
   async listForBuild(_req: Request, res: Response) {

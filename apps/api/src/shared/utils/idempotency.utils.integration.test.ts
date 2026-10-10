@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { subHours } from "date-fns/subHours";
 import { describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -16,7 +17,6 @@ import {
 const ENDPOINT = "test:idempotent-action";
 const PARALLEL_REQUEST_COUNT = 5;
 const SLOW_HANDLER_DELAY_MS = 100;
-const CONFLICT_STATUS = 409;
 const HOURS_PAST_RETENTION = IDEMPOTENCY_KEY_RETENTION_HOURS + 1;
 
 const createUser = () => {
@@ -100,7 +100,7 @@ describe("withIdempotency", () => {
     expect(new Set(answers.map(({ orderId }) => orderId)).size).toBe(1);
     const rejections = outcomes.flatMap((outcome) => (outcome.isFulfilled ? [] : [outcome.reason]));
     for (const rejection of rejections) {
-      expect(rejection).toMatchObject({ code: "DUPLICATE_REQUEST", status: CONFLICT_STATUS });
+      expect(rejection).toMatchObject({ code: "DUPLICATE_REQUEST", status: HTTP_STATUS.CONFLICT });
     }
   });
 
@@ -108,7 +108,11 @@ describe("withIdempotency", () => {
     const user = await createUser();
     const key = randomUUID();
     const failing = withIdempotency(user.id, ENDPOINT, key, async () => {
-      throw new AppError("ITEMS_UNAVAILABLE", "Some items sold out just now.", CONFLICT_STATUS);
+      throw new AppError(
+        "ITEMS_UNAVAILABLE",
+        "Some items sold out just now.",
+        HTTP_STATUS.CONFLICT,
+      );
     });
     await expect(failing).rejects.toMatchObject({ code: "ITEMS_UNAVAILABLE" });
 

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
@@ -8,12 +9,9 @@ import type { CreateAddressBody, UpdateAddressBody } from "./address.schemas.js"
 import type { PublicSavedAddress, UpdateSavedAddressFields } from "./address.types.js";
 import { toPublicSavedAddress } from "./address.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-
 export const MAX_SAVED_ADDRESSES_PER_USER = 15;
 
-const notFound = () => new AppError("NOT_FOUND", "Address not found.", NOT_FOUND_STATUS);
+const notFound = () => new AppError("NOT_FOUND", "Address not found.", HTTP_STATUS.NOT_FOUND);
 
 const normalizeLabel = (label: string | undefined): string | null => label?.trim() || null;
 
@@ -50,7 +48,7 @@ export const addressService = {
         throw new AppError(
           "ADDRESS_LIMIT_REACHED",
           `You can save up to ${MAX_SAVED_ADDRESSES_PER_USER} addresses. Remove one to add another.`,
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
 

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
@@ -11,8 +12,6 @@ import type {
   UpdateContactBody,
 } from "./crm-contacts.schemas.js";
 import { crmContactsService } from "./crm-contacts.service.js";
-
-const CREATED_STATUS = 201;
 
 export const crmContactsController = {
   async listContacts(_req: Request, res: Response) {
@@ -31,7 +30,7 @@ export const crmContactsController = {
     const body = validated.body<CreateContactBody>(res);
     const organization = getResolvedOrganization(res);
     const contact = await crmContactsService.createContact(organization.id, body);
-    sendSuccess(res, contact, "Contact created.", CREATED_STATUS);
+    sendSuccess(res, contact, "Contact created.", HTTP_STATUS.CREATED);
   },
 
   async updateContact(_req: Request, res: Response) {

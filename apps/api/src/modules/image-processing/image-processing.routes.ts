@@ -5,6 +5,7 @@ import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import multer from "multer";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
@@ -22,8 +23,7 @@ import { checkImageIngestBackPressure } from "./image-processing.queue.js";
 import { getImageAssetParamsSchema } from "./image-processing.schemas.js";
 import { resolvedTempUploadDir } from "./image-processing.storage.js";
 
-const INVALID_FILE_STATUS = 422;
-const TOO_MANY_REQUESTS_STATUS = 429;
+const INVALID_FILE_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -74,7 +74,7 @@ const checkBackPressure = async (_req: Request, res: Response, next: NextFunctio
       new AppError(
         "IMAGE_QUEUE_SATURATED",
         "The image processing queue is at capacity. Please try again shortly.",
-        TOO_MANY_REQUESTS_STATUS,
+        HTTP_STATUS.TOO_MANY_REQUESTS,
       ),
     );
     return;

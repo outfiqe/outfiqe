@@ -1,13 +1,12 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { validated } from "#middlewares/validate.js";
 
 import type { ListTopSaleQuery, SaleDebugParam } from "./sale.schemas.js";
 import { saleService } from "./sale.service.js";
-
-const NOT_FOUND_STATUS = 404;
 
 export const saleController = {
   async listTop(_req: Request, res: Response) {
@@ -21,7 +20,7 @@ export const saleController = {
 
     const snapshot = await saleService.getDebugSnapshot(productId);
     if (!snapshot) {
-      throw new AppError("PRODUCT_NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+      throw new AppError("PRODUCT_NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     sendSuccess(res, snapshot, "Sale debug snapshot.");

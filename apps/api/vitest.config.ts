@@ -3,7 +3,7 @@ import path from "node:path";
 import { config as loadEnvFile } from "dotenv";
 import { defineConfig } from "vitest/config";
 
-import { INTEGRATION_WORKER_COUNT } from "./src/testing/integration/workerPool.js";
+import { INTEGRATION_WORKER_COUNT } from "./src/testing/integration/worker-pool.js";
 
 const parsedTestEnv =
   loadEnvFile({ path: path.resolve(import.meta.dirname, ".env.test") }).parsed ?? {};
@@ -44,8 +44,8 @@ export default defineConfig({
         "src/config/app-env.ts",
         "src/processes/consumers.ts",
         "src/shared/utils/readiness.utils.ts",
-        "src/testing/integration/workerPool.ts",
-        "src/testing/integration/uniqueValues.ts",
+        "src/testing/integration/worker-pool.ts",
+        "src/testing/integration/unique-values.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/content-check.utils.ts",
         "src/shared/utils/password.utils.ts",
@@ -72,15 +72,15 @@ export default defineConfig({
         "src/modules/badges/badge.routes.ts",
         "src/modules/challenges/challenge.utils.ts",
         "src/modules/challenges/challenge.routes.ts",
-        "src/modules/creator-leaderboard/creatorLeaderboard.utils.ts",
-        "src/modules/creator-leaderboard/creatorLeaderboard.routes.ts",
-        "src/modules/creator-leaderboard/creatorLeaderboard.service.ts",
-        "src/modules/creator-leaderboard/creatorLeaderboard.repository.ts",
+        "src/modules/creator-leaderboard/creator-leaderboard.utils.ts",
+        "src/modules/creator-leaderboard/creator-leaderboard.routes.ts",
+        "src/modules/creator-leaderboard/creator-leaderboard.service.ts",
+        "src/modules/creator-leaderboard/creator-leaderboard.repository.ts",
         "src/modules/leaderboard/leaderboard.utils.ts",
         "src/modules/leaderboard/leaderboard.service.ts",
         "src/modules/leaderboard/leaderboard.repository.ts",
-        "src/modules/creator-competitions/creatorCompetition.utils.ts",
-        "src/modules/creator-competitions/creatorCompetition.routes.ts",
+        "src/modules/creator-competitions/creator-competition.utils.ts",
+        "src/modules/creator-competitions/creator-competition.routes.ts",
         "src/modules/creators/**/*.ts",
         "src/modules/creator-looks/**/*.ts",
         "src/modules/trending/**/*.ts",
@@ -166,6 +166,7 @@ export default defineConfig({
         "src/modules/platform-settings/**/*.ts",
         "src/modules/feature-flags/**/*.ts",
         "src/modules/products/product.jobs.ts",
+        "src/modules/orders/checkout/checkout.utils.ts",
       ],
       thresholds: {
         lines: 80,
@@ -199,10 +200,10 @@ export default defineConfig({
             ...SANDBOX_ENV_OVERRIDES_PREVENTING_REAL_EXTERNAL_SERVICE_CALLS_IN_TESTS,
           },
           setupFiles: [
-            "./src/testing/integration/perWorkerEnv.ts",
+            "./src/testing/integration/per-worker-env.ts",
             "./src/testing/integration/setup.ts",
           ],
-          globalSetup: ["./src/testing/integration/globalSetup.ts"],
+          globalSetup: ["./src/testing/integration/global-setup.ts"],
           testTimeout: 15000,
           hookTimeout: 30000,
           pool: "forks",

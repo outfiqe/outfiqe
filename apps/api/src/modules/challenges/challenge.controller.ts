@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -10,8 +11,6 @@ import type {
   UpdateChallengeBody,
 } from "./challenge.schemas.js";
 import { challengeService } from "./challenge.service.js";
-
-const CREATED_STATUS = 201;
 
 export const challengeController = {
   async listActive(_req: Request, res: Response) {
@@ -36,7 +35,7 @@ export const challengeController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateChallengeBody>(res);
     const challenge = await challengeService.createChallenge(body);
-    sendSuccess(res, challenge, "Challenge created.", CREATED_STATUS);
+    sendSuccess(res, challenge, "Challenge created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

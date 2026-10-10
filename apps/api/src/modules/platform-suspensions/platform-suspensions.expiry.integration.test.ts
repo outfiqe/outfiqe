@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { runSuspensionExpirySweep } from "./platform-suspensions.expiry.js";
 

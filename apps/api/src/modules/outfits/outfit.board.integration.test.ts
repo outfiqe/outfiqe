@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { IDEMPOTENCY_HEADER, OUTFIT_VERSION_HEADER } from "#constants/http.constants.js";
+import {
+  HTTP_STATUS,
+  IDEMPOTENCY_HEADER,
+  OUTFIT_VERSION_HEADER,
+} from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { FeatureFlagRollout } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -23,18 +27,11 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { outfitService } from "./outfit.service.js";
 
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const BAD_REQUEST_STATUS = 400;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
-const PRECONDITION_REQUIRED_STATUS = 428;
 const PARALLEL_WRITER_COUNT = 50;
 const REPLAY_COUNT = 5;
 
@@ -54,7 +51,7 @@ describe("starting a build", () => {
 
     const response = await startBuild(owner, { title: "Dashain look" });
 
-    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.get(OUTFIT_VERSION_HEADER)).toBe("0");
     expect(response.body.data).toMatchObject({
       title: "Dashain look",
@@ -92,7 +89,7 @@ describe("starting a build", () => {
       .post("/api/outfits")
       .set("Authorization", owner.auth)
       .send({});
-    expect(withoutKey.status).toBe(BAD_REQUEST_STATUS);
+    expect(withoutKey.status).toBe(HTTP_STATUS.BAD_REQUEST);
     expect(withoutKey.body.code).toBe("IDEMPOTENCY_KEY_REQUIRED");
 
     const idempotencyKey = randomUUID();
@@ -105,7 +102,7 @@ describe("starting a build", () => {
     expect(await prisma.outfit.count({ where: { createdById: owner.id } })).toBe(1);
 
     const reusedKey = await startBuild(owner, { title: "Different" }, idempotencyKey);
-    expect(reusedKey.status).toBe(UNPROCESSABLE_STATUS);
+    expect(reusedKey.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(reusedKey.body.code).toBe("IDEMPOTENCY_KEY_REUSED");
   });
 
@@ -115,7 +112,7 @@ describe("starting a build", () => {
 
     const response = await startBuild(owner);
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("NO_SLOT_TYPES");
   });
 
@@ -126,10 +123,10 @@ describe("starting a build", () => {
     const conversation = await createDirectConversation(owner, friend);
 
     const refused = await startBuild(stranger, { sourceConversationId: conversation.id });
-    expect(refused.status).toBe(NOT_FOUND_STATUS);
+    expect(refused.status).toBe(HTTP_STATUS.NOT_FOUND);
 
     const started = await startBuild(owner, { sourceConversationId: conversation.id });
-    expect(started.status).toBe(CREATED_STATUS);
+    expect(started.status).toBe(HTTP_STATUS.CREATED);
     expect(started.body.data.sourceConversationId).toBe(conversation.id);
   });
 
@@ -142,7 +139,7 @@ describe("starting a build", () => {
     await startBuild(owner, { sourceConversationId: conversation.id });
     const secondBuild = await startBuild(owner, { sourceConversationId: conversation.id });
 
-    expect(secondBuild.status).toBe(UNPROCESSABLE_STATUS);
+    expect(secondBuild.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(secondBuild.body.code).toBe("TOO_MANY_BUILDS_IN_CHAT");
   });
 
@@ -152,7 +149,7 @@ describe("starting a build", () => {
     await setFeatureFlagRollout("outfit_builder", FeatureFlagRollout.OFF);
 
     for (const response of [await startBuild(owner), await readBuild(owner, outfitId)]) {
-      expect(response.status).toBe(NOT_FOUND_STATUS);
+      expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
       expect(response.body.code).toBe("FEATURE_NOT_AVAILABLE");
     }
   });
@@ -168,7 +165,7 @@ describe("placing items", () => {
       productId: kurta.id,
     });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.get(OUTFIT_VERSION_HEADER)).toBe("1");
     const { version, board } = response.body.data;
     expect(version).toBe(1);
@@ -211,7 +208,7 @@ describe("placing items", () => {
       productId: secondShirt.id,
     });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.board.itemCount).toBe(1);
     const lastEvent = await prisma.outfitEvent.findFirstOrThrow({
       where: { outfitId },
@@ -248,7 +245,7 @@ describe("placing items", () => {
     ];
     for (const { path, productId, code } of refusals) {
       const response = await writeToBuild(owner, "put", path, 1, { productId });
-      expect(response.status).toBe(UNPROCESSABLE_STATUS);
+      expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
       expect(response.body.code).toBe(code);
     }
     expect(await currentBuildVersion(outfitId)).toBe(1);
@@ -272,7 +269,7 @@ describe("placing items", () => {
       productId: shoes.id,
     });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("BOARD_FULL");
   });
 
@@ -285,7 +282,7 @@ describe("placing items", () => {
       productId: soldOut.id,
     });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.code).toBe("PRODUCT_UNAVAILABLE");
   });
 
@@ -299,7 +296,7 @@ describe("placing items", () => {
       price: 1,
     });
 
-    expect(tampered.status).toBe(UNPROCESSABLE_STATUS);
+    expect(tampered.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(await currentBuildVersion(outfitId)).toBe(0);
   });
 
@@ -316,7 +313,7 @@ describe("placing items", () => {
     const reordered = await writeToBuild(owner, "put", `/${outfitId}/slots/extra/order`, 2, {
       productIds: [second.id, first.id],
     });
-    expect(reordered.status).toBe(OK_STATUS);
+    expect(reordered.status).toBe(HTTP_STATUS.OK);
     const extraSlot = reordered.body.data.board.slots.find(
       (slot: { key: string }) => slot.key === "extra",
     );
@@ -331,11 +328,11 @@ describe("placing items", () => {
     expect(mismatch.body.code).toBe("REORDER_MISMATCH");
 
     const removed = await writeToBuild(owner, "delete", slotPath(outfitId, "extra", 0), 3);
-    expect(removed.status).toBe(OK_STATUS);
+    expect(removed.status).toBe(HTTP_STATUS.OK);
     expect(removed.body.data.board.itemCount).toBe(1);
 
     const emptySpot = await writeToBuild(owner, "delete", slotPath(outfitId, "extra", 2), 4);
-    expect(emptySpot.status).toBe(NOT_FOUND_STATUS);
+    expect(emptySpot.status).toBe(HTTP_STATUS.NOT_FOUND);
     expect(emptySpot.body.code).toBe("ITEM_NOT_FOUND");
   });
 });
@@ -351,7 +348,7 @@ describe("versions and retries", () => {
       .set("Authorization", owner.auth)
       .set(IDEMPOTENCY_HEADER, randomUUID())
       .send({ productId: shirt.id });
-    expect(missingVersion.status).toBe(PRECONDITION_REQUIRED_STATUS);
+    expect(missingVersion.status).toBe(HTTP_STATUS.PRECONDITION_REQUIRED);
     expect(missingVersion.body.code).toBe("OUTFIT_VERSION_REQUIRED");
 
     const malformedVersion = await request(testApp)
@@ -360,12 +357,12 @@ describe("versions and retries", () => {
       .set(IDEMPOTENCY_HEADER, randomUUID())
       .set(OUTFIT_VERSION_HEADER, "latest")
       .send({ productId: shirt.id });
-    expect(malformedVersion.status).toBe(BAD_REQUEST_STATUS);
+    expect(malformedVersion.status).toBe(HTTP_STATUS.BAD_REQUEST);
 
     const staleVersion = await writeToBuild(owner, "put", slotPath(outfitId, "top", 0), 7, {
       productId: shirt.id,
     });
-    expect(staleVersion.status).toBe(CONFLICT_STATUS);
+    expect(staleVersion.status).toBe(HTTP_STATUS.CONFLICT);
     expect(staleVersion.body.code).toBe("OUTFIT_VERSION_CONFLICT");
     expect(await currentBuildVersion(outfitId)).toBe(0);
   });
@@ -427,7 +424,7 @@ describe("versions and retries", () => {
       );
     }
 
-    expect(responses.every((response) => response.status === OK_STATUS)).toBe(true);
+    expect(responses.every((response) => response.status === HTTP_STATUS.OK)).toBe(true);
     const [firstResponse, ...replayedResponses] = responses;
     for (const replayedResponse of replayedResponses) {
       expect(replayedResponse.body.data).toEqual(firstResponse?.body.data);
@@ -443,15 +440,15 @@ describe("who can see a build", () => {
     const outfitId = await startBuildOrFail(owner);
     const shirt = await createOutfitProduct("tops");
 
-    expect((await readBuild(stranger, outfitId)).status).toBe(NOT_FOUND_STATUS);
+    expect((await readBuild(stranger, outfitId)).status).toBe(HTTP_STATUS.NOT_FOUND);
     const strangerWrite = await writeToBuild(stranger, "put", slotPath(outfitId, "top", 0), 0, {
       productId: shirt.id,
     });
-    expect(strangerWrite.status).toBe(NOT_FOUND_STATUS);
+    expect(strangerWrite.status).toBe(HTTP_STATUS.NOT_FOUND);
     const strangerEvents = await request(testApp)
       .get(`/api/outfits/${outfitId}/events?sinceVersion=0`)
       .set("Authorization", stranger.auth);
-    expect(strangerEvents.status).toBe(NOT_FOUND_STATUS);
+    expect(strangerEvents.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("shows someone in the chat it started in the live board, read-only and without the build chat", async () => {
@@ -463,13 +460,13 @@ describe("who can see a build", () => {
     const shirt = await createOutfitProduct("tops");
 
     const view = await readBuild(friend, outfitId);
-    expect(view.status).toBe(OK_STATUS);
+    expect(view.status).toBe(HTTP_STATUS.OK);
     expect(view.body.data).toMatchObject({ kind: "board", myRole: "VIEWER", conversationId: null });
 
     const viewerWrite = await writeToBuild(friend, "put", slotPath(outfitId, "top", 0), 0, {
       productId: shirt.id,
     });
-    expect(viewerWrite.status).toBe(NOT_FOUND_STATUS);
+    expect(viewerWrite.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("lists a member's builds, newest first, and pages through them", async () => {

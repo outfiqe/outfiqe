@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CommissionScope } from "#generated/prisma/enums.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
-import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
-import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
+import { createAdminSession, grantPlatformPermissions } from "#test/integration/auth-helpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { commissionRepository } from "./commission.repository.js";
 

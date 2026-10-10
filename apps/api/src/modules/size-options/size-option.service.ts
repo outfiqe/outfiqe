@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
@@ -5,9 +6,6 @@ import { productTypeService } from "#modules/product-types/product-type.service.
 import { sizeOptionRepository } from "./size-option.repository.js";
 import type { CreateSizeOptionBody } from "./size-option.schemas.js";
 import type { SizeOptionRecord } from "./size-option.types.js";
-
-const CONFLICT_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
 
 export type PublicSizeOption = {
   id: string;
@@ -38,7 +36,7 @@ export const sizeOptionService = {
         throw new AppError(
           "SIZE_LABEL_TAKEN",
           "This size already exists for that garment type.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -47,7 +45,7 @@ export const sizeOptionService = {
 
   async delete(id: string): Promise<void> {
     const deleted = await sizeOptionRepository.delete(id);
-    if (!deleted) throw new AppError("NOT_FOUND", "Size not found.", NOT_FOUND_STATUS);
+    if (!deleted) throw new AppError("NOT_FOUND", "Size not found.", HTTP_STATUS.NOT_FOUND);
   },
 
   async listAll(): Promise<PublicSizeOption[]> {
@@ -69,7 +67,7 @@ export const sizeOptionService = {
       throw new AppError(
         "SIZE_OPTION_NOT_FOUND",
         "One or more selected sizes weren't found for this garment type.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 

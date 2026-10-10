@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { achievementRepository } from "./achievement.repository.js";
 

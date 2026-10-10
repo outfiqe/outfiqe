@@ -1,18 +1,45 @@
 # Products — inventory
 
+## Purpose
+
+The product catalogue: brands list, edit, discount and restock products; the admin team approves them; shoppers browse, search and filter them with real social proof (who wore it, how many sold, ratings).
+
+## Structure
+
+- `product.routes.ts`, `product.controller.ts` — the HTTP layer for brand, admin and public endpoints.
+- `product.service.ts` — `productService`, the only object the controller and other modules import. Holds `create`, `update`, `delete` and `listMine` (a brand's own products) and spreads in every topic service below.
+- `product.repository.ts` — `productRepository`: product create/update/approve/reject/soft-delete, lookups by id, a brand's own list and the admin review list. Spreads in every topic repository below, and re-exports `DbClient`.
+- `product.query-helpers.ts` — the Prisma include and stock helpers several topics share: `withActiveDiscount` (also used by `../outfits` and `../sale`), `withBrandAndCategories`, `withTotalStock`.
+- `product.guards.ts` — `requireOwnedProduct`, the brand-ownership check every write path uses.
+- `product.utils.ts`, `product.constants.ts`, `product.types.ts`, `product.schemas.ts` — mappers, named values, shapes and request validation.
+- `product.jobs.ts` — the nightly inventory-ledger reconciliation.
+- `catalog/` — public browsing: `catalog.service.ts` (`productCatalogService`: listing with filters and sort, search, `autocomplete`, the trending/sale/new-arrival rails, brand storefronts, the product page, batched `isSaved` flags) and `catalog.repository.ts` (`productCatalogRepository`: the public filters, the thrift sold-out exclusion, per-page sales stats).
+- `discounts/` — brand-funded discounts: `discount.service.ts` (set/update/remove with the discount ceiling) and `discount.repository.ts`.
+- `inventory/` — stock: `inventory.service.ts` (`decrementStockForItems`/`restoreStockForItems` for orders, `adjustStock` for brands, and the ledger writes) and `inventory.repository.ts`.
+- `review/` — admin moderation: `review.service.ts` (`listForReview`, `approve`, `reject`, and the brand notification).
+- `social-proof/` — `social-proof.service.ts` and `social-proof.repository.ts`: the worn-by count, "seen on creators", and the rating summary.
+
+Topic integration tests sit in their topic folder (`catalog/`, `discounts/`, `inventory/`); the thrift and image-asset tests cover create, update and listing together, so they stay at the root.
+
+## Funnel
+
+**User-facing:** a brand adds a product with sizes, images and stock; the admin team approves it; shoppers find it by browsing, searching or filtering, see who has worn it and how many sold, and buy it. The brand can restock, discount, edit or delete it at any time.
+
+**Technical:** `product.routes.ts` → `product.controller.ts` → `productService` (or the topic service it spreads in) → `productRepository` (or a topic repository) → Postgres via Prisma, with Redis and an in-process LRU caching autocomplete. `../orders` calls `decrementStockForItems`/`restoreStockForItems` inside its own checkout and cancellation transactions.
+
 ## Stock decrement is atomic, not check-then-write
 
 `decrementStock` runs a single conditional `UPDATE ... WHERE stock >= qty`. Postgres's row lock on that statement is the only correctness mechanism — there's no separate `SELECT` beforehand, so two concurrent buyers of the last unit can't both pass a check and then both write. Verified under real concurrent load: 20 parallel requests against a size with 12 in stock resolved to exactly 12 successes, 0 oversold.
 
 `decrementStock`/`restoreStock` take a `DbClient` (either the default `prisma` client or a `Prisma.TransactionClient`) so a caller building a larger atomic operation — order creation, in particular — can pass its own `$transaction` handle and get the stock write composed into that same transaction.
 
-`decrementStockForItems`/`restoreStockForItems` (in `product.service.ts`) process multi-item lines sorted by `sizeId`. This isn't cosmetic: two transactions that lock the same set of `ProductSize` rows in different orders can deadlock under Postgres; sorting first guarantees every caller acquires locks in the same order.
+`decrementStockForItems`/`restoreStockForItems` (in `inventory/inventory.service.ts`) process multi-item lines sorted by `sizeId`. This isn't cosmetic: two transactions that lock the same set of `ProductSize` rows in different orders can deadlock under Postgres; sorting first guarantees every caller acquires locks in the same order.
 
 ## Inventory ledger — every stock change is written down
 
 `InventoryLedgerEntry` is an append-only record of every change to `ProductSize.stock`: the size, the change (`delta`), what kind of change it was (`InventoryMovementKind`) and what caused it (`sourceType` + `sourceId`). Summing a size's entries always gives its current stock, so we can explain any stock number after the fact.
 
-**Written in the same transaction as the stock change, never after.** `decrementStockForItems`/`restoreStockForItems` take the caller's transaction and a `StockMovement` (kind + source), and `recordStockChanges` in `product.service.ts` writes the ledger rows and a `stock.changed` outbox event (`#outbox/*`) inside that transaction. If the stock update rolls back, so do its ledger rows and its event. The callers are:
+**Written in the same transaction as the stock change, never after.** `decrementStockForItems`/`restoreStockForItems` take the caller's transaction and a `StockMovement` (kind + source), and `recordStockChanges` in `inventory/inventory.service.ts` writes the ledger rows and a `stock.changed` outbox event (`#outbox/*`) inside that transaction. If the stock update rolls back, so do its ledger rows and its event. The callers are:
 
 | What happened                                                     | Kind               | Source                                     |
 | ----------------------------------------------------------------- | ------------------ | ------------------------------------------ |
@@ -50,7 +77,7 @@
 
 `productService.listTrending()` (backing the homepage rail, `GET /products/trending`) asks `../trending` (`trendingService.getTrendingProductIds`) for a real, activity-scored ranking — purchases/cart-adds/saves/creator-tags/tag-clicks, decayed and weighted, refreshed every 30 minutes — instead of `orderBy: reviewedAt desc`. See `../trending/README.md` for the full pipeline. `productRepository.listTrending()` (the old `reviewedAt desc` query) is kept, deliberately, as the cold-start fallback for when nothing has scored activity yet.
 
-The paginated `sort=trending` option on `GET /products` (the "see more" trending page) reuses the same score, but can't reuse `getTrendingProductIds` directly — that method returns a short, diversity-capped, rotating list sized for a homepage rail (`DIVERSE_POOL_LIMIT`, 30 items), not something to page through. Instead it calls `trendingService.listTrendingProductIds({ cursor, limit })`, which paginates over the **full**, undiversified, score-sorted candidate list via the same snapshot-cache-plus-offset-cursor pattern `creator-looks` already uses for its own trending feed tab (`getTrendingSnapshot`/`buildTrendingSnapshot`/`listTrendingIds` in `creator-looks/creatorLook.repository.ts`) — a per-session ID list cached in Redis, paged by cursor-encoded `{ sessionId, offset }`, so the ranking stays stable across a browsing session even though the underlying score isn't a plain sortable column. `encodeCursor`/`decodeCursor` (the base64url cursor codec both features need) live in `#lib/pagination.utils.js`, shared rather than duplicated.
+The paginated `sort=trending` option on `GET /products` (the "see more" trending page) reuses the same score, but can't reuse `getTrendingProductIds` directly — that method returns a short, diversity-capped, rotating list sized for a homepage rail (`DIVERSE_POOL_LIMIT`, 30 items), not something to page through. Instead it calls `trendingService.listTrendingProductIds({ cursor, limit })`, which paginates over the **full**, undiversified, score-sorted candidate list via the same snapshot-cache-plus-offset-cursor pattern `creator-looks` already uses for its own trending feed tab (`getTrendingSnapshot`/`buildTrendingSnapshot`/`listTrendingIds` in `creator-looks/creator-look.repository.ts`) — a per-session ID list cached in Redis, paged by cursor-encoded `{ sessionId, offset }`, so the ranking stays stable across a browsing session even though the underlying score isn't a plain sortable column. `encodeCursor`/`decodeCursor` (the base64url cursor codec both features need) live in `#lib/pagination.utils.js`, shared rather than duplicated.
 
 This path only fires for an **unfiltered** trending browse (`sort=trending` with no `category`/`type`/`q`) — combined with another filter, `GET /products` still falls back to `reviewedAt desc` scoped by that filter. A real per-filter ranked trending view would need a separate cached snapshot per filter combination, which is exactly the "don't generate thousands of caches unnecessarily" tradeoff the homepage rail's own design already ruled out (see `../trending/README.md`); this endpoint draws that same boundary rather than reintroducing the problem for its paginated version. Same cold-start behavior as the rail: if the trending candidate list is empty on the first page, `productService.listPublic` falls through to the ordinary `reviewedAt desc` path for that request instead of showing an empty page.
 
@@ -127,14 +154,14 @@ If `products` grows large enough that a first-time index build becomes a concern
 
 `productService.autocomplete` doesn't have its own SQL function — it calls `productRepository.searchProductIds` with a small fixed `AUTOCOMPLETE_LIMIT` (6) and no filters, the same ranked-id path `listPublic`'s search branch uses, then hydrates via `listApprovedByIds` and maps to a minimal `ProductSuggestion { id, name, brand, imageUrl }` instead of the full public product shape — a typeahead dropdown doesn't need stock/category/pricing data.
 
-**Two-tier caching, memory in front of Redis.** Autocomplete fires on every keystroke across every visitor typing in the search box, and many of those queries repeat within the same short window (lots of people typing "j", "ja", "jac"...) — caching pays off more here than almost anywhere else in the app. `autocompleteMemoryCache` (an `LRUCache` from the `lru-cache` package, module-scoped in `product.service.ts`, capped at `AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES` = 500 entries) is checked first; a miss falls through to the existing Redis `cacheService` (`cache:product-autocomplete:<normalizedQuery>`, `CACHE_TTL.PRODUCT_AUTOCOMPLETE` = 120s — shorter than the other `CACHE_TTL` entries since autocomplete should reflect new/changed inventory sooner than a homepage rail); a miss there runs the real query and populates both. The in-process LRU shares the same TTL as Redis (`CACHE_TTL.PRODUCT_AUTOCOMPLETE * 1000` ms) so a given process's memory cache can't outlive what Redis would still consider fresh. This is deliberately backend-only: the frontend doesn't need a matching client-side LRU, since TanStack Query's own query cache (already used for every other query in the web app) already gives each browser session equivalent per-query-key memoization via `staleTime` — see `apps/web/src/features/products/hooks/useProductAutocomplete.ts`.
+**Two-tier caching, memory in front of Redis.** Autocomplete fires on every keystroke across every visitor typing in the search box, and many of those queries repeat within the same short window (lots of people typing "j", "ja", "jac"...) — caching pays off more here than almost anywhere else in the app. `autocompleteMemoryCache` (an `LRUCache` from the `lru-cache` package, module-scoped in `catalog/catalog.service.ts`, capped at `AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES` = 500 entries) is checked first; a miss falls through to the existing Redis `cacheService` (`cache:product-autocomplete:<normalizedQuery>`, `CACHE_TTL.PRODUCT_AUTOCOMPLETE` = 120s — shorter than the other `CACHE_TTL` entries since autocomplete should reflect new/changed inventory sooner than a homepage rail); a miss there runs the real query and populates both. The in-process LRU shares the same TTL as Redis (`CACHE_TTL.PRODUCT_AUTOCOMPLETE * 1000` ms) so a given process's memory cache can't outlive what Redis would still consider fresh. This is deliberately backend-only: the frontend doesn't need a matching client-side LRU, since TanStack Query's own query cache (already used for every other query in the web app) already gives each browser session equivalent per-query-key memoization via `staleTime` — see `apps/web/src/features/products/hooks/useProductAutocomplete.ts`.
 
 Like `search_products`, the query text goes through `$queryRaw`/`Prisma.sql` bound parameters, not string interpolation — no injection surface, same as the full search path.
 
 ## Brand-funded discounts — `ProductDiscount`, effective price, and the discount ceiling
 
 A brand can set, schedule, edit and remove a sale price on its own product, self-serve, no admin
-involvement — `POST/PATCH/DELETE /products/:id/discount`, owned by `product.service.ts`'s
+involvement — `POST/PATCH/DELETE /products/:id/discount`, owned by `discounts/discount.service.ts`'s
 `setDiscount`/`updateDiscount`/`removeDiscount`. The actual pricing math (what a discount is worth,
 whether it exceeds the ceiling) lives in `../discounts/discount.utils.ts`
 (`resolveBrandFundedUnitPrice`, `isBrandDiscountWithinCeiling`) — this module owns the schema, the
@@ -154,7 +181,7 @@ discount, `setProductDiscountSchema`/`updateProductDiscountSchema` already bound
 `percentBasisPoints` to `MAX_BRAND_DISCOUNT_BASIS_POINTS` — a percent is price-independent, so the
 schema alone fully enforces the ceiling before the request ever reaches the service, and
 `isBrandDiscountWithinCeiling`'s check is unreachable for that type (verified in
-`product.discount.integration.test.ts` — the same over-ceiling percent value 422s at validation).
+`discounts/discount.integration.test.ts` — the same over-ceiling percent value 422s at validation).
 For a `FIXED` discount, `fixedAmount` is just bounded to `[PRICE_MIN, PRICE_MAX]` in the schema
 because the schema has no way to know a specific product's price — whether a given rupee amount is
 "more than 70%" depends on which product it's attached to. That check can only happen in the
@@ -171,7 +198,7 @@ reason: a request that only sends `startsAt` needs it checked against the existi
 just against itself.
 
 **Effective price is read via a filtered Prisma `include`, computed at the mapper, never stored.**
-`withActiveDiscount()` (in `product.repository.ts`) is a function, not a static object literal —
+`withActiveDiscount()` (in `product.query-helpers.ts`) is a function, not a static object literal —
 its `startsAt`/`endsAt` window check needs `new Date()` evaluated per request, not frozen at module
 load. It's spread into every public/brand-facing product query (`listPublic`, `listTrending`,
 `listNewArrivals`, `listApprovedByIds`, `findPublicById`, `listByBrandId`, `create`, `update`) —
@@ -230,7 +257,7 @@ doesn't rank it. See `docs/PRD-THRIFT-LISTINGS.md` for the product spec.
 moment its last unit sells — never just when a shopper opts into `inStock=true`.** Unlike an
 ordinary product (which can restock and stays listed at zero stock, see the existing
 `fix/product-out-of-stock-cta` treatment on the web side), a thrift piece is one-of-a-kind by
-definition and can never restock. `excludeSoldOutThrift` (`product.repository.ts`) — `{ isThrift:
+definition and can never restock. `excludeSoldOutThrift` (`catalog/catalog.repository.ts`) — `{ isThrift:
 true, sizes: { every: { stock: { lte: 0 } } } }`, wrapped in a `NOT` — is folded into
 `buildPublicWhere` and into `listTrending`/`listApprovedByIds`/`listNewArrivals`'s own inline
 `where` clauses (those three don't route through `buildPublicWhere`, so the exclusion has to be

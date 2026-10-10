@@ -1,7 +1,9 @@
 import type { ApiSuccessEnvelope } from "@outfiqe/types";
 import type { Response } from "express";
 
-const DEFAULT_SUCCESS_STATUS = 200;
+import { HTTP_STATUS } from "#constants/http.constants.js";
+
+const DEFAULT_SUCCESS_STATUS = HTTP_STATUS.OK;
 const DEFAULT_SUCCESS_MESSAGE = "Request successful";
 
 export const sendSuccess = <T>(

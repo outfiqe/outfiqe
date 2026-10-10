@@ -7,7 +7,7 @@ import {
   ContentReportTarget,
   OutfitMemberRole,
 } from "#generated/prisma/enums.js";
-import { outfitPersonSelect } from "#modules/outfits/outfit.repository.js";
+import { outfitPersonSelect } from "#modules/outfits/outfit.query-helpers.js";
 
 import { METRICS_TIME_ZONE, OUTFIT_ADMIN_LIMITS } from "./outfit-admin.constants.js";
 import type { ListAdminBuildsQuery } from "./outfit-admin.schemas.js";

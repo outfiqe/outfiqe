@@ -4,6 +4,7 @@ import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { FeatureFlagRollout, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -12,9 +13,9 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { requireFeatureFlag } from "./feature-flags.middleware.js";
 import { FEATURE_FLAG_KEYS } from "./feature-flags.registry.js";
@@ -23,10 +24,6 @@ import { featureFlagsService } from "./feature-flags.service.js";
 const FLAGS_PATH = "/api/platform/feature-flags";
 const OUTFIT_BUILDER_FLAG = "outfit_builder";
 const PROBE_PATH = "/probe";
-const OK_STATUS = 200;
-const NOT_FOUND_STATUS = 404;
-const UNPROCESSABLE_STATUS = 422;
-const FORBIDDEN_STATUS = 403;
 
 const probeApp = express()
   .get(PROBE_PATH, optionalAuth, requireFeatureFlag(OUTFIT_BUILDER_FLAG), (_req, res) => {
@@ -83,7 +80,7 @@ describe("feature flags API", () => {
 
     const response = await request(testApp).get(FLAGS_PATH).set("Authorization", authHeader);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.map((flag: { key: string }) => flag.key)).toEqual(FEATURE_FLAG_KEYS);
     for (const flag of response.body.data) {
       expect(flag).toMatchObject({ rollout: FeatureFlagRollout.OFF, allowedUserIds: [] });
@@ -99,7 +96,7 @@ describe("feature flags API", () => {
       allowedUserIds: [shopper.id, shopper.id],
     });
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.after).toEqual({
       rollout: FeatureFlagRollout.ALLOW_LIST,
       allowedUserIds: [shopper.id],
@@ -144,7 +141,7 @@ describe("feature flags API", () => {
       allowedUserIds: [unknownUserId],
     });
 
-    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(response.body.details).toEqual({ unknownUserIds: [unknownUserId], unknownBrandIds: [] });
   });
 
@@ -155,7 +152,7 @@ describe("feature flags API", () => {
       rollout: FeatureFlagRollout.EVERYONE,
     });
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 });
 
@@ -165,7 +162,7 @@ describe("GET /api/feature-flags/mine", () => {
   it("returns no features for a signed-out visitor while everything is off", async () => {
     const response = await request(testApp).get(MY_FLAGS_PATH);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data).toEqual({ enabledKeys: [] });
   });
 
@@ -195,7 +192,7 @@ describe("GET /api/feature-flags/mine", () => {
       .get(MY_FLAGS_PATH)
       .set("Authorization", "Bearer not-a-real-token");
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.enabledKeys).toEqual([OUTFIT_BUILDER_FLAG]);
   });
 });
@@ -207,8 +204,8 @@ describe("requireFeatureFlag", () => {
     const signedIn = await request(probeApp).get(PROBE_PATH).set("Authorization", authHeader);
     const anonymous = await request(probeApp).get(PROBE_PATH);
 
-    expect(signedIn.status).toBe(NOT_FOUND_STATUS);
-    expect(anonymous.status).toBe(NOT_FOUND_STATUS);
+    expect(signedIn.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(anonymous.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("lets through allow-listed people and members of allow-listed brands, nobody else", async () => {
@@ -226,9 +223,9 @@ describe("requireFeatureFlag", () => {
     const statusFor = async (authHeader: string) =>
       (await request(probeApp).get(PROBE_PATH).set("Authorization", authHeader)).status;
 
-    expect(await statusFor(allowedPerson.authHeader)).toBe(OK_STATUS);
-    expect(await statusFor(brandMember.authHeader)).toBe(OK_STATUS);
-    expect(await statusFor(outsider.authHeader)).toBe(NOT_FOUND_STATUS);
+    expect(await statusFor(allowedPerson.authHeader)).toBe(HTTP_STATUS.OK);
+    expect(await statusFor(brandMember.authHeader)).toBe(HTTP_STATUS.OK);
+    expect(await statusFor(outsider.authHeader)).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("switches off at once for everyone when the rollout goes back to OFF, keeping the lists", async () => {
@@ -247,7 +244,7 @@ describe("requireFeatureFlag", () => {
     const response = await request(probeApp)
       .get(PROBE_PATH)
       .set("Authorization", allowedPerson.authHeader);
-    expect(response.status).toBe(NOT_FOUND_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
     const storedFlag = await prisma.featureFlag.findUniqueOrThrow({
       where: { key: OUTFIT_BUILDER_FLAG },
     });
@@ -260,6 +257,6 @@ describe("requireFeatureFlag", () => {
 
     const response = await request(probeApp).get(PROBE_PATH);
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
   });
 });

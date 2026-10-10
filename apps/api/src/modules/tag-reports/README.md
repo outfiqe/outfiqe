@@ -10,12 +10,12 @@ it can act across every brand.
 
 ## Structure
 
-- `tagReport.routes.ts` — `POST /tag-reports` (public: `optionalAuth`, per-IP rate limit, bot-UA filter), `GET /tag-reports` + `GET /tag-reports/open-count` + `POST /tag-reports/:id/resolve` (all `requireAuth` + `requirePlatformAccess`).
-- `tagReport.controller.ts` — request/response glue; pulls `req.ip` / `user-agent` for the submit path.
-- `tagReport.service.ts` — `submitReport` (drops bot traffic silently, 404s a tag that isn't live, hashes the reporter IP), `recordCounterfeitEscalation` (creates the `BRAND_COUNTERFEIT_REJECTION` row and bumps the creator's `tagCounterfeitFlagCount`), `listReports` / `countOpen`, and `resolveReport` — marks the report `ACTIONED` / `DISMISSED` and, when `takeDownTag` is set, calls `tagReviewService.takeDownTagAsPlatform` to revoke a still-live tag.
-- `tagReport.repository.ts` — Prisma queries: `findReportableTag`, `create`, `incrementCreatorFlagCount`, `countOpen`, the keyset-paginated `listForAdmin` (with the tag / creator / product / brand joins a reviewer needs), `findResolvableReport`, `markResolved`.
-- `tagReport.events.ts` — `registerTagReportEventConsumers()`: subscribes (consumer group `tag-reports`) to `PRODUCT_TAG_REJECTED` and `PRODUCT_TAG_REVOKED`, and on a `COUNTERFEIT_SUSPECTED` reason runs `escalateCounterfeitTagRemoval` → `recordCounterfeitEscalation`.
-- `tagReport.schemas.ts` / `tagReport.types.ts` — Zod validation and DTO shapes.
+- `tag-report.routes.ts` — `POST /tag-reports` (public: `optionalAuth`, per-IP rate limit, bot-UA filter), `GET /tag-reports` + `GET /tag-reports/open-count` + `POST /tag-reports/:id/resolve` (all `requireAuth` + `requirePlatformAccess`).
+- `tag-report.controller.ts` — request/response glue; pulls `req.ip` / `user-agent` for the submit path.
+- `tag-report.service.ts` — `submitReport` (drops bot traffic silently, 404s a tag that isn't live, hashes the reporter IP), `recordCounterfeitEscalation` (creates the `BRAND_COUNTERFEIT_REJECTION` row and bumps the creator's `tagCounterfeitFlagCount`), `listReports` / `countOpen`, and `resolveReport` — marks the report `ACTIONED` / `DISMISSED` and, when `takeDownTag` is set, calls `tagReviewService.takeDownTagAsPlatform` to revoke a still-live tag.
+- `tag-report.repository.ts` — Prisma queries: `findReportableTag`, `create`, `incrementCreatorFlagCount`, `countOpen`, the keyset-paginated `listForAdmin` (with the tag / creator / product / brand joins a reviewer needs), `findResolvableReport`, `markResolved`.
+- `tag-report.events.ts` — `registerTagReportEventConsumers()`: subscribes (consumer group `tag-reports`) to `PRODUCT_TAG_REJECTED` and `PRODUCT_TAG_REVOKED`, and on a `COUNTERFEIT_SUSPECTED` reason runs `escalateCounterfeitTagRemoval` → `recordCounterfeitEscalation`.
+- `tag-report.schemas.ts` / `tag-report.types.ts` — Zod validation and DTO shapes.
 
 ## Funnel
 

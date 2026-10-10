@@ -32,15 +32,30 @@ notifications. The web board and the rest of the feature are added on top (see
 - `outfit.controller.ts` — reads the `X-Outfit-Version` header and the idempotency key, and sends every
   write's new version back in the body and in the same header.
 - `outfit.write.ts` — `runOutfitWrite`, the one path every board change takes (see Funnel).
-- `outfit.service.ts` — starting, reading and listing builds; items; settings; "I'm happy"; lock,
-  unlock and archive.
-- `outfit-member.service.ts` — adding and removing editors, leaving, handing over ownership, and
-  keeping the build's group chat in step (through `../chat/build-chat.service.ts`).
-- `outfit-visibility.service.ts` — private, shared and public, and who a build was sent to.
+- `outfit.service.ts` — `outfitService`: starting, reading and listing builds, with
+  `outfitItemService` and `outfitLifecycleService` spread in.
+- `items/item.service.ts` — placing, removing and reordering items, and "I'm happy".
+- `lifecycle/lifecycle.service.ts` — settings, lock, unlock and archive.
+- `members/member.service.ts` — adding and removing editors, leaving, handing over ownership, and
+  keeping the build's group chat in step (through `../chat/build-chat/build-chat.service.ts`).
+- `visibility/visibility.service.ts` — private, shared and public, and who a build was sent to.
 - `outfit.people.ts` — who can be invited or sent a build: an active shopper or brand account
   that hasn't blocked the owner and isn't blocked by them.
 - `outfit.board.ts` — loads a board and the admin limits and builds the board view.
-- `outfit.repository.ts` — every query, including the version check (`bumpVersion`).
+- `outfit.repository.ts` — `outfitRepository`: builds, versions (`bumpVersion`, the version
+  check), snapshots and the change history, with the topic repositories below spread in.
+- `outfit.query-helpers.ts` — the Prisma selects and includes the topic repositories share, and the
+  row types built from them.
+- `items/item.repository.ts`, `members/member.repository.ts`,
+  `visibility/visibility.repository.ts` — the board items, the people on a build, and who a build
+  was shared with.
+
+The other topic folders (`cart/`, `photos/`, `publish/`, `social/`, `members/`, `stock/`,
+`visibility/`) each export their own `outfit<Topic>Service`, which the controllers and other modules
+call directly. Integration tests about one topic sit in its folder; the board, lifecycle,
+constraints, kill-switch, launch-stage and live tests follow a build across several topics, so
+they stay at the root.
+
 - `outfit.utils.ts` — pure mappers: live price (list price minus any active brand discount),
   stock status in words, the board and summary views, snapshot items, and `X-Outfit-Version`
   parsing.
@@ -64,18 +79,18 @@ notifications. The web board and the rest of the feature are added on top (see
   edits become one grouped "Sita and Ram changed your build" alert per 30-second window
   (`activityWindowGroupKey`); everyone being happy tells the owner it's ready to lock; locking
   tells everyone else on the build; invites, shares and going public tell the people involved.
-- `outfit.stock.ts` — the `stock.changed` handler (inventory queue, `worker` role) and the
+- `stock/stock.events.ts` — the `stock.changed` handler (inventory queue, `worker` role) and the
   `outfit.items-sold-out` handler (notify queue). See "Sold-out items" below.
-- `outfit-stock.repository.ts` — claims newly sold-out draft items and releases restocked ones,
+- `stock/stock.repository.ts` — claims newly sold-out draft items and releases restocked ones,
   and finds replacement products.
-- `outfit-replacements.service.ts` — `GET /:id/slots/:slotKey/positions/:position/replacements`:
+- `stock/replacement.service.ts` — `GET /:id/slots/:slotKey/positions/:position/replacements`:
   up to six in-stock products of the same product type that aren't on the board, from the same
   brand first, then closest in price. Owners and editors only; anyone else gets 404.
-- `outfit-publish.service.ts`, `outfit-publish.repository.ts` — posting a locked build as the
+- `publish/publish.service.ts`, `publish/publish.repository.ts` — posting a locked build as the
   caller's own Creator Look (`POST /:id/look`) and telling them whether a newer version has been
   locked since (`GET /:id/look`). See "Posting a build as a Creator Look" below.
-- `outfit-social.service.ts`, `outfit-social.repository.ts`, `outfit-social.controller.ts`,
-  `outfit-social.types.ts` — the public side of builds: the Builds feed (`GET /public`, with
+- `social/social.service.ts`, `social/social.repository.ts`, `social/social.controller.ts`,
+  `social/social.types.ts` — the public side of builds: the Builds feed (`GET /public`, with
   `category`, `minPrice`, `maxPrice`, `inStockOnly`, `contributorId` and `brandId` filters, and a
   `sort` of `newest` (the default), `most-cheriqed`, `price-low` or `price-high`),
   saved builds (`GET /saved`), a build's public view (`GET /:id/public`), likes and saves
@@ -83,12 +98,12 @@ notifications. The web board and the rest of the feature are added on top (see
   (`GET`/`POST /:id/comments`, `GET /:id/comments/:commentId/replies`,
   `DELETE /:id/comments/:commentId`), and removal by a moderator (used by `../content-reports`).
   See "Builds in public" below.
-- `outfit-cart.service.ts` / `outfit-cart.repository.ts` — "Buy the full set" and "Pick your
+- `cart/cart.service.ts` / `cart/cart.repository.ts` — "Buy the full set" and "Pick your
   own items" (`POST /:id/cart`): checks which version the shopper may buy from, adds the chosen
   sizes through `cartService.addItems`, explains every item left out, and records an
   `outfit_build_visits` row per added item for attribution. See "Buying from a build" below.
-- `outfit-photo.service.ts`, `outfit-photo.repository.ts`, `outfit-photo.utils.ts`,
-  `outfit-photo.types.ts` — build photos: adding them (`POST /:id/photos`), removing one
+- `photos/photo.service.ts`, `photos/photo.repository.ts`, `photos/photo.utils.ts`,
+  `photos/photo.types.ts` — build photos: adding them (`POST /:id/photos`), removing one
   (`DELETE /:id/photos/:photoId`), picking covers (`PUT /:id/covers`), removal by a moderator,
   the cleanup sweep (`runOutfitPhotoCleanupSweep`, wired in `src/jobs/scheduled-jobs.ts`), and
   the cover photos shown on cards. See "Build photos" below.
@@ -97,10 +112,10 @@ notifications. The web board and the rest of the feature are added on top (see
   simultaneous edits, who can see what), `outfit.lifecycle.integration.test.ts` (agreeing,
   locking, people, the build chat, sharing), `outfit.live.integration.test.ts` (the build card,
   chat lines, notifications), `outfit.constraints.integration.test.ts` (database rules),
-  `outfit.stock.integration.test.ts` (sold-out alerts, replacements),
-  `outfit.publish.integration.test.ts` (posting as a look), `outfit.social.integration.test.ts`
-  (the feed, filters, likes, saves, comments, reports), `outfit.cart.integration.test.ts`
-  (buying from a build, Build commission split), `outfit.photos.integration.test.ts` (photo
+  `stock/stock.integration.test.ts` (sold-out alerts, replacements),
+  `publish/publish.integration.test.ts` (posting as a look), `social/social.integration.test.ts`
+  (the feed, filters, likes, saves, comments, reports), `cart/cart.integration.test.ts`
+  (buying from a build, Build commission split), `photos/photo.integration.test.ts` (photo
   limits, covers, moderation, cleanup), `outfit.utils.test.ts`, `outfit-photo.utils.test.ts`,
   `outfit.socket.test.ts`, `outfit.realtime.test.ts`.
 

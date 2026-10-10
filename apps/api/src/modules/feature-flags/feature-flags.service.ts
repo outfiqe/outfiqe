@@ -1,6 +1,7 @@
 import { addMilliseconds } from "date-fns/addMilliseconds";
 import { isFuture } from "date-fns/isFuture";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { FeatureFlagRollout } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -27,8 +28,6 @@ import {
   pickInOrder,
   toFlagSettings,
 } from "./feature-flags.utils.js";
-
-const UNPROCESSABLE_STATUS = 422;
 
 const cachedStates = new Map<FeatureFlagKey, { state: FeatureFlagState; expiresAt: Date }>();
 
@@ -65,7 +64,7 @@ const assertAllowListIdsExist = async ({
     throw new AppError(
       "UNKNOWN_ALLOW_LIST_IDS",
       "Some people or brands on the allow list don't exist.",
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
       { unknownUserIds, unknownBrandIds },
     );
   }

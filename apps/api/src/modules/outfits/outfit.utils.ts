@@ -18,6 +18,7 @@ import {
   toActiveBrandDiscount,
 } from "#modules/discounts/discount.utils.js";
 
+import type { OutfitRuleItemRow } from "./items/item.repository.js";
 import {
   OUTFIT_ITEM_AVAILABILITY,
   OUTFIT_VERSION_HEADER_PATTERN,
@@ -26,9 +27,8 @@ import {
 import type {
   OutfitBoardProductRow,
   OutfitBoardRow,
-  OutfitRuleItemRow,
   OutfitSummaryRow,
-} from "./outfit.repository.js";
+} from "./outfit.query-helpers.js";
 import type {
   OutfitBoardLimitsView,
   OutfitBoardView,
@@ -38,8 +38,8 @@ import type {
   OutfitSummaryView,
   OutfitViewerRole,
 } from "./outfit.types.js";
-import type { OutfitCoverPhotoView } from "./outfit-photo.types.js";
-import type { PublicFeedRow } from "./outfit-social.repository.js";
+import type { OutfitCoverPhotoView } from "./photos/photo.types.js";
+import type { PublicFeedRow } from "./social/social.repository.js";
 
 const NO_STOCK = 0;
 const EMPTY_TOTAL = 0;

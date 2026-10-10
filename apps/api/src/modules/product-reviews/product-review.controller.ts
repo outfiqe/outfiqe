@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -11,8 +12,6 @@ import type {
   WriteProductReviewBody,
 } from "./product-review.schemas.js";
 import { productReviewService } from "./product-review.service.js";
-
-const CREATED_STATUS = 201;
 
 export const productReviewController = {
   async list(_req: Request, res: Response) {
@@ -30,7 +29,7 @@ export const productReviewController = {
     const body = validated.body<WriteProductReviewBody>(res);
 
     const review = await productReviewService.create(productId, userId, body);
-    sendSuccess(res, review, "Review published.", CREATED_STATUS);
+    sendSuccess(res, review, "Review published.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

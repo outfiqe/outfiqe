@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 
@@ -11,13 +12,11 @@ import type {
 } from "./category.schemas.js";
 import { categoryService } from "./category.service.js";
 
-const CREATED_STATUS = 201;
-
 export const categoryController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateCategoryBody>(res);
     const category = await categoryService.create(body);
-    sendSuccess(res, category, "Category created.", CREATED_STATUS);
+    sendSuccess(res, category, "Category created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

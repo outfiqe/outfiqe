@@ -43,3 +43,10 @@ export const CHANGE_PASSWORD_RATE_LIMIT_MAX_REQUESTS = 10;
 export const LOGIN_LOCKOUT_WINDOW_MS = FIFTEEN_MINUTES_MS;
 export const LOGIN_LOCKOUT_THRESHOLD = 8;
 export const LOGIN_CAPTCHA_CHALLENGE_THRESHOLD = 3;
+
+export const MS_PER_SECOND = 1000;
+
+export const USER_NOT_FOUND_MESSAGE = "User not found.";
+export const PASSWORD_BREACHED_MESSAGE =
+  "This password has appeared in a data breach. Please choose another.";
+export const CAPTCHA_FAILED_MESSAGE = "Please complete the challenge to continue.";

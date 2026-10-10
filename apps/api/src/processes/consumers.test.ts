@@ -29,7 +29,7 @@ const fns = vi.hoisted(() => ({
 vi.mock("#socket/socket.listeners.js", () => ({
   registerSocketListeners: fns.registerSocketListeners,
 }));
-vi.mock("#modules/creator-looks/creatorLook.socket.js", () => ({
+vi.mock("#modules/creator-looks/creator-look.socket.js", () => ({
   registerCreatorLookSocketHandlers: fns.registerCreatorLookSocketHandlers,
   registerCommentEventConsumer: fns.registerCommentEventConsumer,
 }));
@@ -37,7 +37,7 @@ vi.mock("#modules/leaderboard/leaderboard.socket.js", () => ({
   registerLeaderboardSocketHandlers: fns.registerLeaderboardSocketHandlers,
   registerLeaderboardEventConsumer: fns.registerLeaderboardEventConsumer,
 }));
-vi.mock("#modules/creator-leaderboard/creatorLeaderboard.socket.js", () => ({
+vi.mock("#modules/creator-leaderboard/creator-leaderboard.socket.js", () => ({
   registerCreatorLeaderboardSocketHandlers: fns.registerCreatorLeaderboardSocketHandlers,
   registerCreatorLeaderboardEventConsumer: fns.registerCreatorLeaderboardEventConsumer,
 }));
@@ -53,7 +53,7 @@ vi.mock("#modules/notifications/notification.socket.js", () => ({
 vi.mock("#modules/chat/chat.socket.js", () => ({
   registerChatSocketEventConsumer: fns.registerChatSocketEventConsumer,
 }));
-vi.mock("#modules/chat/conversation.socket.js", () => ({
+vi.mock("#modules/chat/conversations/conversation.socket.js", () => ({
   registerConversationSocketHandlers: fns.registerConversationSocketHandlers,
   registerMessageEventConsumer: fns.registerMessageEventConsumer,
   registerConversationMembershipConsumer: fns.registerConversationMembershipConsumer,
@@ -71,7 +71,7 @@ vi.mock("#modules/outfits/outfit.realtime.js", () => ({
 vi.mock("#modules/outfits/outfit.notifications.js", () => ({
   registerOutfitNotificationHandlers: fns.registerOutfitNotificationHandlers,
 }));
-vi.mock("#modules/outfits/outfit.stock.js", () => ({
+vi.mock("#modules/outfits/stock/stock.events.js", () => ({
   registerOutfitStockHandlers: fns.registerOutfitStockHandlers,
 }));
 vi.mock("#modules/xp/xp.events.js", () => ({

@@ -11,8 +11,8 @@ import {
   ImageProcessingStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createOwner = () =>
   prisma.user.create({

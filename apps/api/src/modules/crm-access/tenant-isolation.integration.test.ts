@@ -6,10 +6,13 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { seedPlatformOrganization, seedTenantOrganization } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import {
+  seedPlatformOrganization,
+  seedTenantOrganization,
+} from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const tenantHost = (subdomain: string) => `${subdomain}.localhost`;
 
