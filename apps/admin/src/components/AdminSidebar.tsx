@@ -63,7 +63,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { crmApi } from "@/features/crm/api";
 import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 

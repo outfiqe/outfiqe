@@ -12,7 +12,7 @@ import { MembersSection } from "./MembersSection";
 const API_BASE = "http://localhost:3000/api";
 const CURRENT_USER_ID = "current-user-id";
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({
     state: { status: "signed-in", user: { id: CURRENT_USER_ID } },
   }),

@@ -2,7 +2,7 @@ import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";

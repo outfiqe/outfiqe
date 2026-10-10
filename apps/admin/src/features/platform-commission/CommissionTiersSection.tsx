@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 

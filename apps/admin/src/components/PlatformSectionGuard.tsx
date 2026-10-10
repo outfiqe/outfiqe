@@ -1,7 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { isOnTenantHost } from "@/lib/tenantHost";
 
 import { resolveAdminLanding, resolvePlatformPathAccess } from "./adminLanding";

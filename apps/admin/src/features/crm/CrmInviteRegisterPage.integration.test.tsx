@@ -25,7 +25,7 @@ vi.mock("@/lib/apiClient", async () => {
   return { ...actual, setAccessToken: (token: string | null) => setAccessToken(token) };
 });
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({ setSession }),
 }));
 

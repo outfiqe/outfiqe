@@ -19,7 +19,7 @@ import { useForm } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { productTypesApi } from "@/features/product-types/api";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";

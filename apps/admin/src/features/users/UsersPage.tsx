@@ -3,7 +3,7 @@ import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { ApiClientError } from "@/lib/apiClient";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 

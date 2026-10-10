@@ -6,7 +6,7 @@ import { type ReactNode, useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import {

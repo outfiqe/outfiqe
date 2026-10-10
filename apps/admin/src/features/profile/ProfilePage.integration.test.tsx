@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
-import { AuthProvider } from "@/features/auth/AuthContext";
+import { AuthProvider } from "@/features/auth/components/AuthContext";
 
 import { ProfilePage } from "./ProfilePage";
 

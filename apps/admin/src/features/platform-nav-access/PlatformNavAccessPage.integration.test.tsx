@@ -11,7 +11,7 @@ const API_BASE = "http://localhost:3000/api";
 
 const mockAuthState = vi.hoisted(() => ({ current: { isCoFounder: true } }));
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({
     state: { status: "signed-in", user: { id: "me", ...mockAuthState.current } },
   }),

@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TextPromptModal } from "@/components/TextPromptModal";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";

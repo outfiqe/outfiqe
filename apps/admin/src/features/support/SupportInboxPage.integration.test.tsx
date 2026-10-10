@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SupportInboxPage } from "./SupportInboxPage";
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({ state: { status: "signed-in", user: { id: "agent-1" } } }),
 }));
 

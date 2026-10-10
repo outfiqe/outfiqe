@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const useAuthMock = vi.fn();
 const isOnTenantHostMock = vi.fn();
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
 

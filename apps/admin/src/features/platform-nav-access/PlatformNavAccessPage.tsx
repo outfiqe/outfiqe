@@ -4,7 +4,7 @@ import { MAX_PLATFORM_CO_FOUNDERS, PLATFORM_NAV_KEYS, type PlatformNavKey } from
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformNavAccessApi } from "./api";

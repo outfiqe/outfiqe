@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { PlatformOverviewPage } from "./PlatformOverviewPage";
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({
     state: {
       status: "signed-in",

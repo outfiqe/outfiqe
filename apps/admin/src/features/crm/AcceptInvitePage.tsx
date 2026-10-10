@@ -2,8 +2,8 @@ import { Button, FormBanner } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { authApi } from "@/features/auth/api";
-import { useAuth } from "@/features/auth/AuthContext";
+import { authApi } from "@/features/auth/api/authApi";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 import { crmApi } from "./api";
 

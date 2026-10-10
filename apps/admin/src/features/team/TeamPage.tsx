@@ -17,7 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { platformRolesApi } from "@/features/platform-roles/api";
 import { PlatformRolesSection } from "@/features/platform-roles/PlatformRolesSection";
 import { PlatformTeamSection } from "@/features/platform-roles/PlatformTeamSection";

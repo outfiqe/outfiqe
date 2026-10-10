@@ -15,14 +15,14 @@ import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { authApi } from "@/features/auth/api";
-import { useAuth } from "@/features/auth/AuthContext";
+import { authApi } from "@/features/auth/api/authApi";
+import type { CrmInviteInfo } from "@/features/auth/api/authSchemas";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import {
   crmRegisterFormSchema,
   type CrmRegisterFormValues,
   EMPTY_CRM_REGISTER_FORM,
-} from "@/features/auth/registerForm.schema";
-import type { CrmInviteInfo } from "@/features/auth/schemas";
+} from "@/features/auth/schemas/registerForm.schema";
 import { setAccessToken } from "@/lib/apiClient";
 import { useHideBootLoader } from "@/lib/bootLoader";
 import { getErrorMessage } from "@/lib/errorMessages";

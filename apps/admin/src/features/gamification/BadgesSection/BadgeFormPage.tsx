@@ -16,7 +16,7 @@ import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { NoSectionAccess } from "@/components/NoSectionAccess";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { validateWithSchema } from "@/lib/zodFieldErrors";

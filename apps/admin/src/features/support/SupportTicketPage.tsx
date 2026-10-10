@@ -2,8 +2,8 @@ import { Badge, Button, Select } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { useAuth } from "@/features/auth/AuthContext";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { useAuth } from "@/features/auth/components/AuthContext";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {

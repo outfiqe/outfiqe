@@ -15,8 +15,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { ImageUpload } from "@/components/ImageUpload";
-import { authApi } from "@/features/auth/api";
-import { useAuth } from "@/features/auth/AuthContext";
+import { authApi } from "@/features/auth/api/authApi";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ChangePasswordCard } from "./ChangePasswordCard";

@@ -16,7 +16,7 @@ const API_BASE = "http://localhost:3000/api";
 
 const updateUser = vi.fn();
 
-vi.mock("@/features/auth/AuthContext", () => ({
+vi.mock("@/features/auth/components/AuthContext", () => ({
   useAuth: () => ({ updateUser }),
 }));
 

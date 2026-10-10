@@ -3,7 +3,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { useState } from "react";
 
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";

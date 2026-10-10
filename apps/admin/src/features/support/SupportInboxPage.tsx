@@ -3,8 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { type ReactNode, useMemo, useState } from "react";
 
 import { SkeletonBadge } from "@/components/SkeletonControls";
-import { useAuth } from "@/features/auth/AuthContext";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { useAuth } from "@/features/auth/components/AuthContext";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 

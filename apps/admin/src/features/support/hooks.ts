@@ -2,7 +2,7 @@ import { toast } from "@outfiqe/design-system";
 import { useApiMutation, useInfiniteCursorPage } from "@outfiqe/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { supportApi } from "./api";

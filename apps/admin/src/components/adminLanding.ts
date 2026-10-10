@@ -1,4 +1,4 @@
-import type { AdminUser } from "@/features/auth/schemas";
+import type { AdminUser } from "@/features/auth/api/authSchemas";
 import { canOpenPlatformOverview, PLATFORM_OVERVIEW_PATH } from "@/lib/platformPermissions";
 
 import { PLATFORM_NAV_ITEMS } from "./AdminSidebar";

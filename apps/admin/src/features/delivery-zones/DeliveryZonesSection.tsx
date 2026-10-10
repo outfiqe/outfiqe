@@ -21,7 +21,7 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
-import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 

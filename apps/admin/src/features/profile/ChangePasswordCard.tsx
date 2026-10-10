@@ -14,7 +14,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
-import { authApi } from "@/features/auth/api";
+import { authApi } from "@/features/auth/api/authApi";
 import { ApiClientError } from "@/lib/apiClient";
 
 import {
