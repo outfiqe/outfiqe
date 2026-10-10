@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { adminUserSchema } from "./schemas";
+import { adminUserSchema } from "./usersSchemas";
 
 const usersPageSchema = z.object({
   items: z.array(adminUserSchema),

@@ -12,8 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { tagReviewsApi } from "./api";
-import type { PeriodTrend, TagReviewMetrics } from "./schemas";
+import { tagReviewsApi } from "../api/tagReviewsApi";
+import type { PeriodTrend, TagReviewMetrics } from "../api/tagReviewsSchemas";
 
 const POLICY_LABEL: Record<TagReviewMetrics["reviewLatencyByPolicy"][number]["policy"], string> = {
   OPEN: "Open to all",

@@ -28,7 +28,7 @@ export default defineConfig({
         "src/features/platform-settings/**/*.{ts,tsx}",
         "src/features/platform-audit/**/*.{ts,tsx}",
         "src/features/platform-jobs/**/*.{ts,tsx}",
-        "src/features/withdraw-requests/WithdrawRequestsListSection.tsx",
+        "src/features/withdraw-requests/components/WithdrawRequestsListSection.tsx",
         "src/features/tag-reports/**/*.{ts,tsx}",
         "src/features/content-reports/**/*.{ts,tsx}",
         "src/features/content-browser/**/*.{ts,tsx}",

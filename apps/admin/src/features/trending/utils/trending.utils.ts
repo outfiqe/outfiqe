@@ -1,4 +1,4 @@
-import type { BaselineSourceValue } from "./schemas";
+import type { BaselineSourceValue } from "../api/trendingSchemas";
 
 export const BASELINE_SOURCE_LABEL: Record<BaselineSourceValue, string> = {
   product: "this product's own trailing history",

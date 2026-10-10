@@ -7,7 +7,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-import { UsersPage } from "@/features/users/UsersPage";
+import { UsersPage } from "@/features/users/components/UsersPage";
 
 const API_BASE = "http://localhost:3000/api";
 const MODAL_OPEN_TIMEOUT_MS = 4000;

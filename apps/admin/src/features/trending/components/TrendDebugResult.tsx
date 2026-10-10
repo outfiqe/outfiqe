@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/lib/apiClient";
 
-import { trendingApi } from "./api";
-import type { TrendDebugSubject } from "./schemas";
-import { BASELINE_SOURCE_LABEL, formatNumber } from "./trending.utils";
+import { trendingApi } from "../api/trendingApi";
+import type { TrendDebugSubject } from "../api/trendingSchemas";
+import { BASELINE_SOURCE_LABEL, formatNumber } from "../utils/trending.utils";
 import { ActivityStat, ActivityStatSkeleton, StatCard, StatCardSkeleton } from "./TrendStatCards";
 
 const SCORE_STAT_SKELETON_COUNT = 3;

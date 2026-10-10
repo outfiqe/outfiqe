@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type AdminInviteListResult, adminInviteListResultSchema } from "./schemas";
+import { type AdminInviteListResult, adminInviteListResultSchema } from "./teamSchemas";
 
 export const teamApi = {
   async list(): Promise<AdminInviteListResult> {

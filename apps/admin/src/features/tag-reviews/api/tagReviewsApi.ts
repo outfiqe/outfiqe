@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type TagReviewMetrics, tagReviewMetricsSchema } from "./schemas";
+import { type TagReviewMetrics, tagReviewMetricsSchema } from "./tagReviewsSchemas";
 
 export const tagReviewsApi = {
   async metrics(): Promise<TagReviewMetrics> {

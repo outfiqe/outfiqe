@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { wholeNumberText } from "@/lib/formFields";
 
-import { windowTypeSchema } from "./schemas";
+import { windowTypeSchema } from "../api/withdrawPolicySchemas";
 
 const MAX_AMOUNT = 1_000_000_000;
 const MAX_WINDOW_DAYS = 366;

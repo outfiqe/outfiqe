@@ -7,11 +7,11 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { ApiClientError } from "@/lib/apiClient";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { usersApi } from "./api";
-import { BanAccountModal } from "./components/BanAccountModal";
-import { SuspendAccountModal } from "./components/SuspendAccountModal";
-import { useInfiniteUsers } from "./hooks/useInfiniteUsers";
-import type { AccountStatusValue } from "./schemas";
+import { usersApi } from "../api/usersApi";
+import type { AccountStatusValue } from "../api/usersSchemas";
+import { useInfiniteUsers } from "../hooks/useInfiniteUsers";
+import { BanAccountModal } from "./BanAccountModal";
+import { SuspendAccountModal } from "./SuspendAccountModal";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const USER_ROW_SKELETON_COUNT = 6;

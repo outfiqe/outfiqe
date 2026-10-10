@@ -1,9 +1,9 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
-import { trendingApi } from "./api";
-import type { TrendingProductSummary } from "./schemas";
-import { formatNumber } from "./trending.utils";
+import { trendingApi } from "../api/trendingApi";
+import type { TrendingProductSummary } from "../api/trendingSchemas";
+import { formatNumber } from "../utils/trending.utils";
 
 const TOP_TRENDING_SKELETON_COUNT = 5;
 

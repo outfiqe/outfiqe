@@ -10,8 +10,8 @@ import { useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { trendingApi } from "./api";
-import type { TrendDebugSubject } from "./schemas";
+import { trendingApi } from "../api/trendingApi";
+import type { TrendDebugSubject } from "../api/trendingSchemas";
 import { TopTrendingList } from "./TopTrendingList";
 import { TrendDebugResult } from "./TrendDebugResult";
 

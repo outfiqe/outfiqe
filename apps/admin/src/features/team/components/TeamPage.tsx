@@ -23,9 +23,13 @@ import { PlatformRolesSection } from "@/features/platform-roles/components/Platf
 import { PlatformTeamSection } from "@/features/platform-roles/components/PlatformTeamSection";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { teamApi } from "./api";
-import { EMPTY_INVITE_FORM, inviteFormSchema, type InviteFormValues } from "./inviteForm.schema";
-import type { AdminInviteSummary } from "./schemas";
+import { teamApi } from "../api/teamApi";
+import type { AdminInviteSummary } from "../api/teamSchemas";
+import {
+  EMPTY_INVITE_FORM,
+  inviteFormSchema,
+  type InviteFormValues,
+} from "../schemas/inviteForm.schema";
 
 const STATUS_TONE: Record<AdminInviteSummary["status"], "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",

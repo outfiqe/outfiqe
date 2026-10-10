@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { adminWithdrawRequestSchema, type WithdrawRequestStatusValue } from "./schemas";
+import {
+  adminWithdrawRequestSchema,
+  type WithdrawRequestStatusValue,
+} from "./withdrawRequestsSchemas";
 
 const withdrawRequestPageSchema = z.object({
   items: z.array(adminWithdrawRequestSchema),

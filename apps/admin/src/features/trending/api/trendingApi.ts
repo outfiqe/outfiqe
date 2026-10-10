@@ -9,7 +9,7 @@ import {
   trendDebugSnapshotSchema,
   type TrendingProductSummary,
   trendingProductSummarySchema,
-} from "./schemas";
+} from "./trendingSchemas";
 
 const productSearchSchema = z.object({ products: z.array(productSearchResultSchema) });
 const topTrendingSchema = z.array(trendingProductSummarySchema);

@@ -1,7 +1,7 @@
 import { StatCardSkeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
-import { StatCard } from "@/features/trending/TrendStatCards";
+import { StatCard } from "@/features/trending/components/TrendStatCards";
 
 import { gamificationApi } from "./api";
 

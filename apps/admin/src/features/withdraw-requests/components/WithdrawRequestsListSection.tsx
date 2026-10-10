@@ -13,9 +13,9 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { withdrawRequestsApi } from "./api";
-import { useInfiniteWithdrawRequests } from "./hooks/useInfiniteWithdrawRequests";
-import type { WithdrawRequestStatusValue } from "./schemas";
+import { withdrawRequestsApi } from "../api/withdrawRequestsApi";
+import type { WithdrawRequestStatusValue } from "../api/withdrawRequestsSchemas";
+import { useInfiniteWithdrawRequests } from "../hooks/useInfiniteWithdrawRequests";
 
 const TABS: WithdrawRequestStatusValue[] = [
   "PENDING",

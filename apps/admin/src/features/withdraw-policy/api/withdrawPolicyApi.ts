@@ -1,6 +1,10 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type OwnerTypeValue, type WithdrawPolicy, withdrawPolicySchema } from "./schemas";
+import {
+  type OwnerTypeValue,
+  type WithdrawPolicy,
+  withdrawPolicySchema,
+} from "./withdrawPolicySchemas";
 
 export type UpdateWithdrawPolicyInput = {
   ownerType: OwnerTypeValue;

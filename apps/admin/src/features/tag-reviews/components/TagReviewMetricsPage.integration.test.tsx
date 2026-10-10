@@ -5,7 +5,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-import { TagReviewMetricsPage } from "@/features/tag-reviews/TagReviewMetricsPage";
+import { TagReviewMetricsPage } from "@/features/tag-reviews/components/TagReviewMetricsPage";
 
 const API_BASE = "http://localhost:3000/api";
 

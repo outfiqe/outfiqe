@@ -22,9 +22,13 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "./api";
-import { policyFormSchema, type PolicyFormValues } from "./policyForm.schema";
-import { type OwnerTypeValue, type WindowTypeValue, type WithdrawPolicy } from "./schemas";
+import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "../api/withdrawPolicyApi";
+import {
+  type OwnerTypeValue,
+  type WindowTypeValue,
+  type WithdrawPolicy,
+} from "../api/withdrawPolicySchemas";
+import { policyFormSchema, type PolicyFormValues } from "../schemas/policyForm.schema";
 
 const OWNER_TABS: OwnerTypeValue[] = ["CREATOR", "BUSINESS"];
 const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
