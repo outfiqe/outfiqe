@@ -8,6 +8,7 @@ import type {
   AdjustStockBody,
   AutocompleteQuery,
   CreateProductBody,
+  ListFittingProductsQuery,
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
@@ -133,6 +134,12 @@ export const productController = {
     const principal = getAuthPrincipal(res);
     const products = await productService.listNewArrivals(principal?.userId);
     sendSuccess(res, products, "New arrivals.");
+  },
+
+  async listFitting(_req: Request, res: Response) {
+    const query = validated.query<ListFittingProductsQuery>(res);
+    const viewerId = getAuthPrincipal(res)?.userId;
+    sendSuccess(res, await productService.listFitting(query, viewerId), "Products that fit.");
   },
 
   async getPublicById(_req: Request, res: Response) {

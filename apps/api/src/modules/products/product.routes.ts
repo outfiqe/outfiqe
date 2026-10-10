@@ -2,9 +2,11 @@ import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
+import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requireFeatureFlag } from "#modules/feature-flags/feature-flags.middleware.js";
 import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { productController } from "./product.controller.js";
@@ -12,6 +14,7 @@ import {
   adjustStockSchema,
   autocompleteQuerySchema,
   createProductSchema,
+  listFittingProductsQuerySchema,
   listMineProductsQuerySchema,
   listPublicProductsQuerySchema,
   listReviewProductsQuerySchema,
@@ -23,6 +26,16 @@ import {
 } from "./product.schemas.js";
 
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
+
+const FIT_SEARCH_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const FIT_SEARCH_RATE_LIMIT_MAX_REQUESTS = 60;
+
+const fitSearchRateLimit = rateLimit({
+  namespace: "product-fits",
+  windowMs: FIT_SEARCH_RATE_LIMIT_WINDOW_MS,
+  max: FIT_SEARCH_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (req) => req.ip,
+});
 
 export const productRoutes = Router();
 
@@ -52,6 +65,14 @@ productRoutes.get(
   optionalAuth,
   validate({ query: listPublicProductsQuerySchema }),
   productController.listPublic,
+);
+productRoutes.get(
+  "/fits",
+  optionalAuth,
+  requireFeatureFlag("size_fit"),
+  fitSearchRateLimit,
+  validate({ query: listFittingProductsQuerySchema }),
+  productController.listFitting,
 );
 productRoutes.get(
   "/:id",

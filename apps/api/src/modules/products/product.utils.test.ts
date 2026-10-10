@@ -17,6 +17,7 @@ import {
   isNew,
   isThriftSoldOut,
   isUuid,
+  recommendInStockFitSize,
   sumStock,
   toBrandSummary,
   toDiscountView,
@@ -341,5 +342,60 @@ describe("hasCompleteSizeChart", () => {
     ["there are no sizes", true, []],
   ])("is false when %s", (_description, supportsFitRanges, sizes) => {
     expect(hasCompleteSizeChart(supportsFitRanges, sizes)).toBe(false);
+  });
+});
+
+describe("recommendInStockFitSize", () => {
+  const LARGE_FIT_RANGE = { minHeightCm: 170, maxHeightCm: 180, minWeightKg: 65, maxWeightKg: 75 };
+
+  it("recommends the fitting size", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: false,
+          sizes: [
+            { id: "size-m", label: "M", stock: 2, fitRange: MEDIUM_FIT_RANGE },
+            { id: "size-l", label: "L", stock: 2, fitRange: LARGE_FIT_RANGE },
+          ],
+        },
+        { heightCm: 165, weightKg: 60 },
+      ),
+    ).toEqual({ sizeId: "size-m", label: "M" });
+  });
+
+  it("skips a sold-out size", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: false,
+          sizes: [
+            { id: "size-m", label: "M", stock: 0, fitRange: MEDIUM_FIT_RANGE },
+            { id: "size-l", label: "L", stock: 2, fitRange: LARGE_FIT_RANGE },
+          ],
+        },
+        { heightCm: 170, weightKg: 65 },
+      ),
+    ).toEqual({ sizeId: "size-l", label: "L" });
+  });
+
+  it("falls back to the nearest size when none fits", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: null,
+          sizes: [{ id: "size-m", label: "M", stock: 2, fitRange: MEDIUM_FIT_RANGE }],
+        },
+        { heightCm: 200, weightKg: 100 },
+      ),
+    ).toEqual({ sizeId: "size-m", label: "M" });
+  });
+
+  it("returns nothing without a chart", () => {
+    expect(
+      recommendInStockFitSize(
+        { isStretchable: null, sizes: [{ id: "size-m", label: "M", stock: 2, fitRange: null }] },
+        { heightCm: 165, weightKg: 60 },
+      ),
+    ).toBeNull();
   });
 });

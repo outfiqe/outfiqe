@@ -1,4 +1,4 @@
-import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
+import { type FitMeasurements, PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
@@ -33,6 +33,7 @@ import type {
   ProductSizeRecord,
   ProductTypeSummary,
   ProductWithStock,
+  ProductWithStockSalesAndSizes,
   ProductWithStockSizesAndImages,
   SeenOnCreator,
   SetProductDiscountInput,
@@ -102,6 +103,7 @@ const withGalleryImageAssets = {
 };
 
 type PublicFilter = {
+  fitMeasurements?: FitMeasurements;
   categoryId?: string;
   productTypeId?: string;
   brandId?: string;
@@ -123,7 +125,24 @@ const excludeSoldOutThrift: Prisma.ProductWhereInput = {
   sizes: { every: { stock: { lte: 0 } } },
 };
 
+const buildFittingSizeWhere = ({
+  heightCm,
+  weightKg,
+}: FitMeasurements): Prisma.ProductWhereInput => ({
+  productType: { supportsFitRanges: true },
+  sizes: {
+    some: {
+      stock: { gt: 0 },
+      minHeightCm: { lte: heightCm },
+      maxHeightCm: { gte: heightCm },
+      minWeightKg: { lte: weightKg },
+      maxWeightKg: { gte: weightKg },
+    },
+  },
+});
+
 const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
+  AND: filter.fitMeasurements ? [buildFittingSizeWhere(filter.fitMeasurements)] : undefined,
   status: ProductStatus.APPROVED,
   deletedAt: null,
   brand: { accountStatus: AccountStatus.ACTIVE },
@@ -382,6 +401,19 @@ export const productRepository = {
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     });
     return withSalesStats(withTotalStock(rows));
+  },
+
+  async listFitting(
+    filter: PublicFilter & { fitMeasurements: FitMeasurements; cursor?: string; limit: number },
+  ): Promise<ProductWithStockSalesAndSizes[]> {
+    const rows = await prisma.product.findMany({
+      where: buildPublicWhere(filter),
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: filter.limit + 1,
+      ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
+    });
+    return withSalesStats(withTotalStockAndSizes(rows));
   },
 
   async searchProductIds(params: ProductSearchParams): Promise<ProductSearchResult> {

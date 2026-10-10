@@ -78,6 +78,10 @@ Every `ProductSize` can carry the height (cm) and weight (kg) range the brand cu
 
 **What shoppers see.** `GET /products/:id` adds `fitRange` to each size, plus `isStretchable` and `hasSizeChart` (the type takes charts and every size has a range). When an admin turns charts off for a type, stored ranges and stretch stay in the database but the product page gets `null`s, so switching it back on restores them.
 
+**"Find what fits me" — `GET /products/fits?heightCm&weightKg&type&category&cursor&limit`.** It reuses `buildPublicWhere`, so every public-listing rule still applies (approved, not deleted, brand active, sold-out thrift hidden), and adds one condition: the product's type takes charts and it has an in-stock size whose ranges contain both the height and the weight, ends included. All of that runs in one Prisma query; only the page's own rows (at most `limit`) go through `recommendInStockFitSize`, which runs `recommendFitSize` over the in-stock sizes to label each card with `recommendedSize`. Newest first, keyset cursor on the product id like the default browse. Behind the `size_fit` feature flag (404 while it's off) and rate-limited per IP (60 a minute), since it's public and scriptable.
+
+**Height and weight never reach the logs.** They travel as query parameters, so `http-logger` and Sentry's `beforeSend`/`beforeSendTransaction` (`instrument.ts`) replace them with `[redacted]` via `#lib/log-redaction.utils.js`.
+
 **Product types decide whether a chart makes sense.** `ProductType.supportsFitRanges` is false for headwear, footwear and accessories (`DEFAULT_PRODUCT_TYPES` in `@outfiqe/utils`), where height and weight say nothing about size. Sending a range or a stretch value for such a type is refused with `422 FIT_RANGES_NOT_SUPPORTED`. Charts are optional for now; making them required for new products is a later rollout step (see the size-fit PRD).
 
 ## Restocking, editing, and deleting all work regardless of status

@@ -269,6 +269,15 @@ export const listPublicProductsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
+export const listFittingProductsQuerySchema = z.object({
+  heightCm: z.coerce.number().int().min(FIT_HEIGHT_CM_MIN).max(FIT_HEIGHT_CM_MAX),
+  weightKg: z.coerce.number().int().min(FIT_WEIGHT_KG_MIN).max(FIT_WEIGHT_KG_MAX),
+  category: categorySlugFieldSchema.optional(),
+  type: productTypeSlugSchema.optional(),
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export const listBrandProductsQuerySchema = z.object({
   type: productTypeSlugSchema.optional(),
   cursor: z.uuid().optional(),
@@ -286,6 +295,7 @@ export type ProductIdParam = z.infer<typeof productIdParamSchema>;
 export type ListReviewProductsQuery = z.infer<typeof listReviewProductsQuerySchema>;
 export type AutocompleteQuery = z.infer<typeof autocompleteQuerySchema>;
 export type ListPublicProductsQuery = z.infer<typeof listPublicProductsQuerySchema>;
+export type ListFittingProductsQuery = z.infer<typeof listFittingProductsQuerySchema>;
 export type ListBrandProductsQuery = z.infer<typeof listBrandProductsQuerySchema>;
 export type ListMineProductsQuery = z.infer<typeof listMineProductsQuerySchema>;
 export type SetProductDiscountBody = z.infer<typeof setProductDiscountSchema>;

@@ -1,4 +1,10 @@
-import type { FitRange } from "@outfiqe/utils";
+import {
+  FIT_OUTCOME,
+  type FitMeasurements,
+  type FitRange,
+  type FitSizeMatch,
+  recommendFitSize,
+} from "@outfiqe/utils";
 
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import {
@@ -16,6 +22,7 @@ import type {
   ProductSuggestion,
   ProductWithBrand,
   ProductWithOptionalStock,
+  ProductWithStockAndSizes,
   ProductWithStockSizesAndImages,
   PublicProduct,
   StockLine,
@@ -179,3 +186,25 @@ export const hasCompleteSizeChart = (
   sizes: { fitRange: FitRange | null }[],
 ): boolean =>
   supportsFitRanges && sizes.length > 0 && sizes.every(({ fitRange }) => fitRange !== null);
+
+const OUT_OF_STOCK = 0;
+
+export const recommendInStockFitSize = (
+  { sizes, isStretchable }: Pick<ProductWithStockAndSizes, "sizes" | "isStretchable">,
+  measurements: FitMeasurements,
+): FitSizeMatch | null => {
+  const inStockSizes = sizes
+    .filter(({ stock }) => stock > OUT_OF_STOCK)
+    .map(({ id, label, fitRange }) => ({ sizeId: id, label, fitRange }));
+  const recommendation = recommendFitSize(inStockSizes, measurements, isStretchable);
+
+  switch (recommendation.outcome) {
+    case FIT_OUTCOME.SINGLE:
+    case FIT_OUTCOME.BETWEEN_SIZES:
+      return recommendation.primary;
+    case FIT_OUTCOME.NO_FIT:
+      return recommendation.nearest;
+    case FIT_OUTCOME.NO_CHART:
+      return null;
+  }
+};

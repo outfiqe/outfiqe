@@ -1,5 +1,5 @@
 import type { ResponsiveImage } from "@outfiqe/types";
-import type { FitRange } from "@outfiqe/utils";
+import type { FitRange, FitSizeMatch } from "@outfiqe/utils";
 
 import type {
   DiscountType,
@@ -145,6 +145,16 @@ export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
 };
 
 export type ProductSalesStats = { creatorBuyerCount: number; unitsSold: number };
+
+export type ProductWithStockSalesAndSizes = ProductWithStockAndSizes & ProductSalesStats;
+
+export type FittingPublicProduct = PublicProduct & { recommendedSize: FitSizeMatch | null };
+
+export type FittingProductPage = {
+  products: FittingPublicProduct[];
+  nextCursor: string | null;
+  total: number;
+};
 
 export type ProductWithOptionalStock = ProductWithBrand &
   Partial<ProductSalesStats> & { totalStock?: number; images?: ProductFirstImageAsset[] };

@@ -45,6 +45,7 @@ import type {
   AutocompleteQuery,
   CreateProductBody,
   ListBrandProductsQuery,
+  ListFittingProductsQuery,
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
@@ -58,6 +59,7 @@ import type {
 import type {
   BrandProductSize,
   CreateProductSizeInput,
+  FittingProductPage,
   ProductBrandSummary,
   ProductBrandSummaryPage,
   ProductDiscountView,
@@ -76,6 +78,7 @@ import {
   hasCompleteSizeChart,
   isUuid,
   mergeStockLinesBySize,
+  recommendInStockFitSize,
   toBrandSummary,
   toDiscountView,
   toPublicProduct,
@@ -808,6 +811,35 @@ export const productService = {
 
   async recomputeRatingSummary(productId: string): Promise<void> {
     await productRepository.refreshRatingSummary(productId);
+  },
+
+  async listFitting(
+    { heightCm, weightKg, type: typeSlug, category, cursor, limit }: ListFittingProductsQuery,
+    viewerId?: string,
+  ): Promise<FittingProductPage> {
+    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
+    const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
+    const fitMeasurements = { heightCm, weightKg };
+    const filter = { categoryId, productTypeId, fitMeasurements };
+
+    const [rows, { total }] = await Promise.all([
+      productRepository.listFitting({ ...filter, cursor, limit }),
+      productRepository.countPublic(filter),
+    ]);
+    const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
+    const publicProducts = await hydrateSavedFlags(pagedRows.map(toPublicProduct), viewerId);
+    const recommendedSizeByProductId = new Map(
+      pagedRows.map((row) => [row.id, recommendInStockFitSize(row, fitMeasurements)]),
+    );
+
+    return {
+      products: publicProducts.map((publicProduct) => ({
+        ...publicProduct,
+        recommendedSize: recommendedSizeByProductId.get(publicProduct.id) ?? null,
+      })),
+      nextCursor,
+      total,
+    };
   },
 
   async listPublicByBrand(
