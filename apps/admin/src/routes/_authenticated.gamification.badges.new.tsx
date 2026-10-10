@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { NewBadgePage } from "@/features/gamification/BadgesSection/BadgeFormPage";
+import { NewBadgePage } from "@/features/gamification/badges/components/BadgeFormPage";
 
 export const Route = createFileRoute("/_authenticated/gamification/badges/new")({
   validateSearch: (search: Record<string, unknown>) => ({

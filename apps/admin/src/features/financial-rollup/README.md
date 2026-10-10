@@ -10,17 +10,17 @@ computed.
 
 ## Structure
 
-- `api.ts` — `GET /admin/financial-rollup?range=` and `GET /admin/financial-rollup/ledger`
+- `api/financialRollupApi.ts` — `GET /admin/financial-rollup?range=` and `GET /admin/financial-rollup/ledger`
   (paginated, filterable; `getLedger` builds the query string itself rather than relying on a
   library, since filters are optional and cursor-driven).
-- `schemas.ts` — Zod validation for both response shapes (`financialRollupSchema`,
-  `ledgerPageSchema`) and the `LedgerFilters` type the UI passes to `api.ts`.
-- `constants.ts` — payment-method/brand-payout-status label maps and the shared `money`/`percent`
+- `api/financialRollupSchemas.ts` — Zod validation for both response shapes (`financialRollupSchema`,
+  `ledgerPageSchema`) and the `LedgerFilters` type the UI passes to `api/financialRollupApi.ts`.
+- `constants/financialRollup.constants.ts` — payment-method/brand-payout-status label maps and the shared `money`/`percent`
   formatters, used by both `FinancialRollupPage` and `LedgerTable`.
-- `FinancialRollupPage.tsx` — range tabs (this cycle / 30 days / all time), the attributed-order-
+- `components/FinancialRollupPage.tsx` — range tabs (this cycle / 30 days / all time), the attributed-order-
   share stat card, the gateway-vs-ledger side-by-side cards, the GMV-by-payment-method breakdown,
   and the `LedgerTable`.
-- `LedgerTable.tsx` — filters (payment method, brand payout status, date range), the order-level
+- `components/LedgerTable.tsx` — filters (payment method, brand payout status, date range), the order-level
   table itself (via the shared `@outfiqe/design-system` `Table`), a "loaded rows" totals footer,
   and cursor-paginated "Load more" via `useInfiniteCursorPage`.
 
@@ -49,8 +49,8 @@ all through `@/lib/useSearchFilter` (`_authenticated.financial-rollup.tsx` decla
   server-side — a true full-filtered-set total would need a separate aggregate query. Labeling it
   honestly was judged better than either building that extra query for Phase 1 or silently
   presenting a partial sum as if it were complete.
-- **`constants.ts` exists because `PAYMENT_METHOD_LABEL`/`money`/`percent` moved out of
-  `FinancialRollupPage.tsx`** once `LedgerTable.tsx` needed them too — matches this repo's rule
+- **`constants/financialRollup.constants.ts` exists because `PAYMENT_METHOD_LABEL`/`money`/`percent` moved out of
+  `components/FinancialRollupPage.tsx`** once `components/LedgerTable.tsx` needed them too — matches this repo's rule
   that a module-local helper only gets extracted once a second consumer actually needs it, not
   ahead of time.
 - **The order ledger's `Table` component lives in `@outfiqe/design-system`, not locally in this

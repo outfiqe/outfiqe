@@ -8,14 +8,14 @@ instead of its own nav entry.
 
 ## Structure
 
-- `api.ts` / `schemas.ts` — `platformRolesApi` and its Zod response shapes, hitting
+- `api/platformRolesApi.ts` / `api/platformRolesSchemas.ts` — `platformRolesApi` and its Zod response shapes, hitting
   `/api/platform/{roles,permissions,team}` (see `apps/api/src/modules/platform-roles`).
-- `PlatformRolesSection.tsx` — role list plus a create/edit/delete modal with a grouped permission
+- `components/PlatformRolesSection.tsx` — role list plus a create/edit/delete modal with a grouped permission
   checkbox matrix sourced from `GET /platform/permissions`. Same UX as the CRM's `RolesSection.tsx`,
   minus tenant-only concepts (no org rename, no ownership transfer, no per-viewer permission
   subsetting — every caller who reaches this component is already a co-founder, gated by
   `TeamPage.tsx`, so there's nothing to disable).
-- `PlatformTeamSection.tsx` — active platform staff list with a role `<Select>` and an
+- `components/PlatformTeamSection.tsx` — active platform staff list with a role `<Select>` and an
   activate/deactivate button per row, mirroring the CRM's `MembersSection.tsx`.
 
 ## Funnel
@@ -33,4 +33,4 @@ already states for the invite form.
 
 ## Form validation
 
-The role modal uses react-hook-form with `platformRoleForm.schema.ts` (name 2-50 characters, at least one permission), so an empty form shows its messages instead of a silently disabled button. Create, edit and delete each show a success toast.
+The role modal uses react-hook-form with `schemas/platformRoleForm.schema.ts` (name 2-50 characters, at least one permission), so an empty form shows its messages instead of a silently disabled button. Create, edit and delete each show a success toast.

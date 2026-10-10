@@ -10,8 +10,8 @@ act on anything they happen to spot.
 
 ## Structure
 
-- `schemas.ts` — zod shapes for the admin post list, comment list, and reply list responses.
-- `api.ts` — `contentBrowserApi`: `listLooks` (`GET /creator-looks/admin`, admin-only),
+- `api/contentBrowserSchemas.ts` — zod shapes for the admin post list, comment list, and reply list responses.
+- `api/contentBrowserApi.ts` — `contentBrowserApi`: `listLooks` (`GET /creator-looks/admin`, admin-only),
   `listComments`/`listReplies` (the same public, already-existing
   `GET /creator-looks/:lookId/comments[/​:commentId/replies]` endpoints the storefront's own post
   detail view uses), and `deleteLook`/`deleteComment` (the existing
@@ -19,16 +19,16 @@ act on anything they happen to spot.
 - `hooks/useInfiniteAdminLooks.ts`, `hooks/useInfiniteLookComments.ts`,
   `hooks/useInfiniteLookReplies.ts` — cursor pagination via the shared `useInfiniteCursorPage`
   (`@outfiqe/hooks`), one per list.
-- `ContentBrowserPage.tsx` — debounced search box, the post grid, and the two `ConfirmModal`
+- `components/ContentBrowserPage.tsx` — debounced search box, the post grid, and the two `ConfirmModal`
   instances (delete post / delete comment) shared with the rest of the admin app.
-- `PostGridCard.tsx` — one grid tile: the post's thumbnail (with a small flag-count badge when the
+- `components/PostGridCard.tsx` — one grid tile: the post's thumbnail (with a small flag-count badge when the
   creator has prior removals) and its caption underneath, mirroring
   `apps/web/src/features/explore/components/PostGridCard.tsx`'s layout.
-- `PostDetailModal.tsx` — the expanded view for one post, opened by clicking its grid tile: image
+- `components/PostDetailModal.tsx` — the expanded view for one post, opened by clicking its grid tile: image
   on one side, creator/engagement/caption and the comment panel on the other, matching the
   storefront's own `PostDetailModal`'s split-pane shape (image + `ConfirmModal`-driven actions
   instead of like/save/follow, since this is a moderation view, not a viewer one).
-- `PostCommentsPanel.tsx` — the comment list shown inside `PostDetailModal`: each root comment shows
+- `components/PostCommentsPanel.tsx` — the comment list shown inside `PostDetailModal`: each root comment shows
   its `previewReplies` (the same small preview the storefront shows) with a "View N more replies"
   expander that switches to the fully paginated `useInfiniteLookReplies` once clicked, so opening a
   post never fetches more than a handful of replies unless a moderator actually asks for the rest.

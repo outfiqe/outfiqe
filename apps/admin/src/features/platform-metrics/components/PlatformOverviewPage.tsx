@@ -1,0 +1,321 @@
+import {
+  Button,
+  ChartCard,
+  FormBanner,
+  Skeleton,
+  StatCard,
+  StatCardSkeleton,
+  TrendChart,
+} from "@outfiqe/design-system";
+import { useQuery } from "@tanstack/react-query";
+import { Link, type LinkProps } from "@tanstack/react-router";
+import {
+  BanknoteArrowUp,
+  ClipboardList,
+  Compass,
+  LifeBuoy,
+  type LucideIcon,
+  Package,
+  ShoppingBag,
+  TicketPercent,
+} from "lucide-react";
+import type { ReactNode } from "react";
+
+import { financialRollupApi } from "@/features/financial-rollup/api/financialRollupApi";
+import {
+  PLATFORM_KPI_TOUR_ANCHOR,
+  PLATFORM_TOUR_REPLAY_SEARCH,
+  PLATFORM_TOUR_REPLAY_TO,
+  PlatformDashboardTour,
+  TOUR_REPLAY_LABEL,
+} from "@/features/product-tour";
+import { getErrorMessage } from "@/lib/errorMessages";
+
+import { platformMetricsApi } from "../api/platformMetricsApi";
+import type { PlatformActivityTrendPoint, PlatformOverview } from "../api/platformMetricsSchemas";
+
+const OVERVIEW_KEY = ["platform-metrics-overview"];
+const ACTIVITY_TREND_KEY = ["platform-metrics-activity-trend"];
+const ROLLUP_KEY = ["platform-metrics-rollup-gap"];
+const KPI_CARD_COUNT = 6;
+const KPI_HINT = {
+  tenantCount: "Customer organizations using the CRM. Internal platform accounts are not counted.",
+  totalMembers: "People who belong to a customer organization, added up across every organization.",
+  totalContacts: "Contacts stored in the CRM, added up across every customer organization.",
+  totalDeals: "Pipeline deals created, added up across every customer organization.",
+  totalTickets: "Support tickets created, added up across every customer organization.",
+  totalActivities:
+    "Calls, notes and other activities logged, added up across every customer organization.",
+  gatewayNetHeld:
+    "Money the payment gateways collected in the last 30 days, minus refunds. This is what should be sitting with us.",
+  ledgerOwed:
+    "What the ledger says we still owe to brands and muses from the last 30 days, in payouts and commissions that have not been paid out yet.",
+  settlementGap:
+    "Gateway money held minus what the ledger owes. Under 2% counts as reconciled; anything larger needs a review.",
+} as const;
+const SETTLEMENT_CARD_COUNT = 3;
+const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
+const SETTLEMENT_GRID_CLASS = "grid grid-cols-1 gap-3 sm:grid-cols-3";
+const QUICK_ACCESS_TILE_CLASS =
+  "flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center";
+const MIN_TREND_POINTS = 2;
+const HEALTHY_GAP_RATIO = 0.02;
+
+type QuickAccessShortcut = {
+  readonly to: LinkProps["to"];
+  readonly label: string;
+  readonly icon: LucideIcon;
+};
+
+const QUICK_ACCESS_SHORTCUTS: QuickAccessShortcut[] = [
+  { to: "/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/products", label: "Products", icon: Package },
+  { to: "/platform/brand-applications", label: "Brand applications", icon: ClipboardList },
+  { to: "/coupons", label: "Coupons", icon: TicketPercent },
+  { to: "/withdraw-requests", label: "Withdrawal requests", icon: BanknoteArrowUp },
+  { to: "/support", label: "Support requests", icon: LifeBuoy },
+];
+
+const QuickAccessSection = ({ children }: { children: ReactNode }) => (
+  <section>
+    <h2 className="font-display text-lg font-bold text-foreground">Quick access</h2>
+    <div className={`mt-3 ${KPI_GRID_CLASS}`}>{children}</div>
+  </section>
+);
+
+const QuickAccessShortcuts = () => (
+  <QuickAccessSection>
+    {QUICK_ACCESS_SHORTCUTS.map(({ to, label, icon: Icon }) => (
+      <Link
+        key={label}
+        to={to}
+        className={`${QUICK_ACCESS_TILE_CLASS} transition-colors hover:border-foreground`}
+      >
+        <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="text-sm font-medium text-foreground">{label}</span>
+      </Link>
+    ))}
+  </QuickAccessSection>
+);
+
+const QuickAccessSkeleton = () => (
+  <QuickAccessSection>
+    {QUICK_ACCESS_SHORTCUTS.map(({ label }) => (
+      <div key={label} className={QUICK_ACCESS_TILE_CLASS} aria-hidden>
+        <Skeleton className="size-5 rounded-md" />
+        <Skeleton className="h-5 w-24" />
+      </div>
+    ))}
+  </QuickAccessSection>
+);
+
+const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
+
+const formatShortDate = (isoDate: string) =>
+  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
+  <div data-tour-anchor={PLATFORM_KPI_TOUR_ANCHOR} className={KPI_GRID_CLASS}>
+    <StatCard
+      label="Tenants"
+      value={overview.tenantCount.toLocaleString()}
+      hint={KPI_HINT.tenantCount}
+    />
+    <StatCard
+      label="Members"
+      value={overview.totalMembers.toLocaleString()}
+      hint={KPI_HINT.totalMembers}
+    />
+    <StatCard
+      label="Contacts"
+      value={overview.totalContacts.toLocaleString()}
+      hint={KPI_HINT.totalContacts}
+    />
+    <StatCard
+      label="Deals"
+      value={overview.totalDeals.toLocaleString()}
+      hint={KPI_HINT.totalDeals}
+    />
+    <StatCard
+      label="Tickets"
+      value={overview.totalTickets.toLocaleString()}
+      hint={KPI_HINT.totalTickets}
+    />
+    <StatCard
+      label="Activities"
+      value={overview.totalActivities.toLocaleString()}
+      hint={KPI_HINT.totalActivities}
+    />
+  </div>
+);
+
+const ActivityTrendTable = ({ points }: { points: PlatformActivityTrendPoint[] }) => (
+  <table>
+    <caption>Platform-wide CRM activity per day</caption>
+    <thead>
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Activities</th>
+      </tr>
+    </thead>
+    <tbody>
+      {points.map((point) => (
+        <tr key={point.date}>
+          <td>{point.date}</td>
+          <td>{point.activityCount}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+const SettlementSkeleton = () => (
+  <div className={SETTLEMENT_GRID_CLASS}>
+    {Array.from({ length: SETTLEMENT_CARD_COUNT }, (_unused, cardIndex) => (
+      <StatCardSkeleton key={cardIndex} hasDelta={cardIndex === SETTLEMENT_CARD_COUNT - 1} />
+    ))}
+  </div>
+);
+
+const SettlementGap = () => {
+  const rollup = useQuery({
+    queryKey: ROLLUP_KEY,
+    queryFn: () => financialRollupApi.get("30d"),
+    retry: false,
+  });
+
+  if (rollup.isLoading) return <SettlementSkeleton />;
+  if (rollup.error || !rollup.data) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Settlement reconciliation is unavailable for your role.
+      </p>
+    );
+  }
+
+  const netHeld = rollup.data.gateway.netHeld;
+  const ledgerOwed = rollup.data.ledger.owedToBrands + rollup.data.ledger.owedToCreators;
+  const gap = netHeld - ledgerOwed;
+  const isHealthy = Math.abs(gap) <= Math.max(netHeld, ledgerOwed) * HEALTHY_GAP_RATIO;
+
+  return (
+    <div className={SETTLEMENT_GRID_CLASS}>
+      <StatCard
+        label="Gateway net held (30d)"
+        value={formatRupees(netHeld)}
+        hint={KPI_HINT.gatewayNetHeld}
+      />
+      <StatCard
+        label="Ledger owed (30d)"
+        value={formatRupees(ledgerOwed)}
+        hint={KPI_HINT.ledgerOwed}
+      />
+      <StatCard
+        label="Gap"
+        value={formatRupees(gap)}
+        hint={KPI_HINT.settlementGap}
+        delta={{
+          value: isHealthy ? "Reconciled" : "Needs review",
+          tone: isHealthy ? "positive" : "negative",
+        }}
+      />
+    </div>
+  );
+};
+
+const SettlementSection = ({ children }: { children: ReactNode }) => (
+  <section>
+    <h2 className="font-display text-lg font-bold text-foreground">Settlement reconciliation</h2>
+    <p className="mt-1 text-sm text-muted-foreground">
+      Gateway money held vs. what the ledger says is owed, last 30 days.
+    </p>
+    <div className="mt-4">{children}</div>
+  </section>
+);
+
+const ACTIVITY_CHART_TITLE = "Activity";
+const ACTIVITY_CHART_DESCRIPTION = "Platform-wide CRM activity per day";
+
+const OverviewSkeleton = () => (
+  <div className="space-y-8" role="status" aria-label="Loading">
+    <div className={KPI_GRID_CLASS}>
+      {Array.from({ length: KPI_CARD_COUNT }, (_unused, cardIndex) => (
+        <StatCardSkeleton key={cardIndex} />
+      ))}
+    </div>
+    <QuickAccessSkeleton />
+    <ChartCard title={ACTIVITY_CHART_TITLE} description={ACTIVITY_CHART_DESCRIPTION} isLoading>
+      {null}
+    </ChartCard>
+    <SettlementSection>
+      <SettlementSkeleton />
+    </SettlementSection>
+  </div>
+);
+
+export const PlatformOverviewPage = () => {
+  const overview = useQuery({ queryKey: OVERVIEW_KEY, queryFn: platformMetricsApi.getOverview });
+  const activityTrend = useQuery({
+    queryKey: ACTIVITY_TREND_KEY,
+    queryFn: platformMetricsApi.getActivityTrend,
+  });
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Platform-wide totals, activity trend and settlement reconciliation.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to={PLATFORM_TOUR_REPLAY_TO} search={PLATFORM_TOUR_REPLAY_SEARCH}>
+            <Compass aria-hidden="true" />
+            {TOUR_REPLAY_LABEL}
+          </Link>
+        </Button>
+      </div>
+
+      <div className="mt-6 space-y-8">
+        {overview.error ? (
+          <FormBanner>{getErrorMessage(overview.error)}</FormBanner>
+        ) : overview.isLoading || !overview.data ? (
+          <OverviewSkeleton />
+        ) : (
+          <>
+            <OverviewKpiRow overview={overview.data} />
+
+            <QuickAccessShortcuts />
+
+            <ChartCard
+              title={ACTIVITY_CHART_TITLE}
+              description={ACTIVITY_CHART_DESCRIPTION}
+              ariaLabel="Platform-wide CRM activity per day over the recorded window"
+              isLoading={activityTrend.isLoading}
+              error={activityTrend.error ? getErrorMessage(activityTrend.error) : null}
+              isEmpty={(activityTrend.data?.length ?? 0) < MIN_TREND_POINTS}
+              emptyMessage="Not enough history yet — the daily snapshot builds this trend over time."
+              dataTable={<ActivityTrendTable points={activityTrend.data ?? []} />}
+            >
+              <TrendChart
+                data={activityTrend.data ?? []}
+                xKey="date"
+                variant="area"
+                series={[{ dataKey: "activityCount", label: "Activities" }]}
+                formatXTick={(value) => formatShortDate(String(value))}
+                formatTooltipLabel={(label) => formatShortDate(String(label))}
+              />
+            </ChartCard>
+
+            <SettlementSection>
+              <SettlementGap />
+            </SettlementSection>
+
+            <PlatformDashboardTour />
+          </>
+        )}
+      </div>
+    </div>
+  );
+};

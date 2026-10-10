@@ -5,7 +5,7 @@ import { afterEach, vi } from "vitest";
 
 import { grantEveryPlatformPermission } from "./platformPermissionsMock";
 
-vi.mock("@/features/auth/usePlatformPermissions", async () => {
+vi.mock("@/features/auth/hooks/usePlatformPermissions", async () => {
   const { mockedUsePlatformPermissions } = await import("./platformPermissionsMock");
   return { usePlatformPermissions: mockedUsePlatformPermissions };
 });

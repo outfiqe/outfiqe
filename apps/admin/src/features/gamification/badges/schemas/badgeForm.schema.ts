@@ -1,0 +1,38 @@
+import { z } from "zod";
+
+import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
+import {
+  badgeDescriptionText,
+  badgeIconText,
+  badgeNameText,
+  badgeXpRewardText,
+  isEndAfterStart,
+  optionalAssignmentLimitText,
+} from "../../schemas/badgeFormFields.schema";
+
+const sharedBadgeFields = {
+  name: badgeNameText("a badge name"),
+  description: badgeDescriptionText("a description"),
+  icon: badgeIconText(),
+  xpReward: badgeXpRewardText(),
+};
+
+const adminAwardBadgeSchema = z.object({
+  ...sharedBadgeFields,
+  assignmentLimit: optionalAssignmentLimitText(),
+});
+
+const ruleBasedBadgeSchema = z
+  .object({
+    ...sharedBadgeFields,
+    conditions: conditionsSchema,
+    activeFrom: z.string(),
+    activeUntil: z.string(),
+  })
+  .refine((values) => isEndAfterStart(values.activeFrom, values.activeUntil), {
+    message: "The season must end after it starts.",
+    path: ["activeUntil"],
+  });
+
+export const pickBadgeFormSchema = (isAdminAward: boolean) =>
+  isAdminAward ? adminAwardBadgeSchema : ruleBasedBadgeSchema;

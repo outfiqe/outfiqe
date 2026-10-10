@@ -1,0 +1,111 @@
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+
+import { setAccessToken, setUnauthorizedHandler } from "@/lib/apiClient";
+import { IMPERSONATION_CODE_QUERY_PARAM } from "@/lib/impersonationHandoff";
+
+import { authApi } from "../api/authApi";
+import type { AdminUser } from "../api/authSchemas";
+
+const canAccessAdminApp = (role: AdminUser["role"]): boolean =>
+  role === "ADMIN" || role === "BRAND_OWNER" || role === "TENANT_STAFF";
+
+export type SignedOutReason = "session-ended" | "user-signed-out" | "impersonation-code-invalid";
+
+type AuthState =
+  | { status: "loading" }
+  | { status: "signed-out"; reason: SignedOutReason }
+  | { status: "signed-in"; user: AdminUser };
+
+type AuthContextValue = {
+  state: AuthState;
+  logout: () => Promise<void>;
+  updateUser: (patch: Partial<AdminUser>) => void;
+  setSession: (user: AdminUser) => void;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [state, setState] = useState<AuthState>({ status: "loading" });
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => setState({ status: "signed-out", reason: "session-ended" }));
+
+    const stripImpersonationCodeFromUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(IMPERSONATION_CODE_QUERY_PARAM);
+      window.history.replaceState(null, "", url);
+    };
+
+    const redeemImpersonationCode = async (code: string): Promise<void> => {
+      try {
+        const { accessToken } = await authApi.redeemImpersonationCode(code);
+        setAccessToken(accessToken);
+        const user = await authApi.me();
+        stripImpersonationCodeFromUrl();
+        setState(
+          canAccessAdminApp(user.role)
+            ? { status: "signed-in", user }
+            : { status: "signed-out", reason: "session-ended" },
+        );
+      } catch {
+        stripImpersonationCodeFromUrl();
+        setState({ status: "signed-out", reason: "impersonation-code-invalid" });
+      }
+    };
+
+    const restoreSession = async () => {
+      const impersonationCode = new URLSearchParams(window.location.search).get(
+        IMPERSONATION_CODE_QUERY_PARAM,
+      );
+      if (impersonationCode) {
+        await redeemImpersonationCode(impersonationCode);
+        return;
+      }
+
+      try {
+        const { accessToken } = await authApi.refresh();
+        setAccessToken(accessToken);
+        const user = await authApi.me();
+        setState(
+          canAccessAdminApp(user.role)
+            ? { status: "signed-in", user }
+            : { status: "signed-out", reason: "session-ended" },
+        );
+      } catch {
+        setState({ status: "signed-out", reason: "session-ended" });
+      }
+    };
+
+    restoreSession();
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
+  const logout = async () => {
+    await authApi.logout().catch(() => {});
+    setAccessToken(null);
+    setState({ status: "signed-out", reason: "user-signed-out" });
+  };
+
+  const updateUser = useCallback((patch: Partial<AdminUser>) => {
+    setState((prev) =>
+      prev.status === "signed-in" ? { ...prev, user: { ...prev.user, ...patch } } : prev,
+    );
+  }, []);
+
+  const setSession = useCallback((user: AdminUser) => {
+    setState({ status: "signed-in", user });
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ state, logout, updateUser, setSession }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextValue => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};

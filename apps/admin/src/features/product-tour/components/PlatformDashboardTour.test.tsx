@@ -4,8 +4,8 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PLATFORM_NAV_ITEMS } from "@/components/AdminSidebar";
-import { useAuth } from "@/features/auth/AuthContext";
+import { PLATFORM_NAV_ITEMS } from "@/components/adminSidebarNavItems";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 import type { TourProgress } from "../api/toursSchemas";
 import { TOUR_OUTCOME } from "../constants/tourOutcome";
@@ -19,7 +19,7 @@ const WELCOME_TITLE = "Welcome to the platform panel";
 
 vi.mock("../hooks/useTourProgress", () => ({ useTourProgress: vi.fn() }));
 vi.mock("../hooks/useRecordTourOutcome", () => ({ useRecordTourOutcome: vi.fn() }));
-vi.mock("@/features/auth/AuthContext", () => ({ useAuth: vi.fn() }));
+vi.mock("@/features/auth/components/AuthContext", () => ({ useAuth: vi.fn() }));
 
 const recordOutcome = vi.fn();
 

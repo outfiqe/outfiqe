@@ -8,12 +8,12 @@ API). Every action needs a reason and is written to the platform audit log by th
 
 ## Structure
 
-- `OffersSection.tsx` — shown on the Commissions page: filter tabs (waiting on creator, accepted,
+- `components/OffersSection.tsx` — shown on the Commissions page: filter tabs (waiting on creator, accepted,
   posted, released, needs manual refund), one row per offer, and the actions allowed for its
   state, each confirmed with a reason in `TextPromptModal`.
 - `hooks/useInfiniteOffers.ts` — cursor-paged list per filter.
-- `api.ts` — `offersApi.list(filter, cursor)` and `offersApi.act(offerId, action, reason)`.
-- `schemas.ts` — Zod mirror of the API's offer view.
+- `api/outfitOffersApi.ts` — `offersApi.list(filter, cursor)` and `offersApi.act(offerId, action, reason)`.
+- `api/outfitOffersSchemas.ts` — Zod mirror of the API's offer view.
 
 ## Funnel
 

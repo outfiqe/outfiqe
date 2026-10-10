@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AnnouncementsPage } from "@/features/announcements/AnnouncementsPage";
+import { AnnouncementsPage } from "@/features/announcements/components/AnnouncementsPage";
 
 export const Route = createFileRoute("/_authenticated/announcements")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

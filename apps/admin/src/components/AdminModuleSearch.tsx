@@ -25,16 +25,16 @@ export const AdminModuleSearch = ({ sections }: { sections: readonly SidebarNavS
   const isSearching = trimmedQuery.length >= MODULE_SEARCH_MIN_QUERY_LENGTH;
 
   const searchableModules = useMemo(() => flattenSidebarSections(sections), [sections]);
-  const results = useMemo(
+  const matchingModules = useMemo(
     () => searchAdminModules(searchableModules, trimmedQuery),
     [searchableModules, trimmedQuery],
   );
 
-  const selectResult = (resultId: string) => {
-    const result = results.find((candidate) => candidate.id === resultId);
-    if (!result) return;
+  const selectModule = (moduleId: string) => {
+    const selectedModule = matchingModules.find((candidate) => candidate.id === moduleId);
+    if (!selectedModule) return;
     setQuery("");
-    navigate({ href: result.href });
+    navigate({ href: selectedModule.href });
   };
 
   return (
@@ -49,24 +49,24 @@ export const AdminModuleSearch = ({ sections }: { sections: readonly SidebarNavS
 
       {isSearching && (
         <AutocompleteContent>
-          {results.length === 0 && (
+          {matchingModules.length === 0 && (
             <p className="px-2 py-4 text-center text-xs text-muted-foreground">
               No modules match &ldquo;{trimmedQuery}&rdquo;
             </p>
           )}
 
-          {results.map((result) => {
-            const Icon = result.icon;
+          {matchingModules.map((matchingModule) => {
+            const Icon = matchingModule.icon;
             return (
               <AutocompleteItem
-                key={result.id}
-                value={result.id}
-                onSelect={() => selectResult(result.id)}
+                key={matchingModule.id}
+                value={matchingModule.id}
+                onSelect={() => selectModule(matchingModule.id)}
               >
                 {Icon && <Icon className="mr-2 size-3.5 shrink-0 text-muted-foreground" />}
-                <span className="truncate text-[13px] text-foreground">{result.label}</span>
+                <span className="truncate text-[13px] text-foreground">{matchingModule.label}</span>
                 <span className="ml-auto shrink-0 pl-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {result.sectionLabel}
+                  {matchingModule.sectionLabel}
                 </span>
               </AutocompleteItem>
             );

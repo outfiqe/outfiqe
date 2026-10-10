@@ -49,32 +49,32 @@ type PlatformNavViewer = {
 };
 
 export const isPlatformNavItemVisible = (
-  item: PlatformNavItem,
+  navItem: PlatformNavItem,
   viewer: PlatformNavViewer,
 ): boolean => {
-  if (item.coFounderOnly && !viewer.isCoFounder) return false;
+  if (navItem.coFounderOnly && !viewer.isCoFounder) return false;
   if (viewer.isCoFounder) return true;
-  return !viewer.hiddenNavKeys.includes(item.id);
+  return !viewer.hiddenNavKeys.includes(navItem.id);
 };
 
 const pathBelongsToHref = (pathname: string, href: string): boolean =>
   pathname === href || pathname.startsWith(`${href}/`);
 
 export const findPlatformNavItemForPath = (
-  items: readonly PlatformNavItem[],
+  navItems: readonly PlatformNavItem[],
   pathname: string,
 ): PlatformNavItem | undefined =>
-  items
-    .filter((item) => pathBelongsToHref(pathname, item.href))
+  navItems
+    .filter((navItem) => pathBelongsToHref(pathname, navItem.href))
     .sort((longer, shorter) => shorter.href.length - longer.href.length)[0];
 
 export const findFirstVisiblePlatformHref = (
-  items: readonly PlatformNavItem[],
+  navItems: readonly PlatformNavItem[],
   viewer: PlatformNavViewer,
 ): string | undefined => {
   for (const groupKey of PLATFORM_NAV_GROUP_ORDER) {
-    const firstVisibleItem = items.find(
-      (item) => item.group === groupKey && isPlatformNavItemVisible(item, viewer),
+    const firstVisibleItem = navItems.find(
+      (navItem) => navItem.group === groupKey && isPlatformNavItemVisible(navItem, viewer),
     );
     if (firstVisibleItem) return firstVisibleItem.href;
   }
@@ -84,18 +84,20 @@ export const findFirstVisiblePlatformHref = (
 const toSidebarNavItem = ({
   coFounderOnly: _coFounderOnly,
   group: _group,
-  ...item
-}: PlatformNavItem): SidebarNavItem => item;
+  ...navItem
+}: PlatformNavItem): SidebarNavItem => navItem;
 
 export const groupPlatformNavItems = (
-  items: readonly PlatformNavItem[],
+  navItems: readonly PlatformNavItem[],
   viewer: PlatformNavViewer,
   groupIcons: Readonly<Record<PlatformNavGroupKey, SidebarIcon>>,
 ): SidebarNavItem[] => {
-  const visibleItems = items.filter((item) => isPlatformNavItemVisible(item, viewer));
+  const visibleItems = navItems.filter((navItem) => isPlatformNavItemVisible(navItem, viewer));
 
   return PLATFORM_NAV_GROUP_ORDER.reduce<SidebarNavItem[]>((groups, groupKey) => {
-    const groupItems = visibleItems.filter((item) => item.group === groupKey).map(toSidebarNavItem);
+    const groupItems = visibleItems
+      .filter((navItem) => navItem.group === groupKey)
+      .map(toSidebarNavItem);
     const [firstGroupItem] = groupItems;
 
     if (!firstGroupItem) return groups;
@@ -137,14 +139,14 @@ export const resolveAccountLabel = (viewer: {
 };
 
 export const isCrmSubItemVisible = (
-  item: CrmItemVisibilityRules,
+  crmItem: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,
 ): boolean => {
   if (!crmOrganization) return false;
-  if (item.requiresLinkedBrand && crmOrganization.linkedBrandId === null) return false;
-  if (item.permissionKey === null) return true;
+  if (crmItem.requiresLinkedBrand && crmOrganization.linkedBrandId === null) return false;
+  if (crmItem.permissionKey === null) return true;
   return (
     crmOrganization.viewerIsSuperAdmin ||
-    crmOrganization.viewerPermissionKeys.includes(item.permissionKey)
+    crmOrganization.viewerPermissionKeys.includes(crmItem.permissionKey)
   );
 };

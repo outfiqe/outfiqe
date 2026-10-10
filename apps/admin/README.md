@@ -24,6 +24,24 @@ The first admin in an environment is created via the API's boot-time bootstrap
 `apps/api/.env.example`). From there, sign in on `apps/web` and use **Team** to invite further
 admins (they set up their own password on `/register?token=...` here).
 
+## Feature layout
+
+Every feature in `src/features/<feature>/` uses the same layer folders as `apps/web`, so you can open any of them and know where things are:
+
+| Folder        | Holds                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| `api/`        | `<feature>Api.ts` (the `apiClient` calls) and `<feature>Schemas.ts` (Zod schemas for the responses). |
+| `components/` | Pages, sections and modals, one PascalCase component per file.                                       |
+| `hooks/`      | One hook per file (`useInfiniteOrders.ts`).                                                          |
+| `schemas/`    | Form validation schemas (`couponForm.schema.ts`).                                                    |
+| `constants/`  | Named values and lookup maps.                                                                        |
+| `utils/`      | Pure helpers with no React.                                                                          |
+| `types/`      | Shared type shapes, where a feature has them.                                                        |
+
+A feature only has the folders it needs. `index.ts` (when other features import from it) and `README.md` stay at the feature root. Each test sits beside the file it covers, as `<name>.test.ts(x)` or `<name>.integration.test.tsx`.
+
+**Large features are split into topic folders**, each with the same layer folders inside. `crm/` has `billing/`, `audit/`, `reporting/`, `roles/`, `relationships/`, `contacts/`, `pipeline/`, `activities/` and `tickets/`; `gamification/` has `activity-config/`, `badges/` (with `design-studio/` inside), `challenges/`, `conditions/`, `competitions/`, `levels/`, `multipliers/`, `manual-actions/`, `leaderboards/` and `stats/`. Code shared by several topics stays in the feature root's own layer folders. Topic folders are kebab-case; files keep React naming (PascalCase components, camelCase everything else).
+
 ## Deployment
 
 The Vite build sets `base: "/admin/"`, so every emitted URL (entry script, `assets/*`, favicon)

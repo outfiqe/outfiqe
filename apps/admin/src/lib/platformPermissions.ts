@@ -1,4 +1,4 @@
-import type { AdminUser } from "@/features/auth/schemas";
+import type { AdminUser } from "@/features/auth/api/authSchemas";
 
 export const PLATFORM_OVERVIEW_PATH = "/platform";
 const PLATFORM_OVERVIEW_PERMISSION_KEY = "platform:metrics:read";
