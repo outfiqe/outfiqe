@@ -4,8 +4,8 @@ import { Link, useParams } from "@tanstack/react-router";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformMetricsApi } from "./api";
-import type { TenantSparklinePoint } from "./schemas";
+import { platformMetricsApi } from "../api/platformMetricsApi";
+import type { TenantSparklinePoint } from "../api/platformMetricsSchemas";
 import { TenantMetricsSkeleton } from "./TenantMetricsSkeleton";
 
 const MIN_TREND_POINTS = 2;

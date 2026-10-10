@@ -23,14 +23,17 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { buildImpersonationHandoffUrl } from "@/lib/impersonationHandoff";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { platformMetricsApi } from "../platform-metrics/api";
-import { platformImpersonationApi } from "./api";
+import { platformMetricsApi } from "../../platform-metrics/api/platformMetricsApi";
+import { platformImpersonationApi } from "../api/platformImpersonationApi";
+import type {
+  ImpersonationSession,
+  StartImpersonationResult,
+} from "../api/platformImpersonationSchemas";
 import {
   EMPTY_IMPERSONATION_FORM,
   impersonationFormSchema,
   type ImpersonationFormValues,
-} from "./impersonationForm.schema";
-import type { ImpersonationSession, StartImpersonationResult } from "./schemas";
+} from "../schemas/impersonationForm.schema";
 
 const ACTIVE_SESSIONS_QUERY_KEY = ["platform-impersonation-active"];
 const HISTORY_QUERY_KEY = ["platform-impersonation-history"];

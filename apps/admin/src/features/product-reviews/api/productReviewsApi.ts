@@ -7,7 +7,7 @@ import {
   productReviewPageSchema,
   type ProductSuggestion,
   productSuggestionSchema,
-} from "./schemas";
+} from "./productReviewsSchemas";
 
 const suggestionListSchema = z.array(productSuggestionSchema);
 

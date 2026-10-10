@@ -8,8 +8,8 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { productReviewsApi } from "./api";
-import type { ProductReview, ProductSuggestion } from "./schemas";
+import { productReviewsApi } from "../api/productReviewsApi";
+import type { ProductReview, ProductSuggestion } from "../api/productReviewsSchemas";
 
 const SEARCH_DEBOUNCE_MS = 300;
 

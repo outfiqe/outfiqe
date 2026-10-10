@@ -1,6 +1,10 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type FeatureSwitch, featureSwitchListSchema, type FeatureSwitchSettings } from "./schemas";
+import {
+  type FeatureSwitch,
+  featureSwitchListSchema,
+  type FeatureSwitchSettings,
+} from "./platformSwitchesSchemas";
 
 export const FEATURE_SWITCHES_QUERY_KEY = ["platform-feature-switches"];
 

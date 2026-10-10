@@ -8,8 +8,12 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformRolesApi } from "./api";
-import type { PlatformMembershipStatusValue, PlatformRole, PlatformTeamMember } from "./schemas";
+import { platformRolesApi } from "../api/platformRolesApi";
+import type {
+  PlatformMembershipStatusValue,
+  PlatformRole,
+  PlatformTeamMember,
+} from "../api/platformRolesSchemas";
 
 const TEAM_QUERY_KEY = ["platform-team"];
 const ROLES_QUERY_KEY = ["platform-roles"];

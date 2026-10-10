@@ -10,7 +10,7 @@ import {
   platformRoleSchema,
   type PlatformTeamMember,
   platformTeamMemberSchema,
-} from "./schemas";
+} from "./platformRolesSchemas";
 
 const rolesListSchema = z.array(platformRoleSchema);
 const permissionsListSchema = z.array(platformPermissionSchema);

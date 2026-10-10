@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type JobsHealth, jobsHealthSchema, retriedJobsSchema } from "./schemas";
+import { type JobsHealth, jobsHealthSchema, retriedJobsSchema } from "./platformJobsSchemas";
 
 export const JOBS_HEALTH_QUERY_KEY = ["platform-jobs-health"];
 

@@ -18,9 +18,9 @@ import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { useAuth } from "@/features/auth/components/AuthContext";
-import { platformRolesApi } from "@/features/platform-roles/api";
-import { PlatformRolesSection } from "@/features/platform-roles/PlatformRolesSection";
-import { PlatformTeamSection } from "@/features/platform-roles/PlatformTeamSection";
+import { platformRolesApi } from "@/features/platform-roles/api/platformRolesApi";
+import { PlatformRolesSection } from "@/features/platform-roles/components/PlatformRolesSection";
+import { PlatformTeamSection } from "@/features/platform-roles/components/PlatformTeamSection";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { teamApi } from "./api";

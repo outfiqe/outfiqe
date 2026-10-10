@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformNavAccessApi } from "./api";
+import { platformNavAccessApi } from "../api/platformNavAccessApi";
 
 const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "brand-applications": "Brand applications",

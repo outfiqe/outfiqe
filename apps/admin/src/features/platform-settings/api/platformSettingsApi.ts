@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 
-import { type PlatformSetting, platformSettingListSchema } from "./schemas";
+import { type PlatformSetting, platformSettingListSchema } from "./platformSettingsSchemas";
 
 export const PLATFORM_SETTINGS_QUERY_KEY = ["platform-settings"];
 

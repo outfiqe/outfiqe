@@ -31,8 +31,8 @@ import {
 } from "@/features/product-tour";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformMetricsApi } from "./api";
-import type { PlatformActivityTrendPoint, PlatformOverview } from "./schemas";
+import { platformMetricsApi } from "../api/platformMetricsApi";
+import type { PlatformActivityTrendPoint, PlatformOverview } from "../api/platformMetricsSchemas";
 
 const OVERVIEW_KEY = ["platform-metrics-overview"];
 const ACTIVITY_TREND_KEY = ["platform-metrics-activity-trend"];

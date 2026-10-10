@@ -12,7 +12,7 @@ import {
   openImpersonationSessionResultSchema,
   type StartImpersonationResult,
   startImpersonationResultSchema,
-} from "./schemas";
+} from "./platformImpersonationSchemas";
 
 const candidatesListSchema = z.array(impersonationCandidateSchema);
 const sessionListSchema = z.array(impersonationSessionSchema);

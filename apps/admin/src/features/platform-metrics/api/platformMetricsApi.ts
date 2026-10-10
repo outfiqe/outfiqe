@@ -10,7 +10,7 @@ import {
   type TenantMetricListPage,
   tenantMetricListPageSchema,
   type TenantSort,
-} from "./schemas";
+} from "./platformMetricsSchemas";
 
 type ListParams = { plan?: string; sort?: TenantSort; page?: number; pageSize?: number };
 

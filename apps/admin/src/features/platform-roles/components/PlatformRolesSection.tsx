@@ -22,9 +22,12 @@ import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformRolesApi } from "./api";
-import { platformRoleFormSchema, type PlatformRoleFormValues } from "./platformRoleForm.schema";
-import type { PlatformPermission, PlatformRole } from "./schemas";
+import { platformRolesApi } from "../api/platformRolesApi";
+import type { PlatformPermission, PlatformRole } from "../api/platformRolesSchemas";
+import {
+  platformRoleFormSchema,
+  type PlatformRoleFormValues,
+} from "../schemas/platformRoleForm.schema";
 
 const ROLES_QUERY_KEY = ["platform-roles"];
 const PERMISSIONS_QUERY_KEY = ["platform-permissions"];

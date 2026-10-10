@@ -6,7 +6,7 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformMetricsApi } from "../../platform-metrics/api";
+import { platformMetricsApi } from "../../platform-metrics/api/platformMetricsApi";
 import { platformFeaturesApi } from "../api/platformFeaturesApi";
 
 const SOURCE_LABEL: Record<string, string> = {

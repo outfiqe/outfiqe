@@ -16,7 +16,7 @@ import {
 } from "@/features/crm/skeletons";
 import { BadgeFormSkeleton } from "@/features/gamification/BadgesSection/BadgeFormSkeleton";
 import { OrderDetailSkeleton } from "@/features/orders/components/OrderDetailSkeleton";
-import { TenantMetricsSkeleton } from "@/features/platform-metrics/TenantMetricsSkeleton";
+import { TenantMetricsSkeleton } from "@/features/platform-metrics/components/TenantMetricsSkeleton";
 import { SupportTicketSkeleton } from "@/features/support/SupportTicketSkeleton";
 
 import { PagePendingSkeleton } from "../PagePendingSkeleton";

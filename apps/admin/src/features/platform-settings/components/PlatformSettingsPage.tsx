@@ -6,8 +6,8 @@ import { useId, useState } from "react";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { PLATFORM_SETTINGS_QUERY_KEY, platformSettingsApi } from "./api";
-import type { PlatformSetting } from "./schemas";
+import { PLATFORM_SETTINGS_QUERY_KEY, platformSettingsApi } from "../api/platformSettingsApi";
+import type { PlatformSetting } from "../api/platformSettingsSchemas";
 
 const SKELETON_ROW_COUNT = 6;
 const WHOLE_NUMBER = /^-?\d+$/;

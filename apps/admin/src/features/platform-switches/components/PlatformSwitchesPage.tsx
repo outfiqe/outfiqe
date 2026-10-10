@@ -8,15 +8,15 @@ import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { UserSearchField } from "@/components/UserSearchField";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { AllowListChips } from "./AllowListChips";
-import { FEATURE_SWITCHES_QUERY_KEY, featureSwitchesApi } from "./api";
+import { FEATURE_SWITCHES_QUERY_KEY, featureSwitchesApi } from "../api/platformSwitchesApi";
 import {
   type AllowListedBrand,
   type AllowListedUser,
   FEATURE_ROLLOUTS,
   type FeatureRollout,
   type FeatureSwitch,
-} from "./schemas";
+} from "../api/platformSwitchesSchemas";
+import { AllowListChips } from "./AllowListChips";
 
 const SKELETON_ROW_COUNT = 4;
 

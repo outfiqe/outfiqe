@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { JOBS_HEALTH_QUERY_KEY, platformJobsApi } from "./api";
+import { JOBS_HEALTH_QUERY_KEY, platformJobsApi } from "../api/platformJobsApi";
 
 const REFRESH_INTERVAL_MS = 15_000;
 const SKELETON_ROW_COUNT = 3;

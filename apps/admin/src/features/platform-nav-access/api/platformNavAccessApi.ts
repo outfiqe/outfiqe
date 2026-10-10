@@ -8,7 +8,7 @@ import {
   type NavAccessOverview,
   navAccessOverviewSchema,
   savedHiddenNavKeysSchema,
-} from "./schemas";
+} from "./platformNavAccessSchemas";
 
 const candidatesSchema = z.array(coFounderSummarySchema);
 

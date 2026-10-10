@@ -6,8 +6,8 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { platformMetricsApi } from "./api";
-import type { TenantSort } from "./schemas";
+import { platformMetricsApi } from "../api/platformMetricsApi";
+import type { TenantSort } from "../api/platformMetricsSchemas";
 
 const PAGE_SIZE = 25;
 
