@@ -117,6 +117,7 @@ export default defineConfig({
         "src/features/creator-profile/api/creatorProfileSchemas.ts",
         "src/features/creator-profile/components/**/*.{ts,tsx}",
         "src/features/creator-profile/hooks/**/*.{ts,tsx}",
+        "src/features/creator-profile/utils/**/*.{ts,tsx}",
         "src/features/creator-profile/index.ts",
         "src/features/creator-dashboard/earnings/api/commissionApi.ts",
         "src/features/creator-dashboard/earnings/api/commissionSchemas.ts",
