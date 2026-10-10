@@ -14,7 +14,15 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
 - `order.constants.ts` — `FULFILMENT_ADVANCE_FROM` (which statuses each step can move from), the audit target type, and the stale-shipment reminder settings.
 - `order.jobs.ts` — the stale-shipment reminder job.
 - `order.schemas.ts`, `order.types.ts` — request validation and response shapes.
-- `checkout/` — `checkout.service.ts` (`orderCheckoutService.checkout` and the single `checkoutOnce` transaction behind it), with the checkout and checkout-limits integration tests.
+- `checkout/` — one checkout, read top to bottom in `checkout.service.ts`: `orderCheckoutService.checkout` (idempotency) calls `checkoutOnce`, which runs each step below in order. The checkout and checkout-limits integration tests sit here too.
+  - `checkout.lines.ts` — the lines being bought (the Buy Now item, or the cart) and the stock check before anything is priced.
+  - `checkout.pricing.ts` — brand discounts, the coupon, delivery and COD fees, and the money check (`assertOrderMoneyInvariant`).
+  - `checkout.attribution.ts` — which creator or build each line is credited to, and the commission tier and shares that follow.
+  - `checkout.utils.ts` — `toAttributedOrderItems`, turning priced, attributed lines into order items (unit-tested).
+  - `checkout.settlement.ts` — the commission rule, gateway fee and exempt brands loaded before the transaction, and the brand payout and creator commission rows written inside it.
+  - `checkout.commit.ts` — the other writes inside the transaction: the cash-on-delivery stock decrement, the coupon redemption, and one fulfilment group per brand.
+  - `checkout.after-commit.ts` — what happens only once the order is saved: domain events and the confirmation emails.
+  - `checkout.types.ts`, `checkout.constants.ts` — the shapes passed between steps, and the endpoint name and statuses.
 - `cancellation/` — `cancellation.service.ts` (`orderCancellationService.cancel`, cancel-and-refund-if-paid for admins and shoppers) and its integration test.
 - `returns/` — `return.service.ts` (`orderReturnService.markReturned`, including the refund and the manual-refund alert) and its integration test.
 - `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`), and the integration tests.

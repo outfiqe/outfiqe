@@ -166,6 +166,7 @@ export default defineConfig({
         "src/modules/platform-settings/**/*.ts",
         "src/modules/feature-flags/**/*.ts",
         "src/modules/products/product.jobs.ts",
+        "src/modules/orders/checkout/checkout.utils.ts",
       ],
       thresholds: {
         lines: 80,
