@@ -1,6 +1,6 @@
 import type { Message } from "@outfiqe/types";
 
-import { describeGroupEvent } from "./groupEventText";
+import { describeGroupEvent } from "../utils/groupEventText";
 
 export const SystemMessageLine = ({ message }: { message: Message }) => {
   if (!message.systemEvent) return null;

@@ -13,10 +13,14 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 
+import {
+  formatLastSeen,
+  formatMessageClock,
+  formatMessageDateSeparator,
+} from "../utils/messagingTime";
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupInfoPanel } from "./GroupInfoPanel";
 import { MessageComposer } from "./MessageComposer";
-import { formatLastSeen, formatMessageClock, formatMessageDateSeparator } from "./messagingTime";
 import { SystemMessageLine } from "./SystemMessageLine";
 
 const SCROLL_TO_BOTTOM_THRESHOLD_PX = 150;

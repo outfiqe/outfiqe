@@ -16,7 +16,7 @@ import {
   releaseSocketConnection,
 } from "@/shared/lib/socketClient";
 
-import { resolveNotificationNavigation } from "./resolveNotificationHref";
+import { resolveNotificationNavigation } from "../utils/resolveNotificationHref";
 
 const getSocketSnapshot = (): NotificationSocket => toNotificationSocket(getSocket());
 const getServerSocketSnapshot = (): null => null;

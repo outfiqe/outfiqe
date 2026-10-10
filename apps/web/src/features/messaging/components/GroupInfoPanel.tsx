@@ -11,12 +11,12 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
-import { ContactPicker } from "./ContactPicker";
 import {
   GROUP_MEMBER_ROLE,
   GROUP_NAME_MAX_LENGTH,
   MAX_PEOPLE_PER_GROUP_CHANGE,
-} from "./messaging.constants";
+} from "../constants/messaging.constants";
+import { ContactPicker } from "./ContactPicker";
 
 const MEMBER_SKELETON_COUNT = 3;
 

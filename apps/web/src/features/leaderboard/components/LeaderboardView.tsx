@@ -6,7 +6,7 @@ import {
   isLeaderboardCategory,
   LEADERBOARD_CATEGORY,
   LEADERBOARD_QUERY_PARAM,
-} from "../leaderboard.constants";
+} from "../constants/leaderboard.constants";
 import { LeaderboardList } from "./LeaderboardList";
 import { LeaderboardTabs } from "./LeaderboardTabs";
 

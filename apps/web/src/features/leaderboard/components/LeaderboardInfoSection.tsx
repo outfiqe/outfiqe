@@ -1,6 +1,6 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
-import { LEADERBOARD_TABS } from "../leaderboard.constants";
+import { LEADERBOARD_TABS } from "../constants/leaderboard.constants";
 
 const CATEGORY_EXPLANATIONS: Record<string, string> = {
   trending: "Blends recent sales, stashes, and muse tags into one momentum score.",

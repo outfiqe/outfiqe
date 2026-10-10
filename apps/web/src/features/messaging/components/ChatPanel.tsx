@@ -4,7 +4,7 @@ import { Drawer } from "@outfiqe/design-system";
 import { Maximize2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { useChatPanel } from "./ChatPanelContext";
+import { useChatPanel } from "../context/ChatPanelContext";
 import { ConversationList } from "./ConversationList";
 import { MessageThread } from "./MessageThread";
 

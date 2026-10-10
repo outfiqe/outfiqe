@@ -12,7 +12,7 @@ import {
   MAX_REVIEW_IMAGES,
   RATING_STAR_QUALITY_LABEL_BY_VALUE,
   REVIEW_BODY_MIN_LENGTH,
-} from "../product-reviews.constants";
+} from "../constants/productReviews.constants";
 
 type ReviewFormProps = {
   open: boolean;

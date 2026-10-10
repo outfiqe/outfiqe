@@ -1,4 +1,4 @@
-import type { PaymentInitiateResult } from "./api/paymentsSchemas";
+import type { PaymentInitiateResult } from "../api/paymentsSchemas";
 
 export const redirectToPaymentGateway = (result: PaymentInitiateResult): void => {
   if (result.mode === "REDIRECT") {

@@ -6,7 +6,7 @@ import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 
-import { useChatPanel } from "./ChatPanelContext";
+import { useChatPanel } from "../context/ChatPanelContext";
 
 const MAX_DISPLAYED_UNREAD_COUNT = 99;
 

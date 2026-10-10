@@ -14,8 +14,8 @@ import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
+import { MIN_QUERY_LENGTH } from "../constants/search.constants";
 import { useCreatorSearch, useLookSearch } from "../hooks/useExploreSearch";
-import { MIN_QUERY_LENGTH } from "../search.constants";
 
 export const ExploreSearchResults = () => {
   const searchParams = useSearchParams();

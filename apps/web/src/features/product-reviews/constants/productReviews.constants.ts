@@ -1,4 +1,4 @@
-import type { ReviewSort } from "./api/productReviewSchemas";
+import type { ReviewSort } from "../api/productReviewSchemas";
 
 export const MAX_REVIEW_IMAGES = 5;
 export const REVIEW_BODY_MIN_LENGTH = 10;

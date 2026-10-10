@@ -8,8 +8,11 @@ import { type FormEvent, useId, useState } from "react";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import {
+  GROUP_NAME_MAX_LENGTH,
+  MAX_PEOPLE_PER_GROUP_CHANGE,
+} from "../constants/messaging.constants";
 import { ContactPicker } from "./ContactPicker";
-import { GROUP_NAME_MAX_LENGTH, MAX_PEOPLE_PER_GROUP_CHANGE } from "./messaging.constants";
 
 type NewGroupModalProps = {
   open: boolean;
