@@ -10,49 +10,49 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 
-import { crmRelationshipsApi } from "./relationshipsApi";
-import type { PartnerSummary } from "./relationshipsSchemas";
+import { crmRelationshipsApi } from "../api/relationshipsApi";
+import type { CustomerSummary } from "../api/relationshipsSchemas";
 
-const PARTNER_SEARCH_DEBOUNCE_MS = 300;
+const CUSTOMER_SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
-const PARTNER_SEARCH_PAGE_SIZE = 20;
+const CUSTOMER_SEARCH_PAGE_SIZE = 20;
 
-export type SelectedPartner = Pick<PartnerSummary, "creatorId" | "name" | "handle">;
+export type SelectedCustomer = Pick<CustomerSummary, "userId" | "name" | "handle">;
 
-type PartnerSearchFieldProps = {
+type CustomerSearchFieldProps = {
   id: string;
-  value: SelectedPartner | null;
-  onChange: (partner: SelectedPartner | null) => void;
+  value: SelectedCustomer | null;
+  onChange: (customer: SelectedCustomer | null) => void;
 };
 
-const describePartner = (partner: SelectedPartner) => `${partner.name} (@${partner.handle})`;
+const describeCustomer = (customer: SelectedCustomer) => `${customer.name} (@${customer.handle})`;
 
-export const PartnerSearchField = ({ id, value, onChange }: PartnerSearchFieldProps) => {
+export const CustomerSearchField = ({ id, value, onChange }: CustomerSearchFieldProps) => {
   const [typedQuery, setTypedQuery] = useState<string | null>(null);
-  const query = typedQuery ?? (value ? describePartner(value) : "");
+  const query = typedQuery ?? (value ? describeCustomer(value) : "");
 
-  const debouncedQuery = useDebouncedValue(query, PARTNER_SEARCH_DEBOUNCE_MS);
+  const debouncedQuery = useDebouncedValue(query, CUSTOMER_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
 
   const { data: page, isLoading } = useQuery({
-    queryKey: ["crm-partner-search", debouncedQuery],
+    queryKey: ["crm-customer-search", debouncedQuery],
     queryFn: () =>
-      crmRelationshipsApi.listPartners({
+      crmRelationshipsApi.listCustomers({
         q: debouncedQuery.trim(),
-        pageSize: PARTNER_SEARCH_PAGE_SIZE,
+        pageSize: CUSTOMER_SEARCH_PAGE_SIZE,
       }),
     enabled: isSearching,
   });
-  const partners = page?.items ?? [];
+  const customers = page?.items ?? [];
 
-  const selectPartner = (creatorId: string) => {
-    const partner = partners.find((candidate) => candidate.creatorId === creatorId);
-    if (!partner) return;
+  const selectCustomer = (userId: string) => {
+    const customer = customers.find((candidate) => candidate.userId === userId);
+    if (!customer) return;
     setTypedQuery(null);
-    onChange({ creatorId: partner.creatorId, name: partner.name, handle: partner.handle });
+    onChange({ userId: customer.userId, name: customer.name, handle: customer.handle });
   };
 
-  const clearPartner = () => {
+  const clearCustomer = () => {
     setTypedQuery(null);
     onChange(null);
   };
@@ -62,7 +62,7 @@ export const PartnerSearchField = ({ id, value, onChange }: PartnerSearchFieldPr
       <div className="relative">
         <AutocompleteInput
           id={id}
-          placeholder="Search partners by name or @handle…"
+          placeholder="Search customers by name or @handle…"
           value={query}
           onChange={(event) => setTypedQuery(event.target.value)}
           onBlur={() => setTypedQuery(null)}
@@ -71,8 +71,8 @@ export const PartnerSearchField = ({ id, value, onChange }: PartnerSearchFieldPr
         {value && (
           <button
             type="button"
-            onClick={clearPartner}
-            aria-label="Clear selected partner"
+            onClick={clearCustomer}
+            aria-label="Clear selected customer"
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-destructive"
           >
             <X className="size-4" />
@@ -87,21 +87,21 @@ export const PartnerSearchField = ({ id, value, onChange }: PartnerSearchFieldPr
               <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
             ))}
 
-          {!isLoading && partners.length === 0 && (
+          {!isLoading && customers.length === 0 && (
             <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-              No partners found for &ldquo;{debouncedQuery}&rdquo;
+              No customers found for &ldquo;{debouncedQuery}&rdquo;
             </p>
           )}
 
-          {partners.map((partner) => (
+          {customers.map((customer) => (
             <AutocompleteItem
-              key={partner.creatorId}
-              value={partner.creatorId}
-              onSelect={() => selectPartner(partner.creatorId)}
+              key={customer.userId}
+              value={customer.userId}
+              onSelect={() => selectCustomer(customer.userId)}
             >
-              <span className="truncate text-[13px] text-foreground">{partner.name}</span>
+              <span className="truncate text-[13px] text-foreground">{customer.name}</span>
               <span className="ml-1.5 shrink-0 text-[12px] text-muted-foreground">
-                @{partner.handle}
+                @{customer.handle}
               </span>
             </AutocompleteItem>
           ))}

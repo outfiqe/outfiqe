@@ -22,14 +22,14 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
+import { crmApi } from "../../api";
+import type { Permission, Role } from "../../schemas";
 import {
   organizationNameFormSchema,
   type OrganizationNameFormValues,
   roleFormSchema,
   type RoleFormValues,
-} from "./roleForm.schema";
-import type { Permission, Role } from "./schemas";
+} from "../schemas/roleForm.schema";
 
 const ROLES_QUERY_KEY = ["crm-roles"];
 const PERMISSIONS_QUERY_KEY = ["crm-permissions"];

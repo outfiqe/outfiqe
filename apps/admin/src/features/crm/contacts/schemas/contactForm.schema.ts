@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { contactLifecycleStageSchema } from "./contactsSchemas";
+import { contactLifecycleStageSchema } from "../api/contactsSchemas";
 
 const NAME_MAX_LENGTH = 140;
 const EMAIL_MAX_LENGTH = 200;

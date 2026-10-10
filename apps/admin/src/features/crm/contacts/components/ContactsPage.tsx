@@ -6,11 +6,11 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../crmPageContent";
+import { formatDate } from "../../format.utils";
+import { crmContactsApi } from "../api/contactsApi";
+import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
 import { ContactFormModal } from "./ContactFormModal";
-import { crmContactsApi } from "./contactsApi";
-import { type Contact, contactLifecycleStageSchema } from "./contactsSchemas";
-import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "./crmPageContent";
-import { formatDate } from "./format.utils";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;

@@ -19,9 +19,12 @@ import { useForm } from "react-hook-form";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { buildDealFormSchema, type DealFormValues, dealValueFrom } from "./dealForm.schema";
-import { PartnerSearchField, type SelectedPartner } from "./PartnerSearchField";
 import { crmPipelineApi } from "./pipelineApi";
 import type { Deal, PipelineStage } from "./pipelineSchemas";
+import {
+  PartnerSearchField,
+  type SelectedPartner,
+} from "./relationships/components/PartnerSearchField";
 
 const DEALS_QUERY_KEY = ["crm-deals"];
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";

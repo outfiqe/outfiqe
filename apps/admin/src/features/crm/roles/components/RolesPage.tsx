@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import { CRM_PAGE_TEXT } from "./crmPageContent";
+import { crmApi } from "../../api";
+import { CRM_PAGE_TEXT } from "../../crmPageContent";
+import { RoleListSkeleton } from "../../skeletons";
 import { RolesSection } from "./RolesSection";
-import { RoleListSkeleton } from "./skeletons";
 
 export const RolesPage = () => {
   const {

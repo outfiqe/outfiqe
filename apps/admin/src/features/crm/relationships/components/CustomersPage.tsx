@@ -7,37 +7,37 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "./crmPageContent";
-import { formatDate, formatRupees } from "./format.utils";
-import { crmRelationshipsApi } from "./relationshipsApi";
+import { CRM_PAGE_TEXT, CUSTOMER_TABLE_HEADERS } from "../../crmPageContent";
+import { formatDate, formatRupees } from "../../format.utils";
+import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
 
-export const PartnersPage = () => {
+export const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
 
   const {
-    data: partnerPage,
+    data: customerPage,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["crm-partners", debounced, page],
+    queryKey: ["crm-customers", debounced, page],
     queryFn: () =>
-      crmRelationshipsApi.listPartners({ q: debounced || undefined, page, pageSize: PAGE_SIZE }),
+      crmRelationshipsApi.listCustomers({ q: debounced || undefined, page, pageSize: PAGE_SIZE }),
   });
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold text-foreground">
-          {CRM_PAGE_TEXT.partners.title}
+          {CRM_PAGE_TEXT.customers.title}
         </h1>
         <Input
           type="search"
-          placeholder="Search muses"
+          placeholder="Search shoppers"
           value={searchTerm}
           onChange={(event) => {
             setSearchTerm(event.target.value);
@@ -47,60 +47,60 @@ export const PartnersPage = () => {
         />
       </div>
 
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.partners.description}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.customers.description}</p>
 
       <div className="mt-6">
-        {isLoading && <TableSkeleton headers={PARTNER_TABLE_HEADERS} />}
+        {isLoading && <TableSkeleton headers={CUSTOMER_TABLE_HEADERS} />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
-        {partnerPage && partnerPage.reason === "ORGANIZATION_NOT_LINKED_TO_BRAND" && (
+        {customerPage && customerPage.reason === "ORGANIZATION_NOT_LINKED_TO_BRAND" && (
           <FormBanner tone="neutral">
-            This organization isn&apos;t linked to a brand yet, so it has no partners.
+            This organization isn&apos;t linked to a brand yet, so it has no customers.
           </FormBanner>
         )}
 
-        {partnerPage && partnerPage.reason === null && partnerPage.items.length === 0 && (
+        {customerPage && customerPage.reason === null && customerPage.items.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {debounced ? "No partners match your search." : "No partners yet."}
+            {debounced ? "No customers match your search." : "No customers yet."}
           </p>
         )}
 
-        {partnerPage && partnerPage.items.length > 0 && (
+        {customerPage && customerPage.items.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="py-2 pr-4">Muse</th>
-                  <th className="py-2 pr-4">Tag clicks</th>
-                  <th className="py-2 pr-4">Attributed orders</th>
-                  <th className="py-2 pr-4">Attributed revenue</th>
-                  <th className="py-2">Last activity</th>
+                  <th className="py-2 pr-4">Shopper</th>
+                  <th className="py-2 pr-4">Orders</th>
+                  <th className="py-2 pr-4">Items</th>
+                  <th className="py-2 pr-4">Total paid</th>
+                  <th className="py-2">Last order</th>
                 </tr>
               </thead>
               <tbody>
-                {partnerPage.items.map((partner) => (
-                  <tr key={partner.creatorId} className="border-t border-border">
+                {customerPage.items.map((customer) => (
+                  <tr key={customer.userId} className="border-t border-border">
                     <td className="py-2 pr-4">
                       <Link
-                        to="/crm/partners/$creatorId"
-                        params={{ creatorId: partner.creatorId }}
+                        to="/crm/customers/$userId"
+                        params={{ userId: customer.userId }}
                         className="font-semibold text-primary-strong underline"
                       >
-                        {partner.name}
+                        {customer.name}
                       </Link>
-                      <span className="ml-2 text-muted-foreground">@{partner.handle}</span>
+                      <span className="ml-2 text-muted-foreground">@{customer.handle}</span>
                     </td>
-                    <td className="py-2 pr-4">{partner.tagClickCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{partner.attributedOrderCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{formatRupees(partner.attributedRevenue)}</td>
-                    <td className="py-2">{formatDate(partner.lastActivityAt)}</td>
+                    <td className="py-2 pr-4">{customer.orderCount.toLocaleString()}</td>
+                    <td className="py-2 pr-4">{customer.itemCount.toLocaleString()}</td>
+                    <td className="py-2 pr-4">{formatRupees(customer.totalPaid)}</td>
+                    <td className="py-2">{formatDate(customer.lastOrderAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{partnerPage.total} total</span>
+              <span>{customerPage.total} total</span>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -113,7 +113,7 @@ export const PartnersPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={!partnerPage.hasMore}
+                  disabled={!customerPage.hasMore}
                   onClick={() => setPage((current) => current + 1)}
                 >
                   Next

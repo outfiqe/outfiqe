@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { crmActivitiesApi } from "./activitiesApi";
 import { crmBillingApi } from "./billing/api/billingApi";
 import { crmPipelineApi } from "./pipelineApi";
-import { crmRelationshipsApi } from "./relationshipsApi";
+import { crmRelationshipsApi } from "./relationships/api/relationshipsApi";
 import { crmTicketsApi } from "./ticketsApi";
 
 const API_BASE = "http://localhost:3000/api";

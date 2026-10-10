@@ -4,10 +4,10 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDate, formatRupees } from "./format.utils";
-import { crmRelationshipsApi } from "./relationshipsApi";
-import { CustomerDetailSkeleton } from "./skeletons";
-import { TimelineSection } from "./TimelineSection";
+import { formatDate, formatRupees } from "../../format.utils";
+import { CustomerDetailSkeleton } from "../../skeletons";
+import { TimelineSection } from "../../TimelineSection";
+import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
 
