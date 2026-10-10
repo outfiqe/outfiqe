@@ -11,8 +11,8 @@ import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import {
   CategorySelectionProvider,
   useCategorySelection,
-} from "../../lib/CategorySelectionContext";
-import { CategoryResults } from "./index";
+} from "../context/CategorySelectionContext";
+import { CategoryResults } from "./CategoryResults";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),

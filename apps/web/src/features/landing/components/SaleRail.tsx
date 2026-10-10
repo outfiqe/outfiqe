@@ -1,6 +1,6 @@
 import { getSaleProductsServer } from "@/features/products/api/getProductsServer";
 
-import { ProductRail } from "../ProductRail";
+import { ProductRail } from "./ProductRail";
 
 export const SaleRail = async () => {
   const products = await getSaleProductsServer();

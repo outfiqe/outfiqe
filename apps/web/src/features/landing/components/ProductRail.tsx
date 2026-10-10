@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
-import { type ExploreProduct, ProductCard } from "../ProductCard";
+import { type ExploreProduct, ProductCard } from "./ProductCard";
 
 type ProductRailProps = {
   eyebrow?: string;

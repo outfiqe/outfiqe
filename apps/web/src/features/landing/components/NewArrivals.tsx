@@ -1,6 +1,6 @@
 import { getNewArrivalsServer } from "@/features/products/api/getProductsServer";
 
-import { ProductRail } from "../ProductRail";
+import { ProductRail } from "./ProductRail";
 
 export const NewArrivals = async () => {
   const products = await getNewArrivalsServer();

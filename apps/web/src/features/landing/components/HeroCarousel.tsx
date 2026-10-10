@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
-import type { PublicHeroSlide } from "./heroSlideSchemas";
+import type { PublicHeroSlide } from "../api/heroSlideSchemas";
 
 type HeroCarouselProps = {
   slides: PublicHeroSlide[];

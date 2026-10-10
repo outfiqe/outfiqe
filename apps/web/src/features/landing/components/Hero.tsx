@@ -1,4 +1,4 @@
-import { getHeroSlidesServer } from "./getHeroSlidesServer";
+import { getHeroSlidesServer } from "../api/getHeroSlidesServer";
 import { HeroCarousel } from "./HeroCarousel";
 
 export const Hero = async () => {

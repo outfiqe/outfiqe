@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 
-import { scrollToTasteResults } from "../../lib/scrollToTasteResults";
-import { TasteCategories } from "./index";
+import { scrollToTasteResults } from "../utils/scrollToTasteResults";
+import { TasteCategories } from "./TasteCategories";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn() }),
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/categories/hooks/useCategories", () => ({ useCategories: vi.fn() }));
 
-vi.mock("../../lib/scrollToTasteResults", () => ({ scrollToTasteResults: vi.fn() }));
+vi.mock("../utils/scrollToTasteResults", () => ({ scrollToTasteResults: vi.fn() }));
 
 const buildCategory = (slug: string, name: string) => ({
   id: slug,

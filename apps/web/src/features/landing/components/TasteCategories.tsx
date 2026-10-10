@@ -10,12 +10,12 @@ import { visibleTasteCategories } from "@/features/categories/utils/visibleTaste
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
-import { useCategorySelection } from "../../lib/CategorySelectionContext";
+import { useCategorySelection } from "../context/CategorySelectionContext";
 import {
   resolveActiveCategorySlug,
   resolveDisplayCategories,
-} from "../../lib/resolveTasteCategories";
-import { scrollToTasteResults } from "../../lib/scrollToTasteResults";
+} from "../utils/resolveTasteCategories";
+import { scrollToTasteResults } from "../utils/scrollToTasteResults";
 import { CustomizeTasteModal } from "./CustomizeTasteModal";
 
 const SCROLL_STEP_PX = 320;

@@ -14,10 +14,10 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 import { formatResultCount } from "@/shared/lib/formatCount";
 
-import { useCategorySelection } from "../../lib/CategorySelectionContext";
-import { resolveDisplayCategories } from "../../lib/resolveTasteCategories";
-import { TASTE_RESULTS_SECTION_ID } from "../../lib/scrollToTasteResults";
-import { ProductCard } from "../ProductCard";
+import { useCategorySelection } from "../context/CategorySelectionContext";
+import { resolveDisplayCategories } from "../utils/resolveTasteCategories";
+import { TASTE_RESULTS_SECTION_ID } from "../utils/scrollToTasteResults";
+import { ProductCard } from "./ProductCard";
 
 export const CategoryResults = () => {
   const router = useRouter();
