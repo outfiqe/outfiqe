@@ -53,7 +53,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         blocks: [{ kind: "statCards", count: 3, columns: "four" }],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-metrics/PlatformOverviewPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/platform-metrics/components/PlatformOverviewPage.tsx`],
   },
 
   "/gamification": {
@@ -67,8 +67,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/gamification/GamificationOverviewPage.tsx`,
-      `${FEATURES_DIR}/gamification/StatsSection.tsx`,
+      `${FEATURES_DIR}/gamification/components/GamificationOverviewPage.tsx`,
+      `${FEATURES_DIR}/gamification/stats/components/StatsSection.tsx`,
     ],
   },
 
@@ -93,7 +93,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         ],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/financial-rollup/FinancialRollupPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/financial-rollup/components/FinancialRollupPage.tsx`],
   },
 
   "/tag-reviews": {
@@ -106,7 +106,14 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "bar" },
       { kind: "infoCards", cards: [{ rowCount: 2 }, { rowCount: 2 }, { rowCount: 3 }] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/tag-reviews/TagReviewMetricsPage.tsx`],
+    sourceFiles: [
+      `${FEATURES_DIR}/tag-reviews/components/TagReviewMetricsPage.tsx`,
+      `${FEATURES_DIR}/tag-reviews/components/MetricsOverviewStrip.tsx`,
+      `${FEATURES_DIR}/tag-reviews/components/ApprovalSourceMixSection.tsx`,
+      `${FEATURES_DIR}/tag-reviews/components/MetricsDetailSections.tsx`,
+      `${FEATURES_DIR}/tag-reviews/components/MetricsCardParts.tsx`,
+      `${FEATURES_DIR}/tag-reviews/constants/tagReviewMetrics.constants.ts`,
+    ],
   },
   "/profile": {
     title: "Edit profile",
@@ -141,8 +148,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/profile/ProfilePage.tsx`,
-      `${FEATURES_DIR}/profile/ChangePasswordCard.tsx`,
+      `${FEATURES_DIR}/profile/components/ProfilePage.tsx`,
+      `${FEATURES_DIR}/profile/components/ChangePasswordCard.tsx`,
     ],
   },
 
@@ -165,7 +172,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         submitLabel: "Save policy",
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/withdraw-policy/WithdrawPolicyPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/withdraw-policy/components/WithdrawPolicyPage.tsx`],
   },
 
   "/trending": {
@@ -179,7 +186,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         option: "Search by product name",
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/trending/TrendingDebugPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/trending/components/TrendingDebugPage.tsx`],
   },
   "/team": {
     title: "Team",
@@ -202,7 +209,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: [],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/team/TeamPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/team/components/TeamPage.tsx`],
   },
 
   "/platform/features": {
@@ -213,7 +220,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "labeledSelect", label: "Tenant", option: "Select a tenant" },
       { kind: "table", headers: ["Feature", "State", "Source", "Actions"] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-features/PlatformFeaturesPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/platform-features/components/PlatformFeaturesPage.tsx`],
   },
 
   "/platform/impersonation": {
@@ -244,7 +251,10 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         blocks: [{ kind: "table", headers: SESSION_TABLE_HEADERS, rowCount: 3 }],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-impersonation/PlatformImpersonationPage.tsx`],
+    sourceFiles: [
+      `${FEATURES_DIR}/platform-impersonation/components/PlatformImpersonationPage.tsx`,
+      `${FEATURES_DIR}/platform-impersonation/components/SessionTable.tsx`,
+    ],
   },
 
   "/platform/metrics": {
@@ -263,7 +273,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         headers: ["Tenant", "Plan", "Members", "Contacts", "Deals", "Tickets", "Last activity"],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-metrics/PlatformMetricsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/platform-metrics/components/PlatformMetricsPage.tsx`],
   },
 
   "/platform/nav-access": {
@@ -277,7 +287,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         blocks: [{ kind: "toggleRows", count: 6 }],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-nav-access/PlatformNavAccessPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/platform-nav-access/components/PlatformNavAccessPage.tsx`],
   },
   "/content-browser": {
     title: "Browse drops",
@@ -287,7 +297,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "searchInput", placeholder: "Search by caption or muse…" },
       { kind: "posterGrid", count: POSTER_COUNT },
     ],
-    sourceFiles: [`${FEATURES_DIR}/content-browser/ContentBrowserPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/content-browser/components/ContentBrowserPage.tsx`],
   },
 
   "/content-reports": {
@@ -297,7 +307,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "filterTabs", labels: ["Open", "Actioned", "Dismissed"] },
       { kind: "reportRows", count: ROW_COUNT },
     ],
-    sourceFiles: [`${FEATURES_DIR}/content-reports/ContentReportsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/content-reports/components/ContentReportsPage.tsx`],
   },
 
   "/tag-reports": {
@@ -307,7 +317,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "filterTabs", labels: ["Open", "Actioned", "Dismissed"] },
       { kind: "reportRows", count: ROW_COUNT, hasLeadingName: true },
     ],
-    sourceFiles: [`${FEATURES_DIR}/tag-reports/TagReportsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/tag-reports/components/TagReportsPage.tsx`],
   },
 
   "/platform/brand-applications": {
@@ -322,7 +332,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: ["Approve", "Reject"],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/brand-applications/BrandApplicationsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/brand-applications/components/BrandApplicationsPage.tsx`],
   },
 
   "/support": {
@@ -332,7 +342,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "selectBar", options: ["All assignees", "All statuses"] },
       { kind: "cardRows", count: ROW_COUNT, hasBadge: false, textLineCount: 2, actionLabels: [] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/support/SupportInboxPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/support/components/SupportInboxPage.tsx`],
   },
 
   "/organizations": {
@@ -350,7 +360,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       { kind: "cardRows", count: ROW_COUNT, hasBadge: false, actionLabels: [] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/organizations/OrganizationsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/organizations/components/OrganizationsPage.tsx`],
   },
   "/products": {
     title: "Products",
@@ -365,7 +375,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: [],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/products/ProductsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/products/components/ProductsPage.tsx`],
   },
 
   "/users": {
@@ -380,7 +390,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: ["Suspend", "Ban"],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/users/UsersPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/users/components/UsersPage.tsx`],
   },
 
   "/creators": {
@@ -395,7 +405,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: ["Approve", "Reject"],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/creators/CreatorsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/creators/components/CreatorsPage.tsx`],
   },
 
   "/orders": {
@@ -413,14 +423,14 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
         actionLabels: [],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/orders/OrdersPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/orders/components/OrdersPage.tsx`],
   },
 
   "/product-reviews": {
     title: "Product Reviews",
     description: "Search a product to view and moderate its customer reviews.",
     blocks: [{ kind: "searchInput", placeholder: "Search products by name…" }],
-    sourceFiles: [`${FEATURES_DIR}/product-reviews/ProductReviewsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/product-reviews/components/ProductReviewsPage.tsx`],
   },
   "/categories": {
     title: "Categories",
@@ -436,7 +446,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       { kind: "reorderRows", count: ROW_COUNT, hasImage: true, actionLabel: "Unpublish" },
     ],
-    sourceFiles: [`${FEATURES_DIR}/categories/CategoriesPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/categories/components/CategoriesPage.tsx`],
   },
 
   "/collections": {
@@ -454,7 +464,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       { kind: "imageRows", count: ROW_COUNT, actionLabels: ["Manage products", "Unpublish"] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/collections/CollectionsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/collections/components/CollectionsPage.tsx`],
   },
 
   "/hero-slides": {
@@ -474,7 +484,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       { kind: "imageRows", count: ROW_COUNT, actionLabels: ["Unpublish"] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/hero-slides/HeroSlidesPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/hero-slides/components/HeroSlidesPage.tsx`],
   },
 
   "/product-types": {
@@ -492,7 +502,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       { kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" },
     ],
-    sourceFiles: [`${FEATURES_DIR}/product-types/ProductTypesPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/product-types/components/ProductTypesPage.tsx`],
   },
 
   "/size-options": {
@@ -503,7 +513,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "formCard", fields: [{ label: "Size label", width: "small" }] },
       { kind: "actionRows", count: ROW_COUNT, actionLabel: "Delete" },
     ],
-    sourceFiles: [`${FEATURES_DIR}/size-options/SizeOptionsPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/size-options/components/SizeOptionsPage.tsx`],
   },
 
   "/outfit-slot-types": {
@@ -511,7 +521,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     description:
       "The slots every new Outfit Build starts with, in this order. Each slot says which garment types can fill it and how many items it holds.",
     blocks: [{ kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" }],
-    sourceFiles: [`${FEATURES_DIR}/outfit-slot-types/OutfitSlotTypesPage.tsx`],
+    sourceFiles: [`${FEATURES_DIR}/outfit-slot-types/components/OutfitSlotTypesPage.tsx`],
   },
   "/announcements": {
     title: "Announcements",
@@ -529,8 +539,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/announcements/AnnouncementsPage.tsx`,
-      `${FEATURES_DIR}/announcements/AnnouncementsListSection.tsx`,
+      `${FEATURES_DIR}/announcements/components/AnnouncementsPage.tsx`,
+      `${FEATURES_DIR}/announcements/components/AnnouncementsListSection.tsx`,
     ],
   },
 
@@ -567,10 +577,10 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/commissions/CommissionsPage.tsx`,
-      `${FEATURES_DIR}/commissions/CommissionTiersSection.tsx`,
-      `${FEATURES_DIR}/commissions/commissionScopeCopy.ts`,
-      `${FEATURES_DIR}/commissions/CommissionsListSection.tsx`,
+      `${FEATURES_DIR}/commissions/components/CommissionsPage.tsx`,
+      `${FEATURES_DIR}/commissions/components/CommissionTiersSection.tsx`,
+      `${FEATURES_DIR}/commissions/constants/commissionScopeCopy.ts`,
+      `${FEATURES_DIR}/commissions/components/CommissionsListSection.tsx`,
     ],
   },
 
@@ -587,8 +597,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/coupons/CouponsPage.tsx`,
-      `${FEATURES_DIR}/coupons/CouponsListSection.tsx`,
+      `${FEATURES_DIR}/coupons/components/CouponsPage.tsx`,
+      `${FEATURES_DIR}/coupons/components/CouponsListSection.tsx`,
     ],
   },
 
@@ -628,9 +638,9 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/delivery-zones/DeliveryZonesPage.tsx`,
-      `${FEATURES_DIR}/delivery-zones/DeliveryZonesSection.tsx`,
-      `${FEATURES_DIR}/delivery-zones/DeliveryZoneHistorySection.tsx`,
+      `${FEATURES_DIR}/delivery-zones/components/DeliveryZonesPage.tsx`,
+      `${FEATURES_DIR}/delivery-zones/components/DeliveryZonesSection.tsx`,
+      `${FEATURES_DIR}/delivery-zones/components/DeliveryZoneHistorySection.tsx`,
     ],
   },
 
@@ -642,8 +652,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "cardRows", count: ROW_COUNT, actionLabels: ["Approve", "Mark paid"] },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/withdraw-requests/WithdrawRequestsPage.tsx`,
-      `${FEATURES_DIR}/withdraw-requests/WithdrawRequestsListSection.tsx`,
+      `${FEATURES_DIR}/withdraw-requests/components/WithdrawRequestsPage.tsx`,
+      `${FEATURES_DIR}/withdraw-requests/components/WithdrawRequestsListSection.tsx`,
     ],
   },
 
@@ -668,9 +678,9 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/gamification/GamificationBadgesPage.tsx`,
-      `${FEATURES_DIR}/gamification/BadgesSection/index.tsx`,
-      `${FEATURES_DIR}/gamification/ChallengesSection/index.tsx`,
+      `${FEATURES_DIR}/gamification/components/GamificationBadgesPage.tsx`,
+      `${FEATURES_DIR}/gamification/badges/components/BadgesSection.tsx`,
+      `${FEATURES_DIR}/gamification/challenges/components/ChallengesSection.tsx`,
     ],
   },
 
@@ -706,9 +716,11 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/gamification/GamificationLeaderboardsPage.tsx`,
-      `${FEATURES_DIR}/gamification/LeaderboardSection.tsx`,
-      `${FEATURES_DIR}/gamification/CompetitionsSection.tsx`,
+      `${FEATURES_DIR}/gamification/components/GamificationLeaderboardsPage.tsx`,
+      `${FEATURES_DIR}/gamification/leaderboards/components/LeaderboardSection.tsx`,
+      `${FEATURES_DIR}/gamification/competitions/components/CompetitionsSection.tsx`,
+      `${FEATURES_DIR}/gamification/competitions/components/CompetitionFields.tsx`,
+      `${FEATURES_DIR}/gamification/competitions/components/EditCompetitionModal.tsx`,
     ],
   },
 
@@ -754,8 +766,8 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/gamification/GamificationManualActionsPage.tsx`,
-      `${FEATURES_DIR}/gamification/ManualActionsSection.tsx`,
+      `${FEATURES_DIR}/gamification/components/GamificationManualActionsPage.tsx`,
+      `${FEATURES_DIR}/gamification/manual-actions/components/ManualActionsSection.tsx`,
     ],
   },
 
@@ -787,10 +799,10 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/gamification/GamificationXpLevelsPage.tsx`,
-      `${FEATURES_DIR}/gamification/LevelsSection.tsx`,
-      `${FEATURES_DIR}/gamification/MultipliersSection.tsx`,
-      `${FEATURES_DIR}/gamification/ActivityConfigSection/index.tsx`,
+      `${FEATURES_DIR}/gamification/components/GamificationXpLevelsPage.tsx`,
+      `${FEATURES_DIR}/gamification/levels/components/LevelsSection.tsx`,
+      `${FEATURES_DIR}/gamification/multipliers/components/MultipliersSection.tsx`,
+      `${FEATURES_DIR}/gamification/activity-config/components/ActivityConfigSection.tsx`,
     ],
   },
 
@@ -842,10 +854,10 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [
-      `${FEATURES_DIR}/platform-commission/PlatformCommissionPage.tsx`,
-      `${FEATURES_DIR}/platform-commission/CommissionTiersSection.tsx`,
-      `${FEATURES_DIR}/platform-commission/GatewayFeeRatesSection.tsx`,
-      `${FEATURES_DIR}/platform-commission/BrandExemptionsSection.tsx`,
+      `${FEATURES_DIR}/platform-commission/components/PlatformCommissionPage.tsx`,
+      `${FEATURES_DIR}/platform-commission/components/CommissionTiersSection.tsx`,
+      `${FEATURES_DIR}/platform-commission/components/GatewayFeeRatesSection.tsx`,
+      `${FEATURES_DIR}/platform-commission/components/BrandExemptionsSection.tsx`,
     ],
   },
 };
