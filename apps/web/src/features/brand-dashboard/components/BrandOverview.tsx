@@ -24,7 +24,7 @@ import type {
   BrandOverviewTrendPoint,
 } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
-import { BrandShipmentRow } from "./BrandShipmentRow";
+import { BrandShipmentRow } from "../shipments/components/BrandShipmentRow";
 
 const KPI_CARD_COUNT = 7;
 const RECENT_ROW_COUNT = 5;

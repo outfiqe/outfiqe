@@ -22,7 +22,7 @@ import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
-import { BrandTagPolicyCard } from "./BrandTagPolicyCard";
+import { BrandTagPolicyCard } from "../tag-reviews/components/BrandTagPolicyCard";
 
 type EditableFields = {
   contactName: string;

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrandProfile } from "../api/brandDashboardSchemas";
+import type { BrandProfile } from "../../api/brandDashboardSchemas";
 import { BrandTagPolicyCard } from "./BrandTagPolicyCard";
 
 vi.mock("next/navigation", () => ({

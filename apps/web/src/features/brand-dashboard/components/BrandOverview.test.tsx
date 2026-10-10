@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as ProductTour from "@/features/product-tour";
 
-import type { BrandShipmentSummary } from "../api/brandFulfilmentSchemas";
 import type { BrandOverview as BrandOverviewData } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
+import type { BrandShipmentSummary } from "../shipments/api/brandFulfilmentSchemas";
 import { BrandOverview } from "./BrandOverview";
 
 vi.mock("../hooks/useBrandOverview", () => ({
