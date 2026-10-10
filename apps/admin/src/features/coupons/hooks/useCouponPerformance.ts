@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { couponsApi } from "../api";
+import { couponsApi } from "../api/couponsApi";
 
 export const useCouponPerformance = (couponId: string | null) => {
   return useQuery({

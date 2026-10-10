@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { financialRollupApi } from "@/features/financial-rollup/api";
+import { financialRollupApi } from "@/features/financial-rollup/api/financialRollupApi";
 import {
   PLATFORM_KPI_TOUR_ANCHOR,
   PLATFORM_TOUR_REPLAY_SEARCH,

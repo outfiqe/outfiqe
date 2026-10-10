@@ -15,7 +15,7 @@ import {
   TicketsRouteSkeleton,
 } from "@/features/crm/skeletons";
 import { BadgeFormSkeleton } from "@/features/gamification/BadgesSection/BadgeFormSkeleton";
-import { OrderDetailSkeleton } from "@/features/orders/OrderDetailSkeleton";
+import { OrderDetailSkeleton } from "@/features/orders/components/OrderDetailSkeleton";
 import { TenantMetricsSkeleton } from "@/features/platform-metrics/TenantMetricsSkeleton";
 import { SupportTicketSkeleton } from "@/features/support/SupportTicketSkeleton";
 
