@@ -27,11 +27,13 @@ The whole feature sits behind the `outfit_builder` flag on the API.
   - `MyBuildsPage` — My builds / Shared with me tabs, New build, empty/loading/error states, and a
     "coming soon" state while the flag is off.
   - `BuildPage` — loads a build and shows `BuildBoard` or `PublishedBuildView`.
-  - `BuildBoard` — the header (title, status, visibility, open chat), `BoardActions` as a toolbar,
-    `BudgetBar`, then tabs: **Outfit** (the `SlotCard` grid with `ProductFinderPanel` beside it on
-    wide screens), **People** (`BoardPeople`), **Photos** (`BoardPhotosPanel`, only while photos are
-    switched on) and **Buy & drop** (`BuyBuildPanel`, `PostAsLookPanel`, offers). Also the picker
-    and modals. Wraps everything in a dnd-kit `DndContext`.
+  - `BuildBoard` — `BoardHeader` (title, status, visibility, open chat), `BoardActions` as a toolbar,
+    `BudgetBar`, then tabs (`constants/boardTabs.ts`): **Outfit** (the `SlotCard` grid with
+    `ProductFinderPanel` beside it on wide screens), **People** (`BoardPeople`), **Photos**
+    (`BoardPhotosPanel`, only while photos are switched on) and **Buy & drop** (`BuyBuildPanel`,
+    `PostAsLookPanel`, offers). Also the picker and modals. Wraps everything in a dnd-kit
+    `DndContext`. Placing, replacing, removing and dropping items, and the open picker, live in
+    `useBoardItemPlacement`.
   - `SlotCard` — one slot: its items (image, price, stock in words, who added it) and empty
     places to tap. It is also the drop target when dragging.
   - `ProductPickerModal` — tap a slot → search products of that slot's garment types → tap one.

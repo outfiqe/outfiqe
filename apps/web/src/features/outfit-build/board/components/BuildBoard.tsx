@@ -1,48 +1,31 @@
 "use client";
 
-import {
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { Badge, Tabs, TabsContent, TabsList, TabsTrigger, toast } from "@outfiqe/design-system";
-import { MessageCircle } from "lucide-react";
-import Link from "next/link";
+import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@outfiqe/design-system";
 import { useTranslations } from "next-intl";
-import { type ComponentProps, useState } from "react";
+import { useState } from "react";
 
 import { useAuth } from "@/features/auth";
 import { BuildOffersSection } from "@/features/outfit-offers";
-import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useMySizeByProductType } from "@/features/saved-sizes";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 
 import { outfitApi } from "../../api/outfitApi";
-import type {
-  OutfitBoard,
-  OutfitProduct,
-  OutfitSlot,
-  OutfitVisibility,
-} from "../../api/outfitSchemas";
+import type { OutfitBoard, OutfitVisibility } from "../../api/outfitSchemas";
 import { BuyBuildPanel } from "../../components/BuyBuildPanel";
 import { PostAsLookPanel } from "../../publishing/components/PostAsLookPanel";
-import { useOutfitWrites } from "../hooks/useOutfitWrites";
 import {
-  countSoldOutItems,
-  findBoardRefusal,
-  firstFreePosition,
-  toBuyableBuildItems,
-  withHappiness,
-  withItemPlaced,
-  withItemRemoved,
-} from "../utils/outfitBoardRules";
-import { toOutfitProduct } from "../utils/toOutfitProduct";
+  BOARD_TAB,
+  BOARD_TABS_WITH_PHOTOS,
+  BOARD_TABS_WITHOUT_PHOTOS,
+} from "../constants/boardTabs";
+import { useBoardItemPlacement } from "../hooks/useBoardItemPlacement";
+import { useOutfitWrites } from "../hooks/useOutfitWrites";
+import { countSoldOutItems, toBuyableBuildItems, withHappiness } from "../utils/outfitBoardRules";
 import { BoardActions } from "./BoardActions";
+import { BoardHeader } from "./BoardHeader";
 import { BoardPeople } from "./BoardPeople";
 import { BoardPhotosPanel } from "./BoardPhotosPanel";
 import { BoardSettingsModal } from "./BoardSettingsModal";
@@ -55,30 +38,10 @@ import { SlotCard } from "./SlotCard";
 import { VisibilityModal } from "./VisibilityModal";
 
 const DRAG_ACTIVATION_DISTANCE_PX = 6;
-const SWAPPED_POSITION_WHEN_FULL = 0;
 
 type OpenModal = "invite" | "visibility" | "settings" | null;
 
-type PickerTarget = {
-  slot: OutfitSlot;
-  position: number;
-  replacing: ComponentProps<typeof ProductPickerModal>["replacing"];
-} | null;
-
 const NO_SOLD_OUT_ITEMS = 0;
-
-const BOARD_TAB = {
-  OUTFIT: "outfit",
-  PEOPLE: "people",
-  PHOTOS: "photos",
-  BUY_AND_DROP: "buy-and-drop",
-} as const;
-
-const BOARD_TABS_WITHOUT_PHOTOS = [BOARD_TAB.OUTFIT, BOARD_TAB.PEOPLE, BOARD_TAB.BUY_AND_DROP];
-const BOARD_TABS_WITH_PHOTOS = [...BOARD_TABS_WITHOUT_PHOTOS, BOARD_TAB.PHOTOS];
-
-const isPublicProduct = (value: unknown): value is PublicProduct =>
-  typeof value === "object" && value !== null && "id" in value && "effectivePrice" in value;
 
 export const BuildBoard = ({
   board,
@@ -88,12 +51,19 @@ export const BuildBoard = ({
   isReconnecting: boolean;
 }) => {
   const t = useTranslations("outfitBuild.board");
-  const tWrites = useTranslations("outfitBuild.writes");
   const { state } = useAuth();
   const currentUserId = state.user?.id;
   const { runWrite, isSaving } = useOutfitWrites(board.id);
   const productTypes = useProductTypes().data ?? [];
-  const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
+  const {
+    pickerTarget,
+    setPickerTarget,
+    placeOutfitProduct,
+    placeProduct,
+    openPicker,
+    removeItem,
+    dropProductOnSlot,
+  } = useBoardItemPlacement({ board, currentUserId, productTypes, runWrite });
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX } }),
@@ -109,71 +79,7 @@ export const BuildBoard = ({
   );
   const canEdit = board.myRole !== "VIEWER" && board.status === "DRAFT";
   const soldOutItemCount = board.status === "DRAFT" ? countSoldOutItems(board) : NO_SOLD_OUT_ITEMS;
-  const typeIdBySlug = new Map(
-    productTypes.map((productType) => [productType.slug, productType.id]),
-  );
   const memberIds = board.members.map(({ user }) => user.id);
-  const me = board.members.find(({ user }) => user.id === currentUserId)?.user ?? null;
-
-  const placeOutfitProduct = (slot: OutfitSlot, position: number, outfitProduct: OutfitProduct) => {
-    if (!currentUserId) return;
-
-    const refusal = findBoardRefusal(board, {
-      slotKey: slot.key,
-      position,
-      productId: outfitProduct.id,
-      productTypeId: outfitProduct.productTypeId,
-      addedById: currentUserId,
-    });
-    if (refusal) {
-      toast.error(tWrites(`refusals.${refusal}`));
-      return;
-    }
-
-    void runWrite(
-      (write) => outfitApi.placeItem(write, slot.key, position, outfitProduct.id),
-      (current) =>
-        withItemPlaced(current, {
-          slotKey: slot.key,
-          position,
-          product: outfitProduct,
-          addedBy: me,
-        }),
-    );
-  };
-
-  const placeProduct = (slot: OutfitSlot, position: number, product: PublicProduct) => {
-    const productTypeId = typeIdBySlug.get(product.type);
-    if (productTypeId) placeOutfitProduct(slot, position, toOutfitProduct(product, productTypeId));
-  };
-
-  const openPicker = (slot: OutfitSlot, position: number) => {
-    const currentProduct = slot.items.find((item) => item.position === position)?.product;
-    setPickerTarget({
-      slot,
-      position,
-      replacing: currentProduct
-        ? {
-            product: currentProduct,
-            target: { outfitId: board.id, slotKey: slot.key, position },
-          }
-        : null,
-    });
-  };
-
-  const removeItem = (slot: OutfitSlot, position: number) =>
-    void runWrite(
-      (write) => outfitApi.removeItem(write, slot.key, position),
-      (current) => withItemRemoved(current, slot.key, position),
-    );
-
-  const dropProductOnSlot = ({ active, over }: DragEndEvent) => {
-    const product: unknown = active.data.current?.product;
-    const slotKey: unknown = over?.data.current?.slotKey;
-    const slot = board.slots.find((candidate) => candidate.key === slotKey);
-    if (!slot || !isPublicProduct(product)) return;
-    placeProduct(slot, firstFreePosition(slot) ?? SWAPPED_POSITION_WHEN_FULL, product);
-  };
 
   const toggleHappy = (isHappy: boolean) => {
     if (!currentUserId) return;
@@ -192,26 +98,7 @@ export const BuildBoard = ({
   return (
     <DndContext sensors={sensors} onDragEnd={dropProductOnSlot}>
       <div className="space-y-4">
-        <header className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {board.title ?? t("untitled")}
-          </h1>
-          <Badge tone={board.status === "LOCKED" ? "positive" : "neutral"} showDot={false}>
-            {t(`status.${board.status}`)}
-          </Badge>
-          <Badge tone="neutral" showDot={false}>
-            {t(`visibility.${board.visibility}`)}
-          </Badge>
-          {board.conversationId && (
-            <Link
-              href={`/messages/${board.conversationId}`}
-              className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              <MessageCircle className="size-4" aria-hidden />
-              {t("openChat")}
-            </Link>
-          )}
-        </header>
+        <BoardHeader board={board} />
 
         <ReconnectingBanner isReconnecting={isReconnecting} />
         {isSaving && (
