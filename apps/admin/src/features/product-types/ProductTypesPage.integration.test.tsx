@@ -17,12 +17,19 @@ import { ProductTypesPage } from "./ProductTypesPage";
 
 const API_BASE = "http://localhost:3000/api";
 
-const productType = (id: string, label: string, sortOrder: number, isActive = true) => ({
+const productType = (
+  id: string,
+  label: string,
+  sortOrder: number,
+  isActive = true,
+  supportsFitRanges = true,
+) => ({
   id,
   slug: label.toLowerCase(),
   label,
   sortOrder,
   isActive,
+  supportsFitRanges,
   productCount: 0,
   sizeOptionCount: 1,
 });
@@ -92,6 +99,61 @@ describe("ProductTypesPage", () => {
     await user.click(await screen.findByRole("button", { name: "Switch off" }));
 
     await waitFor(() => expect(patchBody).toEqual({ isActive: false }));
+  });
+
+  it("turns size charts off for a garment type and says so", async () => {
+    let patchBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([productType("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/product-types/id-a`, async ({ request }) => {
+        patchBody = await request.json();
+        return okJson(productType("id-a", "Alpha", 0, true, false));
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    expect(await screen.findByText(/Size charts on/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Turn off size charts for Alpha" }));
+
+    await waitFor(() => expect(patchBody).toEqual({ supportsFitRanges: false }));
+    expect(await screen.findByText("Size charts turned off.")).toBeInTheDocument();
+  });
+
+  it("offers to turn size charts back on for a type that has them off", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () =>
+        okJson([productType("id-a", "Bags", 0, true, false)]),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText(/Size charts off/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Turn on size charts for Bags" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an error toast when turning size charts off fails", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([productType("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/product-types/id-a`, () =>
+        HttpResponse.json(
+          { success: false, message: "Only platform staff can change garment types." },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Turn off size charts for Alpha" }));
+
+    expect(
+      await screen.findByText("Only platform staff can change garment types."),
+    ).toBeInTheDocument();
   });
 
   it("shows an error toast when switching a garment type off fails", async () => {

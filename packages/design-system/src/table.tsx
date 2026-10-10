@@ -16,6 +16,8 @@ type TableProps<Row> = {
   readonly columns: TableColumn<Row>[];
   readonly rows: Row[];
   readonly rowKey: (row: Row) => string;
+  readonly rowClassName?: (row: Row) => string | undefined;
+  readonly caption?: string;
   readonly footer?: ReactNode;
   readonly emptyState?: ReactNode;
   readonly isLoading?: boolean;
@@ -30,6 +32,8 @@ export const Table = <Row,>({
   columns,
   rows,
   rowKey,
+  rowClassName,
+  caption,
   footer,
   emptyState,
   isLoading = false,
@@ -38,6 +42,7 @@ export const Table = <Row,>({
 }: TableProps<Row>) => (
   <div className={cn("overflow-x-auto rounded-xl border border-border", className)}>
     <table className="w-full text-sm">
+      {caption && <caption className="sr-only">{caption}</caption>}
       <thead className="bg-muted/50">
         <tr>
           {columns.map((column) => (
@@ -75,7 +80,7 @@ export const Table = <Row,>({
           </tr>
         ) : (
           rows.map((row) => (
-            <tr key={rowKey(row)} className="border-t border-border">
+            <tr key={rowKey(row)} className={cn("border-t border-border", rowClassName?.(row))}>
               {columns.map((column) => (
                 <td key={column.key} className={cn("px-4 py-2.5", alignClass(column.align))}>
                   {column.render(row)}

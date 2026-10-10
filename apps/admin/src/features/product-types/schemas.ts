@@ -6,6 +6,7 @@ export const productTypeSchema = z.object({
   label: z.string(),
   sortOrder: z.number(),
   isActive: z.boolean(),
+  supportsFitRanges: z.boolean(),
   productCount: z.number(),
   sizeOptionCount: z.number(),
 });

@@ -24,6 +24,7 @@ import type {
   InventoryLedgerEntryInput,
   ProductDiscountRecord,
   ProductFirstImageAsset,
+  ProductForReview,
   ProductRecord,
   ProductSalesStats,
   ProductSearchParams,
@@ -351,15 +352,18 @@ export const productRepository = {
   async listForReview(
     status: ProductStatus,
     params: { cursor?: string; limit: number; isThrift?: boolean },
-  ): Promise<ProductWithStock[]> {
+  ): Promise<ProductForReview[]> {
     const rows = await prisma.product.findMany({
       where: { status, deletedAt: null, isThrift: params.isThrift },
-      include: withBrandAndCategories,
+      include: {
+        ...withBrandAndCategories,
+        productType: { select: { slug: true, label: true, supportsFitRanges: true } },
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
-    return withTotalStock(rows);
+    return withTotalStockAndSizes(rows);
   },
 
   async listPublic(

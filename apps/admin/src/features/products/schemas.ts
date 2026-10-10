@@ -8,11 +8,31 @@ export type ProductStatusValue = z.infer<typeof productStatusSchema>;
 
 export const thriftConditionSchema = z.enum(THRIFT_CONDITION_VALUES);
 
+const fitRangeSchema = z.object({
+  minHeightCm: z.number(),
+  maxHeightCm: z.number(),
+  minWeightKg: z.number(),
+  maxWeightKg: z.number(),
+});
+
+const reviewProductSizeSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  stock: z.number(),
+  fitRange: fitRangeSchema.nullable(),
+});
+
 export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
   price: z.number(),
-  productType: z.object({ slug: z.string(), label: z.string() }),
+  productType: z.object({
+    slug: z.string(),
+    label: z.string(),
+    supportsFitRanges: z.boolean(),
+  }),
+  sizes: z.array(reviewProductSizeSchema),
+  isStretchable: z.boolean().nullable(),
   categories: z.array(z.string()),
   imageUrl: z.string().nullable(),
   lowStock: z.boolean(),

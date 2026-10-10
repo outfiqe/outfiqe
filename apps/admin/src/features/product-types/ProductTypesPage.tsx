@@ -73,6 +73,15 @@ export const ProductTypesPage = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
+  const toggleSizeCharts = useApiMutation({
+    mutationFn: (productType: ProductType) =>
+      productTypesApi.setSupportsFitRanges(productType.id, !productType.supportsFitRanges),
+    invalidateKeys: [QUERY_KEY],
+    successMessage: (updated) =>
+      updated.supportsFitRanges ? "Size charts turned on." : "Size charts turned off.",
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
+  });
+
   const reorder = useMutation({
     mutationFn: (orderedIds: string[]) => productTypesApi.reorder(orderedIds),
     onMutate: async (orderedIds) => {
@@ -107,8 +116,9 @@ export const ProductTypesPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Garment types</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        The list of clothing types a product can be. A new type reaches brands once it is on and has
-        at least one size.
+        The list of clothing types a product can be. A new type reaches brands once it is on. Size
+        charts let brands give each size a height and weight range; turn them off for types like
+        bags or shoes, where height and weight say nothing about size.
       </p>
 
       {canManageCatalog && (
@@ -187,6 +197,7 @@ export const ProductTypesPage = () => {
             label: typeLabel,
             slug: typeSlug,
             isActive,
+            supportsFitRanges,
             productCount,
             sizeOptionCount,
           } = productType;
@@ -242,7 +253,8 @@ export const ProductTypesPage = () => {
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  /{typeSlug} · {productCount} products · {sizeOptionCount} sizes
+                  /{typeSlug} · {productCount} products · {sizeOptionCount} sizes ·{" "}
+                  {supportsFitRanges ? "Size charts on" : "Size charts off"}
                   {sizeOptionCount === 0 && (
                     <>
                       {" · "}
@@ -256,6 +268,17 @@ export const ProductTypesPage = () => {
                   )}
                 </p>
               </div>
+
+              {canManageCatalog && (
+                <Button
+                  variant="ghost"
+                  onClick={() => toggleSizeCharts.mutate(productType)}
+                  disabled={toggleSizeCharts.isPending}
+                  aria-label={`${supportsFitRanges ? "Turn off" : "Turn on"} size charts for ${typeLabel}`}
+                >
+                  {supportsFitRanges ? "Turn off size charts" : "Turn on size charts"}
+                </Button>
+              )}
 
               {canManageCatalog && (
                 <Button

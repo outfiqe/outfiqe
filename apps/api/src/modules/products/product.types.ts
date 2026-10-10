@@ -149,7 +149,12 @@ export type ProductSalesStats = { creatorBuyerCount: number; unitsSold: number }
 export type ProductWithOptionalStock = ProductWithBrand &
   Partial<ProductSalesStats> & { totalStock?: number; images?: ProductFirstImageAsset[] };
 
-export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
+export type ProductForReview = Omit<ProductWithStock, "productType"> & {
+  productType: ProductTypeSummary & { supportsFitRanges: boolean };
+  sizes: BrandProductSizeWithFit[];
+};
+
+export type ProductReviewSummary = Omit<ProductForReview, "categories"> & { categories: string[] };
 
 export type ProductReviewPage = {
   products: ProductReviewSummary[];

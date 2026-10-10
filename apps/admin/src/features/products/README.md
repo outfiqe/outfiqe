@@ -14,7 +14,9 @@ a bigger image plus everything the list row summarizes — without leaving the p
   the row's click.
 - `ProductDetailModal.tsx` — the expanded view for one product: a larger image pane next to the
   same info the row shows (status, price, brand, type/categories, thrift condition), plus
-  Approve/Reject when the product is still `PENDING`. Takes the already-fetched `Product` object
+  Approve/Reject when the product is still `PENDING`. For a garment type that takes size charts it
+  also shows the brand's chart (`SizeChartTable` and `StretchBadge` from `@outfiqe/components`)
+  and notes sizes with no range yet, so a reviewer can reject implausible ranges. Takes the already-fetched `Product` object
   as a prop — no separate detail fetch, since `productSchema` already carries everything this
   view needs.
 - `hooks/useInfiniteProducts.ts` — cursor pagination via the shared `useInfiniteCursorPage`

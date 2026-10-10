@@ -1,3 +1,4 @@
+import { SizeChartTable, StretchBadge } from "@outfiqe/components";
 import { Badge, Button, Modal } from "@outfiqe/design-system";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 
@@ -39,7 +40,10 @@ export const ProductDetailModal = ({
     thriftConditionRating,
     thriftConditionNotes,
     createdAt,
+    sizes,
+    isStretchable,
   } = product;
+  const hasMissingRange = sizes.some(({ fitRange }) => fitRange === null);
 
   return (
     <Modal
@@ -81,6 +85,26 @@ export const ProductDetailModal = ({
           <p className="mt-3 text-sm text-muted-foreground">
             {productType.label} &middot; {categories.join(", ")}
           </p>
+
+          {productType.supportsFitRanges && sizes.length > 0 && (
+            <section aria-labelledby="review-size-chart-heading" className="mt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3
+                  id="review-size-chart-heading"
+                  className="text-sm font-semibold text-foreground"
+                >
+                  Size chart
+                </h3>
+                <StretchBadge isStretchable={isStretchable} />
+              </div>
+              {hasMissingRange && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Some sizes have no height and weight range yet.
+                </p>
+              )}
+              <SizeChartTable sizes={sizes} caption={`Size chart for ${name}`} className="mt-2" />
+            </section>
+          )}
 
           {isThrift && (
             <div className="mt-3 rounded-lg bg-thrift/10 p-3">

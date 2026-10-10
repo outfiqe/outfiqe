@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { InventoryMovementKind, ProductStatus } from "#generated/prisma/enums.js";
+import { createAdminSessionWithPlatformPermissions } from "#test/integration/authHelpers.js";
 import {
   type BrandOwnerSession,
   createBrandOwnerSession,
@@ -422,6 +423,31 @@ describe("GET /api/products/:id size chart", () => {
       isStretchable: null,
       hasSizeChart: false,
       sizes: [{ fitRange: null }, { fitRange: null }],
+    });
+  });
+});
+
+describe("GET /api/products/review size chart", () => {
+  it("gives reviewers each size's range, the stretch and whether the type takes a chart", async () => {
+    const session = await createBrandOwnerSession();
+    const { product } = await createChartedProduct(session);
+    const { authHeader } = await createAdminSessionWithPlatformPermissions("platform:catalog:read");
+
+    const response = await request(testApp)
+      .get(`${PRODUCTS_PATH}/review?status=PENDING`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(OK_STATUS);
+    const reviewedProduct = (response.body.data.products as { id: string }[]).find(
+      ({ id }) => id === product.id,
+    );
+    expect(reviewedProduct).toMatchObject({
+      isStretchable: true,
+      productType: { supportsFitRanges: true },
+      sizes: [
+        { label: "M", fitRange: MEDIUM_FIT_RANGE },
+        { label: "L", fitRange: LARGE_FIT_RANGE },
+      ],
     });
   });
 });
