@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { crmApi } from "../../api";
+import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { ReportsSection } from "./ReportsSection";
 
 export const ReportsPage = () => {

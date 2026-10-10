@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { shouldShowPlatformSection } from "@/components/AdminSidebar.utils";
 import { useAuth } from "@/features/auth/components/AuthContext";
-import { crmApi } from "@/features/crm/api";
+import { crmApi } from "@/features/crm/api/crmApi";
 
 import {
   PLATFORM_DASHBOARD_TOUR_KEY,

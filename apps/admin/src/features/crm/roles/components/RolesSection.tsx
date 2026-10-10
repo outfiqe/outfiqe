@@ -22,8 +22,8 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "../../api";
-import type { Permission, Role } from "../../schemas";
+import { crmApi } from "../../api/crmApi";
+import type { Permission, Role } from "../../api/crmSchemas";
 import {
   organizationNameFormSchema,
   type OrganizationNameFormValues,

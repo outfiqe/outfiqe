@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
+import { crmApi } from "../api/crmApi";
 
 const END_SESSION_PERMISSION_KEY = "org:update";
 

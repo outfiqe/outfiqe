@@ -4,8 +4,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../crmPageContent";
-import { formatDateTime } from "../../format.utils";
+import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { formatDateTime } from "../../utils/format.utils";
 import { crmAuditApi } from "../api/auditApi";
 import type { CrmAuditEntry } from "../api/auditSchemas";
 

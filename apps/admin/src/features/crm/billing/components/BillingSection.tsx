@@ -5,8 +5,8 @@ import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDate, formatRupees } from "../../format.utils";
-import { BillingSkeleton } from "../../skeletons";
+import { BillingSkeleton } from "../../components/CrmSkeletons";
+import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmBillingApi } from "../api/billingApi";
 import {
   type BillingOverview,

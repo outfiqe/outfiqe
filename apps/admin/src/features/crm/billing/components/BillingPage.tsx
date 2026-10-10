@@ -1,4 +1,4 @@
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { BillingSection } from "./BillingSection";
 
 export const BillingPage = () => (

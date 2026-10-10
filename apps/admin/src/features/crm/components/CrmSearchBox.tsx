@@ -10,9 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { crmApi } from "./api";
-import { crmReportingApi } from "./reporting/api/reportingApi";
-import type { CrmSearchResults } from "./reporting/api/reportingSchemas";
+import { crmApi } from "../api/crmApi";
+import { crmReportingApi } from "../reporting/api/reportingApi";
+import type { CrmSearchResults } from "../reporting/api/reportingSchemas";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;

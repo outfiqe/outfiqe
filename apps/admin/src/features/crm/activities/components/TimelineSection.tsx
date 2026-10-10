@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDateTime, formatRupees } from "../../format.utils";
+import { formatDateTime, formatRupees } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
 import {
   CRM_ACTIVITY_TYPES,

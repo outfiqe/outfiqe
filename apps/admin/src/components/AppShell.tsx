@@ -3,8 +3,8 @@ import { ThemeToggle } from "@outfiqe/design-system";
 import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { CrmSearchBox } from "@/features/crm/CrmSearchBox";
-import { ImpersonationActivityBanner } from "@/features/crm/ImpersonationActivityBanner";
+import { CrmSearchBox } from "@/features/crm/components/CrmSearchBox";
+import { ImpersonationActivityBanner } from "@/features/crm/components/ImpersonationActivityBanner";
 import { AdminNotificationBell } from "@/features/notifications";
 import { CRM_SEARCH_TOUR_ANCHOR } from "@/features/product-tour";
 import { useHideBootLoader } from "@/lib/bootLoader";

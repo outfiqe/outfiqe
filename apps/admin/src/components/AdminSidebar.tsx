@@ -64,7 +64,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/components/AuthContext";
-import { crmApi } from "@/features/crm/api";
+import { crmApi } from "@/features/crm/api/crmApi";
 import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 
 import { AdminModuleSearch } from "./AdminModuleSearch";

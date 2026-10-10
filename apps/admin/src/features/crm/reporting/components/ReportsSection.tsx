@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDuration, formatRupees } from "../../format.utils";
-import { ReportSkeleton } from "../../skeletons";
+import { ReportSkeleton } from "../../components/CrmSkeletons";
+import { formatDuration, formatRupees } from "../../utils/format.utils";
 import { crmReportingApi } from "../api/reportingApi";
 import type { PipelineReport, TicketReport } from "../api/reportingSchemas";
 

@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDateTime } from "../../format.utils";
+import { formatDateTime } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, type TicketStatusValue } from "../api/ticketsSchemas";
 

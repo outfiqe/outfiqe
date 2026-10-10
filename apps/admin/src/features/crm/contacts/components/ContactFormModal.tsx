@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "../../api";
+import { crmApi } from "../../api/crmApi";
 import { type ContactInput, crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
 import {

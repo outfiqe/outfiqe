@@ -7,8 +7,8 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { Organization } from "../api/crmSchemas";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
-import type { Organization } from "./schemas";
 
 const API_BASE = "http://localhost:3000/api";
 const CURRENT_USER_ID = "current-user-id";

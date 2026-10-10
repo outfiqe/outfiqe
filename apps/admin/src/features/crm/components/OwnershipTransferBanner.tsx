@@ -4,8 +4,8 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import type { Organization } from "./schemas";
+import { crmApi } from "../api/crmApi";
+import type { Organization } from "../api/crmSchemas";
 
 export const OwnershipTransferBanner = ({ organization }: { organization: Organization }) => {
   const { state } = useAuth();

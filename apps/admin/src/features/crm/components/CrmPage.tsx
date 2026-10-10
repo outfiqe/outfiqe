@@ -12,13 +12,13 @@ import {
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import { PlanGateBanner } from "./billing/components/PlanGateBanner";
+import { crmApi } from "../api/crmApi";
+import type { Organization } from "../api/crmSchemas";
+import { PlanGateBanner } from "../billing/components/PlanGateBanner";
+import { CrmOverviewSection } from "../reporting/components/CrmOverviewSection";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
-import { CrmOverviewSection } from "./reporting/components/CrmOverviewSection";
-import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
 const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";

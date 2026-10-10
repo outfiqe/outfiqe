@@ -20,13 +20,13 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
+import { crmApi } from "../api/crmApi";
+import type { OrganizationInviteStatusValue } from "../api/crmSchemas";
 import {
   crmInviteFormSchema,
   type CrmInviteFormValues,
   EMPTY_CRM_INVITE_FORM,
-} from "./crmInviteForm.schema";
-import type { OrganizationInviteStatusValue } from "./schemas";
+} from "../schemas/crmInviteForm.schema";
 
 const STATUS_TONE: Record<OrganizationInviteStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",

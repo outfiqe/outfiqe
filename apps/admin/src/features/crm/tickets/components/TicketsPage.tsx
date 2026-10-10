@@ -21,15 +21,15 @@ import { useForm } from "react-hook-form";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { crmApi } from "../../api";
+import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
-import { CompactRowSkeleton } from "../../CompactRowSkeleton";
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
-import { formatDate } from "../../format.utils";
+import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import {
   CustomerSearchField,
   type SelectedCustomer,
 } from "../../relationships/components/CustomerSearchField";
+import { formatDate } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";

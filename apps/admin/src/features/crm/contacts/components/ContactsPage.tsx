@@ -6,8 +6,8 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../crmPageContent";
-import { formatDate } from "../../format.utils";
+import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
 import { ContactFormModal } from "./ContactFormModal";

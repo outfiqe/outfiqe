@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useSyncExternalStore } from "react";
 
-import { crmApi } from "@/features/crm/api";
+import { crmApi } from "@/features/crm/api/crmApi";
 import { notificationsApi } from "@/lib/notificationsApi";
 import { acquireSocketConnection, getSocket, releaseSocketConnection } from "@/lib/socketClient";
 import { isOnTenantHost } from "@/lib/tenantHost";

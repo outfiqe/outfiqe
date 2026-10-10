@@ -5,8 +5,8 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
-import { formatDate, formatRupees } from "../../format.utils";
-import { PartnerDetailSkeleton } from "../../skeletons";
+import { PartnerDetailSkeleton } from "../../components/CrmSkeletons";
+import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");

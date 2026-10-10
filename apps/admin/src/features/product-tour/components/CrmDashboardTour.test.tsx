@@ -2,7 +2,7 @@ import { renderWithRouter } from "@test/renderWithRouter";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Organization } from "@/features/crm/schemas";
+import type { Organization } from "@/features/crm/api/crmSchemas";
 
 import type { TourProgress } from "../api/toursSchemas";
 import { TOUR_OUTCOME } from "../constants/tourOutcome";

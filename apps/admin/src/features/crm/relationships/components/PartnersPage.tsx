@@ -7,8 +7,8 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "../../crmPageContent";
-import { formatDate, formatRupees } from "../../format.utils";
+import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "../../constants/crmPageContent";
+import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const PAGE_SIZE = 25;

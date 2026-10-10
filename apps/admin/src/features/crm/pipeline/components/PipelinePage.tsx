@@ -7,10 +7,10 @@ import { useState } from "react";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "../../api";
+import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
-import { formatRupees } from "../../format.utils";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
 import type { Deal } from "../api/pipelineSchemas";
 import { DealFormModal } from "./DealFormModal";

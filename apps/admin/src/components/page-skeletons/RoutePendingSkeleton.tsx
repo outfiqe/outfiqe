@@ -13,7 +13,7 @@ import {
   RolesRouteSkeleton,
   TasksRouteSkeleton,
   TicketsRouteSkeleton,
-} from "@/features/crm/skeletons";
+} from "@/features/crm/components/CrmSkeletons";
 import { BadgeFormSkeleton } from "@/features/gamification/BadgesSection/BadgeFormSkeleton";
 import { OrderDetailSkeleton } from "@/features/orders/components/OrderDetailSkeleton";
 import { TenantMetricsSkeleton } from "@/features/platform-metrics/components/TenantMetricsSkeleton";

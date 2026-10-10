@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CrmInviteRegisterPage } from "@/features/crm/CrmInviteRegisterPage";
+import { CrmInviteRegisterPage } from "@/features/crm/components/CrmInviteRegisterPage";
 
 export const Route = createFileRoute("/crm/invites/register")({
   validateSearch: (search: Record<string, unknown>) => ({

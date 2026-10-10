@@ -36,7 +36,7 @@ export default defineConfig({
         "src/components/Logo.tsx",
         "src/features/gamification/designConfig.utils.ts",
         "src/features/gamification/skeletons.tsx",
-        "src/features/crm/CompactRowSkeleton.tsx",
+        "src/features/crm/components/CompactRowSkeleton.tsx",
         "src/features/gamification/BadgesSection/badgeForm.utils.ts",
         "src/features/gamification/BadgesSection/BadgeFormPage.tsx",
         "src/features/gamification/badgeOptions.constants.ts",

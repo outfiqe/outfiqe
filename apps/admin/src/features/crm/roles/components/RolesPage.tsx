@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "../../api";
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
-import { RoleListSkeleton } from "../../skeletons";
+import { crmApi } from "../../api/crmApi";
+import { RoleListSkeleton } from "../../components/CrmSkeletons";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { RolesSection } from "./RolesSection";
 
 export const RolesPage = () => {

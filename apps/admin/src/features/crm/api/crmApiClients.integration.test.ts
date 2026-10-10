@@ -2,11 +2,11 @@ import { mswServer } from "@test/integration/msw/server";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { crmActivitiesApi } from "./activities/api/activitiesApi";
-import { crmBillingApi } from "./billing/api/billingApi";
-import { crmPipelineApi } from "./pipeline/api/pipelineApi";
-import { crmRelationshipsApi } from "./relationships/api/relationshipsApi";
-import { crmTicketsApi } from "./tickets/api/ticketsApi";
+import { crmActivitiesApi } from "../activities/api/activitiesApi";
+import { crmBillingApi } from "../billing/api/billingApi";
+import { crmPipelineApi } from "../pipeline/api/pipelineApi";
+import { crmRelationshipsApi } from "../relationships/api/relationshipsApi";
+import { crmTicketsApi } from "../tickets/api/ticketsApi";
 
 const API_BASE = "http://localhost:3000/api";
 

@@ -16,7 +16,7 @@ import {
   permissionSchema,
   type Role,
   roleSchema,
-} from "./schemas";
+} from "./crmSchemas";
 
 const membersListSchema = z.array(membershipSummarySchema);
 const rolesListSchema = z.array(roleSchema);

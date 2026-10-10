@@ -21,11 +21,11 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "../../api";
+import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
-import { CompactRowSkeleton } from "../../CompactRowSkeleton";
-import { CRM_PAGE_TEXT } from "../../crmPageContent";
-import { formatDate } from "../../format.utils";
+import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { formatDate } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
 import type { Task } from "../api/activitiesSchemas";
 import { taskFormSchema, type TaskFormValues } from "../schemas/taskForm.schema";

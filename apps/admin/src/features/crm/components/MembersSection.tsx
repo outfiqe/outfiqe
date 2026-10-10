@@ -8,8 +8,8 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import type { MembershipStatusValue, MembershipSummary } from "./schemas";
+import { crmApi } from "../api/crmApi";
+import type { MembershipStatusValue, MembershipSummary } from "../api/crmSchemas";
 
 type PendingRoleChange = { member: MembershipSummary; nextRoleId: string };
 

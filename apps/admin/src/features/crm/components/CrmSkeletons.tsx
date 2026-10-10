@@ -7,7 +7,6 @@ import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
 
-import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import {
   AUDIT_TABLE_HEADERS,
   CONTACT_TABLE_HEADERS,
@@ -16,7 +15,8 @@ import {
   INVOICE_TABLE_HEADERS,
   PARTNER_TABLE_HEADERS,
   PRODUCT_BREAKDOWN_HEADERS,
-} from "./crmPageContent";
+} from "../constants/crmPageContent";
+import { CompactRowSkeleton } from "./CompactRowSkeleton";
 
 const INVOICE_SKELETON_ROW_COUNT = 3;
 const RECENT_ORDER_SKELETON_COUNT = 3;

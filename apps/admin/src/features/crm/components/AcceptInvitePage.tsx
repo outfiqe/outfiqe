@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { authApi } from "@/features/auth/api/authApi";
 import { useAuth } from "@/features/auth/components/AuthContext";
 
-import { crmApi } from "./api";
+import { crmApi } from "../api/crmApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/invites/accept");
 
