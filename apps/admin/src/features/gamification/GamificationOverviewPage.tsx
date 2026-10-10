@@ -1,4 +1,4 @@
-import { StatsSection } from "./StatsSection";
+import { StatsSection } from "./stats/components/StatsSection";
 
 export const GamificationOverviewPage = () => {
   return (

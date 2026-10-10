@@ -24,7 +24,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "./api";
+import { gamificationApi } from "../../api";
 import {
   adjustXpFormSchema,
   type AdjustXpFormValues,
@@ -32,7 +32,7 @@ import {
   type AwardBadgeFormValues,
   EMPTY_ADJUST_XP_FORM,
   EMPTY_AWARD_BADGE_FORM,
-} from "./manualActionForm.schema";
+} from "../schemas/manualActionForm.schema";
 
 const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];

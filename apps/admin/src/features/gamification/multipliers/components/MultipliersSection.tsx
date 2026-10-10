@@ -22,14 +22,18 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
-import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
+import {
+  type CreateXpMultiplierInput,
+  gamificationApi,
+  type UpdateXpMultiplierInput,
+} from "../../api";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
+import type { XpMultiplier } from "../../schemas";
 import {
   buildEmptyMultiplierForm,
   multiplierFormSchema,
   type MultiplierFormValues,
-} from "./multiplierForm.schema";
-import type { XpMultiplier } from "./schemas";
+} from "../schemas/multiplierForm.schema";
 
 const MULTIPLIERS_QUERY_KEY = ["admin-xp-multipliers"];
 

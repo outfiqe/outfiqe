@@ -1,6 +1,6 @@
 import { ActivityConfigSection } from "./activity-config/components/ActivityConfigSection";
-import { LevelsSection } from "./LevelsSection";
-import { MultipliersSection } from "./MultipliersSection";
+import { LevelsSection } from "./levels/components/LevelsSection";
+import { MultipliersSection } from "./multipliers/components/MultipliersSection";
 
 export const GamificationXpLevelsPage = () => {
   return (

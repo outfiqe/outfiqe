@@ -22,9 +22,13 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
-import { EMPTY_LEVEL_FORM, levelFormSchema, type LevelFormValues } from "./levelForm.schema";
-import type { Level } from "./schemas";
+import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "../../api";
+import type { Level } from "../../schemas";
+import {
+  EMPTY_LEVEL_FORM,
+  levelFormSchema,
+  type LevelFormValues,
+} from "../schemas/levelForm.schema";
 
 const LEVELS_QUERY_KEY = ["admin-levels"];
 

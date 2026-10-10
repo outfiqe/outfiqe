@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { StatCard } from "@/features/trending/components/TrendStatCards";
 
-import { gamificationApi } from "./api";
+import { gamificationApi } from "../../api";
 
 const OVERVIEW_STAT_COUNT = 5;
 

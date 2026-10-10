@@ -26,7 +26,7 @@ import {
   type CreatorCompetitionFormInput,
   gamificationApi,
   type UpdateCreatorCompetitionFormInput,
-} from "./api";
+} from "../../api";
 import {
   ANIMATION_OPTION_LABEL,
   ANIMATION_OPTIONS,
@@ -36,15 +36,15 @@ import {
   LEADERBOARD_CATEGORY_OPTIONS,
   RARITY_OPTIONS,
   SHAPE_OPTIONS,
-} from "./badgeOptions.constants";
+} from "../../badgeOptions.constants";
+import { legacyShapeAndColorOf } from "../../designConfig.utils";
+import type { CreatorCompetitionAdmin } from "../../schemas";
+import { TitleActionCardSkeleton } from "../../skeletons";
 import {
   competitionFormSchema,
   type CompetitionFormValues,
   EMPTY_COMPETITION_FORM,
-} from "./competitionForm.schema";
-import { legacyShapeAndColorOf } from "./designConfig.utils";
-import type { CreatorCompetitionAdmin } from "./schemas";
-import { TitleActionCardSkeleton } from "./skeletons";
+} from "../schemas/competitionForm.schema";
 
 const COMPETITIONS_QUERY_KEY = ["admin-creator-competitions"];
 
