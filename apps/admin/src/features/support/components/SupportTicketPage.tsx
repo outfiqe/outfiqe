@@ -20,14 +20,12 @@ import {
   STATUS_LABELS,
   STATUS_TONE,
 } from "../constants/support.constants";
-import {
-  useSupportAgents,
-  useSupportAssign,
-  useSupportPriority,
-  useSupportReply,
-  useSupportStatus,
-  useSupportTicket,
-} from "../hooks/supportHooks";
+import { useSupportAgents } from "../hooks/useSupportAgents";
+import { useSupportAssign } from "../hooks/useSupportAssign";
+import { useSupportPriority } from "../hooks/useSupportPriority";
+import { useSupportReply } from "../hooks/useSupportReply";
+import { useSupportStatus } from "../hooks/useSupportStatus";
+import { useSupportTicket } from "../hooks/useSupportTicket";
 import { SupportTicketSkeleton } from "./SupportTicketSkeleton";
 
 const routeApi = getRouteApi("/_authenticated/support/$ticketId");

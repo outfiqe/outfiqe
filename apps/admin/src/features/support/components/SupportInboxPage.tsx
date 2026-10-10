@@ -21,7 +21,9 @@ import {
   STATUS_LABELS,
   STATUS_TONE,
 } from "../constants/support.constants";
-import { useSupportAgents, useSupportInbox, useSupportStats } from "../hooks/supportHooks";
+import { useSupportAgents } from "../hooks/useSupportAgents";
+import { useSupportInbox } from "../hooks/useSupportInbox";
+import { useSupportStats } from "../hooks/useSupportStats";
 
 const NO_FILTER = "";
 type AssigneeMode = "all" | "me" | "unassigned";
