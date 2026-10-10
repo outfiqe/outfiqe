@@ -10,7 +10,7 @@ import {
   rejectTagInputSchema,
   type TagReviewQueueItem,
 } from "../api/tagReviewSchemas";
-import { TAG_REJECTION_REASON_OPTIONS } from "../tagReview.constants";
+import { TAG_REJECTION_REASON_OPTIONS } from "../constants/tagReview.constants";
 
 type RejectTagModalProps = {
   item: TagReviewQueueItem;

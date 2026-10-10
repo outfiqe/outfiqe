@@ -16,9 +16,9 @@ import { useForm } from "react-hook-form";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { useResetPassword } from "../../hooks/useResetPassword";
-import { type ResetPasswordInput, resetPasswordSchema } from "../../schemas/resetPassword.schema";
-import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
+import { useResetPassword } from "../hooks/useResetPassword";
+import { type ResetPasswordInput, resetPasswordSchema } from "../schemas/resetPassword.schema";
+import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 import { ExpiredLinkNotice } from "./ExpiredLinkNotice";
 
 export const ResetPasswordForm = ({ token }: { token: string }) => {

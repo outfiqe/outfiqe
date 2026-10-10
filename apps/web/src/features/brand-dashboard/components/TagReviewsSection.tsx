@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { replaceUrlSearchParams } from "@/shared/lib/replaceUrlSearchParams";
 
 import type { RejectTagInput, TagReviewQueueItem } from "../api/tagReviewSchemas";
+import { TAG_REVIEW_QUERY_PARAM, TAG_REVIEW_QUEUE_TABS } from "../constants/tagReview.constants";
 import {
   usePrefetchOtherTagReviewQueues,
   usePrefetchTagReviewQueue,
@@ -16,7 +17,6 @@ import {
 import { useReviewTagActions } from "../hooks/useReviewTagActions";
 import { useTagReviewPendingCount } from "../hooks/useTagReviewPendingCount";
 import { useTagReviewQueue } from "../hooks/useTagReviewQueue";
-import { TAG_REVIEW_QUERY_PARAM, TAG_REVIEW_QUEUE_TABS } from "../tagReview.constants";
 import { RejectTagModal } from "./RejectTagModal";
 import { TagReviewCard } from "./TagReviewCard";
 

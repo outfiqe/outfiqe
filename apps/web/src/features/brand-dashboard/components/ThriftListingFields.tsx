@@ -3,7 +3,7 @@
 import { Checkbox, Select, Textarea } from "@outfiqe/design-system";
 import type { ThriftCondition } from "@outfiqe/utils";
 
-import { THRIFT_CONDITION_OPTIONS } from "./ProductModal.constants";
+import { THRIFT_CONDITION_OPTIONS } from "../constants/productModal.constants";
 
 type ThriftListingFieldsProps = {
   isThrift: boolean;

@@ -11,8 +11,6 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { BrandShipmentDetail as BrandShipmentDetailData } from "../api/brandFulfilmentSchemas";
 import { useAdvanceShipment } from "../hooks/useAdvanceShipment";
 import { useBrandShipment } from "../hooks/useBrandShipment";
-import { MarkShipmentShippedModal } from "./MarkShipmentShippedModal";
-import { RequestShipmentCancellationModal } from "./RequestShipmentCancellationModal";
 import {
   badgeToneClass,
   canRequestCancellation,
@@ -22,7 +20,9 @@ import {
   PAYMENT_STATUS_LABEL,
   SHIPMENT_STATUS_LABEL,
   SHIPMENT_STATUS_TONE,
-} from "./shipmentStatus";
+} from "../utils/shipmentStatus";
+import { MarkShipmentShippedModal } from "./MarkShipmentShippedModal";
+import { RequestShipmentCancellationModal } from "./RequestShipmentCancellationModal";
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 

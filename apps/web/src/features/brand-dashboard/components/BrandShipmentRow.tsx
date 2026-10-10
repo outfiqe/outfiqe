@@ -9,7 +9,7 @@ import {
   formatShortOrderId,
   SHIPMENT_STATUS_LABEL,
   SHIPMENT_STATUS_TONE,
-} from "./shipmentStatus";
+} from "../utils/shipmentStatus";
 
 type BrandShipmentRowProps = {
   shipment: BrandShipmentSummary;

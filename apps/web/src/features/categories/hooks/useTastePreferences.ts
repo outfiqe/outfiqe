@@ -13,7 +13,7 @@ import {
   TASTE_CATEGORIES_COOKIE_NAME,
   TASTE_CATEGORIES_STORAGE_KEY,
   TASTE_PREFERENCES_QUERY_KEY,
-} from "../lib/tasteSlugs";
+} from "../utils/tasteSlugs";
 
 const CHANGE_EVENT = "outfiqe:taste-categories-changed";
 const SERVER_STALE_TIME_MS = 5 * 60 * 1000;

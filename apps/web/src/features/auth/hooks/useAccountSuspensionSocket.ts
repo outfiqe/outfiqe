@@ -6,11 +6,11 @@ import { useEffect } from "react";
 import { clearAllOfflineData } from "@/features/pwa/utils/clearOfflineData";
 import { acquireSocketConnection, releaseSocketConnection } from "@/shared/lib/socketClient";
 
-import { useAuth } from "../context/AuthContext";
 import {
   ACCOUNT_SUSPENDED_SOCKET_EVENT,
   type AccountSuspendedSocketPayload,
-} from "../socketEvents";
+} from "../constants/socketEvents";
+import { useAuth } from "../context/AuthContext";
 import { AuthActionType } from "../types";
 import { buildAccountSuspendedPath } from "../utils/accountSuspended";
 

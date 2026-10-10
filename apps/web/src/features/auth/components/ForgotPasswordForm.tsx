@@ -18,12 +18,9 @@ import { useForm } from "react-hook-form";
 
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { useForgotPassword } from "../../hooks/useForgotPassword";
-import {
-  type ForgotPasswordInput,
-  forgotPasswordSchema,
-} from "../../schemas/forgotPassword.schema";
-import { getAuthErrorMessage } from "../../utils/authErrors";
+import { useForgotPassword } from "../hooks/useForgotPassword";
+import { type ForgotPasswordInput, forgotPasswordSchema } from "../schemas/forgotPassword.schema";
+import { getAuthErrorMessage } from "../utils/authErrors";
 import { ForgotPasswordSuccess } from "./ForgotPasswordSuccess";
 
 export const ForgotPasswordForm = () => {

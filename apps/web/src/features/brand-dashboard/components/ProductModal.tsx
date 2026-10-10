@@ -14,17 +14,17 @@ import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
 import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import {
+  DEFAULT_IMAGE_MIME_TYPE,
+  PRODUCT_CROP_BOX_STYLE,
+  PRODUCT_PHOTO_ASPECT,
+} from "../constants/productModal.constants";
 import { useCreateProduct } from "../hooks/useCreateProduct";
 import {
   MAX_IMAGES,
   type ProductFormInput,
   productFormSchema,
 } from "../schemas/productForm.schema";
-import {
-  DEFAULT_IMAGE_MIME_TYPE,
-  PRODUCT_CROP_BOX_STYLE,
-  PRODUCT_PHOTO_ASPECT,
-} from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
 import { ThriftListingFields } from "./ThriftListingFields";
 

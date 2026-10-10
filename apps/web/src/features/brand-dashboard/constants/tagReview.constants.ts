@@ -2,7 +2,7 @@ import type {
   BrandTagReviewPolicyValue,
   TagRejectionReasonValue,
   TagReviewStatusValue,
-} from "./api/tagReviewSchemas";
+} from "../api/tagReviewSchemas";
 
 export const TAG_REVIEW_QUEUE_TABS: { status: TagReviewStatusValue; label: string }[] = [
   { status: "PENDING", label: "Waiting" },

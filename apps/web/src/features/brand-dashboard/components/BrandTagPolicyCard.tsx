@@ -6,8 +6,8 @@ import { useState } from "react";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProfile, BrandTagReviewPolicyValue } from "../api/brandDashboardSchemas";
+import { BRAND_TAG_POLICY_OPTIONS } from "../constants/tagReview.constants";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
-import { BRAND_TAG_POLICY_OPTIONS } from "../tagReview.constants";
 
 export const BrandTagPolicyCard = ({ profile }: { profile: BrandProfile }) => {
   const updateProfile = useUpdateBrandProfile();

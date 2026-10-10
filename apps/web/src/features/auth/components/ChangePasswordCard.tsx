@@ -19,12 +19,9 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { ApiClientError } from "@/shared/lib/apiClient";
 
-import { useChangePassword } from "../../hooks/useChangePassword";
-import {
-  type ChangePasswordInput,
-  changePasswordSchema,
-} from "../../schemas/changePassword.schema";
-import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
+import { useChangePassword } from "../hooks/useChangePassword";
+import { type ChangePasswordInput, changePasswordSchema } from "../schemas/changePassword.schema";
+import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 
 const EMPTY_FORM: ChangePasswordInput = {
   currentPassword: "",

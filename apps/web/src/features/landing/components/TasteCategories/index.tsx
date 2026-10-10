@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { visibleTasteCategories } from "@/features/categories/lib/visibleTasteCategories";
+import { visibleTasteCategories } from "@/features/categories/utils/visibleTasteCategories";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 

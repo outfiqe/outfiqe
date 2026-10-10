@@ -17,13 +17,13 @@ import { useForm } from "react-hook-form";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { useUnlinkAccount } from "../../hooks/useUnlinkAccount";
+import { useUnlinkAccount } from "../hooks/useUnlinkAccount";
 import {
   type UnlinkOAuthAccountFormInput,
   unlinkOAuthAccountSchema,
-} from "../../schemas/confirmOAuthLink.schema";
-import { OAuthProvider } from "../../types";
-import { getAuthErrorMessage } from "../../utils/authErrors";
+} from "../schemas/confirmOAuthLink.schema";
+import { OAuthProvider } from "../types";
+import { getAuthErrorMessage } from "../utils/authErrors";
 
 const PROVIDER_LABELS: Record<OAuthProvider, string> = {
   [OAuthProvider.GOOGLE]: "Google",

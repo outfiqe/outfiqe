@@ -1,5 +1,5 @@
 import type { PublicCategory } from "@/features/categories";
-import { visibleTasteCategories } from "@/features/categories/lib/visibleTasteCategories";
+import { visibleTasteCategories } from "@/features/categories/utils/visibleTasteCategories";
 
 export const resolveDisplayCategories = (
   allCategories: PublicCategory[],

@@ -16,12 +16,12 @@ import { useForm } from "react-hook-form";
 
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
+import { useSubmitBrandApplication } from "../hooks/useSubmitBrandApplication";
 import {
   type BrandApplicationInput,
   brandApplicationSchema,
-} from "../../schemas/brandApplication.schema";
-import { getBrandApplicationErrorMessage } from "../../utils/errors";
+} from "../schemas/brandApplication.schema";
+import { getBrandApplicationErrorMessage } from "../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
 import { ProductionField } from "./ProductionField";
 

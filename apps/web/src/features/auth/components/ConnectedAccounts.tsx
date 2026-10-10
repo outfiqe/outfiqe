@@ -3,9 +3,9 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
-import { buildOAuthLinkStartUrl } from "../../api/oauthApi";
-import { useLinkedAccounts } from "../../hooks/useLinkedAccounts";
-import { OAuthProvider } from "../../types";
+import { buildOAuthLinkStartUrl } from "../api/oauthApi";
+import { useLinkedAccounts } from "../hooks/useLinkedAccounts";
+import { OAuthProvider } from "../types";
 import { UnlinkAccountModal } from "./UnlinkAccountModal";
 
 const PROVIDER_LABELS: Record<OAuthProvider, string> = {

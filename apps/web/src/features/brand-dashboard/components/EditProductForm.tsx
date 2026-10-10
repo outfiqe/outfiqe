@@ -15,17 +15,17 @@ import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/useP
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
+import {
+  DEFAULT_IMAGE_MIME_TYPE,
+  PRODUCT_CROP_BOX_STYLE,
+  PRODUCT_PHOTO_ASPECT,
+} from "../constants/productModal.constants";
 import { useUpdateProduct } from "../hooks/useUpdateProduct";
 import {
   buildEditProductFormSchema,
   type EditProductFormInput,
   MAX_IMAGES,
 } from "../schemas/productForm.schema";
-import {
-  DEFAULT_IMAGE_MIME_TYPE,
-  PRODUCT_CROP_BOX_STYLE,
-  PRODUCT_PHOTO_ASPECT,
-} from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
 import { ThriftListingFields } from "./ThriftListingFields";
 

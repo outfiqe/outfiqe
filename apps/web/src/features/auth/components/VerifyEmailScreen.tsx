@@ -8,10 +8,10 @@ import { useEffect, useRef, useState } from "react";
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import { ApiClientError } from "@/shared/lib/apiClient";
 
-import { authApi } from "../../api/authApi";
-import { useResendVerification } from "../../hooks/useResendVerification";
-import { emailField } from "../../schemas/shared.schema";
-import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
+import { authApi } from "../api/authApi";
+import { useResendVerification } from "../hooks/useResendVerification";
+import { emailField } from "../schemas/shared.schema";
+import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 import { VerifyEmailLoading } from "./VerifyEmailLoading";
 import { VerifyEmailSuccess } from "./VerifyEmailSuccess";
 

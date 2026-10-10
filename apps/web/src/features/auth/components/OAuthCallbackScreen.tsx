@@ -18,15 +18,15 @@ import { useForm } from "react-hook-form";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { useConfirmOAuthLink } from "../../hooks/useConfirmOAuthLink";
+import { useConfirmOAuthLink } from "../hooks/useConfirmOAuthLink";
 import {
   type ConfirmOAuthLinkFormInput,
   confirmOAuthLinkSchema,
-} from "../../schemas/confirmOAuthLink.schema";
-import { OAuthProvider } from "../../types";
-import { getAuthErrorMessage } from "../../utils/authErrors";
-import { getDefaultRouteForUser } from "../../utils/getDefaultRoute";
-import { isAdminAppTarget } from "../../utils/safeRedirect";
+} from "../schemas/confirmOAuthLink.schema";
+import { OAuthProvider } from "../types";
+import { getAuthErrorMessage } from "../utils/authErrors";
+import { getDefaultRouteForUser } from "../utils/getDefaultRoute";
+import { isAdminAppTarget } from "../utils/safeRedirect";
 
 const PROVIDER_LABELS: Record<OAuthProvider, string> = {
   [OAuthProvider.GOOGLE]: "Google",

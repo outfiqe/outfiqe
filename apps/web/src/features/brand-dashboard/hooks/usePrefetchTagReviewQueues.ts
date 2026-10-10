@@ -7,7 +7,7 @@ import { useAuth } from "@/features/auth";
 
 import { tagReviewApi } from "../api/tagReviewApi";
 import type { TagReviewStatusValue } from "../api/tagReviewSchemas";
-import { TAG_REVIEW_QUEUE_TABS } from "../tagReview.constants";
+import { TAG_REVIEW_QUEUE_TABS } from "../constants/tagReview.constants";
 import { TAG_REVIEW_QUEUE_KEY } from "./useTagReviewQueue";
 
 export const usePrefetchTagReviewQueue = () => {

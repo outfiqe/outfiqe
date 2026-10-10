@@ -6,8 +6,8 @@ import { http, HttpResponse } from "msw";
 import { useSearchParams } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createAuthQueryClientWrapper } from "../../context/authTestWrapper";
-import { OAuthCallbackScreen } from ".";
+import { createAuthQueryClientWrapper } from "../context/authTestWrapper";
+import { OAuthCallbackScreen } from "./OAuthCallbackScreen";
 
 const CONFIRM_LINK_URL = "/api/auth/oauth/google/link/confirm";
 const CURRENT_USER_URL = "/api/auth/me";

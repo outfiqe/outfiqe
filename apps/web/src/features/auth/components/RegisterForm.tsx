@@ -22,12 +22,12 @@ import { FormFieldError } from "@/components/FormFieldError";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
-import { CaptchaChallenge } from "../../components/CaptchaChallenge";
-import { ContinueWithOAuthButtons } from "../../components/ContinueWithOAuthButtons";
-import { useRegister } from "../../hooks/useRegister";
-import { type RegisterInput, registerSchema } from "../../schemas/register.schema";
-import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
-import { getSafeRedirect } from "../../utils/safeRedirect";
+import { useRegister } from "../hooks/useRegister";
+import { type RegisterInput, registerSchema } from "../schemas/register.schema";
+import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
+import { getSafeRedirect } from "../utils/safeRedirect";
+import { CaptchaChallenge } from "./CaptchaChallenge";
+import { ContinueWithOAuthButtons } from "./ContinueWithOAuthButtons";
 import { RegisterSuccess } from "./RegisterSuccess";
 
 const DEFAULT_OAUTH_REDIRECT = "/profile";
