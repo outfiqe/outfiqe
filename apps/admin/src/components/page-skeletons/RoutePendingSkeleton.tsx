@@ -17,7 +17,7 @@ import {
 import { BadgeFormSkeleton } from "@/features/gamification/BadgesSection/BadgeFormSkeleton";
 import { OrderDetailSkeleton } from "@/features/orders/components/OrderDetailSkeleton";
 import { TenantMetricsSkeleton } from "@/features/platform-metrics/components/TenantMetricsSkeleton";
-import { SupportTicketSkeleton } from "@/features/support/SupportTicketSkeleton";
+import { SupportTicketSkeleton } from "@/features/support/components/SupportTicketSkeleton";
 
 import { PagePendingSkeleton } from "../PagePendingSkeleton";
 import { AdminPageSkeleton } from "./AdminPageSkeleton";

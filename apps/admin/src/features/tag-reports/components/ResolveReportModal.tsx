@@ -1,7 +1,7 @@
 import { Button, Modal } from "@outfiqe/design-system";
 import { useId, useState } from "react";
 
-import type { ResolveTagReportInput, TagReport } from "./schemas";
+import type { ResolveTagReportInput, TagReport } from "../api/tagReportsSchemas";
 
 type ResolveReportModalProps = {
   report: TagReport;

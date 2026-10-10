@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { type ProductType, productTypeSchema } from "./schemas";
+import { type ProductType, productTypeSchema } from "./productTypesSchemas";
 
 const listSchema = z.array(productTypeSchema);
 

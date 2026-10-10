@@ -8,10 +8,10 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { productsApi } from "./api";
-import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
+import { productsApi } from "../api/productsApi";
+import type { ProductStatusValue } from "../api/productsSchemas";
+import { useInfiniteProducts } from "../hooks/useInfiniteProducts";
 import { ProductDetailModal } from "./ProductDetailModal";
-import type { ProductStatusValue } from "./schemas";
 
 const TABS: ProductStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
 const PRODUCTS_STATUS_FILTER = oneOfFilter<ProductStatusValue>(TABS, "PENDING");

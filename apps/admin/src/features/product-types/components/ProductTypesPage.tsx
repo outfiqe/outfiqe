@@ -26,13 +26,13 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { slugify } from "@/lib/slugify";
 
-import { productTypesApi } from "./api";
+import { productTypesApi } from "../api/productTypesApi";
+import type { ProductType } from "../api/productTypesSchemas";
 import {
   EMPTY_PRODUCT_TYPE_FORM,
   productTypeFormSchema,
   type ProductTypeFormValues,
-} from "./productTypeForm.schema";
-import type { ProductType } from "./schemas";
+} from "../schemas/productTypeForm.schema";
 
 const QUERY_KEY = ["admin-product-types"];
 

@@ -3,7 +3,7 @@ import type {
   SupportPriorityValue,
   SupportSegmentValue,
   SupportStatusValue,
-} from "./schemas";
+} from "../api/supportSchemas";
 
 export const STATUS_LABELS: Record<SupportStatusValue, string> = {
   NEW: "New",

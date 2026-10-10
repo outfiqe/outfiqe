@@ -1,7 +1,7 @@
 import { Badge, Button, Modal } from "@outfiqe/design-system";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 
-import type { Product, ProductStatusValue } from "./schemas";
+import type { Product, ProductStatusValue } from "../api/productsSchemas";
 
 const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",

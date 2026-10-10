@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { productSchema, type ProductStatusValue } from "./schemas";
+import { productSchema, type ProductStatusValue } from "./productsSchemas";
 
 const productPageSchema = z.object({
   products: z.array(productSchema),

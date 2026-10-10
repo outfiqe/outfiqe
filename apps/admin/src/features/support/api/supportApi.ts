@@ -15,7 +15,7 @@ import {
   type SupportTicketWithThread,
   supportTicketWithThreadSchema,
   type SupportVisibilityValue,
-} from "./schemas";
+} from "./supportSchemas";
 
 const toQuery = (filters: SupportInboxFilters, cursor?: string): string => {
   const params = new URLSearchParams();

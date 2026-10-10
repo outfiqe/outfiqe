@@ -8,8 +8,11 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { useSupportAgents, useSupportInbox, useSupportStats } from "./hooks";
-import type { SupportCategoryValue, SupportInboxFilters, SupportStatusValue } from "./schemas";
+import type {
+  SupportCategoryValue,
+  SupportInboxFilters,
+  SupportStatusValue,
+} from "../api/supportSchemas";
 import {
   CATEGORY_FILTER_VALUES,
   CATEGORY_LABELS,
@@ -17,7 +20,8 @@ import {
   STATUS_FILTER_VALUES,
   STATUS_LABELS,
   STATUS_TONE,
-} from "./support.constants";
+} from "../constants/support.constants";
+import { useSupportAgents, useSupportInbox, useSupportStats } from "../hooks/supportHooks";
 
 const NO_FILTER = "";
 type AssigneeMode = "all" | "me" | "unassigned";

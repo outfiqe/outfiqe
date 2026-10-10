@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
-import { productTypesApi } from "@/features/product-types/api";
+import { productTypesApi } from "@/features/product-types/api/productTypesApi";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 

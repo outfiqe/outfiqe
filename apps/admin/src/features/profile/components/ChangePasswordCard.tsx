@@ -21,7 +21,7 @@ import {
   changePasswordFormSchema,
   type ChangePasswordFormValues,
   EMPTY_CHANGE_PASSWORD_FORM,
-} from "./profileForms.schema";
+} from "../schemas/profileForms.schema";
 
 const FALLBACK_ERROR = "Something went wrong. Please try again.";
 const PASSWORD_UPDATED_MESSAGE = "Password updated. Other devices were signed out.";

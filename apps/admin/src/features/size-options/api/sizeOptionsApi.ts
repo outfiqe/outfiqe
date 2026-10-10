@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { type SizeOption, sizeOptionSchema } from "./schemas";
+import { type SizeOption, sizeOptionSchema } from "./sizeOptionsSchemas";
 
 const listSchema = z.array(sizeOptionSchema);
 

@@ -5,8 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import type { TagReport } from "@/features/tag-reports/schemas";
-import { TagReportsPage } from "@/features/tag-reports/TagReportsPage";
+import type { TagReport } from "@/features/tag-reports/api/tagReportsSchemas";
+import { TagReportsPage } from "@/features/tag-reports/components/TagReportsPage";
 
 const API_BASE = "http://localhost:3000/api";
 

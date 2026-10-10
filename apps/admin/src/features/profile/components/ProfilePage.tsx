@@ -19,8 +19,8 @@ import { authApi } from "@/features/auth/api/authApi";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { profileFormSchema, type ProfileFormValues } from "../schemas/profileForms.schema";
 import { ChangePasswordCard } from "./ChangePasswordCard";
-import { profileFormSchema, type ProfileFormValues } from "./profileForms.schema";
 
 const PROFILE_UPDATED_MESSAGE = "Profile updated.";
 

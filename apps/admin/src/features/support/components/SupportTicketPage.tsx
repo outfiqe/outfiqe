@@ -7,19 +7,11 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
-  useSupportAgents,
-  useSupportAssign,
-  useSupportPriority,
-  useSupportReply,
-  useSupportStatus,
-  useSupportTicket,
-} from "./hooks";
-import {
   ALLOWED_SUPPORT_TRANSITIONS,
   type SupportMessage,
   type SupportPriorityValue,
   type SupportVisibilityValue,
-} from "./schemas";
+} from "../api/supportSchemas";
 import {
   CATEGORY_LABELS,
   PRIORITY_LABELS,
@@ -27,7 +19,15 @@ import {
   SEGMENT_LABELS,
   STATUS_LABELS,
   STATUS_TONE,
-} from "./support.constants";
+} from "../constants/support.constants";
+import {
+  useSupportAgents,
+  useSupportAssign,
+  useSupportPriority,
+  useSupportReply,
+  useSupportStatus,
+  useSupportTicket,
+} from "../hooks/supportHooks";
 import { SupportTicketSkeleton } from "./SupportTicketSkeleton";
 
 const routeApi = getRouteApi("/_authenticated/support/$ticketId");

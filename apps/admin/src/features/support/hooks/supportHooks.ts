@@ -5,14 +5,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { supportApi } from "./api";
+import { supportApi } from "../api/supportApi";
 import type {
   SupportInboxFilters,
   SupportPriorityValue,
   SupportStatusValue,
   SupportTicketWithThread,
   SupportVisibilityValue,
-} from "./schemas";
+} from "../api/supportSchemas";
 
 const INBOX_KEY = "support-tickets";
 const TICKET_KEY = "support-ticket";

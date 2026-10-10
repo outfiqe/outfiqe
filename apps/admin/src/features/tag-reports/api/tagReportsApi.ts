@@ -6,7 +6,7 @@ import {
   type TagReportPage,
   tagReportPageSchema,
   type TagReportStatusValue,
-} from "./schemas";
+} from "./tagReportsSchemas";
 
 export const tagReportsApi = {
   async list(status?: TagReportStatusValue, cursor?: string): Promise<TagReportPage> {

@@ -20,17 +20,17 @@ import { useForm } from "react-hook-form";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
-import { productTypesApi } from "@/features/product-types/api";
+import { productTypesApi } from "@/features/product-types/api/productTypesApi";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { sizeOptionsApi } from "./api";
-import type { SizeOption } from "./schemas";
+import { sizeOptionsApi } from "../api/sizeOptionsApi";
+import type { SizeOption } from "../api/sizeOptionsSchemas";
 import {
   EMPTY_SIZE_OPTION_FORM,
   sizeOptionFormSchema,
   type SizeOptionFormValues,
-} from "./sizeOptionForm.schema";
+} from "../schemas/sizeOptionForm.schema";
 
 const SizeOptionRowSkeleton = () => (
   <div

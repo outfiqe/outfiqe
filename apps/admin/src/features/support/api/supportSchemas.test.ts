@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { ALLOWED_SUPPORT_TRANSITIONS, SUPPORT_STATUS_VALUES, supportTicketSchema } from "./schemas";
+import {
+  ALLOWED_SUPPORT_TRANSITIONS,
+  SUPPORT_STATUS_VALUES,
+  supportTicketSchema,
+} from "./supportSchemas";
 
 describe("ALLOWED_SUPPORT_TRANSITIONS", () => {
   it("covers every status and never self-transitions", () => {

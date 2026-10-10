@@ -7,10 +7,14 @@ import { ReportRowSkeleton } from "@/components/ReportRowSkeleton";
 import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { tagReportsApi } from "./api";
-import { useInfiniteTagReports } from "./hooks/useInfiniteTagReports";
+import { tagReportsApi } from "../api/tagReportsApi";
+import type {
+  ResolveTagReportInput,
+  TagReport,
+  TagReportStatusValue,
+} from "../api/tagReportsSchemas";
+import { useInfiniteTagReports } from "../hooks/useInfiniteTagReports";
 import { ResolveReportModal } from "./ResolveReportModal";
-import type { ResolveTagReportInput, TagReport, TagReportStatusValue } from "./schemas";
 
 const TABS: TagReportStatusValue[] = ["OPEN", "ACTIONED", "DISMISSED"];
 const TAG_REPORTS_STATUS_FILTER = oneOfFilter<TagReportStatusValue>(TABS, "OPEN");
