@@ -8,7 +8,7 @@ import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
-import { PublicBuildsFeed } from "@/features/outfit-build/components/PublicBuildsFeed";
+import { PublicBuildsFeed } from "@/features/outfit-build/public-builds/components/PublicBuildsFeed";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";

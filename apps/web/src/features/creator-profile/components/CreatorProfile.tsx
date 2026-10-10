@@ -23,7 +23,7 @@ import { EditPostModal } from "@/features/creator-dashboard/looks/components/Edi
 import { useDeleteLook } from "@/features/creator-dashboard/looks/hooks/useDeleteLook";
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { useChatPanel } from "@/features/messaging";
-import { ProfileBuildsTabs } from "@/features/outfit-build/components/ProfileBuildsTabs";
+import { ProfileBuildsTabs } from "@/features/outfit-build/my-builds/components/ProfileBuildsTabs";
 import { shareOrCopyLink } from "@/features/pwa";
 import { useHandleAvailability } from "@/features/users/hooks/useHandleAvailability";
 import { uploadImagesThroughPipeline, uploadsApi } from "@/shared/api/uploadsApi";

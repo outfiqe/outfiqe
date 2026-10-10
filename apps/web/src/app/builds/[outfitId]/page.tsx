@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getServerSessionWithToken } from "@/features/auth/api/serverAuth";
 import { BuildPage, PublicBuildPage } from "@/features/outfit-build";
-import { getPublicBuildServer } from "@/features/outfit-build/api/getPublicBuildServer";
+import { getPublicBuildServer } from "@/features/outfit-build/public-builds/api/getPublicBuildServer";
 import { buildPageMetadata } from "@/shared/seo";
 
 type BuildRouteProps = { params: Promise<{ outfitId: string }> };

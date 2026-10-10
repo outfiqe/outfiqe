@@ -8,9 +8,9 @@ import { useTranslations } from "next-intl";
 
 import { AppImage } from "@/shared/components/AppImage";
 
-import { useOutfit } from "../hooks/useOutfit";
+import { useOutfit } from "../board/hooks/useOutfit";
+import { buildPath } from "../my-builds/components/BuildSummaryCard";
 import { formatLakhAmount } from "../utils/outfitFormatting";
-import { buildPath } from "./BuildSummaryCard";
 
 const PREVIEW_IMAGE_COUNT = 3;
 const NO_ITEMS = 0;

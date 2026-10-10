@@ -8,8 +8,8 @@ import { useId, useState } from "react";
 import { useAuth } from "@/features/auth";
 
 import type { BuildCartResult } from "../api/outfitSchemas";
+import type { BuyableBuildItem } from "../board/utils/outfitBoardRules";
 import { useBuyFromBuild } from "../hooks/useBuyFromBuild";
-import type { BuyableBuildItem } from "../utils/outfitBoardRules";
 
 type ItemChoice = { sizeLabel: string; isTicked: boolean };
 
