@@ -26,7 +26,7 @@ first-party support requests raised by shoppers, creators and brands. Backed by
   reply composer with a **Reply to customer** / **Internal note** toggle, and a right rail with
   legal-only status buttons, the assignee `Select`, priority, and a requester-context card.
 - Routes: `routes/_authenticated.support.index.tsx` and `_authenticated.support.$ticketId.tsx`.
-  The sidebar entry is in `components/AdminSidebar.tsx` (`PLATFORM_NAV_ITEMS`, key `support`).
+  The sidebar entry is in `components/adminSidebarNavItems.ts` (`PLATFORM_NAV_ITEMS`, key `support`).
 
 ## Funnel
 

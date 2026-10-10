@@ -31,6 +31,6 @@ candidates query) so the list re-renders from the server.
   co-founders (`coFounderOnly` on the nav item), the page renders a notice otherwise, and every
   write endpoint is `requireCoFounder` server-side, so a non-co-founder who types the URL sees
   nothing actionable.
-- `NAV_KEY_LABELS` duplicates the labels in `AdminSidebar.tsx`'s `PLATFORM_NAV_ITEMS`. Keep the
+- `NAV_KEY_LABELS` duplicates the labels in `components/adminSidebarNavItems.ts`'s `PLATFORM_NAV_ITEMS`. Keep the
   two in sync by hand — the shared contract in `@outfiqe/types` is the keys only, not the
   display strings (which carry icons and live with the sidebar).

@@ -12,7 +12,7 @@ actions, just numbers.
 
 ## Structure
 
-- `components/TagReviewMetricsPage.tsx` — the `/tag-reviews` route. One `useQuery` → a comprehension-first
+- `components/TagReviewMetricsPage.tsx` — the `/tag-reviews` route. Each section it renders has its own file in `components/` (`MetricsOverviewStrip.tsx` for the `InsightBanner` and `OverviewStrip`, `ApprovalSourceMixSection.tsx`, `MetricsDetailSections.tsx`, the shared `MetricsCardParts.tsx`, and `TagReviewMetricsSkeleton.tsx`), with its labels and hints in `constants/tagReviewMetrics.constants.ts` and its formatters in `utils/tagReviewMetrics.utils.ts`. One `useQuery` → a comprehension-first
   layout, in narrative order: an `InsightBanner` (the single most important thing to know, picked
   by priority — open issues, then zero-manual-review, then an all-clear), an `OverviewStrip` of
   four `StatCard`s (Tags live / Manual review rate / Median time to live / Open issues — each with

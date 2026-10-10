@@ -13,6 +13,7 @@ In the sidebar's Platform section (needs `platform:access` plus `platform:impers
   open (hand-off) result.
 - `api/platformImpersonationApi.ts` — `platformImpersonationApi` (`listCandidates`, `listActive`, `listHistory`, `start`,
   `revoke`, `open`).
+- `components/SessionTable.tsx` — the table both the active and history session lists render through; `utils/impersonation.utils.ts`'s `formatMoment` formats their timestamps.
 - `components/PlatformImpersonationPage.tsx` — the start form (tenant `<Select>` reusing
   `platformMetricsApi.listTenants`, a member `<Select>` from `listCandidates`, a reason `<Input>`,
   a scope `<Select>`, an optional minutes `<Input>`), a result panel that reveals the minted
