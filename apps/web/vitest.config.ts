@@ -236,6 +236,7 @@ export default defineConfig({
         "src/features/addresses/components/SavedAddressPicker.tsx",
         "src/features/checkout/components/CheckoutSummary.tsx",
         "src/features/checkout/components/CheckoutForm.tsx",
+        "src/features/checkout/components/CheckoutAddressFields.tsx",
         "src/features/checkout/components/BuyNowCouponForm.tsx",
         "src/features/checkout/utils/buildBuyNowCart.ts",
         "src/features/cart/components/CouponForm.tsx",
