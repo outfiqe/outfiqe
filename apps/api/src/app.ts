@@ -93,6 +93,7 @@ import { pushRoutes } from "./modules/push/push.routes.js";
 import { saleRoutes } from "./modules/sale/sale.routes.js";
 import { savedSizeRoutes } from "./modules/saved-sizes/savedSize.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
+import { sizeStandardRoutes } from "./modules/size-standards/sizeStandard.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
 import { tagReviewRoutes } from "./modules/tag-reviews/tagReview.routes.js";
@@ -195,6 +196,7 @@ export const createApp = () => {
   app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
+  app.use("/api/size-standards", sizeStandardRoutes);
   app.use("/api/feature-flags", viewerFeatureFlagsRoutes);
   app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
   app.use("/api/outfits", outfitRoutes);

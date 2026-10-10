@@ -59,6 +59,7 @@ export default defineConfig({
         "src/modules/auth/auth.captcha.utils.ts",
         "src/modules/auth/oauth/**/*.ts",
         "src/modules/users/user.service.ts",
+        "src/modules/size-standards/**/*.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",
