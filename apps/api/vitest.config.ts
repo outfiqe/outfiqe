@@ -62,6 +62,7 @@ export default defineConfig({
         "src/modules/size-standards/**/*.ts",
         "src/modules/fit-profile/**/*.ts",
         "src/shared/utils/log-redaction.utils.ts",
+        "src/shared/utils/fit-range.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",

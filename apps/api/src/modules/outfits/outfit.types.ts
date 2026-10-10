@@ -1,3 +1,5 @@
+import type { FitRange } from "@outfiqe/utils";
+
 import type {
   OutfitEventType,
   OutfitMemberRole,
@@ -47,7 +49,8 @@ export type OutfitProductView = {
   productTypeId: string;
   brand: { id: string; name: string };
   availability: OutfitItemAvailability;
-  sizes: { label: string; isInStock: boolean }[];
+  isStretchable: boolean | null;
+  sizes: { label: string; isInStock: boolean; fitRange: FitRange | null }[];
 };
 
 export type OutfitItemView = {

@@ -24,6 +24,6 @@ export type CreateProductTypeInput = {
   supportsFitRanges?: boolean;
 };
 
-export type AssignableProductType = PublicProductType & { supportsFitRanges: boolean };
+export type ProductTypeWithFitSupport = PublicProductType & { supportsFitRanges: boolean };
 
 export type UpdateProductTypeInput = Partial<CreateProductTypeInput>;

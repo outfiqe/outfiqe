@@ -46,13 +46,6 @@ export type ProductRecord = {
   sizeStandardId: string | null;
 } & ProductRatingSummary;
 
-export type ProductSizeFitColumns = {
-  minHeightCm: number | null;
-  maxHeightCm: number | null;
-  minWeightKg: number | null;
-  maxWeightKg: number | null;
-};
-
 export type ProductSizeRecord = {
   id: string;
   label: string;

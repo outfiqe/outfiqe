@@ -11,7 +11,8 @@ never define themselves.
 ## Structure
 
 - `product-type.routes.ts` — `GET /admin` (admin, every type incl. inactive), `GET /` (public,
-  Redis-cached, active only), `GET /assignable` (brand-owner, every active type, each with
+  Redis-cached, active only, each with `supportsFitRanges` so the "Find what fits me" page only
+  offers types that take size charts), `GET /assignable` (brand-owner, every active type, each with
   `supportsFitRanges`), `POST /` + `POST /reorder` + `PATCH /:id` (admin, each refreshing the
   public cache).
 - `product-type.controller.ts` / `product-type.service.ts` / `product-type.repository.ts` —
@@ -21,8 +22,8 @@ never define themselves.
 - `product-type.types.ts` — `ProductTypeRecord`, `ProductTypeWithCounts` (adds `productCount` +
   `sizeOptionCount`).
 - `product-type.utils.ts` — `toPublicProductType` mapper (`{ id, slug, label }`, the
-  `@outfiqe/types` `PublicProductType` shape) and `toAssignableProductType`, which adds
-  `supportsFitRanges` for the brand product form.
+  `@outfiqe/types` `PublicProductType` shape) and `toProductTypeWithFitSupport`, which adds
+  `supportsFitRanges` for the storefront list and the brand product form.
 
 ## Funnel
 

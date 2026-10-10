@@ -8,6 +8,7 @@ import {
   ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { SIZE_FIT_COLUMNS_SELECT } from "#lib/fit-range.utils.js";
 import { withActiveDiscount } from "#modules/products/product.repository.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -42,8 +43,12 @@ const boardProductSelect = () =>
     imageUrl: true,
     productTypeId: true,
     lowStock: true,
+    isStretchable: true,
     brand: { select: { id: true, name: true } },
-    sizes: { select: { label: true, stock: true }, orderBy: { sortOrder: "asc" } },
+    sizes: {
+      select: { label: true, stock: true, ...SIZE_FIT_COLUMNS_SELECT },
+      orderBy: { sortOrder: "asc" },
+    },
     ...withActiveDiscount(),
   }) satisfies Prisma.ProductSelect;
 

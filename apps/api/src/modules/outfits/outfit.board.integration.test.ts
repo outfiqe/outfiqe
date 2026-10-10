@@ -159,6 +159,24 @@ describe("starting a build", () => {
 });
 
 describe("placing items", () => {
+  it("shows each item's size ranges and fabric stretch so the board can work out a size", async () => {
+    const owner = await createOutfitUser("Sita");
+    const outfitId = await startBuildOrFail(owner);
+    const kurta = await createOutfitProduct("tops");
+    const mediumFitRange = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
+    await prisma.product.update({ where: { id: kurta.id }, data: { isStretchable: false } });
+    await prisma.productSize.updateMany({ where: { productId: kurta.id }, data: mediumFitRange });
+    await writeToBuild(owner, "put", slotPath(outfitId, "top", 0), 0, { productId: kurta.id });
+
+    const response = await readBuild(owner, outfitId);
+
+    const topSlot = response.body.data.slots.find((slot: { key: string }) => slot.key === "top");
+    expect(topSlot.items[0].product).toMatchObject({
+      isStretchable: false,
+      sizes: [{ label: "M", isInStock: true, fitRange: mediumFitRange }],
+    });
+  });
+
   it("adds an item, bumps the version, and records history and an outbox event", async () => {
     const owner = await createOutfitUser("Sita");
     const outfitId = await startBuildOrFail(owner);

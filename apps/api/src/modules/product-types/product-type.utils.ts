@@ -1,6 +1,6 @@
 import type { PublicProductType } from "@outfiqe/types";
 
-import type { AssignableProductType, ProductTypeRecord } from "./product-type.types.js";
+import type { ProductTypeRecord, ProductTypeWithFitSupport } from "./product-type.types.js";
 
 export const toPublicProductType = (productType: ProductTypeRecord): PublicProductType => ({
   id: productType.id,
@@ -8,7 +8,9 @@ export const toPublicProductType = (productType: ProductTypeRecord): PublicProdu
   label: productType.label,
 });
 
-export const toAssignableProductType = (productType: ProductTypeRecord): AssignableProductType => ({
+export const toProductTypeWithFitSupport = (
+  productType: ProductTypeRecord,
+): ProductTypeWithFitSupport => ({
   ...toPublicProductType(productType),
   supportsFitRanges: productType.supportsFitRanges,
 });

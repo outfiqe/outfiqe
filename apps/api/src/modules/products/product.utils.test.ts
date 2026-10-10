@@ -21,8 +21,6 @@ import {
   sumStock,
   toBrandSummary,
   toDiscountView,
-  toFitColumns,
-  toFitRange,
   toPublicProduct,
   toSuggestion,
 } from "./product.utils.js";
@@ -305,31 +303,6 @@ describe("toBrandSummary", () => {
 });
 
 const MEDIUM_FIT_RANGE = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
-
-describe("toFitRange", () => {
-  it("builds a range when all four ends are stored", () => {
-    expect(toFitRange(MEDIUM_FIT_RANGE)).toEqual(MEDIUM_FIT_RANGE);
-  });
-
-  it("returns null when any end is missing", () => {
-    expect(toFitRange({ ...MEDIUM_FIT_RANGE, maxWeightKg: null })).toBeNull();
-  });
-});
-
-describe("toFitColumns", () => {
-  it("spreads a range into its four columns", () => {
-    expect(toFitColumns(MEDIUM_FIT_RANGE)).toEqual(MEDIUM_FIT_RANGE);
-  });
-
-  it("clears all four columns for no range", () => {
-    expect(toFitColumns(null)).toEqual({
-      minHeightCm: null,
-      maxHeightCm: null,
-      minWeightKg: null,
-      maxWeightKg: null,
-    });
-  });
-});
 
 describe("hasCompleteSizeChart", () => {
   it("is true when the type takes charts and every size has a range", () => {

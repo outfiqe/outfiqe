@@ -8,8 +8,10 @@ import {
   ProductStatus,
   TagReviewStatus,
 } from "#generated/prisma/enums.js";
+import { SIZE_FIT_COLUMNS_SELECT, toFitColumns, toFitRange } from "#lib/fit-range.utils.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
+import type { SizeFitColumns } from "#types/fit-range.types.js";
 
 import {
   NEW_ARRIVAL_WINDOW_MS,
@@ -29,7 +31,6 @@ import type {
   ProductSalesStats,
   ProductSearchParams,
   ProductSearchResult,
-  ProductSizeFitColumns,
   ProductSizeRecord,
   ProductTypeSummary,
   ProductWithStock,
@@ -42,7 +43,7 @@ import type {
   UpdateProductDiscountInput,
   UpdateProductInput,
 } from "./product.types.js";
-import { sumStock, toFitColumns, toFitRange } from "./product.utils.js";
+import { sumStock } from "./product.utils.js";
 
 export type { DbClient } from "#types/db.types.js";
 
@@ -64,19 +65,12 @@ export const withActiveDiscount = () => {
   };
 };
 
-const sizeFitColumnsSelect = {
-  minHeightCm: true,
-  maxHeightCm: true,
-  minWeightKg: true,
-  maxWeightKg: true,
-} as const;
-
 const withBrandAndCategories = {
   brand: { select: { name: true } },
   categories: { select: { slug: true, name: true } },
   productType: { select: { slug: true, label: true } },
   sizes: {
-    select: { id: true, label: true, stock: true, ...sizeFitColumnsSelect },
+    select: { id: true, label: true, stock: true, ...SIZE_FIT_COLUMNS_SELECT },
     orderBy: { sortOrder: "asc" as const },
   },
 };
@@ -221,7 +215,7 @@ const withSalesStats = async <T extends { id: string }>(
   return rows.map((row) => ({ ...row, ...(stats.get(row.id) ?? EMPTY_SALES_STATS) }));
 };
 
-type BrandProductSizeRow = BrandProductSize & ProductSizeFitColumns;
+type BrandProductSizeRow = BrandProductSize & SizeFitColumns;
 
 const toWithTotalStockAndSizes = <T extends { sizes: BrandProductSizeRow[] }>({
   sizes,
@@ -527,7 +521,7 @@ export const productRepository = {
         productType: { select: { slug: true, label: true, supportsFitRanges: true } },
         sizes: {
           orderBy: { sortOrder: "asc" },
-          select: { id: true, label: true, stock: true, ...sizeFitColumnsSelect },
+          select: { id: true, label: true, stock: true, ...SIZE_FIT_COLUMNS_SELECT },
         },
         ...withGalleryImageAssets,
         ...withActiveDiscount(),

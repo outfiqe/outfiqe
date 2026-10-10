@@ -47,15 +47,9 @@ describe("stock and price", () => {
   });
 
   it("describes availability in words, including low stock", () => {
-    expect(toItemAvailability({ sizes: [{ label: "M", stock: 3 }], lowStock: false })).toBe(
-      "IN_STOCK",
-    );
-    expect(toItemAvailability({ sizes: [{ label: "M", stock: 1 }], lowStock: true })).toBe(
-      "LOW_STOCK",
-    );
-    expect(toItemAvailability({ sizes: [{ label: "M", stock: 0 }], lowStock: true })).toBe(
-      "OUT_OF_STOCK",
-    );
+    expect(toItemAvailability({ sizes: [{ stock: 3 }], lowStock: false })).toBe("IN_STOCK");
+    expect(toItemAvailability({ sizes: [{ stock: 1 }], lowStock: true })).toBe("LOW_STOCK");
+    expect(toItemAvailability({ sizes: [{ stock: 0 }], lowStock: true })).toBe("OUT_OF_STOCK");
   });
 
   it("uses the list price, or the active brand discount when there is one", () => {

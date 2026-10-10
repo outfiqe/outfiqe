@@ -186,6 +186,23 @@ describe("GET /api/product-types", () => {
     expect(labels).toEqual(["Ay", "Bee"]);
   });
 
+  it("says which storefront types take a size chart", async () => {
+    await createProductType(`sf-fit-${randomUUID().slice(0, 6)}`, { label: "Kurtas" });
+    await createProductType(`sf-bag-${randomUUID().slice(0, 6)}`, {
+      label: "Bags",
+      supportsFitRanges: false,
+    });
+
+    const response = await request(testApp).get("/api/product-types");
+
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Kurtas", supportsFitRanges: true }),
+        expect.objectContaining({ label: "Bags", supportsFitRanges: false }),
+      ]),
+    );
+  });
+
   it("returns inactive types on the admin list", async () => {
     await createProductType(`admin-off-${randomUUID().slice(0, 6)}`, { isActive: false });
 
