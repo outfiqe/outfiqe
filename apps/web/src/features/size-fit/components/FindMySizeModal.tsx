@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { useId, useState } from "react";
 
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { useAuth } from "@/features/auth";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useFitProfile, useSaveFitProfile } from "../hooks/useFitProfile";

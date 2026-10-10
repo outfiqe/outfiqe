@@ -18,7 +18,6 @@ import { useAuth } from "@/features/auth";
 import { BuildOffersSection } from "@/features/outfit-offers";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
-import { useMySizeByProductType } from "@/features/saved-sizes";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 
@@ -29,6 +28,7 @@ import type {
   OutfitSlot,
   OutfitVisibility,
 } from "../api/outfitSchemas";
+import { useMySizeByProductId } from "../hooks/useMySizeByProductId";
 import { useOutfitWrites } from "../hooks/useOutfitWrites";
 import {
   countSoldOutItems,
@@ -100,7 +100,9 @@ export const BuildBoard = ({
     useSensor(KeyboardSensor),
   );
 
-  const mySizeByProductType = useMySizeByProductType();
+  const mySizeByProductId = useMySizeByProductId(
+    board.slots.flatMap((slot) => slot.items.map(({ product }) => product)),
+  );
   const isPhotosOn = useFeatureFlag("outfit_photos");
   const isTryOnOn = useFeatureFlag("outfit_try_on");
   const { selectedTab, selectTab } = useTabSearchParam(
@@ -270,7 +272,7 @@ export const BuildBoard = ({
                     key={slot.key}
                     slot={slot}
                     canEdit={canEdit}
-                    mySizeByProductType={mySizeByProductType}
+                    mySizeByProductId={mySizeByProductId}
                     onAddAt={openPicker}
                     onRemoveAt={removeItem}
                   />
@@ -324,7 +326,7 @@ export const BuildBoard = ({
             {board.status === "LOCKED" && (
               <BuyBuildPanel
                 outfitId={board.id}
-                items={toBuyableBuildItems(board, mySizeByProductType)}
+                items={toBuyableBuildItems(board, mySizeByProductId)}
               />
             )}
             <PostAsLookPanel board={board} />

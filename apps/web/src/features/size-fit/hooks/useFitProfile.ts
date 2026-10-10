@@ -4,7 +4,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import type { FitMeasurements } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { useAuth } from "@/features/auth";
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
 import { fitProfileApi } from "../api/fitProfileApi";

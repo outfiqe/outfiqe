@@ -7,7 +7,7 @@ const saveMutate = vi.fn();
 const authState = { isAuthenticated: false };
 const fitProfileState: { data: { heightCm: number; weightKg: number } | null } = { data: null };
 
-vi.mock("@/features/auth/context/AuthContext", () => ({
+vi.mock("@/features/auth", () => ({
   useAuth: () => authState,
 }));
 

@@ -292,25 +292,12 @@ describe("BuildBoard", () => {
     await waitFor(() => expect(placedProductIds).toEqual([replacement.id]));
   });
 
-  it("says whether each item comes in the person's saved size", async () => {
+  it("says whether each item comes in the size that fits the person", async () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { user: { id: SITA.id } },
       isAuthenticated: true,
     } as ReturnType<typeof useAuth>);
-    mswServer.use(
-      http.get("/api/saved-sizes/me", () =>
-        ok([
-          {
-            productTypeId: "type-tops",
-            productTypeSlug: "tops",
-            productTypeLabel: "Tops",
-            sizeOptions: ["S", "M", "L"],
-            savedSize: "M",
-            lastBoughtSize: null,
-          },
-        ]),
-      ),
-    );
+    mswServer.use(http.get("/api/fit-profile/me", () => ok({ heightCm: 165, weightKg: 60 })));
     renderBoard(
       buildBoard({
         itemCount: 1,
@@ -321,8 +308,26 @@ describe("BuildBoard", () => {
                 position: 0,
                 product: outfitProduct({
                   sizes: [
-                    { label: "M", isInStock: false },
-                    { label: "L", isInStock: true },
+                    {
+                      label: "M",
+                      isInStock: false,
+                      fitRange: {
+                        minHeightCm: 160,
+                        maxHeightCm: 170,
+                        minWeightKg: 55,
+                        maxWeightKg: 65,
+                      },
+                    },
+                    {
+                      label: "L",
+                      isInStock: true,
+                      fitRange: {
+                        minHeightCm: 170,
+                        maxHeightCm: 180,
+                        minWeightKg: 65,
+                        maxWeightKg: 75,
+                      },
+                    },
                   ],
                 }),
                 addedBy: SITA,

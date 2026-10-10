@@ -98,13 +98,16 @@ Ways in from the rest of the app:
   creators who are on the build a "Drop as a look" button. `PublishLookModal` reuses the creator
   photo cropper and upload (`../creator-dashboard/components/PostModal.constants`,
   `PhotoCropPane`, `usePendingPhotos`), prefills the caption with the build's name and each
-  item's size from `useMySizeByProductType`, and sends `POST /api/outfits/:id/look`
+  item's size from `useMySizeByProductId`, and sends `POST /api/outfits/:id/look`
   (`hooks/useBuildLook.ts`). Afterwards the panel links to the look; when a newer version has
   been locked since, it offers "Drop the new version".
-- Sizes: `SlotCard` labels each item with the person's size from `../saved-sizes`
-  (`useMySizeByProductType`), using `describeSizeFit` in `utils/outfitBoardRules.ts`.
+- Sizes: `SlotCard` labels each item with the size that fits the person (`useMySizeByProductId`),
+  using `describeSizeFit` in `utils/outfitBoardRules.ts`. That size is worked out per product by
+  `toMySizeByProductId`, which runs `recommendFitSize` on the item's own size chart with the
+  person's measurements (`useShopperMeasurements` from `../size-fit`). Sizes differ between brands,
+  so a saved label per kind of clothing would be wrong; an item without a chart shows no size hint.
 - Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes
-  prefilled from the person's saved sizes) and under a shared or public build
+  prefilled with the size that fits the person) and under a shared or public build
   (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). Each item has a tick and a
   size picker; sold-out sizes can't be picked. "Buy the full set" sends every item with a size,
   "Add the ticked items" sends only the ticked ones (`hooks/useBuyFromBuild.ts` →

@@ -3,8 +3,9 @@
 ## Purpose
 
 Everything a shopper uses to find the right size when every brand sizes differently: the brand's
-size chart and fabric stretch on the product page, the "Find my size" modal, and the shopper's own
-height and weight (remembered on the device, or saved to their account). Sizes are recommended
+size chart and fabric stretch on the product page, the "Find my size" modal, the "Find what fits
+me" page (`/fit`), "My measurements" in settings, and the shopper's own height and weight
+(remembered on the device, or saved to their account), which the outfit board also uses. Sizes are recommended
 from each product's own height and weight ranges, never from the label, because an "L" at one
 brand can be an "XL" at another.
 
@@ -17,6 +18,17 @@ brand can be an "XL" at another.
   buttons (disabled when that size is sold out), "Save to my account" for signed-in shoppers and a
   link to the "Find what fits me" page. Its content only mounts while open, so it reads the
   browser's storage after hydration and never during server rendering.
+- `components/FitFinder.tsx` — the `/fit` page body: height and weight inputs (prefilled from
+  the link, the account or the device), chips for the kinds of clothing that take size charts, and
+  every fitting product with "Your size: M" under it. Measurements and the chosen kind live in the
+  URL, so back, refresh and sharing work. Prompt, loading, error, empty and load-more states.
+- `components/MyMeasurementsSettings.tsx` — settings → My measurements (`/settings/measurements`,
+  which `/settings/sizes` redirects to): save, change or remove height and weight, translated
+  through the `fitProfile` messages.
+- `hooks/useShopperMeasurements.ts` — the account's measurements, else the device's. The device
+  value is read through `useSyncExternalStore` with an empty server snapshot, so server rendering and
+  hydration agree.
+- `api/fittingProductsApi.ts` + `hooks/useInfiniteFittingProducts.ts` — `GET /products/fits`.
 - `utils/describeFitRecommendation.ts` — turns a `recommendFitSize` result into the headline and
   one-line reason the modal shows, including the stretch reasoning and how far outside the nearest
   size the shopper is.
@@ -38,11 +50,18 @@ immediately see their size, or the two sizes they're between, or the nearest siz
 they are. "Select M" picks that size on the page. Signed-in shoppers can save the measurements to
 their account.
 
+On `/fit` they enter their height and weight (or find them already filled in), see every piece
+in stock that is cut for them with the size to pick, and can narrow to one kind of clothing. In
+settings they can save or remove their measurements.
+
 **Technical:** `ProductDetail` → `useFeatureFlag("size_fit")` + `product.hasSizeChart` →
 `ProductFitSection` → `FindMySizeModal` → `recommendFitSize` from `@outfiqe/utils` (runs in the
 browser, no request per keystroke) → `describeFitRecommendation`. Prefill: `useFitProfile` →
 `GET /fit-profile/me`, else `readDeviceMeasurements`. Saving: `useSaveFitProfile` →
-`PUT /fit-profile/me`.
+`PUT /fit-profile/me`. `app/fit/page.tsx` (server; `noindex` when the URL carries measurements,
+canonical `/fit`) → `FitFinder` → `useInfiniteFittingProducts` → `GET /products/fits`. The outfit
+board: `outfit-build`'s `useMySizeByProductId` → `useShopperMeasurements` → `recommendFitSize`
+per item.
 
 ## Non-obvious rationale
 

@@ -6,6 +6,7 @@ export const publicProductTypeSchema = z.object({
   id: z.string(),
   slug: z.string(),
   label: z.string(),
+  supportsFitRanges: z.boolean().optional(),
 });
 export type PublicProductType = z.infer<typeof publicProductTypeSchema>;
 

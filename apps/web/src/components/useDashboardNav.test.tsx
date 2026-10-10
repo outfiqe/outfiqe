@@ -55,9 +55,9 @@ describe("useDashboardNav", () => {
     expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("language");
   });
 
-  it("offers My sizes to shoppers and creators but not to brand accounts", () => {
-    expect(navIdsFor(UserRole.CUSTOMER)).toContain("sizes");
-    expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("sizes");
+  it("offers My measurements to shoppers and creators but not to brand accounts", () => {
+    expect(navIdsFor(UserRole.CUSTOMER)).toContain("measurements");
+    expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("measurements");
   });
 
   it("hides My Builds while Outfit Build is switched off for the person", () => {
