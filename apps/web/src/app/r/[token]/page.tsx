@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { creatorLinksApi } from "@/features/creator-dashboard/api/creatorLinksApi";
+import { creatorLinksApi } from "@/features/creator-dashboard/share-links/api/creatorLinksApi";
 import { ApiClientError } from "@/shared/lib/apiClient";
 
 const RedirectPage = () => {

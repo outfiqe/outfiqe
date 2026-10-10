@@ -4,9 +4,9 @@ import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import type { CreatorStatus } from "@/features/auth/types";
 
+import { CreatorStatusGate } from "../../components/CreatorStatusGate";
 import { useEarningsSummary } from "../hooks/useEarningsSummary";
 import { useMyEarnings } from "../hooks/useMyEarnings";
-import { CreatorStatusGate } from "./CreatorStatusGate";
 import { EarningsLedgerRow } from "./EarningsLedgerRow";
 import { EarningsSummaryTiles } from "./EarningsSummaryTiles";
 

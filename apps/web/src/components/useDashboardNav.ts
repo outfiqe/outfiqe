@@ -26,7 +26,7 @@ import {
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
-import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
+import { useCommissionEligibility } from "@/features/creator-dashboard/earnings/hooks/useCommissionEligibility";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 

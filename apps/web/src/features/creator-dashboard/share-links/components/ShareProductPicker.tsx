@@ -14,8 +14,8 @@ import { useState } from "react";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { AppImage } from "@/shared/components/AppImage";
 
-import { SEARCH_DEBOUNCE_MS } from "../constants/postModal.constants";
-import { useTaggableProducts } from "../hooks/useTaggableProducts";
+import { SEARCH_DEBOUNCE_MS } from "../../looks/constants/postModal.constants";
+import { useTaggableProducts } from "../../looks/hooks/useTaggableProducts";
 
 const ProductThumb = ({ url }: { url: string | null }) => (
   <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">

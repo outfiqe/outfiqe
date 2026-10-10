@@ -21,7 +21,7 @@ vi.mock("../hooks/useMyEarnings", () => ({
   useMyEarnings: vi.fn(),
 }));
 
-vi.mock("./CreatorStatusGate", () => ({
+vi.mock("../../components/CreatorStatusGate", () => ({
   CreatorStatusGate: ({ creatorStatus }: { creatorStatus: string }) => (
     <div>Status gate for {creatorStatus}</div>
   ),

@@ -6,12 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CreatorStatus } from "@/features/auth/types";
 import type * as ProductTour from "@/features/product-tour";
 
+import type { CreatorOverview as CreatorOverviewData } from "../api/creatorOverviewSchemas";
 import {
   CommissionSource,
   CommissionStatus,
   type CreatorCommission,
-} from "../api/commissionSchemas";
-import type { CreatorOverview as CreatorOverviewData } from "../api/creatorOverviewSchemas";
+} from "../earnings/api/commissionSchemas";
 import { useCreatorOverview } from "../hooks/useCreatorOverview";
 import { CreatorOverview } from "./CreatorOverview";
 

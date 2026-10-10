@@ -5,7 +5,7 @@ import {
   badgeConditionProgressSchema,
   badgeDesignConfigSchema,
   BadgeRarity,
-} from "./badgeSchemas";
+} from "../../badges/api/badgeSchemas";
 
 export const challengeStatusSchema = z.enum(["UPCOMING", "OPEN", "ENDED"]);
 export type ChallengeStatus = z.infer<typeof challengeStatusSchema>;

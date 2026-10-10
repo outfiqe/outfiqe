@@ -19,7 +19,7 @@ vi.mock("@/features/creator-dashboard/components/ApplyAsCreatorButton", () => ({
   ApplyAsCreatorButton: () => <button type="button">Apply now</button>,
 }));
 
-vi.mock("@/features/creator-dashboard/components/PostModal", () => ({
+vi.mock("@/features/creator-dashboard/looks/components/PostModal", () => ({
   PostModal: ({ initialPhotoFile }: { initialPhotoFile?: File | null }) => (
     <div data-testid="post-modal">{initialPhotoFile?.name}</div>
   ),

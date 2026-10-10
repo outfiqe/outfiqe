@@ -17,7 +17,7 @@ vi.mock("../hooks/useMyCreatorLinks", () => ({
   useMyCreatorLinks: vi.fn(),
 }));
 
-vi.mock("./CreatorStatusGate", () => ({
+vi.mock("../../components/CreatorStatusGate", () => ({
   CreatorStatusGate: ({ creatorStatus }: { creatorStatus: string }) => (
     <div>Status gate for {creatorStatus}</div>
   ),

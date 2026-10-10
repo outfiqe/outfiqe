@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 
-import { useTaggableProducts } from "../hooks/useTaggableProducts";
+import { useTaggableProducts } from "../../looks/hooks/useTaggableProducts";
 import { ShareProductPicker } from "./ShareProductPicker";
 
-vi.mock("../hooks/useTaggableProducts", () => ({
+vi.mock("../../looks/hooks/useTaggableProducts", () => ({
   useTaggableProducts: vi.fn(),
 }));
 

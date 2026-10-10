@@ -7,10 +7,10 @@ import { CreatorStatus } from "@/features/auth/types";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import { CreatorStatusGate } from "../../components/CreatorStatusGate";
 import type { CreatorLink } from "../api/creatorLinksSchemas";
 import { useCreateInternalLink, useGetOrCreateExternalLink } from "../hooks/useCreateCreatorLink";
 import { useMyCreatorLinks } from "../hooks/useMyCreatorLinks";
-import { CreatorStatusGate } from "./CreatorStatusGate";
 import { DeleteLinkModal } from "./DeleteLinkModal";
 import { ShareLinkRow } from "./ShareLinkRow";
 import { ShareProductPicker } from "./ShareProductPicker";

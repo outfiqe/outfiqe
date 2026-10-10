@@ -10,7 +10,7 @@ import {
   DEFAULT_IMAGE_MIME_TYPE,
   DEFAULT_POST_LAYOUT,
   MAX_PHOTOS,
-} from "@/features/creator-dashboard/constants/postModal.constants";
+} from "@/features/creator-dashboard/looks/constants/postModal.constants";
 import { useMySizeByProductType } from "@/features/saved-sizes";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
