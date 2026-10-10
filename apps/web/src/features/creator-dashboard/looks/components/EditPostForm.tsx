@@ -1,33 +1,23 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  CropSurface,
-  FormBanner,
-  getCroppedImageFile,
-  HiddenFileInput,
-  type PixelCrop,
-  toast,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, getCroppedImageFile, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { generateUuid, POST_LAYOUT_ASPECT } from "@outfiqe/utils";
-import { ImagePlus, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
-import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
 import {
   cropBoxStyleForAspect,
   DEFAULT_IMAGE_MIME_TYPE,
-  MAX_PHOTOS,
   SEARCH_DEBOUNCE_MS,
 } from "../constants/postModal.constants";
+import { useEditLookPhotos } from "../hooks/useEditLookPhotos";
 import { useMaxTaggedProducts } from "../hooks/useMaxTaggedProducts";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { useUpdateLook } from "../hooks/useUpdateLook";
@@ -36,18 +26,9 @@ import {
   collectTaggedProductSizeErrors,
   summarizeTaggedProductErrors,
 } from "../utils/taggedProductSizeErrors";
+import { EditPostPhotoStrip } from "./EditPostPhotoStrip";
 import { ProductTagPicker } from "./ProductTagPicker";
-
-type NewLookPhoto = {
-  id: string;
-  file: File;
-  objectUrl: string;
-  crop: { x: number; y: number };
-  zoom: number;
-  croppedAreaPixels: PixelCrop | null;
-};
-
-const createPhotoId = generateUuid;
+import { StagingPhotoCropper } from "./StagingPhotoCropper";
 
 type EditPostFormProps = {
   lookId: string;
@@ -61,12 +42,24 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
   const photoAspect = POST_LAYOUT_ASPECT[detail.layout];
   const cropBoxStyle = cropBoxStyleForAspect(photoAspect);
 
-  const [existingUrls, setExistingUrls] = useState(detail.imageUrls);
-  const [newPhotos, setNewPhotos] = useState<NewLookPhoto[]>([]);
-  const [stagingPhoto, setStagingPhoto] = useState<NewLookPhoto | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    existingUrls,
+    newPhotos,
+    stagingPhoto,
+    setStagingPhoto,
+    photoError,
+    setPhotoError,
+    isProcessingPhotos,
+    setIsProcessingPhotos,
+    fileInputRef,
+    canAddPhoto,
+    revokeNewPhoto,
+    handleFilesSelected,
+    confirmStagingPhoto,
+    cancelStagingPhoto,
+    removeExistingPhoto,
+    removeNewPhoto,
+  } = useEditLookPhotos(detail.imageUrls);
 
   const [productFilter, setProductFilter] = useState("");
   const [searchProductCache, setSearchProductCache] = useState<Record<string, PublicProduct>>({});
@@ -112,68 +105,10 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
   );
   const hasUnresolvedTag = detail.taggedProducts.some((tag) => tag.reviewStatus !== "APPROVED");
 
-  const totalPhotoCount = existingUrls.length + newPhotos.length + (stagingPhoto ? 1 : 0);
-  const canAddPhoto = totalPhotoCount < MAX_PHOTOS;
-
-  const revokeNewPhoto = (photo: NewLookPhoto) => URL.revokeObjectURL(photo.objectUrl);
-
   const close = () => {
     newPhotos.forEach(revokeNewPhoto);
     if (stagingPhoto) revokeNewPhoto(stagingPhoto);
     onClose();
-  };
-
-  const handleFilesSelected = async (fileList: FileList | null) => {
-    const selected = fileList?.item(0);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (!selected || !canAddPhoto) return;
-
-    setPhotoError(null);
-
-    let photoFile = selected;
-    if (isHeicImage(selected)) {
-      setIsProcessingPhotos(true);
-      try {
-        photoFile = await toUploadableImage(selected);
-      } catch (conversionFailure) {
-        setPhotoError(getErrorMessage(conversionFailure));
-        return;
-      } finally {
-        setIsProcessingPhotos(false);
-      }
-    }
-
-    setStagingPhoto({
-      id: createPhotoId(),
-      file: photoFile,
-      objectUrl: URL.createObjectURL(photoFile),
-      crop: { x: 0, y: 0 },
-      zoom: 1,
-      croppedAreaPixels: null,
-    });
-  };
-
-  const confirmStagingPhoto = () => {
-    if (!stagingPhoto?.croppedAreaPixels) return;
-    setNewPhotos((current) => [...current, stagingPhoto]);
-    setStagingPhoto(null);
-  };
-
-  const cancelStagingPhoto = () => {
-    if (stagingPhoto) revokeNewPhoto(stagingPhoto);
-    setStagingPhoto(null);
-  };
-
-  const removeExistingPhoto = (url: string) => {
-    setExistingUrls((current) => current.filter((existingUrl) => existingUrl !== url));
-  };
-
-  const removeNewPhoto = (id: string) => {
-    setNewPhotos((current) => {
-      const target = current.find((photo) => photo.id === id);
-      if (target) revokeNewPhoto(target);
-      return current.filter((photo) => photo.id !== id);
-    });
   };
 
   const toggleProduct = (product: PublicProduct) => {
@@ -266,98 +201,27 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
       {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
 
       <div className="space-y-5">
-        <div>
-          <div className="flex flex-wrap gap-2">
-            {existingUrls.map((url) => (
-              <div key={url} className="group relative size-20 shrink-0">
-                <div
-                  className="size-full overflow-hidden rounded-xl bg-muted bg-cover bg-center"
-                  style={{ backgroundImage: `url(${url})` }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeExistingPhoto(url)}
-                  aria-label="Remove photo"
-                  className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
-            ))}
-
-            {newPhotos.map((photo) => (
-              <div key={photo.id} className="group relative size-20 shrink-0">
-                <div
-                  className="size-full overflow-hidden rounded-xl bg-muted bg-cover bg-center"
-                  style={{ backgroundImage: `url(${photo.objectUrl})` }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeNewPhoto(photo.id)}
-                  aria-label="Remove photo"
-                  className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
-            ))}
-
-            {canAddPhoto && !stagingPhoto && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Add a photo"
-                className="flex size-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ImagePlus className="size-5" />
-                <span className="text-[11px] font-medium">Add</span>
-              </button>
-            )}
-          </div>
-
-          <HiddenFileInput inputRef={fileInputRef} onFilesSelected={handleFilesSelected} />
-
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {existingUrls.length + newPhotos.length}/{MAX_PHOTOS} photos
-          </p>
-
-          {photoError && <p className="mt-1.5 text-xs text-destructive">{photoError}</p>}
-        </div>
+        <EditPostPhotoStrip
+          existingUrls={existingUrls}
+          newPhotos={newPhotos}
+          canAddPhoto={canAddPhoto}
+          hasStagingPhoto={Boolean(stagingPhoto)}
+          photoError={photoError}
+          fileInputRef={fileInputRef}
+          handleFilesSelected={handleFilesSelected}
+          removeExistingPhoto={removeExistingPhoto}
+          removeNewPhoto={removeNewPhoto}
+        />
 
         {stagingPhoto && (
-          <div className="space-y-3 rounded-xl border border-border p-3">
-            <CropSurface
-              imageSrc={stagingPhoto.objectUrl}
-              aspect={photoAspect}
-              crop={stagingPhoto.crop}
-              onCropChange={(crop) =>
-                setStagingPhoto((current) => (current ? { ...current, crop } : current))
-              }
-              zoom={stagingPhoto.zoom}
-              onZoomChange={(zoom) =>
-                setStagingPhoto((current) => (current ? { ...current, zoom } : current))
-              }
-              onCropComplete={(croppedAreaPixels) =>
-                setStagingPhoto((current) =>
-                  current ? { ...current, croppedAreaPixels } : current,
-                )
-              }
-              cropAreaClassName="h-56"
-              cropAreaStyle={cropBoxStyle}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={cancelStagingPhoto}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={confirmStagingPhoto}
-                disabled={!stagingPhoto.croppedAreaPixels}
-              >
-                Use photo
-              </Button>
-            </div>
-          </div>
+          <StagingPhotoCropper
+            stagingPhoto={stagingPhoto}
+            setStagingPhoto={setStagingPhoto}
+            photoAspect={photoAspect}
+            cropBoxStyle={cropBoxStyle}
+            cancelStagingPhoto={cancelStagingPhoto}
+            confirmStagingPhoto={confirmStagingPhoto}
+          />
         )}
 
         <label htmlFor="edit-post-form-caption" className="sr-only">
