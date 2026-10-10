@@ -33,7 +33,9 @@ to any one app.
 - `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
   orders (newest, most cheriqed, price low to high, price high to low). The API validates the
   `sort` query against it and the web feed's sort menu offers exactly these.
-- `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
+- `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types, each
+  saying whether it `supportsFitRanges` (headwear, footwear and accessories don't: height and
+  weight say nothing about their size). Garment
   types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only
   bootstraps the defaults: the six originals plus footwear, accessories, saree, kurta set and
   lehenga, which Outfit Build slots need.

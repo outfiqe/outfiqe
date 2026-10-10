@@ -392,6 +392,62 @@ async function seedProductSizes() {
   }
 }
 
+const SEED_SIZE_STANDARD_NAME = "Letter sizes";
+const STRETCHABLE_EVERY_NTH_PRODUCT = 3;
+const SEED_FIT_RANGES_BY_LABEL: Record<
+  string,
+  { minHeightCm: number; maxHeightCm: number; minWeightKg: number; maxWeightKg: number }
+> = {
+  XS: { minHeightCm: 145, maxHeightCm: 155, minWeightKg: 38, maxWeightKg: 46 },
+  S: { minHeightCm: 152, maxHeightCm: 162, minWeightKg: 45, maxWeightKg: 54 },
+  M: { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 53, maxWeightKg: 63 },
+  L: { minHeightCm: 168, maxHeightCm: 178, minWeightKg: 62, maxWeightKg: 72 },
+  XL: { minHeightCm: 176, maxHeightCm: 186, minWeightKg: 71, maxWeightKg: 82 },
+};
+
+async function seedSizeStandards() {
+  if ((await prisma.brandSizeStandard.count()) > 0) return;
+
+  const brands = await prisma.brand.findMany({ select: { id: true } });
+  for (const { id: brandId } of brands) {
+    const standard = await prisma.brandSizeStandard.create({
+      data: {
+        brandId,
+        name: SEED_SIZE_STANDARD_NAME,
+        labels: {
+          create: DEFAULT_SIZES.map((label, sortOrder) => ({ label, sortOrder })),
+        },
+      },
+      select: { id: true },
+    });
+
+    const products = await prisma.product.findMany({
+      where: { brandId, isThrift: false },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, productType: { select: { supportsFitRanges: true } } },
+    });
+
+    for (const [index, product] of products.entries()) {
+      const supportsFitRanges = product.productType.supportsFitRanges;
+      await prisma.product.update({
+        where: { id: product.id },
+        data: {
+          sizeStandardId: standard.id,
+          isStretchable: supportsFitRanges ? index % STRETCHABLE_EVERY_NTH_PRODUCT === 0 : null,
+        },
+      });
+      if (!supportsFitRanges) continue;
+
+      for (const [label, fitRange] of Object.entries(SEED_FIT_RANGES_BY_LABEL)) {
+        await prisma.productSize.updateMany({
+          where: { productId: product.id, label },
+          data: fitRange,
+        });
+      }
+    }
+  }
+}
+
 // Illustrative starting tiers — admin-editable afterwards, not hardcoded
 // logic. A sold item's price is looked up against these bands to find the
 // creator's fixed commission for that sale (see CommissionTier).
@@ -1273,7 +1329,12 @@ const seedProductTypes = async (): Promise<Map<string, string>> => {
     DEFAULT_PRODUCT_TYPES.map((productType, index) =>
       prisma.productType.upsert({
         where: { slug: productType.slug },
-        create: { slug: productType.slug, label: productType.label, sortOrder: index },
+        create: {
+          slug: productType.slug,
+          label: productType.label,
+          sortOrder: index,
+          supportsFitRanges: productType.supportsFitRanges,
+        },
         update: {},
       }),
     ),
@@ -1930,6 +1991,7 @@ async function main() {
   await seedCreatorLookImages();
   await seedHashtags();
   await seedProductSizes();
+  await seedSizeStandards();
   await seedProductImages();
   await seedBrandRatings();
 

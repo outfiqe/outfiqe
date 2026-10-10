@@ -102,6 +102,7 @@ model User {
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
   savedSizes                               SavedSize[]
+  fitProfile                               UserFitProfile?
   outfitLikes                              OutfitLike[]                @relation("OutfitLikes")
   outfitSaves                              OutfitSave[]                @relation("OutfitSaves")
   outfitComments                           OutfitComment[]             @relation("OutfitComments")
@@ -322,6 +323,7 @@ model Brand {
   fulfilmentGroups     OrderFulfilmentGroup[]
   buildCommissions     CreatorCommission[]        @relation("BrandBuildCommissions")
   outfitOffers         OutfitOffer[]
+  sizeStandards        BrandSizeStandard[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -349,6 +351,10 @@ model Product {
   updatedAt     DateTime      @updatedAt @map("updated_at")
   wornByCount   Int           @default(0) @map("worn_by_count")
   deletedAt     DateTime?     @map("deleted_at")
+
+  sizeStandardId String?            @map("size_standard_id") @db.Uuid
+  sizeStandard   BrandSizeStandard? @relation(fields: [sizeStandardId], references: [id], onDelete: SetNull)
+  isStretchable  Boolean?           @map("is_stretchable")
 
   isThrift              Boolean          @default(false) @map("is_thrift")
   thriftConditionRating ThriftCondition? @map("thrift_condition_rating")
@@ -383,6 +389,7 @@ model Product {
   @@index([brandId])
   @@index([productTypeId])
   @@index([isThrift])
+  @@index([sizeStandardId])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
   @@index([searchVector], type: Gin, map: "products_search_vector_idx")
   @@map("products")
@@ -645,6 +652,8 @@ model ProductType {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  supportsFitRanges Boolean @default(true) @map("supports_fit_ranges")
+
   products        Product[]
   sizeOptions     SizeOption[]
   outfitSlotTypes OutfitSlotTypeProductType[]
@@ -741,11 +750,53 @@ model ProductSize {
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
 
+  minHeightCm Int? @map("min_height_cm")
+  maxHeightCm Int? @map("max_height_cm")
+  minWeightKg Int? @map("min_weight_kg")
+  maxWeightKg Int? @map("max_weight_kg")
+
   cartItems  CartItem[]
   orderItems OrderItem[]
 
   @@unique([productId, label])
   @@map("product_sizes")
+}
+
+model BrandSizeStandard {
+  id         String    @id @default(uuid()) @db.Uuid
+  brandId    String    @map("brand_id") @db.Uuid
+  brand      Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name       String
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  labels   BrandSizeStandardLabel[]
+  products Product[]
+
+  @@index([brandId, archivedAt])
+  @@map("brand_size_standards")
+}
+
+model BrandSizeStandardLabel {
+  id         String            @id @default(uuid()) @db.Uuid
+  standardId String            @map("standard_id") @db.Uuid
+  standard   BrandSizeStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  label      String
+  sortOrder  Int               @default(0) @map("sort_order")
+
+  @@unique([standardId, label])
+  @@map("brand_size_standard_labels")
+}
+
+model UserFitProfile {
+  userId    String   @id @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  heightCm  Int      @map("height_cm")
+  weightKg  Int      @map("weight_kg")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_fit_profiles")
 }
 
 model SizeOption {
