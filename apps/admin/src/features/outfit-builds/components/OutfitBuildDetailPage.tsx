@@ -184,12 +184,12 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
         <Section title="Items on the board">
           {detail.items.length === NOTHING && <EmptyLine text="No items on the board." />}
           <ul className="space-y-1 text-sm">
-            {detail.items.map((item) => (
-              <li key={`${item.slotLabel}-${item.position}`} className="text-foreground">
-                {item.slotLabel}: {item.productName} · Rs. {item.price}
+            {detail.items.map((buildItem) => (
+              <li key={`${buildItem.slotLabel}-${buildItem.position}`} className="text-foreground">
+                {buildItem.slotLabel}: {buildItem.productName} · Rs. {buildItem.price}
                 <span className="text-muted-foreground">
                   {" "}
-                  · added by {item.addedBy?.name ?? "someone no longer here"}
+                  · added by {buildItem.addedBy?.name ?? "someone no longer here"}
                 </span>
               </li>
             ))}
@@ -212,9 +212,13 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
         <Section title="What viewers see">
           {detail.publishedItems.length === NOTHING && <EmptyLine text="Not shared or public." />}
           <ul className="space-y-1 text-sm">
-            {detail.publishedItems.map((item) => (
-              <li key={`${item.slotLabel}-${item.position}`} className="text-foreground">
-                {item.slotLabel}: {item.productName} · {item.brandName} · Rs. {item.unitPrice}
+            {detail.publishedItems.map((publishedItem) => (
+              <li
+                key={`${publishedItem.slotLabel}-${publishedItem.position}`}
+                className="text-foreground"
+              >
+                {publishedItem.slotLabel}: {publishedItem.productName} · {publishedItem.brandName} ·
+                Rs. {publishedItem.unitPrice}
               </li>
             ))}
           </ul>

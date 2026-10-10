@@ -198,18 +198,20 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
         <h2 className="font-display text-sm font-bold text-foreground">Items</h2>
         <div className="mt-2 space-y-2">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
+          {items.map((orderItem) => (
+            <div key={orderItem.id} className="flex items-center justify-between gap-3 text-sm">
               <div>
                 <p className="text-foreground">
-                  {item.productName} · {item.sizeLabel} × {item.qty}
+                  {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
                 </p>
                 <p className="text-muted-foreground">
-                  {item.brandName}
-                  {item.attributedCreatorName ? ` · via ${item.attributedCreatorName}` : ""}
+                  {orderItem.brandName}
+                  {orderItem.attributedCreatorName
+                    ? ` · via ${orderItem.attributedCreatorName}`
+                    : ""}
                 </p>
               </div>
-              <p className="shrink-0 text-foreground">Rs. {item.unitPrice.toLocaleString()}</p>
+              <p className="shrink-0 text-foreground">Rs. {orderItem.unitPrice.toLocaleString()}</p>
             </div>
           ))}
         </div>

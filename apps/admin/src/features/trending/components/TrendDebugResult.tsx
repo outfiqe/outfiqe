@@ -64,24 +64,32 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
     );
   }
 
-  const data = snapshot.data;
-  if (!data) return null;
+  const trendSnapshot = snapshot.data;
+  if (!trendSnapshot) return null;
 
   return (
     <div className="mt-6 space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard label="Trending score" value={formatNumber(data.score)} />
+        <StatCard label="Trending score" value={formatNumber(trendSnapshot.score)} />
         <StatCard
           label="Rank"
-          value={data.rank ? `#${data.rank}` : "Not trending"}
-          hint={data.rank ? "Position among today's trending candidates" : "No score above zero"}
+          value={trendSnapshot.rank ? `#${trendSnapshot.rank}` : "Not trending"}
+          hint={
+            trendSnapshot.rank
+              ? "Position among today's trending candidates"
+              : "No score above zero"
+          }
         />
         <StatCard
           label="Freshness boost"
           value={
-            data.freshnessMultiplier > 1 ? `×${formatNumber(data.freshnessMultiplier)}` : "None"
+            trendSnapshot.freshnessMultiplier > 1
+              ? `×${formatNumber(trendSnapshot.freshnessMultiplier)}`
+              : "None"
           }
-          hint={data.freshnessMultiplier > 1 ? "Product is 3 days old or newer" : undefined}
+          hint={
+            trendSnapshot.freshnessMultiplier > 1 ? "Product is 3 days old or newer" : undefined
+          }
         />
       </div>
 
@@ -90,11 +98,11 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
           Activity in the last 6 hours
         </h3>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          <ActivityStat label="Purchases" value={data.recentActivity.purchaseUnits} />
-          <ActivityStat label="Cart adds" value={data.recentActivity.cartAdds} />
-          <ActivityStat label="Stashes" value={data.recentActivity.saves} />
-          <ActivityStat label="Muse tags" value={data.recentActivity.creatorTags} />
-          <ActivityStat label="Tag clicks" value={data.recentActivity.tagClicks} />
+          <ActivityStat label="Purchases" value={trendSnapshot.recentActivity.purchaseUnits} />
+          <ActivityStat label="Cart adds" value={trendSnapshot.recentActivity.cartAdds} />
+          <ActivityStat label="Stashes" value={trendSnapshot.recentActivity.saves} />
+          <ActivityStat label="Muse tags" value={trendSnapshot.recentActivity.creatorTags} />
+          <ActivityStat label="Tag clicks" value={trendSnapshot.recentActivity.tagClicks} />
         </div>
       </div>
 
@@ -105,25 +113,28 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
         <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-4 text-sm text-foreground">
           <p>
             Activity right now:{" "}
-            <span className="font-semibold">{formatNumber(data.decayedActivity)}</span>. Previous 6
-            hours:{" "}
-            <span className="font-semibold">{formatNumber(data.previousWindowActivity)}</span>.
-            That&apos;s a velocity of{" "}
-            <span className="font-semibold">{formatNumber(data.velocity)}×</span>.
+            <span className="font-semibold">{formatNumber(trendSnapshot.decayedActivity)}</span>.
+            Previous 6 hours:{" "}
+            <span className="font-semibold">
+              {formatNumber(trendSnapshot.previousWindowActivity)}
+            </span>
+            . That&apos;s a velocity of{" "}
+            <span className="font-semibold">{formatNumber(trendSnapshot.velocity)}×</span>.
           </p>
           <p>
-            Baseline ({BASELINE_SOURCE_LABEL[data.baseline.source]}):{" "}
-            <span className="font-semibold">{formatNumber(data.baseline.value)}</span>. That&apos;s
-            a lift of <span className="font-semibold">{formatNumber(data.baselineLift)}×</span>{" "}
-            above normal.
+            Baseline ({BASELINE_SOURCE_LABEL[trendSnapshot.baseline.source]}):{" "}
+            <span className="font-semibold">{formatNumber(trendSnapshot.baseline.value)}</span>.
+            That&apos;s a lift of{" "}
+            <span className="font-semibold">{formatNumber(trendSnapshot.baselineLift)}×</span> above
+            normal.
           </p>
           <p>
             Velocity and baseline lift combine into a momentum of{" "}
-            <span className="font-semibold">{formatNumber(data.momentum)}×</span>. This is capped so
-            one spike can&apos;t take over the rankings.
+            <span className="font-semibold">{formatNumber(trendSnapshot.momentum)}×</span>. This is
+            capped so one spike can&apos;t take over the rankings.
           </p>
           <p className="text-xs text-muted-foreground">
-            Scored at {new Date(data.scoredAt).toLocaleString()}
+            Scored at {new Date(trendSnapshot.scoredAt).toLocaleString()}
           </p>
         </div>
       </div>

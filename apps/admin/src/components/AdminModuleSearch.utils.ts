@@ -11,12 +11,12 @@ export type AdminModuleSearchResult = {
 export const MODULE_SEARCH_MIN_QUERY_LENGTH = 2;
 
 const flattenNavItems = (
-  items: readonly SidebarNavItem[],
+  navItems: readonly SidebarNavItem[],
   sectionLabel: string,
 ): AdminModuleSearchResult[] =>
-  items.flatMap((item) => [
-    { id: item.id, label: item.label, href: item.href, sectionLabel, icon: item.icon },
-    ...(item.items ? flattenNavItems(item.items, sectionLabel) : []),
+  navItems.flatMap((navItem) => [
+    { id: navItem.id, label: navItem.label, href: navItem.href, sectionLabel, icon: navItem.icon },
+    ...(navItem.items ? flattenNavItems(navItem.items, sectionLabel) : []),
   ]);
 
 export const flattenSidebarSections = (

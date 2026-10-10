@@ -42,13 +42,18 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
 
   if (current.data && current.data !== processedCurrentData) {
     setProcessedCurrentData(current.data);
-    setKnown((prev) => new Map([...prev, ...current.data.map((p) => [p.id, p] as const)]));
+    setKnown(
+      (prev) =>
+        new Map([...prev, ...current.data.map((product) => [product.id, product] as const)]),
+    );
     setSelectedIds((ids) => ids ?? current.data.map((product) => product.id));
   }
 
   if (search.data && search.data !== processedSearchData) {
     setProcessedSearchData(search.data);
-    setKnown((prev) => new Map([...prev, ...search.data.map((p) => [p.id, p] as const)]));
+    setKnown(
+      (prev) => new Map([...prev, ...search.data.map((product) => [product.id, product] as const)]),
+    );
   }
 
   const save = useApiMutation({

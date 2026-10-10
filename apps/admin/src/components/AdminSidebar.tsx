@@ -59,8 +59,8 @@ export const AdminSidebar = () => {
     );
   }
 
-  const visibleCrmItems = CRM_SUB_ITEMS.filter((item) =>
-    isCrmSubItemVisible(item, crmOrganization),
+  const visibleCrmItems = CRM_SUB_ITEMS.filter((crmItem) =>
+    isCrmSubItemVisible(crmItem, crmOrganization),
   ).map(toNavItem);
 
   const user = state.status === "signed-in" ? state.user : null;

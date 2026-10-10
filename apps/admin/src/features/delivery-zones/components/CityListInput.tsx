@@ -17,7 +17,7 @@ export const CityListInput = ({ cities, onChange }: CityListInputProps) => {
     setDraft("");
   };
 
-  const removeCity = (city: string) => onChange(cities.filter((c) => c !== city));
+  const removeCity = (city: string) => onChange(cities.filter((listedCity) => listedCity !== city));
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") return;
