@@ -12,8 +12,10 @@ import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
 import { ReviewsSection } from "@/features/product-reviews";
 import { shareOrCopyLink } from "@/features/pwa";
+import { ProductFitSection } from "@/features/size-fit";
 import { STAFF_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
 import { AppImage } from "@/shared/components/AppImage";
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { cn } from "@/shared/lib/cn";
 
 const PRODUCT_IMAGE_SIZES = "(min-width: 1024px) 40vw, 100vw";
@@ -39,6 +41,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const canShop = !isBrandOwner && !isStaff;
   const wishlistMutation = useToggleWishlist();
   const addToCartMutation = useAddToCart();
+  const isSizeFitOn = useFeatureFlag("size_fit");
 
   const [isSaved, setIsSaved] = useState(product.isSaved);
   const [lastSeenIsSaved, setLastSeenIsSaved] = useState(product.isSaved);
@@ -242,6 +245,15 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             selected={selectedSizeId}
             onSelect={setSelectedSizeId}
           />
+          {isSizeFitOn && product.hasSizeChart && (
+            <ProductFitSection
+              productName={product.name}
+              sizes={product.sizes}
+              isStretchable={product.isStretchable}
+              selectedSizeId={selectedSizeId}
+              onSelectSize={setSelectedSizeId}
+            />
+          )}
 
           <QuantitySelector quantity={quantity} onChange={setQuantity} />
 

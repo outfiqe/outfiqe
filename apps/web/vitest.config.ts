@@ -102,6 +102,8 @@ export default defineConfig({
         "src/features/brand-dashboard/components/FabricStretchField.tsx",
         "src/features/brand-dashboard/schemas/sizeChart.schema.ts",
         "src/features/brand-dashboard/utils/sizeChartWarnings.ts",
+        "src/features/size-fit/components/*.tsx",
+        "src/features/size-fit/utils/*.ts",
         "src/features/brand-dashboard/components/TagReviewsSection.tsx",
         "src/features/brand-dashboard/components/TagReviewCard.tsx",
         "src/features/brand-dashboard/components/RejectTagModal.tsx",
