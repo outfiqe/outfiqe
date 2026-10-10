@@ -5,9 +5,9 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDateTime } from "./format.utils";
-import { crmTicketsApi } from "./ticketsApi";
-import { TICKET_STATUSES, type TicketStatusValue } from "./ticketsSchemas";
+import { formatDateTime } from "../../format.utils";
+import { crmTicketsApi } from "../api/ticketsApi";
+import { TICKET_STATUSES, type TicketStatusValue } from "../api/ticketsSchemas";
 
 const TICKETS_QUERY_KEY = ["crm-tickets"];
 

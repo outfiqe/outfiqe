@@ -7,13 +7,13 @@ import { useState } from "react";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import { PlanGateBanner } from "./billing/components/PlanGateBanner";
-import { CRM_PAGE_TEXT } from "./crmPageContent";
+import { crmApi } from "../../api";
+import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CRM_PAGE_TEXT } from "../../crmPageContent";
+import { formatRupees } from "../../format.utils";
+import { crmPipelineApi } from "../api/pipelineApi";
+import type { Deal } from "../api/pipelineSchemas";
 import { DealFormModal } from "./DealFormModal";
-import { formatRupees } from "./format.utils";
-import { crmPipelineApi } from "./pipelineApi";
-import type { Deal } from "./pipelineSchemas";
 import { StageConfigModal } from "./StageConfigModal";
 
 const STAGES_QUERY_KEY = ["crm-pipeline-stages"];

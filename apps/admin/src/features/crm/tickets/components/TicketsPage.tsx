@@ -21,19 +21,19 @@ import { useForm } from "react-hook-form";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { crmApi } from "./api";
-import { PlanGateBanner } from "./billing/components/PlanGateBanner";
-import { CompactRowSkeleton } from "./CompactRowSkeleton";
-import { CRM_PAGE_TEXT } from "./crmPageContent";
-import { formatDate } from "./format.utils";
+import { crmApi } from "../../api";
+import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CompactRowSkeleton } from "../../CompactRowSkeleton";
+import { CRM_PAGE_TEXT } from "../../crmPageContent";
+import { formatDate } from "../../format.utils";
 import {
   CustomerSearchField,
   type SelectedCustomer,
-} from "./relationships/components/CustomerSearchField";
+} from "../../relationships/components/CustomerSearchField";
+import { crmTicketsApi } from "../api/ticketsApi";
+import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
+import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
 import { TicketDetail } from "./TicketDetail";
-import { ticketFormSchema, type TicketFormValues } from "./ticketForm.schema";
-import { crmTicketsApi } from "./ticketsApi";
-import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "./ticketsSchemas";
 
 const TICKETS_QUERY_KEY = ["crm-tickets"];
 

@@ -7,8 +7,8 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { Deal } from "../api/pipelineSchemas";
 import { DealFormModal } from "./DealFormModal";
-import type { Deal } from "./pipelineSchemas";
 
 const API_BASE = "http://localhost:3000/api";
 

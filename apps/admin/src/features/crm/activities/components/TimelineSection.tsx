@@ -5,14 +5,14 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmActivitiesApi } from "./activitiesApi";
+import { formatDateTime, formatRupees } from "../../format.utils";
+import { crmActivitiesApi } from "../api/activitiesApi";
 import {
   CRM_ACTIVITY_TYPES,
   type CrmActivityTypeValue,
   type CrmSubjectTypeValue,
   type TimelineEntry,
-} from "./activitiesSchemas";
-import { formatDateTime, formatRupees } from "./format.utils";
+} from "../api/activitiesSchemas";
 
 const isActivityType = (value: string): value is CrmActivityTypeValue =>
   (CRM_ACTIVITY_TYPES as readonly string[]).includes(value);

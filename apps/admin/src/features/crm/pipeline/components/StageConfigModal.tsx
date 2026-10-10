@@ -18,9 +18,9 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmPipelineApi } from "./pipelineApi";
-import type { PipelineStage } from "./pipelineSchemas";
-import { stageFormSchema, type StageFormValues } from "./stageForm.schema";
+import { crmPipelineApi } from "../api/pipelineApi";
+import type { PipelineStage } from "../api/pipelineSchemas";
+import { stageFormSchema, type StageFormValues } from "../schemas/stageForm.schema";
 
 const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 
