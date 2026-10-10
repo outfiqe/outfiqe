@@ -1,8 +1,9 @@
+import type { FitRange } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
 
-import type { EditProductFormInput, ProductFormInput } from "../schemas/productForm.schema";
+import type { CreateProductPayload, UpdateProductPayload } from "../schemas/productForm.schema";
 import {
   type BrandProduct,
   type BrandProductPage,
@@ -17,6 +18,11 @@ import {
 const brandProductSizeListSchema = z.array(brandProductSizeSchema);
 
 export type StockAdjustment = { sizeId: string; delta: number };
+
+export type SizeChartPayload = {
+  isStretchable: boolean | null;
+  sizes: { sizeId: string; fitRange: FitRange | null }[];
+};
 
 export type SetProductDiscountInput = {
   discountType: "PERCENT" | "FIXED";
@@ -34,13 +40,18 @@ export const brandProductsApi = {
     return brandProductPageSchema.parse(res.data);
   },
 
-  async create(input: ProductFormInput): Promise<BrandProduct> {
+  async create(input: CreateProductPayload): Promise<BrandProduct> {
     const res = await apiClient.post<BrandProduct>("/products", input);
     return brandProductSchema.parse(res.data);
   },
 
-  async update(productId: string, input: EditProductFormInput): Promise<BrandProduct> {
+  async update(productId: string, input: UpdateProductPayload): Promise<BrandProduct> {
     const res = await apiClient.patch<BrandProduct>(`/products/${productId}`, input);
+    return brandProductSchema.parse(res.data);
+  },
+
+  async updateSizeChart(productId: string, sizeChart: SizeChartPayload): Promise<BrandProduct> {
+    const res = await apiClient.put<BrandProduct>(`/products/${productId}/size-chart`, sizeChart);
     return brandProductSchema.parse(res.data);
   },
 

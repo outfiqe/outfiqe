@@ -2,12 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Input, MultiSelect, toast } from "@outfiqe/design-system";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useProductTypes } from "@/features/products/hooks/useProductTypes";
-import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
+import { useAssignableProductTypes } from "@/features/products/hooks/useProductTypes";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
@@ -20,13 +19,14 @@ import {
   buildEditProductFormSchema,
   type EditProductFormInput,
   MAX_IMAGES,
+  toUpdateProductPayload,
 } from "../schemas/productForm.schema";
 import {
   DEFAULT_IMAGE_MIME_TYPE,
   PRODUCT_CROP_BOX_STYLE,
   PRODUCT_PHOTO_ASPECT,
 } from "./ProductModal.constants";
-import { SizeStockFields } from "./SizeStockFields";
+import { ProductSizesSection } from "./ProductSizesSection";
 import { ThriftListingFields } from "./ThriftListingFields";
 
 const selectClass =
@@ -40,7 +40,7 @@ type EditProductFormProps = {
 export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
   const originalType = product.type;
   const update = useUpdateProduct();
-  const productTypes = useProductTypes();
+  const productTypes = useAssignableProductTypes();
   const categories = useCategories();
   const pending = usePendingPhotos(MAX_IMAGES, product.imageUrls);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
@@ -56,7 +56,9 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
       imageUrls: product.imageUrls,
       imageAssetIds: product.imageUrls.map(() => null),
       lowStock: product.lowStock,
+      sizeStandardId: "",
       sizes: [],
+      isStretchable: product.isStretchable,
       isThrift: product.isThrift,
       thriftConditionRating: product.thriftConditionRating ?? undefined,
       thriftConditionNotes: product.thriftConditionNotes ?? undefined,
@@ -66,14 +68,19 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
   const type = form.watch("type");
   const sizes = form.watch("sizes") ?? [];
   const typeChanged = type !== originalType;
-  const sizeOptions = useSizeOptions(type);
+  const supportsFitRanges =
+    productTypes.data?.find((productType) => productType.slug === type)?.supportsFitRanges ?? false;
   const typeField = form.register("type");
+  const typeSelectId = useId();
 
   const submitEdit = form.handleSubmit(async (values) => {
     try {
       await update.mutateAsync({
         productId: product.id,
-        input: { ...values, sizes: typeChanged ? values.sizes : undefined },
+        input: toUpdateProductPayload(values, {
+          hasTypeChanged: typeChanged,
+          supportsFitRanges,
+        }),
       });
       toast.success("Product updated");
       onClose();
@@ -165,13 +172,20 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
+          <label
+            htmlFor={typeSelectId}
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
+            Type
+          </label>
           <select
+            id={typeSelectId}
             className={selectClass}
             {...typeField}
             onChange={(event) => {
               typeField.onChange(event);
               form.setValue("sizes", []);
+              form.setValue("sizeStandardId", "");
             }}
           >
             {productTypes.data?.map((productType) => (
@@ -190,21 +204,21 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
         </div>
 
         {typeChanged && (
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Sizes and stock
-            </label>
-            <SizeStockFields
-              sizeOptions={sizeOptions.data ?? []}
-              value={sizes}
-              onChange={(next) => form.setValue("sizes", next, { shouldValidate: true })}
-            />
-            {form.formState.errors.sizes && (
-              <p className="mt-1.5 text-xs text-destructive">
-                {form.formState.errors.sizes.message}
-              </p>
-            )}
-          </div>
+          <ProductSizesSection
+            sizeStandardId={form.watch("sizeStandardId")}
+            onSizeStandardChange={(nextStandardId) =>
+              form.setValue("sizeStandardId", nextStandardId, { shouldValidate: true })
+            }
+            sizes={sizes}
+            onSizesChange={(nextSizes) =>
+              form.setValue("sizes", nextSizes, { shouldValidate: true })
+            }
+            isStretchable={form.watch("isStretchable")}
+            onStretchChange={(isStretchable) => form.setValue("isStretchable", isStretchable)}
+            supportsFitRanges={supportsFitRanges}
+            sizeStandardError={form.formState.errors.sizeStandardId?.message}
+            sizesError={form.formState.errors.sizes?.message}
+          />
         )}
 
         <ThriftListingFields

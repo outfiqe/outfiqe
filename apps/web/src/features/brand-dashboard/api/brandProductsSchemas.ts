@@ -2,10 +2,18 @@ import { z } from "zod";
 
 import { thriftConditionSchema } from "@/features/products/api/productSchemas";
 
+export const fitRangeSchema = z.object({
+  minHeightCm: z.number(),
+  maxHeightCm: z.number(),
+  minWeightKg: z.number(),
+  maxWeightKg: z.number(),
+});
+
 export const brandProductSizeSchema = z.object({
   id: z.string(),
   label: z.string(),
   stock: z.number(),
+  fitRange: fitRangeSchema.nullable().default(null),
 });
 export type BrandProductSize = z.infer<typeof brandProductSizeSchema>;
 
@@ -34,6 +42,8 @@ export const brandProductSchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
   createdAt: z.string(),
   sizes: z.array(brandProductSizeSchema),
+  sizeStandardId: z.string().nullable(),
+  isStretchable: z.boolean().nullable(),
   isThrift: z.boolean(),
   thriftConditionRating: thriftConditionSchema.nullable(),
   thriftConditionNotes: z.string().nullable(),
