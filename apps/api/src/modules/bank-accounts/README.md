@@ -9,22 +9,22 @@ rest and only ever decrypted through one narrow, audited admin path.
 
 ## Structure
 
-- `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin` needs `platform:withdraw:read` or
+- `bank-account.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin` needs `platform:withdraw:read` or
   `platform:withdraw:manage` (it only shows masked account numbers), while
   `PATCH /:id/verify` and `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`,
   see `platform-access/README.md` — reused from the withdraw module, since verifying/revealing a
   bank account is part of the same "clear money out to a real bank" workflow, not a separate
   concern). `GET /admin` is the cursor-paginated queue the admin `bank-accounts` feature reads,
   filterable by `?verified=`.
-- `bankAccount.controller.ts` — reads validated input + the auth principal, calls the service.
-- `bankAccount.service.ts` — business rules: validates the bank is active/known
+- `bank-account.controller.ts` — reads validated input + the auth principal, calls the service.
+- `bank-account.service.ts` — business rules: validates the bank is active/known
   (`nepalBankService.requireActiveBank`), encrypts the account number on create, flags an
   account-name/legal-name mismatch without blocking, auto-defaults a user's first account,
   decrypts + audit-logs on reveal.
-- `bankAccount.repository.ts` — Prisma queries, including the transactional set-default swap.
-- `bankAccount.types.ts` — DB-shaped and public (masked) view types.
-- `bankAccount.utils.ts` — `toPublicBankAccount` mapper, `isNameMismatch` check.
-- `bankAccount.integration.test.ts` — colocated integration test.
+- `bank-account.repository.ts` — Prisma queries, including the transactional set-default swap.
+- `bank-account.types.ts` — DB-shaped and public (masked) view types.
+- `bank-account.utils.ts` — `toPublicBankAccount` mapper, `isNameMismatch` check.
+- `bank-account.integration.test.ts` — colocated integration test.
 
 Uses two shared pieces (also used by `brand-bank-accounts`): the
 `encryptAccountNumber`/`decryptAccountNumber`/`lastFourDigits` trio
@@ -43,8 +43,8 @@ the list, and revealing the number lets them compare it against the submitted fi
 verifying it; the same reveal is also surfaced from the `withdraw-requests` admin screen when
 actually processing a payout, so an admin never has to retype account details by hand.
 
-**Technical:** `bankAccount.routes.ts` → `bankAccount.controller.ts` → `bankAccount.service.ts` →
-`bankAccount.repository.ts` → Postgres. `POST /` runs inside a transaction that counts the
+**Technical:** `bank-account.routes.ts` → `bank-account.controller.ts` → `bank-account.service.ts` →
+`bank-account.repository.ts` → Postgres. `POST /` runs inside a transaction that counts the
 user's existing accounts and creates the new one, marking it `isDefault` only if it's the first.
 
 ## Non-obvious rationale

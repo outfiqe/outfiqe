@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, FeatureFlagRollout, OutfitStatus } from "#generated/prisma/enums.js";
 import { runOutfitOfferLifecycleSweep } from "#modules/outfit-offers/outfit-offer.lifecycle.js";
@@ -16,12 +17,8 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-
-const OK_STATUS = 200;
-const CREATED_STATUS = 201;
-const NOT_FOUND_STATUS = 404;
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -48,7 +45,7 @@ describe("the Outfit Build safety switch", () => {
 
     await switchOutfitBuildOff();
 
-    expect((await readBuild(owner, outfitId)).status).toBe(NOT_FOUND_STATUS);
+    expect((await readBuild(owner, outfitId)).status).toBe(HTTP_STATUS.NOT_FOUND);
     const writeWhileOff = await writeToBuild(
       owner,
       "put",
@@ -56,18 +53,18 @@ describe("the Outfit Build safety switch", () => {
       await currentBuildVersion(outfitId),
       { isHappy: true },
     );
-    expect(writeWhileOff.status).toBe(NOT_FOUND_STATUS);
+    expect(writeWhileOff.status).toBe(HTTP_STATUS.NOT_FOUND);
     const myBuilds = await request(testApp).get("/api/outfits").set("Authorization", owner.auth);
-    expect(myBuilds.status).toBe(NOT_FOUND_STATUS);
+    expect(myBuilds.status).toBe(HTTP_STATUS.NOT_FOUND);
     const offers = await request(testApp)
       .get("/api/outfit-offers/received")
       .set("Authorization", owner.auth);
-    expect(offers.status).toBe(NOT_FOUND_STATUS);
+    expect(offers.status).toBe(HTTP_STATUS.NOT_FOUND);
 
     await turnOutfitBuilderOn();
 
     const reopened = await readBuild(owner, outfitId);
-    expect(reopened.status).toBe(OK_STATUS);
+    expect(reopened.status).toBe(HTTP_STATUS.OK);
     expect(reopened.body.data).toMatchObject({ title: "Still here", status: OutfitStatus.DRAFT });
   });
 
@@ -94,12 +91,12 @@ describe("the Outfit Build safety switch", () => {
       .post(`/api/conversations/${conversation.id}/messages`)
       .set("Authorization", sender.auth)
       .send({ body: "Still chatting" });
-    expect(message.status).toBe(OK_STATUS);
+    expect(message.status).toBe(HTTP_STATUS.OK);
 
     const look = await request(testApp)
       .post("/api/creator-looks")
       .set("Authorization", sender.auth)
       .send({ imageUrls: ["https://cdn.outfiqe.test/still-posting.jpg"], taggedProducts: [] });
-    expect(look.status).toBe(CREATED_STATUS);
+    expect(look.status).toBe(HTTP_STATUS.CREATED);
   });
 });

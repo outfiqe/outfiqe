@@ -13,9 +13,14 @@ graph edge itself; the entities being followed (`User`, `Brand`) are owned by th
 - `follow.service.ts` — `follow`/`unfollow`/`isFollowing`, `listFollowers`/`listFollowing`, and
   `suggestedCreators` (maps the repository's raw `UserRecord` page to the public `FollowTarget`
   shape via `toFollowTarget`).
-- `follow.repository.ts` — Prisma/raw-SQL queries: the follow-edge CRUD, follower/following
-  listings, and the full creator-suggestion pipeline (candidate generation, scoring, session-cursor
-  pagination).
+- `follow.repository.ts` — `followRepository`, the object every caller imports: follow and
+  unfollow (with the follower-count bump), with the two topic repositories below spread in.
+- `graph/graph.repository.ts` — `followGraphRepository`: who follows whom (`isFollowing`,
+  `listFollowingIds`, `findFollowedAmong`) and the follower/following listings.
+- `suggestions/suggestion.repository.ts` — `followSuggestionRepository`: the full
+  creator-suggestion pipeline (candidate generation, scoring, session-cursor pagination). It reads
+  the follow graph through `followGraphRepository`, never the root object, so the two files don't
+  import each other. Its integration test sits beside it.
 - `follow.schemas.ts` — Zod request validation, including `listSuggestedCreatorsQuerySchema`
   (`cursor`/`limit`).
 - `follow.types.ts` — response/DTO shapes (`FollowTarget`, `FollowersPage`, `FollowingPage`,

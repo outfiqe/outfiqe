@@ -8,9 +8,9 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
-import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.ADMIN });

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -21,9 +22,6 @@ import type {
 } from "./collection.types.js";
 import { toPublicCollection } from "./collection.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
     return await run();
@@ -32,7 +30,7 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
       throw new AppError(
         "SLUG_TAKEN",
         "A collection with this slug already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -41,7 +39,7 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
 
 const requireCollection = async (id: string): Promise<CollectionRecord> => {
   const collection = await collectionRepository.findById(id);
-  if (!collection) throw new AppError("NOT_FOUND", "Collection not found.", NOT_FOUND_STATUS);
+  if (!collection) throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
   return collection;
 };
 
@@ -91,7 +89,8 @@ export const collectionService = {
 
   async getPublicBySlug(slug: string): Promise<PublicCollection> {
     const collection = await collectionRepository.findPublicBySlug(slug);
-    if (!collection) throw new AppError("NOT_FOUND", "Collection not found.", NOT_FOUND_STATUS);
+    if (!collection)
+      throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
     return toPublicCollection(collection);
   },
 
@@ -100,7 +99,8 @@ export const collectionService = {
     query: ListCollectionProductsQuery,
   ): Promise<PublicCollectionProductPage> {
     const collection = await collectionRepository.findPublicBySlug(slug);
-    if (!collection) throw new AppError("NOT_FOUND", "Collection not found.", NOT_FOUND_STATUS);
+    if (!collection)
+      throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
 
     const [rows, total] = await Promise.all([
       collectionRepository.listPublicProducts({

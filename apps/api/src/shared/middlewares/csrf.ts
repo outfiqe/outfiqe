@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CSRF_TOKEN_COOKIE_NAME, getRefreshTokenCookie } from "#lib/cookie.utils.js";
 
 import { AppError } from "./error-handler.js";
 
-const FORBIDDEN_STATUS = 403;
 const CSRF_HEADER_NAME = "x-csrf-token";
 
 export const requireCsrfHeader = (req: Request, _res: Response, next: NextFunction) => {
@@ -19,7 +19,7 @@ export const requireCsrfHeader = (req: Request, _res: Response, next: NextFuncti
       new AppError(
         "CSRF_MISMATCH",
         "This request could not be verified. Please retry.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       ),
     );
   }

@@ -8,13 +8,13 @@ account) lives in the `auth` module, not here; the role catalog itself lives in 
 
 ## Structure
 
-- `adminInvite.routes.ts` — `POST /api/admin/invites` (send an invite), `GET /api/admin/invites` (list sent invites).
-- `adminInvite.controller.ts` — reads the validated body/principal, calls the service, sends the response.
-- `adminInvite.service.ts` — validates the chosen role exists in the platform org, creates the invite record, emails the invite link, rejects an email that already has an account or already has a pending invite.
-- `adminInvite.repository.ts` — Prisma access for `AdminInvite`, the co-founder lookup `list` uses to flag rows, `findPendingByEmail` (blocks a duplicate pending invite), and `countPendingByRoleId` (used by `platform-roles` to block deleting a role still referenced by an unaccepted invite).
-- `adminInvite.types.ts` — `AdminInviteRecord`, `AdminInviteWithRoleName`, `CreateAdminInviteInput`, `AdminInviteSummary`, `AdminInviteStatus`, `AdminInviteListResult`.
-- `adminInvite.schemas.ts` — Zod body schema for `POST /`, including the required `roleId`.
-- `adminInvite.utils.ts` — `toSummary`, mapping a record + role name + co-founder flag to the list response shape.
+- `admin-invite.routes.ts` — `POST /api/admin/invites` (send an invite), `GET /api/admin/invites` (list sent invites).
+- `admin-invite.controller.ts` — reads the validated body/principal, calls the service, sends the response.
+- `admin-invite.service.ts` — validates the chosen role exists in the platform org, creates the invite record, emails the invite link, rejects an email that already has an account or already has a pending invite.
+- `admin-invite.repository.ts` — Prisma access for `AdminInvite`, the co-founder lookup `list` uses to flag rows, `findPendingByEmail` (blocks a duplicate pending invite), and `countPendingByRoleId` (used by `platform-roles` to block deleting a role still referenced by an unaccepted invite).
+- `admin-invite.types.ts` — `AdminInviteRecord`, `AdminInviteWithRoleName`, `CreateAdminInviteInput`, `AdminInviteSummary`, `AdminInviteStatus`, `AdminInviteListResult`.
+- `admin-invite.schemas.ts` — Zod body schema for `POST /`, including the required `roleId`.
+- `admin-invite.utils.ts` — `toSummary`, mapping a record + role name + co-founder flag to the list response shape.
 
 ## Funnel
 

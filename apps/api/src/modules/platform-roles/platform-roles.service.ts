@@ -1,7 +1,8 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
+import { adminInviteRepository } from "#modules/admin-invites/admin-invite.repository.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import type {
@@ -21,10 +22,6 @@ import type {
 } from "./platform-roles.types.js";
 import { findUnselectablePlatformPermissionKeys } from "./platform-roles.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-const CONFLICT_STATUS = 409;
-
 const CO_FOUNDER_ACTING_GRANT: ActingPermissionGrant = {
   isSuperAdmin: true,
   permissionKeys: [...PLATFORM_PERMISSION_KEYS],
@@ -35,7 +32,7 @@ const asPlatformRoleNameConflict = (err: unknown): unknown =>
     ? new AppError(
         "PLATFORM_ROLE_NAME_TAKEN",
         "A platform role with that name already exists.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       )
     : err;
 
@@ -45,7 +42,7 @@ const requirePlatformOrganizationId = async (): Promise<string> => {
     throw new AppError(
       "PLATFORM_ORGANIZATION_NOT_FOUND",
       "The platform organization is not configured.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return platformOrganization.id;
@@ -57,7 +54,7 @@ const assertPermissionKeysSelectable = (permissionKeys: string[]): void => {
     throw new AppError(
       "INVALID_PERMISSION_KEYS",
       "One or more of the selected permissions can't be granted to a platform role.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
@@ -97,10 +94,14 @@ export const platformRolesService = {
     const organizationId = await requirePlatformOrganizationId();
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (role.isBuiltIn) {
-      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be edited.", FORBIDDEN_STATUS);
+      throw new AppError(
+        "ROLE_IS_BUILT_IN",
+        "Built-in roles can't be edited.",
+        HTTP_STATUS.FORBIDDEN,
+      );
     }
     if (input.permissionKeys !== undefined) {
       assertPermissionKeysSelectable(input.permissionKeys);
@@ -117,10 +118,14 @@ export const platformRolesService = {
     const organizationId = await requirePlatformOrganizationId();
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (role.isBuiltIn) {
-      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be deleted.", FORBIDDEN_STATUS);
+      throw new AppError(
+        "ROLE_IS_BUILT_IN",
+        "Built-in roles can't be deleted.",
+        HTTP_STATUS.FORBIDDEN,
+      );
     }
 
     const [memberCount, pendingInviteCount] = await Promise.all([
@@ -131,7 +136,7 @@ export const platformRolesService = {
       throw new AppError(
         "ROLE_IN_USE",
         "Reassign every member and pending invite off this role before deleting it.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -142,7 +147,7 @@ export const platformRolesService = {
         throw new AppError(
           "ROLE_IN_USE",
           "Reassign every member and pending invite off this role before deleting it.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw err;
@@ -168,7 +173,7 @@ export const platformRolesService = {
       throw new AppError(
         "PLATFORM_ORGANIZATION_NOT_FOUND",
         "The platform organization is not configured.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
     return crmAccessService.updateMembership(

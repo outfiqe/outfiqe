@@ -9,18 +9,18 @@ keyed by `brandId`, not a reuse of the creator-scoped `BankAccount.userId` table
 
 ## Structure
 
-- `brandBankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (any member of the
+- `brand-bank-account.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (any member of the
   caller's brand); `GET /admin`, `PATCH /:id/verify`, `GET /:id/reveal` (admin-only). `GET /admin`
   is the cursor-paginated queue the admin `bank-accounts` feature reads, filterable by
   `?verified=`.
-- `brandBankAccount.controller.ts` — resolves the caller's brand via `requireBrandId`
+- `brand-bank-account.controller.ts` — resolves the caller's brand via `requireBrandId`
   (`#lib/brand-guard.utils.js`), reads validated input, calls the service.
-- `brandBankAccount.service.ts` — same rules as `bank-accounts`' service, checked against the
+- `brand-bank-account.service.ts` — same rules as `bank-accounts`' service, checked against the
   brand instead of a user.
-- `brandBankAccount.repository.ts` — Prisma queries, including the transactional set-default swap.
-- `brandBankAccount.types.ts` — DB-shaped and public (masked) view types.
-- `brandBankAccount.utils.ts` — `toPublicBrandBankAccount` mapper.
-- `brandBankAccount.integration.test.ts` — colocated integration test.
+- `brand-bank-account.repository.ts` — Prisma queries, including the transactional set-default swap.
+- `brand-bank-account.types.ts` — DB-shaped and public (masked) view types.
+- `brand-bank-account.utils.ts` — `toPublicBrandBankAccount` mapper.
+- `brand-bank-account.integration.test.ts` — colocated integration test.
 
 Shares the create-body Zod schema and the account-number encryption utils with `bank-accounts`
 (`#lib/bank-account-body.schemas.js`, `#lib/account-number-encryption.utils.js`,
@@ -33,9 +33,9 @@ granularity the brand dashboard already uses for products/orders, not owner-only
 brand's payout bank account from the brand wallet screen. It belongs to the brand, not to
 whichever member happened to add it.
 
-**Technical:** `brandBankAccount.routes.ts` → `brandBankAccount.controller.ts` (resolves
-`brandId` via `requireBrandId`) → `brandBankAccount.service.ts` →
-`brandBankAccount.repository.ts` → Postgres.
+**Technical:** `brand-bank-account.routes.ts` → `brand-bank-account.controller.ts` (resolves
+`brandId` via `requireBrandId`) → `brand-bank-account.service.ts` →
+`brand-bank-account.repository.ts` → Postgres.
 
 ## Non-obvious rationale
 

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -22,8 +23,6 @@ import type {
 import { crmActivitiesService } from "./crm-activities.service.js";
 import type { SubjectRef } from "./crm-activities.types.js";
 
-const CREATED_STATUS = 201;
-
 const readSubject = (body: {
   subjectType?: "partner" | "customer" | "deal";
   subjectId?: string;
@@ -45,7 +44,7 @@ export const crmActivitiesController = {
       authorMembershipId: membership.id,
       subject: { subjectType: body.subjectType, subjectId: body.subjectId },
     });
-    sendSuccess(res, activity, "Activity logged.", CREATED_STATUS);
+    sendSuccess(res, activity, "Activity logged.", HTTP_STATUS.CREATED);
   },
 
   async listActivities(_req: Request, res: Response) {
@@ -106,7 +105,7 @@ export const crmActivitiesController = {
       },
       principal.userId,
     );
-    sendSuccess(res, task, "Task created.", CREATED_STATUS);
+    sendSuccess(res, task, "Task created.", HTTP_STATUS.CREATED);
   },
 
   async updateTask(_req: Request, res: Response) {

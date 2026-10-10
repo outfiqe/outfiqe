@@ -1,13 +1,14 @@
 import { OAuth2Client } from "google-auth-library";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import type { OAuthCodeExchangeInput, OAuthProfile } from "../oauth.types.js";
 
-const OAUTH_EXCHANGE_FAILED_STATUS = 400;
+const OAUTH_EXCHANGE_FAILED_STATUS = HTTP_STATUS.BAD_REQUEST;
 const OAUTH_EXCHANGE_FAILED_MESSAGE = "Could not complete Google sign-in. Please try again.";
 
 const createGoogleOAuthClient = (): OAuth2Client =>

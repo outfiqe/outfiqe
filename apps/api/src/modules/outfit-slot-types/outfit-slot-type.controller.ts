@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getPlatformPrincipal } from "#modules/platform-access/platform-access.middleware.js";
@@ -15,8 +16,6 @@ import type {
 } from "./outfit-slot-type.schemas.js";
 import { outfitSlotTypeService } from "./outfit-slot-type.service.js";
 import { describeOutfitSlotTypeForAudit } from "./outfit-slot-type.utils.js";
-
-const CREATED_STATUS = 201;
 
 export const outfitSlotTypeController = {
   async listAll(_req: Request, res: Response) {
@@ -37,7 +36,7 @@ export const outfitSlotTypeController = {
       metadata: { before: null, after: describeOutfitSlotTypeForAudit(slotType) },
     });
 
-    sendSuccess(res, slotType, "Slot type created.", CREATED_STATUS);
+    sendSuccess(res, slotType, "Slot type created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

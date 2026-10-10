@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { OutfitEventType, OutfitStatus } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
@@ -8,7 +9,7 @@ import { redis } from "#redis/redis.client.js";
 import {
   createAdminSessionWithPlatformPermissions,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
+} from "#test/integration/auth-helpers.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -19,16 +20,11 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { outfitAdminRepository } from "./outfit-admin.repository.js";
 
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNPROCESSABLE_STATUS = 422;
 const REASON = "Owner asked support to reopen it.";
 
 beforeEach(async () => {
@@ -59,7 +55,7 @@ const lockedBuild = async (owner: OutfitTestUser, title: string) => {
   });
   await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
   const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
-  expect(locked.status).toBe(OK_STATUS);
+  expect(locked.status).toBe(HTTP_STATUS.OK);
   return outfitId;
 };
 
@@ -79,7 +75,7 @@ describe("admin build list and detail", () => {
     const staff = asStaff(authHeader);
 
     const byTitle = await staff.get("/builds?search=dashain");
-    expect(byTitle.status).toBe(OK_STATUS);
+    expect(byTitle.status).toBe(HTTP_STATUS.OK);
     expect(byTitle.body.data.items.map(({ id }: { id: string }) => id)).toEqual([outfitId]);
     expect(byTitle.body.data.items[0]).toMatchObject({
       status: OutfitStatus.LOCKED,
@@ -100,7 +96,7 @@ describe("admin build list and detail", () => {
     ).toBe(true);
 
     const detail = await staff.get(`/builds/${outfitId}`);
-    expect(detail.status).toBe(OK_STATUS);
+    expect(detail.status).toBe(HTTP_STATUS.OK);
     expect(detail.body.data.members).toHaveLength(1);
     expect(detail.body.data.items).toHaveLength(2);
     expect(detail.body.data.versions).toHaveLength(1);
@@ -115,7 +111,7 @@ describe("admin build list and detail", () => {
 
     const history = await asStaff(authHeader).get(`/builds/${outfitId}/history`);
 
-    expect(history.status).toBe(OK_STATUS);
+    expect(history.status).toBe(HTTP_STATUS.OK);
     const types = history.body.data.events.map(({ type }: { type: string }) => type);
     expect(types[0]).toBe(OutfitEventType.LOCKED);
     expect(types.at(-1)).toBe(OutfitEventType.CREATED);
@@ -125,12 +121,14 @@ describe("admin build list and detail", () => {
   it("answers 404 for an unknown build and 403 for staff without build access", async () => {
     const { authHeader } = await createAdminSessionWithPlatformPermissions("platform:builds:read");
     const missing = await asStaff(authHeader).get("/builds/00000000-0000-4000-8000-000000000000");
-    expect(missing.status).toBe(NOT_FOUND_STATUS);
+    expect(missing.status).toBe(HTTP_STATUS.NOT_FOUND);
 
     const { authHeader: supportHeader } =
       await createRoleLimitedStaffSession("platform:support:read");
-    expect((await asStaff(supportHeader).get("/builds")).status).toBe(FORBIDDEN_STATUS);
-    expect((await asStaff(supportHeader).get("/builds/metrics")).status).toBe(FORBIDDEN_STATUS);
+    expect((await asStaff(supportHeader).get("/builds")).status).toBe(HTTP_STATUS.FORBIDDEN);
+    expect((await asStaff(supportHeader).get("/builds/metrics")).status).toBe(
+      HTTP_STATUS.FORBIDDEN,
+    );
   });
 });
 
@@ -146,7 +144,7 @@ describe("unlocking and archiving a build as staff", () => {
       reason: REASON,
     });
 
-    expect(unlocked.status).toBe(OK_STATUS);
+    expect(unlocked.status).toBe(HTTP_STATUS.OK);
     const outfit = await prisma.outfit.findUniqueOrThrow({ where: { id: outfitId } });
     expect(outfit).toMatchObject({ status: OutfitStatus.DRAFT, lockedAt: null });
     expect(outfit.version).toBe(versionBefore + 1);
@@ -163,7 +161,7 @@ describe("unlocking and archiving a build as staff", () => {
     expect(audit.metadata).toMatchObject({ reason: REASON });
 
     const again = await asStaff(authHeader).post(`/builds/${outfitId}/unlock`, { reason: REASON });
-    expect(again.status).toBe(CONFLICT_STATUS);
+    expect(again.status).toBe(HTTP_STATUS.CONFLICT);
   });
 
   it("archives a draft build and refuses to archive it twice", async () => {
@@ -175,14 +173,14 @@ describe("unlocking and archiving a build as staff", () => {
     const staff = asStaff(authHeader);
 
     expect((await staff.post(`/builds/${outfitId}/archive`, { reason: REASON })).status).toBe(
-      OK_STATUS,
+      HTTP_STATUS.OK,
     );
     const outfit = await prisma.outfit.findUniqueOrThrow({ where: { id: outfitId } });
     expect(outfit.status).toBe(OutfitStatus.ARCHIVED);
     expect(outfit.archivedAt).not.toBeNull();
 
     expect((await staff.post(`/builds/${outfitId}/archive`, { reason: REASON })).status).toBe(
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   });
 
@@ -192,14 +190,14 @@ describe("unlocking and archiving a build as staff", () => {
     const { authHeader: managerHeader } =
       await createAdminSessionWithPlatformPermissions("platform:builds:manage");
     const noReason = await asStaff(managerHeader).post(`/builds/${outfitId}/unlock`, {});
-    expect(noReason.status).toBe(UNPROCESSABLE_STATUS);
+    expect(noReason.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 
     const { authHeader: readerHeader } =
       await createRoleLimitedStaffSession("platform:builds:read");
     const reader = asStaff(readerHeader);
-    expect((await reader.get(`/builds/${outfitId}`)).status).toBe(OK_STATUS);
+    expect((await reader.get(`/builds/${outfitId}`)).status).toBe(HTTP_STATUS.OK);
     expect((await reader.post(`/builds/${outfitId}/unlock`, { reason: REASON })).status).toBe(
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   });
 });
@@ -215,7 +213,7 @@ describe("build metrics", () => {
 
     const metrics = await asStaff(authHeader).get("/builds/metrics?weeks=4");
 
-    expect(metrics.status).toBe(OK_STATUS);
+    expect(metrics.status).toBe(HTTP_STATUS.OK);
     const { weeks, sharedBuildCount, publicBuildCount, commissionByTier } = metrics.body.data;
     const thisWeek = weeks.at(-1);
     expect(thisWeek).toMatchObject({ buildsStartedAlone: 2, buildsLocked: 1, likes: 1 });

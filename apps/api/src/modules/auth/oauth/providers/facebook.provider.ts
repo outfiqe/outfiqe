@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -8,7 +9,7 @@ import { describeError } from "#redis/redis.utils.js";
 import type { OAuthCodeExchangeInput, OAuthProfile } from "../oauth.types.js";
 
 const FACEBOOK_GRAPH_BASE_URL = "https://graph.facebook.com/v19.0";
-const OAUTH_EXCHANGE_FAILED_STATUS = 400;
+const OAUTH_EXCHANGE_FAILED_STATUS = HTTP_STATUS.BAD_REQUEST;
 const OAUTH_EXCHANGE_FAILED_MESSAGE = "Could not complete Facebook sign-in. Please try again.";
 
 type FacebookTokenResponse = { access_token: string };

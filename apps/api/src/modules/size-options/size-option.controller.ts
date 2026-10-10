@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 
@@ -10,13 +11,11 @@ import type {
 } from "./size-option.schemas.js";
 import { sizeOptionService } from "./size-option.service.js";
 
-const CREATED_STATUS = 201;
-
 export const sizeOptionController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateSizeOptionBody>(res);
     const sizeOption = await sizeOptionService.create(body);
-    sendSuccess(res, sizeOption, "Size created.", CREATED_STATUS);
+    sendSuccess(res, sizeOption, "Size created.", HTTP_STATUS.CREATED);
   },
 
   async delete(_req: Request, res: Response) {

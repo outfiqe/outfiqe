@@ -8,14 +8,14 @@ never entered by a user — it's seeded once and cached.
 
 ## Structure
 
-- `nepalBank.routes.ts` — `GET /` (authenticated, cached).
-- `nepalBank.controller.ts` — reads the request, calls the service, sends the response envelope.
-- `nepalBank.service.ts` — `listActive` for the public listing; `requireActiveBank` for other
+- `nepal-bank.routes.ts` — `GET /` (authenticated, cached).
+- `nepal-bank.controller.ts` — reads the request, calls the service, sends the response envelope.
+- `nepal-bank.service.ts` — `listActive` for the public listing; `requireActiveBank` for other
   modules (`bank-accounts`, `brand-bank-accounts`) to validate a submitted `bankId`.
-- `nepalBank.repository.ts` — Prisma queries against `NepalBank`.
-- `nepalBank.types.ts` — the full DB-shaped record and the public (no `isActive`) view.
-- `nepalBank.utils.ts` — `toPublicNepalBank` mapper.
-- `nepalBank.integration.test.ts` — colocated integration test.
+- `nepal-bank.repository.ts` — Prisma queries against `NepalBank`.
+- `nepal-bank.types.ts` — the full DB-shaped record and the public (no `isActive`) view.
+- `nepal-bank.utils.ts` — `toPublicNepalBank` mapper.
+- `nepal-bank.integration.test.ts` — colocated integration test.
 
 ## Funnel
 
@@ -23,8 +23,8 @@ never entered by a user — it's seeded once and cached.
 bank-account form (`bank-accounts`/`brand-bank-accounts` features), nothing more — there's no
 screen dedicated to this module on its own.
 
-**Technical:** `nepalBank.routes.ts` → `nepalBank.controller.ts` → `nepalBank.service.ts` →
-`nepalBank.repository.ts` → Postgres. The list is populated two ways: the
+**Technical:** `nepal-bank.routes.ts` → `nepal-bank.controller.ts` → `nepal-bank.service.ts` →
+`nepal-bank.repository.ts` → Postgres. The list is populated two ways: the
 `20260906120000_nepal_banks_bootstrap_defaults` migration inserts every bank in
 `prisma/seed-data/nepal-banks.json` (`INSERT ... ON CONFLICT ("code") DO NOTHING`), so any
 environment is bank-pickable the moment migrations finish; `seedNepalBanks` in `prisma/seed.ts`
@@ -47,5 +47,5 @@ upserts the same JSON by `code` for local demo databases. Served from a Redis-ca
   in sync with it going forward (same stance as `20260901120000_withdraw_policy_bootstrap_defaults`);
   a rename or a new bank still ships by editing the JSON and re-running the seed, or by a follow-up
   migration. Integration tests can't assert the seeded rows — `resetDatabase()` truncates every
-  table after each test — so `nepalBank.integration.test.ts` only asserts relative ordering of the
+  table after each test — so `nepal-bank.integration.test.ts` only asserts relative ordering of the
   banks it creates itself, never an exact list.

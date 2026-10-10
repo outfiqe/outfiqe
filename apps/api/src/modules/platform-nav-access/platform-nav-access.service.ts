@@ -1,5 +1,6 @@
 import { isPlatformNavKey, MAX_PLATFORM_CO_FOUNDERS, type PlatformNavKey } from "@outfiqe/utils";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { cacheService } from "#redis/cache.service.js";
@@ -16,9 +17,6 @@ import type {
   NavAccessOverview,
   NavAccessResolution,
 } from "./platform-nav-access.types.js";
-
-const CONFLICT_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
 
 const readHiddenNavKeysFromDb = async (): Promise<PlatformNavKey[]> => {
   const stored = await platformNavAccessRepository.findConfigHiddenNavKeys();
@@ -118,14 +116,14 @@ export const platformNavAccessService = {
       throw new AppError(
         "MEMBERSHIP_NOT_FOUND",
         "That platform member could not be found.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
     if (target.isPlatformSuperAdmin) {
       throw new AppError(
         "ALREADY_CO_FOUNDER",
         "That member is already a co-founder.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -142,7 +140,7 @@ export const platformNavAccessService = {
         throw new AppError(
           "CO_FOUNDER_LIMIT_REACHED",
           `The co-founder group is capped at ${MAX_PLATFORM_CO_FOUNDERS}.`,
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       await platformNavAccessRepository.setCoFounderFlag(membershipId, true, client);
@@ -162,7 +160,11 @@ export const platformNavAccessService = {
       context.platformOrganizationId,
     );
     if (!target || !target.isPlatformSuperAdmin) {
-      throw new AppError("NOT_A_CO_FOUNDER", "That member is not a co-founder.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "NOT_A_CO_FOUNDER",
+        "That member is not a co-founder.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     await platformNavAccessRepository.runInTransaction(async (client) => {
@@ -178,7 +180,7 @@ export const platformNavAccessService = {
         throw new AppError(
           "LAST_CO_FOUNDER",
           "You can't remove the last co-founder — promote another member first.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       await platformNavAccessRepository.setCoFounderFlag(membershipId, false, client);

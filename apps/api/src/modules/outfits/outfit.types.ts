@@ -15,7 +15,7 @@ import type {
   OutfitCoverPhotoView,
   OutfitPhotoLimitsView,
   OutfitPhotoView,
-} from "./outfit-photo.types.js";
+} from "./photos/photo.types.js";
 
 export type OutfitViewerRole = (typeof OUTFIT_VIEWER_ROLE)[keyof typeof OUTFIT_VIEWER_ROLE];
 

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
@@ -41,9 +42,7 @@ import {
 
 const NO_ACTIVE_LEVELS_RESULT: AwardXpResult = { awarded: false, reason: "ACTIVITY_DISABLED" };
 const MIN_TOTAL_XP = 0;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const VALIDATION_STATUS = 422;
+const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const isPlainMetadataObject = (
   metadata: Prisma.InputJsonValue | undefined,
@@ -226,7 +225,7 @@ const createLevel = async (input: CreateLevelBody): Promise<LevelRecord> => {
       throw new AppError(
         "LEVEL_NUMBER_TAKEN",
         `Level ${input.level} already exists.`,
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     throw error;
@@ -235,7 +234,8 @@ const createLevel = async (input: CreateLevelBody): Promise<LevelRecord> => {
 
 const updateLevel = async (id: string, input: UpdateLevelBody): Promise<LevelRecord> => {
   const level = await xpRepository.findLevelById(id);
-  if (!level) throw new AppError("LEVEL_NOT_FOUND", "This level doesn't exist.", NOT_FOUND_STATUS);
+  if (!level)
+    throw new AppError("LEVEL_NOT_FOUND", "This level doesn't exist.", HTTP_STATUS.NOT_FOUND);
 
   return xpRepository.updateLevel(id, input);
 };
@@ -252,7 +252,7 @@ const updateActivityConfig = async (
     throw new AppError(
       "ACTIVITY_CONFIG_NOT_FOUND",
       `No XP config exists for ${activityType}.`,
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return updated;
@@ -281,7 +281,7 @@ const updateMultiplier = async (
     throw new AppError(
       "XP_MULTIPLIER_NOT_FOUND",
       "This XP multiplier doesn't exist.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return updated;
@@ -293,7 +293,7 @@ const adjustXp = async (
 ): Promise<AwardXpResult> => {
   const targetUser = await userRepository.findById(userId);
   if (!targetUser) {
-    throw new AppError("USER_NOT_FOUND", "This user doesn't exist.", NOT_FOUND_STATUS);
+    throw new AppError("USER_NOT_FOUND", "This user doesn't exist.", HTTP_STATUS.NOT_FOUND);
   }
 
   const progress = await xpRepository.findProgressForUser(userId);

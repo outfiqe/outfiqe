@@ -1,13 +1,12 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type { AddressIdParam, CreateAddressBody, UpdateAddressBody } from "./address.schemas.js";
 import { addressService } from "./address.service.js";
-
-const CREATED_STATUS = 201;
 
 export const addressController = {
   async list(_req: Request, res: Response) {
@@ -20,7 +19,7 @@ export const addressController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateAddressBody>(res);
     const address = await addressService.create(userId, body);
-    sendSuccess(res, address, "Address saved.", CREATED_STATUS);
+    sendSuccess(res, address, "Address saved.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {

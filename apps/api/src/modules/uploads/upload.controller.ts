@@ -1,12 +1,13 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 
 import { uploadService } from "./upload.service.js";
 
-const NO_FILES_STATUS = 422;
+const NO_FILES_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 export const uploadController = {
   async upload(req: Request, res: Response) {

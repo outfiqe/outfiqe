@@ -2,7 +2,7 @@ import { addDays } from "date-fns/addDays";
 import { addMonths } from "date-fns/addMonths";
 
 import { env } from "#config/env.config.js";
-import { crmSubscriptionRenewalDueTemplate } from "#email-templates/templates.js";
+import { crmSubscriptionRenewalDueTemplate } from "#email-templates/crm.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { SubscriptionStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";

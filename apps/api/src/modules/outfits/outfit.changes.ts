@@ -1,8 +1,8 @@
 import type { Prisma } from "#generated/prisma/client.js";
 import { OutfitEventType } from "#generated/prisma/enums.js";
-import { buildChatService } from "#modules/chat/build-chat.service.js";
+import { buildChatService } from "#modules/chat/build-chat/build-chat.service.js";
 import { CHAT_SYSTEM_EVENT } from "#modules/chat/chat.constants.js";
-import type { ChatSystemEvent } from "#modules/chat/message.schemas.js";
+import type { ChatSystemEvent } from "#modules/chat/messages/message.schemas.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 

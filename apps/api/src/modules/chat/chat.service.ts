@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { AccountStatus, UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
@@ -15,20 +16,16 @@ import {
 } from "./chat.types.js";
 import { toBlockedChatContact } from "./chat.utils.js";
 
-const BAD_REQUEST_STATUS = 400;
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-
 const requireBlockableTarget = async (targetId: string) => {
   const target = await userRepository.findById(targetId);
   if (!target) {
-    throw new AppError("NOT_FOUND", "User not found.", NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", "User not found.", HTTP_STATUS.NOT_FOUND);
   }
   if (target.role === UserRole.ADMIN) {
     throw new AppError(
       "CANNOT_BLOCK_ADMIN",
       "Chat with Admin/Support accounts can't be turned off.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
   return target;
@@ -107,7 +104,7 @@ export const chatService = {
       throw new AppError(
         "ADMIN_CHAT_ALWAYS_ON",
         "Admin accounts must stay reachable for support and can't turn off chat.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -124,7 +121,7 @@ export const chatService = {
       throw new AppError(
         "CANNOT_BLOCK_SELF",
         "You can't turn off chat with yourself.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 

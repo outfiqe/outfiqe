@@ -13,9 +13,13 @@ bought the linked brand's products. Every query is scoped to `Organization.linke
   settled-payment-status set, and the `ORGANIZATION_NOT_LINKED_TO_BRAND` reason code.
 - `crm-relationships.types.ts` — `PartnerSummary`/`CustomerSummary`, the `RelationshipListPage`
   envelope (`items` + `total` + `hasMore` + `reason`), and the detail shapes.
-- `crm-relationships.repository.ts` — raw SQL for the aggregate list and detail-core queries
-  (grouped in the database, never fetch-then-reduce), plus Prisma for the small
-  recent-orders/recent-attributed-orders reads and `isBrandPartner`.
+- `crm-relationships.repository.ts` — `crmRelationshipsRepository`, the object the service imports:
+  `crmPartnerRepository` and `crmCustomerRepository` spread together.
+- `partners/partner.repository.ts` and `customers/customer.repository.ts` — raw SQL for each side's
+  aggregate list and detail-core queries (grouped in the database, never fetch-then-reduce), plus
+  Prisma for the small recent-orders/recent-attributed-orders reads and `isBrandPartner`.
+- `crm-relationships.query-helpers.ts` — the name-or-handle search clause, ISO date formatting, and
+  the total-count reader both sides share.
 - `crm-relationships.service.ts` — resolves the org's `linkedBrandId`, returns an empty page with
   a `reason` when there is none (list endpoints) or a `404` (detail endpoints), clamps the page
   window, and exposes `isPartner(organization, creatorId)` for `crm-pipeline` (deal subjects).
@@ -38,7 +42,7 @@ tenant's own brand.
 **Technical:** `crm-relationships.routes.ts` → `resolveTenant` → `requireAuth` →
 `requireAdvancedCrmFeatures` (from `crm-billing`) → `requirePermission` →
 `crm-relationships.controller.ts` → `crm-relationships.service.ts` →
-`crm-relationships.repository.ts` (`$queryRaw` / Prisma) → Postgres.
+`crm-relationships.repository.ts` (`partners/` or `customers/`, `$queryRaw` / Prisma) → Postgres.
 
 ## Non-obvious rationale
 

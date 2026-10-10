@@ -1,5 +1,40 @@
 # Orders — checkout
 
+## Purpose
+
+Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-delivery order, then carries it through fulfilment, cancellation and returns — for the shopper, the admin team, and each brand shipping its own part of the order.
+
+## Structure
+
+- `order.routes.ts`, `order.controller.ts` — the HTTP layer for shopper, admin and brand endpoints.
+- `order.service.ts` — `orderService`, the only object the controller and other modules import. It holds the shopper/admin reads (`getOrder`, `listOrders`, `listAllAdmin`, `getOrderAdmin`) and `advanceFulfilment`, and spreads in every topic service below.
+- `order.repository.ts` — `orderRepository`: order reads and writes, payment-state changes (`markCancelled`, `markReturned`, `markRefunded`, `failUnsettledPayment`, `markNeedsManualRefund`), and `listSettledPurchasedProductIds`. Spreads in `orderFulfilmentGroupRepository`.
+- `order.utils.ts` — the order, item, payment and admin view mappers, and `deriveOrderFulfilment` (the order-level fulfilment rollup, unit-tested in `order.utils.test.ts`).
+- `order.attribution.utils.ts` — creator attribution for each line (see "Attribution" below).
+- `order.constants.ts` — `FULFILMENT_ADVANCE_FROM` (which statuses each step can move from), the audit target type, and the stale-shipment reminder settings.
+- `order.jobs.ts` — the stale-shipment reminder job.
+- `order.schemas.ts`, `order.types.ts` — request validation and response shapes.
+- `checkout/` — one checkout, read top to bottom in `checkout.service.ts`: `orderCheckoutService.checkout` (idempotency) calls `checkoutOnce`, which runs each step below in order. The checkout and checkout-limits integration tests sit here too.
+  - `checkout.lines.ts` — the lines being bought (the Buy Now item, or the cart) and the stock check before anything is priced.
+  - `checkout.pricing.ts` — brand discounts, the coupon, delivery and COD fees, and the money check (`assertOrderMoneyInvariant`).
+  - `checkout.attribution.ts` — which creator or build each line is credited to, and the commission tier and shares that follow.
+  - `checkout.utils.ts` — `toAttributedOrderItems`, turning priced, attributed lines into order items (unit-tested).
+  - `checkout.settlement.ts` — the commission rule, gateway fee and exempt brands loaded before the transaction, and the brand payout and creator commission rows written inside it.
+  - `checkout.commit.ts` — the other writes inside the transaction: the cash-on-delivery stock decrement, the coupon redemption, and one fulfilment group per brand.
+  - `checkout.after-commit.ts` — what happens only once the order is saved: domain events and the confirmation emails.
+  - `checkout.types.ts`, `checkout.constants.ts` — the shapes passed between steps, and the endpoint name and statuses.
+- `cancellation/` — `cancellation.service.ts` (`orderCancellationService.cancel`, cancel-and-refund-if-paid for admins and shoppers) and its integration test.
+- `returns/` — `return.service.ts` (`orderReturnService.markReturned`, including the refund and the manual-refund alert) and its integration test.
+- `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`), and the integration tests.
+
+Shared integration-test setup lives in `src/testing/integration/order-fixtures.ts`.
+
+## Funnel
+
+**User-facing:** a shopper checks out from their cart or with Buy Now, pays by eSewa/Khalti or chooses cash on delivery, and sees the order in their account. Each brand packs and ships its own part of the order from the brand dashboard. The shopper can cancel before it ships; the admin team can advance, cancel, refund, or mark an order returned.
+
+**Technical:** `order.routes.ts` → `order.controller.ts` → `orderService` (or the topic service it spreads in: `checkout/`, `cancellation/`, `returns/`, `fulfilment-groups/`) → `orderRepository` / `orderFulfilmentGroupRepository` → Postgres via Prisma, inside one transaction per write. Checkout and payment confirmation publish domain events over Redis Streams for XP, notifications and commissions.
+
 ## Only shoppers can buy
 
 The buyer-facing routes — `POST /orders/checkout`, `GET /orders`, `GET /orders/:orderId`,
@@ -59,7 +94,7 @@ Every downstream computation — `subtotal`, the commission tier lookup
 `pricedLines`, never the pre-discount `lines`. This is deliberate, not incidental: it's what makes
 `BrandPayout.grossAmount = unitPrice × qty` stay true with **zero changes** to the settlement code
 in the section above — a discounted order's payout math is byte-identical to a full-price order at
-the discounted price, verified in `order.integration.test.ts`.
+the discounted price, verified in `checkout/checkout.integration.test.ts`.
 
 **Commission currently follows the discounted price, not list price** — `findTierForPrice` is
 called with `pricedLines[index].unitPrice`, so a creator's flat per-band commission reflects what
@@ -76,7 +111,7 @@ Fetching discounts by `orderPlacedAt` (the same `Date` used for attribution reso
 checkout request is judged consistently against one instant, not two. A discount created _after_
 `orderPlacedAt` naturally can't match `startsAt <= orderPlacedAt`, so an already-in-flight or
 already-placed checkout is never retroactively affected — proven directly
-(`order.integration.test.ts`, "never retroactively changes an already-placed order").
+(`checkout/checkout.integration.test.ts`, "never retroactively changes an already-placed order").
 
 ## Idempotency is claim-first, not check-then-write
 
@@ -297,11 +332,11 @@ can act on it.
 
 ## `Order.deliveredAt` is stamped from the group rollup, not the group itself
 
-`setOrderFulfilmentRollup` (`order.repository.ts`) is the single place that writes
+`setOrderFulfilmentRollup` (`fulfilment-groups/fulfilment-group.repository.ts`) is the single place that writes
 `Order.fulfilmentStatus`/`fulfilmentSummary` after any group changes — the admin advance path and
 `advanceBrandFulfilmentGroup` both funnel through it. It also stamps `Order.deliveredAt` the moment
 the recomputed rollup reaches `DELIVERED`, guarded by `deliveredAt: null` so it's only ever set
-once. This is the field `commission.repository.ts`/`brandPayout.repository.ts`'s
+once. This is the field `commission.repository.ts`/`brand-payout.repository.ts`'s
 `findApprovableIds` sweeps read (`fulfilmentStatus = DELIVERED AND deliveredAt <= cutoff`) to mature
 commissions and brand payouts — before this, a brand marking its own shipment delivered moved the
 order to `DELIVERED` without ever stamping the timestamp those sweeps depend on, so a brand-fulfilled

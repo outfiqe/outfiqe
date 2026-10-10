@@ -1,178 +1,32 @@
-import { randomUUID } from "node:crypto";
-
-import { PRODUCT_SORT } from "@outfiqe/utils";
-import { LRUCache } from "lru-cache";
-
-import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
-import type { Prisma } from "#generated/prisma/client.js";
-import {
-  DiscountType,
-  InventoryMovementKind,
-  InventoryMovementSource,
-  ProductStatus,
-} from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
-import { sendEmail } from "#lib/email.utils.js";
-import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
-import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
-import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
-import type { ActiveBrandDiscount } from "#modules/discounts/discount.types.js";
-import { isBrandDiscountWithinCeiling } from "#modules/discounts/discount.utils.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
-import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
-import { saleService } from "#modules/sale/sale.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
-import { trendingService } from "#modules/trending/trending.service.js";
-import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
-import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
-import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
-import { cacheService } from "#redis/cache.service.js";
-import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
-import { describeError } from "#redis/redis.utils.js";
 
-import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "./product.constants.js";
+import { productCatalogService } from "./catalog/catalog.service.js";
+import { productDiscountService } from "./discounts/discount.service.js";
+import { productInventoryService, recordNewSizeStock } from "./inventory/inventory.service.js";
+import { requireOwnedProduct } from "./product.guards.js";
 import { productRepository } from "./product.repository.js";
 import type {
-  AdjustStockBody,
-  AutocompleteQuery,
   CreateProductBody,
-  ListBrandProductsQuery,
   ListMineProductsQuery,
-  ListPublicProductsQuery,
-  ListReviewProductsQuery,
-  SetProductDiscountBody,
   UpdateProductBody,
-  UpdateProductDiscountBody,
 } from "./product.schemas.js";
 import type {
-  BrandProductSize,
   CreateProductSizeInput,
   ProductBrandSummary,
   ProductBrandSummaryPage,
-  ProductDiscountView,
-  ProductRecord,
-  ProductReviewPage,
-  ProductSearchCursor,
-  ProductSuggestion,
-  PublicProduct,
-  PublicProductDetail,
-  PublicProductPage,
-  SizeStockDelta,
-  StockLine,
-  StockMovement,
 } from "./product.types.js";
-import {
-  isUuid,
-  mergeStockLinesBySize,
-  toBrandSummary,
-  toDiscountView,
-  toPublicProduct,
-  toSuggestion,
-} from "./product.utils.js";
-
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
-
-const DISCOUNT_CEILING_PERCENT = MAX_BRAND_DISCOUNT_BASIS_POINTS / BASIS_POINTS_PER_PERCENT;
-const DISCOUNT_EXCEEDS_CEILING_MESSAGE = `A brand discount can't be worth more than ${DISCOUNT_CEILING_PERCENT}% of the product's price.`;
-
-const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
-const AUTOCOMPLETE_CACHE_NAMESPACE = "product-autocomplete";
-const MS_PER_SECOND = 1000;
-
-const autocompleteMemoryCache = new LRUCache<string, ProductSuggestion[]>({
-  max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * MS_PER_SECOND,
-});
-
-const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
-  const product = await productRepository.findById(productId);
-  if (!product || product.brandId !== brandId || product.deletedAt) {
-    throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
-  }
-  return product;
-};
-
-const requirePendingProduct = async (productId: string): Promise<ProductRecord> => {
-  const product = await productRepository.findById(productId);
-  if (!product || product.deletedAt) {
-    throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
-  }
-  if (product.status !== ProductStatus.PENDING) {
-    throw new AppError(
-      "ALREADY_REVIEWED",
-      "This product has already been reviewed.",
-      CONFLICT_STATUS,
-    );
-  }
-  return product;
-};
-
-const notifyBrand = async (
-  product: ProductRecord,
-  template: (name: string) => { subject: string; html: string },
-  fallbackBody: string,
-): Promise<void> => {
-  const brand = await brandRepository.findById(product.brandId);
-  if (!brand) return;
-
-  const { subject, html } = template(product.name);
-  await sendEmail({ to: brand.email, subject, body: fallbackBody, html });
-};
-
-const recordStockChanges = async (
-  tx: Prisma.TransactionClient,
-  movement: StockMovement,
-  sizeDeltas: SizeStockDelta[],
-): Promise<void> => {
-  if (sizeDeltas.length === 0) return;
-
-  await productRepository.recordInventoryMovements(
-    tx,
-    sizeDeltas.map(({ sizeId, delta }) => ({ ...movement, sizeId, delta })),
-  );
-  await enqueueOutboxEvent(tx, {
-    topic: OUTBOX_TOPIC.STOCK_CHANGED,
-    aggregateId: movement.sourceId,
-    payload: { sizeIds: sizeDeltas.map(({ sizeId }) => sizeId) },
-  });
-};
-
-const recordNewSizeStock = (
-  tx: Prisma.TransactionClient,
-  productId: string,
-  sizes: BrandProductSize[],
-): Promise<void> =>
-  recordStockChanges(
-    tx,
-    {
-      kind: InventoryMovementKind.SIZE_CREATED,
-      sourceType: InventoryMovementSource.PRODUCT_SIZE,
-      sourceId: productId,
-    },
-    sizes.map(({ id, stock }) => ({ sizeId: id, delta: stock })),
-  );
-
-const hydrateSavedFlags = async (
-  products: PublicProduct[],
-  viewerId?: string,
-): Promise<PublicProduct[]> => {
-  if (!viewerId || products.length === 0) return products;
-
-  const savedProductIds = await wishlistRepository.listSavedProductIds(
-    viewerId,
-    products.map((product) => product.id),
-  );
-  return products.map((product) => ({ ...product, isSaved: savedProductIds.has(product.id) }));
-};
+import { toBrandSummary } from "./product.utils.js";
+import { productReviewService } from "./review/review.service.js";
+import { productSocialProofService } from "./social-proof/social-proof.service.js";
 
 export const productService = {
   async create(
@@ -221,7 +75,7 @@ export const productService = {
           throw new AppError(
             "SIZE_OPTION_NOT_FOUND",
             "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
+            HTTP_STATUS.NOT_FOUND,
           );
         }
         return { label: sizeOption.label, stock, sortOrder };
@@ -274,7 +128,7 @@ export const productService = {
         throw new AppError(
           "SIZES_REQUIRED",
           "Add at least one size for the new product type.",
-          BAD_REQUEST_STATUS,
+          HTTP_STATUS.BAD_REQUEST,
         );
       }
 
@@ -290,7 +144,7 @@ export const productService = {
           throw new AppError(
             "SIZE_OPTION_NOT_FOUND",
             "One or more selected sizes weren't found.",
-            NOT_FOUND_STATUS,
+            HTTP_STATUS.NOT_FOUND,
           );
         }
         return { label: sizeOption.label, stock, sortOrder };
@@ -321,7 +175,7 @@ export const productService = {
         throw new AppError(
           "SIZES_IN_USE",
           "Can't change product type — some of its current sizes already have orders and can't be removed.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -332,136 +186,6 @@ export const productService = {
     const brandId = await requireBrandId(userId);
     await requireOwnedProduct(productId, brandId);
     await productRepository.softDelete(productId);
-  },
-
-  async setDiscount(
-    userId: string,
-    productId: string,
-    input: SetProductDiscountBody,
-  ): Promise<ProductDiscountView> {
-    const brandId = await requireBrandId(userId);
-    const product = await requireOwnedProduct(productId, brandId);
-
-    const discount: ActiveBrandDiscount = {
-      discountType: input.discountType,
-      percentBasisPoints: input.percentBasisPoints ?? null,
-      fixedAmount: input.fixedAmount ?? null,
-    };
-    if (!isBrandDiscountWithinCeiling(product.price, discount)) {
-      throw new AppError(
-        "DISCOUNT_EXCEEDS_CEILING",
-        DISCOUNT_EXCEEDS_CEILING_MESSAGE,
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    const created = await productRepository.createDiscount(productId, {
-      discountType: input.discountType,
-      percentBasisPoints: discount.percentBasisPoints,
-      fixedAmount: discount.fixedAmount,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt ?? null,
-      createdById: userId,
-    });
-
-    return toDiscountView(created);
-  },
-
-  async updateDiscount(
-    userId: string,
-    productId: string,
-    input: UpdateProductDiscountBody,
-  ): Promise<ProductDiscountView> {
-    const brandId = await requireBrandId(userId);
-    const product = await requireOwnedProduct(productId, brandId);
-
-    const existing = await productRepository.findActiveDiscount(productId);
-    if (!existing) {
-      throw new AppError(
-        "DISCOUNT_NOT_FOUND",
-        "This product has no active discount to edit.",
-        NOT_FOUND_STATUS,
-      );
-    }
-
-    const discountTypeChanged =
-      input.discountType !== undefined && input.discountType !== existing.discountType;
-    const nextDiscountType = input.discountType ?? existing.discountType;
-
-    const nextPercentBasisPoints = discountTypeChanged
-      ? nextDiscountType === DiscountType.PERCENT
-        ? (input.percentBasisPoints ?? null)
-        : null
-      : (input.percentBasisPoints ?? existing.percentBasisPoints);
-
-    const nextFixedAmount = discountTypeChanged
-      ? nextDiscountType === DiscountType.FIXED
-        ? (input.fixedAmount ?? null)
-        : null
-      : (input.fixedAmount ?? existing.fixedAmount);
-
-    if (nextDiscountType === DiscountType.PERCENT && nextPercentBasisPoints === null) {
-      throw new AppError(
-        "DISCOUNT_AMOUNT_REQUIRED",
-        "Switching to a percent discount needs percentBasisPoints.",
-        BAD_REQUEST_STATUS,
-      );
-    }
-    if (nextDiscountType === DiscountType.FIXED && nextFixedAmount === null) {
-      throw new AppError(
-        "DISCOUNT_AMOUNT_REQUIRED",
-        "Switching to a fixed discount needs fixedAmount.",
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    const nextStartsAt = input.startsAt ?? existing.startsAt;
-    const nextEndsAt = input.endsAt !== undefined ? input.endsAt : existing.endsAt;
-    if (nextEndsAt && nextEndsAt <= nextStartsAt) {
-      throw new AppError(
-        "INVALID_DISCOUNT_WINDOW",
-        "endsAt must be after startsAt.",
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    const nextDiscount: ActiveBrandDiscount = {
-      discountType: nextDiscountType,
-      percentBasisPoints: nextPercentBasisPoints,
-      fixedAmount: nextFixedAmount,
-    };
-    if (!isBrandDiscountWithinCeiling(product.price, nextDiscount)) {
-      throw new AppError(
-        "DISCOUNT_EXCEEDS_CEILING",
-        DISCOUNT_EXCEEDS_CEILING_MESSAGE,
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    const updated = await productRepository.updateDiscount(existing.id, {
-      discountType: nextDiscountType,
-      percentBasisPoints: nextPercentBasisPoints,
-      fixedAmount: nextFixedAmount,
-      startsAt: nextStartsAt,
-      endsAt: nextEndsAt,
-    });
-
-    return toDiscountView(updated);
-  },
-
-  async removeDiscount(userId: string, productId: string): Promise<void> {
-    const brandId = await requireBrandId(userId);
-    await requireOwnedProduct(productId, brandId);
-
-    const existing = await productRepository.findActiveDiscount(productId);
-    if (!existing) {
-      throw new AppError(
-        "DISCOUNT_NOT_FOUND",
-        "This product has no active discount to remove.",
-        NOT_FOUND_STATUS,
-      );
-    }
-    await productRepository.deactivateDiscount(existing.id);
   },
 
   async listMine(
@@ -475,364 +199,13 @@ export const productService = {
     return { products: pagedProducts.map(toBrandSummary), nextCursor };
   },
 
-  async listForReview({
-    status: rawStatus,
-    isThrift,
-    cursor,
-    limit,
-  }: ListReviewProductsQuery): Promise<ProductReviewPage> {
-    const status = rawStatus ?? ProductStatus.PENDING;
-    const rows = await productRepository.listForReview(status, { cursor, limit, isThrift });
+  ...productCatalogService,
 
-    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-    return {
-      products: pagedProducts.map(({ categories, ...rest }) => ({
-        ...rest,
-        categories: categories.map((category) => category.name),
-      })),
-      nextCursor,
-    };
-  },
+  ...productDiscountService,
 
-  async autocomplete({ q }: AutocompleteQuery): Promise<ProductSuggestion[]> {
-    const normalizedQuery = q.trim().toLowerCase();
+  ...productInventoryService,
 
-    const memoryHit = autocompleteMemoryCache.get(normalizedQuery);
-    if (memoryHit) return memoryHit;
+  ...productReviewService,
 
-    const cacheKey = redisKeys.cache(AUTOCOMPLETE_CACHE_NAMESPACE, normalizedQuery);
-    try {
-      const cached = await cacheService.get<ProductSuggestion[]>(cacheKey);
-      if (cached) {
-        autocompleteMemoryCache.set(normalizedQuery, cached);
-        return cached;
-      }
-    } catch (error) {
-      logger.warn(`Cache read failed for "${cacheKey}": ${describeError(error)}`);
-    }
-
-    const { ids } = await productRepository.searchProductIds({
-      query: q,
-      limit: AUTOCOMPLETE_LIMIT,
-      offset: 0,
-    });
-    const rows = await productRepository.listApprovedByIds(ids);
-    const suggestions = rows.map(toSuggestion);
-
-    autocompleteMemoryCache.set(normalizedQuery, suggestions);
-    try {
-      await cacheService.set(cacheKey, suggestions, CACHE_TTL.PRODUCT_AUTOCOMPLETE);
-    } catch (error) {
-      logger.warn(`Cache write failed for "${cacheKey}": ${describeError(error)}`);
-    }
-
-    return suggestions;
-  },
-
-  async listPublic(
-    {
-      type: typeSlug,
-      category,
-      q,
-      sort,
-      minPrice,
-      maxPrice,
-      inStock,
-      thrift,
-      cursor,
-      limit,
-    }: ListPublicProductsQuery,
-    viewerId?: string,
-  ): Promise<PublicProductPage> {
-    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
-    const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
-
-    if (q) {
-      const offset = decodeCursor<ProductSearchCursor>(cursor)?.offset ?? 0;
-      const { ids, total, brandCount } = await productRepository.searchProductIds({
-        query: q,
-        limit,
-        offset,
-        categoryId,
-        productTypeId,
-        minPrice,
-        maxPrice,
-        inStockOnly: inStock,
-        thrift,
-      });
-      const rows = await productRepository.listApprovedByIds(ids);
-      const nextOffset = offset + ids.length;
-      const nextCursor =
-        nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
-
-      const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-      return { products, nextCursor, total, brandCount };
-    }
-
-    const isUnfilteredTrendingBrowse =
-      sort === PRODUCT_SORT.TRENDING &&
-      !categoryId &&
-      !productTypeId &&
-      !minPrice &&
-      !maxPrice &&
-      !inStock &&
-      thrift === undefined;
-
-    if (isUnfilteredTrendingBrowse) {
-      const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
-      const isColdStart = ids.length === 0 && !cursor;
-
-      if (!isColdStart) {
-        const [rows, counts] = await Promise.all([
-          productRepository.listApprovedByIds(ids),
-          productRepository.countPublic({}),
-        ]);
-
-        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-        return {
-          products,
-          nextCursor,
-          total: counts.total,
-          brandCount: counts.brandCount,
-        };
-      }
-    }
-
-    const isUnfilteredSaleBrowse =
-      sort === PRODUCT_SORT.ON_SALE &&
-      !categoryId &&
-      !productTypeId &&
-      !minPrice &&
-      !maxPrice &&
-      !inStock &&
-      thrift === undefined;
-
-    if (isUnfilteredSaleBrowse) {
-      const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
-
-      if (ids.length > 0 || cursor) {
-        const [rows, counts] = await Promise.all([
-          productRepository.listApprovedByIds(ids),
-          productRepository.countPublic({ sort: PRODUCT_SORT.ON_SALE }),
-        ]);
-
-        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-        return {
-          products,
-          nextCursor,
-          total: counts.total,
-          brandCount: counts.brandCount,
-        };
-      }
-    }
-
-    const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
-    const filter = {
-      categoryId,
-      productTypeId,
-      minPrice,
-      maxPrice,
-      inStockOnly: inStock,
-      thrift,
-      sort,
-    };
-    const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ ...filter, cursor: keysetCursor, limit }),
-      productRepository.countPublic(filter),
-    ]);
-
-    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-
-    const products = await hydrateSavedFlags(pagedProducts.map(toPublicProduct), viewerId);
-    return {
-      products,
-      nextCursor,
-      total: counts.total,
-      brandCount: counts.brandCount,
-    };
-  },
-
-  async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
-    const product = await productRepository.findPublicById(id);
-    if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
-
-    const { brandId, brand, sizes, images, wornByCount } = product;
-
-    const [seenOnCreators, isSaved] = await Promise.all([
-      productRepository.listSeenOnCreators(id),
-      viewerId ? wishlistRepository.isSaved(viewerId, id) : false,
-    ]);
-
-    return {
-      ...toPublicProduct(product),
-      brand: { id: brandId, name: brand.name },
-      sizes,
-      images: images.map((image) => image.url),
-      wornByCount,
-      seenOnCreators,
-      isSaved,
-    };
-  },
-
-  async recountWornBy(productId: string): Promise<void> {
-    const count = await productRepository.countDistinctApprovedCreators(productId);
-    await productRepository.updateWornByCount(productId, count);
-  },
-
-  async recountWornByForCreator(creatorId: string): Promise<void> {
-    const productIds = await productRepository.listProductIdsTaggedByCreator(creatorId);
-    await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
-  },
-
-  async recomputeRatingSummary(productId: string): Promise<void> {
-    await productRepository.refreshRatingSummary(productId);
-  },
-
-  async listPublicByBrand(
-    brandId: string,
-    { type: typeSlug, cursor, limit }: ListBrandProductsQuery,
-    viewerId?: string,
-  ): Promise<PublicProductPage> {
-    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
-
-    const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ brandId, productTypeId, cursor, limit }),
-      productRepository.countPublic({ brandId, productTypeId }),
-    ]);
-
-    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-
-    const products = await hydrateSavedFlags(pagedProducts.map(toPublicProduct), viewerId);
-    return {
-      products,
-      nextCursor,
-      total: counts.total,
-      brandCount: counts.brandCount,
-    };
-  },
-
-  async listTrending(viewerId?: string): Promise<PublicProduct[]> {
-    const rankedIds = await trendingService.getTrendingProductIds(TRENDING_LIMIT);
-    const rows =
-      rankedIds.length > 0
-        ? await productRepository.listApprovedByIds(rankedIds)
-        : await productRepository.listTrending();
-    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-  },
-
-  async listSale(viewerId?: string): Promise<PublicProduct[]> {
-    const rankedIds = await saleService.getSaleProductIds(viewerId, SALE_RAIL_LIMIT);
-    if (rankedIds.length === 0) return [];
-    const rows = await productRepository.listApprovedByIds(rankedIds);
-    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-  },
-
-  async listNewArrivals(viewerId?: string): Promise<PublicProduct[]> {
-    const rows = await productRepository.listNewArrivals();
-    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-  },
-
-  async decrementStockForItems(
-    tx: Prisma.TransactionClient,
-    lines: StockLine[],
-    movement: StockMovement,
-  ): Promise<string[]> {
-    const insufficientSizeIds: string[] = [];
-    const committedDeltas: SizeStockDelta[] = [];
-    for (const { sizeId, qty } of mergeStockLinesBySize(lines)) {
-      const isDecremented = await productRepository.decrementStock(tx, sizeId, qty);
-      if (isDecremented) committedDeltas.push({ sizeId, delta: -qty });
-      else insufficientSizeIds.push(sizeId);
-    }
-    await recordStockChanges(tx, movement, committedDeltas);
-    return insufficientSizeIds;
-  },
-
-  async restoreStockForItems(
-    tx: Prisma.TransactionClient,
-    lines: StockLine[],
-    movement: StockMovement,
-  ): Promise<void> {
-    const restoredDeltas: SizeStockDelta[] = [];
-    for (const { sizeId, qty } of mergeStockLinesBySize(lines)) {
-      await productRepository.restoreStock(tx, sizeId, qty);
-      restoredDeltas.push({ sizeId, delta: qty });
-    }
-    await recordStockChanges(tx, movement, restoredDeltas);
-  },
-
-  async adjustStock(
-    userId: string,
-    productId: string,
-    { adjustments }: AdjustStockBody,
-  ): Promise<BrandProductSize[]> {
-    const brandId = await requireBrandId(userId);
-    await requireOwnedProduct(productId, brandId);
-
-    const sizeIds = adjustments.map((adjustment) => adjustment.sizeId);
-    const ownedSizeIds = new Set(await productRepository.findSizeIdsForProduct(productId, sizeIds));
-    const unknownSizeId = sizeIds.find((sizeId) => !ownedSizeIds.has(sizeId));
-    if (unknownSizeId) {
-      throw new AppError(
-        "SIZE_NOT_FOUND",
-        "One or more sizes weren't found on this product.",
-        NOT_FOUND_STATUS,
-      );
-    }
-
-    const sortedAdjustments = [...adjustments].sort((left, right) =>
-      left.sizeId.localeCompare(right.sizeId),
-    );
-
-    await prisma.$transaction(async (tx) => {
-      for (const { sizeId, delta } of sortedAdjustments) {
-        if (delta > 0) {
-          await productRepository.restoreStock(tx, sizeId, delta);
-          continue;
-        }
-
-        const isDecremented = await productRepository.decrementStock(tx, sizeId, -delta);
-        if (!isDecremented) {
-          throw new AppError(
-            "INSUFFICIENT_STOCK",
-            "Can't reduce stock below what's available.",
-            BAD_REQUEST_STATUS,
-            { sizeId },
-          );
-        }
-      }
-
-      await recordStockChanges(
-        tx,
-        {
-          kind: InventoryMovementKind.BRAND_ADJUSTMENT,
-          sourceType: InventoryMovementSource.BRAND_ADJUSTMENT,
-          sourceId: randomUUID(),
-        },
-        sortedAdjustments,
-      );
-    });
-
-    return productRepository.listSizesForProduct(productId);
-  },
-
-  async approve(productId: string, adminUserId: string): Promise<void> {
-    const product = await requirePendingProduct(productId);
-    await productRepository.approve(productId, adminUserId);
-    await notifyBrand(product, productApprovedTemplate, `${product.name} is now live on Outfiqe.`);
-
-    logger.info(`Product approved: ${productId} by admin ${adminUserId}`);
-  },
-
-  async reject(productId: string, adminUserId: string): Promise<void> {
-    const product = await requirePendingProduct(productId);
-    await productRepository.reject(productId, adminUserId);
-    await notifyBrand(
-      product,
-      productRejectedTemplate,
-      `${product.name} wasn't approved to list on Outfiqe.`,
-    );
-
-    logger.info(`Product rejected: ${productId} by admin ${adminUserId}`);
-  },
+  ...productSocialProofService,
 };

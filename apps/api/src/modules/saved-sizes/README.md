@@ -8,15 +8,15 @@ also reports the size they last bought in it, so the app can suggest it and offe
 
 ## Structure
 
-- `savedSize.routes.ts` — `GET /me`, `PUT /me/:productTypeId` with `{ sizeLabel }`,
+- `saved-size.routes.ts` — `GET /me`, `PUT /me/:productTypeId` with `{ sizeLabel }`,
   `DELETE /me/:productTypeId`. All need a signed-in person; changes are rate-limited per person.
-- `savedSize.controller.ts` — auth principal → service. Every change answers with the full list,
+- `saved-size.controller.ts` — auth principal → service. Every change answers with the full list,
   so the app can replace its copy in one go.
-- `savedSize.service.ts` — joins product types, saved sizes and last-bought sizes into one list,
+- `saved-size.service.ts` — joins product types, saved sizes and last-bought sizes into one list,
   and refuses sizes the kind of clothing isn't offered in (`422 UNKNOWN_SIZE`).
-- `savedSize.repository.ts` — reads active product types with their size options and this
+- `saved-size.repository.ts` — reads active product types with their size options and this
   person's saved size, the last-bought size per type (raw SQL, `DISTINCT ON`), and writes rows.
-- `savedSize.schemas.ts`, `savedSize.types.ts` — request validation and response shapes.
+- `saved-size.schemas.ts`, `saved-size.types.ts` — request validation and response shapes.
 
 ## Funnel
 
@@ -24,8 +24,8 @@ also reports the size they last bought in it, so the app can suggest it and offe
 clothing. If they have bought something before, the row suggests that size with a "Save" button.
 Outfit boards then say "Your size M: in stock" on each item.
 
-**Technical:** `savedSize.routes.ts` → `savedSize.controller.ts` → `savedSize.service.ts` →
-`savedSize.repository.ts` → Postgres (`saved_sizes`, primary key `(user_id, product_type_id)`, both
+**Technical:** `saved-size.routes.ts` → `saved-size.controller.ts` → `saved-size.service.ts` →
+`saved-size.repository.ts` → Postgres (`saved_sizes`, primary key `(user_id, product_type_id)`, both
 foreign keys `ON DELETE CASCADE`; last-bought sizes come from `orders` and `order_items`).
 
 ## Non-obvious rationale

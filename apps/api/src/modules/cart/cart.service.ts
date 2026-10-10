@@ -1,7 +1,8 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import type { CouponLine } from "#modules/coupons/coupon.types.js";
-import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import {
   computeDiscountPercent,
   resolveBrandFundedUnitPrice,
@@ -13,7 +14,6 @@ import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
 import { cartRepository } from "./cart.repository.js";
 import type { AppliedCouponView, CartItemView, CartView } from "./cart.types.js";
 
-const NOT_FOUND_STATUS = 404;
 const NO_STOCK = 0;
 
 const buildCartLines = async (
@@ -194,7 +194,8 @@ export const cartService = {
     }
 
     const item = await cartRepository.findItemById(cartId, cartItemId);
-    if (!item) throw new AppError("NOT_FOUND", "This item isn't in your bag.", NOT_FOUND_STATUS);
+    if (!item)
+      throw new AppError("NOT_FOUND", "This item isn't in your bag.", HTTP_STATUS.NOT_FOUND);
 
     const stockBySizeId = await productRepository.getStockBySizeIds([item.sizeId]);
     const availableStock = stockBySizeId.get(item.sizeId) ?? 0;

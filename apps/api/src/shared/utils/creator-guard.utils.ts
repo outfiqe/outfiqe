@@ -1,10 +1,10 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
-const FORBIDDEN_STATUS = 403;
 const DEFAULT_MESSAGE = "Only approved muses can do this.";
 
 type GuardedUser = Awaited<ReturnType<typeof userRepository.findById>>;
@@ -17,7 +17,7 @@ const rejectStaffAndBrandAccounts = (user: GuardedUser): void => {
     throw new AppError(
       "STAFF_CANNOT_BE_CREATOR",
       "Staff and brand accounts can't drop as a muse.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
@@ -29,7 +29,7 @@ export const requireApprovedCreator = async (
   const user = await userRepository.findById(userId);
   rejectStaffAndBrandAccounts(user);
   if (!user || !isApprovedCreator(user)) {
-    throw new AppError("NOT_A_CREATOR", message, FORBIDDEN_STATUS);
+    throw new AppError("NOT_A_CREATOR", message, HTTP_STATUS.FORBIDDEN);
   }
 };
 
@@ -50,6 +50,6 @@ export const requireCommissionEarner = async (userId: string, message: string): 
   const user = await userRepository.findById(userId);
   rejectStaffAndBrandAccounts(user);
   if (!(await canUserEarnCommission(user))) {
-    throw new AppError("NOT_A_CREATOR", message, FORBIDDEN_STATUS);
+    throw new AppError("NOT_A_CREATOR", message, HTTP_STATUS.FORBIDDEN);
   }
 };

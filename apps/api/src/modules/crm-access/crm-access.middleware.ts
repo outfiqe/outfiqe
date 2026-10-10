@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
@@ -11,8 +12,6 @@ import { crmAccessService } from "./crm-access.service.js";
 import type { MembershipWithRole, OrganizationRecord } from "./crm-access.types.js";
 import { extractSubdomain, resolveTenantHostname } from "./crm-access.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
 const FORBIDDEN_MESSAGE = "You do not have permission to do this.";
 
 export const resolveTenant = async (req: Request, res: Response, next: NextFunction) => {
@@ -28,7 +27,7 @@ export const resolveTenant = async (req: Request, res: Response, next: NextFunct
       new AppError(
         "ORGANIZATION_NOT_FOUND",
         "No CRM organization is configured.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       ),
     );
   }
@@ -54,12 +53,12 @@ export const requirePermission = (permissionKey: string) => {
     );
 
     if (!membership || membership.status !== "ACTIVE") {
-      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
     }
 
     const isSuperAdmin = organization.superAdminMembershipId === membership.id;
     if (!isSuperAdmin && !membership.role.permissionKeys.includes(permissionKey)) {
-      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
     }
 
     res.locals.crmMembership = membership;
@@ -78,13 +77,13 @@ export const requireAnyPermission = (permissionKeys: string[]) => {
     );
 
     if (!membership || membership.status !== "ACTIVE") {
-      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
     }
 
     const isSuperAdmin = organization.superAdminMembershipId === membership.id;
     const holdsAnyKey = permissionKeys.some((key) => membership.role.permissionKeys.includes(key));
     if (!isSuperAdmin && !holdsAnyKey) {
-      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
     }
 
     res.locals.crmMembership = membership;
@@ -95,12 +94,12 @@ export const requireAnyPermission = (permissionKeys: string[]) => {
 export const requirePlatformAccess = async (_req: Request, res: Response, next: NextFunction) => {
   const principal = requireAuthPrincipal(res);
   if (principal.role !== UserRole.ADMIN) {
-    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
   }
 
   const platformAccess = await platformAccessService.resolveAccess(principal.userId);
   if (!platformAccess.hasStaffAccess) {
-    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, HTTP_STATUS.FORBIDDEN));
   }
 
   res.locals.platformAccess = platformAccess;

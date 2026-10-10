@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
@@ -28,9 +29,6 @@ import type {
 } from "./auth.schemas.js";
 import { authService } from "./auth.service.js";
 
-const CREATED_STATUS = 201;
-const FORBIDDEN_STATUS = 403;
-
 const QUERY_PURPOSE_TO_TOKEN_PURPOSE: Record<ValidateTokenQuery["purpose"], TokenPurpose> = {
   "email-verification": TokenPurpose.EMAIL_VERIFICATION,
   "password-reset": TokenPurpose.PASSWORD_RESET,
@@ -52,7 +50,7 @@ export const authController = {
       res,
       { userId },
       "Account created. Please check your email to verify your address.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 
@@ -121,7 +119,7 @@ export const authController = {
       throw new AppError(
         "IMPERSONATION_FORBIDDEN",
         "You can't change the account password while viewing another account.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -143,7 +141,7 @@ export const authController = {
       await authService.registerBrand({ inviteToken, name, phone, password });
 
     setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
-    sendSuccess(res, { accessToken, user }, "Brand account created.", CREATED_STATUS);
+    sendSuccess(res, { accessToken, user }, "Brand account created.", HTTP_STATUS.CREATED);
   },
 
   async getBrandInvite(_req: Request, res: Response) {
@@ -159,7 +157,7 @@ export const authController = {
       await authService.registerAdmin({ inviteToken, phone, password });
 
     setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
-    sendSuccess(res, { accessToken, user }, "Admin account created.", CREATED_STATUS);
+    sendSuccess(res, { accessToken, user }, "Admin account created.", HTTP_STATUS.CREATED);
   },
 
   async getAdminInvite(_req: Request, res: Response) {
@@ -193,7 +191,7 @@ export const authController = {
       },
       target: { type: AUDIT_TARGET_TYPE.MEMBERSHIP, id: crmMembership.id },
     });
-    sendSuccess(res, { accessToken, user }, "CRM account created.", CREATED_STATUS);
+    sendSuccess(res, { accessToken, user }, "CRM account created.", HTTP_STATUS.CREATED);
   },
 
   async validateToken(_req: Request, res: Response) {

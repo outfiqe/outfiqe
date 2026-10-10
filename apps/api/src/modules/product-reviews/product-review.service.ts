@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
@@ -16,14 +17,10 @@ import type { ListProductReviewsQuery, WriteProductReviewBody } from "./product-
 import type { ProductReviewPage, ProductReviewRecord } from "./product-review.types.js";
 import { toReviewRecord } from "./product-review.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-const CONFLICT_STATUS = 409;
-
 const requireActiveProduct = async (productId: string): Promise<void> => {
   const product = await productRepository.findById(productId);
   if (!product || product.deletedAt) {
-    throw new AppError("PRODUCT_NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+    throw new AppError("PRODUCT_NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
   }
 };
 
@@ -31,7 +28,7 @@ const throwReviewAlreadyExists = (): never => {
   throw new AppError(
     "REVIEW_ALREADY_EXISTS",
     "You've already reviewed this product. Edit your existing review instead.",
-    CONFLICT_STATUS,
+    HTTP_STATUS.CONFLICT,
   );
 };
 
@@ -42,10 +39,10 @@ const requireOwnedReview = async (
 ): Promise<void> => {
   const review = await productReviewRepository.findActiveById(reviewId);
   if (!review || review.productId !== productId) {
-    throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", NOT_FOUND_STATUS);
+    throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", HTTP_STATUS.NOT_FOUND);
   }
   if (review.userId !== userId) {
-    throw new AppError("FORBIDDEN", "You can only edit your own review.", FORBIDDEN_STATUS);
+    throw new AppError("FORBIDDEN", "You can only edit your own review.", HTTP_STATUS.FORBIDDEN);
   }
 };
 
@@ -85,7 +82,7 @@ export const productReviewService = {
       throw new AppError(
         "PURCHASE_REQUIRED",
         "Only customers who have received this product can leave a review.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -150,7 +147,11 @@ export const productReviewService = {
   ): Promise<void> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "REVIEW_NOT_FOUND",
+        "This review no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     const isOwner = review.userId === principal.userId;
@@ -159,7 +160,11 @@ export const productReviewService = {
       REVIEW_MODERATE_PERMISSION_KEY,
     );
     if (!isOwner && !canModerate) {
-      throw new AppError("FORBIDDEN", "You can only delete your own review.", FORBIDDEN_STATUS);
+      throw new AppError(
+        "FORBIDDEN",
+        "You can only delete your own review.",
+        HTTP_STATUS.FORBIDDEN,
+      );
     }
 
     await productReviewRepository.softDelete(reviewId);
@@ -184,13 +189,17 @@ export const productReviewService = {
   ): Promise<{ helpfulCount: number }> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "REVIEW_NOT_FOUND",
+        "This review no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (review.userId === userId) {
       throw new AppError(
         "CANNOT_VOTE_OWN_REVIEW",
         "You can't mark your own review as helpful.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -204,7 +213,11 @@ export const productReviewService = {
   ): Promise<{ helpfulCount: number }> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "REVIEW_NOT_FOUND",
+        "This review no longer exists.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
 
     return productReviewRepository.unvote(reviewId, userId);

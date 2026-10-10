@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { CrmTicketStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta } from "#lib/crm-counters.js";
@@ -16,10 +17,6 @@ import type {
   TicketWithComments,
 } from "./crm-tickets.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
-
 type TenantOrganization = { id: string; linkedBrandId: string | null };
 
 const requireValidSubject = async (
@@ -31,7 +28,11 @@ const requireValidSubject = async (
       ? await crmRelationshipsService.isPartner(organization, subject.subjectId)
       : await crmRelationshipsService.isCustomer(organization, subject.subjectId);
   if (!belongs) {
-    throw new AppError("SUBJECT_NOT_FOUND", "That subject isn't in this CRM.", NOT_FOUND_STATUS);
+    throw new AppError(
+      "SUBJECT_NOT_FOUND",
+      "That subject isn't in this CRM.",
+      HTTP_STATUS.NOT_FOUND,
+    );
   }
 };
 
@@ -47,7 +48,7 @@ const requireMembership = async (
     throw new AppError(
       "MEMBERSHIP_NOT_FOUND",
       "That teammate isn't a member of this organization.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
   return membership;
@@ -116,7 +117,7 @@ export const crmTicketsService = {
 
   async getTicket(organizationId: string, ticketId: string): Promise<TicketWithComments> {
     const ticket = await crmTicketsRepository.findTicket(organizationId, ticketId);
-    if (!ticket) throw new AppError("TICKET_NOT_FOUND", "Ticket not found.", NOT_FOUND_STATUS);
+    if (!ticket) throw new AppError("TICKET_NOT_FOUND", "Ticket not found.", HTTP_STATUS.NOT_FOUND);
     return ticket;
   },
 
@@ -132,7 +133,7 @@ export const crmTicketsService = {
       throw new AppError(
         "INVALID_TICKET_TRANSITION",
         `A ${ticket.status} ticket can't move to ${toStatus}.`,
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -146,7 +147,7 @@ export const crmTicketsService = {
       throw new AppError(
         "TICKET_STATUS_CHANGED",
         "This ticket's status changed under you — reload and try again.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

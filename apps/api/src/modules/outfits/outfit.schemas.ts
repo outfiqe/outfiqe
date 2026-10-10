@@ -7,7 +7,7 @@ import {
   IMAGE_ASSET_ALIGNMENT_ISSUE,
   lookContentSchema,
   taggedProductsSchema,
-} from "#modules/creator-looks/creatorLook.schemas.js";
+} from "#modules/creator-looks/creator-look.schemas.js";
 import { PLATFORM_SETTING_REGISTRY } from "#modules/platform-settings/platform-settings.registry.js";
 
 import { OUTFIT_LIMITS } from "./outfit.constants.js";

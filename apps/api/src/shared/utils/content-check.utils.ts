@@ -7,9 +7,9 @@ import {
   LOOKALIKE_CHARACTERS,
   MAX_REPEATED_CHARACTER_RUN,
 } from "#constants/content-check.constants.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
-const UNPROCESSABLE_STATUS = 422;
 const PLURAL_SUFFIXES = ["es", "s"];
 const COMBINING_MARKS = /[̀-ͯ]/g;
 const WORD_SEPARATORS = /[^\p{L}\p{M}\p{N}@$!]+/u;
@@ -60,7 +60,7 @@ export const assertContentAllowed = (text: string | null | undefined): void => {
     throw new AppError(
       "CONTENT_NOT_ALLOWED",
       CONTENT_REFUSAL_MESSAGES[refusal],
-      UNPROCESSABLE_STATUS,
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
       {
         reason: refusal,
       },

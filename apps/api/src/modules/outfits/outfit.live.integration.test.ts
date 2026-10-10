@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { MessageKind, NotificationType } from "#generated/prisma/enums.js";
 import { CHAT_SYSTEM_EVENT } from "#modules/chat/chat.constants.js";
@@ -17,11 +18,9 @@ import {
   startBuildOrFail,
   turnOutfitBuilderOn,
   writeToBuild,
-} from "#test/integration/outfitFixtures.js";
+} from "#test/integration/outfit-fixtures.js";
 
 import { activityWindowGroupKey, notifyOutfitActivity } from "./outfit.notifications.js";
-
-const OK_STATUS = 200;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -44,7 +43,7 @@ const writeAtCurrentVersion = async (
     await currentBuildVersion(outfitId),
     body,
   );
-  expect(response.status).toBe(OK_STATUS);
+  expect(response.status).toBe(HTTP_STATUS.OK);
   return response;
 };
 

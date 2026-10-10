@@ -1,7 +1,12 @@
-import { afterAll, afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { disconnectRedis, redis } from "#redis/redis.client.js";
+
+beforeAll(async () => {
+  await resetDatabase();
+  await resetEphemeralRedisState();
+});
 
 afterEach(async () => {
   await resetDatabase();

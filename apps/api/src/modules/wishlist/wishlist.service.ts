@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -9,11 +10,9 @@ import { wishlistRepository } from "./wishlist.repository.js";
 import type { ListWishlistQuery } from "./wishlist.schemas.js";
 import type { WishlistResult } from "./wishlist.types.js";
 
-const NOT_FOUND_STATUS = 404;
-
 const requireProduct = async (productId: string): Promise<void> => {
   const product = await productRepository.findById(productId);
-  if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+  if (!product) throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
 };
 
 export const wishlistService = {

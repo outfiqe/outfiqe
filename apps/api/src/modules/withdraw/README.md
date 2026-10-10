@@ -15,8 +15,13 @@ frequent sums than a creator, so they're governed by separate policy rows, not o
 mark-paid`, `PUT /admin/policy` (versioned — creates a new active row for the given `ownerType`,
   deactivating the previous one for that `ownerType` only).
 - `withdraw.controller.ts` — reads validated input + the auth principal, calls the service.
-- `withdraw.service.ts` — the eligibility formula, the request-creation transaction, cooldown/
-  window/attempt checks, admin approve/reject/mark-paid, policy versioning.
+- `withdraw.service.ts` — `withdrawService`, the only object the controller imports: policy reads
+  and versioning, with the two topic services below spread in.
+- `requests/request.service.ts` — the muse/brand side: the eligibility formula, the
+  request-creation transaction, cooldown/window/attempt checks, and the owner's own request list.
+  Its integration test sits beside it.
+- `review/review.service.ts` — the admin side: list, approve, reject, mark-paid (claiming the
+  ledger rows it pays out), and the status-change event. Its integration test sits beside it.
 - `withdraw.repository.ts` — Prisma queries scoped by `OwnerContext` (`creatorId` or `brandId`,
   never both) for the user-facing side; unscoped admin queries/transitions for the review queue.
 - `withdraw.constants.ts` — `DEFAULT_WITHDRAW_POLICY`, the code-level fallback values per
