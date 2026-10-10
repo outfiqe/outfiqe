@@ -16,7 +16,7 @@ import {
 
 const MISSING_TEST_DATABASE_URL_MESSAGE =
   "TEST_DATABASE_URL is not set. Integration tests refuse to start without it, since each " +
-  "worker gets its own clone of it and resetDatabase() truncates every table after each test — " +
+  "worker gets its own clone of it and resetDatabase() truncates every table before each file and after each test — " +
   "copy apps/api/.env.test.example to apps/api/.env.test and set it there.";
 
 const quoteIdentifier = (identifier: string): string => `"${identifier.replace(/"/g, '""')}"`;

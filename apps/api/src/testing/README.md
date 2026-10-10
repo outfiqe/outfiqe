@@ -25,8 +25,8 @@ any one module, so they live here instead of being duplicated into every integra
   `process.env.DATABASE_URL` and `process.env.REDIS_URL` to this worker's own clone before any app
   module (and therefore `#config/env.config.ts`) is imported.
 - `integration/setup.ts` — the second `setupFiles` entry: truncates every table and clears any
-  accumulated Redis rate-limit/lockout counters after each test, and disconnects Prisma/Redis after
-  the suite. Now operating on this worker's private database and Redis logical database.
+  accumulated Redis rate-limit/lockout counters before each test file's first test and after every
+  test, and disconnects Prisma/Redis after the suite. Now operating on this worker's private database and Redis logical database.
 
 Reached from anywhere in `src/` via the `#test/*` subpath import (see `package.json`'s `imports`),
 e.g. `import { testApp } from "#test/integration/test-app.js"`.
@@ -37,6 +37,15 @@ An integration test (colocated as `<module>.integration.test.ts` next to the mod
 imports `testApp` and, if it needs to be authenticated, `createAdminSession`; `supertest(testApp)`
 sends a real HTTP request through the real Express app, middleware, and a real (test) database.
 `integration/setup.ts` resets the database between tests so each test starts from a clean slate.
+
+**It also resets once before each file's first test, not only after each test.** A worker's database
+is cloned from the migrated template, and some migrations insert rows (for example the
+`replace_order_fee_settings_with_delivery_zones` migration creates a "Default zone" with a 150
+delivery fee). With only an after-each reset, whichever test ran first on a fresh worker still saw
+those rows. A test that created its own default zone then had two, and `findDefault`'s unordered
+`findFirst` could return either one. That made the cart-coupon test in
+`modules/coupons/redemption/redemption.integration.test.ts` fail only when it was first on its
+worker. The before-all reset gives every test the same empty starting point wherever it runs.
 
 Test files run in parallel across `INTEGRATION_WORKER_COUNT` forked workers. `global-setup.ts`
 provisions one Postgres database and one Redis logical database per worker up front;
