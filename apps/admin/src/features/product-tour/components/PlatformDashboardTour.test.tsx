@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PLATFORM_NAV_ITEMS } from "@/components/AdminSidebar";
+import { PLATFORM_NAV_ITEMS } from "@/components/adminSidebarNavItems";
 import { useAuth } from "@/features/auth/components/AuthContext";
 
 import type { TourProgress } from "../api/toursSchemas";
