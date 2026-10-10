@@ -6,7 +6,7 @@ import {
   type PlatformAuditFilter,
   type PlatformAuditPage,
   platformAuditPageSchema,
-} from "./schemas";
+} from "./platformAuditSchemas";
 
 export const PLATFORM_AUDIT_QUERY_KEY = "platform-audit-log";
 

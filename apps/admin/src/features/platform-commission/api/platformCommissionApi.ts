@@ -13,7 +13,7 @@ import {
   type GatewayPaymentMethodValue,
   type PlatformCommissionRule,
   platformCommissionRuleSchema,
-} from "./schemas";
+} from "./platformCommissionSchemas";
 
 const BRAND_SEARCH_RESULT_LIMIT = 8;
 

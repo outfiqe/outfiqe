@@ -1,4 +1,4 @@
-import { OffersSection } from "@/features/outfit-offers/OffersSection";
+import { OffersSection } from "@/features/outfit-offers/components/OffersSection";
 
 import { COMMISSION_SCOPE, type CommissionScopeValue } from "../api/commissionsSchemas";
 import { CommissionsListSection } from "./CommissionsListSection";

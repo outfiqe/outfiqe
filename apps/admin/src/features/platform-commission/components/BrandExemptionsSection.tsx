@@ -28,13 +28,13 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { platformCommissionApi } from "./api";
+import { platformCommissionApi } from "../api/platformCommissionApi";
+import type { BrandCommissionExemption } from "../api/platformCommissionSchemas";
 import {
   EMPTY_EXEMPTION_FORM,
   exemptionFormSchema,
   type ExemptionFormValues,
-} from "./exemptionForm.schema";
-import type { BrandCommissionExemption } from "./schemas";
+} from "../schemas/exemptionForm.schema";
 
 const EXEMPTIONS_QUERY_KEY = ["admin-brand-commission-exemptions"];
 const BRAND_SEARCH_DEBOUNCE_MS = 300;

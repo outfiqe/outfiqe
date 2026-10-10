@@ -7,7 +7,7 @@ import {
   featureDefinitionSchema,
   type ResolvedFeature,
   resolvedFeatureSchema,
-} from "./schemas";
+} from "./platformFeaturesSchemas";
 
 const registrySchema = z.array(featureDefinitionSchema);
 const resolvedListSchema = z.array(resolvedFeatureSchema);

@@ -13,7 +13,7 @@ import {
   adminBuildPageSchema,
   type BuildMetrics,
   buildMetricsSchema,
-} from "./schemas";
+} from "./outfitBuildsSchemas";
 
 export const ADMIN_BUILDS_QUERY_KEY = "admin-outfit-builds";
 export const ADMIN_BUILD_QUERY_KEY = "admin-outfit-build";

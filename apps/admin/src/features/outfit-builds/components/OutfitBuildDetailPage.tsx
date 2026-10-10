@@ -15,8 +15,8 @@ import {
   ADMIN_BUILDS_QUERY_KEY,
   outfitBuildsApi,
   useAdminBuildHistory,
-} from "./api";
-import type { AdminBuildAction, AdminBuildDetail } from "./schemas";
+} from "../api/outfitBuildsApi";
+import type { AdminBuildAction, AdminBuildDetail } from "../api/outfitBuildsSchemas";
 
 const SKELETON_ROW_COUNT = 4;
 const NOTHING = 0;

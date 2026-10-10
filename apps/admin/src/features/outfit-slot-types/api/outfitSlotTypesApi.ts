@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { type OutfitSlotType, outfitSlotTypeSchema } from "./schemas";
+import { type OutfitSlotType, outfitSlotTypeSchema } from "./outfitSlotTypesSchemas";
 
 const listSchema = z.array(outfitSlotTypeSchema);
 

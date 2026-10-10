@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { BUILD_METRICS_QUERY_KEY, outfitBuildsApi } from "./api";
+import { BUILD_METRICS_QUERY_KEY, outfitBuildsApi } from "../api/outfitBuildsApi";
 
 const WEEK_CHOICES = [4, 12, 26, 52] as const;
 const DEFAULT_WEEK_COUNT = 12;

@@ -6,8 +6,8 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
+import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
 import { OutfitSlotTypesPage } from "./OutfitSlotTypesPage";
-import type { OutfitSlotType } from "./schemas";
 
 const API_BASE = "http://localhost:3000/api";
 

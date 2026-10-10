@@ -10,9 +10,12 @@ import { productTypesApi } from "@/features/product-types/api";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { outfitSlotTypesApi } from "./api";
-import { OUTFIT_SLOT_TYPES_QUERY_KEY, PRODUCT_TYPES_QUERY_KEY } from "./outfitSlotTypes.constants";
-import type { OutfitSlotType } from "./schemas";
+import { outfitSlotTypesApi } from "../api/outfitSlotTypesApi";
+import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
+import {
+  OUTFIT_SLOT_TYPES_QUERY_KEY,
+  PRODUCT_TYPES_QUERY_KEY,
+} from "../constants/outfitSlotTypes.constants";
 import { SlotTypeFormModal } from "./SlotTypeFormModal";
 
 const SKELETON_ROW_COUNT = 4;

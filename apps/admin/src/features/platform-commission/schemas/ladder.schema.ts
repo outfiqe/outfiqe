@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { optionalWholeNumberText, percentText, wholeNumberText } from "@/lib/formFields";
 
-import type { FeeTypeValue } from "./schemas";
+import type { FeeTypeValue } from "../api/platformCommissionSchemas";
 
 const LADDER_FLOOR_PRICE = 0;
 const MAX_TIER_AMOUNT = 1_000_000_000;

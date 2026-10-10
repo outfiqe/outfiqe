@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { OutfitSlotType } from "./schemas";
+import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
 import {
   EMPTY_SLOT_TYPE_FORM,
   slotTypeFormSchema,

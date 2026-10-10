@@ -15,15 +15,15 @@ import { type FormEvent, useId, useState } from "react";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { useAdminBuilds } from "./api";
-import { BuildMetricsSection } from "./BuildMetricsSection";
+import { useAdminBuilds } from "../api/outfitBuildsApi";
 import {
   type AdminBuildFilter,
   BUILD_STATUSES,
   BUILD_VISIBILITIES,
   type BuildStatus,
   type BuildVisibility,
-} from "./schemas";
+} from "../api/outfitBuildsSchemas";
+import { BuildMetricsSection } from "./BuildMetricsSection";
 
 const SKELETON_ROW_COUNT = 5;
 const NO_BUILDS = 0;

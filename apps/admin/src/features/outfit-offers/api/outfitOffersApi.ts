@@ -7,7 +7,7 @@ import {
   adminOfferSchema,
   type OfferRefundStatusValue,
   type OfferStatusValue,
-} from "./schemas";
+} from "./outfitOffersSchemas";
 
 export type OfferFilter =
   | { kind: "status"; status: OfferStatusValue }

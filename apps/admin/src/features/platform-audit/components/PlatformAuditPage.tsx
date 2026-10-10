@@ -4,8 +4,8 @@ import { type FormEvent, useId, useState } from "react";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { usePlatformAuditLog } from "./api";
-import type { PlatformAuditEntry, PlatformAuditFilter } from "./schemas";
+import { usePlatformAuditLog } from "../api/platformAuditApi";
+import type { PlatformAuditEntry, PlatformAuditFilter } from "../api/platformAuditSchemas";
 
 const SKELETON_ROW_COUNT = 5;
 const NO_ENTRIES = 0;

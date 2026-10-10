@@ -20,13 +20,13 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { organizationsApi } from "./api";
-import { BusinessOwnerField } from "./BusinessOwnerField";
+import { organizationsApi } from "../api/organizationsApi";
 import {
   EMPTY_ORGANIZATION_FORM,
   organizationFormSchema,
   type OrganizationFormValues,
-} from "./organizationForm.schema";
+} from "../schemas/organizationForm.schema";
+import { BusinessOwnerField } from "./BusinessOwnerField";
 
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 

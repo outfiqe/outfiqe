@@ -8,9 +8,9 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type CreateTierInput, platformCommissionApi } from "./api";
-import { type TierRowErrors, type TierRowState, validateLadder } from "./ladder.schema";
-import type { FeeTypeValue, PlatformCommissionTier } from "./schemas";
+import { type CreateTierInput, platformCommissionApi } from "../api/platformCommissionApi";
+import type { FeeTypeValue, PlatformCommissionTier } from "../api/platformCommissionSchemas";
+import { type TierRowErrors, type TierRowState, validateLadder } from "../schemas/ladder.schema";
 
 const RULES_QUERY_KEY = ["admin-platform-commission-rules"];
 const LADDER_FLOOR_PRICE = 0;

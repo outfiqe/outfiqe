@@ -1,7 +1,7 @@
 import { isOutfitSlotIcon, OUTFIT_SLOT_ICONS } from "@outfiqe/utils";
 import { z } from "zod";
 
-import type { OutfitSlotType } from "./schemas";
+import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
 
 const LABEL_MIN_LENGTH = 2;
 const LABEL_MAX_LENGTH = 40;

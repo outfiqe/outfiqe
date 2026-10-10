@@ -8,9 +8,9 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type AdminOfferAction, type OfferFilter, offersApi } from "./api";
-import { ADMIN_OFFERS_QUERY_KEY, useInfiniteOffers } from "./hooks/useInfiniteOffers";
-import type { AdminOffer } from "./schemas";
+import { type AdminOfferAction, type OfferFilter, offersApi } from "../api/outfitOffersApi";
+import type { AdminOffer } from "../api/outfitOffersSchemas";
+import { ADMIN_OFFERS_QUERY_KEY, useInfiniteOffers } from "../hooks/useInfiniteOffers";
 
 const SKELETON_ROW_COUNT = 3;
 const NO_OFFERS = 0;

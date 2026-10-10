@@ -24,15 +24,15 @@ import { useForm, useWatch } from "react-hook-form";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { slugify } from "@/lib/slugify";
 
-import { outfitSlotTypesApi } from "./api";
-import { OUTFIT_SLOT_TYPES_QUERY_KEY } from "./outfitSlotTypes.constants";
-import type { OutfitSlotType } from "./schemas";
+import { outfitSlotTypesApi } from "../api/outfitSlotTypesApi";
+import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
+import { OUTFIT_SLOT_TYPES_QUERY_KEY } from "../constants/outfitSlotTypes.constants";
 import {
   EMPTY_SLOT_TYPE_FORM,
   slotTypeFormSchema,
   type SlotTypeFormValues,
   toSlotTypeFormValues,
-} from "./slotTypeForm.schema";
+} from "../schemas/slotTypeForm.schema";
 
 type GarmentTypeOption = { id: string; label: string };
 

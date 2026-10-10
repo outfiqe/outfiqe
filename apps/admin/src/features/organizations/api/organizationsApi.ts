@@ -7,7 +7,7 @@ import {
   type OrganizationListPage,
   organizationListPageSchema,
   organizationSchema,
-} from "./schemas";
+} from "./organizationsSchemas";
 
 export const organizationsApi = {
   async list(cursor?: string): Promise<OrganizationListPage> {

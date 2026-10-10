@@ -19,9 +19,12 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { platformCommissionApi } from "./api";
-import { gatewayRateFormSchema, type GatewayRateFormValues } from "./gatewayRateForm.schema";
-import type { GatewayPaymentMethodValue } from "./schemas";
+import { platformCommissionApi } from "../api/platformCommissionApi";
+import type { GatewayPaymentMethodValue } from "../api/platformCommissionSchemas";
+import {
+  gatewayRateFormSchema,
+  type GatewayRateFormValues,
+} from "../schemas/gatewayRateForm.schema";
 
 const RATES_QUERY_KEY = ["admin-gateway-fee-rates"];
 const PROVIDERS: GatewayPaymentMethodValue[] = ["ESEWA", "KHALTI"];
