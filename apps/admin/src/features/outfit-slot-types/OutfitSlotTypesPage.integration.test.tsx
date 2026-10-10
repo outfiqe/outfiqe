@@ -39,8 +39,8 @@ const garmentTypes = [
   ...garmentType,
   sortOrder,
   isActive: true,
+  supportsFitRanges: true,
   productCount: 0,
-  sizeOptionCount: 1,
 }));
 
 const serveSlotTypes = (slotTypes: OutfitSlotType[]) =>

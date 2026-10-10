@@ -480,7 +480,7 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
   "/product-types": {
     title: "Garment types",
     description:
-      "The list of clothing types a product can be. A new type reaches brands once it is on and has at least one size.",
+      "The list of clothing types a product can be. A new type reaches brands once it is on.",
     blocks: [
       {
         kind: "formCard",
