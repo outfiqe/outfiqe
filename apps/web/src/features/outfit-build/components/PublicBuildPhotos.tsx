@@ -4,8 +4,8 @@ import { Flag } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
-import { ReportContentModal } from "@/features/explore/components/ReportContentModal";
-import { useReportContent } from "@/features/explore/hooks/useReportContent";
+import { ReportContentModal } from "@/features/explore/posts/components/ReportContentModal";
+import { useReportContent } from "@/features/explore/posts/hooks/useReportContent";
 import { AppImage } from "@/shared/components/AppImage";
 
 import type { OutfitPhoto } from "../api/outfitSchemas";

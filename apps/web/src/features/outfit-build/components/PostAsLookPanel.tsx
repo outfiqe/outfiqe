@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth";
-import { lookPermalinkPath } from "@/features/explore/utils/lookPermalink";
+import { lookPermalinkPath } from "@/features/explore/posts/utils/lookPermalink";
 
 import type { OutfitBoard } from "../api/outfitSchemas";
 import { useMyBuildLook } from "../hooks/useBuildLook";

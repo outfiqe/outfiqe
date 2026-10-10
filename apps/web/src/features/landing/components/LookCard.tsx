@@ -4,8 +4,8 @@ import { CheriqIcon } from "@outfiqe/design-system";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import type { FeedPost } from "@/features/explore/api/exploreFeedSchemas";
-import { PostCaption } from "@/features/explore/components/PostCaption";
+import type { FeedPost } from "@/features/explore/feed/api/exploreFeedSchemas";
+import { PostCaption } from "@/features/explore/posts/components/PostCaption";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import type { ResponsiveImage } from "@/shared/lib/responsiveImage";

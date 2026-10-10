@@ -7,9 +7,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { hasServerSessionCookie } from "@/features/auth/api/serverAuth";
 import { ExploreFeed } from "@/features/explore";
-import { buildExploreFeedQueryKey } from "@/features/explore/api/exploreFeedQueryKey";
-import { getExploreFeedFirstPageServer } from "@/features/explore/api/serverExploreFeed";
 import { EXPLORE_TAB } from "@/features/explore/constants/explore.constants";
+import { buildExploreFeedQueryKey } from "@/features/explore/feed/api/exploreFeedQueryKey";
+import { getExploreFeedFirstPageServer } from "@/features/explore/feed/api/serverExploreFeed";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 

@@ -20,14 +20,17 @@ const { exploreFeedApi } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../api/exploreFeedApi", () => ({ exploreFeedApi }));
+vi.mock("../feed/api/exploreFeedApi", () => ({ exploreFeedApi }));
 
 const { patchPostInFeedCaches, patchCreatorInFeedCaches } = vi.hoisted(() => ({
   patchPostInFeedCaches: vi.fn(),
   patchCreatorInFeedCaches: vi.fn(),
 }));
 
-vi.mock("./feedCacheUpdate", () => ({ patchPostInFeedCaches, patchCreatorInFeedCaches }));
+vi.mock("../feed/utils/feedCacheUpdate", () => ({
+  patchPostInFeedCaches,
+  patchCreatorInFeedCaches,
+}));
 
 await import("./offlineActionHandlers");
 

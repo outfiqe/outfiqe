@@ -5,8 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 import { useAuth } from "@/features/auth";
-import { ReportContentModal } from "@/features/explore/components/ReportContentModal";
-import { useReportContent } from "@/features/explore/hooks/useReportContent";
+import { ReportContentModal } from "@/features/explore/posts/components/ReportContentModal";
+import { useReportContent } from "@/features/explore/posts/hooks/useReportContent";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BuildComment } from "../api/outfitSocialSchemas";

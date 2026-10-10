@@ -7,8 +7,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth";
-import { ReportContentModal } from "@/features/explore/components/ReportContentModal";
-import { useReportContent } from "@/features/explore/hooks/useReportContent";
+import { ReportContentModal } from "@/features/explore/posts/components/ReportContentModal";
+import { useReportContent } from "@/features/explore/posts/hooks/useReportContent";
 import { AppImage } from "@/shared/components/AppImage";
 
 import type { PublicBuildDetail } from "../api/outfitSocialSchemas";

@@ -1,0 +1,316 @@
+"use client";
+
+import { Button, FormBanner } from "@outfiqe/design-system";
+import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Fragment, useEffect, useState } from "react";
+import Masonry from "react-masonry-css";
+
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
+import { PublicBuildsFeed } from "@/features/outfit-build/components/PublicBuildsFeed";
+import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
+import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
+
+import { ExploreSidebarNav } from "../../components/ExploreSidebarNav";
+import { HeaderBackdrop } from "../../components/HeaderBackdrop";
+import {
+  EXPLORE_GRID_BREAKPOINT_COLUMNS,
+  EXPLORE_QUERY_PARAM,
+  EXPLORE_TAB,
+  type ExploreQueryParamKey,
+  FEED_LAYOUT,
+  type FeedLayout,
+  STAFF_LOCKED_EXPLORE_TABS,
+  STAFF_LOCKED_TAB_TOOLTIP,
+} from "../../constants/explore.constants";
+import { useExploreAuthGate } from "../../hooks/useExploreAuthGate";
+import { ExploreFeedSkeleton } from "../../posts/components/PostCardSkeleton";
+import { PostGridCard } from "../../posts/components/PostGridCard";
+import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
+import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
+import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
+import { buildTrendingRankByPostId, findTrendingFallbackBoundary } from "../utils/trendingRank";
+import { FeedFilterTabs } from "./FeedFilterTabs";
+
+const EAGER_IMAGE_COUNT = 4;
+
+const AddPostButton = dynamic(
+  () => import("../../components/AddPostButton").then((m) => m.AddPostButton),
+  {
+    ssr: false,
+  },
+);
+const PostCard = dynamic(() => import("../../posts/components/PostCard").then((m) => m.PostCard), {
+  loading: () => <ExploreFeedSkeleton layout={FEED_LAYOUT.LIST} />,
+});
+const PostDetailModal = dynamic(
+  () => import("../../posts/components/PostDetailModal").then((m) => m.PostDetailModal),
+  {
+    ssr: false,
+  },
+);
+const Sidebar = dynamic(() => import("../../components/Sidebar").then((m) => m.Sidebar), {
+  ssr: false,
+});
+
+export const ExploreFeed = () => {
+  const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
+  const { isStaff } = useAuth();
+  const isLastViewerStaff = useStaffViewerHint();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [detailPostId, setDetailPostId] = useState<string | null>(null);
+  const isHydrated = useIsHydrated();
+  const [hasJustDismissedForYouHint, setHasJustDismissedForYouHint] = useState(false);
+  const isForYouHintVisible = isHydrated && !hasJustDismissedForYouHint && !isForYouHintDismissed();
+
+  const dismissForYouHint = () => {
+    rememberForYouHintDismissed();
+    setHasJustDismissedForYouHint(true);
+  };
+
+  const isStaffViewer = isAuthResolved ? isStaff : isLastViewerStaff;
+  const lockedTabs: readonly string[] = isStaffViewer ? STAFF_LOCKED_EXPLORE_TABS : [];
+  const lockedTabTooltip = isStaffViewer ? STAFF_LOCKED_TAB_TOOLTIP : undefined;
+  const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
+  const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
+  const committedLayout: FeedLayout =
+    searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
+      ? FEED_LAYOUT.LIST
+      : FEED_LAYOUT.GRID;
+
+  const isRequestedTabLockedForAdmin =
+    isAuthResolved && isStaff && lockedTabs.includes(requestedTab);
+  useEffect(() => {
+    if (!isRequestedTabLockedForAdmin) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(EXPLORE_QUERY_PARAM.TAB, EXPLORE_TAB.TRENDING);
+    router.replace(`/explore?${params.toString()}`, { scroll: false });
+  }, [isRequestedTabLockedForAdmin, router, searchParams]);
+
+  const { pendingValue: pendingTab, markPending: markTabPending } =
+    usePendingSelection<string>(committedTab);
+  const { pendingValue: pendingLayout, markPending: markLayoutPending } =
+    usePendingSelection<FeedLayout>(committedLayout);
+
+  const tab = pendingTab ?? committedTab;
+  const layout = pendingLayout ?? committedLayout;
+
+  const updateExploreParams = (updates: Partial<Record<ExploreQueryParamKey, string>>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    router.replace(`/explore?${params.toString()}`, { scroll: false });
+  };
+
+  const setTab = (value: string) => {
+    markTabPending(value);
+    updateExploreParams({ [EXPLORE_QUERY_PARAM.TAB]: value });
+  };
+  const setLayout = (value: FeedLayout) => {
+    markLayoutPending(value);
+    updateExploreParams({ [EXPLORE_QUERY_PARAM.LAYOUT]: value });
+  };
+
+  const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
+  const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU && isForYouHintVisible;
+  const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
+  const isBuildsTab = tab === EXPLORE_TAB.BUILDS;
+  const feedEnabled = !isBuildsTab && isAuthResolved && (!isFollowingTab || isAuthenticated);
+
+  const {
+    data: exploreFeedPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error: feedError,
+    refetch,
+  } = useInfiniteExploreFeed(tab, feedEnabled, viewerId);
+
+  const { newLookCount, dismiss } = useExploreFeedSocket(tab);
+
+  const sentinelRef = useLoadMoreOnVisible(
+    () => fetchNextPage(),
+    Boolean(hasNextPage) && !isFetchingNextPage,
+  );
+
+  const rawPosts = exploreFeedPages?.pages.flatMap((page) => page.posts) ?? [];
+  const postsById = new Map(rawPosts.map((post) => [post.id, post]));
+  const posts = [...postsById.values()];
+  const detailPost = detailPostId ? (postsById.get(detailPostId) ?? null) : null;
+
+  const isRankedTab = tab === EXPLORE_TAB.TRENDING || tab === EXPLORE_TAB.FOR_YOU;
+  const trendingRankByPostId = buildTrendingRankByPostId(posts, isRankedTab);
+  const isTrendingTab = tab === EXPLORE_TAB.TRENDING;
+  const fallbackBoundaryIndex = findTrendingFallbackBoundary(posts, isTrendingTab);
+  const postsBeforeFallbackBoundary =
+    fallbackBoundaryIndex > 0 ? posts.slice(0, fallbackBoundaryIndex) : posts;
+  const postsAfterFallbackBoundary =
+    fallbackBoundaryIndex > 0 ? posts.slice(fallbackBoundaryIndex) : [];
+
+  const showNewLooks = () => {
+    dismiss();
+    void refetch();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <>
+      <HeaderBackdrop />
+
+      <div className="lg:hidden">
+        <FeedFilterTabs
+          tab={tab}
+          onChange={setTab}
+          layout={layout}
+          onLayoutChange={setLayout}
+          lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
+        />
+      </div>
+      <AddPostButton />
+
+      <div className="grid grid-cols-1 gap-9 px-4 pb-16 pt-6 sm:px-6 lg:grid-cols-[224px_1fr_296px]">
+        <ExploreSidebarNav
+          tab={tab}
+          onChange={setTab}
+          layout={layout}
+          onLayoutChange={setLayout}
+          lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
+        />
+
+        <div>
+          {showForYouPersonalizationHint && (
+            <FormBanner tone="neutral" onDismiss={dismissForYouHint}>
+              For You gets more personalized as you follow muses and cheriq or stash looks you love.
+            </FormBanner>
+          )}
+
+          {newLookCount > 0 && (
+            <button
+              type="button"
+              onClick={showNewLooks}
+              className="mb-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-foreground py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              {newLookCount === 1 ? "1 new look" : `${newLookCount} new looks`} — click to view
+            </button>
+          )}
+
+          {isBuildsTab ? (
+            <PublicBuildsFeed />
+          ) : followingGated ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-sm text-muted-foreground">
+                Sign in to see looks from muses you follow.
+              </p>
+              <button
+                type="button"
+                onClick={goToSignIn}
+                className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+              >
+                Log in or sign up
+              </button>
+            </div>
+          ) : posts.length === 0 && (isLoading || !isAuthResolved) ? (
+            <ExploreFeedSkeleton layout={layout} compactGrid />
+          ) : posts.length === 0 && isError ? (
+            <div role="alert" className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-sm text-muted-foreground">
+                Couldn&apos;t load the feed. {getErrorMessage(feedError)}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                Try again
+              </Button>
+            </div>
+          ) : posts.length === 0 && isTrendingTab ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              Nothing is trending right now. Check back soon.
+            </p>
+          ) : posts.length === 0 && isFollowingTab ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              No drops from muses you follow yet. Follow muses from &ldquo;Muses to follow&rdquo; to
+              fill this tab.
+            </p>
+          ) : posts.length === 0 ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              Nothing here yet — try a different tab.
+            </p>
+          ) : layout === FEED_LAYOUT.GRID ? (
+            <>
+              <Masonry
+                breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                className="-ml-4 flex w-auto"
+                columnClassName="pl-4"
+              >
+                {postsBeforeFallbackBoundary.map((post, index) => (
+                  <PostGridCard
+                    key={post.id}
+                    post={post}
+                    onClick={() => setDetailPostId(post.id)}
+                    trendingRank={trendingRankByPostId.get(post.id)}
+                    eager={index < EAGER_IMAGE_COUNT}
+                  />
+                ))}
+              </Masonry>
+
+              {postsAfterFallbackBoundary.length > 0 && (
+                <>
+                  <p className="py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Recent & popular
+                  </p>
+                  <Masonry
+                    breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                    className="-ml-4 flex w-auto"
+                    columnClassName="pl-4"
+                  >
+                    {postsAfterFallbackBoundary.map((post, index) => (
+                      <PostGridCard
+                        key={post.id}
+                        post={post}
+                        onClick={() => setDetailPostId(post.id)}
+                        trendingRank={trendingRankByPostId.get(post.id)}
+                        eager={postsBeforeFallbackBoundary.length + index < EAGER_IMAGE_COUNT}
+                      />
+                    ))}
+                  </Masonry>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="mx-auto flex max-w-xl flex-col">
+              {posts.map((post, index) => (
+                <Fragment key={post.id}>
+                  {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
+                    <p className="py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Recent & popular
+                    </p>
+                  )}
+                  <PostCard post={post} trendingRank={trendingRankByPostId.get(post.id)} />
+                </Fragment>
+              ))}
+            </div>
+          )}
+
+          {hasNextPage && (
+            <div ref={sentinelRef} className="flex justify-center pt-6">
+              <span className="text-xs text-muted-foreground">
+                {isFetchingNextPage ? "Loading more…" : ""}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <Sidebar activeTag={tab} onTagClick={setTab} />
+      </div>
+
+      {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPostId(null)} />}
+    </>
+  );
+};
