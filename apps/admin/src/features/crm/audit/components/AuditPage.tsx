@@ -4,10 +4,10 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmAuditApi } from "./auditApi";
-import type { CrmAuditEntry } from "./auditSchemas";
-import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "./crmPageContent";
-import { formatDateTime } from "./format.utils";
+import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../crmPageContent";
+import { formatDateTime } from "../../format.utils";
+import { crmAuditApi } from "../api/auditApi";
+import type { CrmAuditEntry } from "../api/auditSchemas";
 
 const AUDIT_QUERY_KEY = ["crm-audit"];
 

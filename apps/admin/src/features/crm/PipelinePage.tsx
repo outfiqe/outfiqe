@@ -8,12 +8,12 @@ import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import { PlanGateBanner } from "./billing/components/PlanGateBanner";
 import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { DealFormModal } from "./DealFormModal";
 import { formatRupees } from "./format.utils";
 import { crmPipelineApi } from "./pipelineApi";
 import type { Deal } from "./pipelineSchemas";
-import { PlanGateBanner } from "./PlanGateBanner";
 import { StageConfigModal } from "./StageConfigModal";
 
 const STAGES_QUERY_KEY = ["crm-pipeline-stages"];

@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDuration, formatRupees } from "./format.utils";
-import { crmReportingApi } from "./reportingApi";
-import type { PipelineReport, TicketReport } from "./reportingSchemas";
-import { ReportSkeleton } from "./skeletons";
+import { formatDuration, formatRupees } from "../../format.utils";
+import { ReportSkeleton } from "../../skeletons";
+import { crmReportingApi } from "../api/reportingApi";
+import type { PipelineReport, TicketReport } from "../api/reportingSchemas";
 
 const PIPELINE_REPORT_KEY = ["crm-report-pipeline"];
 const TICKET_REPORT_KEY = ["crm-report-tickets"];

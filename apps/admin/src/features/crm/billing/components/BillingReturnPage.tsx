@@ -2,8 +2,8 @@ import { FormBanner } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { crmBillingApi } from "./billingApi";
-import type { InvoiceVerifyResult } from "./billingSchemas";
+import { crmBillingApi } from "../api/billingApi";
+import type { InvoiceVerifyResult } from "../api/billingSchemas";
 
 const routeApi = getRouteApi("/_authenticated/crm/billing/return/$invoiceId");
 

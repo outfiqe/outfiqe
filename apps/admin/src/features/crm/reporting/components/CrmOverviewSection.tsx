@@ -10,9 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDuration, formatRupees } from "./format.utils";
-import { crmReportingApi } from "./reportingApi";
-import type { CrmOverviewReport } from "./reportingSchemas";
+import { formatDuration, formatRupees } from "../../format.utils";
+import { crmReportingApi } from "../api/reportingApi";
+import type { CrmOverviewReport } from "../api/reportingSchemas";
 
 const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;

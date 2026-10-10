@@ -13,11 +13,11 @@ import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
-import { CrmOverviewSection } from "./CrmOverviewSection";
+import { PlanGateBanner } from "./billing/components/PlanGateBanner";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
-import { PlanGateBanner } from "./PlanGateBanner";
+import { CrmOverviewSection } from "./reporting/components/CrmOverviewSection";
 import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";

@@ -24,10 +24,10 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmActivitiesApi } from "./activitiesApi";
 import type { Task } from "./activitiesSchemas";
 import { crmApi } from "./api";
+import { PlanGateBanner } from "./billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { formatDate } from "./format.utils";
-import { PlanGateBanner } from "./PlanGateBanner";
 import { taskFormSchema, type TaskFormValues } from "./taskForm.schema";
 
 const TASKS_QUERY_KEY = ["crm-tasks"];

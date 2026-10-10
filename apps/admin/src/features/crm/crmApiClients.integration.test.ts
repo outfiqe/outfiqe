@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { crmActivitiesApi } from "./activitiesApi";
-import { crmBillingApi } from "./billingApi";
+import { crmBillingApi } from "./billing/api/billingApi";
 import { crmPipelineApi } from "./pipelineApi";
 import { crmRelationshipsApi } from "./relationshipsApi";
 import { crmTicketsApi } from "./ticketsApi";

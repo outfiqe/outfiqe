@@ -1,4 +1,4 @@
-import type { CheckoutRedirect } from "./billingSchemas";
+import type { CheckoutRedirect } from "../api/billingSchemas";
 
 export const redirectToPaymentGateway = (redirect: CheckoutRedirect): void => {
   if (redirect.mode === "REDIRECT") {

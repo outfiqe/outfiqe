@@ -5,16 +5,16 @@ import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmBillingApi } from "./billingApi";
+import { formatDate, formatRupees } from "../../format.utils";
+import { BillingSkeleton } from "../../skeletons";
+import { crmBillingApi } from "../api/billingApi";
 import {
   type BillingOverview,
   type InvoiceStatusValue,
   type SubscriptionInvoice,
   type SubscriptionStatusValue,
-} from "./billingSchemas";
-import { formatDate, formatRupees } from "./format.utils";
+} from "../api/billingSchemas";
 import { PlanCheckoutModal } from "./PlanCheckoutModal";
-import { BillingSkeleton } from "./skeletons";
 
 const BILLING_OVERVIEW_KEY = ["crm-billing-overview"];
 const BILLING_INVOICES_KEY = ["crm-billing-invoices"];

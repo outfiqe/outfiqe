@@ -1,5 +1,5 @@
+import { CRM_PAGE_TEXT } from "../../crmPageContent";
 import { BillingSection } from "./BillingSection";
-import { CRM_PAGE_TEXT } from "./crmPageContent";
 
 export const BillingPage = () => (
   <div>

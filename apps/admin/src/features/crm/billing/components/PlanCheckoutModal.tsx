@@ -4,13 +4,13 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmBillingApi } from "./billingApi";
+import { crmBillingApi } from "../api/billingApi";
 import {
   CRM_BILLING_PROVIDER,
   type CrmBillingProviderValue,
   type PlanDefinition,
-} from "./billingSchemas";
-import { redirectToPaymentGateway } from "./paymentRedirect";
+} from "../api/billingSchemas";
+import { redirectToPaymentGateway } from "../utils/paymentRedirect";
 
 type PlanCheckoutModalProps = {
   open: boolean;

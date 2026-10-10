@@ -22,11 +22,11 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
+import { PlanGateBanner } from "./billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchField";
 import { formatDate } from "./format.utils";
-import { PlanGateBanner } from "./PlanGateBanner";
 import { TicketDetail } from "./TicketDetail";
 import { ticketFormSchema, type TicketFormValues } from "./ticketForm.schema";
 import { crmTicketsApi } from "./ticketsApi";
