@@ -14,21 +14,21 @@ signup.
 
 ## Structure
 
-- `schemas.ts` — `Organization`/`OrganizationCreationSuggestion` Zod schemas mirroring the API's
+- `api/organizationsSchemas.ts` — `Organization`/`OrganizationCreationSuggestion` Zod schemas mirroring the API's
   response shapes. `Organization` carries `linkedBrandId`/`linkedBrandName`;
   `OrganizationCreationSuggestion` carries `existingOrganizationForBrand`.
-- `api.ts` — `organizationsApi.list`/`.suggestFromBrand`/`.create`, thin `apiClient` calls against
+- `api/organizationsApi.ts` — `organizationsApi.list`/`.suggestFromBrand`/`.create`, thin `apiClient` calls against
   `GET /api/crm/organizations`, `GET /api/crm/organizations/suggest`, `POST /api/crm/organizations`.
   `.list` takes an optional `cursor` and returns a `{ organizations, nextCursor }` page — every
-  tenant onboarded grows this list without bound, so `OrganizationsPage.tsx` reads it via
+  tenant onboarded grows this list without bound, so `components/OrganizationsPage.tsx` reads it via
   `useInfiniteQuery` with a "Load more" button, the same pattern `AuditPage` uses, rather than one
   unbounded fetch. `.create` takes a single `{ name, subdomain, targetOwnerUserId, linkedBrandId }`
   input, gated server-side on `platform:organizations:manage` (see `crm-access/README.md` in
   `apps/api`) — listing/suggesting stay on the coarser platform-staff gate.
-- `BusinessOwnerField.tsx` — the business picker for onboarding: the shared
+- `components/BusinessOwnerField.tsx` — the business picker for onboarding: the shared
   `@/components/BrandSearchField` with this screen's wording ("Business", "businesses"), backed by
   `brandsApi.search` (`apps/admin/src/lib/brandsApi.ts`).
-- `OrganizationsPage.tsx` — list + inline create form: pick a business, review the
+- `components/OrganizationsPage.tsx` — list + inline create form: pick a business, review the
   auto-suggested (editable) subdomain and any organizations that business already owns, hit Create.
 
 Route: `apps/admin/src/routes/_authenticated.organizations.index.tsx` (`/organizations`). Uses the
@@ -47,7 +47,7 @@ ownership transfer, and only become SUPERADMIN once they accept. The platform ad
 is removed from the organization entirely the moment that happens.
 
 **Technical:** `BusinessOwnerField` → `brandsApi.search` → `GET /api/brands`. Once picked,
-`organizations/api.ts`'s `suggestFromBrand` → `GET /api/crm/organizations/suggest` (`apps/api`'s
+`organizations/api/organizationsApi.ts`'s `suggestFromBrand` → `GET /api/crm/organizations/suggest` (`apps/api`'s
 `crm-access.controller.ts` → `.service.ts`'s `suggestOrganizationFromBrand`, which resolves the
 brand's owner via `brandRepository.findOwnerUserId` and a candidate subdomain via
 `slugifyHandle`/`withHandleSuffix`, the same collision-retry helpers `user.repository.ts` already
@@ -100,4 +100,4 @@ verbatim rather than inventing a second acceptance mechanism.
 
 ## Form validation
 
-The create form uses react-hook-form with `organizationForm.schema.ts`: a business must be picked and the subdomain must match the tenant subdomain rules from `@outfiqe/utils` (lowercase letters, numbers and hyphens, no hyphen at either end, up to 63 characters, not a reserved name). Picking a business fills the subdomain with the suggested one until the person edits it themselves. Messages show under the fields and a success toast follows a create.
+The create form uses react-hook-form with `schemas/organizationForm.schema.ts`: a business must be picked and the subdomain must match the tenant subdomain rules from `@outfiqe/utils` (lowercase letters, numbers and hyphens, no hyphen at either end, up to 63 characters, not a reserved name). Picking a business fills the subdomain with the suggested one until the person edits it themselves. Messages show under the fields and a success toast follows a create.

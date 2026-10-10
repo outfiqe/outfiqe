@@ -8,18 +8,18 @@ a bigger image plus everything the list row summarizes — without leaving the p
 
 ## Structure
 
-- `ProductsPage.tsx` — status tabs, the thrift-only toggle, the product list, and the
+- `components/ProductsPage.tsx` — status tabs, the thrift-only toggle, the product list, and the
   approve/reject actions. Clicking a row's image/name area opens `ProductDetailModal`; the
   approve/reject buttons on the row stay separate sibling controls so they don't also trigger
   the row's click.
-- `ProductDetailModal.tsx` — the expanded view for one product: a larger image pane next to the
+- `components/ProductDetailModal.tsx` — the expanded view for one product: a larger image pane next to the
   same info the row shows (status, price, brand, type/categories, thrift condition), plus
   Approve/Reject when the product is still `PENDING`. Takes the already-fetched `Product` object
   as a prop — no separate detail fetch, since `productSchema` already carries everything this
   view needs.
 - `hooks/useInfiniteProducts.ts` — cursor pagination via the shared `useInfiniteCursorPage`
   equivalent for this app.
-- `api.ts`, `schemas.ts` — `productsApi` (`list`/`approve`/`reject`) and the `Product` shape.
+- `api/productsApi.ts`, `api/productsSchemas.ts` — `productsApi` (`list`/`approve`/`reject`) and the `Product` shape.
 
 ## Funnel
 

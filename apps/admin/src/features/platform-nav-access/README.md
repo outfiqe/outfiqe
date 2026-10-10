@@ -8,11 +8,11 @@ plus a co-founder roster (add/remove, 4-cap). Backs the `/api/platform/nav-acces
 
 ## Structure
 
-- `api.ts` — `platformNavAccessApi` (`getOverview`, `listCandidates`, `setHiddenNavKeys`,
+- `api/platformNavAccessApi.ts` — `platformNavAccessApi` (`getOverview`, `listCandidates`, `setHiddenNavKeys`,
   `promoteCoFounder`, `demoteCoFounder`), thin `apiClient` calls + Zod `.parse`.
-- `schemas.ts` — Zod mirrors of the responses. `hiddenNavKeys` is parsed as `string[]` (not a
+- `api/platformNavAccessSchemas.ts` — Zod mirrors of the responses. `hiddenNavKeys` is parsed as `string[]` (not a
   strict enum) so an unknown key from the server never rejects the whole payload.
-- `PlatformNavAccessPage.tsx` — the screen. Renders a non-co-founder notice when
+- `components/PlatformNavAccessPage.tsx` — the screen. Renders a non-co-founder notice when
   `useAuth().state.user.isCoFounder` is false (the real gate is the API + the sidebar hiding the
   nav item). `NAV_KEY_LABELS` is the local key→label map; the `platform-nav-access` key itself is
   never listed as toggleable.

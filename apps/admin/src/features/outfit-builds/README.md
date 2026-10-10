@@ -7,18 +7,18 @@ with a reason, and read the weekly Outfit Build numbers.
 
 ## Structure
 
-- `OutfitBuildsPage.tsx` — two tabs. "Builds": search by title or owner, filter by status and who
+- `components/OutfitBuildsPage.tsx` — two tabs. "Builds": search by title or owner, filter by status and who
   can see it, a paged list linking to each build, empty/loading/error states. "Metrics":
   `BuildMetricsSection`.
-- `OutfitBuildDetailPage.tsx` — people, items on the board, locked versions, what viewers see,
+- `components/OutfitBuildDetailPage.tsx` — people, items on the board, locked versions, what viewers see,
   looks posted from the build, photos, open reports, the history (paged, newest first), and
   Unlock / Archive (shown only to staff with `platform:builds:manage`; each asks for a reason in
   `TextPromptModal`).
-- `BuildMetricsSection.tsx` — a period picker (4, 12, 26 or 52 weeks), a week-by-week table
+- `components/BuildMetricsSection.tsx` — a period picker (4, 12, 26 or 52 weeks), a week-by-week table
   (builds started alone or from a chat, locked, made public, comments, likes, saves, full-set and
   picked-item orders), the current shared and public totals, and commission earned at each rate.
-- `api.ts` — calls to `/api/platform/builds…` and the paged list and history hooks.
-- `schemas.ts` — Zod mirrors of the API views.
+- `api/outfitBuildsApi.ts` — calls to `/api/platform/builds…` and the paged list and history hooks.
+- `api/outfitBuildsSchemas.ts` — Zod mirrors of the API views.
 
 Routes: `_authenticated.outfit-builds.index.tsx` (`/outfit-builds`) and
 `_authenticated.outfit-builds.$outfitId.tsx`. The "Outfit builds" sidebar item is in

@@ -12,7 +12,7 @@ actions, just numbers.
 
 ## Structure
 
-- `TagReviewMetricsPage.tsx` — the `/tag-reviews` route. One `useQuery` → a comprehension-first
+- `components/TagReviewMetricsPage.tsx` — the `/tag-reviews` route. One `useQuery` → a comprehension-first
   layout, in narrative order: an `InsightBanner` (the single most important thing to know, picked
   by priority — open issues, then zero-manual-review, then an all-clear), an `OverviewStrip` of
   four `StatCard`s (Tags live / Manual review rate / Median time to live / Open issues — each with
@@ -24,7 +24,7 @@ actions, just numbers.
   reasons, watch list). `formatHours`/`formatPercent` render raw numbers; `JargonHint` is a small
   local `Tooltip` + info-icon wrapper for jargon that isn't already attached to a `StatCard`'s own
   `hint` prop (SLA lapsed, p50/p90, Trusted creator, Legacy approval).
-- `api.ts` / `schemas.ts` — `GET /tag-reviews/metrics`, parsed with `tagReviewMetricsSchema`
+- `api/tagReviewsApi.ts` / `api/tagReviewsSchemas.ts` — `GET /tag-reviews/metrics`, parsed with `tagReviewMetricsSchema`
   (including the `overview`/`PeriodTrend` shape the strip reads from).
 
 ## Funnel
