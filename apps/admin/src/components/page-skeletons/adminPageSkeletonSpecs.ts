@@ -5,8 +5,6 @@ const FEATURES_DIR = "src/features";
 const ROW_COUNT = 3;
 const GRID_CARD_COUNT = 6;
 
-const PILL_COUNT = 5;
-
 const POSTER_COUNT = 10;
 
 const SESSION_TABLE_HEADERS = [
@@ -493,17 +491,6 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       { kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" },
     ],
     sourceFiles: [`${FEATURES_DIR}/product-types/ProductTypesPage.tsx`],
-  },
-
-  "/size-options": {
-    title: "Sizes",
-    description: "The size list a brand picks from when adding a product, per garment type.",
-    blocks: [
-      { kind: "pills", count: PILL_COUNT },
-      { kind: "formCard", fields: [{ label: "Size label", width: "small" }] },
-      { kind: "actionRows", count: ROW_COUNT, actionLabel: "Delete" },
-    ],
-    sourceFiles: [`${FEATURES_DIR}/size-options/SizeOptionsPage.tsx`],
   },
 
   "/outfit-slot-types": {

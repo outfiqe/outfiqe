@@ -14,7 +14,7 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { isCheckConstraintViolation } from "#lib/prisma.utils.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
+import { createSizeStandard, ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -61,11 +61,9 @@ const createBrandOwner = async () => {
   return { brand, authHeader: `Bearer ${accessToken}` };
 };
 
-const createProductThroughApi = async (authHeader: string) => {
-  const productTypeId = await ensureProductType();
-  const sizeOption = await prisma.sizeOption.create({
-    data: { productTypeId, label: `M-${randomUUID().slice(0, 4)}`, sortOrder: 0 },
-  });
+const createProductThroughApi = async (brandId: string, authHeader: string) => {
+  await ensureProductType();
+  const { sizeStandardId, standardLabelId } = await createSizeStandard(brandId);
   const categorySlug = `cat-${randomUUID().slice(0, 8)}`;
   await prisma.category.create({ data: { slug: categorySlug, name: "Ledger Category" } });
 
@@ -77,7 +75,8 @@ const createProductThroughApi = async (authHeader: string) => {
       price: 3_200,
       type: "tops",
       categories: [categorySlug],
-      sizes: [{ sizeOptionId: sizeOption.id, stock: INITIAL_STOCK }],
+      sizeStandardId,
+      sizes: [{ standardLabelId, stock: INITIAL_STOCK }],
     });
   expect(response.status).toBe(CREATED_STATUS);
   const productId: string = response.body.data.id;
@@ -125,9 +124,9 @@ const ledgerTotalFor = async (sizeId: string): Promise<number> => {
 
 describe("inventory ledger", () => {
   it("records a new product's opening stock and announces it", async () => {
-    const { authHeader } = await createBrandOwner();
+    const { brand, authHeader } = await createBrandOwner();
 
-    const { productId, sizeId } = await createProductThroughApi(authHeader);
+    const { productId, sizeId } = await createProductThroughApi(brand.id, authHeader);
 
     const entries = await prisma.inventoryLedgerEntry.findMany({ where: { sizeId } });
     expect(entries).toMatchObject([
@@ -146,8 +145,8 @@ describe("inventory ledger", () => {
   });
 
   it("records a brand's restock, and nothing at all for a refused adjustment", async () => {
-    const { authHeader } = await createBrandOwner();
-    const { productId, sizeId } = await createProductThroughApi(authHeader);
+    const { brand, authHeader } = await createBrandOwner();
+    const { productId, sizeId } = await createProductThroughApi(brand.id, authHeader);
 
     const restock = await request(testApp)
       .patch(`/api/products/${productId}/stock`)
@@ -168,8 +167,8 @@ describe("inventory ledger", () => {
   });
 
   it("refuses an adjustment that names the same size twice", async () => {
-    const { authHeader } = await createBrandOwner();
-    const { productId, sizeId } = await createProductThroughApi(authHeader);
+    const { brand, authHeader } = await createBrandOwner();
+    const { productId, sizeId } = await createProductThroughApi(brand.id, authHeader);
 
     const response = await request(testApp)
       .patch(`/api/products/${productId}/stock`)

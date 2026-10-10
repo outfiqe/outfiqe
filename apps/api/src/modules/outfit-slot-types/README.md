@@ -50,7 +50,9 @@ active slot types in that order.
   admin page can show the relationship from either side.
 - **The defaults live in the migration, not only the seed.** `20260929200000_add_outfit_build_data_model`
   inserts the six default slot types, the five garment types they need (footwear, accessories,
-  saree, kurta set, lehenga) and their sizes, skipping any that already exist. Production has
-  never been seeded, so every environment gets working defaults from migrations alone.
+  saree, kurta set, lehenga), skipping any that already exist. Production has never been seeded,
+  so every environment gets working defaults from migrations alone. (It also seeded admin size
+  options for those types; that catalog was later dropped, since sizes now come from each brand's
+  own size standards.)
 - **The total item cap is a setting, not a slot type field.** "Items per board"
   (`outfit.maxItemsPerBoard`) lives in platform settings with the other Outfit Build limits.

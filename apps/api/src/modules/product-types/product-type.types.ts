@@ -13,7 +13,6 @@ export type ProductTypeRecord = {
 
 export type ProductTypeWithCounts = ProductTypeRecord & {
   productCount: number;
-  sizeOptionCount: number;
 };
 
 export type CreateProductTypeInput = {

@@ -105,7 +105,6 @@ export default defineConfig({
         "src/modules/platform-jobs/**/*.ts",
         "src/shared/middlewares/require-idempotency-key.ts",
         "src/modules/taste-preferences/**/*.ts",
-        "src/modules/saved-sizes/**/*.ts",
         "src/modules/tours/**/*.ts",
         "src/modules/follows/**/*.ts",
         "src/modules/wishlist/**/*.ts",

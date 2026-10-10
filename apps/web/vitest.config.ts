@@ -300,7 +300,6 @@ export default defineConfig({
         "src/features/outfit-offers/hooks/**/*.ts",
         "src/features/outfit-offers/api/**/*.ts",
         "src/features/creator-dashboard/hooks/useMaxTaggedProducts.ts",
-        "src/features/saved-sizes/**/*.{ts,tsx}",
         "src/shared/hooks/useFeatureFlag.ts",
         "src/i18n/localeCookie.ts",
         "src/i18n/useChosenLanguage.ts",

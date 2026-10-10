@@ -101,7 +101,6 @@ model User {
   oauthIdentities                          OAuthIdentity[]
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
-  savedSizes                               SavedSize[]
   fitProfile                               UserFitProfile?
   outfitLikes                              OutfitLike[]                @relation("OutfitLikes")
   outfitSaves                              OutfitSave[]                @relation("OutfitSaves")
@@ -655,25 +654,10 @@ model ProductType {
   supportsFitRanges Boolean @default(true) @map("supports_fit_ranges")
 
   products        Product[]
-  sizeOptions     SizeOption[]
   outfitSlotTypes OutfitSlotTypeProductType[]
-  savedSizes      SavedSize[]
 
   @@index([isActive, sortOrder])
   @@map("product_types")
-}
-
-model SavedSize {
-  userId        String      @map("user_id") @db.Uuid
-  productTypeId String      @map("product_type_id") @db.Uuid
-  sizeLabel     String      @map("size_label")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
-
-  @@id([userId, productTypeId])
-  @@index([productTypeId])
-  @@map("saved_sizes")
 }
 
 model TastePreference {
@@ -797,18 +781,6 @@ model UserFitProfile {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_fit_profiles")
-}
-
-model SizeOption {
-  id            String      @id @default(uuid()) @db.Uuid
-  productTypeId String      @map("product_type_id") @db.Uuid
-  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
-  label         String
-  sortOrder     Int         @default(0) @map("sort_order")
-  createdAt     DateTime    @default(now()) @map("created_at")
-
-  @@unique([productTypeId, label])
-  @@map("size_options")
 }
 
 model CreatorLook {

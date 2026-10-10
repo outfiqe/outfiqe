@@ -12,7 +12,11 @@ import {
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
+import {
+  createSizeStandard,
+  ensureProductType,
+  type SizeStandardFixture,
+} from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -39,19 +43,12 @@ const createBrandOwner = async () => {
   await prisma.brandMembership.create({
     data: { userId: user.id, brandId: brand.id, role: BrandRole.OWNER },
   });
-  return user;
+  return { ...user, brandId: brand.id };
 };
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.BRAND_OWNER });
   return `Bearer ${accessToken}`;
-};
-
-const createSizeOption = async () => {
-  const productTypeId = await ensureProductType();
-  return prisma.sizeOption.create({
-    data: { productTypeId, label: `M-${randomUUID().slice(0, 4)}`, sortOrder: 0 },
-  });
 };
 
 const createCategory = async () => {
@@ -72,18 +69,23 @@ const createImageAsset = (ownerId: string) =>
     },
   });
 
-const buildProductBody = (sizeOptionId: string, categorySlug: string) => ({
+const buildProductBody = (
+  { sizeStandardId, standardLabelId }: SizeStandardFixture,
+  categorySlug: string,
+) => ({
   name: "Asset Linked Jacket",
   price: 3_200,
   type: "tops",
   categories: [categorySlug],
-  sizes: [{ sizeOptionId, stock: 4 }],
+  sizeStandardId,
+  sizes: [{ standardLabelId, stock: 4 }],
 });
 
 describe("POST /api/products image asset linking", () => {
   it("stores imageAssetId on the created product image at the matching position", async () => {
     const owner = await createBrandOwner();
-    const sizeOption = await createSizeOption();
+    await ensureProductType();
+    const sizeStandard = await createSizeStandard(owner.brandId);
     const categorySlug = await createCategory();
     const asset = await createImageAsset(owner.id);
 
@@ -91,7 +93,7 @@ describe("POST /api/products image asset linking", () => {
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id))
       .send({
-        ...buildProductBody(sizeOption.id, categorySlug),
+        ...buildProductBody(sizeStandard, categorySlug),
         imageUrls: ["https://cdn.outfiqe.test/front.jpg", "https://cdn.outfiqe.test/back.jpg"],
         imageAssetIds: [asset.id, null],
       });
@@ -107,7 +109,8 @@ describe("POST /api/products image asset linking", () => {
   it("rejects an image asset that belongs to a different user", async () => {
     const owner = await createBrandOwner();
     const stranger = await createBrandOwner();
-    const sizeOption = await createSizeOption();
+    await ensureProductType();
+    const sizeStandard = await createSizeStandard(owner.brandId);
     const categorySlug = await createCategory();
     const strangersAsset = await createImageAsset(stranger.id);
 
@@ -115,7 +118,7 @@ describe("POST /api/products image asset linking", () => {
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id))
       .send({
-        ...buildProductBody(sizeOption.id, categorySlug),
+        ...buildProductBody(sizeStandard, categorySlug),
         imageUrls: ["https://cdn.outfiqe.test/front.jpg"],
         imageAssetIds: [strangersAsset.id],
       });

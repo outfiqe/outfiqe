@@ -15,7 +15,6 @@ import {
 } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -199,7 +198,6 @@ export const ProductTypesPage = () => {
             isActive,
             supportsFitRanges,
             productCount,
-            sizeOptionCount,
           } = productType;
 
           return (
@@ -253,19 +251,8 @@ export const ProductTypesPage = () => {
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  /{typeSlug} · {productCount} products · {sizeOptionCount} sizes ·{" "}
+                  /{typeSlug} · {productCount} products ·{" "}
                   {supportsFitRanges ? "Size charts on" : "Size charts off"}
-                  {sizeOptionCount === 0 && (
-                    <>
-                      {" · "}
-                      <Link
-                        to="/size-options"
-                        className="font-medium text-foreground underline underline-offset-2"
-                      >
-                        Add sizes
-                      </Link>
-                    </>
-                  )}
                 </p>
               </div>
 

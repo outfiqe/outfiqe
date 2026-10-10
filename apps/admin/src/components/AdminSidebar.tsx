@@ -40,7 +40,6 @@ import {
   Percent,
   PiggyBank,
   QrCode,
-  Ruler,
   ScrollText,
   Settings2,
   Shapes,
@@ -226,7 +225,6 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     icon: Shirt,
     group: "catalog",
   },
-  { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler, group: "catalog" },
   {
     id: "outfit-slot-types",
     href: "/outfit-slot-types",

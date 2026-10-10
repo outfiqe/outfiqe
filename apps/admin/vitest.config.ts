@@ -88,7 +88,6 @@ export default defineConfig({
         "src/features/notifications/adminNotificationBell.utils.ts",
         "src/features/coupons/**/*.{ts,tsx}",
         "src/features/product-reviews/**/*.{ts,tsx}",
-        "src/features/size-options/**/*.{ts,tsx}",
         "src/features/outfit-slot-types/**/*.{ts,tsx}",
         "src/components/ConfirmModal.tsx",
         "src/components/TextPromptModal.tsx",

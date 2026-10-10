@@ -48,11 +48,6 @@ export const fitRangeSchema = z
 
 const stockSchema = z.number().int().min(STOCK_MIN).max(STOCK_MAX);
 
-export const productSizeInputSchema = z.object({
-  sizeOptionId: z.uuid(),
-  stock: stockSchema,
-});
-
 export const standardSizeInputSchema = z.object({
   standardLabelId: z.uuid(),
   stock: stockSchema,
@@ -61,10 +56,7 @@ export const standardSizeInputSchema = z.object({
 
 const AT_LEAST_ONE_SIZE_MESSAGE = "Add at least one size";
 
-const productSizesSchema = z.union([
-  z.array(standardSizeInputSchema).min(1, AT_LEAST_ONE_SIZE_MESSAGE),
-  z.array(productSizeInputSchema).min(1, AT_LEAST_ONE_SIZE_MESSAGE),
-]);
+const productSizesSchema = z.array(standardSizeInputSchema).min(1, AT_LEAST_ONE_SIZE_MESSAGE);
 
 const hasUniqueValues = (values: string[]): boolean => new Set(values).size === values.length;
 
@@ -86,7 +78,7 @@ const productFieldsSchema = z.object({
   imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
   sizes: productSizesSchema,
-  sizeStandardId: z.uuid().optional(),
+  sizeStandardId: z.uuid(),
   isStretchable: z.boolean().nullable().optional(),
   isThrift: z.boolean().optional(),
   thriftConditionRating: z.enum(ThriftCondition).optional(),
@@ -99,23 +91,15 @@ const productFieldsSchema = z.object({
 });
 
 const SIZE_STANDARD_MISMATCH_MESSAGE =
-  "Sizes picked from a size standard need its sizeStandardId, and only those sizes can have one.";
+  "Send sizes together with the sizeStandardId they come from.";
 
 const sizeStandardMatchesSizes = (data: {
-  sizes?: (ProductSizeInput | StandardSizeInput)[];
+  sizes?: StandardSizeInput[];
   sizeStandardId?: string;
-}): boolean => {
-  if (!data.sizes) return true;
-  const isFromStandard = data.sizes.every((size) => "standardLabelId" in size);
-  return isFromStandard === (data.sizeStandardId !== undefined);
-};
+}): boolean => (data.sizes === undefined) === (data.sizeStandardId === undefined);
 
-const standardLabelIdsAreUnique = (data: {
-  sizes?: (ProductSizeInput | StandardSizeInput)[];
-}): boolean =>
-  hasUniqueValues(
-    (data.sizes ?? []).flatMap((size) => ("standardLabelId" in size ? [size.standardLabelId] : [])),
-  );
+const standardLabelIdsAreUnique = (data: { sizes?: StandardSizeInput[] }): boolean =>
+  hasUniqueValues((data.sizes ?? []).map(({ standardLabelId }) => standardLabelId));
 
 const DUPLICATE_SIZES_MESSAGE = "Each size can only be picked once.";
 
@@ -187,7 +171,6 @@ export const updateSizeChartSchema = z.object({
     }),
 });
 
-export type ProductSizeInput = z.infer<typeof productSizeInputSchema>;
 export type StandardSizeInput = z.infer<typeof standardSizeInputSchema>;
 export type UpdateSizeChartBody = z.infer<typeof updateSizeChartSchema>;
 export type AdjustStockBody = z.infer<typeof adjustStockSchema>;

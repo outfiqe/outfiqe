@@ -8,6 +8,5 @@ export const productTypeSchema = z.object({
   isActive: z.boolean(),
   supportsFitRanges: z.boolean(),
   productCount: z.number(),
-  sizeOptionCount: z.number(),
 });
 export type ProductType = z.infer<typeof productTypeSchema>;

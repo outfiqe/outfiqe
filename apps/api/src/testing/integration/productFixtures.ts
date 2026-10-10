@@ -67,3 +67,25 @@ export const createBrandOwnerSession = async (): Promise<BrandOwnerSession> => {
   const { accessToken } = generateTokenpair({ sub: user.id, role: UserRole.BRAND_OWNER });
   return { userId: user.id, brandId: brand.id, authHeader: `Bearer ${accessToken}` };
 };
+
+export type SizeStandardFixture = {
+  sizeStandardId: string;
+  standardLabelId: string;
+};
+
+export const createSizeStandard = async (
+  brandId: string,
+  label = "M",
+): Promise<SizeStandardFixture> => {
+  const standard = await prisma.brandSizeStandard.create({
+    data: {
+      brandId,
+      name: `Standard ${randomUUID().slice(0, 8)}`,
+      labels: { create: [{ label, sortOrder: 0 }] },
+    },
+    select: { id: true, labels: { select: { id: true } } },
+  });
+  const [standardLabel] = standard.labels;
+  if (!standardLabel) throw new Error("Size standard fixture has no label");
+  return { sizeStandardId: standard.id, standardLabelId: standardLabel.id };
+};

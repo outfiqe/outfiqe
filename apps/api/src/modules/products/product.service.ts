@@ -28,7 +28,6 @@ import { imageProcessingService } from "#modules/image-processing/image-processi
 import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
 import { saleService } from "#modules/sale/sale.service.js";
-import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { sizeStandardService } from "#modules/size-standards/sizeStandard.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
@@ -49,7 +48,6 @@ import type {
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
-  ProductSizeInput,
   SetProductDiscountBody,
   StandardSizeInput,
   UpdateProductBody,
@@ -171,34 +169,7 @@ const recordNewSizeStock = (
     sizes.map(({ id, stock }) => ({ sizeId: id, delta: stock })),
   );
 
-const isStandardSizeInputs = (
-  sizes: ProductSizeInput[] | StandardSizeInput[],
-): sizes is StandardSizeInput[] => sizes.every((size) => "standardLabelId" in size);
-
-const resolveCatalogSizeInputs = async (
-  productTypeId: string,
-  sizes: ProductSizeInput[],
-): Promise<CreateProductSizeInput[]> => {
-  const sizeOptions = await sizeOptionService.getManyByIds(
-    sizes.map((size) => size.sizeOptionId),
-    productTypeId,
-  );
-  const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
-
-  return sizes.map(({ sizeOptionId, stock }, sortOrder) => {
-    const sizeOption = sizeOptionById.get(sizeOptionId);
-    if (!sizeOption) {
-      throw new AppError(
-        "SIZE_OPTION_NOT_FOUND",
-        "One or more selected sizes weren't found.",
-        NOT_FOUND_STATUS,
-      );
-    }
-    return { label: sizeOption.label, stock, sortOrder, fitRange: null };
-  });
-};
-
-const resolveStandardSizeInputs = async (
+const resolveSizeInputs = async (
   brandId: string,
   sizeStandardId: string | undefined,
   sizes: StandardSizeInput[],
@@ -227,16 +198,6 @@ const resolveStandardSizeInputs = async (
     };
   });
 };
-
-const resolveSizeInputs = (
-  brandId: string,
-  productTypeId: string,
-  sizeStandardId: string | undefined,
-  sizes: ProductSizeInput[] | StandardSizeInput[],
-): Promise<CreateProductSizeInput[]> =>
-  isStandardSizeInputs(sizes)
-    ? resolveStandardSizeInputs(brandId, sizeStandardId, sizes)
-    : resolveCatalogSizeInputs(productTypeId, sizes);
 
 const assertFitDataAllowed = (
   supportsFitRanges: boolean,
@@ -293,7 +254,7 @@ export const productService = {
     }
     const productType = await productTypeService.getActiveBySlug(type);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
-    const resolvedSizes = await resolveSizeInputs(brandId, productType.id, sizeStandardId, sizes);
+    const resolvedSizes = await resolveSizeInputs(brandId, sizeStandardId, sizes);
     assertFitDataAllowed(productType.supportsFitRanges, isStretchable, resolvedSizes);
 
     const productInput = {
@@ -364,7 +325,7 @@ export const productService = {
           BAD_REQUEST_STATUS,
         );
       }
-      sizeChanges = await resolveSizeInputs(brandId, targetProductType.id, sizeStandardId, sizes);
+      sizeChanges = await resolveSizeInputs(brandId, sizeStandardId, sizes);
     }
 
     const effectiveProductType =

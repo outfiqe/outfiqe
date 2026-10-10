@@ -19,8 +19,8 @@ never define themselves.
   standard module layering.
 - `product-type.schemas.ts` — `createProductTypeSchema` (`label`, lowercase-hyphen `slug`,
   `sortOrder?`, `isActive?`, `supportsFitRanges?`), `updateProductTypeSchema`, `reorderProductTypesSchema`.
-- `product-type.types.ts` — `ProductTypeRecord`, `ProductTypeWithCounts` (adds `productCount` +
-  `sizeOptionCount`).
+- `product-type.types.ts` — `ProductTypeRecord`, `ProductTypeWithCounts` (adds `productCount`),
+  `ProductTypeWithFitSupport`.
 - `product-type.utils.ts` — `toPublicProductType` mapper (`{ id, slug, label }`, the
   `@outfiqe/types` `PublicProductType` shape) and `toProductTypeWithFitSupport`, which adds
   `supportsFitRanges` for the storefront list and the brand product form.
@@ -37,8 +37,8 @@ of that type stay in the database and reappear if the type is switched back on.
 
 **Technical**: `apps/admin/src/features/product-types` → `/api/product-types/admin` +
 `/reorder` + `PATCH`. Storefront: `apps/web` `useProductTypes` → `GET /api/product-types` (cached);
-brand form: `useAssignableProductTypes` → `GET /api/product-types/assignable`. `products` and
-`size-options` resolve a request's type slug to a `ProductType.id` through
+brand form: `useAssignableProductTypes` → `GET /api/product-types/assignable`. `products`
+resolves a request's type slug to a `ProductType.id` through
 `productTypeService.getBySlug` / `getActiveBySlug`.
 
 ## Non-obvious rationale

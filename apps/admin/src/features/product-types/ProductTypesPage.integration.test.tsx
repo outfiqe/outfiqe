@@ -31,7 +31,6 @@ const productType = (
   isActive,
   supportsFitRanges,
   productCount: 0,
-  sizeOptionCount: 1,
 });
 
 const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
@@ -39,7 +38,7 @@ const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "o
 const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: ProductTypesPage });
-  const children = ["/product-types", "/size-options"].map((path) =>
+  const children = ["/product-types"].map((path) =>
     createRoute({ getParentRoute: () => rootRoute, path }),
   );
   const router = createRouter({
@@ -175,21 +174,6 @@ describe("ProductTypesPage", () => {
     expect(
       await screen.findByText("Only platform staff can change garment types."),
     ).toBeInTheDocument();
-  });
-
-  it("links to the sizes page for a type that has none yet", async () => {
-    mswServer.use(
-      http.get(`${API_BASE}/product-types/admin`, () =>
-        okJson([{ ...productType("id-a", "Alpha", 0), sizeOptionCount: 0 }]),
-      ),
-    );
-
-    renderPage();
-
-    expect(await screen.findByRole("link", { name: "Add sizes" })).toHaveAttribute(
-      "href",
-      "/size-options",
-    );
   });
 
   it("shows an empty state when there are no garment types", async () => {

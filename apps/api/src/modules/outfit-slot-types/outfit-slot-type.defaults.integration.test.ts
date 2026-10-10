@@ -4,7 +4,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { templateDatabaseUrl } from "#test/integration/workerPool.js";
 
 const DEFAULT_SLOT_KEYS = ["top", "bottom", "full-outfit", "footwear", "accessory", "extra"];
-const FOOTWEAR_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
 const migratedTemplateClient = new Client({
   connectionString: templateDatabaseUrl(process.env.TEST_DATABASE_URL ?? ""),
@@ -76,17 +75,5 @@ describe("the Outfit Build migration's starting data", () => {
     );
 
     expect(rows.map((row) => row.key)).toEqual(["bottom", "top"]);
-  });
-
-  it("ships sizes for the new garment types", async () => {
-    const { rows } = await migratedTemplateClient.query<{ label: string }>(
-      `SELECT size_option.label
-         FROM size_options size_option
-         JOIN product_types product_type ON product_type.id = size_option.product_type_id
-        WHERE product_type.slug = 'footwear'
-        ORDER BY size_option.sort_order`,
-    );
-
-    expect(rows.map((row) => row.label)).toEqual(FOOTWEAR_SIZES);
   });
 });

@@ -1310,20 +1310,6 @@ const PRODUCT_IMAGE_POOLS: Record<string, string[]> = Object.fromEntries(
   SEED_PRODUCTS.map((product) => [product.name, product.photoPool]),
 );
 
-const DEFAULT_SIZES_BY_TYPE: Record<string, string[]> = {
-  tops: ["XS", "S", "M", "L", "XL"],
-  bottoms: ["XS", "S", "M", "L", "XL"],
-  dresses: ["XS", "S", "M", "L", "XL"],
-  outerwear: ["XS", "S", "M", "L", "XL"],
-  pants: ["28", "30", "32", "34", "36"],
-  headwear: ["One size"],
-  footwear: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
-  accessories: ["One size"],
-  saree: ["Free size"],
-  "kurta-set": ["XS", "S", "M", "L", "XL", "XXL"],
-  lehenga: ["XS", "S", "M", "L", "XL"],
-};
-
 const seedProductTypes = async (): Promise<Map<string, string>> => {
   await Promise.all(
     DEFAULT_PRODUCT_TYPES.map((productType, index) =>
@@ -1341,19 +1327,7 @@ const seedProductTypes = async (): Promise<Map<string, string>> => {
   );
 
   const rows = await prisma.productType.findMany({ select: { id: true, slug: true } });
-  const idBySlug = new Map(rows.map((row) => [row.slug, row.id]));
-
-  if ((await prisma.sizeOption.count()) === 0) {
-    for (const [slug, labels] of Object.entries(DEFAULT_SIZES_BY_TYPE)) {
-      const productTypeId = idBySlug.get(slug);
-      if (!productTypeId) continue;
-      await prisma.sizeOption.createMany({
-        data: labels.map((label, sortOrder) => ({ productTypeId, label, sortOrder })),
-      });
-    }
-  }
-
-  return idBySlug;
+  return new Map(rows.map((row) => [row.slug, row.id]));
 };
 
 const seedProducts = async (brands: { id: string }[], productTypeIdBySlug: Map<string, string>) => {

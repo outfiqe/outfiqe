@@ -8,21 +8,6 @@
     "settingsTitle": "Language",
     "settingsDescription": "Choose the language for outfit builds. More of Outfiqe will follow."
   },
-  "savedSizes": {
-    "title": "My sizes",
-    "description": "Save your size for each kind of clothing. Only you can see them. Outfit builds use them to show whether an item comes in your size.",
-    "sizeFor": "Your size for {type}",
-    "notSet": "Not saved",
-    "lastBought": "You last bought {size}.",
-    "saveLastBought": "Save {size}",
-    "clear": "Clear {type} size",
-    "saved": "Size saved.",
-    "cleared": "Size cleared.",
-    "saveFailed": "Couldn't save your size. Try again.",
-    "loadFailed": "Couldn't load your sizes. Try again.",
-    "retry": "Try again",
-    "empty": "There are no kinds of clothing to size yet."
-  },
   "fitProfile": {
     "title": "My measurements",
     "description": "Your height and weight, used only to recommend sizes. Every brand sizes differently, so we compare these with each product's own size chart. Only you can see them.",
