@@ -1,7 +1,11 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { BadgeCardSkeleton, CategoryToggleRowSkeleton, TitleActionCardSkeleton } from "./skeletons";
+import {
+  BadgeCardSkeleton,
+  CategoryToggleRowSkeleton,
+  TitleActionCardSkeleton,
+} from "./GamificationSkeletons";
 
 describe("gamification skeletons", () => {
   it("draws the badge card with an icon, two text lines and two action buttons", () => {

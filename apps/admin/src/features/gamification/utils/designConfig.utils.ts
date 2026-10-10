@@ -1,4 +1,4 @@
-import type { BadgeDesignConfig, BadgeLayer, BadgeShapeValue } from "./schemas";
+import type { BadgeDesignConfig, BadgeLayer, BadgeShapeValue } from "../api/gamificationSchemas";
 
 const FALLBACK_SHAPE: BadgeShapeValue = "circle";
 const FALLBACK_COLOR = "#94a3b8";

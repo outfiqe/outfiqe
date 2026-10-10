@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BadgeAdmin } from "../../schemas";
+import type { BadgeAdmin } from "../../api/gamificationSchemas";
 import { EMPTY_FORM } from "../constants/badgeForm.constants";
 import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
 

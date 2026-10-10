@@ -1,4 +1,4 @@
-import { ManualActionsSection } from "./manual-actions/components/ManualActionsSection";
+import { ManualActionsSection } from "../manual-actions/components/ManualActionsSection";
 
 export const GamificationManualActionsPage = () => {
   return (

@@ -2,14 +2,14 @@ import { z } from "zod";
 
 import { wholeNumberText } from "@/lib/formFields";
 
-import { AUTO_ANIMATION_OPTION } from "../../badgeOptions.constants";
 import {
   badgeAnimationSchema,
   badgeCategorySchema,
   badgeRaritySchema,
   badgeShapeSchema,
   creatorLeaderboardCategorySchema,
-} from "../../schemas";
+} from "../../api/gamificationSchemas";
+import { AUTO_ANIMATION_OPTION } from "../../constants/badgeOptions.constants";
 
 export const MIN_COMPETITION_WINNERS = 1;
 export const MAX_COMPETITION_WINNERS = 10;

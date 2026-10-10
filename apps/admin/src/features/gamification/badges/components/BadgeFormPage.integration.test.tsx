@@ -12,7 +12,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
-import type { BadgeAdmin } from "../../schemas";
+import type { BadgeAdmin } from "../../api/gamificationSchemas";
 import { BadgeFormPage } from "./BadgeFormPage";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}`;

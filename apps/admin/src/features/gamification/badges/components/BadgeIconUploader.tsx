@@ -8,8 +8,8 @@ import {
 } from "@outfiqe/design-system";
 import { ImagePlus, Loader2, X } from "lucide-react";
 
-import { gamificationApi } from "../../api";
-import { BADGE_ICON_IMAGE_ACCEPT } from "../../badgeOptions.constants";
+import { gamificationApi } from "../../api/gamificationApi";
+import { BADGE_ICON_IMAGE_ACCEPT } from "../../constants/badgeOptions.constants";
 
 const SQUARE_ASPECT = 1;
 const RASTERIZED_MIME_TYPE = "image/png";

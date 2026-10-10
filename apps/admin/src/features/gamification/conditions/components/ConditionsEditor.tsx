@@ -3,7 +3,7 @@ import { Button, Input, Select } from "@outfiqe/design-system";
 import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 import type { FieldErrorMap } from "@/lib/zodFieldErrors";
 
-import type { AchievementMetricValue, ConditionOperatorValue } from "../../schemas";
+import type { AchievementMetricValue, ConditionOperatorValue } from "../../api/gamificationSchemas";
 import {
   EMPTY_CONDITION,
   METRIC_OPTIONS,

@@ -1,14 +1,14 @@
 import type {
-  AUTO_ANIMATION_OPTION,
-  RULE_BASED_REQUIREMENT_TYPES,
-} from "../../badgeOptions.constants";
-import type { ConditionFormState } from "../../conditions/types/condition.types";
-import type {
   BadgeAnimationValue,
   BadgeCategoryValue,
   BadgeRarityValue,
   BadgeShapeValue,
-} from "../../schemas";
+} from "../../api/gamificationSchemas";
+import type { ConditionFormState } from "../../conditions/types/condition.types";
+import type {
+  AUTO_ANIMATION_OPTION,
+  RULE_BASED_REQUIREMENT_TYPES,
+} from "../../constants/badgeOptions.constants";
 
 export type ChallengeFormState = {
   name: string;

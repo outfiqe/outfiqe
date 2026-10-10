@@ -2,6 +2,7 @@ import { AchievementBadgeIcon, Button, Input, Select } from "@outfiqe/design-sys
 import { Circle, Image as ImageIcon, Sparkles, Type } from "lucide-react";
 import { useState } from "react";
 
+import type { BadgeLayer, BadgeShapeValue } from "../../../api/gamificationSchemas";
 import {
   ANIMATION_OPTION_LABEL,
   ANIMATION_OPTIONS,
@@ -9,8 +10,7 @@ import {
   BADGE_DESIGN_MODE,
   DEFAULT_BADGE_ICON,
   SHAPE_OPTIONS,
-} from "../../../badgeOptions.constants";
-import type { BadgeLayer, BadgeShapeValue } from "../../../schemas";
+} from "../../../constants/badgeOptions.constants";
 import { BadgeIconUploader } from "../../components/BadgeIconUploader";
 import type { BadgeFormState } from "../../types/badgeForm.types";
 import { toPreviewDesignConfig } from "../../utils/badgeForm.utils";

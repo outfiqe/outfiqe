@@ -1,5 +1,5 @@
-import { CompetitionsSection } from "./competitions/components/CompetitionsSection";
-import { LeaderboardSection } from "./leaderboards/components/LeaderboardSection";
+import { CompetitionsSection } from "../competitions/components/CompetitionsSection";
+import { LeaderboardSection } from "../leaderboards/components/LeaderboardSection";
 
 export const GamificationLeaderboardsPage = () => {
   return (

@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { gamificationApi } from "../../api";
-import type { ActivityXpConfig } from "../../schemas";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { ActivityXpConfig } from "../../api/gamificationSchemas";
 import { ACTIVITY_CONFIG_QUERY_KEY } from "../constants/activityConfigForm.constants";
 import { activityConfigFormSchema } from "../schemas/activityConfigForm.schema";
 import type { ActivityConfigFormState } from "../types/activityConfigForm.types";

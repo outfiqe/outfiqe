@@ -1,6 +1,6 @@
 import { Button } from "@outfiqe/design-system";
 
-import type { ActivityXpConfig } from "../../schemas";
+import type { ActivityXpConfig } from "../../api/gamificationSchemas";
 
 export const ActivityConfigCard = ({
   config,

@@ -5,9 +5,9 @@ import { useState } from "react";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../../api";
-import type { ChallengeAdmin } from "../../schemas";
-import { TitleActionCardSkeleton } from "../../skeletons";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { ChallengeAdmin } from "../../api/gamificationSchemas";
+import { TitleActionCardSkeleton } from "../../components/GamificationSkeletons";
 import {
   CHALLENGES_QUERY_KEY,
   createEmptyChallengeForm,

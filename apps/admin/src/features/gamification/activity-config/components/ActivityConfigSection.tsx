@@ -5,8 +5,8 @@ import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../../api";
-import type { ActivityXpConfig } from "../../schemas";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { ActivityXpConfig } from "../../api/gamificationSchemas";
 import { ACTIVITY_CONFIG_QUERY_KEY } from "../constants/activityConfigForm.constants";
 import { ActivityConfigCard } from "./ActivityConfigCard";
 import { EditActivityConfigModal } from "./EditActivityConfigModal";

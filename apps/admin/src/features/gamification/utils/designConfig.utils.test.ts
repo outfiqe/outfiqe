@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import type { BadgeDesignConfig, BadgeLayer } from "../api/gamificationSchemas";
 import {
   isStudioDesignConfig,
   legacyImageUrlOf,
   legacyShapeAndColorOf,
   studioLayersOf,
 } from "./designConfig.utils";
-import type { BadgeDesignConfig, BadgeLayer } from "./schemas";
 
 const legacyConfig: BadgeDesignConfig = { shape: "star", primaryColor: "#ff0000" };
 

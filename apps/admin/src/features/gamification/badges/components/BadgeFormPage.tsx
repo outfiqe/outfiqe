@@ -21,10 +21,10 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
-import type { UpdateBadgeFormInput } from "../../api";
-import { gamificationApi } from "../../api";
-import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../../badgeOptions.constants";
-import type { BadgeAdmin } from "../../schemas";
+import type { UpdateBadgeFormInput } from "../../api/gamificationApi";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { BadgeAdmin } from "../../api/gamificationSchemas";
+import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../../constants/badgeOptions.constants";
 import { BADGES_QUERY_KEY, EMPTY_FORM } from "../constants/badgeForm.constants";
 import { BadgeDesignSection } from "../design-studio/components/BadgeDesignSection";
 import { BADGE_LAYER_TYPE } from "../design-studio/constants/studioLayer.constants";

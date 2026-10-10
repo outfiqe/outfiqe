@@ -9,7 +9,7 @@ import {
   Type,
 } from "lucide-react";
 
-import type { BadgeLayer } from "../../../schemas";
+import type { BadgeLayer } from "../../../api/gamificationSchemas";
 import { BADGE_LAYER_TYPE, LAYER_TYPE_LABEL } from "../constants/studioLayer.constants";
 
 const layerLabel = (layer: BadgeLayer): string => {

@@ -1,5 +1,5 @@
-import type { UpdateActivityXpConfigInput } from "../../api";
-import type { ActivityXpConfig } from "../../schemas";
+import type { UpdateActivityXpConfigInput } from "../../api/gamificationApi";
+import type { ActivityXpConfig } from "../../api/gamificationSchemas";
 import type { ActivityConfigFormState } from "../types/activityConfigForm.types";
 
 export const formForActivityConfig = (config: ActivityXpConfig): ActivityConfigFormState => ({

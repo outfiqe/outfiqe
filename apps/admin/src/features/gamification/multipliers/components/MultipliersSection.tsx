@@ -26,9 +26,9 @@ import {
   type CreateXpMultiplierInput,
   gamificationApi,
   type UpdateXpMultiplierInput,
-} from "../../api";
-import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
-import type { XpMultiplier } from "../../schemas";
+} from "../../api/gamificationApi";
+import type { XpMultiplier } from "../../api/gamificationSchemas";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../utils/datetime.utils";
 import {
   buildEmptyMultiplierForm,
   multiplierFormSchema,

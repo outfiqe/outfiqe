@@ -2,7 +2,7 @@ import { cn, layerBorderWidthPx, layerFontSizePx, SHAPE_CLIP_PATH } from "@outfi
 import { ImageIcon } from "lucide-react";
 import { Rnd } from "react-rnd";
 
-import type { BadgeLayer } from "../../../schemas";
+import type { BadgeLayer } from "../../../api/gamificationSchemas";
 import {
   BADGE_FONT_WEIGHT,
   BADGE_LAYER_TYPE,

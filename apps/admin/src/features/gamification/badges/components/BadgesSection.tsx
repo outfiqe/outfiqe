@@ -5,9 +5,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../../api";
-import type { BadgeAdmin } from "../../schemas";
-import { BadgeCardSkeleton } from "../../skeletons";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { BadgeAdmin } from "../../api/gamificationSchemas";
+import { BadgeCardSkeleton } from "../../components/GamificationSkeletons";
 import { BADGES_QUERY_KEY } from "../constants/badgeForm.constants";
 import { BadgeCard } from "./BadgeCard";
 

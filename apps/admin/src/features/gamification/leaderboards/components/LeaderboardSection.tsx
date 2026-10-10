@@ -6,9 +6,9 @@ import { useState } from "react";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../../api";
-import { LEADERBOARD_CATEGORY_LABEL } from "../../badgeOptions.constants";
-import { CategoryToggleRowSkeleton } from "../../skeletons";
+import { gamificationApi } from "../../api/gamificationApi";
+import { CategoryToggleRowSkeleton } from "../../components/GamificationSkeletons";
+import { LEADERBOARD_CATEGORY_LABEL } from "../../constants/badgeOptions.constants";
 
 const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"];
 

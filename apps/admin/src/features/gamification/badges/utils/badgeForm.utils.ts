@@ -1,20 +1,20 @@
 import type { BadgeDesignConfig } from "@outfiqe/types";
 
-import type { BadgeFormInput } from "../../api";
+import type { BadgeFormInput } from "../../api/gamificationApi";
+import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../../api/gamificationSchemas";
+import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
 import {
   AUTO_ANIMATION_OPTION,
   BADGE_DESIGN_MODE,
   DEFAULT_BADGE_ICON,
-} from "../../badgeOptions.constants";
-import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
-import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
+} from "../../constants/badgeOptions.constants";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../utils/datetime.utils";
 import {
   isStudioDesignConfig,
   legacyImageUrlOf,
   legacyShapeAndColorOf,
   studioLayersOf,
-} from "../../designConfig.utils";
-import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../../schemas";
+} from "../../utils/designConfig.utils";
 import type { BadgeFormState } from "../types/badgeForm.types";
 
 export const toPreviewDesignConfig = (form: BadgeFormState): BadgeDesignConfig => {

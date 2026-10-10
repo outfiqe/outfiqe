@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
 import {
   badgeDescriptionText,
   badgeIconText,
@@ -7,8 +8,7 @@ import {
   badgeXpRewardText,
   isEndAfterStart,
   optionalAssignmentLimitText,
-} from "../../badgeFormFields.schema";
-import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
+} from "../../schemas/badgeFormFields.schema";
 
 const sharedBadgeFields = {
   name: badgeNameText("a badge name"),

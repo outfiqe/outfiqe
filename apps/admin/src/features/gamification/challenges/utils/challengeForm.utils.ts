@@ -1,8 +1,8 @@
-import type { ChallengeFormInput } from "../../api";
-import { AUTO_ANIMATION_OPTION } from "../../badgeOptions.constants";
-import { toDatetimeLocalValue, toIsoOrNull } from "../../datetime.utils";
-import { legacyShapeAndColorOf } from "../../designConfig.utils";
-import type { ChallengeAdmin } from "../../schemas";
+import type { ChallengeFormInput } from "../../api/gamificationApi";
+import type { ChallengeAdmin } from "../../api/gamificationSchemas";
+import { AUTO_ANIMATION_OPTION } from "../../constants/badgeOptions.constants";
+import { toDatetimeLocalValue, toIsoOrNull } from "../../utils/datetime.utils";
+import { legacyShapeAndColorOf } from "../../utils/designConfig.utils";
 import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const formForChallenge = (challenge: ChallengeAdmin): ChallengeFormState => ({

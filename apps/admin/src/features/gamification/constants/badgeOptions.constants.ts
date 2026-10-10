@@ -5,7 +5,7 @@ import type {
   BadgeRarityValue,
   BadgeShapeValue,
   CreatorLeaderboardCategoryValue,
-} from "./schemas";
+} from "../api/gamificationSchemas";
 
 export const CATEGORY_OPTIONS: BadgeCategoryValue[] = [
   "BEGINNER",

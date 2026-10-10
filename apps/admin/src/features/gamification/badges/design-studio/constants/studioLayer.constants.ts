@@ -4,7 +4,7 @@ import type {
   BadgeImageLayer,
   BadgeShapeValue,
   BadgeTextLayer,
-} from "../../../schemas";
+} from "../../../api/gamificationSchemas";
 import { generateLayerId } from "../utils/studioLayer.utils";
 
 export const CANVAS_SIZE_PX = 320;

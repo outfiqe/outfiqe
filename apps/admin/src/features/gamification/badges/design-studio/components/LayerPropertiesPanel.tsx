@@ -1,11 +1,15 @@
 import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
+import type {
+  BadgeImageFitValue,
+  BadgeLayer,
+  BadgeShapeValue,
+} from "../../../api/gamificationSchemas";
 import {
   IMAGE_FIT_OPTION_LABEL,
   IMAGE_FIT_OPTIONS,
   SHAPE_OPTIONS,
-} from "../../../badgeOptions.constants";
-import type { BadgeImageFitValue, BadgeLayer, BadgeShapeValue } from "../../../schemas";
+} from "../../../constants/badgeOptions.constants";
 import { BadgeIconUploader } from "../../components/BadgeIconUploader";
 import {
   BADGE_FONT_WEIGHT,

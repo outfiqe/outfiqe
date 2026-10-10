@@ -4,6 +4,12 @@ import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { FieldErrorMap } from "@/lib/zodFieldErrors";
 
+import type {
+  BadgeCategoryValue,
+  BadgeRarityValue,
+  BadgeShapeValue,
+} from "../../api/gamificationSchemas";
+import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
 import {
   ANIMATION_OPTION_LABEL,
   ANIMATION_OPTIONS,
@@ -12,9 +18,7 @@ import {
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
   SHAPE_OPTIONS,
-} from "../../badgeOptions.constants";
-import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
-import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../../schemas";
+} from "../../constants/badgeOptions.constants";
 import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const ChallengeFields = ({

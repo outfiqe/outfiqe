@@ -1,13 +1,13 @@
 import { z } from "zod";
 
+import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
 import {
   badgeDescriptionText,
   badgeNameText,
   badgeXpRewardText,
   isEndAfterStart,
   requiredBadgeIconText,
-} from "../../badgeFormFields.schema";
-import { conditionsSchema } from "../../conditions/schemas/conditionForm.schema";
+} from "../../schemas/badgeFormFields.schema";
 
 export const challengeFormSchema = z
   .object({

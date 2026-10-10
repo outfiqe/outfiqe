@@ -5,9 +5,9 @@ import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
-import type { UpdateChallengeFormInput } from "../../api";
-import { gamificationApi } from "../../api";
-import type { ChallengeAdmin } from "../../schemas";
+import type { UpdateChallengeFormInput } from "../../api/gamificationApi";
+import { gamificationApi } from "../../api/gamificationApi";
+import type { ChallengeAdmin } from "../../api/gamificationSchemas";
 import { CHALLENGES_QUERY_KEY } from "../constants/challengeForm.constants";
 import { challengeFormSchema } from "../schemas/challengeForm.schema";
 import type { ChallengeFormState } from "../types/challengeForm.types";

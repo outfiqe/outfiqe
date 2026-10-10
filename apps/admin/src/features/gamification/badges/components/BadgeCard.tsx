@@ -1,7 +1,7 @@
 import { AchievementBadgeIcon, Button } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
-import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../../schemas";
+import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../../api/gamificationSchemas";
 
 const summariseBadge = (badge: BadgeAdmin): string => {
   const { achievement } = badge;

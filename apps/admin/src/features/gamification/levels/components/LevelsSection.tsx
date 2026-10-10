@@ -22,8 +22,12 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "../../api";
-import type { Level } from "../../schemas";
+import {
+  type CreateLevelInput,
+  gamificationApi,
+  type UpdateLevelInput,
+} from "../../api/gamificationApi";
+import type { Level } from "../../api/gamificationSchemas";
 import {
   EMPTY_LEVEL_FORM,
   levelFormSchema,

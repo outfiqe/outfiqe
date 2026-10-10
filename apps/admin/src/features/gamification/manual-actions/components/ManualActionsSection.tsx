@@ -24,7 +24,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
-import { gamificationApi } from "../../api";
+import { gamificationApi } from "../../api/gamificationApi";
 import {
   adjustXpFormSchema,
   type AdjustXpFormValues,

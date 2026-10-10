@@ -3,14 +3,14 @@ import { Checkbox, Input, Select } from "@outfiqe/design-system";
 import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 import type { FieldErrorMap } from "@/lib/zodFieldErrors";
 
+import type { BadgeCategoryValue, BadgeRarityValue } from "../../api/gamificationSchemas";
+import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
 import {
   CATEGORY_OPTIONS,
   DEFAULT_BADGE_ICON,
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
-} from "../../badgeOptions.constants";
-import { ConditionsEditor } from "../../conditions/components/ConditionsEditor";
-import type { BadgeCategoryValue, BadgeRarityValue } from "../../schemas";
+} from "../../constants/badgeOptions.constants";
 import type { BadgeFormState } from "../types/badgeForm.types";
 import { BrandSponsorField } from "./BrandSponsorField";
 

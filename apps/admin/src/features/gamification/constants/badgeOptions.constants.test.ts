@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  badgeCategorySchema,
+  badgeRaritySchema,
+  badgeShapeSchema,
+} from "../api/gamificationSchemas";
 import { CATEGORY_OPTIONS, RARITY_OPTIONS, SHAPE_OPTIONS } from "./badgeOptions.constants";
-import { badgeCategorySchema, badgeRaritySchema, badgeShapeSchema } from "./schemas";
 
 const sorted = (values: readonly string[]) => [...values].sort();
 

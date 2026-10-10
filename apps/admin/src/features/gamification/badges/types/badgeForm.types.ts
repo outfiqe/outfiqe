@@ -1,16 +1,16 @@
 import type {
-  AUTO_ANIMATION_OPTION,
-  BADGE_DESIGN_MODE,
-  RULE_BASED_REQUIREMENT_TYPES,
-} from "../../badgeOptions.constants";
-import type { ConditionFormState } from "../../conditions/types/condition.types";
-import type {
   BadgeAnimationValue,
   BadgeCategoryValue,
   BadgeLayer,
   BadgeRarityValue,
   BadgeShapeValue,
-} from "../../schemas";
+} from "../../api/gamificationSchemas";
+import type { ConditionFormState } from "../../conditions/types/condition.types";
+import type {
+  AUTO_ANIMATION_OPTION,
+  BADGE_DESIGN_MODE,
+  RULE_BASED_REQUIREMENT_TYPES,
+} from "../../constants/badgeOptions.constants";
 
 export type BadgeDesignMode = (typeof BADGE_DESIGN_MODE)[keyof typeof BADGE_DESIGN_MODE];
 

@@ -30,7 +30,7 @@ import {
   xpMultiplierSchema,
   type XpStats,
   xpStatsSchema,
-} from "./schemas";
+} from "./gamificationSchemas";
 
 const levelListSchema = z.array(levelSchema);
 const xpMultiplierListSchema = z.array(xpMultiplierSchema);

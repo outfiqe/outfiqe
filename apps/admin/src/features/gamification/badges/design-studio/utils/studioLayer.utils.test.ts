@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BadgeLayer } from "../../../schemas";
+import type { BadgeLayer } from "../../../api/gamificationSchemas";
 import { CANVAS_SIZE_PX } from "../constants/studioLayer.constants";
 import { moveLayerDown, moveLayerUp, percentToPx, pxToPercent } from "./studioLayer.utils";
 

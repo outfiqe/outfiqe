@@ -1,4 +1,4 @@
-import type { AchievementMetricValue, ConditionOperatorValue } from "../../schemas";
+import type { AchievementMetricValue, ConditionOperatorValue } from "../../api/gamificationSchemas";
 import type { ConditionFormState } from "../types/condition.types";
 
 export const METRIC_OPTIONS: AchievementMetricValue[] = [

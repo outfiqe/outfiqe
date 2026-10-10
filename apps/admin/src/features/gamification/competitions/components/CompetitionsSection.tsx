@@ -26,7 +26,9 @@ import {
   type CreatorCompetitionFormInput,
   gamificationApi,
   type UpdateCreatorCompetitionFormInput,
-} from "../../api";
+} from "../../api/gamificationApi";
+import type { CreatorCompetitionAdmin } from "../../api/gamificationSchemas";
+import { TitleActionCardSkeleton } from "../../components/GamificationSkeletons";
 import {
   ANIMATION_OPTION_LABEL,
   ANIMATION_OPTIONS,
@@ -36,10 +38,8 @@ import {
   LEADERBOARD_CATEGORY_OPTIONS,
   RARITY_OPTIONS,
   SHAPE_OPTIONS,
-} from "../../badgeOptions.constants";
-import { legacyShapeAndColorOf } from "../../designConfig.utils";
-import type { CreatorCompetitionAdmin } from "../../schemas";
-import { TitleActionCardSkeleton } from "../../skeletons";
+} from "../../constants/badgeOptions.constants";
+import { legacyShapeAndColorOf } from "../../utils/designConfig.utils";
 import {
   competitionFormSchema,
   type CompetitionFormValues,
