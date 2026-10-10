@@ -21,16 +21,16 @@ export const toSlotRules = (board: OutfitBoard): OutfitSlotRule[] =>
 
 export const toBoardItems = (board: OutfitBoard): OutfitBoardItem[] =>
   board.slots.flatMap((slot) =>
-    slot.items.map((item) => ({
+    slot.items.map((slotItem) => ({
       slotKey: slot.key,
-      position: item.position,
-      productId: item.product.id,
-      addedById: item.addedBy?.id ?? null,
+      position: slotItem.position,
+      productId: slotItem.product.id,
+      addedById: slotItem.addedBy?.id ?? null,
     })),
   );
 
 export const firstFreePosition = (slot: OutfitSlot): number | null => {
-  const takenPositions = new Set(slot.items.map((item) => item.position));
+  const takenPositions = new Set(slot.items.map((slotItem) => slotItem.position));
   for (let position = FIRST_POSITION; position < slot.maxItems; position += NEXT_POSITION_STEP) {
     if (!takenPositions.has(position)) return position;
   }
@@ -81,7 +81,7 @@ export const withItemPlaced = (
       ? {
           ...slot,
           items: [
-            ...slot.items.filter((item) => item.position !== position),
+            ...slot.items.filter((slotItem) => slotItem.position !== position),
             { position, product, addedBy, addedAt: new Date().toISOString() },
           ].sort((first, second) => first.position - second.position),
         }
@@ -98,7 +98,7 @@ export const withItemRemoved = (
   members: everyoneUnhappy(board),
   slots: board.slots.map((slot) =>
     slot.key === slotKey
-      ? { ...slot, items: slot.items.filter((item) => item.position !== position) }
+      ? { ...slot, items: slot.items.filter((slotItem) => slotItem.position !== position) }
       : slot,
   ),
 });
@@ -117,7 +117,7 @@ export const withHappiness = (
 export const countSoldOutItems = (board: OutfitBoard): number =>
   board.slots
     .flatMap((slot) => slot.items)
-    .filter((item) => item.product.availability === "OUT_OF_STOCK").length;
+    .filter((slotItem) => slotItem.product.availability === "OUT_OF_STOCK").length;
 
 export const SIZE_FIT = {
   IN_STOCK: "IN_STOCK",

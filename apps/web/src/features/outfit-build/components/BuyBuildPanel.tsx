@@ -67,7 +67,7 @@ export const BuyBuildPanel = ({ outfitId, items }: BuyBuildPanelProps) => {
   const { isAuthenticated, isShopper } = useAuth();
   const buyFromBuild = useBuyFromBuild(outfitId);
   const [choiceByProductId, setChoiceByProductId] = useState(
-    () => new Map(items.map((item) => [item.productId, startingChoice(item)])),
+    () => new Map(items.map((buildItem) => [buildItem.productId, startingChoice(buildItem)])),
   );
   const [hasNothingPicked, setHasNothingPicked] = useState(false);
 

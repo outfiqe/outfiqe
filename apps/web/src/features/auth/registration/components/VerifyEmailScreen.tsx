@@ -73,7 +73,7 @@ const VerifyEmailError = ({ error }: { error: unknown }) => {
             id="resend-email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
             onBlur={() => setTouched(true)}
             autoComplete="email"
           />

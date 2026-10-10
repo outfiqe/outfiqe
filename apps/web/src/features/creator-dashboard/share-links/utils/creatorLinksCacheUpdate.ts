@@ -14,7 +14,7 @@ export const removeCreatorLinkFromCache = (queryClient: QueryClient, linkId: str
         ...data,
         pages: data.pages.map((page) => ({
           ...page,
-          items: page.items.filter((item) => item.id !== linkId),
+          items: page.items.filter((existingLink) => existingLink.id !== linkId),
         })),
       };
     },
@@ -28,7 +28,8 @@ export const prependCreatorLinkToCache = (queryClient: QueryClient, link: Creato
       if (!data) return data;
 
       const [firstPage, ...restPages] = data.pages;
-      if (!firstPage || firstPage.items.some((item) => item.id === link.id)) return data;
+      if (!firstPage || firstPage.items.some((existingLink) => existingLink.id === link.id))
+        return data;
 
       return {
         ...data,

@@ -190,8 +190,8 @@ export const CheckoutForm = ({
         return;
       }
 
-      const result = await initiatePayment.mutateAsync(order.id);
-      redirectToPaymentGateway(result);
+      const paymentInitiation = await initiatePayment.mutateAsync(order.id);
+      redirectToPaymentGateway(paymentInitiation);
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));

@@ -53,7 +53,7 @@ export const PublishLookModal = ({ board, onPublished, onClose }: PublishLookMod
   const mySizeByProductType = useMySizeByProductType();
   const publishLook = usePublishBuildLook(board.id);
   const pending = usePendingPhotos(MAX_PHOTOS, coverImageUrls(board).slice(0, MAX_PHOTOS));
-  const products = board.slots.flatMap((slot) => slot.items.map((item) => item.product));
+  const products = board.slots.flatMap((slot) => slot.items.map((slotItem) => slotItem.product));
 
   const [caption, setCaption] = useState(board.title ?? "");
   const [sizeByProductId, setSizeByProductId] = useState<Record<string, string>>(() =>

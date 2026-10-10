@@ -148,8 +148,8 @@ export const useDashboardNav = (): DashboardNav => {
   const canUseOffers = isBrand || isCreator;
   const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
   const baseNavItems = isOutfitBuildOn
-    ? roleNavItems.flatMap((item) =>
-        item === OVERVIEW_NAV_ITEM ? [item, ...outfitBuildNavItems] : [item],
+    ? roleNavItems.flatMap((navItem) =>
+        navItem === OVERVIEW_NAV_ITEM ? [navItem, ...outfitBuildNavItems] : [navItem],
       )
     : roleNavItems;
   const showCrmLink = hasCrmAccess && isOnTenantHost;

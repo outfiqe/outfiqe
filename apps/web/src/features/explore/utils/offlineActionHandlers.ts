@@ -18,28 +18,32 @@ const followCreatorPayloadSchema = z.object({ creatorId: z.string(), following: 
 
 registerOfflineActionHandler(LIKE_LOOK_ACTION_TYPE, async (payload, queryClient) => {
   const { lookId, liked } = likeLookPayloadSchema.parse(payload);
-  const result = await (liked ? exploreFeedApi.unlike(lookId) : exploreFeedApi.like(lookId));
+  const { liked: isLikedNow, likeCount } = await (liked
+    ? exploreFeedApi.unlike(lookId)
+    : exploreFeedApi.like(lookId));
   patchPostInFeedCaches(queryClient, lookId, (post) => ({
     ...post,
-    isLiked: result.liked,
-    likeCount: result.likeCount,
+    isLiked: isLikedNow,
+    likeCount,
   }));
 });
 
 registerOfflineActionHandler(SAVE_LOOK_ACTION_TYPE, async (payload, queryClient) => {
   const { lookId, saved } = saveLookPayloadSchema.parse(payload);
-  const result = await (saved ? exploreFeedApi.unsave(lookId) : exploreFeedApi.save(lookId));
+  const { saved: isSavedNow, saveCount } = await (saved
+    ? exploreFeedApi.unsave(lookId)
+    : exploreFeedApi.save(lookId));
   patchPostInFeedCaches(queryClient, lookId, (post) => ({
     ...post,
-    isSaved: result.saved,
-    saveCount: result.saveCount,
+    isSaved: isSavedNow,
+    saveCount,
   }));
 });
 
 registerOfflineActionHandler(FOLLOW_CREATOR_ACTION_TYPE, async (payload, queryClient) => {
   const { creatorId, following } = followCreatorPayloadSchema.parse(payload);
-  const result = await (following
+  const { following: isFollowingNow } = await (following
     ? exploreFeedApi.unfollow(creatorId)
     : exploreFeedApi.follow(creatorId));
-  patchCreatorInFeedCaches(queryClient, creatorId, result.following);
+  patchCreatorInFeedCaches(queryClient, creatorId, isFollowingNow);
 });

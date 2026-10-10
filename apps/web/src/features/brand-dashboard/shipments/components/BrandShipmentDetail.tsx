@@ -61,28 +61,28 @@ const ItemsCard = ({ items }: { items: BrandShipmentDetailData["items"] }) => (
   <section className="rounded-2xl border border-border p-4">
     <h2 className="text-sm font-semibold text-foreground">Items in this shipment</h2>
     <ul className="mt-3 space-y-3">
-      {items.map((item) => {
-        const isDiscounted = item.unitPrice < item.listUnitPrice;
+      {items.map((lineItem) => {
+        const isDiscounted = lineItem.unitPrice < lineItem.listUnitPrice;
         return (
-          <li key={item.id} className="flex items-center gap-3">
+          <li key={lineItem.id} className="flex items-center gap-3">
             <div className="relative flex aspect-3/4 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
-              {item.imageUrl ? (
-                <AppImage src={item.imageUrl} alt="" fill sizes="48px" />
+              {lineItem.imageUrl ? (
+                <AppImage src={lineItem.imageUrl} alt="" fill sizes="48px" />
               ) : (
                 <Shirt className="size-5 text-foreground/25" strokeWidth={1} />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{item.productName}</p>
+              <p className="truncate text-sm font-medium text-foreground">{lineItem.productName}</p>
               <p className="text-xs text-muted-foreground">
-                {item.sizeLabel} · Qty {item.qty}
+                {lineItem.sizeLabel} · Qty {lineItem.qty}
               </p>
             </div>
             <div className="shrink-0 text-right text-sm">
-              <p className="font-medium text-foreground">{formatRupees(item.unitPrice)}</p>
+              <p className="font-medium text-foreground">{formatRupees(lineItem.unitPrice)}</p>
               {isDiscounted && (
                 <p className="text-xs text-muted-foreground line-through">
-                  {formatRupees(item.listUnitPrice)}
+                  {formatRupees(lineItem.listUnitPrice)}
                 </p>
               )}
             </div>

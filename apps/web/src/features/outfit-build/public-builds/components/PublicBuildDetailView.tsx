@@ -83,40 +83,41 @@ export const PublicBuildDetailView = ({
       <PublicBuildPhotos photos={build.photos} canReport={isAuthenticated} />
 
       <ul className="grid gap-3 sm:grid-cols-2">
-        {build.items.map((item) => (
+        {build.items.map((buildItem) => (
           <li
-            key={`${item.slotKey}-${item.position}`}
+            key={`${buildItem.slotKey}-${buildItem.position}`}
             className="flex gap-3 rounded-xl border border-border bg-card p-3"
           >
             <Link
-              href={`/product/${item.productId}`}
+              href={`/product/${buildItem.productId}`}
               className="relative size-20 shrink-0 overflow-hidden rounded-md bg-muted"
             >
-              {item.imageUrl && (
-                <AppImage src={item.imageUrl} alt={item.productName} fill sizes="80px" />
+              {buildItem.imageUrl && (
+                <AppImage src={buildItem.imageUrl} alt={buildItem.productName} fill sizes="80px" />
               )}
             </Link>
             <span className="min-w-0">
               <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {item.slotLabel}
+                {buildItem.slotLabel}
               </span>
               <Link
-                href={`/product/${item.productId}`}
+                href={`/product/${buildItem.productId}`}
                 className="block truncate text-sm font-medium text-foreground hover:underline"
               >
-                {item.productName}
+                {buildItem.productName}
               </Link>
               <span className="block text-xs text-muted-foreground">
-                {tBudget("rupees", { amount: formatLakhAmount(item.unitPrice) })} · {item.brandName}
+                {tBudget("rupees", { amount: formatLakhAmount(buildItem.unitPrice) })} ·{" "}
+                {buildItem.brandName}
               </span>
               <span
                 className={
-                  item.isInStock
+                  buildItem.isInStock
                     ? "block text-xs text-muted-foreground"
                     : "block text-xs text-destructive"
                 }
               >
-                {item.isInStock ? t("inStock") : t("soldOut")}
+                {buildItem.isInStock ? t("inStock") : t("soldOut")}
               </span>
             </span>
           </li>

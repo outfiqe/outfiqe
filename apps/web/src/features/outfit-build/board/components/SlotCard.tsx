@@ -65,7 +65,7 @@ export const SlotCard = ({
   });
 
   const positions = Array.from({ length: slot.maxItems }, (_, position) => position);
-  const itemByPosition = new Map(slot.items.map((item) => [item.position, item]));
+  const itemByPosition = new Map(slot.items.map((slotItem) => [slotItem.position, slotItem]));
 
   return (
     <section
@@ -98,8 +98,8 @@ export const SlotCard = ({
 
       <ul className="space-y-2">
         {positions.map((position) => {
-          const item = itemByPosition.get(position);
-          if (!item) {
+          const slotItem = itemByPosition.get(position);
+          if (!slotItem) {
             return (
               <li key={position}>
                 {canEdit ? (
@@ -121,7 +121,7 @@ export const SlotCard = ({
             );
           }
 
-          const { product, addedBy } = item;
+          const { product, addedBy } = slotItem;
           const mySize = mySizeByProductType.get(product.productTypeId);
           const isSoldOut = product.availability === "OUT_OF_STOCK";
           return (

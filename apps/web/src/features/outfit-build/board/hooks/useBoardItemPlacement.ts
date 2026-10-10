@@ -84,7 +84,7 @@ export const useBoardItemPlacement = ({
   };
 
   const openPicker = (slot: OutfitSlot, position: number) => {
-    const currentProduct = slot.items.find((item) => item.position === position)?.product;
+    const currentProduct = slot.items.find((slotItem) => slotItem.position === position)?.product;
     setPickerTarget({
       slot,
       position,

@@ -57,7 +57,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
   };
 
   const save = () => {
-    const payload = {
+    const profileChanges = {
       contactName: draft.contactName,
       phone: draft.phone,
       instagram: draft.instagram,
@@ -69,7 +69,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
         : {}),
     };
 
-    updateProfile.mutate(payload, {
+    updateProfile.mutate(profileChanges, {
       onSuccess: (updated) => {
         setFields((current) => ({
           ...current,

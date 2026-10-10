@@ -88,7 +88,7 @@ export const CheckoutBody = () => {
   }
 
   const cart = cartQuery.data;
-  const purchasableItems = cart?.items.filter((item) => !item.soldOut) ?? [];
+  const purchasableItems = cart?.items.filter((cartItem) => !cartItem.soldOut) ?? [];
   if (!cart || purchasableItems.length === 0) {
     return (
       <div className="py-14 text-center">

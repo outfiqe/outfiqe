@@ -28,8 +28,8 @@ const BuildCardBody = ({ outfitId }: { outfitId: string }) => {
 
   const productImages =
     outfit.kind === "board"
-      ? outfit.slots.flatMap((slot) => slot.items.map((item) => item.product.imageUrl))
-      : outfit.items.map((item) => item.imageUrl);
+      ? outfit.slots.flatMap((slot) => slot.items.map((slotItem) => slotItem.product.imageUrl))
+      : outfit.items.map((buildItem) => buildItem.imageUrl);
   const previewImages = productImages
     .filter((imageUrl): imageUrl is string => imageUrl !== null)
     .slice(0, PREVIEW_IMAGE_COUNT);

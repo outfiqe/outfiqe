@@ -59,20 +59,20 @@ export const TagReviewsSection = () => {
   const isRefreshingCachedTab = queue.isFetching && !queue.isPending && !queue.isFetchingNextPage;
   const { approve, reject } = useReviewTagActions();
 
-  const items = queue.data?.pages.flatMap((page) => page.items) ?? [];
+  const tagReviews = queue.data?.pages.flatMap((page) => page.items) ?? [];
   const busyTagId = approve.isPending
     ? approve.variables?.tagId
     : reject.isPending
       ? reject.variables?.tagId
       : undefined;
 
-  const approveTag = (item: TagReviewQueueItem, trustCreator: boolean) => {
+  const approveTag = (tagReview: TagReviewQueueItem, trustCreator: boolean) => {
     approve.mutate(
-      { tagId: item.id, trustCreator },
+      { tagId: tagReview.id, trustCreator },
       {
         onSuccess: () =>
           toast.success(
-            trustCreator ? `Approved — ${item.creator.name} is now trusted` : "Tag approved",
+            trustCreator ? `Approved — ${tagReview.creator.name} is now trusted` : "Tag approved",
           ),
         onError: (error) => toast.error(getErrorMessage(error)),
       },
@@ -140,21 +140,21 @@ export const TagReviewsSection = () => {
         </div>
       )}
 
-      {!queue.isPending && !queue.isError && items.length === 0 && (
+      {!queue.isPending && !queue.isError && tagReviews.length === 0 && (
         <div className="mt-5 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">{EMPTY_COPY[tab]}</p>
         </div>
       )}
 
-      {items.length > 0 && (
+      {tagReviews.length > 0 && (
         <div className="mt-5 space-y-3">
-          {items.map((item) => (
+          {tagReviews.map((tagReview) => (
             <TagReviewCard
-              key={item.id}
-              item={item}
-              isBusy={busyTagId === item.id}
-              onApprove={(trustCreator) => approveTag(item, trustCreator)}
-              onReject={() => setRejectingItem(item)}
+              key={tagReview.id}
+              item={tagReview}
+              isBusy={busyTagId === tagReview.id}
+              onApprove={(trustCreator) => approveTag(tagReview, trustCreator)}
+              onReject={() => setRejectingItem(tagReview)}
             />
           ))}
         </div>
