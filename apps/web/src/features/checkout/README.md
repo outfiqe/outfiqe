@@ -12,7 +12,7 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 - `api/checkoutApi.ts` / `checkoutSchemas.ts` — `POST /orders/checkout` and its request/response shapes, plus `previewBuyNowCoupon` (`POST /coupons/preview-buy-now`).
 - `hooks/useCheckout.ts` — the submit mutation.
 - `hooks/useBuyNowCouponPreview.ts` — the Buy Now coupon-preview mutation `BuyNowCouponForm` calls.
-- `hooks/useBuyNowPayload.ts` / `lib/buyNowStorage.ts` / `lib/buildBuyNowCart.ts` — the Buy Now path (see below).
+- `hooks/useBuyNowPayload.ts` / `utils/buyNowStorage.ts` / `utils/buildBuyNowCart.ts` — the Buy Now path (see below).
 
 ## Funnel
 

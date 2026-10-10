@@ -8,13 +8,25 @@ client-side session/user context the rest of the app reads.
 
 ## Structure
 
+The feature is split into topic folders, each with the usual layer folders inside (`api/`, `components/`, `hooks/`, `utils/`, `constants/`, `schemas/`). Code several topics share stays in the feature root's own layer folders.
+
+- Feature root — `authApi`, server auth helpers, the user schemas, `AuthContext`, `useCurrentUser`, `useLogout`, the shared form schema, types, the auth utils, `CaptchaChallenge` and `NotAShopperNotice`.
+- `login/` — the login form and hook.
+- `registration/` — shopper and brand sign-up and email verification.
+- `password/` — forgot, reset and change password.
+- `oauth/` — Google/Facebook sign-in buttons, the callback screen, linked accounts.
+- `suspension/` — the account-suspended screen and its socket listener.
+- `phone-number/` — the add-phone-number banner.
+
+Files:
+
 - `api/authApi.ts` — the typed client for all auth endpoints (login, register, logout, password
   reset, signed-in password change, email verification, current-user, and `session()` — the
   read-only session check the mount bootstrap runs).
 - `api/serverAuth.ts` — server-only session/token helpers used by server components and route
   handlers (e.g. `apps/web/src/features/brand-profile`'s SSR fetch).
 - `api/userSchemas.ts` — Zod schemas for the session/user shape returned by the API.
-- `api/oauthApi.ts` + `api/oauthSchemas.ts` — the OAuth account-management client: URL builders for
+- `oauth/api/oauthApi.ts` + `oauth/api/oauthSchemas.ts` — the OAuth account-management client: URL builders for
   the full-page-navigation `start`/`link/start` redirects (`buildOAuthStartUrl`/
   `buildOAuthLinkStartUrl` — never `fetch` calls, since those endpoints are browser navigations),
   plus real API calls for `confirmLink`, `unlink`, and `getLinkedAccounts`.
