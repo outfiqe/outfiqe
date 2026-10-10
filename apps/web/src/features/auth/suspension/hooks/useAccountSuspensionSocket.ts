@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { clearAllOfflineData } from "@/features/pwa/utils/clearOfflineData";
+import { clearAllOfflineData } from "@/features/pwa/offline/utils/clearOfflineData";
 import { acquireSocketConnection, releaseSocketConnection } from "@/shared/lib/socketClient";
 
 import { useAuth } from "../../context/AuthContext";

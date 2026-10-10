@@ -11,7 +11,7 @@ import {
   useReducer,
 } from "react";
 
-import { clearAllOfflineData } from "@/features/pwa/utils/clearOfflineData";
+import { clearAllOfflineData } from "@/features/pwa/offline/utils/clearOfflineData";
 import {
   setAccessToken,
   setSuspendedHandler,

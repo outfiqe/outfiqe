@@ -2,9 +2,9 @@
 
 import { useCallback, useState, useSyncExternalStore } from "react";
 
-import { isPwaEnabled } from "../constants/pwaFeatureFlag";
+import { isPwaEnabled } from "../../constants/pwaFeatureFlag";
+import { isIosBrowser, isRunningStandalone, supportsWebPush } from "../../utils/standalone";
 import { subscribeToPush, unsubscribeFromPush } from "../utils/pushClient";
-import { isIosBrowser, isRunningStandalone, supportsWebPush } from "../utils/standalone";
 
 export type PushOptInState =
   "unavailable" | "needs-install" | "can-enable" | "enabling" | "enabled" | "blocked" | "failed";

@@ -21,7 +21,7 @@ vi.mock("@serwist/turbopack/react", () => ({
 const renderWithPwaEnabled = async (isPwaEnabled: boolean) => {
   vi.resetModules();
   capturedProviderProps.length = 0;
-  vi.doMock("../constants/pwaFeatureFlag", () => ({ isPwaEnabled }));
+  vi.doMock("../../constants/pwaFeatureFlag", () => ({ isPwaEnabled }));
 
   const { ServiceWorkerProvider } = await import("./ServiceWorkerProvider");
   render(<ServiceWorkerProvider>the app</ServiceWorkerProvider>);

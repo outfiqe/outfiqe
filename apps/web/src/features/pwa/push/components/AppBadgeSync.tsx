@@ -7,9 +7,9 @@ import { useEffect } from "react";
 import { useAuth } from "@/features/auth";
 import { notificationsApi } from "@/shared/lib/notificationsApi";
 
-import { isPwaEnabled } from "../constants/pwaFeatureFlag";
+import { isPwaEnabled } from "../../constants/pwaFeatureFlag";
+import { isRunningStandalone } from "../../utils/standalone";
 import { showUnreadBadge } from "../utils/appBadge";
-import { isRunningStandalone } from "../utils/standalone";
 
 export const AppBadgeSync = () => {
   const { isAuthenticated } = useAuth();

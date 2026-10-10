@@ -17,7 +17,7 @@ const setHasBrowserPrompt = (value: boolean) => {
   promptListeners.forEach((listener) => listener());
 };
 
-vi.mock("../constants/pwaFeatureFlag", () => ({
+vi.mock("../../constants/pwaFeatureFlag", () => ({
   get isPwaEnabled() {
     return pwaEnabled;
   },
@@ -38,7 +38,7 @@ vi.mock("../utils/installPromptStore", () => ({
   },
 }));
 
-vi.mock("../utils/standalone", () => ({
+vi.mock("../../utils/standalone", () => ({
   isIosBrowser: () => iosBrowser,
   isRunningStandalone: () => standalone,
 }));

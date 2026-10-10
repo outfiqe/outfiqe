@@ -8,7 +8,7 @@ let webPushSupported = true;
 let iosBrowser = false;
 let standalone = false;
 
-vi.mock("../constants/pwaFeatureFlag", () => ({
+vi.mock("../../constants/pwaFeatureFlag", () => ({
   get isPwaEnabled() {
     return pwaEnabled;
   },
@@ -16,7 +16,7 @@ vi.mock("../constants/pwaFeatureFlag", () => ({
 
 vi.mock("../utils/pushClient", () => ({ subscribeToPush, unsubscribeFromPush }));
 
-vi.mock("../utils/standalone", () => ({
+vi.mock("../../utils/standalone", () => ({
   supportsWebPush: () => webPushSupported,
   isIosBrowser: () => iosBrowser,
   isRunningStandalone: () => standalone,

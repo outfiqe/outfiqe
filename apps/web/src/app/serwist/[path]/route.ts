@@ -1,9 +1,9 @@
 import { createSerwistRoute } from "@serwist/turbopack";
 
-import { APPLE_SPLASH_DIRECTORY } from "@/features/pwa/constants/appleSplashScreens";
-import { SCREENSHOT_DIRECTORY } from "@/features/pwa/constants/appScreenshots";
-import { IMAGE_HOSTS_GLOBAL_NAME } from "@/features/pwa/constants/runtimeCaching";
-import { OFFLINE_PATH } from "@/features/pwa/constants/serviceWorker";
+import { SCREENSHOT_DIRECTORY } from "@/features/pwa/app-manifest/constants/appScreenshots";
+import { APPLE_SPLASH_DIRECTORY } from "@/features/pwa/install/constants/appleSplashScreens";
+import { IMAGE_HOSTS_GLOBAL_NAME } from "@/features/pwa/service-worker/constants/runtimeCaching";
+import { OFFLINE_PATH } from "@/features/pwa/service-worker/constants/serviceWorker";
 import { toImageHosts } from "@/features/pwa/utils/imageHosts";
 
 const SERVICE_WORKER_SOURCE = "src/app/sw.ts";

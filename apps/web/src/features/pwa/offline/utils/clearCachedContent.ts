@@ -1,4 +1,4 @@
-import { CLEAR_CACHED_CONTENT_MESSAGE } from "../constants/serviceWorkerMessages";
+import { CLEAR_CACHED_CONTENT_MESSAGE } from "../../service-worker/constants/serviceWorkerMessages";
 
 const ignoreUnavailableServiceWorker = () => undefined;
 

@@ -3,7 +3,7 @@
 import { SerwistProvider } from "@serwist/turbopack/react";
 import type { ReactNode } from "react";
 
-import { isPwaEnabled } from "../constants/pwaFeatureFlag";
+import { isPwaEnabled } from "../../constants/pwaFeatureFlag";
 import {
   SERVICE_WORKER_SCOPE,
   SERVICE_WORKER_SCRIPT_TYPE,

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
 
-import { isIosBrowser } from "./standalone";
+import { isIosBrowser } from "../../utils/standalone";
 
 const publicKeyResponseSchema = z.object({ publicKey: z.string().nullable() });
 

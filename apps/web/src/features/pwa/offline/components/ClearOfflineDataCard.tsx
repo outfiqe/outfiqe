@@ -3,7 +3,7 @@
 import { Button, toast } from "@outfiqe/design-system";
 import { useState } from "react";
 
-import { isPwaEnabled } from "../constants/pwaFeatureFlag";
+import { isPwaEnabled } from "../../constants/pwaFeatureFlag";
 import { clearAllOfflineData } from "../utils/clearOfflineData";
 
 export const ClearOfflineDataCard = () => {

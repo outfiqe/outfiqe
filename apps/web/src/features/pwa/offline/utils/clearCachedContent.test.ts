@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CLEAR_CACHED_CONTENT_MESSAGE } from "../constants/serviceWorkerMessages";
+import { CLEAR_CACHED_CONTENT_MESSAGE } from "../../service-worker/constants/serviceWorkerMessages";
 import { clearCachedContent } from "./clearCachedContent";
 
 const setServiceWorker = (value: unknown) => {

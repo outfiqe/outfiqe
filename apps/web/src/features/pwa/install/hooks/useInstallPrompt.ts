@@ -2,18 +2,18 @@
 
 import { useState, useSyncExternalStore } from "react";
 
+import { isPwaEnabled } from "../../constants/pwaFeatureFlag";
+import { isIosBrowser, isRunningStandalone } from "../../utils/standalone";
 import {
   hasVisitedOftenEnough,
   isWithinInstallPromptCooldown,
   rememberInstallPromptDismissed,
 } from "../constants/installPrompt";
-import { isPwaEnabled } from "../constants/pwaFeatureFlag";
 import {
   canOfferBrowserInstall,
   showBrowserInstallPrompt,
   subscribeToInstallPrompt,
 } from "../utils/installPromptStore";
-import { isIosBrowser, isRunningStandalone } from "../utils/standalone";
 
 export type InstallPromptState = "hidden" | "can-install" | "ios-instructions";
 

@@ -1,4 +1,4 @@
-import { isPwaKillSwitchEngagedOnClient } from "./pwaKillSwitch";
+import { isPwaKillSwitchEngagedOnClient } from "../service-worker/constants/pwaKillSwitch";
 
 const ENABLED_FLAG_VALUE = "true";
 

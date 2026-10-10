@@ -17,7 +17,7 @@ vi.mock("../utils/clearOfflineData", () => ({
 
 const renderWithPwaEnabled = async (isPwaEnabled: boolean) => {
   vi.resetModules();
-  vi.doMock("../constants/pwaFeatureFlag", () => ({ isPwaEnabled }));
+  vi.doMock("../../constants/pwaFeatureFlag", () => ({ isPwaEnabled }));
 
   const { ClearOfflineDataCard } = await import("./ClearOfflineDataCard");
   return render(<ClearOfflineDataCard />);
