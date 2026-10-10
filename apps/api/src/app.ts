@@ -61,6 +61,7 @@ import {
   viewerFeatureFlagsRoutes,
 } from "./modules/feature-flags/feature-flags.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
+import { fitProfileRoutes } from "./modules/fit-profile/fitProfile.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
 import { imageProcessingQueues } from "./modules/image-processing/image-processing.queue.js";
@@ -237,6 +238,7 @@ export const createApp = () => {
   app.use("/api/categories", categoryRoutes);
   app.use("/api/taste-preferences", tastePreferenceRoutes);
   app.use("/api/saved-sizes", savedSizeRoutes);
+  app.use("/api/fit-profile", fitProfileRoutes);
   app.use("/api/tours", tourRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);
