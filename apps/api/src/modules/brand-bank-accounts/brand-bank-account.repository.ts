@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import { BankAccountVerificationMethod } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type {
@@ -33,6 +34,12 @@ export const brandBankAccountRepository = {
         branchName: input.branchName,
         qrCodeImageUrl: input.qrCodeImageUrl,
         isDefault: input.isDefault,
+        isVerified: input.isVerified,
+        verifiedAt: input.verifiedAt,
+        verificationMethod: input.verificationMethod,
+        qrCheckStatus: input.qrCheckStatus,
+        qrCheckReason: input.qrCheckReason,
+        qrCheckedAt: input.qrCheckedAt,
       },
       include: withBankName,
     });
@@ -87,7 +94,12 @@ export const brandBankAccountRepository = {
   async verify(id: string, adminId: string): Promise<boolean> {
     const result = await prisma.brandBankAccount.updateMany({
       where: { id, isVerified: false },
-      data: { isVerified: true, verifiedAt: new Date(), verifiedById: adminId },
+      data: {
+        isVerified: true,
+        verifiedAt: new Date(),
+        verifiedById: adminId,
+        verificationMethod: BankAccountVerificationMethod.MANUAL,
+      },
     });
     return result.count > 0;
   },

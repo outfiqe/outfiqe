@@ -38,6 +38,9 @@ export const toAdminBankAccountView = ({
   qrCodeImageUrl,
   isVerified,
   verifiedAt,
+  verificationMethod,
+  qrCheckStatus,
+  qrCheckReason,
   createdAt,
 }: AdminBankAccountRow): AdminBankAccountView => ({
   id,
@@ -49,5 +52,8 @@ export const toAdminBankAccountView = ({
   qrCodeImageUrl,
   isVerified,
   verifiedAt: verifiedAt?.toISOString() ?? null,
+  verificationMethod,
+  qrCheckStatus,
+  qrCheckReason,
   createdAt: createdAt.toISOString(),
 });

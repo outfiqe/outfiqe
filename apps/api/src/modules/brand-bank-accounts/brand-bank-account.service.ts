@@ -12,6 +12,8 @@ import type {
 import { isNameMismatch } from "#lib/name-mismatch.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { bankQrVerificationService } from "#modules/bank-qr-verification/bank-qr-verification.service.js";
+import { toBankAccountQrCheckFields } from "#modules/bank-qr-verification/bank-qr-verification.utils.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { nepalBankService } from "#modules/nepal-banks/nepal-bank.service.js";
 
@@ -29,10 +31,16 @@ import {
 
 export const brandBankAccountService = {
   async create(brandId: string, body: BankAccountBody): Promise<CreateBrandBankAccountResult> {
-    await nepalBankService.requireActiveBank(body.bankId);
+    const bank = await nepalBankService.requireActiveBank(body.bankId);
 
     const brand = await brandRepository.findById(brandId);
     if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", HTTP_STATUS.NOT_FOUND);
+
+    const qrCheck = await bankQrVerificationService.checkQrForNewBankAccount(body.qrCodeImageUrl, {
+      accountName: body.accountName,
+      accountNumber: body.accountNumber,
+      bankCode: bank.code,
+    });
 
     const bankAccount = await prisma.$transaction(async (tx) => {
       const existingCount = await brandBankAccountRepository.countForBrand(brandId, tx);
@@ -46,6 +54,7 @@ export const brandBankAccountService = {
           branchName: body.branchName,
           qrCodeImageUrl: body.qrCodeImageUrl,
           isDefault: existingCount === 0,
+          ...toBankAccountQrCheckFields(qrCheck, new Date()),
         },
         tx,
       );

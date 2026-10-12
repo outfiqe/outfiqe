@@ -16,7 +16,7 @@ keyed by `brandId`, not a reuse of the creator-scoped `BankAccount.userId` table
 - `brand-bank-account.controller.ts` — resolves the caller's brand via `requireBrandId`
   (`#lib/brand-guard.utils.js`), reads validated input, calls the service.
 - `brand-bank-account.service.ts` — same rules as `bank-accounts`' service, checked against the
-  brand instead of a user.
+  brand instead of a user, including the same QR check through `bank-qr-verification`.
 - `brand-bank-account.repository.ts` — Prisma queries, including the transactional set-default swap.
 - `brand-bank-account.types.ts` — DB-shaped and public (masked) view types.
 - `brand-bank-account.utils.ts` — `toPublicBrandBankAccount` mapper.
@@ -31,10 +31,13 @@ Shares the create-body Zod schema and the account-number encryption utils with `
 **User-facing:** any team member on a brand (any `BrandMembership` role — same authorization
 granularity the brand dashboard already uses for products/orders, not owner-only) can add the
 brand's payout bank account from the brand wallet screen. It belongs to the brand, not to
-whichever member happened to add it.
+whichever member happened to add it. The QR photo is read as soon as it's saved: a QR showing
+the same holder name and account number verifies the account straight away, a photo with no QR
+is refused, and anything else waits for an admin.
 
 **Technical:** `brand-bank-account.routes.ts` → `brand-bank-account.controller.ts` (resolves
-`brandId` via `requireBrandId`) → `brand-bank-account.service.ts` →
+`brandId` via `requireBrandId`) → `brand-bank-account.service.ts` (runs
+`bankQrVerificationService.checkQrForNewBankAccount` before the create transaction) →
 `brand-bank-account.repository.ts` → Postgres.
 
 ## Non-obvious rationale
@@ -42,8 +45,8 @@ whichever member happened to add it.
 - Same encryption/audit-log design as `bank-accounts` (see that module's README) — account
   numbers are never stored in plaintext, and the only decrypt path (`GET /:id/reveal`,
   admin-only) writes a `BrandBankAccountAccessLog` row every time.
-- Same `qrCodeImageUrl`-for-manual-verification rationale as `bank-accounts` — there's no
-  automated way to confirm a Nepali bank account belongs to whoever submitted it, so the QR photo
-  uploaded at add-time is what an admin actually checks against in the review screen.
+- Same QR check as `bank-accounts` (see `bank-qr-verification/README.md`). A brand's QR is often
+  a merchant QR that shows a shop name rather than the legal account name, so those accounts go
+  to admin review (`NAME_DIFFERS`) rather than being refused.
 - The account-holder-name mismatch check compares against `Brand.contactName`, not any
   individual member's name — the account belongs to the brand as an entity.

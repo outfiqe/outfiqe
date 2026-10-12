@@ -18,9 +18,10 @@ rest and only ever decrypted through one narrow, audited admin path.
   filterable by `?verified=`.
 - `bank-account.controller.ts` — reads validated input + the auth principal, calls the service.
 - `bank-account.service.ts` — business rules: validates the bank is active/known
-  (`nepalBankService.requireActiveBank`), encrypts the account number on create, flags an
-  account-name/legal-name mismatch without blocking, auto-defaults a user's first account,
-  decrypts + audit-logs on reveal.
+  (`nepalBankService.requireActiveBank`), checks the QR photo against the typed details
+  (`bankQrVerificationService.checkQrForNewBankAccount`), encrypts the account number on create,
+  flags an account-name/legal-name mismatch without blocking, auto-defaults a user's first
+  account, decrypts + audit-logs on reveal.
 - `bank-account.repository.ts` — Prisma queries, including the transactional set-default swap.
 - `bank-account.types.ts` — DB-shaped and public (masked) view types.
 - `bank-account.utils.ts` — `toPublicBankAccount` mapper, `isNameMismatch` check.
@@ -38,14 +39,22 @@ brand's bank account, so it lives in `shared/utils` rather than being duplicated
 **User-facing:** a user adds a bank account from their dashboard (bank picked from a searchable
 dropdown backed by `nepal-banks`, account number entered twice to confirm, a photo of the bank's
 QR code required alongside), sees it in their list masked as `•••• 1234`, can mark one as
-default. An admin reviews it in the admin `bank-accounts` feature — the QR shows straight from
-the list, and revealing the number lets them compare it against the submitted fields — before
-verifying it; the same reveal is also surfaced from the `withdraw-requests` admin screen when
-actually processing a payout, so an admin never has to retype account details by hand.
+default. The QR is read on save:
+
+- If it shows the same holder name and account number, the account is verified straight away.
+- If the photo has no QR code, or the QR shows a different account, the form shows an error.
+- Anything else goes to an admin, who reviews it in the admin `bank-accounts` feature. The QR
+  shows straight from the list, along with why it wasn't matched, and revealing the number lets
+  them compare it against the submitted fields before verifying it.
+
+The same reveal is also surfaced from the `withdraw-requests` admin screen when actually
+processing a payout, so an admin never has to retype account details by hand.
 
 **Technical:** `bank-account.routes.ts` → `bank-account.controller.ts` → `bank-account.service.ts` →
-`bank-account.repository.ts` → Postgres. `POST /` runs inside a transaction that counts the
-user's existing accounts and creates the new one, marking it `isDefault` only if it's the first.
+`bank-account.repository.ts` → Postgres. `POST /` first runs the QR check (outside the
+transaction, since decoding an image is CPU work), then a transaction that counts the user's
+existing accounts and creates the new one with the check result. The new account is marked
+`isDefault` only if it's the first.
 
 ## Non-obvious rationale
 
@@ -55,17 +64,22 @@ user's existing accounts and creates the new one, marking it `isDefault` only if
   every call writes a `BankAccountAccessLog` row (admin id + timestamp) — this is deliberate:
   an admin needs the real number once, to key it into their bank portal for a manual transfer,
   but nothing else in the system should ever see it, and every time something does, it's audited.
-- **`qrCodeImageUrl` exists because verification has no automated check to lean on.** No bank in
-  Nepal exposes a public account-verification API (no penny-drop/name-match service the way
-  India's do), so `isVerified` can only ever be a human judgment call. Before this field, an admin
-  clicking "verify" had nothing to check beyond the self-reported form fields — `isNameMismatch`
-  only compares the account name against the same user's own profile name, not third-party
-  evidence. The QR photo, uploaded once at add-time (required going forward; existing rows before
-  this field predate it and have `qrCodeImageUrl: null`), gives the admin something independent
-  of the typed fields to compare against.
+- **`qrCodeImageUrl` exists because Nepal has no account-verification API.** No bank exposes a
+  penny-drop or name-match service the way India's do. `isNameMismatch` only compares the account
+  name with the same user's own profile name, which isn't outside evidence. The QR photo, uploaded
+  once at add-time, gives something independent of the typed fields. Rows created before this
+  field have `qrCodeImageUrl: null`, and rows created before the QR check have
+  `qrCheckStatus: NOT_CHECKED`.
+- **A QR match is not proof of ownership.** QR codes have a checksum, not a signature, so a QR can
+  be made with any name and number. A match (`verificationMethod: QR_MATCH`, `verifiedById: null`)
+  replaces the admin's manual Verify click only. The first payout to every account still needs the
+  admin cross-check in `withdraw`. The matching rules and their limits are in
+  `bank-qr-verification/README.md`.
 - A name mismatch between `accountName` and the user's `name` doesn't block account creation — it
   comes back as a `nameMismatch` flag in the create response, per the design doc's "flag, don't
   block outright" rule. The comparison is case/whitespace-insensitive only; no fuzzy matching.
+- The manual `verify` action stamps `verificationMethod: MANUAL`, so admins can tell hand-checked
+  accounts from QR-matched ones.
 - `verify` and the Rev 3 first-payout cross-check (`firstPayoutCrossCheckedAt`/`By`) are separate
   concerns: `isVerified` is a one-time manual check on the account itself, done here; the
   first-payout cross-check is enforced by the `withdraw` module's `approve` action (it's about

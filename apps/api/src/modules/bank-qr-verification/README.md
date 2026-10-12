@@ -23,6 +23,9 @@ every other case the account is saved and waits for an admin, the same as before
   length, value), including the nested account templates in tags 26–51, and checks the CRC-16
   in tag 63.
 - `bank-qr-verification.matcher.ts`: the match rules below.
+- `bank-qr-verification.utils.ts`: `toBankAccountQrCheckFields` turns a check result into the
+  columns both bank modules save (a match also sets `isVerified`, `verifiedAt` and
+  `verificationMethod: QR_MATCH`).
 - `bank-qr-verification.constants.ts`: EMV tags, CRC values, decode passes, the confirmed field
   map, and the rejection error codes and messages.
 - `bank-qr-verification.types.ts` / `bank-qr-verification.schemas.ts`: shapes and the preview body.

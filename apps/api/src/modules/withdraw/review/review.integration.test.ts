@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
+  BankAccountVerificationMethod,
+  BankQrCheckStatus,
   BankType,
   BrandPayoutStatus,
   BrandRole,
@@ -261,6 +263,31 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
       where: { id: bankAccount.id },
     });
     expect(updatedAccount.firstPayoutCrossCheckedAt).not.toBeNull();
+  });
+
+  it("still requires the cross-check on the first payout to an account verified by its QR", async () => {
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
+    const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const creator = await createUser();
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    await prisma.bankAccount.update({
+      where: { id: bankAccount.id },
+      data: {
+        verificationMethod: BankAccountVerificationMethod.QR_MATCH,
+        qrCheckStatus: BankQrCheckStatus.MATCHED,
+      },
+    });
+    const withdrawRequest = await createWithdrawRequest(creator, bankAccount.id, policy.id, 1000);
+
+    const withoutConfirmation = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
+      .set("Authorization", authHeader)
+      .send({});
+
+    expect(withoutConfirmation.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    expect(withoutConfirmation.body.code).toBe("IDENTITY_CROSS_CHECK_REQUIRED");
   });
 
   it("blocks a platform staffer without platform:withdraw:manage", async () => {

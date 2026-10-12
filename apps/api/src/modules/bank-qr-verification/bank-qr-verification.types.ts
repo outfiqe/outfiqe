@@ -1,4 +1,8 @@
-import type { BankQrCheckReason, BankQrCheckStatus } from "#generated/prisma/enums.js";
+import type {
+  BankAccountVerificationMethod,
+  BankQrCheckReason,
+  BankQrCheckStatus,
+} from "#generated/prisma/enums.js";
 
 import type { BANK_QR_REJECTION } from "./bank-qr-verification.constants.js";
 
@@ -44,4 +48,11 @@ export type BankQrPreview = {
   isQrDetected: boolean;
   accountName: string | null;
   accountNumber: string | null;
+};
+
+export type BankAccountQrCheckFields = BankQrCheckForSave & {
+  qrCheckedAt: Date;
+  isVerified: boolean;
+  verifiedAt: Date | null;
+  verificationMethod: BankAccountVerificationMethod | null;
 };

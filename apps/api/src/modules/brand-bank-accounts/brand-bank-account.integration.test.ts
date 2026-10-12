@@ -5,9 +5,21 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { BankType, BrandRole, UserRole } from "#generated/prisma/enums.js";
+import {
+  BankAccountVerificationMethod,
+  BankQrCheckReason,
+  BankQrCheckStatus,
+  BankType,
+  BrandRole,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
+import {
+  uploadBankQrImage,
+  uploadImageWithoutQr,
+  uploadQrImageWithText,
+} from "#test/integration/bank-qr-fixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
@@ -68,13 +80,16 @@ const createBank = () =>
     },
   });
 
-const validBody = (bankId: string, overrides: Partial<Record<string, string>> = {}) => ({
+const NOT_A_PAYMENT_QR_TEXT = "https://bank.example.com/scan-to-pay";
+const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
+
+const validBody = async (bankId: string, overrides: Partial<Record<string, string>> = {}) => ({
   bankId,
   accountName: "Kastha Contact",
   accountNumber: "1234567890",
   confirmAccountNumber: "1234567890",
   branchName: "Kamaladi",
-  qrCodeImageUrl: "https://cdn.outfiqe.test/brand-bank-qr.png",
+  qrCodeImageUrl: overrides.qrCodeImageUrl ?? (await uploadQrImageWithText(NOT_A_PAYMENT_QR_TEXT)),
   ...overrides,
 });
 
@@ -87,7 +102,7 @@ describe("POST /api/brand-bank-accounts", () => {
     const response = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
 
     expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.bankAccount.accountNumberLast4).toBe("7890");
@@ -106,7 +121,7 @@ describe("POST /api/brand-bank-accounts", () => {
     const response = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id, { accountName: "Someone Else" }));
+      .send(await validBody(bank.id, { accountName: "Someone Else" }));
 
     expect(response.status).toBe(HTTP_STATUS.CREATED);
     expect(response.body.data.nameMismatch).toBe(true);
@@ -119,9 +134,90 @@ describe("POST /api/brand-bank-accounts", () => {
     const response = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
 
     expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+  });
+});
+
+describe("POST /api/brand-bank-accounts QR check", () => {
+  it("verifies the account straight away when the QR shows the same name and number", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const bank = await createBank();
+    const qrCodeImageUrl = await uploadBankQrImage({
+      accountName: "Kastha Contact",
+      accountNumber: "1234567890",
+    });
+
+    const response = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
+    expect(response.body.data.bankAccount.isVerified).toBe(true);
+
+    const stored = await prisma.brandBankAccount.findFirstOrThrow({ where: { brandId: brand.id } });
+    expect(stored).toMatchObject({
+      isVerified: true,
+      verifiedById: null,
+      verificationMethod: BankAccountVerificationMethod.QR_MATCH,
+      qrCheckStatus: BankQrCheckStatus.MATCHED,
+    });
+  });
+
+  it("saves the account for admin review when the QR shows a shop name", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const bank = await createBank();
+    const qrCodeImageUrl = await uploadBankQrImage({ accountName: "Kastha Fashion Store" });
+
+    const response = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
+
+    const stored = await prisma.brandBankAccount.findFirstOrThrow({ where: { brandId: brand.id } });
+    expect(stored).toMatchObject({
+      isVerified: false,
+      qrCheckStatus: BankQrCheckStatus.NEEDS_REVIEW,
+      qrCheckReason: BankQrCheckReason.NAME_DIFFERS,
+    });
+  });
+
+  it("refuses a photo with no QR code in it and saves nothing", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const bank = await createBank();
+    const qrCodeImageUrl = await uploadImageWithoutQr();
+
+    const response = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    expect(response.body.code).toBe("BANK_QR_NOT_FOUND");
+    expect(await prisma.brandBankAccount.count({ where: { brandId: brand.id } })).toBe(0);
+  });
+
+  it("refuses a QR image url that is not one of our uploads", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const bank = await createBank();
+
+    const response = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(
+        await validBody(bank.id, { qrCodeImageUrl: "https://cdn.outfiqe.test/brand-bank-qr.png" }),
+      );
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    expect(response.body.code).toBe("BANK_QR_IMAGE_NOT_UPLOADED");
   });
 });
 
@@ -135,7 +231,7 @@ describe("GET /api/brand-bank-accounts", () => {
     await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
 
     const response = await request(testApp)
       .get("/api/brand-bank-accounts")
@@ -157,13 +253,19 @@ describe("PATCH /api/brand-bank-accounts/:id/default", () => {
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeader)
       .send(
-        validBody(bank.id, { accountNumber: "1111111111", confirmAccountNumber: "1111111111" }),
+        await validBody(bank.id, {
+          accountNumber: "1111111111",
+          confirmAccountNumber: "1111111111",
+        }),
       );
     const second = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeader)
       .send(
-        validBody(bank.id, { accountNumber: "2222222222", confirmAccountNumber: "2222222222" }),
+        await validBody(bank.id, {
+          accountNumber: "2222222222",
+          confirmAccountNumber: "2222222222",
+        }),
       );
 
     const secondId = second.body.data.bankAccount.id;
@@ -187,7 +289,7 @@ describe("PATCH /api/brand-bank-accounts/:id/default", () => {
     const created = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
 
     const response = await request(testApp)
       .patch(`/api/brand-bank-accounts/${created.body.data.bankAccount.id}/default`)
@@ -207,7 +309,7 @@ describe("admin brand bank account actions", () => {
     const created = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
     const id = created.body.data.bankAccount.id;
 
     const forbidden = await request(testApp)
@@ -222,6 +324,7 @@ describe("admin brand bank account actions", () => {
 
     const stored = await prisma.brandBankAccount.findUniqueOrThrow({ where: { id } });
     expect(stored.isVerified).toBe(true);
+    expect(stored.verificationMethod).toBe(BankAccountVerificationMethod.MANUAL);
   });
 
   it("reveal decrypts the number and writes an audit log entry", async () => {
@@ -233,7 +336,7 @@ describe("admin brand bank account actions", () => {
     const created = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
     const id = created.body.data.bankAccount.id;
 
     const response = await request(testApp)
@@ -281,7 +384,7 @@ describe("GET /api/brand-bank-accounts/admin", () => {
     const created = await request(testApp)
       .post("/api/brand-bank-accounts")
       .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
-      .send(validBody(bank.id));
+      .send(await validBody(bank.id));
     const id = created.body.data.bankAccount.id;
 
     const pending = await request(testApp)
@@ -291,8 +394,11 @@ describe("GET /api/brand-bank-accounts/admin", () => {
     const row = pending.body.data.items.find((item: { id: string }) => item.id === id);
     expect(row).toMatchObject({
       ownerName: brand.name,
-      qrCodeImageUrl: "https://cdn.outfiqe.test/brand-bank-qr.png",
+      qrCodeImageUrl: created.body.data.bankAccount.qrCodeImageUrl,
       isVerified: false,
+      verificationMethod: null,
+      qrCheckStatus: BankQrCheckStatus.NEEDS_REVIEW,
+      qrCheckReason: BankQrCheckReason.NOT_PAYMENT_QR,
     });
 
     await request(testApp)
