@@ -33,7 +33,9 @@ to any one app.
 - `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
   orders (newest, most cheriqed, price low to high, price high to low). The API validates the
   `sort` query against it and the web feed's sort menu offers exactly these.
-- `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
+- `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types, each
+  saying whether it `supportsFitRanges` (headwear, footwear and accessories don't: height and
+  weight say nothing about their size). Garment
   types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only
   bootstraps the defaults: the six originals plus footwear, accessories, saree, kurta set and
   lehenga, which Outfit Build slots need.
@@ -52,6 +54,12 @@ to any one app.
   `resolveNotificationMessage.ts`.
 - `uuid/` — `generateUuid`, an RFC 4122 v4 UUID generator that falls back to
   `crypto.getRandomValues` when `crypto.randomUUID` isn't available.
+- `size-fit/` — `recommendFitSize`, the one rule for which of a product's sizes fits a shopper's
+  height and weight, using the ranges the brand set on each size. The API runs it to label each
+  result on the "Find what fits me" page, and the web product page runs it in the browser for the
+  "Find my size" modal, so both always agree and the modal answers without a request. Also the
+  measurement bounds (`FIT_HEIGHT_CM_MIN`/`MAX`, `FIT_WEIGHT_KG_MIN`/`MAX`) that both sides
+  validate against, and the `FitRange`/`FitRecommendation` types.
 - `index.ts` — re-exports everything above; every app only ever imports from `@outfiqe/utils`.
 
 ## Non-obvious rationale
@@ -70,3 +78,21 @@ never `recentActors.length`.** The write path caps `recentActors` at 3 (`MAX_REC
 `apps/api/src/modules/notifications/README.md`) so the metadata payload stays small, but the
 displayed count still needs to reflect the real number of people who liked/followed, not just how
 many names got stored.
+
+**How `recommendFitSize` picks a size.** Sizes must be passed smallest first (the product's size
+order); sizes without a range, or with an inverted one, are ignored. For each size it measures how
+far the shopper sits outside the range, as `heightGap / HEIGHT_STEP_CM + weightGap / WEIGHT_STEP_KG`
+(both steps 5, roughly one size step), so 0 means the size fits on both.
+
+- One size fits: that size. On a non-stretch piece, when the shopper is in the top
+  `EDGE_ZONE_RATIO` (20%) of either range and the next size up is within one step, the next size is
+  offered as "size up for room".
+- Two or more fit (overlapping ranges): the size whose range centre is closest wins, the other is
+  "also fits".
+- None fits but the nearest is within `NEAR_FIT_MAX` (one step) and has a charted neighbour:
+  `BETWEEN_SIZES`, the closer of the two first.
+- Otherwise `NO_FIT`, with the nearest size and the signed offsets (positive = above its range).
+
+Whenever the two candidates are within `TIE_MARGIN` (0.25) of each other, stretch decides:
+stretchable picks the smaller size, non-stretch and unknown pick the larger, because a too-tight
+non-stretch garment can't be worn while a slightly loose one can.

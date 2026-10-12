@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, Modal, Skeleton, toast } from "@outfiqe/design-system";
-import { Plus } from "lucide-react";
+import { Badge, Button, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { Plus, Ruler } from "lucide-react";
 import { useState } from "react";
 
+import { useAssignableProductTypes } from "@/features/products/hooks/useProductTypes";
 import { AppImage } from "@/shared/components/AppImage";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -16,6 +17,8 @@ import { DiscountModal } from "./DiscountModal";
 import { EditProductModal } from "./EditProductModal";
 import { ProductActionsMenu } from "./ProductActionsMenu";
 import { ProductModal } from "./ProductModal";
+import { SizeChartModal } from "./SizeChartModal";
+import { SizeStandardsModal } from "./SizeStandardsModal";
 import { StockModal } from "./StockModal";
 
 const STATUS_LABEL: Record<BrandProduct["status"], string> = {
@@ -30,8 +33,17 @@ const STATUS_CLASS: Record<BrandProduct["status"], string> = {
   REJECTED: "bg-destructive/10 text-destructive",
 };
 
+const isMissingSizeChart = ({ isThrift, sizes }: BrandProduct): boolean =>
+  !isThrift && sizes.some(({ fitRange }) => fitRange === null);
+
 export const ProductsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [isSizeStandardsOpen, setIsSizeStandardsOpen] = useState(false);
+  const [sizeChartProduct, setSizeChartProduct] = useState<BrandProduct | null>(null);
+  const productTypes = useAssignableProductTypes();
+  const fitTypeSlugs = new Set(
+    productTypes.data?.flatMap(({ slug, supportsFitRanges }) => (supportsFitRanges ? [slug] : [])),
+  );
   const [editingProduct, setEditingProduct] = useState<BrandProduct | null>(null);
   const [stockProduct, setStockProduct] = useState<BrandProduct | null>(null);
   const [discountProduct, setDiscountProduct] = useState<BrandProduct | null>(null);
@@ -71,10 +83,16 @@ export const ProductsSection = () => {
             {brandProducts.length} product{brandProducts.length === 1 ? "" : "s"} listed
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="size-4" />
-          Add product
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setIsSizeStandardsOpen(true)}>
+            <Ruler className="size-4" />
+            Size standards
+          </Button>
+          <Button onClick={() => setModalOpen(true)}>
+            <Plus className="size-4" />
+            Add product
+          </Button>
+        </div>
       </div>
 
       {isPending && (
@@ -110,7 +128,8 @@ export const ProductsSection = () => {
       {brandProducts.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {brandProducts.map((product) => {
-            const { id, imageUrl, name, price, status } = product;
+            const { id, imageUrl, name, price, status, type } = product;
+            const takesSizeChart = fitTypeSlugs.has(type);
 
             return (
               <div
@@ -125,6 +144,9 @@ export const ProductsSection = () => {
                     onEdit={() => setEditingProduct(product)}
                     onManageStock={() => setStockProduct(product)}
                     onManageDiscount={() => setDiscountProduct(product)}
+                    onEditSizeChart={
+                      takesSizeChart ? () => setSizeChartProduct(product) : undefined
+                    }
                     onDelete={() => setDeletingProduct(product)}
                     className="absolute right-2 top-2"
                   />
@@ -150,6 +172,11 @@ export const ProductsSection = () => {
                   >
                     {STATUS_LABEL[status]}
                   </span>
+                  {takesSizeChart && isMissingSizeChart(product) && (
+                    <Badge tone="neutral" showDot={false} className="ml-1.5 mt-2">
+                      Add size chart
+                    </Badge>
+                  )}
                 </div>
               </div>
             );
@@ -173,6 +200,13 @@ export const ProductsSection = () => {
       <EditProductModal product={editingProduct} onClose={() => setEditingProduct(null)} />
       <StockModal product={stockProduct} onClose={() => setStockProduct(null)} />
       <DiscountModal product={discountProduct} onClose={() => setDiscountProduct(null)} />
+      <SizeStandardsModal
+        open={isSizeStandardsOpen}
+        onClose={() => setIsSizeStandardsOpen(false)}
+      />
+      {sizeChartProduct && (
+        <SizeChartModal product={sizeChartProduct} onClose={() => setSizeChartProduct(null)} />
+      )}
 
       <Modal
         open={deletingProduct !== null}

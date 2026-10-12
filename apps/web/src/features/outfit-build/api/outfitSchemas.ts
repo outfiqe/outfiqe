@@ -23,7 +23,22 @@ export const outfitProductSchema = z.object({
   productTypeId: z.string(),
   brand: z.object({ id: z.string(), name: z.string() }),
   availability: availabilitySchema,
-  sizes: z.array(z.object({ label: z.string(), isInStock: z.boolean() })),
+  isStretchable: z.boolean().nullable().optional(),
+  sizes: z.array(
+    z.object({
+      label: z.string(),
+      isInStock: z.boolean(),
+      fitRange: z
+        .object({
+          minHeightCm: z.number(),
+          maxHeightCm: z.number(),
+          minWeightKg: z.number(),
+          maxWeightKg: z.number(),
+        })
+        .nullable()
+        .optional(),
+    }),
+  ),
 });
 
 const outfitItemSchema = z.object({

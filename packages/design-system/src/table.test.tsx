@@ -94,4 +94,26 @@ describe("Table", () => {
 
     expect(screen.queryByText("Totals")).not.toBeInTheDocument();
   });
+
+  it("names the table with a caption for screen readers", () => {
+    render(
+      <Table columns={columns} rows={rows} rowKey={(row) => row.id} caption="Totals by name" />,
+    );
+
+    expect(screen.getByRole("table", { name: "Totals by name" })).toBeInTheDocument();
+  });
+
+  it("adds a class to the rows the caller picks", () => {
+    render(
+      <Table
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        rowClassName={(row) => (row.id === "2" ? "is-picked" : undefined)}
+      />,
+    );
+
+    expect(screen.getByText("Beta").closest("tr")).toHaveClass("is-picked");
+    expect(screen.getByText("Alpha").closest("tr")).not.toHaveClass("is-picked");
+  });
 });

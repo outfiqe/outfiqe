@@ -18,6 +18,7 @@ export const createProductTypeSchema = z.object({
   slug: productTypeSlugSchema,
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
+  supportsFitRanges: z.boolean().optional(),
 });
 
 export const updateProductTypeSchema = createProductTypeSchema.partial();

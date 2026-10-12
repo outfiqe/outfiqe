@@ -27,6 +27,11 @@ export const productTypesApi = {
     return productTypeSchema.parse(res.data);
   },
 
+  async setSupportsFitRanges(id: string, supportsFitRanges: boolean): Promise<ProductType> {
+    const res = await apiClient.patch<ProductType>(`/product-types/${id}`, { supportsFitRanges });
+    return productTypeSchema.parse(res.data);
+  },
+
   async reorder(orderedIds: string[]): Promise<void> {
     await apiClient.post("/product-types/reorder", { orderedIds });
   },

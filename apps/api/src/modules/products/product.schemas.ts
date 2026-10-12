@@ -1,4 +1,12 @@
-import { PRODUCT_SORT, PRODUCT_SORT_VALUES } from "@outfiqe/utils";
+import {
+  FIT_HEIGHT_CM_MAX,
+  FIT_HEIGHT_CM_MIN,
+  FIT_WEIGHT_KG_MAX,
+  FIT_WEIGHT_KG_MIN,
+  isFitRangeOrdered,
+  PRODUCT_SORT,
+  PRODUCT_SORT_VALUES,
+} from "@outfiqe/utils";
 import { z } from "zod";
 
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
@@ -24,10 +32,33 @@ export const productTypeSlugSchema = z.string().trim().min(1).max(TYPE_SLUG_MAX)
 export const categorySlugFieldSchema = z.string().trim().min(1).max(60);
 export const productStatusSchema = z.enum(ProductStatus);
 
-export const productSizeInputSchema = z.object({
-  sizeOptionId: z.uuid(),
-  stock: z.number().int().min(STOCK_MIN).max(STOCK_MAX),
+const MAX_SIZE_CHART_ENTRIES = 50;
+
+const heightCmSchema = z.number().int().min(FIT_HEIGHT_CM_MIN).max(FIT_HEIGHT_CM_MAX);
+const weightKgSchema = z.number().int().min(FIT_WEIGHT_KG_MIN).max(FIT_WEIGHT_KG_MAX);
+
+export const fitRangeSchema = z
+  .object({
+    minHeightCm: heightCmSchema,
+    maxHeightCm: heightCmSchema,
+    minWeightKg: weightKgSchema,
+    maxWeightKg: weightKgSchema,
+  })
+  .refine(isFitRangeOrdered, { message: "Each range's minimum can't be above its maximum." });
+
+const stockSchema = z.number().int().min(STOCK_MIN).max(STOCK_MAX);
+
+export const standardSizeInputSchema = z.object({
+  standardLabelId: z.uuid(),
+  stock: stockSchema,
+  fitRange: fitRangeSchema.nullable().default(null),
 });
+
+const AT_LEAST_ONE_SIZE_MESSAGE = "Add at least one size";
+
+const productSizesSchema = z.array(standardSizeInputSchema).min(1, AT_LEAST_ONE_SIZE_MESSAGE);
+
+const hasUniqueValues = (values: string[]): boolean => new Set(values).size === values.length;
 
 const IMAGE_ASSET_IDS_MISMATCH_MESSAGE =
   "imageAssetIds must line up one-to-one with imageUrls when both are provided.";
@@ -46,7 +77,9 @@ const productFieldsSchema = z.object({
   imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
   imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
-  sizes: z.array(productSizeInputSchema).min(1, "Add at least one size"),
+  sizes: productSizesSchema,
+  sizeStandardId: z.uuid(),
+  isStretchable: z.boolean().nullable().optional(),
   isThrift: z.boolean().optional(),
   thriftConditionRating: z.enum(ThriftCondition).optional(),
   thriftConditionNotes: z
@@ -56,6 +89,19 @@ const productFieldsSchema = z.object({
     .max(THRIFT_CONDITION_NOTES_MAX)
     .optional(),
 });
+
+const SIZE_STANDARD_MISMATCH_MESSAGE =
+  "Send sizes together with the sizeStandardId they come from.";
+
+const sizeStandardMatchesSizes = (data: {
+  sizes?: StandardSizeInput[];
+  sizeStandardId?: string;
+}): boolean => (data.sizes === undefined) === (data.sizeStandardId === undefined);
+
+const standardLabelIdsAreUnique = (data: { sizes?: StandardSizeInput[] }): boolean =>
+  hasUniqueValues((data.sizes ?? []).map(({ standardLabelId }) => standardLabelId));
+
+const DUPLICATE_SIZES_MESSAGE = "Each size can only be picked once.";
 
 const THRIFT_CONDITION_REQUIRED_MESSAGE =
   "A thrift listing needs a condition rating and a short condition note.";
@@ -69,6 +115,8 @@ const thriftConditionFieldsPresentWhenThrift = (data: {
   (data.thriftConditionRating !== undefined && data.thriftConditionNotes !== undefined);
 
 export const createProductSchema = productFieldsSchema
+  .refine(sizeStandardMatchesSizes, { message: SIZE_STANDARD_MISMATCH_MESSAGE, path: ["sizes"] })
+  .refine(standardLabelIdsAreUnique, { message: DUPLICATE_SIZES_MESSAGE, path: ["sizes"] })
   .refine(imageAssetIdsMatchImageUrls, {
     message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
     path: ["imageAssetIds"],
@@ -80,6 +128,8 @@ export const createProductSchema = productFieldsSchema
 
 export const updateProductSchema = productFieldsSchema
   .partial()
+  .refine(sizeStandardMatchesSizes, { message: SIZE_STANDARD_MISMATCH_MESSAGE, path: ["sizes"] })
+  .refine(standardLabelIdsAreUnique, { message: DUPLICATE_SIZES_MESSAGE, path: ["sizes"] })
   .refine(imageAssetIdsMatchImageUrls, {
     message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
     path: ["imageAssetIds"],
@@ -110,7 +160,19 @@ export const adjustStockSchema = z.object({
     ),
 });
 
-export type ProductSizeInput = z.infer<typeof productSizeInputSchema>;
+export const updateSizeChartSchema = z.object({
+  isStretchable: z.boolean().nullable(),
+  sizes: z
+    .array(z.object({ sizeId: z.uuid(), fitRange: fitRangeSchema.nullable() }))
+    .min(1)
+    .max(MAX_SIZE_CHART_ENTRIES)
+    .refine((sizeChartEntries) => hasUniqueValues(sizeChartEntries.map(({ sizeId }) => sizeId)), {
+      message: DUPLICATE_SIZES_MESSAGE,
+    }),
+});
+
+export type StandardSizeInput = z.infer<typeof standardSizeInputSchema>;
+export type UpdateSizeChartBody = z.infer<typeof updateSizeChartSchema>;
 export type AdjustStockBody = z.infer<typeof adjustStockSchema>;
 
 const discountAmountFieldsMatchType = (data: {
@@ -190,6 +252,15 @@ export const listPublicProductsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
+export const listFittingProductsQuerySchema = z.object({
+  heightCm: z.coerce.number().int().min(FIT_HEIGHT_CM_MIN).max(FIT_HEIGHT_CM_MAX),
+  weightKg: z.coerce.number().int().min(FIT_WEIGHT_KG_MIN).max(FIT_WEIGHT_KG_MAX),
+  category: categorySlugFieldSchema.optional(),
+  type: productTypeSlugSchema.optional(),
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export const listBrandProductsQuerySchema = z.object({
   type: productTypeSlugSchema.optional(),
   cursor: z.uuid().optional(),
@@ -207,6 +278,7 @@ export type ProductIdParam = z.infer<typeof productIdParamSchema>;
 export type ListReviewProductsQuery = z.infer<typeof listReviewProductsQuerySchema>;
 export type AutocompleteQuery = z.infer<typeof autocompleteQuerySchema>;
 export type ListPublicProductsQuery = z.infer<typeof listPublicProductsQuerySchema>;
+export type ListFittingProductsQuery = z.infer<typeof listFittingProductsQuerySchema>;
 export type ListBrandProductsQuery = z.infer<typeof listBrandProductsQuerySchema>;
 export type ListMineProductsQuery = z.infer<typeof listMineProductsQuerySchema>;
 export type SetProductDiscountBody = z.infer<typeof setProductDiscountSchema>;

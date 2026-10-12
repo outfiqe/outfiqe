@@ -11,7 +11,6 @@ import {
   DEFAULT_POST_LAYOUT,
   MAX_PHOTOS,
 } from "@/features/creator-dashboard/looks/constants/postModal.constants";
-import { useMySizeByProductType } from "@/features/saved-sizes";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
@@ -19,6 +18,7 @@ import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/useP
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { OutfitBoard, OutfitProduct } from "../../api/outfitSchemas";
+import { useMySizeByProductId } from "../../hooks/useMySizeByProductId";
 import { usePublishBuildLook } from "../hooks/useBuildLook";
 
 const CAPTION_MAX_LENGTH = 280;
@@ -50,17 +50,17 @@ const pickDefaultSize = (product: OutfitProduct, mySize: string | undefined): st
 export const PublishLookModal = ({ board, onPublished, onClose }: PublishLookModalProps) => {
   const t = useTranslations("outfitBuild.publish");
   const captionId = useId();
-  const mySizeByProductType = useMySizeByProductType();
   const publishLook = usePublishBuildLook(board.id);
   const pending = usePendingPhotos(MAX_PHOTOS, coverImageUrls(board).slice(0, MAX_PHOTOS));
   const products = board.slots.flatMap((slot) => slot.items.map((slotItem) => slotItem.product));
+  const mySizeByProductId = useMySizeByProductId(products);
 
   const [caption, setCaption] = useState(board.title ?? "");
   const [sizeByProductId, setSizeByProductId] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       products.map((product) => [
         product.id,
-        pickDefaultSize(product, mySizeByProductType.get(product.productTypeId)),
+        pickDefaultSize(product, mySizeByProductId.get(product.id)),
       ]),
     ),
   );

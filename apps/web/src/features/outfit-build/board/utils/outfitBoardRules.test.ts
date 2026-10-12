@@ -8,6 +8,7 @@ import {
   firstFreePosition,
   SIZE_FIT,
   toBuyableBuildItems,
+  toMySizeByProductId,
   withHappiness,
   withItemPlaced,
   withItemRemoved,
@@ -99,7 +100,7 @@ const placedItem = (productId: string, position = 0) => ({
 });
 
 describe("toBuyableBuildItems", () => {
-  it("lists every item on the board with its sizes and my saved size for its type", () => {
+  it("lists every item on the board with its sizes and my size for that product", () => {
     const shirt = {
       ...placedItem("shirt"),
       product: { ...product("shirt"), sizes: [{ label: "M", isInStock: true }] },
@@ -107,7 +108,7 @@ describe("toBuyableBuildItems", () => {
     const trousers = { ...placedItem("trousers"), product: product("trousers", "type-bottoms") };
     const current = board([slot({ items: [shirt] }), slot({ key: "bottom", items: [trousers] })]);
 
-    expect(toBuyableBuildItems(current, new Map([["type-tops", "M"]]))).toEqual([
+    expect(toBuyableBuildItems(current, new Map([["shirt", "M"]]))).toEqual([
       {
         productId: "shirt",
         productName: "Product shirt",
@@ -121,6 +122,45 @@ describe("toBuyableBuildItems", () => {
         suggestedSizeLabel: undefined,
       },
     ]);
+  });
+});
+
+describe("toMySizeByProductId", () => {
+  const MEDIUM_RANGE = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
+  const LARGE_RANGE = { minHeightCm: 170, maxHeightCm: 180, minWeightKg: 65, maxWeightKg: 75 };
+
+  it("works out each product's size from its own chart", () => {
+    const runsSmall = {
+      ...product("runs-small"),
+      sizes: [
+        { label: "M", isInStock: true, fitRange: { ...MEDIUM_RANGE, maxHeightCm: 164 } },
+        { label: "L", isInStock: true, fitRange: { ...LARGE_RANGE, minHeightCm: 164 } },
+      ],
+    };
+    const trueToSize = {
+      ...product("true-to-size"),
+      sizes: [{ label: "M", isInStock: true, fitRange: MEDIUM_RANGE }],
+    };
+
+    expect(toMySizeByProductId([runsSmall, trueToSize], { heightCm: 167, weightKg: 64 })).toEqual(
+      new Map([
+        ["runs-small", "L"],
+        ["true-to-size", "M"],
+      ]),
+    );
+  });
+
+  it("skips products without a chart or that don't fit, and everything without measurements", () => {
+    const uncharted = { ...product("uncharted"), sizes: [{ label: "M", isInStock: true }] };
+    const tooSmall = {
+      ...product("too-small"),
+      sizes: [{ label: "XS", isInStock: true, fitRange: { ...MEDIUM_RANGE, maxHeightCm: 150 } }],
+    };
+
+    expect(toMySizeByProductId([uncharted, tooSmall], { heightCm: 190, weightKg: 90 })).toEqual(
+      new Map(),
+    );
+    expect(toMySizeByProductId([uncharted], null)).toEqual(new Map());
   });
 });
 

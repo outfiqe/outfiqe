@@ -78,7 +78,6 @@ const LIST_PATHS = new Set([
   "/product-reviews",
   "/product-types",
   "/products",
-  "/size-options",
   "/support",
   "/tag-reports",
   "/tag-reviews",

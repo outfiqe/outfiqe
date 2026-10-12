@@ -1,5 +1,5 @@
 import type { AdminPageSkeletonSpec } from "./adminPageSkeleton.types";
-import { FEATURES_DIR, PILL_COUNT, ROW_COUNT } from "./pageSkeletonSpecs.constants";
+import { FEATURES_DIR, ROW_COUNT } from "./pageSkeletonSpecs.constants";
 
 export const catalogPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
   "/products": {
@@ -72,7 +72,7 @@ export const catalogPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
   "/product-types": {
     title: "Garment types",
     description:
-      "The list of clothing types a product can be. A new type reaches brands once it is on and has at least one size.",
+      "The list of clothing types a product can be. A new type reaches brands once it is on.",
     blocks: [
       {
         kind: "formCard",
@@ -85,16 +85,6 @@ export const catalogPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
       { kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" },
     ],
     sourceFiles: [`${FEATURES_DIR}/product-types/components/ProductTypesPage.tsx`],
-  },
-  "/size-options": {
-    title: "Sizes",
-    description: "The size list a brand picks from when adding a product, per garment type.",
-    blocks: [
-      { kind: "pills", count: PILL_COUNT },
-      { kind: "formCard", fields: [{ label: "Size label", width: "small" }] },
-      { kind: "actionRows", count: ROW_COUNT, actionLabel: "Delete" },
-    ],
-    sourceFiles: [`${FEATURES_DIR}/size-options/components/SizeOptionsPage.tsx`],
   },
   "/outfit-slot-types": {
     title: "Outfit slots",

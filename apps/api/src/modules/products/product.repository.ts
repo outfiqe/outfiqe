@@ -1,24 +1,25 @@
 import { prisma } from "#db/prisma.js";
 import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { toFitColumns } from "#lib/fit-range.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { productCatalogRepository } from "./catalog/catalog.repository.js";
 import { productDiscountRepository } from "./discounts/discount.repository.js";
 import { productInventoryRepository } from "./inventory/inventory.repository.js";
 import {
+  toWithTotalStockAndSizes,
   withActiveDiscount,
   withBrandAndCategories,
-  withTotalStock,
+  withTotalStockAndSizes,
 } from "./product.query-helpers.js";
 import type {
-  BrandProductSize,
   CreateProductInput,
+  ProductForReview,
   ProductRecord,
-  ProductWithStock,
   ProductWithStockSizesAndImages,
+  SizeChartEntry,
   UpdateProductInput,
 } from "./product.types.js";
-import { sumStock } from "./product.utils.js";
 import { productSocialProofRepository } from "./social-proof/social-proof.repository.js";
 
 export type { DbClient } from "#types/db.types.js";
@@ -26,20 +27,6 @@ export type { DbClient } from "#types/db.types.js";
 const withImages = {
   images: { orderBy: { sortOrder: "asc" as const }, select: { url: true } },
 };
-
-const toWithTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>({
-  sizes,
-  ...rest
-}: T): Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] } => ({
-  ...rest,
-  totalStock: sumStock(sizes),
-  sizes: sizes.map(({ id, label, stock }) => ({ id, label, stock })),
-});
-
-const withTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>(
-  rows: T[],
-): (Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] })[] =>
-  rows.map(toWithTotalStockAndSizes);
 
 export const productRepository = {
   async create(
@@ -62,11 +49,12 @@ export const productRepository = {
             }
           : undefined,
         sizes: {
-          create: sizeInputs.map(({ label, stock, sortOrder }) => ({
+          create: sizeInputs.map(({ label, stock, sortOrder, fitRange }) => ({
             label,
             stock,
             inStock: stock > 0,
             sortOrder,
+            ...toFitColumns(fitRange),
           })),
         },
       },
@@ -103,11 +91,12 @@ export const productRepository = {
           ? {
               sizes: {
                 deleteMany: {},
-                create: sizes.map(({ label, stock, sortOrder }) => ({
+                create: sizes.map(({ label, stock, sortOrder, fitRange }) => ({
                   label,
                   stock,
                   inStock: stock > 0,
                   sortOrder,
+                  ...toFitColumns(fitRange),
                 })),
               },
             }
@@ -168,15 +157,40 @@ export const productRepository = {
   async listForReview(
     status: ProductStatus,
     params: { cursor?: string; limit: number; isThrift?: boolean },
-  ): Promise<ProductWithStock[]> {
+  ): Promise<ProductForReview[]> {
     const rows = await prisma.product.findMany({
       where: { status, deletedAt: null, isThrift: params.isThrift },
-      include: withBrandAndCategories,
+      include: {
+        ...withBrandAndCategories,
+        productType: { select: { slug: true, label: true, supportsFitRanges: true } },
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
-    return withTotalStock(rows);
+    return withTotalStockAndSizes(rows);
+  },
+
+  async updateSizeChart(
+    client: DbClient,
+    productId: string,
+    isStretchable: boolean | null,
+    sizeChartEntries: SizeChartEntry[],
+  ): Promise<{ updatedSizeCount: number; product: ProductWithStockSizesAndImages }> {
+    let updatedSizeCount = 0;
+    for (const { sizeId, fitRange } of sizeChartEntries) {
+      const { count } = await client.productSize.updateMany({
+        where: { id: sizeId, productId },
+        data: toFitColumns(fitRange),
+      });
+      updatedSizeCount += count;
+    }
+    const product = await client.product.update({
+      where: { id: productId },
+      data: { isStretchable },
+      include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
+    });
+    return { updatedSizeCount, product: toWithTotalStockAndSizes(product) };
   },
 
   ...productCatalogRepository,

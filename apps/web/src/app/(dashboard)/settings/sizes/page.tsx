@@ -1,30 +1,5 @@
-import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 
-import { MySizesSettings } from "@/features/saved-sizes";
-import { TranslatedPageHeading } from "@/i18n/TranslatedPageHeading";
-import { TranslationsProvider } from "@/i18n/TranslationsProvider";
+const LegacySizesSettingsPage = () => permanentRedirect("/settings/measurements");
 
-import { requireAuthedSession } from "../../requireDashboardSession";
-
-export const metadata: Metadata = { title: "My sizes" };
-
-const DashboardSizesSettingsPage = async () => {
-  await requireAuthedSession("/settings/sizes");
-
-  return (
-    <TranslationsProvider>
-      <div className="max-w-xl">
-        <TranslatedPageHeading
-          namespace="savedSizes"
-          titleKey="title"
-          descriptionKey="description"
-        />
-        <div className="mt-6">
-          <MySizesSettings />
-        </div>
-      </div>
-    </TranslationsProvider>
-  );
-};
-
-export default DashboardSizesSettingsPage;
+export default LegacySizesSettingsPage;

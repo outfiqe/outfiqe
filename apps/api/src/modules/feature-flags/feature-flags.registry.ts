@@ -20,6 +20,12 @@ export const FEATURE_FLAG_REGISTRY = [
     label: "Public Builds feed",
     description: "Shows public builds in the Builds tab in Explore and on profiles.",
   },
+  {
+    key: "size_fit",
+    label: "Size charts and fit finder",
+    description:
+      "Shows brands' size charts on product pages, the Find my size modal and the Find what fits me page.",
+  },
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_REGISTRY)[number]["key"];

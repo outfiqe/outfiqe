@@ -22,7 +22,6 @@ const EVERY_SECTION_BUT_SUPPORT = [
   "collections",
   "categories",
   "product-types",
-  "size-options",
   "outfit-slot-types",
   "hero-slides",
   "orders",

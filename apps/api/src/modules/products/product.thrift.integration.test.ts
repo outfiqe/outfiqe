@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { BrandRole, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { ensureProductType } from "#test/integration/product-fixtures.js";
+import {
+  createSizeStandard,
+  ensureProductType,
+  type SizeStandardFixture,
+} from "#test/integration/product-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
@@ -51,13 +55,6 @@ const createCategory = () =>
     data: { slug: `thrift-cat-${randomUUID().slice(0, 8)}`, name: "Thrift Test Category" },
   });
 
-const createSizeOption = async () => {
-  const productTypeId = await ensureProductType();
-  return prisma.sizeOption.create({
-    data: { productTypeId, label: `M-${randomUUID().slice(0, 4)}`, sortOrder: 0 },
-  });
-};
-
 type SeedProductOptions = {
   isThrift?: boolean;
   stock?: number;
@@ -90,43 +87,45 @@ const setUpBrandFixtures = async () => {
   const brand = await createBrand();
   const owner = await createBrandOwner(brand.id);
   const category = await createCategory();
-  const sizeOption = await createSizeOption();
-  return { brand, owner, category, sizeOption };
+  await ensureProductType();
+  const sizeStandard = await createSizeStandard(brand.id);
+  return { brand, owner, category, sizeStandard };
 };
 
 const buildCreateBody = (
   categorySlug: string,
-  sizeOptionId: string,
+  { sizeStandardId, standardLabelId }: SizeStandardFixture,
   overrides: Record<string, unknown> = {},
 ) => ({
   name: "Secondhand Trench Coat",
   price: 3_500,
   type: "tops",
   categories: [categorySlug],
-  sizes: [{ sizeOptionId, stock: 1 }],
+  sizeStandardId,
+  sizes: [{ standardLabelId, stock: 1 }],
   ...overrides,
 });
 
 describe("POST /api/products — thrift condition validation", () => {
   it("rejects a thrift listing with no condition rating or notes", async () => {
-    const { owner, category, sizeOption } = await setUpBrandFixtures();
+    const { owner, category, sizeStandard } = await setUpBrandFixtures();
 
     const response = await request(testApp)
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
-      .send(buildCreateBody(category.slug, sizeOption.id, { isThrift: true }));
+      .send(buildCreateBody(category.slug, sizeStandard, { isThrift: true }));
 
     expect(response.status).toBe(422);
   });
 
   it("accepts a thrift listing with a condition rating and notes", async () => {
-    const { owner, category, sizeOption } = await setUpBrandFixtures();
+    const { owner, category, sizeStandard } = await setUpBrandFixtures();
 
     const response = await request(testApp)
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
       .send(
-        buildCreateBody(category.slug, sizeOption.id, {
+        buildCreateBody(category.slug, sizeStandard, {
           isThrift: true,
           thriftConditionRating: "GOOD",
           thriftConditionNotes: "Small mark on the left cuff, otherwise excellent.",
@@ -144,12 +143,12 @@ describe("POST /api/products — thrift condition validation", () => {
   });
 
   it("doesn't require condition fields for an ordinary, non-thrift listing", async () => {
-    const { owner, category, sizeOption } = await setUpBrandFixtures();
+    const { owner, category, sizeStandard } = await setUpBrandFixtures();
 
     const response = await request(testApp)
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
-      .send(buildCreateBody(category.slug, sizeOption.id));
+      .send(buildCreateBody(category.slug, sizeStandard));
 
     expect(response.status).toBe(201);
     expect(response.body.data.isThrift).toBe(false);
@@ -158,13 +157,13 @@ describe("POST /api/products — thrift condition validation", () => {
 
 describe("PATCH /api/products/:id — unchecking thrift", () => {
   it("clears the condition fields once isThrift is unset", async () => {
-    const { owner, category, sizeOption } = await setUpBrandFixtures();
+    const { owner, category, sizeStandard } = await setUpBrandFixtures();
 
     const created = await request(testApp)
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
       .send(
-        buildCreateBody(category.slug, sizeOption.id, {
+        buildCreateBody(category.slug, sizeStandard, {
           isThrift: true,
           thriftConditionRating: "FAIR",
           thriftConditionNotes: "Visible fading on the front panel.",
@@ -262,12 +261,12 @@ describe("GET /api/products/:id — a sold-out thrift product stays reachable", 
 
 describe("GET /api/products/mine — a brand still sees its own sold-out thrift listing", () => {
   it("keeps a sold-out thrift product in the owning brand's own list", async () => {
-    const { owner, category, sizeOption } = await setUpBrandFixtures();
+    const { owner, category, sizeStandard } = await setUpBrandFixtures();
     const created = await request(testApp)
       .post("/api/products")
       .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
       .send(
-        buildCreateBody(category.slug, sizeOption.id, {
+        buildCreateBody(category.slug, sizeStandard, {
           isThrift: true,
           thriftConditionRating: "LIKE_NEW",
           thriftConditionNotes: "Worn once.",

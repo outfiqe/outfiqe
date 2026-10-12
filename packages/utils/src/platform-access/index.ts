@@ -31,7 +31,6 @@ export const PLATFORM_SECTION_ACCESS: Record<PlatformNavKey, PlatformSectionAcce
   collections: CATALOG_ACCESS,
   categories: CATALOG_ACCESS,
   "product-types": CATALOG_ACCESS,
-  "size-options": CATALOG_ACCESS,
   "outfit-slot-types": CATALOG_ACCESS,
   "hero-slides": CATALOG_ACCESS,
   trending: CATALOG_ACCESS,
