@@ -19,16 +19,24 @@ import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "../product.constants.js";
 import type {
   AutocompleteQuery,
   ListBrandProductsQuery,
+  ListFittingProductsQuery,
   ListPublicProductsQuery,
 } from "../product.schemas.js";
 import type {
+  FittingProductPage,
   ProductSearchCursor,
   ProductSuggestion,
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
 } from "../product.types.js";
-import { isUuid, toPublicProduct, toSuggestion } from "../product.utils.js";
+import {
+  hasCompleteSizeChart,
+  isUuid,
+  recommendInStockFitSize,
+  toPublicProduct,
+  toSuggestion,
+} from "../product.utils.js";
 import { productSocialProofRepository } from "../social-proof/social-proof.repository.js";
 import { productCatalogRepository } from "./catalog.repository.js";
 
@@ -217,7 +225,8 @@ export const productCatalogService = {
     const product = await productCatalogRepository.findPublicById(id);
     if (!product) throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
 
-    const { brandId, brand, sizes, images, wornByCount } = product;
+    const { brandId, brand, sizes, images, wornByCount, productType, isStretchable } = product;
+    const { supportsFitRanges } = productType;
 
     const [seenOnCreators, isSaved] = await Promise.all([
       productSocialProofRepository.listSeenOnCreators(id),
@@ -227,11 +236,42 @@ export const productCatalogService = {
     return {
       ...toPublicProduct(product),
       brand: { id: brandId, name: brand.name },
-      sizes,
+      sizes: supportsFitRanges ? sizes : sizes.map((size) => ({ ...size, fitRange: null })),
+      isStretchable: supportsFitRanges ? isStretchable : null,
+      hasSizeChart: hasCompleteSizeChart(supportsFitRanges, sizes),
       images: images.map((image) => image.url),
       wornByCount,
       seenOnCreators,
       isSaved,
+    };
+  },
+
+  async listFitting(
+    { heightCm, weightKg, type: typeSlug, category, cursor, limit }: ListFittingProductsQuery,
+    viewerId?: string,
+  ): Promise<FittingProductPage> {
+    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
+    const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
+    const fitMeasurements = { heightCm, weightKg };
+    const filter = { categoryId, productTypeId, fitMeasurements };
+
+    const [rows, { total }] = await Promise.all([
+      productCatalogRepository.listFitting({ ...filter, cursor, limit }),
+      productCatalogRepository.countPublic(filter),
+    ]);
+    const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
+    const publicProducts = await hydrateSavedFlags(pagedRows.map(toPublicProduct), viewerId);
+    const recommendedSizeByProductId = new Map(
+      pagedRows.map((row) => [row.id, recommendInStockFitSize(row, fitMeasurements)]),
+    );
+
+    return {
+      products: publicProducts.map((publicProduct) => ({
+        ...publicProduct,
+        recommendedSize: recommendedSizeByProductId.get(publicProduct.id) ?? null,
+      })),
+      nextCursor,
+      total,
     };
   },
 

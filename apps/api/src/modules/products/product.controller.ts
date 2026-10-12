@@ -9,6 +9,7 @@ import type {
   AdjustStockBody,
   AutocompleteQuery,
   CreateProductBody,
+  ListFittingProductsQuery,
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
@@ -16,6 +17,7 @@ import type {
   SetProductDiscountBody,
   UpdateProductBody,
   UpdateProductDiscountBody,
+  UpdateSizeChartBody,
 } from "./product.schemas.js";
 import { productService } from "./product.service.js";
 
@@ -35,6 +37,15 @@ export const productController = {
 
     const product = await productService.update(userId, id, body);
     sendSuccess(res, product, "Product updated.");
+  },
+
+  async updateSizeChart(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+    const body = validated.body<UpdateSizeChartBody>(res);
+
+    const product = await productService.updateSizeChart(userId, id, body);
+    sendSuccess(res, product, "Size chart saved.");
   },
 
   async adjustStock(_req: Request, res: Response) {
@@ -122,6 +133,12 @@ export const productController = {
     const principal = getAuthPrincipal(res);
     const products = await productService.listNewArrivals(principal?.userId);
     sendSuccess(res, products, "New arrivals.");
+  },
+
+  async listFitting(_req: Request, res: Response) {
+    const query = validated.query<ListFittingProductsQuery>(res);
+    const viewerId = getAuthPrincipal(res)?.userId;
+    sendSuccess(res, await productService.listFitting(query, viewerId), "Products that fit.");
   },
 
   async getPublicById(_req: Request, res: Response) {

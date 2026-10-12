@@ -52,7 +52,7 @@ const GROUP_STEPS: PlatformTourStep[] = [
     groupKey: "catalog",
     anchorSelector: groupSelector("catalog"),
     title: "Catalog",
-    body: "The shared catalog every brand lists into: products awaiting approval, collections, categories, garment types, size options, and the hero slides shown on the storefront home page.",
+    body: "The shared catalog every brand lists into: products awaiting approval, collections, categories, garment types, and the hero slides shown on the storefront home page.",
   },
   {
     id: "commerce",

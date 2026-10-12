@@ -12,10 +12,12 @@ type ProductFixture = Omit<ProductWithStockSizesAndImages, "images"> & {
   images: (ProductFirstImageAsset & { url: string })[];
 };
 import {
+  hasCompleteSizeChart,
   isLowStock,
   isNew,
   isThriftSoldOut,
   isUuid,
+  recommendInStockFitSize,
   sumStock,
   toBrandSummary,
   toDiscountView,
@@ -59,11 +61,13 @@ const buildProduct = (overrides: Partial<ProductFixture> = {}): ProductFixture =
   isThrift: false,
   thriftConditionRating: null,
   thriftConditionNotes: null,
+  isStretchable: null,
+  sizeStandardId: null,
   brand: { name: "Acme" },
   categories: [{ slug: "outerwear", name: "Outerwear" }],
   productType: { slug: "jacket", label: "Jacket" },
   totalStock: 10,
-  sizes: [{ id: "size-1", label: "M", stock: 10 }],
+  sizes: [{ id: "size-1", label: "M", stock: 10, fitRange: null }],
   images: [{ url: "jacket.png" }],
   ...overrides,
 });
@@ -295,5 +299,76 @@ describe("toBrandSummary", () => {
     const summary = toBrandSummary(buildProduct({ isThrift: true, totalStock: 0 }));
     expect(summary.isThrift).toBe(true);
     expect(summary.isSoldOut).toBe(true);
+  });
+});
+
+const MEDIUM_FIT_RANGE = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
+
+describe("hasCompleteSizeChart", () => {
+  it("is true when the type takes charts and every size has a range", () => {
+    expect(hasCompleteSizeChart(true, [{ fitRange: MEDIUM_FIT_RANGE }])).toBe(true);
+  });
+
+  it.each([
+    ["the type doesn't take charts", false, [{ fitRange: MEDIUM_FIT_RANGE }]],
+    ["a size has no range", true, [{ fitRange: MEDIUM_FIT_RANGE }, { fitRange: null }]],
+    ["there are no sizes", true, []],
+  ])("is false when %s", (_description, supportsFitRanges, sizes) => {
+    expect(hasCompleteSizeChart(supportsFitRanges, sizes)).toBe(false);
+  });
+});
+
+describe("recommendInStockFitSize", () => {
+  const LARGE_FIT_RANGE = { minHeightCm: 170, maxHeightCm: 180, minWeightKg: 65, maxWeightKg: 75 };
+
+  it("recommends the fitting size", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: false,
+          sizes: [
+            { id: "size-m", label: "M", stock: 2, fitRange: MEDIUM_FIT_RANGE },
+            { id: "size-l", label: "L", stock: 2, fitRange: LARGE_FIT_RANGE },
+          ],
+        },
+        { heightCm: 165, weightKg: 60 },
+      ),
+    ).toEqual({ sizeId: "size-m", label: "M" });
+  });
+
+  it("skips a sold-out size", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: false,
+          sizes: [
+            { id: "size-m", label: "M", stock: 0, fitRange: MEDIUM_FIT_RANGE },
+            { id: "size-l", label: "L", stock: 2, fitRange: LARGE_FIT_RANGE },
+          ],
+        },
+        { heightCm: 170, weightKg: 65 },
+      ),
+    ).toEqual({ sizeId: "size-l", label: "L" });
+  });
+
+  it("falls back to the nearest size when none fits", () => {
+    expect(
+      recommendInStockFitSize(
+        {
+          isStretchable: null,
+          sizes: [{ id: "size-m", label: "M", stock: 2, fitRange: MEDIUM_FIT_RANGE }],
+        },
+        { heightCm: 200, weightKg: 100 },
+      ),
+    ).toEqual({ sizeId: "size-m", label: "M" });
+  });
+
+  it("returns nothing without a chart", () => {
+    expect(
+      recommendInStockFitSize(
+        { isStretchable: null, sizes: [{ id: "size-m", label: "M", stock: 2, fitRange: null }] },
+        { heightCm: 165, weightKg: 60 },
+      ),
+    ).toBeNull();
   });
 });

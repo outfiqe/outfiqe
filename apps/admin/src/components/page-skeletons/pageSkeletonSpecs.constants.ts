@@ -3,8 +3,6 @@ export const FEATURES_DIR = "src/features";
 export const ROW_COUNT = 3;
 export const GRID_CARD_COUNT = 6;
 
-export const PILL_COUNT = 5;
-
 export const POSTER_COUNT = 10;
 
 export const SESSION_TABLE_HEADERS = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, MoreVertical, Pencil, Tag, Trash2 } from "lucide-react";
+import { Boxes, MoreVertical, Pencil, Ruler, Tag, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
@@ -9,6 +9,7 @@ type ProductActionsMenuProps = {
   onEdit: () => void;
   onManageStock: () => void;
   onManageDiscount: () => void;
+  onEditSizeChart?: () => void;
   onDelete: () => void;
   className?: string;
 };
@@ -17,6 +18,7 @@ export const ProductActionsMenu = ({
   onEdit,
   onManageStock,
   onManageDiscount,
+  onEditSizeChart,
   onDelete,
   className,
 }: ProductActionsMenuProps) => {
@@ -93,6 +95,21 @@ export const ProductActionsMenu = ({
             <Tag className="size-3.5" />
             Sale price
           </button>
+          {onEditSizeChart && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={(event) => {
+                event.stopPropagation();
+                setOpen(false);
+                onEditSizeChart();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+            >
+              <Ruler className="size-3.5" />
+              Size chart
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

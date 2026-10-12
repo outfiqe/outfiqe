@@ -1,4 +1,5 @@
 import type { ResponsiveImage } from "@outfiqe/types";
+import type { FitRange, FitSizeMatch } from "@outfiqe/utils";
 
 import type {
   DiscountType,
@@ -41,12 +42,15 @@ export type ProductRecord = {
   isThrift: boolean;
   thriftConditionRating: ThriftCondition | null;
   thriftConditionNotes: string | null;
+  isStretchable: boolean | null;
+  sizeStandardId: string | null;
 } & ProductRatingSummary;
 
 export type ProductSizeRecord = {
   id: string;
   label: string;
   inStock: boolean;
+  fitRange: FitRange | null;
 };
 
 export type SeenOnCreator = {
@@ -106,6 +110,8 @@ export type ProductWithStock = ProductWithBrand & { totalStock: number };
 
 export type BrandProductSize = { id: string; label: string; stock: number };
 
+export type BrandProductSizeWithFit = BrandProductSize & { fitRange: FitRange | null };
+
 export type StockLine = { sizeId: string; qty: number };
 
 export type StockMovement = {
@@ -125,7 +131,7 @@ export type InventoryReconciliationSummary = {
   adoptedUntrackedSizeCount: number;
 };
 
-export type ProductWithStockAndSizes = ProductWithStock & { sizes: BrandProductSize[] };
+export type ProductWithStockAndSizes = ProductWithStock & { sizes: BrandProductSizeWithFit[] };
 
 export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
   images: { url: string }[];
@@ -133,10 +139,25 @@ export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
 
 export type ProductSalesStats = { creatorBuyerCount: number; unitsSold: number };
 
+export type ProductWithStockSalesAndSizes = ProductWithStockAndSizes & ProductSalesStats;
+
+export type FittingPublicProduct = PublicProduct & { recommendedSize: FitSizeMatch | null };
+
+export type FittingProductPage = {
+  products: FittingPublicProduct[];
+  nextCursor: string | null;
+  total: number;
+};
+
 export type ProductWithOptionalStock = ProductWithBrand &
   Partial<ProductSalesStats> & { totalStock?: number; images?: ProductFirstImageAsset[] };
 
-export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
+export type ProductForReview = Omit<ProductWithStock, "productType"> & {
+  productType: ProductTypeSummary & { supportsFitRanges: boolean };
+  sizes: BrandProductSizeWithFit[];
+};
+
+export type ProductReviewSummary = Omit<ProductForReview, "categories"> & { categories: string[] };
 
 export type ProductReviewPage = {
   products: ProductReviewSummary[];
@@ -157,7 +178,9 @@ export type ProductBrandSummary = {
   lowStock: boolean;
   status: ProductStatus;
   createdAt: Date;
-  sizes: BrandProductSize[];
+  sizes: BrandProductSizeWithFit[];
+  sizeStandardId: string | null;
+  isStretchable: boolean | null;
   isThrift: boolean;
   thriftConditionRating: ThriftCondition | null;
   thriftConditionNotes: string | null;
@@ -173,6 +196,7 @@ export type CreateProductSizeInput = {
   label: string;
   stock: number;
   sortOrder: number;
+  fitRange: FitRange | null;
 };
 
 export type CreateProductInput = {
@@ -185,6 +209,8 @@ export type CreateProductInput = {
   imageAssetIds?: (string | null)[];
   lowStock?: boolean;
   sizes: CreateProductSizeInput[];
+  sizeStandardId?: string;
+  isStretchable?: boolean | null;
   isThrift?: boolean;
   thriftConditionRating?: ThriftCondition;
   thriftConditionNotes?: string;
@@ -263,7 +289,11 @@ export type ProductSuggestion = {
 export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   brand: { id: string; name: string };
   sizes: ProductSizeRecord[];
+  isStretchable: boolean | null;
+  hasSizeChart: boolean;
   images: string[];
   wornByCount: number;
   seenOnCreators: SeenOnCreator[];
 };
+
+export type SizeChartEntry = { sizeId: string; fitRange: FitRange | null };

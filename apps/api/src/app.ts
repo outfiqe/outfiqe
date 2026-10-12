@@ -62,6 +62,7 @@ import {
   viewerFeatureFlagsRoutes,
 } from "./modules/feature-flags/feature-flags.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financial-rollup.routes.js";
+import { fitProfileRoutes } from "./modules/fit-profile/fit-profile.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/hero-slide.routes.js";
 import { imageProcessingQueues } from "./modules/image-processing/image-processing.queue.js";
@@ -92,8 +93,7 @@ import { productTypeRoutes } from "./modules/product-types/product-type.routes.j
 import { productRoutes } from "./modules/products/product.routes.js";
 import { pushRoutes } from "./modules/push/push.routes.js";
 import { saleRoutes } from "./modules/sale/sale.routes.js";
-import { savedSizeRoutes } from "./modules/saved-sizes/saved-size.routes.js";
-import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
+import { sizeStandardRoutes } from "./modules/size-standards/size-standard.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tag-report.routes.js";
 import { tagReviewRoutes } from "./modules/tag-reviews/tag-review.routes.js";
@@ -194,7 +194,7 @@ export const createApp = () => {
   app.use("/api/products", productRoutes);
   app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/product-types", productTypeRoutes);
-  app.use("/api/size-options", sizeOptionRoutes);
+  app.use("/api/size-standards", sizeStandardRoutes);
   app.use("/api/feature-flags", viewerFeatureFlagsRoutes);
   app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
   app.use("/api/outfits", outfitRoutes);
@@ -234,7 +234,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/taste-preferences", tastePreferenceRoutes);
-  app.use("/api/saved-sizes", savedSizeRoutes);
+  app.use("/api/fit-profile", fitProfileRoutes);
   app.use("/api/tours", tourRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);

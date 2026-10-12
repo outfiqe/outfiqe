@@ -1,13 +1,15 @@
-import type { PublicProductType } from "@outfiqe/types";
-
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { productTypeRepository } from "./product-type.repository.js";
 import type { CreateProductTypeBody, UpdateProductTypeBody } from "./product-type.schemas.js";
-import type { ProductTypeRecord, ProductTypeWithCounts } from "./product-type.types.js";
-import { toPublicProductType } from "./product-type.utils.js";
+import type {
+  ProductTypeRecord,
+  ProductTypeWithCounts,
+  ProductTypeWithFitSupport,
+} from "./product-type.types.js";
+import { toProductTypeWithFitSupport } from "./product-type.utils.js";
 
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -62,14 +64,18 @@ export const productTypeService = {
     return productTypeRepository.listAll();
   },
 
-  async listForStorefront(): Promise<PublicProductType[]> {
+  async listForStorefront(): Promise<ProductTypeWithFitSupport[]> {
     const productTypes = await productTypeRepository.listActive();
-    return productTypes.map(toPublicProductType);
+    return productTypes.map(toProductTypeWithFitSupport);
   },
 
-  async listAssignable(): Promise<PublicProductType[]> {
+  async listAssignable(): Promise<ProductTypeWithFitSupport[]> {
     const productTypes = await productTypeRepository.listAssignable();
-    return productTypes.map(toPublicProductType);
+    return productTypes.map(toProductTypeWithFitSupport);
+  },
+
+  async getById(id: string): Promise<ProductTypeRecord> {
+    return requireProductType(id);
   },
 
   async getBySlug(slug: string): Promise<ProductTypeRecord> {

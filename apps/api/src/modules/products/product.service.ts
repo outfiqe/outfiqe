@@ -7,7 +7,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
-import { sizeOptionService } from "#modules/size-options/size-option.service.js";
+import { sizeStandardService } from "#modules/size-standards/size-standard.service.js";
 
 import { productCatalogService } from "./catalog/catalog.service.js";
 import { productDiscountService } from "./discounts/discount.service.js";
@@ -17,7 +17,9 @@ import { productRepository } from "./product.repository.js";
 import type {
   CreateProductBody,
   ListMineProductsQuery,
+  StandardSizeInput,
   UpdateProductBody,
+  UpdateSizeChartBody,
 } from "./product.schemas.js";
 import type {
   CreateProductSizeInput,
@@ -27,6 +29,55 @@ import type {
 import { toBrandSummary } from "./product.utils.js";
 import { productReviewService } from "./review/review.service.js";
 import { productSocialProofService } from "./social-proof/social-proof.service.js";
+
+const NO_STOCK = 0;
+
+const resolveSizeInputs = async (
+  brandId: string,
+  sizeStandardId: string | undefined,
+  sizes: StandardSizeInput[],
+): Promise<CreateProductSizeInput[]> => {
+  if (!sizeStandardId) {
+    throw new AppError(
+      "SIZE_STANDARD_REQUIRED",
+      "Pick the size standard these sizes come from.",
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    );
+  }
+  const sizeInputByLabelId = new Map(sizes.map((size) => [size.standardLabelId, size]));
+  const ownedLabels = await sizeStandardService.getOwnedLabelsInStandardOrder(
+    brandId,
+    sizeStandardId,
+    [...sizeInputByLabelId.keys()],
+  );
+
+  return ownedLabels.map(({ id, label }, sortOrder) => {
+    const sizeInput = sizeInputByLabelId.get(id);
+    return {
+      label,
+      sortOrder,
+      stock: sizeInput?.stock ?? NO_STOCK,
+      fitRange: sizeInput?.fitRange ?? null,
+    };
+  });
+};
+
+const assertFitDataAllowed = (
+  supportsFitRanges: boolean,
+  isStretchable: boolean | null | undefined,
+  sizes: { fitRange: CreateProductSizeInput["fitRange"] }[],
+): void => {
+  const hasFitData =
+    (isStretchable !== undefined && isStretchable !== null) ||
+    sizes.some(({ fitRange }) => fitRange !== null);
+  if (!supportsFitRanges && hasFitData) {
+    throw new AppError(
+      "FIT_RANGES_NOT_SUPPORTED",
+      "This kind of clothing doesn't take a size chart or a stretch setting.",
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    );
+  }
+};
 
 export const productService = {
   async create(
@@ -40,6 +91,8 @@ export const productService = {
       imageAssetIds,
       lowStock,
       sizes,
+      sizeStandardId,
+      isStretchable,
       isThrift,
       thriftConditionRating,
       thriftConditionNotes,
@@ -51,11 +104,8 @@ export const productService = {
     }
     const productType = await productTypeService.getActiveBySlug(type);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
-    const sizeOptions = await sizeOptionService.getManyByIds(
-      sizes.map((size) => size.sizeOptionId),
-      productType.id,
-    );
-    const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
+    const resolvedSizes = await resolveSizeInputs(brandId, sizeStandardId, sizes);
+    assertFitDataAllowed(productType.supportsFitRanges, isStretchable, resolvedSizes);
 
     const productInput = {
       brandId,
@@ -69,17 +119,9 @@ export const productService = {
       isThrift,
       thriftConditionRating: isThrift ? thriftConditionRating : undefined,
       thriftConditionNotes: isThrift ? thriftConditionNotes : undefined,
-      sizes: sizes.map(({ sizeOptionId, stock }, sortOrder) => {
-        const sizeOption = sizeOptionById.get(sizeOptionId);
-        if (!sizeOption) {
-          throw new AppError(
-            "SIZE_OPTION_NOT_FOUND",
-            "One or more selected sizes weren't found.",
-            HTTP_STATUS.NOT_FOUND,
-          );
-        }
-        return { label: sizeOption.label, stock, sortOrder };
-      }),
+      sizeStandardId,
+      isStretchable,
+      sizes: resolvedSizes,
     };
 
     const product = await prisma.$transaction(async (tx) => {
@@ -103,6 +145,8 @@ export const productService = {
       imageAssetIds,
       lowStock,
       sizes,
+      sizeStandardId,
+      isStretchable,
       isThrift,
       thriftConditionRating,
       thriftConditionNotes,
@@ -131,25 +175,23 @@ export const productService = {
           HTTP_STATUS.BAD_REQUEST,
         );
       }
-
-      const sizeOptions = await sizeOptionService.getManyByIds(
-        sizes.map((size) => size.sizeOptionId),
-        targetProductType.id,
-      );
-      const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
-
-      sizeChanges = sizes.map(({ sizeOptionId, stock }, sortOrder) => {
-        const sizeOption = sizeOptionById.get(sizeOptionId);
-        if (!sizeOption) {
-          throw new AppError(
-            "SIZE_OPTION_NOT_FOUND",
-            "One or more selected sizes weren't found.",
-            HTTP_STATUS.NOT_FOUND,
-          );
-        }
-        return { label: sizeOption.label, stock, sortOrder };
-      });
+      sizeChanges = await resolveSizeInputs(brandId, sizeStandardId, sizes);
     }
+
+    const effectiveProductType =
+      targetProductType ??
+      (isStretchable === undefined
+        ? undefined
+        : await productTypeService.getById(product.productTypeId));
+    if (effectiveProductType) {
+      assertFitDataAllowed(
+        effectiveProductType.supportsFitRanges,
+        isStretchable,
+        sizeChanges ?? [],
+      );
+    }
+    const stretchAfterTypeChange =
+      isTypeChange && !targetProductType.supportsFitRanges ? null : isStretchable;
 
     try {
       const updatedProduct = await prisma.$transaction(async (tx) => {
@@ -162,6 +204,8 @@ export const productService = {
           imageAssetIds,
           lowStock,
           sizes: sizeChanges,
+          sizeStandardId: isTypeChange ? sizeStandardId : undefined,
+          isStretchable: stretchAfterTypeChange,
           isThrift,
           thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
           thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
@@ -186,6 +230,41 @@ export const productService = {
     const brandId = await requireBrandId(userId);
     await requireOwnedProduct(productId, brandId);
     await productRepository.softDelete(productId);
+  },
+
+  async updateSizeChart(
+    userId: string,
+    productId: string,
+    { isStretchable, sizes: sizeChartEntries }: UpdateSizeChartBody,
+  ): Promise<ProductBrandSummary> {
+    const brandId = await requireBrandId(userId);
+    const product = await requireOwnedProduct(productId, brandId);
+    const productType = await productTypeService.getById(product.productTypeId);
+    if (!productType.supportsFitRanges) {
+      throw new AppError(
+        "FIT_RANGES_NOT_SUPPORTED",
+        "This kind of clothing doesn't take a size chart or a stretch setting.",
+        HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const updatedProduct = await prisma.$transaction(async (tx) => {
+      const { updatedSizeCount, product: savedProduct } = await productRepository.updateSizeChart(
+        tx,
+        productId,
+        isStretchable,
+        sizeChartEntries,
+      );
+      if (updatedSizeCount !== sizeChartEntries.length) {
+        throw new AppError(
+          "SIZE_NOT_FOUND",
+          "One or more sizes weren't found on this product.",
+          HTTP_STATUS.NOT_FOUND,
+        );
+      }
+      return savedProduct;
+    });
+    return toBrandSummary(updatedProduct);
   },
 
   async listMine(

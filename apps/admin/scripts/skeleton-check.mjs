@@ -51,7 +51,6 @@ const ROUTES = [
   "/product-types",
   "/products",
   "/profile",
-  "/size-options",
   "/support",
   "/tag-reports",
   "/tag-reviews",

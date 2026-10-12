@@ -20,7 +20,6 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   collections: "Collections",
   categories: "Categories",
   "product-types": "Garment types",
-  "size-options": "Sizes",
   "outfit-slot-types": "Outfit slots",
   "hero-slides": "Hero slides",
   orders: "Orders",

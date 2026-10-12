@@ -13,6 +13,7 @@ import {
   OutfitMemberRole,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { toFitRange } from "#lib/fit-range.utils.js";
 import {
   resolveBrandFundedUnitPrice,
   toActiveBrandDiscount,
@@ -62,7 +63,10 @@ export const hasStock = (sizes: readonly { stock: number }[]): boolean =>
 export const toItemAvailability = ({
   sizes,
   lowStock,
-}: Pick<OutfitBoardProductRow, "sizes" | "lowStock">): OutfitItemAvailability => {
+}: {
+  sizes: readonly { stock: number }[];
+  lowStock: boolean;
+}): OutfitItemAvailability => {
   if (!hasStock(sizes)) return OUTFIT_ITEM_AVAILABILITY.OUT_OF_STOCK;
   return lowStock ? OUTFIT_ITEM_AVAILABILITY.LOW_STOCK : OUTFIT_ITEM_AVAILABILITY.IN_STOCK;
 };
@@ -82,7 +86,12 @@ export const toProductView = (product: OutfitBoardProductRow): OutfitProductView
   productTypeId: product.productTypeId,
   brand: product.brand,
   availability: toItemAvailability(product),
-  sizes: product.sizes.map(({ label, stock }) => ({ label, isInStock: stock > NO_STOCK })),
+  isStretchable: product.isStretchable,
+  sizes: product.sizes.map(({ label, stock, ...fitColumns }) => ({
+    label,
+    isInStock: stock > NO_STOCK,
+    fitRange: toFitRange(fitColumns),
+  })),
 });
 
 export const toViewerRole = (memberRole: OutfitMemberRole | null): OutfitViewerRole => {

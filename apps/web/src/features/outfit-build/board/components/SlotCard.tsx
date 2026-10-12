@@ -21,7 +21,7 @@ const SINGLE_ITEM = 1;
 type SlotCardProps = {
   slot: OutfitSlot;
   canEdit: boolean;
-  mySizeByProductType: ReadonlyMap<string, string>;
+  mySizeByProductId: ReadonlyMap<string, string>;
   onAddAt: (slot: OutfitSlot, position: number) => void;
   onRemoveAt: (slot: OutfitSlot, position: number) => void;
 };
@@ -51,7 +51,7 @@ const MySizeLabel = ({ product, mySize }: { product: OutfitProduct; mySize: stri
 export const SlotCard = ({
   slot,
   canEdit,
-  mySizeByProductType,
+  mySizeByProductId,
   onAddAt,
   onRemoveAt,
 }: SlotCardProps) => {
@@ -122,7 +122,7 @@ export const SlotCard = ({
           }
 
           const { product, addedBy } = slotItem;
-          const mySize = mySizeByProductType.get(product.productTypeId);
+          const mySize = mySizeByProductId.get(product.id);
           const isSoldOut = product.availability === "OUT_OF_STOCK";
           return (
             <li key={position} className="flex items-start gap-3 rounded-lg bg-muted/50 p-2">

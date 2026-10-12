@@ -1,8 +1,9 @@
-import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
+import { type FitMeasurements, PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { SIZE_FIT_COLUMNS_SELECT, toFitRange } from "#lib/fit-range.utils.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 
 import { NEW_ARRIVAL_WINDOW_MS, TRENDING_LIMIT } from "../product.constants.js";
@@ -10,6 +11,7 @@ import {
   withActiveDiscount,
   withBrandAndCategories,
   withTotalStock,
+  withTotalStockAndSizes,
 } from "../product.query-helpers.js";
 import type {
   ProductFirstImageAsset,
@@ -17,7 +19,9 @@ import type {
   ProductSearchParams,
   ProductSearchResult,
   ProductSizeRecord,
+  ProductTypeSummary,
   ProductWithStock,
+  ProductWithStockSalesAndSizes,
 } from "../product.types.js";
 import { sumStock } from "../product.utils.js";
 
@@ -41,6 +45,7 @@ const withGalleryImageAssets = {
 };
 
 type PublicFilter = {
+  fitMeasurements?: FitMeasurements;
   categoryId?: string;
   productTypeId?: string;
   brandId?: string;
@@ -56,7 +61,24 @@ const excludeSoldOutThrift: Prisma.ProductWhereInput = {
   sizes: { every: { stock: { lte: 0 } } },
 };
 
+const buildFittingSizeWhere = ({
+  heightCm,
+  weightKg,
+}: FitMeasurements): Prisma.ProductWhereInput => ({
+  productType: { supportsFitRanges: true },
+  sizes: {
+    some: {
+      stock: { gt: 0 },
+      minHeightCm: { lte: heightCm },
+      maxHeightCm: { gte: heightCm },
+      minWeightKg: { lte: weightKg },
+      maxWeightKg: { gte: weightKg },
+    },
+  },
+});
+
 const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
+  AND: filter.fitMeasurements ? [buildFittingSizeWhere(filter.fitMeasurements)] : undefined,
   status: ProductStatus.APPROVED,
   deletedAt: null,
   brand: { accountStatus: AccountStatus.ACTIVE },
@@ -136,6 +158,19 @@ export const productCatalogRepository = {
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     });
     return withSalesStats(withTotalStock(rows));
+  },
+
+  async listFitting(
+    filter: PublicFilter & { fitMeasurements: FitMeasurements; cursor?: string; limit: number },
+  ): Promise<ProductWithStockSalesAndSizes[]> {
+    const rows = await prisma.product.findMany({
+      where: buildPublicWhere(filter),
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: filter.limit + 1,
+      ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
+    });
+    return withSalesStats(withTotalStockAndSizes(rows));
   },
 
   async searchProductIds(params: ProductSearchParams): Promise<ProductSearchResult> {
@@ -232,6 +267,7 @@ export const productCatalogRepository = {
         brandId: string;
         sizes: ProductSizeRecord[];
         images: (ProductFirstImageAsset & { url: string })[];
+        productType: ProductTypeSummary & { supportsFitRanges: boolean };
       })
     | null
   > {
@@ -245,8 +281,11 @@ export const productCatalogRepository = {
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
-        productType: { select: { slug: true, label: true } },
-        sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
+        productType: { select: { slug: true, label: true, supportsFitRanges: true } },
+        sizes: {
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, label: true, stock: true, ...SIZE_FIT_COLUMNS_SELECT },
+        },
         ...withGalleryImageAssets,
         ...withActiveDiscount(),
       },
@@ -257,7 +296,12 @@ export const productCatalogRepository = {
     return {
       ...rest,
       totalStock: sumStock(sizes),
-      sizes: sizes.map(({ id, label, stock }) => ({ id, label, inStock: stock > 0 })),
+      sizes: sizes.map(({ id, label, stock, ...fitColumns }) => ({
+        id,
+        label,
+        inStock: stock > 0,
+        fitRange: toFitRange(fitColumns),
+      })),
     };
   },
 };

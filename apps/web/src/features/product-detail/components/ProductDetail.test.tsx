@@ -38,12 +38,26 @@ vi.mock("./ShippingInfo", () => ({
   ShippingInfo: () => null,
 }));
 
+const featureFlagState = { isSizeFitOn: false };
+
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({
+  useFeatureFlag: () => featureFlagState.isSizeFitOn,
+}));
+
+vi.mock("@/features/size-fit/hooks/useFitProfile", () => ({
+  useFitProfile: () => ({ data: null }),
+  useSaveFitProfile: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
 
+type SizeFixture = Omit<ProductDetailType["sizes"][number], "fitRange"> &
+  Partial<Pick<ProductDetailType["sizes"][number], "fitRange">>;
+
 const buildProduct = (
-  sizes: ProductDetailType["sizes"],
+  sizes: SizeFixture[],
   overrides: Partial<ProductDetailType> = {},
 ): ProductDetailType => ({
   id: "product-1",
@@ -61,7 +75,9 @@ const buildProduct = (
   thriftConditionRating: null,
   thriftConditionNotes: null,
   isSoldOut: false,
-  sizes,
+  sizes: sizes.map((size) => ({ fitRange: null, ...size })),
+  isStretchable: null,
+  hasSizeChart: false,
   images: [],
   wornByCount: 0,
   seenOnCreators: [],
@@ -77,6 +93,10 @@ const buildProduct = (
 });
 
 const cta = (name: RegExp) => screen.getByRole("button", { name });
+
+beforeEach(() => {
+  featureFlagState.isSizeFitOn = false;
+});
 
 describe("ProductDetail out-of-stock handling", () => {
   beforeEach(() => {
@@ -300,5 +320,56 @@ describe("ProductDetail save button", () => {
     rerender(<ProductDetail product={buildProduct(sizes, { isSaved: true })} />);
 
     expect(screen.getByRole("button", { name: "Stash" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  describe("size chart", () => {
+    const chartedSizes = [
+      {
+        id: "m",
+        label: "M",
+        inStock: true,
+        fitRange: { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 },
+      },
+      {
+        id: "l",
+        label: "L",
+        inStock: true,
+        fitRange: { minHeightCm: 170, maxHeightCm: 180, minWeightKg: 65, maxWeightKg: 75 },
+      },
+    ];
+
+    it("shows the brand's chart and stretch once size_fit is on", () => {
+      featureFlagState.isSizeFitOn = true;
+      render(
+        <ProductDetail
+          product={buildProduct(chartedSizes, { hasSizeChart: true, isStretchable: true })}
+        />,
+      );
+
+      expect(screen.getByRole("table", { name: "Size chart for Wool Bomber" })).toBeInTheDocument();
+      expect(screen.getByText("Stretchable fabric")).toBeInTheDocument();
+    });
+
+    it.each([
+      ["size_fit is off", false, true],
+      ["the product has no complete chart", true, false],
+    ])("hides the chart when %s", (_description, isSizeFitOn, hasSizeChart) => {
+      featureFlagState.isSizeFitOn = isSizeFitOn;
+      render(<ProductDetail product={buildProduct(chartedSizes, { hasSizeChart })} />);
+
+      expect(screen.queryByRole("button", { name: "Find my size" })).not.toBeInTheDocument();
+    });
+
+    it("selects the size the modal recommends", () => {
+      featureFlagState.isSizeFitOn = true;
+      render(<ProductDetail product={buildProduct(chartedSizes, { hasSizeChart: true })} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Find my size" }));
+      fireEvent.change(screen.getByLabelText("Height (cm)"), { target: { value: "175" } });
+      fireEvent.change(screen.getByLabelText("Weight (kg)"), { target: { value: "70" } });
+      fireEvent.click(screen.getByRole("button", { name: "Select L" }));
+
+      expect(screen.getByRole("button", { name: "L" })).toHaveAttribute("aria-pressed", "true");
+    });
   });
 });

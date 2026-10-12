@@ -1,8 +1,11 @@
 import {
   findPlacementRefusal,
+  FIT_OUTCOME,
+  type FitMeasurements,
   type OutfitBoardItem,
   type OutfitPlacementRefusal,
   type OutfitSlotRule,
+  recommendFitSize,
 } from "@outfiqe/utils";
 
 import type { OutfitBoard, OutfitProduct, OutfitSlot } from "../../api/outfitSchemas";
@@ -138,16 +141,36 @@ export type BuyableBuildItem = {
 
 export const toBuyableBuildItems = (
   board: OutfitBoard,
-  mySizeByProductType: ReadonlyMap<string, string>,
+  mySizeByProductId: ReadonlyMap<string, string>,
 ): BuyableBuildItem[] =>
   board.slots.flatMap((slot) =>
     slot.items.map(({ product }) => ({
       productId: product.id,
       productName: product.name,
       sizes: product.sizes,
-      suggestedSizeLabel: mySizeByProductType.get(product.productTypeId),
+      suggestedSizeLabel: mySizeByProductId.get(product.id),
     })),
   );
+
+export const toMySizeByProductId = (
+  products: readonly OutfitProduct[],
+  measurements: FitMeasurements | null,
+): Map<string, string> => {
+  if (!measurements) return new Map();
+  return new Map(
+    products.flatMap(({ id, sizes, isStretchable }) => {
+      const recommendation = recommendFitSize(
+        sizes.map(({ label, fitRange }) => ({ sizeId: label, label, fitRange: fitRange ?? null })),
+        measurements,
+        isStretchable ?? null,
+      );
+      return recommendation.outcome === FIT_OUTCOME.SINGLE ||
+        recommendation.outcome === FIT_OUTCOME.BETWEEN_SIZES
+        ? [[id, recommendation.primary.label] as const]
+        : [];
+    }),
+  );
+};
 
 export const describeSizeFit = (product: OutfitProduct, mySize: string): SizeFit | null => {
   if (product.sizes.length === NO_SIZES_KNOWN) return null;

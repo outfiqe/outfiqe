@@ -3,10 +3,18 @@ import { z } from "zod";
 import { productTypeSchema, thriftConditionSchema } from "@/features/products/api/productSchemas";
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 
+const fitRangeSchema = z.object({
+  minHeightCm: z.number(),
+  maxHeightCm: z.number(),
+  minWeightKg: z.number(),
+  maxWeightKg: z.number(),
+});
+
 export const productSizeSchema = z.object({
   id: z.string(),
   label: z.string(),
   inStock: z.boolean(),
+  fitRange: fitRangeSchema.nullable().default(null),
 });
 export type ProductSize = z.infer<typeof productSizeSchema>;
 
@@ -51,6 +59,8 @@ export const productDetailSchema = z
     thriftConditionNotes: z.string().nullable(),
     isSoldOut: z.boolean(),
     sizes: z.array(productSizeSchema),
+    isStretchable: z.boolean().nullable().default(null),
+    hasSizeChart: z.boolean().default(false),
     images: z.array(z.string()),
     wornByCount: z.number(),
     seenOnCreators: z.array(seenOnCreatorSchema),

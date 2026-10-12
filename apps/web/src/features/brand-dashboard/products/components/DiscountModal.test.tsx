@@ -42,6 +42,8 @@ const buildProduct = (overrides: Partial<BrandProduct> = {}): BrandProduct => ({
   isThrift: false,
   thriftConditionRating: null,
   thriftConditionNotes: null,
+  sizeStandardId: null,
+  isStretchable: null,
   isSoldOut: false,
   ...overrides,
 });

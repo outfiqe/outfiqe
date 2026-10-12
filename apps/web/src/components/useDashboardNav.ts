@@ -44,10 +44,10 @@ const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
   icon: MessageCircleOff,
 };
 
-const SIZES_NAV_ITEM: SidebarNavItem = {
-  id: "sizes",
-  href: "/settings/sizes",
-  label: "My sizes",
+const MEASUREMENTS_NAV_ITEM: SidebarNavItem = {
+  id: "measurements",
+  href: "/settings/measurements",
+  label: "My measurements",
   icon: Ruler,
 };
 
@@ -96,7 +96,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "badges", href: "/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/challenges", label: "Challenges", icon: Trophy },
   ADDRESSES_NAV_ITEM,
-  SIZES_NAV_ITEM,
+  MEASUREMENTS_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
   SUPPORT_NAV_ITEM,

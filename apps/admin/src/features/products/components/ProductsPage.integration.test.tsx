@@ -10,6 +10,15 @@ import { ProductsPage } from "./ProductsPage";
 
 const API_BASE = "http://localhost:3000/api";
 
+const MEDIUM_FIT_RANGE = { minHeightCm: 160, maxHeightCm: 170, minWeightKg: 55, maxWeightKg: 65 };
+
+type ReviewSize = {
+  id: string;
+  label: string;
+  stock: number;
+  fitRange: typeof MEDIUM_FIT_RANGE | null;
+};
+
 const product = (
   id: string,
   name: string,
@@ -17,12 +26,17 @@ const product = (
     isThrift?: boolean;
     thriftConditionRating?: "LIKE_NEW" | "GOOD" | "FAIR" | null;
     thriftConditionNotes?: string | null;
+    productType?: { slug: string; label: string; supportsFitRanges: boolean };
+    sizes?: ReviewSize[];
+    isStretchable?: boolean | null;
   } = {},
 ) => ({
   id,
   name,
   price: 1_000,
-  productType: { slug: "jacket", label: "Jacket" },
+  productType: { slug: "jacket", label: "Jacket", supportsFitRanges: true },
+  sizes: [],
+  isStretchable: null,
   categories: [],
   imageUrl: null,
   lowStock: false,
@@ -223,6 +237,60 @@ describe("ProductsPage", () => {
     expect(within(dialog).getByText("Studio Nine")).toBeInTheDocument();
     expect(within(dialog).getByText("Rs. 1,000")).toBeInTheDocument();
     expect(within(dialog).getByText("Small mark on the left cuff.")).toBeInTheDocument();
+  });
+
+  it("shows the brand's size chart and stretch in the detail modal", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({
+          products: [
+            product("product-1", "Linen Kurta", {
+              isStretchable: false,
+              sizes: [
+                { id: "size-m", label: "M", stock: 4, fitRange: MEDIUM_FIT_RANGE },
+                { id: "size-l", label: "L", stock: 2, fitRange: null },
+              ],
+            }),
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "View Linen Kurta" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Linen Kurta" });
+    const chart = within(dialog).getByRole("table", { name: "Size chart for Linen Kurta" });
+    expect(within(chart).getByText("M").closest("tr")).toHaveTextContent("160–170");
+    expect(within(dialog).getByText("Non-stretch fabric")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Some sizes have no height and weight range yet."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no size chart for a type that doesn't take one", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({
+          products: [
+            product("product-1", "Canvas Tote", {
+              productType: { slug: "bags", label: "Bags", supportsFitRanges: false },
+              sizes: [{ id: "size-one", label: "One size", stock: 3, fitRange: null }],
+            }),
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "View Canvas Tote" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Canvas Tote" });
+    expect(within(dialog).queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("closes the detail modal", async () => {

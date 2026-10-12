@@ -15,6 +15,7 @@ export default defineConfig({
         "src/kanban/KanbanBoard.tsx",
         "src/sidebar/useExpandedGroups.ts",
         "src/sidebar/SidebarNavItemView.tsx",
+        "src/size-chart/*.{ts,tsx}",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

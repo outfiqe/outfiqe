@@ -12,19 +12,17 @@ const withCounts = {
   _count: {
     select: {
       products: { where: { status: ProductStatus.APPROVED, deletedAt: null } },
-      sizeOptions: true,
     },
   },
 };
 
 type RowWithCounts = ProductTypeRecord & {
-  _count: { products: number; sizeOptions: number };
+  _count: { products: number };
 };
 
 const toWithCounts = ({ _count, ...productType }: RowWithCounts): ProductTypeWithCounts => ({
   ...productType,
   productCount: _count.products,
-  sizeOptionCount: _count.sizeOptions,
 });
 
 export const productTypeRepository = {
@@ -71,7 +69,7 @@ export const productTypeRepository = {
 
   async listAssignable(): Promise<ProductTypeRecord[]> {
     return prisma.productType.findMany({
-      where: { isActive: true, sizeOptions: { some: {} } },
+      where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   },
