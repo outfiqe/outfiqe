@@ -10,6 +10,8 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/test-app.js";
 
+import { nepalBankService } from "./nepal-bank.service.js";
+
 beforeEach(async () => {
   await redis.flushdb();
 });
@@ -79,5 +81,25 @@ describe("GET /api/banks", () => {
       .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
 
     expect(response.body.data[0]).not.toHaveProperty("isActive");
+  });
+});
+
+describe("nepalBankService.listKnownSwiftCodes", () => {
+  it("returns the swift code of every bank that has one", async () => {
+    const swiftCode = `T${randomUUID().slice(0, 7).toUpperCase()}`;
+    await prisma.nepalBank.create({
+      data: {
+        name: "Swift Test Bank",
+        code: randomUUID().slice(0, 8),
+        swiftCode,
+        type: BankType.COMMERCIAL,
+      },
+    });
+    await createBank({ name: "Bank Without Swift Code" });
+
+    const knownSwiftCodes = await nepalBankService.listKnownSwiftCodes();
+
+    expect(knownSwiftCodes.has(swiftCode)).toBe(true);
+    expect([...knownSwiftCodes].every(Boolean)).toBe(true);
   });
 });

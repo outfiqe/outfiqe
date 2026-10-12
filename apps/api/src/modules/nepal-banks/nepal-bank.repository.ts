@@ -13,4 +13,12 @@ export const nepalBankRepository = {
   async findById(id: string): Promise<NepalBankRecord | null> {
     return prisma.nepalBank.findUnique({ where: { id } });
   },
+
+  async listSwiftCodes(): Promise<string[]> {
+    const banksWithSwiftCodes = await prisma.nepalBank.findMany({
+      where: { swiftCode: { not: null } },
+      select: { swiftCode: true },
+    });
+    return banksWithSwiftCodes.flatMap(({ swiftCode }) => (swiftCode ? [swiftCode] : []));
+  },
 };

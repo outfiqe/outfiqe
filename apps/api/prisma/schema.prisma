@@ -2176,6 +2176,7 @@ model NepalBank {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   code      String   @unique
+  swiftCode String?  @unique @map("swift_code")
   type      BankType
   logoUrl   String?  @map("logo_url")
   isActive  Boolean  @default(true) @map("is_active")

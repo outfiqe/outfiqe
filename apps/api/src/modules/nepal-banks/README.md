@@ -11,7 +11,9 @@ never entered by a user — it's seeded once and cached.
 - `nepal-bank.routes.ts` — `GET /` (authenticated, cached).
 - `nepal-bank.controller.ts` — reads the request, calls the service, sends the response envelope.
 - `nepal-bank.service.ts` — `listActive` for the public listing; `requireActiveBank` for other
-  modules (`bank-accounts`, `brand-bank-accounts`) to validate a submitted `bankId`.
+  modules (`bank-accounts`, `brand-bank-accounts`) to validate a submitted `bankId`;
+  `listKnownSwiftCodes` for `bank-qr-verification`, which compares the SWIFT code on a bank QR
+  with the picked bank.
 - `nepal-bank.repository.ts` — Prisma queries against `NepalBank`.
 - `nepal-bank.types.ts` — the full DB-shaped record and the public (no `isActive`) view.
 - `nepal-bank.utils.ts` — `toPublicNepalBank` mapper.
@@ -49,3 +51,10 @@ upserts the same JSON by `code` for local demo databases. Served from a Redis-ca
   migration. Integration tests can't assert the seeded rows — `resetDatabase()` truncates every
   table after each test — so `nepal-bank.integration.test.ts` only asserts relative ordering of the
   banks it creates itself, never an exact list.
+- `swiftCode` is filled for the 20 commercial banks only, from public SWIFT directories (cross-checked
+  in two of them). Bank apps put it in their account QR (`"bankCode":"GLBBNPKA"`), and
+  `bank-qr-verification` uses it to confirm the QR is for the bank the person picked. The
+  `20261012180000_add_nepal_bank_swift_codes` migration sets it in every environment, and
+  `nepal-banks.json` carries it for the seed. Development banks and finance companies are left
+  empty on purpose: an account at a bank with no SWIFT code can't be confirmed from its QR and goes
+  to admin review. That is safer than guessing a code, which could wrongly refuse real accounts.
