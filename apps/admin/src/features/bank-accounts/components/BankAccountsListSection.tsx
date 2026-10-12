@@ -17,6 +17,7 @@ import {
   type VerifiedFilterValue,
 } from "../api/bankAccountsSchemas";
 import { useInfiniteBankAccounts } from "../hooks/useInfiniteBankAccounts";
+import { describeQrCheckNote, describeVerificationBadge } from "../utils/bankQrCheck.utils";
 
 const OWNER_TABS: OwnerTypeValue[] = ownerTypeSchema.options;
 const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
@@ -138,6 +139,7 @@ export const BankAccountsListSection = () => {
             createdAt,
           } = account;
           const revealed = revealedById[id];
+          const qrCheckNote = describeQrCheckNote(account);
 
           return (
             <div key={id} className="rounded-xl border border-border bg-card p-4">
@@ -148,7 +150,7 @@ export const BankAccountsListSection = () => {
                       {ownerName}
                     </h3>
                     <Badge tone={isVerified ? "positive" : "neutral"} showDot={false}>
-                      {isVerified ? "Verified" : "Pending verification"}
+                      {describeVerificationBadge(account)}
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -158,6 +160,9 @@ export const BankAccountsListSection = () => {
                   <p className="mt-1 text-xs text-muted-foreground">
                     Added {new Date(createdAt).toLocaleDateString()}
                   </p>
+                  {qrCheckNote && (
+                    <p className="mt-1 text-xs text-muted-foreground">{qrCheckNote}</p>
+                  )}
                 </div>
 
                 {canManageWithdrawals && (

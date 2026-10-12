@@ -26,6 +26,7 @@ import { facebookWebhookRoutes } from "./modules/auth/oauth/facebook.webhooks.ro
 import { oauthRoutes } from "./modules/auth/oauth/oauth.routes.js";
 import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { bankAccountRoutes } from "./modules/bank-accounts/bank-account.routes.js";
+import { bankQrVerificationRoutes } from "./modules/bank-qr-verification/bank-qr-verification.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brand-application.routes.js";
 import { brandBankAccountRoutes } from "./modules/brand-bank-accounts/brand-bank-account.routes.js";
 import { brandOverviewRoutes } from "./modules/brand-overview/brand-overview.routes.js";
@@ -250,6 +251,7 @@ export const createApp = () => {
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/banks", nepalBankRoutes);
   app.use("/api/bank-accounts", bankAccountRoutes);
+  app.use("/api/bank-qr-verification", bankQrVerificationRoutes);
   app.use("/api/brand-bank-accounts", brandBankAccountRoutes);
   app.use("/api/brand-payouts", brandPayoutRoutes);
   app.use("/api/withdraw", withdrawRoutes);

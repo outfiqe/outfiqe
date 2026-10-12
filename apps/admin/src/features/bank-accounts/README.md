@@ -12,20 +12,30 @@ the first place.
 
 - `api/bankAccountsApi.ts` — `GET /bank-accounts/admin` or `GET /brand-bank-accounts/admin` (owner-type
   dependent), `PATCH /:id/verify`, `GET /:id/reveal`.
-- `api/bankAccountsSchemas.ts` — `OwnerTypeValue`, `AdminBankAccount`, `RevealedBankAccount`, the
-  pending/verified filter values.
+- `api/bankAccountsSchemas.ts` — `OwnerTypeValue`, `AdminBankAccount` (including the QR check
+  status, reason and verification method), `RevealedBankAccount`, the pending/verified filter
+  values.
 - `hooks/useInfiniteBankAccounts.ts` — the paginated, owner-type- and filter-scoped queue.
 - `components/BankAccountsListSection.tsx` — the queue: an owner-type tab (Creator/Business), a
   pending/verified tab, and per-row Reveal/Verify actions.
+- `constants/bankQrCheckLabels.ts` / `utils/bankQrCheck.utils.ts` — the badge label ("Verified by
+  QR", "Verified", "Pending verification") and the note that says why a pending account's QR
+  wasn't matched.
 - `components/BankAccountsPage.tsx` — the route's top-level wrapper.
 
 ## Funnel
 
-**Admin-facing:** pick Creator or Business, then Pending or Verified. Each row already shows the
-QR code the owner uploaded — no click needed for that. Reveal a row to see the real account
-number next to it and compare against what the owner typed in; Verify once they match. A verified
-account immediately unblocks that owner's withdrawals — see `apps/api/src/modules/withdraw/README.md`'s
-`hasVerifiedBankAccount` gate.
+**Admin-facing:** pick Creator or Business, then Pending or Verified.
+
+- Accounts whose QR showed the same holder name and account number are already verified, and
+  show as "Verified by QR".
+- Each pending row shows the QR code the owner uploaded (no click needed) and a short note on why
+  the automatic check didn't match it, for example "the name on the QR differs from the account
+  name".
+- Reveal a row to see the real account number next to it and compare it against what the owner
+  typed in. Verify once they match. A verified
+  account immediately unblocks that owner's withdrawals — see `apps/api/src/modules/withdraw/README.md`'s
+  `hasVerifiedBankAccount` gate.
 
 **Technical:** `components/BankAccountsListSection.tsx` → `api/bankAccountsApi.ts` → `bank-accounts`/`brand-bank-accounts`
 routes → their services/repositories → Postgres.
@@ -41,13 +51,16 @@ decrypted number in local component state (`revealedById`), not in React Query's
 background refetch or another admin's action should never silently re-trigger a decrypt-and-log
 the admin didn't ask for.
 
-**There is no automated identity check behind "Verify."** No bank in Nepal exposes a
-public account-verification API the way India's penny-drop APIs do, so this is a human judgment
-call: the admin compares the revealed account number and the QR code photo against the submitted
-form fields (name, number, branch) and decides. The QR upload at add-time
-(`apps/web/src/features/bank-accounts`) exists specifically to give this screen something to
-check against, since the account-holder-name match alone (`isNameMismatch`) is just a string
-comparison against the owner's own profile name, not third-party evidence.
+**There is no outside identity check behind "Verify."** No bank in Nepal exposes a public
+account-verification API the way India's penny-drop APIs do.
+
+- The server reads the uploaded QR and verifies only exact matches
+  (`apps/api/src/modules/bank-qr-verification/README.md`). Everything else is left to a human
+  call: the admin compares the revealed account number and the QR photo against the submitted
+  fields (name, number, branch) and decides.
+- "Verified by QR" means the QR and the typed details agree. It is not proof of ownership, because
+  a QR can be made with any details. That is why the first payout to every account still needs an
+  admin cross-check in `withdraw-requests`.
 
 **The same reveal is also surfaced from `withdraw-requests`, not duplicated.** Both screens call
 the same `GET /:id/reveal`; `withdraw-requests` uses the `bankAccountId` already resolved onto

@@ -28,6 +28,13 @@ export const createBankAccountResultSchema = z.object({
 });
 export type CreateBankAccountResult = z.infer<typeof createBankAccountResultSchema>;
 
+export const bankQrPreviewSchema = z.object({
+  isQrDetected: z.boolean(),
+  accountName: z.string().nullable(),
+  accountNumber: z.string().nullable(),
+});
+export type BankQrPreview = z.infer<typeof bankQrPreviewSchema>;
+
 const ACCOUNT_NAME_MIN = 2;
 const ACCOUNT_NAME_MAX = 120;
 const ACCOUNT_NUMBER_MIN_DIGITS = 6;

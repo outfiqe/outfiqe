@@ -1,3 +1,10 @@
+import type {
+  BankAccountVerificationMethod,
+  BankQrCheckReason,
+  BankQrCheckStatus,
+} from "#generated/prisma/enums.js";
+import type { BankAccountQrCheckFields } from "#modules/bank-qr-verification/bank-qr-verification.types.js";
+
 export type BankAccountRecord = {
   id: string;
   userId: string;
@@ -10,6 +17,9 @@ export type BankAccountRecord = {
   isDefault: boolean;
   isVerified: boolean;
   verifiedAt: Date | null;
+  verificationMethod: BankAccountVerificationMethod | null;
+  qrCheckStatus: BankQrCheckStatus;
+  qrCheckReason: BankQrCheckReason | null;
   firstPayoutCrossCheckedAt: Date | null;
   createdAt: Date;
 };
@@ -37,7 +47,7 @@ export type CreateBankAccountRepositoryInput = {
   branchName: string;
   qrCodeImageUrl: string;
   isDefault: boolean;
-};
+} & BankAccountQrCheckFields;
 
 export type CreateBankAccountResult = {
   bankAccount: PublicBankAccount;
@@ -54,6 +64,9 @@ export type AdminBankAccountView = {
   qrCodeImageUrl: string | null;
   isVerified: boolean;
   verifiedAt: string | null;
+  verificationMethod: BankAccountVerificationMethod | null;
+  qrCheckStatus: BankQrCheckStatus;
+  qrCheckReason: BankQrCheckReason | null;
   createdAt: string;
 };
 

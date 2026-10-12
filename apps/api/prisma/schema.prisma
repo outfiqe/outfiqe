@@ -2152,10 +2152,32 @@ enum BankType {
   FINANCE
 }
 
+enum BankQrCheckStatus {
+  NOT_CHECKED
+  MATCHED
+  NEEDS_REVIEW
+}
+
+enum BankQrCheckReason {
+  NOT_PAYMENT_QR
+  INVALID_CHECKSUM
+  NAME_NOT_FOUND
+  NAME_DIFFERS
+  ACCOUNT_NUMBER_NOT_FOUND
+  READ_FAILED
+  BANK_NOT_CONFIRMED
+}
+
+enum BankAccountVerificationMethod {
+  MANUAL
+  QR_MATCH
+}
+
 model NepalBank {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   code      String   @unique
+  swiftCode String?  @unique @map("swift_code")
   type      BankType
   logoUrl   String?  @map("logo_url")
   isActive  Boolean  @default(true) @map("is_active")
@@ -2185,6 +2207,11 @@ model BankAccount {
   verifiedAt              DateTime? @map("verified_at")
   verifiedById            String?   @map("verified_by_id") @db.Uuid
   verifiedBy              User?     @relation("BankAccountVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  verificationMethod BankAccountVerificationMethod? @map("verification_method")
+  qrCheckStatus      BankQrCheckStatus              @default(NOT_CHECKED) @map("qr_check_status")
+  qrCheckReason      BankQrCheckReason?             @map("qr_check_reason")
+  qrCheckedAt        DateTime?                      @map("qr_checked_at")
 
   firstPayoutCrossCheckedAt   DateTime? @map("first_payout_cross_checked_at")
   firstPayoutCrossCheckedById String?   @map("first_payout_cross_checked_by_id") @db.Uuid
@@ -2256,6 +2283,11 @@ model BrandBankAccount {
   verifiedAt              DateTime? @map("verified_at")
   verifiedById            String?   @map("verified_by_id") @db.Uuid
   verifiedBy              User?     @relation("BrandBankAccountVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  verificationMethod BankAccountVerificationMethod? @map("verification_method")
+  qrCheckStatus      BankQrCheckStatus              @default(NOT_CHECKED) @map("qr_check_status")
+  qrCheckReason      BankQrCheckReason?             @map("qr_check_reason")
+  qrCheckedAt        DateTime?                      @map("qr_checked_at")
 
   firstPayoutCrossCheckedAt   DateTime? @map("first_payout_cross_checked_at")
   firstPayoutCrossCheckedById String?   @map("first_payout_cross_checked_by_id") @db.Uuid
