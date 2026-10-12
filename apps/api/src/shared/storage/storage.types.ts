@@ -11,5 +11,7 @@ export type UploadedFile = {
 
 export interface StorageProvider {
   upload(file: UploadableFile): Promise<UploadedFile>;
+  read(key: string): Promise<Buffer>;
   delete(key: string): Promise<void>;
+  keyFromPublicUrl(url: string): string | null;
 }

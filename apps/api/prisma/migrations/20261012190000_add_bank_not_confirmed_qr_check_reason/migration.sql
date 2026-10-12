@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BankQrCheckReason" ADD VALUE 'BANK_NOT_CONFIRMED';

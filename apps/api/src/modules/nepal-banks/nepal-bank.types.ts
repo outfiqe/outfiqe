@@ -4,6 +4,7 @@ export type NepalBankRecord = {
   id: string;
   name: string;
   code: string;
+  swiftCode: string | null;
   type: BankType;
   logoUrl: string | null;
   isActive: boolean;

@@ -22,4 +22,8 @@ export const nepalBankService = {
     }
     return bank;
   },
+
+  async listKnownSwiftCodes(): Promise<ReadonlySet<string>> {
+    return new Set(await nepalBankRepository.listSwiftCodes());
+  },
 };

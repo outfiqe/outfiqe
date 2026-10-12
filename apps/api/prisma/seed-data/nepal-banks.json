@@ -1,24 +1,64 @@
 [
-  { "code": "A01", "name": "Nepal Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A02", "name": "Agricultural Development Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A03", "name": "Nabil Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A04", "name": "Nepal Investment Mega Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A05", "name": "Standard Chartered Bank Nepal Ltd.", "type": "COMMERCIAL" },
-  { "code": "A06", "name": "Himalayan Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A07", "name": "Nepal SBI Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A08", "name": "Everest Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A09", "name": "Kumari Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A10", "name": "Laxmi Sunrise Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A11", "name": "Citizens Bank International Ltd.", "type": "COMMERCIAL" },
-  { "code": "A12", "name": "Prime Commercial Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A13", "name": "Sanima Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A14", "name": "Machhapuchhre Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A15", "name": "NIC Asia Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A16", "name": "Global IME Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A17", "name": "NMB Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A18", "name": "Prabhu Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A19", "name": "Siddhartha Bank Ltd.", "type": "COMMERCIAL" },
-  { "code": "A20", "name": "Rastriya Banijya Bank Ltd.", "type": "COMMERCIAL" },
+  { "code": "A01", "name": "Nepal Bank Ltd.", "swiftCode": "NEBLNPKA", "type": "COMMERCIAL" },
+  {
+    "code": "A02",
+    "name": "Agricultural Development Bank Ltd.",
+    "swiftCode": "ADBLNPKA",
+    "type": "COMMERCIAL"
+  },
+  { "code": "A03", "name": "Nabil Bank Ltd.", "swiftCode": "NARBNPKA", "type": "COMMERCIAL" },
+  {
+    "code": "A04",
+    "name": "Nepal Investment Mega Bank Ltd.",
+    "swiftCode": "NIBLNPKT",
+    "type": "COMMERCIAL"
+  },
+  {
+    "code": "A05",
+    "name": "Standard Chartered Bank Nepal Ltd.",
+    "swiftCode": "SCBLNPKA",
+    "type": "COMMERCIAL"
+  },
+  { "code": "A06", "name": "Himalayan Bank Ltd.", "swiftCode": "HIMANPKA", "type": "COMMERCIAL" },
+  { "code": "A07", "name": "Nepal SBI Bank Ltd.", "swiftCode": "NSBINPKA", "type": "COMMERCIAL" },
+  { "code": "A08", "name": "Everest Bank Ltd.", "swiftCode": "EVBLNPKA", "type": "COMMERCIAL" },
+  { "code": "A09", "name": "Kumari Bank Ltd.", "swiftCode": "KMBLNPKA", "type": "COMMERCIAL" },
+  {
+    "code": "A10",
+    "name": "Laxmi Sunrise Bank Ltd.",
+    "swiftCode": "LXBLNPKA",
+    "type": "COMMERCIAL"
+  },
+  {
+    "code": "A11",
+    "name": "Citizens Bank International Ltd.",
+    "swiftCode": "CTZNNPKA",
+    "type": "COMMERCIAL"
+  },
+  {
+    "code": "A12",
+    "name": "Prime Commercial Bank Ltd.",
+    "swiftCode": "PCBLNPKA",
+    "type": "COMMERCIAL"
+  },
+  { "code": "A13", "name": "Sanima Bank Ltd.", "swiftCode": "SNMANPKA", "type": "COMMERCIAL" },
+  {
+    "code": "A14",
+    "name": "Machhapuchhre Bank Ltd.",
+    "swiftCode": "MBLNNPKA",
+    "type": "COMMERCIAL"
+  },
+  { "code": "A15", "name": "NIC Asia Bank Ltd.", "swiftCode": "NICENPKA", "type": "COMMERCIAL" },
+  { "code": "A16", "name": "Global IME Bank Ltd.", "swiftCode": "GLBBNPKA", "type": "COMMERCIAL" },
+  { "code": "A17", "name": "NMB Bank Ltd.", "swiftCode": "NMBBNPKA", "type": "COMMERCIAL" },
+  { "code": "A18", "name": "Prabhu Bank Ltd.", "swiftCode": "PRVUNPKA", "type": "COMMERCIAL" },
+  { "code": "A19", "name": "Siddhartha Bank Ltd.", "swiftCode": "SIDDNPKA", "type": "COMMERCIAL" },
+  {
+    "code": "A20",
+    "name": "Rastriya Banijya Bank Ltd.",
+    "swiftCode": "RBBANPKA",
+    "type": "COMMERCIAL"
+  },
   { "code": "B01", "name": "Narayani Development Bank Ltd.", "type": "DEVELOPMENT" },
   { "code": "B02", "name": "Karnali Development Bank Ltd.", "type": "DEVELOPMENT" },
   { "code": "B03", "name": "Excel Development Bank Ltd.", "type": "DEVELOPMENT" },

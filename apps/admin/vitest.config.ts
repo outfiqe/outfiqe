@@ -29,6 +29,7 @@ export default defineConfig({
         "src/features/platform-audit/**/*.{ts,tsx}",
         "src/features/platform-jobs/**/*.{ts,tsx}",
         "src/features/withdraw-requests/components/WithdrawRequestsListSection.tsx",
+        "src/features/bank-accounts/utils/bankQrCheck.utils.ts",
         "src/features/tag-reports/**/*.{ts,tsx}",
         "src/features/content-reports/**/*.{ts,tsx}",
         "src/features/content-browser/**/*.{ts,tsx}",

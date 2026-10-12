@@ -27,7 +27,12 @@ import { prisma } from "../src/shared/db/prisma.js";
 import { seedCrmAccess } from "./seed-crm.js";
 import { seedTagReview } from "./seed-tag-review.js";
 
-type NepalBankSeedRow = { code: string; name: string; type: keyof typeof BankType };
+type NepalBankSeedRow = {
+  code: string;
+  name: string;
+  swiftCode?: string;
+  type: keyof typeof BankType;
+};
 
 const NEPAL_BANKS: NepalBankSeedRow[] = JSON.parse(
   readFileSync(new URL("./seed-data/nepal-banks.json", import.meta.url), "utf8"),
@@ -474,8 +479,13 @@ async function seedNepalBanks() {
     NEPAL_BANKS.map((bank) =>
       prisma.nepalBank.upsert({
         where: { code: bank.code },
-        update: { name: bank.name, type: BankType[bank.type] },
-        create: { code: bank.code, name: bank.name, type: BankType[bank.type] },
+        update: { name: bank.name, swiftCode: bank.swiftCode ?? null, type: BankType[bank.type] },
+        create: {
+          code: bank.code,
+          name: bank.name,
+          swiftCode: bank.swiftCode ?? null,
+          type: BankType[bank.type],
+        },
       }),
     ),
   );
