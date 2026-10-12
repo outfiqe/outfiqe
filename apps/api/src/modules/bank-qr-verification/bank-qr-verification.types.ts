@@ -4,7 +4,7 @@ import type {
   BankQrCheckStatus,
 } from "#generated/prisma/enums.js";
 
-import type { BANK_QR_REJECTION } from "./bank-qr-verification.constants.js";
+import type { BANK_QR_FORMAT, BANK_QR_REJECTION } from "./bank-qr-verification.constants.js";
 
 export type EmvMerchantAccountTemplate = {
   templateTag: string;
@@ -27,7 +27,18 @@ export type BankQrTypedDetails = {
   accountName: string;
   accountNumber: string;
   bankCode: string;
+  bankSwiftCode: string | null;
 };
+
+export type BankAccountQrDetails = {
+  accountName: string;
+  accountNumber: string;
+  bankSwiftCode: string | null;
+};
+
+export type ReadBankQr =
+  | { format: typeof BANK_QR_FORMAT.EMV; emvPayload: ParsedEmvPayload }
+  | { format: typeof BANK_QR_FORMAT.ACCOUNT_JSON; accountDetails: BankAccountQrDetails };
 
 export type BankQrRejection = (typeof BANK_QR_REJECTION)[keyof typeof BANK_QR_REJECTION];
 

@@ -40,6 +40,7 @@ export const brandBankAccountService = {
       accountName: body.accountName,
       accountNumber: body.accountNumber,
       bankCode: bank.code,
+      bankSwiftCode: bank.swiftCode,
     });
 
     const bankAccount = await prisma.$transaction(async (tx) => {

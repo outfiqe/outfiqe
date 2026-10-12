@@ -2165,6 +2165,7 @@ enum BankQrCheckReason {
   NAME_DIFFERS
   ACCOUNT_NUMBER_NOT_FOUND
   READ_FAILED
+  BANK_NOT_CONFIRMED
 }
 
 enum BankAccountVerificationMethod {

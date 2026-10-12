@@ -16,6 +16,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { grantPlatformPermissions } from "#test/integration/auth-helpers.js";
 import {
+  uploadAccountJsonQrImage,
   uploadBankQrImage,
   uploadImageWithoutQr,
   uploadQrImageWithText,
@@ -56,15 +57,18 @@ const createAdmin = async () => {
   return admin;
 };
 
-const createBank = () =>
+const createBank = (swiftCode: string | null = null) =>
   prisma.nepalBank.create({
     data: {
       name: `Test Bank ${randomUUID().slice(0, 6)}`,
       code: randomUUID().slice(0, 8).toUpperCase(),
+      swiftCode,
       type: BankType.COMMERCIAL,
       isActive: true,
     },
   });
+
+const uniqueSwiftCode = () => `T${randomUUID().replace(/-/g, "").slice(0, 7).toUpperCase()}`;
 
 const NOT_A_PAYMENT_QR_TEXT = "https://bank.example.com/scan-to-pay";
 
@@ -232,6 +236,87 @@ describe("POST /api/bank-accounts QR check", () => {
     expect(response.status).toBe(VALIDATION_ERROR_STATUS);
     expect(response.body.code).toBe("BANK_QR_IMAGE_NOT_UPLOADED");
     expect(await prisma.bankAccount.count({ where: { userId: user.id } })).toBe(0);
+  });
+});
+
+describe("POST /api/bank-accounts with a bank account JSON QR", () => {
+  it("verifies the account when the QR shows the same name, number and bank", async () => {
+    const user = await createUser();
+    const swiftCode = uniqueSwiftCode();
+    const bank = await createBank(swiftCode);
+    const qrCodeImageUrl = await uploadAccountJsonQrImage({
+      accountName: "SABIN SHRESTHA",
+      accountNumber: "1234567890",
+      bankCode: swiftCode,
+    });
+
+    const response = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
+    expect(response.body.data.bankAccount.isVerified).toBe(true);
+
+    const stored = await prisma.bankAccount.findFirstOrThrow({ where: { userId: user.id } });
+    expect(stored).toMatchObject({
+      verificationMethod: BankAccountVerificationMethod.QR_MATCH,
+      qrCheckStatus: BankQrCheckStatus.MATCHED,
+    });
+  });
+
+  it("refuses the account when the QR shows a different account number", async () => {
+    const user = await createUser();
+    const swiftCode = uniqueSwiftCode();
+    const bank = await createBank(swiftCode);
+    const qrCodeImageUrl = await uploadAccountJsonQrImage({
+      accountNumber: "1234567899",
+      bankCode: swiftCode,
+    });
+
+    const response = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    expect(response.body.code).toBe("BANK_QR_ACCOUNT_NUMBER_MISMATCH");
+    expect(await prisma.bankAccount.count({ where: { userId: user.id } })).toBe(0);
+  });
+
+  it("refuses the account when the QR is for a different bank we know", async () => {
+    const user = await createUser();
+    const pickedBank = await createBank(uniqueSwiftCode());
+    const otherBankSwiftCode = uniqueSwiftCode();
+    await createBank(otherBankSwiftCode);
+    const qrCodeImageUrl = await uploadAccountJsonQrImage({ bankCode: otherBankSwiftCode });
+
+    const response = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
+      .send(await validBody(pickedBank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    expect(response.body.code).toBe("BANK_QR_BANK_MISMATCH");
+  });
+
+  it("saves the account for review when the picked bank can't be confirmed", async () => {
+    const user = await createUser();
+    const bank = await createBank();
+    const qrCodeImageUrl = await uploadAccountJsonQrImage({ bankCode: uniqueSwiftCode() });
+
+    const response = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
+    const stored = await prisma.bankAccount.findFirstOrThrow({ where: { userId: user.id } });
+    expect(stored).toMatchObject({
+      isVerified: false,
+      qrCheckStatus: BankQrCheckStatus.NEEDS_REVIEW,
+      qrCheckReason: BankQrCheckReason.BANK_NOT_CONFIRMED,
+    });
   });
 });
 

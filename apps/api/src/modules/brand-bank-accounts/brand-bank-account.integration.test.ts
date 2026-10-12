@@ -16,6 +16,7 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import {
+  uploadAccountJsonQrImage,
   uploadBankQrImage,
   uploadImageWithoutQr,
   uploadQrImageWithText,
@@ -70,15 +71,18 @@ const createMember = async (brandId: string, role: BrandRole = BrandRole.OWNER) 
   return user;
 };
 
-const createBank = () =>
+const createBank = (swiftCode: string | null = null) =>
   prisma.nepalBank.create({
     data: {
       name: `Test Bank ${randomUUID().slice(0, 6)}`,
       code: randomUUID().slice(0, 8).toUpperCase(),
+      swiftCode,
       type: BankType.COMMERCIAL,
       isActive: true,
     },
   });
+
+const uniqueSwiftCode = () => `T${randomUUID().replace(/-/g, "").slice(0, 7).toUpperCase()}`;
 
 const NOT_A_PAYMENT_QR_TEXT = "https://bank.example.com/scan-to-pay";
 const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
@@ -218,6 +222,32 @@ describe("POST /api/brand-bank-accounts QR check", () => {
 
     expect(response.status).toBe(VALIDATION_ERROR_STATUS);
     expect(response.body.code).toBe("BANK_QR_IMAGE_NOT_UPLOADED");
+  });
+});
+
+describe("POST /api/brand-bank-accounts with a bank account JSON QR", () => {
+  it("verifies the account when the QR shows the same name, number and bank", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const swiftCode = uniqueSwiftCode();
+    const bank = await createBank(swiftCode);
+    const qrCodeImageUrl = await uploadAccountJsonQrImage({
+      accountName: "KASTHA CONTACT",
+      accountNumber: "1234567890",
+      bankCode: swiftCode,
+    });
+
+    const response = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(await validBody(bank.id, { qrCodeImageUrl }));
+
+    expect(response.status).toBe(HTTP_STATUS.CREATED);
+    const stored = await prisma.brandBankAccount.findFirstOrThrow({ where: { brandId: brand.id } });
+    expect(stored).toMatchObject({
+      isVerified: true,
+      verificationMethod: BankAccountVerificationMethod.QR_MATCH,
+    });
   });
 });
 

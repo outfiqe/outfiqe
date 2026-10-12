@@ -91,3 +91,18 @@ export const renderBlankPng = (): Promise<Buffer> =>
   })
     .png()
     .toBuffer();
+
+type AccountJsonQrFields = {
+  accountName?: string;
+  accountNumber?: string;
+  bankCode?: string | null;
+};
+
+export const buildAccountJsonQrPayload = ({
+  accountName = "SABIN SHRESTHA",
+  accountNumber = "1234567890",
+  bankCode = "NARBNPKA",
+}: AccountJsonQrFields = {}): string =>
+  JSON.stringify(
+    bankCode === null ? { accountName, accountNumber } : { bankCode, accountName, accountNumber },
+  );

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { BankQrCheckReason, BankQrCheckStatus } from "#generated/prisma/enums.js";
 import {
   breakChecksum,
+  buildAccountJsonQrPayload,
   buildBankQrPayload,
   TEST_ACCOUNT_NUMBER_SUB_TAG,
   TEST_BANK_CODE_SUB_TAG,
@@ -13,14 +14,20 @@ import { BANK_QR_REJECTION } from "./bank-qr-verification.constants.js";
 import { parseEmvPayload } from "./bank-qr-verification.emv-parser.js";
 import {
   findConfirmedAccountNumber,
+  matchBankQrAgainstTypedDetails,
   matchQrPayloadAgainstTypedDetails,
 } from "./bank-qr-verification.matcher.js";
-import type { ConfirmedQrAccountFieldLocation } from "./bank-qr-verification.types.js";
+import { readBankQr } from "./bank-qr-verification.reader.js";
+import type {
+  BankQrTypedDetails,
+  ConfirmedQrAccountFieldLocation,
+} from "./bank-qr-verification.types.js";
 
-const typedDetails = {
+const typedDetails: BankQrTypedDetails = {
   accountName: "Sabin Shrestha",
   accountNumber: "1234567890",
   bankCode: "A03",
+  bankSwiftCode: "NARBNPKA",
 };
 
 const confirmedTestBankFields: ConfirmedQrAccountFieldLocation[] = [
@@ -159,5 +166,92 @@ describe("findConfirmedAccountNumber", () => {
     const payload = parseEmvPayload(buildBankQrPayload());
 
     expect(payload && findConfirmedAccountNumber(payload)).toBeNull();
+  });
+});
+
+describe("matchBankQrAgainstTypedDetails with a bank account JSON QR", () => {
+  const knownBankSwiftCodes = new Set(["NARBNPKA", "GLBBNPKA"]);
+
+  const matchJsonQr = (
+    qrFields: Parameters<typeof buildAccountJsonQrPayload>[0],
+    typedOverrides: Partial<typeof typedDetails> = {},
+  ) =>
+    matchBankQrAgainstTypedDetails(
+      readBankQr(buildAccountJsonQrPayload(qrFields)),
+      { ...typedDetails, ...typedOverrides },
+      knownBankSwiftCodes,
+    );
+
+  it("matches when the name, account number and bank all agree", () => {
+    expect(matchJsonQr({ accountName: "SHRESTHA SABIN" })).toEqual({
+      isRejected: false,
+      qrCheckStatus: BankQrCheckStatus.MATCHED,
+      qrCheckReason: null,
+    });
+  });
+
+  it("accepts the 11 character form of the bank's swift code", () => {
+    expect(matchJsonQr({ bankCode: "narbnpkaxxx" })).toMatchObject({
+      qrCheckStatus: BankQrCheckStatus.MATCHED,
+    });
+  });
+
+  it("rejects a QR whose account number differs from the typed one", () => {
+    expect(matchJsonQr({ accountNumber: "1234567899" })).toEqual({
+      isRejected: true,
+      rejection: BANK_QR_REJECTION.ACCOUNT_NUMBER_CONTRADICTS_QR,
+    });
+  });
+
+  it("rejects a QR for a different bank we know", () => {
+    expect(matchJsonQr({ bankCode: "GLBBNPKA" })).toEqual({
+      isRejected: true,
+      rejection: BANK_QR_REJECTION.BANK_CONTRADICTS_QR,
+    });
+  });
+
+  it("sends a QR with a different name to review", () => {
+    expect(matchJsonQr({ accountName: "Sabin Traders" })).toEqual(
+      needsReview(BankQrCheckReason.NAME_DIFFERS),
+    );
+  });
+
+  it("sends a QR with a bank code we don't know to review", () => {
+    expect(matchJsonQr({ bankCode: "UNKNNPKA" })).toEqual(
+      needsReview(BankQrCheckReason.BANK_NOT_CONFIRMED),
+    );
+  });
+
+  it("sends a QR with no bank code to review", () => {
+    expect(matchJsonQr({ bankCode: null })).toEqual(
+      needsReview(BankQrCheckReason.BANK_NOT_CONFIRMED),
+    );
+  });
+
+  it("rejects a QR for a known bank when the picked bank is one without a swift code", () => {
+    expect(matchJsonQr({}, { bankSwiftCode: null })).toEqual({
+      isRejected: true,
+      rejection: BANK_QR_REJECTION.BANK_CONTRADICTS_QR,
+    });
+  });
+
+  it("sends it to review when neither the QR nor the picked bank has a swift code", () => {
+    expect(matchJsonQr({ bankCode: null }, { bankSwiftCode: null })).toEqual(
+      needsReview(BankQrCheckReason.BANK_NOT_CONFIRMED),
+    );
+  });
+});
+
+describe("matchBankQrAgainstTypedDetails with other QRs", () => {
+  it("sends a QR that is neither format to review", () => {
+    expect(matchBankQrAgainstTypedDetails(null, typedDetails, new Set())).toEqual(
+      needsReview(BankQrCheckReason.NOT_PAYMENT_QR),
+    );
+  });
+
+  it("uses the EMV rules for an EMV QR", () => {
+    expect(
+      matchBankQrAgainstTypedDetails(readBankQr(buildBankQrPayload()), typedDetails, new Set()),
+    ).toMatchObject({ qrCheckStatus: BankQrCheckStatus.MATCHED });
   });
 });

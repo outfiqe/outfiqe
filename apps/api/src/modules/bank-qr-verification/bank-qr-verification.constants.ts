@@ -28,6 +28,13 @@ export const HEX_RADIX = 16;
 
 export const RGBA_CHANNEL_COUNT = 4;
 
+export const BANK_QR_FORMAT = {
+  EMV: "EMV",
+  ACCOUNT_JSON: "ACCOUNT_JSON",
+} as const;
+
+export const SWIFT_BANK_CODE_LENGTH = 8;
+
 export const QR_DECODE_PASSES: readonly QrDecodePass[] = [
   { maxDimensionPx: 1600, shouldNormaliseContrast: false },
   { maxDimensionPx: 1600, shouldNormaliseContrast: true },

@@ -4,12 +4,14 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { BankQrCheckReason, BankQrCheckStatus } from "#generated/prisma/enums.js";
 import {
   breakChecksum,
+  buildAccountJsonQrPayload,
   buildBankQrPayload,
   renderBlankPng,
   renderQrPng,
 } from "#test/bank-qr-test-codes.js";
 
-const { readStoredFile, keyFromPublicUrl, warnLog } = vi.hoisted(() => ({
+const { readStoredFile, keyFromPublicUrl, warnLog, listKnownSwiftCodes } = vi.hoisted(() => ({
+  listKnownSwiftCodes: vi.fn<() => Promise<ReadonlySet<string>>>(),
   readStoredFile: vi.fn<(key: string) => Promise<Buffer>>(),
   keyFromPublicUrl: vi.fn<(url: string) => string | null>(),
   warnLog: vi.fn(),
@@ -19,6 +21,9 @@ vi.mock("#storage/storage.js", () => ({
   storage: { read: readStoredFile, keyFromPublicUrl },
 }));
 vi.mock("#lib/winston.utils.js", () => ({ default: { warn: warnLog } }));
+vi.mock("#modules/nepal-banks/nepal-bank.service.js", () => ({
+  nepalBankService: { listKnownSwiftCodes },
+}));
 
 const { bankQrVerificationService } = await import("./bank-qr-verification.service.js");
 
@@ -29,6 +34,7 @@ const typedDetails = {
   accountName: "Sabin Shrestha",
   accountNumber: "1234567890",
   bankCode: "A03",
+  bankSwiftCode: "NARBNPKA",
 };
 
 const missingFileError = () => Object.assign(new Error("no such file"), { code: "ENOENT" });
@@ -36,6 +42,7 @@ const missingFileError = () => Object.assign(new Error("no such file"), { code: 
 beforeEach(() => {
   vi.clearAllMocks();
   keyFromPublicUrl.mockReturnValue(STORED_QR_KEY);
+  listKnownSwiftCodes.mockResolvedValue(new Set(["NARBNPKA", "GLBBNPKA"]));
 });
 
 describe("bankQrVerificationService.checkQrForNewBankAccount", () => {
@@ -143,6 +150,56 @@ describe("bankQrVerificationService.previewQr", () => {
       isQrDetected: false,
       accountName: null,
       accountNumber: null,
+    });
+  });
+});
+
+describe("bankQrVerificationService with a bank account JSON QR", () => {
+  it("returns a match when the QR shows the typed name, number and picked bank", async () => {
+    readStoredFile.mockResolvedValue(await renderQrPng(buildAccountJsonQrPayload()));
+
+    await expect(
+      bankQrVerificationService.checkQrForNewBankAccount(STORED_QR_URL, typedDetails),
+    ).resolves.toEqual({ qrCheckStatus: BankQrCheckStatus.MATCHED, qrCheckReason: null });
+  });
+
+  it("rejects a QR that shows a different account number", async () => {
+    readStoredFile.mockResolvedValue(
+      await renderQrPng(buildAccountJsonQrPayload({ accountNumber: "9999999999" })),
+    );
+
+    await expect(
+      bankQrVerificationService.checkQrForNewBankAccount(STORED_QR_URL, typedDetails),
+    ).rejects.toMatchObject({ code: "BANK_QR_ACCOUNT_NUMBER_MISMATCH" });
+  });
+
+  it("rejects a QR for a different bank we know", async () => {
+    readStoredFile.mockResolvedValue(
+      await renderQrPng(buildAccountJsonQrPayload({ bankCode: "GLBBNPKA" })),
+    );
+
+    await expect(
+      bankQrVerificationService.checkQrForNewBankAccount(STORED_QR_URL, typedDetails),
+    ).rejects.toMatchObject({ code: "BANK_QR_BANK_MISMATCH" });
+  });
+
+  it("does not look up bank codes for an EMV QR", async () => {
+    readStoredFile.mockResolvedValue(await renderQrPng(buildBankQrPayload()));
+
+    await bankQrVerificationService.checkQrForNewBankAccount(STORED_QR_URL, typedDetails);
+
+    expect(listKnownSwiftCodes).not.toHaveBeenCalled();
+  });
+
+  it("previews both the name and the account number", async () => {
+    readStoredFile.mockResolvedValue(
+      await renderQrPng(buildAccountJsonQrPayload({ accountNumber: "1234-567-890" })),
+    );
+
+    await expect(bankQrVerificationService.previewQr(STORED_QR_URL)).resolves.toEqual({
+      isQrDetected: true,
+      accountName: "SABIN SHRESTHA",
+      accountNumber: "1234567890",
     });
   });
 });

@@ -1,5 +1,10 @@
 import { storage } from "#storage/storage.js";
-import { buildBankQrPayload, renderBlankPng, renderQrPng } from "#test/bank-qr-test-codes.js";
+import {
+  buildAccountJsonQrPayload,
+  buildBankQrPayload,
+  renderBlankPng,
+  renderQrPng,
+} from "#test/bank-qr-test-codes.js";
 
 type UploadedBankQrFields = Parameters<typeof buildBankQrPayload>[0];
 
@@ -19,3 +24,7 @@ export const uploadBankQrImage = (fields?: UploadedBankQrFields): Promise<string
   uploadQrImageWithText(buildBankQrPayload(fields));
 
 export const uploadImageWithoutQr = async (): Promise<string> => uploadPng(await renderBlankPng());
+
+export const uploadAccountJsonQrImage = (
+  fields?: Parameters<typeof buildAccountJsonQrPayload>[0],
+): Promise<string> => uploadQrImageWithText(buildAccountJsonQrPayload(fields));
