@@ -66,3 +66,15 @@ describe("describeQrCheckNote", () => {
     ).toBeNull();
   });
 });
+
+describe("describeQrCheckNote for a bank that couldn't be confirmed", () => {
+  it("says the QR's bank couldn't be confirmed", () => {
+    expect(
+      describeQrCheckNote({
+        isVerified: false,
+        qrCheckStatus: "NEEDS_REVIEW",
+        qrCheckReason: "BANK_NOT_CONFIRMED",
+      }),
+    ).toBe(QR_CHECK_REASON_NOTE.BANK_NOT_CONFIRMED);
+  });
+});

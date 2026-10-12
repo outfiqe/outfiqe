@@ -17,6 +17,7 @@ export const qrCheckReasonSchema = z.enum([
   "NAME_DIFFERS",
   "ACCOUNT_NUMBER_NOT_FOUND",
   "READ_FAILED",
+  "BANK_NOT_CONFIRMED",
 ]);
 export type QrCheckReasonValue = z.infer<typeof qrCheckReasonSchema>;
 

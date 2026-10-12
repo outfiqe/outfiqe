@@ -16,4 +16,5 @@ export const QR_CHECK_REASON_NOTE: Record<QrCheckReasonValue, string> = {
   NAME_DIFFERS: "QR check: the name on the QR differs from the account name.",
   ACCOUNT_NUMBER_NOT_FOUND: "QR check: the typed account number isn't on the QR.",
   READ_FAILED: "QR check: the photo couldn't be read.",
+  BANK_NOT_CONFIRMED: "QR check: couldn't confirm the QR is for the bank they picked.",
 };

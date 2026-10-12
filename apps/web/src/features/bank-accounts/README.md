@@ -29,8 +29,8 @@ see rationale below.
 
 **User-facing:**
 
-1. Upload a photo or screenshot of the bank QR. The holder name is filled in if the QR shows it
-   and the field is still empty, and a note says what was read, or that no QR code was found.
+1. Upload a photo or screenshot of the bank QR. The holder name and account number are filled in
+   if the QR shows them and the fields are still empty, and a note says what was read, or that no QR code was found.
 2. Pick the bank, check or enter the details, and submit.
 3. If the server finds the same name and number on the QR, the account is added as **Verified**.
    Otherwise it is added as pending, and an admin verifies it before it can receive a withdrawal
