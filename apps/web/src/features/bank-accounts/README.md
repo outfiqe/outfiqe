@@ -8,21 +8,37 @@ see rationale below.
 ## Structure
 
 - `api/bankAccountApi.ts` / `bankAccountSchemas.ts` — `GET/POST /bank-accounts` (creator) or
-  `/brand-bank-accounts` (business), `PATCH /:id/default`, and the `AddBankAccountInput` form
-  schema (mirrors `apps/api/src/shared/utils/bank-account-body.schemas.ts`).
+  `/brand-bank-accounts` (business), `PATCH /:id/default`, `POST /bank-qr-verification/preview`,
+  and the `AddBankAccountInput` form schema (mirrors
+  `apps/api/src/shared/utils/bank-account-body.schemas.ts`).
 - `hooks/useBankAccounts.ts` / `useAddBankAccount.ts` / `useSetDefaultBankAccount.ts` — list
   query and the two mutations, all keyed by `["bank-accounts", ownerType]`.
+- `hooks/usePreviewBankQr.ts` — reads an uploaded QR so the form can fill in what it shows.
 - `components/BankAccountsList.tsx` — the section: list, empty state, "Add bank account" button.
-- `components/BankAccountCard.tsx` — one account row: masked number, verification badge, "Set as
-  default" action.
-- `components/AddBankAccountModal.tsx` — the add form (bank picker from `nepal-banks`, account
-  name/number/confirm/branch).
+- `components/BankAccountCard.tsx` — one account row: masked number, Verified or Pending
+  verification badge, "Set as default" action.
+- `components/AddBankAccountModal.tsx` — the add form: QR first, then the bank picker from
+  `nepal-banks` and account name/number/confirm/branch.
+- `components/BankQrUploadField.tsx` — the QR uploader. It calls the preview right after upload,
+  fills in only the fields that are still empty, and shows a note about what it read.
+- `constants/bankQrMessages.ts` — the QR notes and the after-submit toasts.
+- `utils/bankQrPrefill.utils.ts` — `pickBankQrPrefills` (which empty fields to fill) and
+  `describeBankQrPreview` (which note to show).
 
 ## Funnel
 
-**User-facing:** pick a bank from the dropdown, enter account details, submit. The new account
-starts unverified — an admin verifies it before it can receive a withdrawal (see `withdraw`'s
-README for why).
+**User-facing:**
+
+1. Upload a photo or screenshot of the bank QR. The holder name is filled in if the QR shows it
+   and the field is still empty, and a note says what was read, or that no QR code was found.
+2. Pick the bank, check or enter the details, and submit.
+3. If the server finds the same name and number on the QR, the account is added as **Verified**.
+   Otherwise it is added as pending, and an admin verifies it before it can receive a withdrawal
+   (see `withdraw`'s README for why). A photo with no QR code is refused with a message in the
+   form.
+
+Reading the QR in the form is only a help. The server checks it again on submit, and if the
+preview call fails, the form still works.
 
 **Technical:** `BankAccountsList` → `useBankAccounts(ownerType)` → `bankAccountApi.list` → the
 owner-appropriate REST path. Every call in this feature is parameterized by `ownerType`

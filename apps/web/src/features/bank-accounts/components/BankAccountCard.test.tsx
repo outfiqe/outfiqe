@@ -32,6 +32,7 @@ describe("BankAccountCard", () => {
     renderCard(aBankAccount());
 
     expect(screen.getByText("Pending verification")).toBeInTheDocument();
+    expect(screen.queryByText("Verified")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("View bank QR code")).not.toBeInTheDocument();
   });
 
@@ -39,6 +40,7 @@ describe("BankAccountCard", () => {
     renderCard(aBankAccount({ isVerified: true, qrCodeImageUrl: "https://cdn.test/qr.png" }));
 
     expect(screen.queryByText("Pending verification")).not.toBeInTheDocument();
+    expect(screen.getByText("Verified")).toBeInTheDocument();
     expect(screen.getByLabelText("View bank QR code")).toHaveAttribute(
       "href",
       "https://cdn.test/qr.png",

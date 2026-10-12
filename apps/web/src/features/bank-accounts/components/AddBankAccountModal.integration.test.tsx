@@ -21,6 +21,39 @@ const mockBanks = () => {
   } as ReturnType<typeof useNepalBanks>);
 };
 
+const unreadableQrPreview = { isQrDetected: true, accountName: null, accountNumber: null };
+
+const previewReturns = (preview: {
+  isQrDetected: boolean;
+  accountName: string | null;
+  accountNumber: string | null;
+}) =>
+  mswServer.use(
+    http.post("/api/bank-qr-verification/preview", () =>
+      HttpResponse.json({ success: true, message: "Bank QR read.", data: preview }),
+    ),
+  );
+
+const createdAccountResponse = (isVerified: boolean) =>
+  HttpResponse.json({
+    success: true,
+    message: "Bank account added.",
+    data: {
+      bankAccount: {
+        id: "account-1",
+        bankId: "bank-1",
+        bankName: "Nepal Bank",
+        accountName: "Sabin Shrestha",
+        accountNumberLast4: "7890",
+        branchName: "Kathmandu",
+        isDefault: true,
+        isVerified,
+        qrCodeImageUrl: "https://cdn.test/bank-qr.png",
+      },
+      nameMismatch: false,
+    },
+  });
+
 const renderModal = (onClose = vi.fn()) => {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   render(
@@ -61,6 +94,9 @@ describe("AddBankAccountModal", () => {
           message: "ok",
           data: { files: [{ url: "https://cdn.test/bank-qr.png", key: "bank-qr" }] },
         }),
+      ),
+      http.post("/api/bank-qr-verification/preview", () =>
+        HttpResponse.json({ success: true, message: "Bank QR read.", data: unreadableQrPreview }),
       ),
     );
   });
@@ -127,6 +163,84 @@ describe("AddBankAccountModal", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(await screen.findByText(/doesn't match your profile name/)).toBeInTheDocument();
+  });
+
+  it("fills in the holder name read from the uploaded QR", async () => {
+    previewReturns({ isQrDetected: true, accountName: "SABIN SHRESTHA", accountNumber: null });
+    const user = userEvent.setup();
+    renderModal();
+
+    await uploadQrCode(user);
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Account holder name")).toHaveValue("SABIN SHRESTHA"),
+    );
+    expect(screen.getByText(/We read your QR and filled in what it shows/)).toBeInTheDocument();
+  });
+
+  it("does not overwrite a name the person already typed", async () => {
+    previewReturns({ isQrDetected: true, accountName: "SABIN SHRESTHA", accountNumber: null });
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.type(screen.getByLabelText("Account holder name"), "Sabin Shrestha");
+    await uploadQrCode(user);
+
+    await screen.findByText(/We read your QR and filled in what it shows/);
+    expect(screen.getByLabelText("Account holder name")).toHaveValue("Sabin Shrestha");
+  });
+
+  it("tells the person when the uploaded photo has no QR code", async () => {
+    previewReturns({ isQrDetected: false, accountName: null, accountNumber: null });
+    const user = userEvent.setup();
+    renderModal();
+
+    await uploadQrCode(user);
+
+    expect(await screen.findByText(/couldn't find a QR code in that photo/)).toBeInTheDocument();
+  });
+
+  it("keeps the form usable when reading the QR fails", async () => {
+    mswServer.use(
+      http.post("/api/bank-qr-verification/preview", () =>
+        HttpResponse.json({ success: false, message: "Too many QR reads." }, { status: 429 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderModal();
+
+    await uploadQrCode(user);
+
+    await waitFor(() => expect(screen.queryByText("Reading your QR…")).not.toBeInTheDocument());
+    expect(screen.getByLabelText("Account holder name")).toHaveValue("");
+  });
+
+  it("says the account is verified when the QR matched", async () => {
+    mswServer.use(http.post("/api/bank-accounts", () => createdAccountResponse(true)));
+    const user = userEvent.setup();
+    const { onClose } = renderModal();
+
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: "Add bank account" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText("Bank account added and verified from your QR."),
+    ).toBeInTheDocument();
+  });
+
+  it("says the account is waiting for verification when the QR didn't match", async () => {
+    mswServer.use(http.post("/api/bank-accounts", () => createdAccountResponse(false)));
+    const user = userEvent.setup();
+    const { onClose } = renderModal();
+
+    await fillValidForm(user);
+    await user.click(screen.getByRole("button", { name: "Add bank account" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText("Bank account added. We'll verify it shortly."),
+    ).toBeInTheDocument();
   });
 
   it("shows the backend's error message on failure", async () => {

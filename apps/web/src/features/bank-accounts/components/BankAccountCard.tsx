@@ -66,7 +66,11 @@ export const BankAccountCard = ({ ownerType, bankAccount }: BankAccountCardProps
             Default
           </Badge>
         )}
-        {!isVerified && (
+        {isVerified ? (
+          <Badge tone="success" showDot={false}>
+            Verified
+          </Badge>
+        ) : (
           <Badge tone="neutral" showDot={false}>
             Pending verification
           </Badge>

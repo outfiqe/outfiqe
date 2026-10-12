@@ -10,7 +10,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  ImageUploader,
   Input,
   Modal,
   Select,
@@ -20,7 +19,6 @@ import {
 import { useForm } from "react-hook-form";
 
 import { useNepalBanks } from "@/features/nepal-banks";
-import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import {
@@ -28,7 +26,9 @@ import {
   addBankAccountSchema,
   type OwnerTypeValue,
 } from "../api/bankAccountSchemas";
+import { BANK_ACCOUNT_ADDED_TOASTS } from "../constants/bankQrMessages";
 import { useAddBankAccount } from "../hooks/useAddBankAccount";
+import { BankQrUploadField } from "./BankQrUploadField";
 
 type AddBankAccountModalProps = {
   ownerType: OwnerTypeValue;
@@ -56,10 +56,13 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
     const addedBankAccount = await addBankAccount.mutateAsync(values).catch(() => null);
     if (!addedBankAccount) return;
 
-    if (addedBankAccount.nameMismatch) {
-      toast.warning(
-        "The account holder name doesn't match your profile name — this may slow down verification.",
-      );
+    const { bankAccount, nameMismatch } = addedBankAccount;
+    if (bankAccount.isVerified) {
+      toast.success(BANK_ACCOUNT_ADDED_TOASTS.VERIFIED);
+    } else if (nameMismatch) {
+      toast.warning(BANK_ACCOUNT_ADDED_TOASTS.NAME_MISMATCH);
+    } else {
+      toast.success(BANK_ACCOUNT_ADDED_TOASTS.PENDING);
     }
     onClose();
   });
@@ -71,6 +74,8 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
           {addBankAccount.isError && (
             <FormBanner className="mb-4">{getErrorMessage(addBankAccount.error)}</FormBanner>
           )}
+
+          <BankQrUploadField form={form} />
 
           <FormField
             control={form.control}
@@ -148,29 +153,6 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
                 <FormLabel>Branch</FormLabel>
                 <FormControl>
                   <Input autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="qrCodeImageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bank QR code</FormLabel>
-                <p className="mb-1.5 text-xs text-muted-foreground">
-                  A photo of your bank&apos;s QR code, so we can verify this account faster.
-                </p>
-                <FormControl>
-                  <ImageUploader
-                    value={field.value ? [field.value] : []}
-                    onChange={(urls) => field.onChange(urls[0] ?? "")}
-                    onUpload={(files) => uploadsApi.upload(files)}
-                    maxFiles={1}
-                    describeUploadError={getErrorMessage}
-                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

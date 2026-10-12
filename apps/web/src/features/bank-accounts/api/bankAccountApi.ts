@@ -4,6 +4,8 @@ import {
   type AddBankAccountInput,
   type BankAccount,
   bankAccountListSchema,
+  type BankQrPreview,
+  bankQrPreviewSchema,
   type CreateBankAccountResult,
   createBankAccountResultSchema,
   OwnerType,
@@ -14,6 +16,8 @@ const BASE_PATH: Record<OwnerTypeValue, string> = {
   [OwnerType.CREATOR]: "/bank-accounts",
   [OwnerType.BUSINESS]: "/brand-bank-accounts",
 };
+
+const BANK_QR_PREVIEW_PATH = "/bank-qr-verification/preview";
 
 export const bankAccountApi = {
   async list(ownerType: OwnerTypeValue): Promise<BankAccount[]> {
@@ -31,5 +35,10 @@ export const bankAccountApi = {
 
   async setDefault(ownerType: OwnerTypeValue, id: string): Promise<void> {
     await apiClient.patch(`${BASE_PATH[ownerType]}/${id}/default`);
+  },
+
+  async previewQr(qrCodeImageUrl: string): Promise<BankQrPreview> {
+    const res = await apiClient.post<BankQrPreview>(BANK_QR_PREVIEW_PATH, { qrCodeImageUrl });
+    return bankQrPreviewSchema.parse(res.data);
   },
 };

@@ -202,6 +202,8 @@ export default defineConfig({
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/bank-accounts/components/BankAccountsList.tsx",
         "src/features/bank-accounts/components/BankAccountCard.tsx",
+        "src/features/bank-accounts/components/BankQrUploadField.tsx",
+        "src/features/bank-accounts/utils/bankQrPrefill.utils.ts",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
         "src/features/withdraw/components/WithdrawSectionSkeleton.tsx",
