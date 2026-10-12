@@ -7,9 +7,9 @@ import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createApprovedCreator = async (
   name: string,

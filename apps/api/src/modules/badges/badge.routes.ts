@@ -2,6 +2,7 @@
 import { Router } from "express";
 import multer from "multer";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
@@ -31,7 +32,7 @@ const requireGamificationMutationAdmin = [
   requirePlatformNavItem("gamification"),
 ];
 
-const INVALID_FILE_STATUS = 422;
+const INVALID_FILE_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 const allowedIconImageMimeTypes = new Set<string>(ICON_IMAGE_MIME_TYPES);
 
 const iconImageUpload = multer({

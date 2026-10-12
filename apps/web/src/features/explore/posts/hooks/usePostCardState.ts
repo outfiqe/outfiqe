@@ -1,0 +1,67 @@
+"use client";
+
+import { toast } from "@outfiqe/design-system";
+import { useState } from "react";
+
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { shareOrCopyLink } from "@/features/pwa";
+
+import { useLookComments } from "../../comments/hooks/useLookComments";
+import type { FeedPost } from "../../feed/api/exploreFeedSchemas";
+import { useExploreAuthGate } from "../../hooks/useExploreAuthGate";
+import { useFollowCreator } from "../../suggestions/hooks/useFollowCreator";
+import { lookPermalinkPath } from "../utils/lookPermalink";
+import { useLikeLook } from "./useLikeLook";
+import { useReportContent } from "./useReportContent";
+import { useSaveLook } from "./useSaveLook";
+
+const STAFF_CANNOT_LIKE_MESSAGE =
+  "Staff accounts can't cheriq drops — this keeps trending and payouts based on real audience activity.";
+
+export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedPost) => {
+  const { state, isStaff } = useAuth();
+  const { isAuthenticated, gated } = useExploreAuthGate();
+  const likeMutation = useLikeLook();
+  const saveMutation = useSaveLook();
+  const followMutation = useFollowCreator();
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportMutation = useReportContent(() => setReportOpen(false));
+
+  const isOwnPost = state.user?.id === creator.id;
+  const likeDisabledReason = isStaff ? STAFF_CANNOT_LIKE_MESSAGE : undefined;
+
+  const { comments, draft, setDraft, submitComment } = useLookComments(id, commentsOpen);
+
+  const shareLook = async () => {
+    const outcome = await shareOrCopyLink({
+      title: `${creator.name}'s look on Outfiqe`,
+      text: caption ?? `See what @${creator.handle} is wearing`,
+      url: `${window.location.origin}${lookPermalinkPath(creator.handle, id)}`,
+    });
+    if (outcome === "copied") toast.success("Link copied");
+    if (outcome === "failed") toast.error("Couldn't share or copy the link");
+  };
+
+  return {
+    isAuthenticated,
+    isOwnPost,
+    isStaff,
+    likeDisabledReason,
+    taggedProducts,
+    gated,
+    likeMutation,
+    saveMutation,
+    followMutation,
+    shareLook,
+    commentsOpen,
+    setCommentsOpen,
+    draft,
+    setDraft,
+    comments,
+    submitComment,
+    reportOpen,
+    setReportOpen,
+    reportMutation,
+  };
+};

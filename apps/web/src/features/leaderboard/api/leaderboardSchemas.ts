@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { LEADERBOARD_CATEGORY } from "../leaderboard.constants";
+import { LEADERBOARD_CATEGORY } from "../constants/leaderboard.constants";
 
 export const leaderboardEntrySchema = z.object({
   rank: z.number(),

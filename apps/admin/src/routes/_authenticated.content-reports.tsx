@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { ContentReportsPage } from "@/features/content-reports/ContentReportsPage";
+import { ContentReportsPage } from "@/features/content-reports/components/ContentReportsPage";
 
 export const Route = createFileRoute("/_authenticated/content-reports")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

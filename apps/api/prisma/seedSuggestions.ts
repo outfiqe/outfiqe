@@ -1,7 +1,7 @@
 import "../src/config/load-env.js";
 
 import { CreatorStatus, FollowTargetType } from "../src/generated/prisma/enums.js";
-import { creatorLookService } from "../src/modules/creator-looks/creatorLook.service.js";
+import { creatorLookService } from "../src/modules/creator-looks/creator-look.service.js";
 import type { UserRecord } from "../src/modules/users/user.types.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { disconnectRedis } from "../src/shared/redis/redis.client.js";

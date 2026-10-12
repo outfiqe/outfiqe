@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { isCheckConstraintViolation } from "#lib/prisma.utils.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const FIT_RANGE_COMPLETE_CONSTRAINT = "product_sizes_fit_range_complete";
 const FIT_RANGE_VALID_CONSTRAINT = "product_sizes_fit_range_valid";

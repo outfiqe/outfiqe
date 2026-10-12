@@ -1,6 +1,6 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { deliveryZonesApi } from "../api";
+import { deliveryZonesApi } from "../api/deliveryZonesApi";
 
 export const DELIVERY_ZONE_HISTORY_QUERY_KEY = ["delivery-zone-history"];
 

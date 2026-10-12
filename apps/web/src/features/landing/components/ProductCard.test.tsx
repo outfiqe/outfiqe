@@ -1,0 +1,194 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { type ExploreProduct, ProductCard } from "./ProductCard";
+
+const push = vi.fn();
+const mutate = vi.fn();
+const useAuthMock = vi.fn((): { isAuthenticated: boolean; isStaff?: boolean } => ({
+  isAuthenticated: false,
+}));
+const wishlistMutationState = { isPending: false };
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => "/shop",
+}));
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => useAuthMock(),
+}));
+vi.mock("@/features/wishlist", () => ({
+  useToggleWishlist: () => ({ mutate, isPending: wishlistMutationState.isPending }),
+  STAFF_CANNOT_SAVE_PRODUCT_MESSAGE: "Staff accounts can't save products.",
+}));
+vi.mock("next/link", () => ({
+  __esModule: true,
+  default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+const buildProduct = (overrides: Partial<ExploreProduct> = {}): ExploreProduct => ({
+  id: "product-1",
+  brand: "Studio Nine",
+  name: "Denim Jacket",
+  price: 4500,
+  creatorBuyerCount: 0,
+  unitsSold: 0,
+  ...overrides,
+});
+
+beforeEach(() => {
+  push.mockClear();
+  mutate.mockClear();
+  useAuthMock.mockReturnValue({ isAuthenticated: false });
+  wishlistMutationState.isPending = false;
+});
+
+describe("ProductCard rating display", () => {
+  it("shows a minimal star + average when the product has reviews", () => {
+    render(<ProductCard product={buildProduct({ avgRating: 4.3, reviewCount: 12 })} />);
+    expect(screen.getByText("4.3")).toBeInTheDocument();
+  });
+
+  it("omits the rating for a product with no reviews", () => {
+    render(<ProductCard product={buildProduct({ avgRating: null, reviewCount: 0 })} />);
+    expect(screen.queryByText(/^\d\.\d$/)).not.toBeInTheDocument();
+  });
+});
+
+describe("ProductCard price display", () => {
+  it("shows a single price with no strikethrough when there is no discount", () => {
+    render(<ProductCard product={buildProduct({ price: 2_000 })} />);
+    expect(screen.getByText("Rs. 2,000")).toBeInTheDocument();
+    expect(screen.queryByText(/OFF/)).not.toBeInTheDocument();
+  });
+
+  it("shows the effective price, a struck-through list price, and a percent badge when discounted", () => {
+    render(
+      <ProductCard
+        product={buildProduct({ price: 2_000, effectivePrice: 1_600, discountPercent: 20 })}
+      />,
+    );
+    expect(screen.getByText("Rs. 1,600")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 2,000")).toBeInTheDocument();
+    expect(screen.getByText("20% OFF")).toBeInTheDocument();
+  });
+});
+
+describe("ProductCard save button", () => {
+  it("sends an unauthenticated shopper to login with a redirect back", async () => {
+    render(<ProductCard product={buildProduct()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Stash it" }));
+
+    expect(push).toHaveBeenCalledWith("/login?redirect=%2Fshop");
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("toggles the wishlist and calls back when a signed-in shopper saves", async () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    const onToggleSaved = vi.fn();
+    render(<ProductCard product={buildProduct()} onToggleSaved={onToggleSaved} />);
+
+    const button = screen.getByRole("button", { name: "Stash it" });
+    await userEvent.click(button);
+
+    expect(mutate).toHaveBeenCalledWith(
+      { productId: "product-1", saved: false },
+      expect.anything(),
+    );
+    expect(onToggleSaved).toHaveBeenCalledWith("product-1", true);
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("picks up a fresh isSaved prop from a later fetch, not just the value it first mounted with", () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    const { rerender } = render(<ProductCard product={buildProduct({ isSaved: false })} />);
+    expect(screen.getByRole("button", { name: "Stash it" })).toBeInTheDocument();
+
+    rerender(<ProductCard product={buildProduct({ isSaved: true })} />);
+
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("disables the save button while a wishlist toggle is already in flight", () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    wishlistMutationState.isPending = true;
+    render(<ProductCard product={buildProduct()} />);
+
+    expect(screen.getByRole("button", { name: "Stash it" })).toBeDisabled();
+  });
+
+  it("rolls the pressed state back if the wishlist mutation errors", async () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    mutate.mockImplementation((_vars, opts?: { onError?: () => void }) => opts?.onError?.());
+    render(<ProductCard product={buildProduct({ isSaved: true })} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove from stash" }));
+
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("disables the save button for a platform admin viewer, without calling the mutation", async () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true, isStaff: true });
+    render(<ProductCard product={buildProduct()} />);
+
+    const button = screen.getByRole("button", { name: "Stash it" });
+    expect(button).toBeDisabled();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+});
+
+describe("ProductCard badges and social proof", () => {
+  it("labels a new product", () => {
+    render(<ProductCard product={buildProduct({ isNew: true })} />);
+    expect(screen.getByText("New")).toBeInTheDocument();
+  });
+
+  it("labels a low-stock product when it is not new", () => {
+    render(<ProductCard product={buildProduct({ lowStock: true })} />);
+    expect(screen.getByText("Low stock")).toBeInTheDocument();
+  });
+
+  it("shows the trending rank badge instead of a label when ranked", () => {
+    render(<ProductCard product={buildProduct({ isNew: true })} trendingRank={1} />);
+    expect(screen.queryByText("New")).not.toBeInTheDocument();
+  });
+
+  it("summarises muse and buyer counts, singular and combined", () => {
+    render(<ProductCard product={buildProduct({ creatorBuyerCount: 1, unitsSold: 20 })} />);
+    expect(screen.getByText(/Worn by 1 muse/)).toBeInTheDocument();
+    expect(screen.getByText(/20 bought/)).toBeInTheDocument();
+  });
+
+  it("shows only the units-sold line when no muses have worn it", () => {
+    render(<ProductCard product={buildProduct({ creatorBuyerCount: 0, unitsSold: 5 })} />);
+    expect(screen.getByText(/5 bought/)).toBeInTheDocument();
+    expect(screen.queryByText(/Worn by/)).not.toBeInTheDocument();
+  });
+
+  it("renders a fallback illustration and swatch when there is no image", () => {
+    const { container } = render(<ProductCard product={buildProduct()} />);
+    expect(container.querySelector("svg.lucide-shirt")).toBeInTheDocument();
+  });
+
+  it("uses the product image as a background when present", () => {
+    const { container } = render(
+      <ProductCard product={buildProduct({ image: "https://cdn.example/x.jpg" })} />,
+    );
+    expect(container.querySelector("svg.lucide-shirt")).not.toBeInTheDocument();
+  });
+});

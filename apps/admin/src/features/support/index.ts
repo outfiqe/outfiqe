@@ -1,2 +1,2 @@
-export { SupportInboxPage } from "./SupportInboxPage";
-export { SupportTicketPage } from "./SupportTicketPage";
+export { SupportInboxPage } from "./components/SupportInboxPage";
+export { SupportTicketPage } from "./components/SupportTicketPage";

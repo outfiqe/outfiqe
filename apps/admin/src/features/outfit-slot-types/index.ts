@@ -1,3 +1,3 @@
-export { outfitSlotTypesApi } from "./api";
-export { OutfitSlotTypesPage } from "./OutfitSlotTypesPage";
-export type { OutfitSlotType } from "./schemas";
+export { outfitSlotTypesApi } from "./api/outfitSlotTypesApi";
+export type { OutfitSlotType } from "./api/outfitSlotTypesSchemas";
+export { OutfitSlotTypesPage } from "./components/OutfitSlotTypesPage";

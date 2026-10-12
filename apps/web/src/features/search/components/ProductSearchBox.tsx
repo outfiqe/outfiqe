@@ -18,7 +18,7 @@ import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 import { SHOP_SEARCH_PATH } from "@/shared/lib/exploreMode";
 
-import { AUTOCOMPLETE_DEBOUNCE_MS, MIN_QUERY_LENGTH } from "../search.constants";
+import { AUTOCOMPLETE_DEBOUNCE_MS, MIN_QUERY_LENGTH } from "../constants/search.constants";
 
 type ProductSearchBoxProps = {
   placeholder: string;

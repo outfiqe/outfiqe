@@ -1,7 +1,7 @@
 import { Tour } from "@outfiqe/design-system";
 
 import { shouldShowCrmSection } from "@/components/AdminSidebar.utils";
-import type { Organization } from "@/features/crm/schemas";
+import type { Organization } from "@/features/crm/api/crmSchemas";
 
 import {
   CRM_DASHBOARD_TOUR_KEY,

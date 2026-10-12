@@ -16,9 +16,9 @@ import {
   createSizeStandard,
   ensureProductType,
   type SizeStandardFixture,
-} from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+} from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createBrandOwner = async () => {
   const user = await prisma.user.create({

@@ -1,7 +1,7 @@
 "use client";
 
+import type { LeaderboardCategory } from "../constants/leaderboard.constants";
 import { useLeaderboard } from "../hooks/useLeaderboard";
-import type { LeaderboardCategory } from "../leaderboard.constants";
 import { LeaderboardListSkeleton } from "./LeaderboardListSkeleton";
 import { LeaderboardPodium } from "./LeaderboardPodium";
 import { LeaderboardRow } from "./LeaderboardRow";

@@ -49,8 +49,8 @@ export const SupportRequestForm = ({
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      const result = await submit.mutateAsync(values);
-      onSubmitted?.(result);
+      const submittedRequest = await submit.mutateAsync(values);
+      onSubmitted?.(submittedRequest);
     } catch {
       // surfaced via submit.error below
     }

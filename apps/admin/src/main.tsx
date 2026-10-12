@@ -8,7 +8,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { RoutePendingSkeleton } from "./components/page-skeletons/RoutePendingSkeleton";
-import { AuthProvider } from "./features/auth/AuthContext.tsx";
+import { AuthProvider } from "./features/auth/components/AuthContext.tsx";
 import { APP_ENV } from "./lib/appEnv";
 import { BOOT_LOADER_MAX_VISIBLE_MS, hideBootLoader } from "./lib/bootLoader";
 import { routeTree } from "./routeTree.gen";

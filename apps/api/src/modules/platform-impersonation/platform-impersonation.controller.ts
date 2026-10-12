@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getPlatformPrincipal } from "#modules/platform-access/platform-access.middleware.js";
@@ -13,7 +14,6 @@ import type {
 } from "./platform-impersonation.schemas.js";
 import { platformImpersonationService } from "./platform-impersonation.service.js";
 
-const CREATED_STATUS = 201;
 const MANAGE_ANY_KEY = "platform:impersonate:manage";
 
 export const platformImpersonationController = {
@@ -32,7 +32,7 @@ export const platformImpersonationController = {
       userAgent: req.get("user-agent") ?? null,
     });
 
-    sendSuccess(res, result, "Impersonation session started.", CREATED_STATUS);
+    sendSuccess(res, result, "Impersonation session started.", HTTP_STATUS.CREATED);
   },
 
   async listActive(_req: Request, res: Response) {

@@ -1,5 +1,6 @@
 import { isFuture } from "date-fns/isFuture";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
   AnnouncementStatus,
   NotificationEntityType,
@@ -32,9 +33,7 @@ import {
   toAnnouncementView,
 } from "./announcement.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const VALIDATION_STATUS = 422;
+const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 const NOT_FOUND_MESSAGE = "We couldn't find that announcement.";
 
 const requireDraft = (record: AnnouncementRecord): void => {
@@ -42,14 +41,14 @@ const requireDraft = (record: AnnouncementRecord): void => {
     throw new AppError(
       "ANNOUNCEMENT_NOT_DRAFT",
       "This announcement can no longer be edited.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
 };
 
 const requireAnnouncement = async (id: string): Promise<AnnouncementRecord> => {
   const record = await announcementRepository.findById(id);
-  if (!record) throw new AppError("NOT_FOUND", NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+  if (!record) throw new AppError("NOT_FOUND", NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
   return record;
 };
 
@@ -142,7 +141,7 @@ export const announcementService = {
       throw new AppError(
         "ANNOUNCEMENT_NOT_DRAFT",
         "This announcement can no longer be sent.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     return announcementService.runFanOut(id);
@@ -154,7 +153,7 @@ export const announcementService = {
       throw new AppError(
         "ANNOUNCEMENT_NOT_CANCELABLE",
         "This announcement has already started sending and can't be canceled.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

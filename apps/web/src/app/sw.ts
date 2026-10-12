@@ -3,11 +3,17 @@ import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist
 import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 import {
+  SHARE_TARGET_PATH,
+  SHARE_TARGET_PHOTO_FIELD_NAME,
+  SHARED_PHOTO_CACHE_NAME,
+  SHARED_PHOTO_CACHE_URL,
+} from "../features/pwa/app-manifest/constants/shareTarget";
+import { isPrivatePath } from "../features/pwa/constants/privatePaths";
+import {
   BACKGROUND_REFRESH_PATH,
   BACKGROUND_REFRESH_SYNC_TAG,
-} from "../features/pwa/constants/backgroundRefresh";
-import { isPrivatePath } from "../features/pwa/constants/privatePaths";
-import { parsePushMessage } from "../features/pwa/constants/pushMessage";
+} from "../features/pwa/offline/constants/backgroundRefresh";
+import { parsePushMessage } from "../features/pwa/push/constants/pushMessage";
 import {
   API_PATH_PREFIX,
   CACHED_IMAGE_LIFETIME_SECONDS,
@@ -18,19 +24,16 @@ import {
   IOS_MAX_CACHED_PAGES,
   MAX_CACHED_IMAGES,
   MAX_CACHED_PAGES,
-} from "../features/pwa/constants/runtimeCaching";
-import { OFFLINE_PATH, VISITED_PAGES_CACHE_NAME } from "../features/pwa/constants/serviceWorker";
+} from "../features/pwa/service-worker/constants/runtimeCaching";
+import {
+  OFFLINE_PATH,
+  VISITED_PAGES_CACHE_NAME,
+} from "../features/pwa/service-worker/constants/serviceWorker";
 import {
   SERVICE_WORKER_ERROR_MESSAGE,
   type ServiceWorkerErrorReport,
-} from "../features/pwa/constants/serviceWorkerError";
-import { CLEAR_CACHED_CONTENT_MESSAGE } from "../features/pwa/constants/serviceWorkerMessages";
-import {
-  SHARE_TARGET_PATH,
-  SHARE_TARGET_PHOTO_FIELD_NAME,
-  SHARED_PHOTO_CACHE_NAME,
-  SHARED_PHOTO_CACHE_URL,
-} from "../features/pwa/constants/shareTarget";
+} from "../features/pwa/service-worker/constants/serviceWorkerError";
+import { CLEAR_CACHED_CONTENT_MESSAGE } from "../features/pwa/service-worker/constants/serviceWorkerMessages";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {

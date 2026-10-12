@@ -8,13 +8,13 @@ flip an override, or clear one. In the sidebar's Platform section (needs `platfo
 
 ## Structure
 
-- `schemas.ts` — Zod mirrors of the registry entry and `ResolvedFeature`.
-- `api.ts` — `platformFeaturesApi` (`getRegistry`, `getTenantFeatures`, `setOverride`,
+- `api/platformFeaturesSchemas.ts` — Zod mirrors of the registry entry and `ResolvedFeature`.
+- `api/platformFeaturesApi.ts` — `platformFeaturesApi` (`getRegistry`, `getTenantFeatures`, `setOverride`,
   `clearOverride`).
-- `PlatformFeaturesPage.tsx` — a tenant `<Select>` (reusing `platformMetricsApi.listTenants`) and
+- `components/PlatformFeaturesPage.tsx` — a tenant `<Select>` (reusing `platformMetricsApi.listTenants`) and
   a table of resolved features with an enable/disable button and, when the state is an override,
   a "Clear override" button.
-- `PlatformFeaturesPage.integration.test.tsx`.
+- `components/PlatformFeaturesPage.integration.test.tsx`.
 
 Route: `_authenticated.platform.features.index.tsx` (`/platform/features`); the "Feature flags"
 sidebar item is in `PLATFORM_NAV_ITEMS`.

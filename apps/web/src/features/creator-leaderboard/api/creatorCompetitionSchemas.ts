@@ -3,9 +3,9 @@ import { z } from "zod";
 import {
   badgeDesignConfigSchema,
   BadgeRarity,
-} from "@/features/creator-dashboard/api/badgeSchemas";
+} from "@/features/creator-dashboard/badges/api/badgeSchemas";
 
-import { CREATOR_LEADERBOARD_CATEGORY } from "../creatorLeaderboard.constants";
+import { CREATOR_LEADERBOARD_CATEGORY } from "../constants/creatorLeaderboard.constants";
 
 export const creatorCompetitionSchema = z.object({
   id: z.string(),

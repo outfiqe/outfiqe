@@ -1,0 +1,55 @@
+﻿import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
+import { Router } from "express";
+
+import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
+import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
+import { validate } from "#middlewares/validate.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
+import { CACHE_TTL } from "#redis/redis.keys.js";
+
+import { heroSlideController } from "./hero-slide.controller.js";
+import {
+  createHeroSlideSchema,
+  heroSlideIdParamSchema,
+  updateHeroSlideSchema,
+} from "./hero-slide.schemas.js";
+import { heroSlideService } from "./hero-slide.service.js";
+
+const CACHE_NAMESPACE = "hero-slides";
+
+const heroSlidesPublicCache = cache({
+  namespace: CACHE_NAMESPACE,
+  ttlSeconds: CACHE_TTL.HERO_SLIDES_PUBLIC,
+  successMessage: "Hero slides.",
+});
+
+const refreshHeroSlidesPublicCache = refreshCacheOnWrite({
+  namespace: CACHE_NAMESPACE,
+  ttlSeconds: CACHE_TTL.HERO_SLIDES_PUBLIC,
+  load: () => heroSlideService.listPublic(),
+});
+
+const revalidateHeroSlidesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.heroSlides);
+
+export const heroSlideRoutes = Router();
+
+heroSlideRoutes.get("/admin", ...platformGuards.catalogRead, heroSlideController.listAll);
+
+heroSlideRoutes.get("/", heroSlidesPublicCache, heroSlideController.listPublic);
+
+heroSlideRoutes.post(
+  "/",
+  ...platformGuards.catalogManage,
+  validate({ body: createHeroSlideSchema }),
+  refreshHeroSlidesPublicCache,
+  revalidateHeroSlidesWebCache,
+  heroSlideController.create,
+);
+heroSlideRoutes.patch(
+  "/:id",
+  ...platformGuards.catalogManage,
+  validate({ params: heroSlideIdParamSchema, body: updateHeroSlideSchema }),
+  refreshHeroSlidesPublicCache,
+  revalidateHeroSlidesWebCache,
+  heroSlideController.update,
+);

@@ -5,10 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { STAFF_VIEWER_HINT_KEY } from "@/features/auth/utils/staffViewerHint";
 
+import { useTrendingTags } from "../feed/hooks/useTrendingTags";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
-import { useFollowCreator } from "../hooks/useFollowCreator";
-import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
-import { useTrendingTags } from "../hooks/useTrendingTags";
+import { useFollowCreator } from "../suggestions/hooks/useFollowCreator";
+import { useSuggestedCreators } from "../suggestions/hooks/useSuggestedCreators";
 import { Sidebar } from "./Sidebar";
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
@@ -17,16 +17,16 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 vi.mock("../hooks/useExploreAuthGate", () => ({
   useExploreAuthGate: vi.fn(),
 }));
-vi.mock("../hooks/useSuggestedCreators", () => ({
+vi.mock("../suggestions/hooks/useSuggestedCreators", () => ({
   useSuggestedCreators: vi.fn(),
 }));
-vi.mock("../hooks/useFollowCreator", () => ({
+vi.mock("../suggestions/hooks/useFollowCreator", () => ({
   useFollowCreator: vi.fn(),
 }));
-vi.mock("../hooks/useTrendingTags", () => ({
+vi.mock("../feed/hooks/useTrendingTags", () => ({
   useTrendingTags: vi.fn(),
 }));
-vi.mock("./SuggestedCreatorsModal", () => ({
+vi.mock("../suggestions/components/SuggestedCreatorsModal", () => ({
   SuggestedCreatorsModal: ({ onClose }: { onClose: () => void }) => (
     <div data-testid="suggested-creators-modal">
       <button type="button" onClick={onClose}>

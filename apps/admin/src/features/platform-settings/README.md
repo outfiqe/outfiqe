@@ -7,12 +7,12 @@ the range each one allows, or reset one to its default.
 
 ## Structure
 
-- `PlatformSettingsPage.tsx` — settings grouped as the API's registry groups them; each row shows
+- `components/PlatformSettingsPage.tsx` — settings grouped as the API's registry groups them; each row shows
   its description, default and allowed range, a number field, Save, and Reset when changed.
   Values outside the range, or not whole numbers, are refused before saving; rules between
   settings (for example, photos per person can't exceed photos per board) are checked by the API
   and shown as the error it returns.
-- `api.ts`, `schemas.ts` — `GET /api/platform/settings`, `PUT` / `DELETE /api/platform/settings/:key`.
+- `api/platformSettingsApi.ts`, `api/platformSettingsSchemas.ts` — `GET /api/platform/settings`, `PUT` / `DELETE /api/platform/settings/:key`.
 
 Route: `_authenticated.platform.settings.index.tsx` (`/platform/settings`). The "Limits" sidebar
 item is in `PLATFORM_NAV_ITEMS`. Needs `platform:settings:manage`.

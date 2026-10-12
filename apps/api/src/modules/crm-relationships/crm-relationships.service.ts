@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import {
@@ -13,8 +14,6 @@ import type {
   PartnerSummary,
   RelationshipListPage,
 } from "./crm-relationships.types.js";
-
-const NOT_FOUND_STATUS = 404;
 
 type TenantBrandOrganization = { id: string; linkedBrandId: string | null };
 
@@ -39,7 +38,7 @@ const requireLinkedBrandId = (organization: TenantBrandOrganization): string => 
     throw new AppError(
       "ORGANIZATION_NOT_LINKED_TO_BRAND",
       "This organization isn't linked to a brand yet, so it has no partners or customers.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   return organization.linkedBrandId;
@@ -84,7 +83,7 @@ export const crmRelationshipsService = {
 
     const core = await crmRelationshipsRepository.findPartnerCore(brandId, creatorId);
     if (!core) {
-      throw new AppError("PARTNER_NOT_FOUND", "Partner not found.", NOT_FOUND_STATUS);
+      throw new AppError("PARTNER_NOT_FOUND", "Partner not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const [productBreakdown, recentAttributedOrders] = await Promise.all([
@@ -103,7 +102,7 @@ export const crmRelationshipsService = {
 
     const core = await crmRelationshipsRepository.findCustomerCore(brandId, userId);
     if (!core) {
-      throw new AppError("CUSTOMER_NOT_FOUND", "Customer not found.", NOT_FOUND_STATUS);
+      throw new AppError("CUSTOMER_NOT_FOUND", "Customer not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const recentOrders = await crmRelationshipsRepository.recentCustomerOrders(brandId, userId);

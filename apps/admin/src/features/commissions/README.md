@@ -8,22 +8,22 @@ commission rows people and brands have earned.
 
 ## Structure
 
-- `CommissionsPage.tsx` — the routed page. For each kind of commission (Creator Look, Build) it
+- `components/CommissionsPage.tsx` — the routed page. For each kind of commission (Creator Look, Build) it
   shows the tier list, the price test and the change history, then the list of commissions.
-- `CommissionTiersSection.tsx` — one kind's price bands (`scope` prop): add, edit and delete, a
+- `components/CommissionTiersSection.tsx` — one kind's price bands (`scope` prop): add, edit and delete, a
   warning on every band that overlaps another, and a banner when any do.
-- `TierPriceTestBox.tsx` — "Test a price": the band and commission a whole-rupee price would get.
-- `TierChangeHistory.tsx` — every add, edit and removal of a band, with what it was and what it
+- `components/TierPriceTestBox.tsx` — "Test a price": the band and commission a whole-rupee price would get.
+- `components/TierChangeHistory.tsx` — every add, edit and removal of a band, with what it was and what it
   became, who did it and when.
-- `CommissionsListSection.tsx` — commission rows by status, with approve, void and mark-paid.
+- `components/CommissionsListSection.tsx` — commission rows by status, with approve, void and mark-paid.
   Each row names who earns it; a brand's share of a Build commission is marked "Brand".
-- `commissionScopeCopy.ts` — title and description for each kind.
-- `commissionQueryKeys.ts` — query keys; `tierChangeQueryKeys(scope)` lists what a band change
+- `constants/commissionScopeCopy.ts` — title and description for each kind.
+- `constants/commissionQueryKeys.ts` — query keys; `tierChangeQueryKeys(scope)` lists what a band change
   must refresh (the bands, the history and any price-test answers).
 - `hooks/useInfiniteCommissions.ts`, `hooks/useInfiniteTierHistory.ts` — cursor-paged lists.
-- `api.ts` — `commissionsApi`; every tier call takes the scope.
-- `schemas.ts` — Zod mirrors of the API's responses.
-- `tierForm.schema.ts` — the tier form's validation.
+- `api/commissionsApi.ts` — `commissionsApi`; every tier call takes the scope.
+- `api/commissionsSchemas.ts` — Zod mirrors of the API's responses.
+- `schemas/tierForm.schema.ts` — the tier form's validation.
 
 ## Funnel
 
@@ -31,7 +31,7 @@ commission rows people and brands have earned.
 want, checks a few prices in "Test a price", and can see who changed what in the history below.
 Further down they review commissions and approve, void or mark them paid.
 
-**Technical:** components → `api.ts` → `apiClient` → `GET/POST /api/commissions/tiers?scope=`,
+**Technical:** components → `api/commissionsApi.ts` → `apiClient` → `GET/POST /api/commissions/tiers?scope=`,
 `PATCH/DELETE /api/commissions/tiers/:id?scope=`, `GET /api/commissions/tiers/price-test`,
 `GET /api/commissions/tiers/history`, `GET /api/commissions`,
 `POST /api/commissions/:id/approve|void|mark-paid` → `apps/api/src/modules/commissions`.

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { WithdrawPolicyPage } from "@/features/withdraw-policy/WithdrawPolicyPage";
+import { WithdrawPolicyPage } from "@/features/withdraw-policy/components/WithdrawPolicyPage";
 
 export const Route = createFileRoute("/_authenticated/withdraw-policy")({
   component: WithdrawPolicyPage,

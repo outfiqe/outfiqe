@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { applyCrmCounterDelta, recomputeCrmCounters, touchCrmActivity } from "#lib/crm-counters.js";
-import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
 
 const seedCountedTenant = async () => {
   const brand = await prisma.brand.create({

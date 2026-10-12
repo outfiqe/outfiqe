@@ -8,12 +8,15 @@ import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
 import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
+import { useTrendingTags } from "../feed/hooks/useTrendingTags";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
-import { useFollowCreator } from "../hooks/useFollowCreator";
-import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
-import { useTrendingTags } from "../hooks/useTrendingTags";
-import { SuggestedCreatorRow, SuggestedCreatorRowSkeleton } from "./SuggestedCreatorRow";
-import { SuggestedCreatorsModal } from "./SuggestedCreatorsModal";
+import {
+  SuggestedCreatorRow,
+  SuggestedCreatorRowSkeleton,
+} from "../suggestions/components/SuggestedCreatorRow";
+import { SuggestedCreatorsModal } from "../suggestions/components/SuggestedCreatorsModal";
+import { useFollowCreator } from "../suggestions/hooks/useFollowCreator";
+import { useSuggestedCreators } from "../suggestions/hooks/useSuggestedCreators";
 
 interface SidebarProps {
   activeTag: string;

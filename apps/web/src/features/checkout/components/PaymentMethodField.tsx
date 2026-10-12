@@ -3,7 +3,7 @@
 import { cn } from "@/shared/lib/cn";
 
 import { PaymentMethod, type PaymentMethodValue } from "../api/checkoutSchemas";
-import { PAYMENT_METHODS } from "../checkout.constants";
+import { PAYMENT_METHODS } from "../constants/checkout.constants";
 
 type PaymentMethodFieldProps = {
   value: PaymentMethodValue;

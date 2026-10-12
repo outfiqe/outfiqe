@@ -1,6 +1,6 @@
-import { brandPayoutService } from "#modules/brand-payouts/brandPayout.service.js";
+import { brandPayoutService } from "#modules/brand-payouts/brand-payout.service.js";
+import { toBrandFulfilmentGroupSummaryView } from "#modules/orders/fulfilment-groups/fulfilment-group.utils.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
-import { toBrandFulfilmentGroupSummaryView } from "#modules/orders/order.utils.js";
 
 import { RECENT_ORDER_LIMIT } from "./brand-overview.constants.js";
 import { brandOverviewRepository } from "./brand-overview.repository.js";

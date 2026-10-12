@@ -1,7 +1,7 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { withdrawRequestsApi } from "../api";
-import type { WithdrawRequestStatusValue } from "../schemas";
+import { withdrawRequestsApi } from "../api/withdrawRequestsApi";
+import type { WithdrawRequestStatusValue } from "../api/withdrawRequestsSchemas";
 
 export const useInfiniteWithdrawRequests = (status: WithdrawRequestStatusValue) => {
   return useInfiniteCursorPage(["withdraw-requests", status], (cursor) =>

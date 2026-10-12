@@ -96,8 +96,11 @@ export const FollowingModal = ({ userId, onClose }: FollowingModalProps) => {
           </p>
         )}
 
-        {following.map((item) => (
-          <FollowingRow key={`${item.kind}-${item.id}`} item={item} />
+        {following.map((followedAccount) => (
+          <FollowingRow
+            key={`${followedAccount.kind}-${followedAccount.id}`}
+            item={followedAccount}
+          />
         ))}
 
         {hasNextPage && (

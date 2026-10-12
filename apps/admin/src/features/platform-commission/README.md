@@ -8,19 +8,19 @@ time-boxed brand commission exemptions.
 
 ## Structure
 
-- `PlatformCommissionPage.tsx` — composes the three sections below on one page.
-- `CommissionTiersSection.tsx` — the price-band ladder editor. Loads the current active rule's
+- `components/PlatformCommissionPage.tsx` — composes the three sections below on one page.
+- `components/CommissionTiersSection.tsx` — the price-band ladder editor. Loads the current active rule's
   tiers into an editable working copy (add/remove bands, per-band FLAT/PERCENT toggle),
   client-side validates the whole ladder (starts at Rs 0, contiguous, top band open-ended) before
   submitting the whole set as one new versioned rule via `POST /commission-rules`.
-- `GatewayFeeRatesSection.tsx` — one small percent form per provider (eSewa, Khalti), each
+- `components/GatewayFeeRatesSection.tsx` — one small percent form per provider (eSewa, Khalti), each
   independently versioned via `POST /gateway-fee-rates`.
-- `BrandExemptionsSection.tsx` — a brand-search autocomplete (`GET /brands?q=`, same pattern as
+- `components/BrandExemptionsSection.tsx` — a brand-search autocomplete (`GET /brands?q=`, same pattern as
   `gamification`'s `BrandSponsorField`) plus start/end date and reason inputs to create an
   exemption, and a list with a Revoke action.
-- `api.ts` — `platformCommissionApi`, all calls against `/brand-payouts/*` (plus `searchBrands`
+- `api/platformCommissionApi.ts` — `platformCommissionApi`, all calls against `/brand-payouts/*` (plus `searchBrands`
   against the shared `/brands` search endpoint).
-- `schemas.ts` — Zod response shapes.
+- `api/platformCommissionSchemas.ts` — Zod response shapes.
 
 ## Funnel
 

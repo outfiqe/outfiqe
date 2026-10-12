@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { BankAccountsPage } from "@/features/bank-accounts/BankAccountsPage";
+import { BankAccountsPage } from "@/features/bank-accounts/components/BankAccountsPage";
 
 export const Route = createFileRoute("/_authenticated/bank-accounts")({
   validateSearch: (search: Record<string, unknown>): { owner?: string; verified?: string } => ({

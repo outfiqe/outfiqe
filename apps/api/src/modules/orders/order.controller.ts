@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -21,7 +21,6 @@ import type {
 } from "./order.schemas.js";
 import { orderService } from "./order.service.js";
 
-const CREATED_STATUS = 201;
 const BUYER_CANCEL_DEFAULT_REASON = "Cancelled by buyer";
 
 export const orderController = {
@@ -31,7 +30,7 @@ export const orderController = {
     const idempotencyKey = req.header(IDEMPOTENCY_HEADER);
 
     const order = await orderService.checkout(userId, body, idempotencyKey);
-    sendSuccess(res, order, "Order placed.", CREATED_STATUS);
+    sendSuccess(res, order, "Order placed.", HTTP_STATUS.CREATED);
   },
 
   async get(_req: Request, res: Response) {

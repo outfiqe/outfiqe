@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { brandShipmentSummarySchema } from "./brandFulfilmentSchemas";
+import { brandShipmentSummarySchema } from "../shipments/api/brandFulfilmentSchemas";
 
 export const brandOverviewKpisSchema = z.object({
   lifetimeRevenue: z.number(),

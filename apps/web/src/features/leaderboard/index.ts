@@ -6,4 +6,4 @@ export {
   LEADERBOARD_CATEGORY,
   LEADERBOARD_TABS,
   type LeaderboardCategory,
-} from "./leaderboard.constants";
+} from "./constants/leaderboard.constants";

@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { AccountStatus, FeatureFlagRollout, ProductStatus } from "#generated/prisma/enums.js";
-import { setFeatureFlagRollout } from "#test/integration/outfitFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { setFeatureFlagRollout } from "#test/integration/outfit-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const FITS_PATH = "/api/products/fits";
 const OK_STATUS = 200;

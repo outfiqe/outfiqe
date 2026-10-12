@@ -66,7 +66,7 @@ vi.mock("@/features/explore", async (importOriginal) => {
   };
 });
 
-vi.mock("@/features/creator-dashboard/components/EditPostModal", () => ({
+vi.mock("@/features/creator-dashboard/looks/components/EditPostModal", () => ({
   EditPostModal: ({ lookId, onClose }: { lookId: string | null; onClose: () => void }) =>
     lookId ? (
       <div role="dialog" aria-label="Edit drop">

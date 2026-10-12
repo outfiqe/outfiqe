@@ -1,7 +1,7 @@
 export { cartApi } from "./api/cartApi";
 export type { AppliedCoupon, Cart, CartItem } from "./api/cartSchemas";
-export { CART_QUERY_KEY } from "./cart.constants";
 export { CartBody } from "./components/CartBody";
+export { CART_QUERY_KEY } from "./constants/cart.constants";
 export { useAddToCart } from "./hooks/useAddToCart";
 export { useApplyCoupon } from "./hooks/useApplyCoupon";
 export { useCart } from "./hooks/useCart";

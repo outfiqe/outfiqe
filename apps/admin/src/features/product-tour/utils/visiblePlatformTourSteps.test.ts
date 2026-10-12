@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { PLATFORM_NAV_ITEMS } from "@/components/AdminSidebar";
+import { PLATFORM_NAV_ITEMS } from "@/components/adminSidebarNavItems";
 
 import { PLATFORM_DASHBOARD_TOUR_STEPS } from "../constants/platformDashboardTour";
 import { visiblePlatformTourSteps } from "./visiblePlatformTourSteps";

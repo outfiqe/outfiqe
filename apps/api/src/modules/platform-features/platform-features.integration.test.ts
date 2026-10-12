@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
 
 import { platformFeaturesRepository } from "./platform-features.repository.js";
 import { platformFeaturesService } from "./platform-features.service.js";

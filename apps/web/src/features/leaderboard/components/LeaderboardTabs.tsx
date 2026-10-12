@@ -2,7 +2,7 @@
 
 import { cn } from "@/shared/lib/cn";
 
-import { LEADERBOARD_TABS, type LeaderboardCategory } from "../leaderboard.constants";
+import { LEADERBOARD_TABS, type LeaderboardCategory } from "../constants/leaderboard.constants";
 
 type LeaderboardTabsProps = {
   category: LeaderboardCategory;

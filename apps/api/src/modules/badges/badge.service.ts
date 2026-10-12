@@ -1,5 +1,6 @@
 import sharp from "sharp";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
@@ -30,8 +31,7 @@ import type {
 } from "./badge.types.js";
 import { hasOnlyManagedImageUrls, parseDesignConfig } from "./badge.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const VALIDATION_STATUS = 422;
+const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const listCollectionForUser = async (userId: string): Promise<BadgeCollectionEntry[]> => {
   const [badges, userStates, progressList] = await Promise.all([
@@ -90,7 +90,7 @@ const updateDisplay = async (
     throw new AppError(
       "BADGE_NOT_COLLECTED",
       "You haven't collected this badge.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
 };
@@ -210,7 +210,7 @@ const listAllBadgesAdmin = async (): Promise<BadgeAdminRecord[]> =>
 const findBadgeAdmin = async (badgeId: string): Promise<BadgeAdminRecord> => {
   const badge = await badgeRepository.findBadgeAdminById(badgeId);
   if (!badge) {
-    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
+    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", HTTP_STATUS.NOT_FOUND);
   }
   return badge;
 };
@@ -263,7 +263,7 @@ const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> =>
 const updateBadge = async (badgeId: string, input: UpdateBadgeBody): Promise<BadgeAdminRecord> => {
   const existing = await badgeRepository.findBadgeAdminById(badgeId);
   if (!existing) {
-    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
+    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", HTTP_STATUS.NOT_FOUND);
   }
   assertManagedImageUrls(input.designConfig);
   await assertSponsorBrandExists(input.sponsorBrandId);
@@ -310,7 +310,7 @@ const removeUserBadge = async (
     throw new AppError(
       "USER_BADGE_NOT_FOUND",
       "This badge award doesn't exist or was already removed.",
-      NOT_FOUND_STATUS,
+      HTTP_STATUS.NOT_FOUND,
     );
   }
   logger.info(`UserBadge ${userBadgeId} removed by admin ${adminUserId}: ${input.reason}`);

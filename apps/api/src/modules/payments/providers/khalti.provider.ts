@@ -1,4 +1,5 @@
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
@@ -13,7 +14,7 @@ import type {
 import { PaymentVerifyStatus } from "../payment.types.js";
 
 const RUPEES_TO_PAISA = 100;
-const INITIATE_FAILED_STATUS = 502;
+const INITIATE_FAILED_STATUS = HTTP_STATUS.BAD_GATEWAY;
 
 const KhaltiLookupStatus = {
   COMPLETED: "Completed",

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -17,8 +18,6 @@ import type {
   TicketIdParams,
 } from "./crm-tickets.schemas.js";
 import { crmTicketsService } from "./crm-tickets.service.js";
-
-const CREATED_STATUS = 201;
 
 export const crmTicketsController = {
   async listTickets(_req: Request, res: Response) {
@@ -51,7 +50,7 @@ export const crmTicketsController = {
       },
       principal.userId,
     );
-    sendSuccess(res, ticket, "Ticket created.", CREATED_STATUS);
+    sendSuccess(res, ticket, "Ticket created.", HTTP_STATUS.CREATED);
   },
 
   async getTicket(_req: Request, res: Response) {
@@ -97,7 +96,7 @@ export const crmTicketsController = {
       res,
       await crmTicketsService.addComment(organization.id, ticketId, membership.id, body),
       "Comment added.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 };

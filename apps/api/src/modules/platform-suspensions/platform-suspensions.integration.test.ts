@@ -11,9 +11,9 @@ import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
-import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { seedPlatformOrganization } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const DEFAULT_TEST_PASSWORD = "correct-horse-battery";
 

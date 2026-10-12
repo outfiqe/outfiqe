@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -17,8 +18,6 @@ import type {
   VoidCommissionBody,
 } from "./commission.schemas.js";
 import { commissionService } from "./commission.service.js";
-
-const CREATED_STATUS = 201;
 
 export const commissionController = {
   async getMyEligibility(_req: Request, res: Response) {
@@ -78,7 +77,7 @@ export const commissionController = {
     const { scope } = validated.query<CommissionScopeQuery>(res);
     const body = validated.body<CreateCommissionTierBody>(res);
     const tier = await commissionService.createTier(body, scope, userId);
-    sendSuccess(res, tier, "Commission tier created.", CREATED_STATUS);
+    sendSuccess(res, tier, "Commission tier created.", HTTP_STATUS.CREATED);
   },
 
   async updateTier(_req: Request, res: Response) {

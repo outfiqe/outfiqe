@@ -38,19 +38,26 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   handlers whose recipient can be either the customer or an agent. `CRM_ITEM_ASSIGNED` is the one
   `ADMIN`-surface target that also needs to cross a _tenant_ boundary, not just an app boundary —
   see Non-obvious rationale.
-- `notification.repository.ts` — Prisma queries only. `createIndividual` (plain insert, ungrouped
-  types) and `upsertGroup`/`retractGroupActor` (the race-safe grouped write/retraction — see
-  rationale below) own the `notifications` table's write side; `findMutedRecipientIds` reads
-  `notification_preferences`. The rest are small, single-purpose cross-module reads the write path
-  needs to build a denormalized `metadata` snapshot or resolve a fan-out recipient list
-  (`findActorSnapshot`, `findLookSnapshot`, `findBrandMemberIds`,
-  `findOrderNotificationContext`, `findProductReviewSnapshot`, `findDeliveredOrderProducts`) —
-  kept here rather than added to each producing module's own repository, since "who should this
-  notification go to and what should it show" is this module's concern, not theirs.
-  `upsertSystemReminder` is the actor-less counterpart of `upsertGroup` — a recipient-keyed
-  grouped row (find-unread-by-`groupKey` then update-or-create in one transaction) for
-  system-generated digests that have no acting user, with `metadata` merged so a repeated sweep
-  refreshes a count in place.
+- `notification.repository.ts` — Prisma queries only. `notificationRepository` holds the bell's
+  reads and read-state writes (`listForRecipient`, `countUnread`, `markRead`, `markAllRead`, the
+  per-organization clear and the retention delete) and spreads in the three topic repositories
+  below, so every caller keeps using `notificationRepository`.
+- `delivery/delivery.repository.ts` — the `notifications` table's write side: `createIndividual`
+  (plain insert, ungrouped types), `createManyForBroadcast`, and `upsertGroup`/`retractGroupActor`
+  (the race-safe grouped write/retraction — see rationale below). `upsertSystemReminder` is the
+  actor-less counterpart of `upsertGroup` — a recipient-keyed grouped row
+  (find-unread-by-`groupKey` then update-or-create in one transaction) for system-generated
+  digests that have no acting user, with `metadata` merged so a repeated sweep refreshes a count in
+  place.
+- `context/context.repository.ts` — small, single-purpose cross-module reads the write path needs
+  to build a denormalized `metadata` snapshot or resolve a fan-out recipient list
+  (`findActorSnapshot`, `findLookSnapshot`, `findBrandName`, `findBrandMemberIds`,
+  `findOrderNotificationContext`, `findProductReviewSnapshot`, `findDeliveredOrderProducts`,
+  `findRecipientAudience`) — kept here rather than added to each producing module's own
+  repository, since "who should this notification go to and what should it show" is this module's
+  concern, not theirs.
+- `preferences/preference.repository.ts` — `notification_preferences`: `findMutedRecipientIds`,
+  `isPushMutedForType`, and the per-type overrides a person sets.
 - `notification.service.ts` — `notifyIndividual`/`notifyManyIndividual`/`notifyGroup`/
   `retractGroupActor`/`notifySystemReminder`: the mute-check + write + realtime-handoff
   orchestration every event handler calls into. Never called directly by another module — only by
@@ -60,12 +67,16 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   each row with the organization. `notifyPlatformStaffMember` does the same for one named staff
   member, such as the assigned support agent. `clearOrganizationNotificationsFor` removes one
   organization's notifications from a person's bell.
-- `notification.events.ts` — `registerNotificationEventConsumers()`: one domain-event handler per
-  row in plan §5's event catalog, each resolving the right recipient(s), building the denormalized
-  `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
+- `notification.events.ts` — `registerNotificationEventConsumers()`, the single entry point
+  `src/processes/consumers.ts` calls. It registers each group in `event-consumers/`
+  (`account`, `social`, `gamification`, `commerce`, `crm`, `support`, `tag-review`), each file
+  exporting one `register<Group>NotificationConsumers()`. Together they hold one domain-event
+  handler per row in plan §5's event catalog, each resolving the right recipient(s), building the
+  denormalized `metadata` snapshot, and calling into `notification.service.ts`. Every handler
+  subscribes to its own event, so the order the groups register in has no effect. A second, independent consumer
   group from every other module already subscribed to the same streams (`xp.events.ts`,
   `achievement.events.ts`) — Redis Streams consumer groups don't interfere with each other.
-  `ACCOUNT_APPROVED` is the welcome from Outfiqe, with no actor, so the bell shows the Outfiqe mark. Two events send it: `DomainEvents.CREATOR_APPROVED` (published by `creators/creator.service.ts` `approve()`, `approvedAccountKind: "creator"`) and `DomainEvents.BRAND_OWNER_REGISTERED` (published by `auth/auth.service.ts` when a brand owner finishes registering from their approval invite, `approvedAccountKind: "brand"` plus the brand's name). A brand isn't welcomed at approval time because the applicant has no account until they accept the invite. The approval email covers that moment.
+  `ACCOUNT_APPROVED` is the welcome from Outfiqe, with no actor, so the bell shows the Outfiqe mark. Two events send it: `DomainEvents.CREATOR_APPROVED` (published by `creators/creator.service.ts` `approve()`, `approvedAccountKind: "creator"`) and `DomainEvents.BRAND_OWNER_REGISTERED` (published by `auth/invites/invite.service.ts` when a brand owner finishes registering from their approval invite, `approvedAccountKind: "brand"` plus the brand's name). A brand isn't welcomed at approval time because the applicant has no account until they accept the invite. The approval email covers that moment.
   `DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED` (published by `withdraw/withdraw.service.ts` on a
   final approval, a rejection, and a mark-paid) is handled the same way: the handler maps the
   event's `status` to a `NotificationType` via `WITHDRAW_REQUEST_NOTIFICATION_TYPES` and no-ops on

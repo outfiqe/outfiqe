@@ -25,9 +25,9 @@ import type {
   CreatorOverview as CreatorOverviewData,
   CreatorOverviewTrendPoint,
 } from "../api/creatorOverviewSchemas";
+import { EarningsLedgerRow } from "../earnings/components/EarningsLedgerRow";
 import { useCreatorOverview } from "../hooks/useCreatorOverview";
 import { CreatorStatusGate } from "./CreatorStatusGate";
-import { EarningsLedgerRow } from "./EarningsLedgerRow";
 
 const KPI_CARD_COUNT = 6;
 const RECENT_ROW_COUNT = 5;

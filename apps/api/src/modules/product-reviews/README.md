@@ -21,7 +21,7 @@ Socket.IO.
   as price/stock bounds on `Product` — not as a DB `CHECK` constraint.
 - `product-review.utils.ts` — `toReviewRecord`: pure row → record mapping, no DB access.
 - `product-review.repository.ts` — Prisma queries. `hasDeliveredPurchase` is the verified-purchase
-  gate (see rationale below). `vote`/`unvote` mirror `creatorLook.repository.ts`'s
+  gate (see rationale below). `vote`/`unvote` mirror `creator-look.repository.ts`'s
   `like`/`unlike` exactly: an idempotent `createMany({ skipDuplicates: true })`/`deleteMany` inside
   a transaction with the `helpfulCount` increment/decrement, so a duplicate vote request is a no-op
   rather than a unique-constraint error.

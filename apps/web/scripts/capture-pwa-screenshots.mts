@@ -7,7 +7,7 @@ import { chromium } from "@playwright/test";
 import {
   type AppScreenshot,
   appScreenshots,
-} from "../src/features/pwa/constants/appScreenshots.ts";
+} from "../src/features/pwa/app-manifest/constants/appScreenshots.ts";
 
 const webAppRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 

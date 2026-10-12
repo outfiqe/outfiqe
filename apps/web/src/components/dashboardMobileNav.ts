@@ -9,8 +9,8 @@ export const resolvePinnedIds = (
   navItems: readonly SidebarNavItem[],
   pinnedIds: readonly string[] | null,
 ): string[] => {
-  const eligibleIds = new Set(navItems.map((item) => item.id));
-  const defaultIds = navItems.slice(0, PINNED_SLOT_COUNT).map((item) => item.id);
+  const eligibleIds = new Set(navItems.map((navItem) => navItem.id));
+  const defaultIds = navItems.slice(0, PINNED_SLOT_COUNT).map((navItem) => navItem.id);
 
   const chosen = pinnedIds === null ? defaultIds : pinnedIds.filter((id) => eligibleIds.has(id));
 

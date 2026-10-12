@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { AuthProvider } from "@/features/auth/AuthContext";
+import { AuthProvider } from "@/features/auth/components/AuthContext";
 
 import { ProtectedRoute } from "./ProtectedRoute";
 

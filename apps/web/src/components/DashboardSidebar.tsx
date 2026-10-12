@@ -26,7 +26,7 @@ export const DashboardSidebar = () => {
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
   const { navItems, isBrand, accountLabel } = useDashboardNav();
-  useIdlePrefetchSidebarLinks(navItems.map((item) => item.href));
+  useIdlePrefetchSidebarLinks(navItems.map((navItem) => navItem.href));
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
     return (

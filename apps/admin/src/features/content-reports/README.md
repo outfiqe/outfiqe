@@ -8,15 +8,15 @@ content.
 
 ## Structure
 
-- `ContentReportsPage.tsx` — the queue: Open / Actioned / Dismissed filter, each report with its
+- `components/ContentReportsPage.tsx` — the queue: Open / Actioned / Dismissed filter, each report with its
   reason, what was reported, a preview, the author's prior removals and a link to the content on
   the storefront, plus a Resolve button.
-- `ResolveContentReportModal.tsx` — dismiss, or remove the content, with an optional note.
+- `components/ResolveContentReportModal.tsx` — dismiss, or remove the content, with an optional note.
   Removing is turned off once the content is already gone.
-- `contentReportTarget.ts` — `TARGET_NOUN` (post, comment, build, build comment) and
+- `utils/contentReportTarget.ts` — `TARGET_NOUN` (post, comment, build, build comment) and
   `reportedContentHref`, the storefront link for a report's target (a look on its creator's
   profile, or `/builds/:id` for a build or build comment). Shared by the page and the modal.
-- `api.ts`, `schemas.ts` — the `/api/content-reports` client and zod schemas.
+- `api/contentReportsApi.ts`, `api/contentReportsSchemas.ts` — the `/api/content-reports` client and zod schemas.
 - `hooks/useInfiniteContentReports.ts` — the paged queue.
 
 ## Funnel

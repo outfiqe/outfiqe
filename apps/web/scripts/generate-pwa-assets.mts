@@ -9,12 +9,12 @@ import {
   APPLE_TOUCH_ICON_SIZE,
   installAppIcons,
   MASKABLE_SAFE_ZONE_RATIO,
-} from "../src/features/pwa/constants/appIcons.ts";
+} from "../src/features/pwa/app-manifest/constants/appIcons.ts";
+import { LIGHT_THEME_COLOR } from "../src/features/pwa/app-manifest/constants/appTheme.ts";
 import {
   appleSplashFileName,
   appleSplashScreens,
-} from "../src/features/pwa/constants/appleSplashScreens.ts";
-import { LIGHT_THEME_COLOR } from "../src/features/pwa/constants/appTheme.ts";
+} from "../src/features/pwa/install/constants/appleSplashScreens.ts";
 
 const SVG_RENDER_DENSITY = 512;
 

@@ -8,22 +8,22 @@ per-coupon performance report, and look up a redemption for support.
 
 ## Structure
 
-- `api.ts` — `couponsApi`: `list` (status-filterable, paginated), `create`, `getById`,
+- `api/couponsApi.ts` — `couponsApi`: `list` (status-filterable, paginated), `create`, `getById`,
   `updateStatus`, `approve`, `updateBudget`, `getPerformance`, `searchRedemptions`.
-- `schemas.ts` — Zod response schemas (`couponSchema`, `couponPerformanceSchema`,
+- `api/couponsSchemas.ts` — Zod response schemas (`couponSchema`, `couponPerformanceSchema`,
   `couponRedemptionSchema`) and the plain input types the create/update calls send.
 - `hooks/useInfiniteCoupons.ts`, `hooks/useInfiniteRedemptions.ts` — `useInfiniteCursorPage`
   wrappers, same pattern as `withdraw-requests`.
 - `hooks/useCouponPerformance.ts` — a plain `useQuery`, enabled only once a coupon is selected.
-- `CouponsPage.tsx` — the routed page (`/coupons`), two tabs: Coupons and Redemption lookup.
-- `CouponsListSection.tsx` — the coupon list: status tabs (URL-bound via `@/lib/useSearchFilter`
+- `components/CouponsPage.tsx` — the routed page (`/coupons`), two tabs: Coupons and Redemption lookup.
+- `components/CouponsListSection.tsx` — the coupon list: status tabs (URL-bound via `@/lib/useSearchFilter`
   as `?status=`, so a filtered view survives a refresh and is shareable; the default `ACTIVE` is
   omitted from the URL — `_authenticated.coupons.tsx` declares the `validateSearch`), budget
   progress bar, and the approve/pause-activate/archive/edit-budget/performance actions.
-- `CreateCouponModal.tsx` — the new-coupon form (react-hook-form, inline messages, success toast).
-- `couponForm.schema.ts` — the form's zod schema: string-typed number fields, code length 4-24, percent 1-100 or fixed amount depending on the discount type.
-- `CouponPerformanceModal.tsx` — `StatCard` grid over `GET /:id/performance`.
-- `RedemptionLookupSection.tsx` — search by coupon code or order id; a released redemption shows its
+- `components/CreateCouponModal.tsx` — the new-coupon form (react-hook-form, inline messages, success toast).
+- `schemas/couponForm.schema.ts` — the form's zod schema: string-typed number fields, code length 4-24, percent 1-100 or fixed amount depending on the discount type.
+- `components/CouponPerformanceModal.tsx` — `StatCard` grid over `GET /:id/performance`.
+- `components/RedemptionLookupSection.tsx` — search by coupon code or order id; a released redemption shows its
   `releasedReason` inline as the support-facing refusal/reversal reason, and a velocity-flagged
   redemption shows a "Flagged for review" badge plus its `flagReason`.
 
@@ -34,7 +34,7 @@ status with a live budget bar, creates a new one via the modal, approves/pauses/
 click, and can search for a specific redemption from the second tab when a support ticket references
 a coupon.
 
-**Technical:** `CouponsPage` → `CouponsListSection`/`RedemptionLookupSection` → `api.ts` →
+**Technical:** `CouponsPage` → `CouponsListSection`/`RedemptionLookupSection` → `api/couponsApi.ts` →
 `GET/POST/PATCH /api/admin/coupons/*` → `coupon.controller.ts` → `coupon.service.ts`.
 
 ## Non-obvious rationale

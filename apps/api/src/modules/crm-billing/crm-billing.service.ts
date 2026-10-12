@@ -1,6 +1,7 @@
 import { addMonths } from "date-fns/addMonths";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CrmBillingProvider } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -29,10 +30,6 @@ import {
   getPlanDefinition,
   isAdvancedCrmEnabled,
 } from "./crm-billing.utils.js";
-
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_GATEWAY_STATUS = 502;
 
 const BILLING_RETURN_PATH = "/crm/billing/return";
 const buildBillingReturnPath = (invoiceId: string): string => `${BILLING_RETURN_PATH}/${invoiceId}`;
@@ -78,7 +75,7 @@ const startProviderPaymentForInvoice = async (
     throw new AppError(
       "BILLING_PROVIDER_UNAVAILABLE",
       "Couldn't start the payment. Please try again in a moment.",
-      BAD_GATEWAY_STATUS,
+      HTTP_STATUS.BAD_GATEWAY,
     );
   }
 
@@ -187,7 +184,7 @@ export const crmBillingService = {
   ): Promise<BillingCheckoutRedirect> {
     const plan = getPlanDefinition(input.planId);
     if (!plan) {
-      throw new AppError("UNKNOWN_PLAN", "That plan isn't available.", NOT_FOUND_STATUS);
+      throw new AppError("UNKNOWN_PLAN", "That plan isn't available.", HTTP_STATUS.NOT_FOUND);
     }
 
     const activeSeatCount = await crmBillingRepository.countActiveMemberships(organization.id);
@@ -220,13 +217,13 @@ export const crmBillingService = {
       invoiceId,
     );
     if (!invoice) {
-      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", NOT_FOUND_STATUS);
+      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (invoice.status !== "OPEN") {
       throw new AppError(
         "INVOICE_NOT_PAYABLE",
         "This invoice can no longer be paid.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -242,7 +239,7 @@ export const crmBillingService = {
       invoiceId,
     );
     if (!invoice) {
-      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", NOT_FOUND_STATUS);
+      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     if (invoice.status === "PAID") return { status: PaymentVerifyStatus.COMPLETE };
@@ -251,7 +248,7 @@ export const crmBillingService = {
       throw new AppError(
         "INVOICE_NOT_PAYABLE",
         "This invoice has no payment in progress.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -267,7 +264,7 @@ export const crmBillingService = {
       throw new AppError(
         "NO_ACTIVE_SUBSCRIPTION",
         "There's no active subscription to cancel.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
     await crmBillingRepository.setCancelAtPeriodEnd(organizationId, true);

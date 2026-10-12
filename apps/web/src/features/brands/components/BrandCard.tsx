@@ -20,7 +20,7 @@ import {
   BRANDS_QUERY_KEY,
   FOLLOW_BUTTON_LABEL,
   MADE_IN_NEPAL_LABEL,
-} from "../brands.constants";
+} from "../constants/brands.constants";
 
 type BrandCardProps = {
   brand: BrandSummary;

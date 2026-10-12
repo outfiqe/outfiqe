@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { UserRole } from "#generated/prisma/enums.js";
@@ -22,9 +23,6 @@ import type {
 } from "./platform-suspensions.types.js";
 
 const HOURS_TO_MS = 60 * 60 * 1000;
-const FORBIDDEN_STATUS = 403;
-const CONFLICT_STATUS = 409;
-const NOT_FOUND_STATUS = 404;
 const USER_NOT_FOUND_MESSAGE = "User not found.";
 const BRAND_NOT_FOUND_MESSAGE = "Brand not found.";
 const TARGET_TYPE_USER = "user";
@@ -35,18 +33,18 @@ const assertNotSelf = (actorUserId: string, targetUserId: string): void => {
     throw new AppError(
       "CANNOT_MODERATE_SELF",
       "You cannot suspend or ban your own account.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
 
 const assertTargetIsModerable = (target: { role: UserRole } | null): void => {
-  if (!target) throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+  if (!target) throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
   if (target.role === UserRole.ADMIN) {
     throw new AppError(
       "CANNOT_MODERATE_ADMIN",
       "Admin accounts cannot be suspended or banned.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
@@ -103,7 +101,7 @@ export const platformSuspensionsService = {
       throw new AppError(
         "ALREADY_SUSPENDED",
         "This account is already suspended or banned.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -145,7 +143,7 @@ export const platformSuspensionsService = {
     });
 
     if (!changed) {
-      throw new AppError("ALREADY_BANNED", "This account is already banned.", CONFLICT_STATUS);
+      throw new AppError("ALREADY_BANNED", "This account is already banned.", HTTP_STATUS.CONFLICT);
     }
 
     await writeSuspendedRedisFlag(targetUserId, reason, null);
@@ -170,7 +168,7 @@ export const platformSuspensionsService = {
       throw new AppError(
         "NOT_SUSPENDED",
         "This account is not currently suspended.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -200,13 +198,17 @@ export const platformSuspensionsService = {
       throw new AppError(
         "BAN_REQUIRES_SECOND_ADMIN",
         "A ban must be lifted by a different admin than the one who imposed it.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
     const changed = await platformSuspensionsRepository.unbanUser(targetUserId);
     if (!changed) {
-      throw new AppError("NOT_BANNED", "This account is not currently banned.", CONFLICT_STATUS);
+      throw new AppError(
+        "NOT_BANNED",
+        "This account is not currently banned.",
+        HTTP_STATUS.CONFLICT,
+      );
     }
 
     await clearSuspendedRedisFlag(targetUserId);
@@ -226,7 +228,8 @@ export const platformSuspensionsService = {
     const { targetBrandId, actorUserId, reason, durationHours } = input;
 
     const existing = await platformSuspensionsRepository.findBrandSuspensionState(targetBrandId);
-    if (!existing) throw new AppError("BRAND_NOT_FOUND", BRAND_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    if (!existing)
+      throw new AppError("BRAND_NOT_FOUND", BRAND_NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
 
     const expiresAt = durationHours ? new Date(Date.now() + durationHours * HOURS_TO_MS) : null;
 
@@ -238,7 +241,11 @@ export const platformSuspensionsService = {
     });
 
     if (!changed) {
-      throw new AppError("ALREADY_SUSPENDED", "This brand is already suspended.", CONFLICT_STATUS);
+      throw new AppError(
+        "ALREADY_SUSPENDED",
+        "This brand is already suspended.",
+        HTTP_STATUS.CONFLICT,
+      );
     }
 
     await platformAudit.record({
@@ -269,7 +276,7 @@ export const platformSuspensionsService = {
       throw new AppError(
         "NOT_SUSPENDED",
         "This brand is not currently suspended.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 

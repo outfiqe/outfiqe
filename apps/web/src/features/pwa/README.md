@@ -24,116 +24,127 @@ server starts. Setting it only at runtime does nothing.
 
 ## Structure
 
-- `constants/appIcons.ts` — which icons exist (192 and 512 pixels, in both normal and maskable
+The feature is split into topic folders, each with the usual layer folders inside (`api/`, `components/`, `hooks/`, `utils/`, `constants/`, `schemas/`). Code several topics share stays in the feature root's own layer folders.
+
+- Feature root — the PWA feature flag, image hosts, private paths and standalone detection.
+- `install/` — the install prompt and the Apple launch images.
+- `app-manifest/` — icons, screenshots, shortcuts, theme, metadata, viewport, and sharing into and out of the app.
+- `offline/` — offline caching, the offline action queue, persistent storage, background refresh and the offline banner.
+- `push/` — push notifications and the app badge.
+- `service-worker/` — the service worker setup, update prompt, error reporting and the kill switch.
+
+Files:
+
+- `app-manifest/constants/appIcons.ts` — which icons exist (192 and 512 pixels, in both normal and maskable
   form), the Apple icon size, the maskable safe area, and how a file name is built from those.
   Nothing anywhere else should ever write an icon file name by hand.
-- `constants/appleSplashScreens.ts` — the list of iPhone and iPad screen sizes we ship launch
+- `install/constants/appleSplashScreens.ts` — the list of iPhone and iPad screen sizes we ship launch
   images for, and how those file names are built.
-- `constants/appShortcuts.ts` — the shortcuts that appear when you long-press the app icon.
-- `constants/appTheme.ts` — the light and dark theme colours, copied from `--background` in
+- `app-manifest/constants/appShortcuts.ts` — the shortcuts that appear when you long-press the app icon.
+- `app-manifest/constants/appTheme.ts` — the light and dark theme colours, copied from `--background` in
   `packages/design-system/tokens.css` so the app bar matches the app.
-- `constants/appMetadata.ts` — the icon, Apple, and manifest parts of the page head.
-- `constants/serviceWorker.ts` — where the worker is served from, the scope it claims, the name of
+- `app-manifest/constants/appMetadata.ts` — the icon, Apple, and manifest parts of the page head.
+- `service-worker/constants/serviceWorker.ts` — where the worker is served from, the scope it claims, the name of
   the cache holding visited pages, and the address of the offline page. Shared by the app and by
   the worker itself, so the two can never point at different places.
 - `constants/pwaFeatureFlag.ts` — reads `NEXT_PUBLIC_PWA_ENABLED`. Kept separate from
   `serviceWorker.ts` because the worker bundle has no `process.env` and would crash on it.
-- `constants/runtimeCaching.ts` — cache names, how long things are kept, and how many of each are
+- `service-worker/constants/runtimeCaching.ts` — cache names, how long things are kept, and how many of each are
   kept. iPhone gets lower limits than everything else.
 - `constants/privatePaths.ts` — the pages that must never be saved to disk, and the check for them.
-- `constants/serviceWorkerMessages.ts` — the message the app sends the worker to forget everything.
-- `constants/updatePrompt.ts` — the pages where the "new version" prompt must not appear.
-- `constants/offlineCache.ts` — which loaded data may be written to the browser database, how long
+- `service-worker/constants/serviceWorkerMessages.ts` — the message the app sends the worker to forget everything.
+- `service-worker/constants/updatePrompt.ts` — the pages where the "new version" prompt must not appear.
+- `offline/constants/offlineCache.ts` — which loaded data may be written to the browser database, how long
   it is kept, and the version to bump when a saved shape changes.
-- `constants/pushMessage.ts` — the shape of the payload the server sends with a push, and a safe
+- `push/constants/pushMessage.ts` — the shape of the payload the server sends with a push, and a safe
   fallback for anything malformed.
-- `constants/pushOptIn.ts` — remembers, per browser, that someone dismissed the "turn on
+- `push/constants/pushOptIn.ts` — remembers, per browser, that someone dismissed the "turn on
   notifications" bar so it does not come back every visit.
-- `constants/installPrompt.ts` — how many visits before the install bar is worth showing, and how
+- `install/constants/installPrompt.ts` — how many visits before the install bar is worth showing, and how
   long it stays quiet after someone dismisses it.
 - `utils/standalone.ts` — whether the app is running as an installed app, whether the browser is
   on iOS, and whether it can do web push at all.
-- `utils/pushClient.ts` — fetches the push key, subscribes the browser, registers the subscription
+- `push/utils/pushClient.ts` — fetches the push key, subscribes the browser, registers the subscription
   with the API, and unsubscribes.
-- `utils/installPromptStore.ts` — captures the browser's own install prompt when it fires,
+- `install/utils/installPromptStore.ts` — captures the browser's own install prompt when it fires,
   replays it on demand, and counts the visit that just happened.
-- `utils/appBadge.ts` — sets or clears the number on the installed app icon.
-- `hooks/usePushSubscription.ts` — the small state machine behind the opt-in: not-asked, blocked,
+- `push/utils/appBadge.ts` — sets or clears the number on the installed app icon.
+- `push/hooks/usePushSubscription.ts` — the small state machine behind the opt-in: not-asked, blocked,
   needs-install, enabled, and the transient enabling/failed states.
-- `hooks/useInstallPrompt.ts` — the small state machine behind the install bar: hidden, a real
+- `install/hooks/useInstallPrompt.ts` — the small state machine behind the install bar: hidden, a real
   browser install to offer, or the iOS instructions instead.
-- `components/PushNotificationPrompt.tsx` — the dismissible bar and the explainer that runs before
+- `push/components/PushNotificationPrompt.tsx` — the dismissible bar and the explainer that runs before
   the browser's own permission prompt.
-- `components/InstallPrompt.tsx` — the "Install Outfiqe" bar, and the Add to Home Screen steps
+- `install/components/InstallPrompt.tsx` — the "Install Outfiqe" bar, and the Add to Home Screen steps
   shown in its place on an iOS browser tab.
-- `components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
+- `push/components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
   the installed app is open.
-- `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
-- `utils/browserDatabase.ts` — the "do nothing, don't throw" wrapper around an IndexedDB read/write,
+- `offline/utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
+- `offline/utils/browserDatabase.ts` — the "do nothing, don't throw" wrapper around an IndexedDB read/write,
   shared by `queryPersister.ts` and `offlineActionQueue.ts` so a blocked or absent database never
   crashes either one.
-- `constants/offlineActions.ts` — the queue's storage key and how many queued actions it holds.
-- `utils/offlineActionQueue.ts` — the queue itself: add one (collapsing a repeat on the same key
+- `offline/constants/offlineActions.ts` — the queue's storage key and how many queued actions it holds.
+- `offline/utils/offlineActionQueue.ts` — the queue itself: add one (collapsing a repeat on the same key
   into the latest version), list them, remove one. Capped — the oldest queued action is dropped
   once a new one would push the queue over the limit.
-- `utils/offlineActionProcessor.ts` — where a feature registers the real call one of its queued
+- `offline/utils/offlineActionProcessor.ts` — where a feature registers the real call one of its queued
   action types replays through, and the drain that runs them in order once reconnected.
-- `components/OfflineActionSync.tsx` — calls that drain on load and every time the connection comes
+- `offline/components/OfflineActionSync.tsx` — calls that drain on load and every time the connection comes
   back, via `useIsOnline`.
-- `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
-- `utils/webShare.ts` — `shareOrCopyLink`, the one function every "Share" button in the app calls:
+- `offline/utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
+- `app-manifest/utils/webShare.ts` — `shareOrCopyLink`, the one function every "Share" button in the app calls:
   the browser's own share sheet when it has one, copying the link when it doesn't. See
   `apps/web/src/features/explore/README.md`'s "Sharing a look, a profile, or a product" for how
   each surface uses it.
-- `constants/shareTarget.ts` — the share-target route, the form field the shared photo arrives
+- `app-manifest/constants/shareTarget.ts` — the share-target route, the form field the shared photo arrives
   under, and the Cache Storage name/key it's stashed at in between — read by both `app/sw.ts` and
   the client page, so the two can never disagree about any of it.
-- `utils/shareTargetPhoto.ts` — reads the stashed photo back out of Cache Storage as a real `File`,
+- `app-manifest/utils/shareTargetPhoto.ts` — reads the stashed photo back out of Cache Storage as a real `File`,
   and deletes it — a one-time read, not a re-checkable value.
-- `hooks/useSharedPhoto.ts` — the `useQuery` wrapper around that read, so the composing page gets
+- `app-manifest/hooks/useSharedPhoto.ts` — the `useQuery` wrapper around that read, so the composing page gets
   the usual loading/data shape instead of hand-rolling its own effect.
-- `hooks/useIsOnline.ts` — whether there is a connection right now.
+- `offline/hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
-- `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
+- `offline/utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
   out.
-- `utils/manifestIcons.ts` — turns the icon list into the manifest's format.
-- `constants/appScreenshots.ts` — the narrow and wide screenshots Android's install dialog shows,
+- `app-manifest/utils/manifestIcons.ts` — turns the icon list into the manifest's format.
+- `app-manifest/constants/appScreenshots.ts` — the narrow and wide screenshots Android's install dialog shows,
   their sizes and captions.
-- `utils/manifestScreenshots.ts` — turns that list into the manifest's format, keeping only the
+- `app-manifest/utils/manifestScreenshots.ts` — turns that list into the manifest's format, keeping only the
   files that are actually on disk. Imported straight into `app/manifest.ts`, not via the barrel,
   because it reads the filesystem.
-- `utils/appleSplashMedia.ts` — builds the media query that picks one launch image for one device.
-- `utils/appViewport.ts` — the page's `viewport`, including the theme colour for light and dark.
-- `components/AppleSplashLinks.tsx` — puts one launch image link in the page head per device.
-- `components/ServiceWorkerProvider.tsx` — registers the worker, or does nothing when the flag is
+- `install/utils/appleSplashMedia.ts` — builds the media query that picks one launch image for one device.
+- `app-manifest/utils/appViewport.ts` — the page's `viewport`, including the theme colour for light and dark.
+- `install/components/AppleSplashLinks.tsx` — puts one launch image link in the page head per device.
+- `service-worker/components/ServiceWorkerProvider.tsx` — registers the worker, or does nothing when the flag is
   off.
-- `components/OfflineRetryButton.tsx` — the "Try again" button on the offline page.
-- `components/AppUpdatePrompt.tsx` — the "A new version is ready" bar, and the reload it triggers.
-- `components/OfflineBanner.tsx` — the "You're offline" strip, so nobody mistakes saved content for
+- `offline/components/OfflineRetryButton.tsx` — the "Try again" button on the offline page.
+- `service-worker/components/AppUpdatePrompt.tsx` — the "A new version is ready" bar, and the reload it triggers.
+- `offline/components/OfflineBanner.tsx` — the "You're offline" strip, so nobody mistakes saved content for
   live content.
-- `components/PersistentStorageRequest.tsx` — makes the storage request once, on load.
-- `constants/backgroundRefresh.ts` — the periodic sync tag, the feed path it refreshes, and the
+- `offline/components/PersistentStorageRequest.tsx` — makes the storage request once, on load.
+- `offline/constants/backgroundRefresh.ts` — the periodic sync tag, the feed path it refreshes, and the
   minimum time the browser is asked to wait between runs.
-- `utils/backgroundRefresh.ts` — `registerBackgroundRefresh`, which checks that periodic background
+- `offline/utils/backgroundRefresh.ts` — `registerBackgroundRefresh`, which checks that periodic background
   sync exists and is already permitted before registering it — never asks for the permission itself.
-- `components/BackgroundRefreshRegistration.tsx` — calls that once, on load, the same shape as
+- `offline/components/BackgroundRefreshRegistration.tsx` — calls that once, on load, the same shape as
   `PersistentStorageRequest`.
-- `constants/serviceWorkerError.ts` — the message the worker sends when something throws inside it,
+- `service-worker/constants/serviceWorkerError.ts` — the message the worker sends when something throws inside it,
   and the check that safely recognises one arriving.
-- `components/ServiceWorkerErrorReporter.tsx` — listens for that message and hands it to Sentry.
-- `utils/clearOfflineData.ts` — `clearAllOfflineData`, the one call that forgets both the worker's
+- `service-worker/components/ServiceWorkerErrorReporter.tsx` — listens for that message and hands it to Sentry.
+- `offline/utils/clearOfflineData.ts` — `clearAllOfflineData`, the one call that forgets both the worker's
   saved pages/photos and the persisted query cache together. Used on sign out and by the settings
   button below.
-- `components/ClearOfflineDataCard.tsx` — the "Clear offline data" button on the security settings
+- `offline/components/ClearOfflineDataCard.tsx` — the "Clear offline data" button on the security settings
   page.
-- `constants/pwaKillSwitch.ts` — the name of the attribute the server stamps onto `<html>` when the
+- `service-worker/constants/pwaKillSwitch.ts` — the name of the attribute the server stamps onto `<html>` when the
   emergency switch is on, and the client-side check for it.
-- `utils/pwaKillSwitchServer.ts` — reads the actual switch from the server environment. Kept out of
+- `service-worker/utils/pwaKillSwitchServer.ts` — reads the actual switch from the server environment. Kept out of
   this folder's barrel file on purpose — see "Things that are not obvious" below.
-- `utils/teardownServiceWorkerAndCaches.ts` — unregisters every service worker registration and
+- `service-worker/utils/teardownServiceWorkerAndCaches.ts` — unregisters every service worker registration and
   deletes every cache. What actually turns the switch off for someone who already has the app
   installed.
-- `components/PwaKillSwitchTeardown.tsx` — runs that once, on load, only when the switch is on.
+- `service-worker/components/PwaKillSwitchTeardown.tsx` — runs that once, on load, only when the switch is on.
 
 Outside this folder:
 
@@ -199,7 +210,7 @@ afterwards — scrolling further down a feed, opening a product, and so on. That
 TanStack Query, so we write its cache to the browser's own database and read it back on start-up.
 Opening the app with no connection then shows real content instead of empty loading skeletons.
 
-Only data on an explicit allowlist is ever written (`constants/offlineCache.ts`): products,
+Only data on an explicit allowlist is ever written (`offline/constants/offlineCache.ts`): products,
 categories, the explore feed, looks, a brand's products, and the creator leaderboard. Everything
 else is skipped. Failed requests are skipped too, so a page cannot get stuck showing an error it
 saved earlier.
@@ -210,11 +221,11 @@ moment the saved pages and photos are.
 ## Actions taken while offline
 
 A handful of simple on/off actions — liking, saving, or following, for now — are safe to queue:
-sending one twice changes nothing, and a few minutes' delay is invisible. `utils/offlineActionQueue.ts`
+sending one twice changes nothing, and a few minutes' delay is invisible. `offline/utils/offlineActionQueue.ts`
 holds them, keyed so a repeat on the same thing collapses into the latest version instead of
 piling up, and capped so a phone that was offline for a month can't flood the server the moment it
-reconnects. `components/OfflineActionSync.tsx` drains the queue on load and every time the
-connection returns; `utils/offlineActionProcessor.ts` is where a feature registers the real API call
+reconnects. `offline/components/OfflineActionSync.tsx` drains the queue on load and every time the
+connection returns; `offline/utils/offlineActionProcessor.ts` is where a feature registers the real API call
 each of its action types replays through — see `apps/web/src/features/explore/README.md`'s "Liking,
 saving, and following work with no connection" for a concrete example end to end.
 
@@ -241,10 +252,10 @@ bar and shows it once someone has visited enough times to make installing worth 
 Dismissing it is remembered per browser, so it does not come back for two weeks.
 
 On Android and desktop Chrome, the browser fires `beforeinstallprompt` ahead of time and hands over
-an object that can show its own install dialog later; `utils/installPromptStore.ts` captures that
+an object that can show its own install dialog later; `install/utils/installPromptStore.ts` captures that
 event the moment it fires (`event.preventDefault()` stops the browser's own banner from also
 appearing) and holds onto it until the bar's "Install" button asks for it. iPhone never fires that
-event at all — Safari has no install API to hand over — so there `hooks/useInstallPrompt.ts` falls
+event at all — Safari has no install API to hand over — so there `install/hooks/useInstallPrompt.ts` falls
 back to a short "tap Share, then Add to Home Screen" panel instead of a button that could not work.
 
 `e2e/installPrompt.spec.ts` proves both paths for real: dispatching a fake `beforeinstallprompt`
@@ -289,7 +300,7 @@ granting the Notifications permission through Playwright — `context.grantPermi
 `Browser.grantPermissions`, and `Browser.setPermission` were all tried — never moves
 `Notification.permission` off its default in this Chromium build, so no automated test in this
 repo can watch a real notification appear. What the notification actually says is covered instead
-by `constants/pushMessage.test.ts` (unit-level, the same `parsePushMessage` the worker runs) and by
+by `push/constants/pushMessage.test.ts` (unit-level, the same `parsePushMessage` the worker runs) and by
 the API's own `push.messages.test.ts` for the title/body/url/tag the server sends in the first
 place. Worth knowing if this ever needs re-verifying by hand: install the app, subscribe, and
 trigger a real notification from a running API with VAPID keys set.
@@ -318,8 +329,8 @@ refreshes in the background every so often, so opening the app after a while sho
 already caught up rather than a stale page for a moment. On iPhone the feed simply refreshes
 whenever the app is opened, same as it always has.
 
-**Technical:** `components/BackgroundRefreshRegistration.tsx` calls
-`utils/backgroundRefresh.ts`'s `registerBackgroundRefresh` once, on load. It checks that the
+**Technical:** `offline/components/BackgroundRefreshRegistration.tsx` calls
+`offline/utils/backgroundRefresh.ts`'s `registerBackgroundRefresh` once, on load. It checks that the
 Periodic Background Sync permission is already `"granted"` and that the browser actually exposes
 a `periodicSync` manager, and only then registers the `refresh-feed` tag. Nothing here ever asks
 for that permission — there is no prompt to ask for. Chrome grants it on its own, to installed
@@ -354,7 +365,7 @@ purge themselves and try again the moment the browser reports they're out of roo
 after that point. The one manual cache write outside those two rules, the background refresh's own
 `cache.put`, swallows the same kind of failure itself, since nothing in that path goes through the
 plugin at all. Everywhere else that touches IndexedDB — the persisted query cache, the offline
-action queue — already goes through `utils/browserDatabase.ts`'s do-nothing-don't-throw wrapper.
+action queue — already goes through `offline/utils/browserDatabase.ts`'s do-nothing-don't-throw wrapper.
 
 **Errors inside the worker reach Sentry too, not just errors on the page.** `@sentry/nextjs` is
 already initialised on every page (`instrumentation-client.ts`), and it auto-captures uncaught
@@ -364,7 +375,7 @@ worker's. What Sentry's page-level setup cannot see is an error thrown from _ins
 own isolated global scope — a different execution context with no Sentry of its own. `app/sw.ts`
 listens for its own `error`/`unhandledrejection` events and relays a small, safe summary
 (message, stack, and which listener it came from) to every open tab via `postMessage`;
-`components/ServiceWorkerErrorReporter.tsx` is the one thing on the page listening for that
+`service-worker/components/ServiceWorkerErrorReporter.tsx` is the one thing on the page listening for that
 message, and it hands it straight to `Sentry.captureException`, tagged `source: "service-worker"`
 so it's easy to tell apart from an ordinary page error.
 
@@ -392,7 +403,7 @@ Flipping it does two things:
   build flag, so every one of its existing callers respects it automatically.
 - Anyone who already has the worker installed from before gets it torn down: every service worker
   registration unregistered, every cache deleted, the moment they next load the app
-  (`utils/teardownServiceWorkerAndCaches.ts`, run by `components/PwaKillSwitchTeardown.tsx`). This
+  (`service-worker/utils/teardownServiceWorkerAndCaches.ts`, run by `service-worker/components/PwaKillSwitchTeardown.tsx`). This
   is the part that actually matters for an emergency switch — merely refusing new registrations
   would leave everyone who already installed the app running the very thing being turned off.
 
@@ -590,7 +601,7 @@ actually be proven here: that calling the real permission check in a real browse
 experimental `"periodic-background-sync"` permission name is unrecognised, never throws past the
 `try`/`catch` and never crashes the page. The registration logic's branches (granted, not granted,
 no `periodicSync` manager, a throwing Permissions API, no service worker support) are covered at
-the unit level in `utils/backgroundRefresh.test.ts` instead, with the browser APIs stubbed. Worth
+the unit level in `offline/utils/backgroundRefresh.test.ts` instead, with the browser APIs stubbed. Worth
 knowing if this ever needs re-verifying by hand: install the app on Android Chrome, use it across
 several days, then check `chrome://serviceworker-internals` or the app's own network log for a
 background fetch to `/explore` with no page open.
@@ -603,11 +614,11 @@ way any non-`NEXT_PUBLIC_` variable is — but `isPwaEnabled`, and everything bu
 underneath them to pass a prop down from. `app/layout.tsx` is already dynamically rendered on every
 request (it reads `headers()` for the CSP nonce), so it can read the real switch server-side and
 stamp `data-pwa-killed="true"` onto `<html>` before any client code runs.
-`constants/pwaKillSwitch.ts`'s `isPwaKillSwitchEngagedOnClient` just reads that attribute back off
+`service-worker/constants/pwaKillSwitch.ts`'s `isPwaKillSwitchEngagedOnClient` just reads that attribute back off
 the root element — reliable, because the browser sets an element's attributes the instant it
 parses that element's opening tag, long before any deferred script executes.
 
-**`utils/pwaKillSwitchServer.ts` is imported directly, never through this folder's own barrel
+**`service-worker/utils/pwaKillSwitchServer.ts` is imported directly, never through this folder's own barrel
 file.** It starts with `import "server-only"`, which fails the build the moment ANY client
 component's import chain reaches it — and since `index.ts` is imported by client components
 throughout this app, re-exporting it there would poison the whole barrel for every one of them.
@@ -657,10 +668,10 @@ What's guarded automatically, on every PR:
 
 ## Screenshots for the install dialog
 
-`constants/appScreenshots.ts` is the list Android's install dialog draws its preview from — a
+`app-manifest/constants/appScreenshots.ts` is the list Android's install dialog draws its preview from — a
 narrow (phone) and a wide (desktop) set. `scripts/capture-pwa-screenshots.mts`
 (`pnpm --filter @outfiqe/web capture:pwa-screenshots`) drives a headless browser over the running
-app and writes them to `public/screenshots/`. `utils/manifestScreenshots.ts` only lists the ones
+app and writes them to `public/screenshots/`. `app-manifest/utils/manifestScreenshots.ts` only lists the ones
 that are actually on disk, so the manifest stays valid whether or not any have been captured yet —
 and the moment real ones are committed they appear in the manifest with no code change.
 

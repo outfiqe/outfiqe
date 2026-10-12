@@ -5,7 +5,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { useRecordTourOutcome } from "./useRecordTourOutcome";
@@ -14,7 +14,7 @@ import { useTourProgress } from "./useTourProgress";
 const API_BASE = "http://localhost:3000/api";
 const ok = (data: unknown) => HttpResponse.json({ success: true, data });
 
-vi.mock("@/features/auth/AuthContext", () => ({ useAuth: vi.fn() }));
+vi.mock("@/features/auth/components/AuthContext", () => ({ useAuth: vi.fn() }));
 
 const SAVED_TOUR = {
   tourKey: "crm-dashboard",

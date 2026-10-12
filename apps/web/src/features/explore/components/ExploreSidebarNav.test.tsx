@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
   useLinkStatus: () => linkStatus,
 }));
 
-import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../explore.constants";
+import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../constants/explore.constants";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 
 const renderNav = (props?: Partial<Parameters<typeof ExploreSidebarNav>[0]>) =>

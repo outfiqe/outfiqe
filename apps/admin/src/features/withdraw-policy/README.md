@@ -9,8 +9,8 @@ one shared record.
 
 ## Structure
 
-- `api.ts` / `schemas.ts` — `GET /withdraw/policy?ownerType=`, `PUT /withdraw/admin/policy`.
-- `WithdrawPolicyPage.tsx` — the tab switch plus the form (`PolicyForm`, a local component keyed
+- `api/withdrawPolicyApi.ts` / `api/withdrawPolicySchemas.ts` — `GET /withdraw/policy?ownerType=`, `PUT /withdraw/admin/policy`.
+- `components/WithdrawPolicyPage.tsx` — the tab switch plus the form (`PolicyForm`, a local component keyed
   by `ownerType` so switching tabs discards any unsaved edits rather than merging them).
 
 ## Funnel
@@ -29,4 +29,4 @@ Added it the same way `get`/`post`/`patch`/`del` are already implemented, since 
 
 ## Form validation
 
-The policy form uses react-hook-form with `policyForm.schema.ts`. Numbers are kept as text in the form so a person can clear a field, and are converted when the form is sent. Max amount must be above min amount, and the window value and attempts per window must be at least 1, matching the API. Saving shows a success toast. The page shows a skeleton until the current policy has loaded so the form never starts with placeholder values.
+The policy form uses react-hook-form with `schemas/policyForm.schema.ts`. Numbers are kept as text in the form so a person can clear a field, and are converted when the form is sent. Max amount must be above min amount, and the window value and attempts per window must be at least 1, matching the API. Saving shows a success toast. The page shows a skeleton until the current policy has loaded so the form never starts with placeholder values.

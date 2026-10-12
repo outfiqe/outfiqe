@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { cacheService } from "#redis/cache.service.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import { PLATFORM_NAV_ACCESS_HIDDEN_KEYS_CACHE_KEY } from "./platform-nav-access.constants.js";
 

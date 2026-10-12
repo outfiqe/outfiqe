@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
 import type {
@@ -12,9 +13,7 @@ import type {
 import { AppError } from "./error-handler.js";
 
 const BEARER_PREFIX = "Bearer ";
-const UNAUTHORIZED_STATUS = 401;
 const UNAUTHORIZED_MESSAGE = "Authentication required.";
-const FORBIDDEN_STATUS = 403;
 const SAFE_HTTP_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 const resolveImpersonation = async (
@@ -35,7 +34,7 @@ const resolveImpersonation = async (
     throw new AppError(
       "IMPERSONATION_ENDED",
       "This impersonation session is no longer valid.",
-      UNAUTHORIZED_STATUS,
+      HTTP_STATUS.UNAUTHORIZED,
     );
   }
 
@@ -51,12 +50,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith(BEARER_PREFIX)) {
-    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, UNAUTHORIZED_STATUS));
+    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, HTTP_STATUS.UNAUTHORIZED));
   }
 
   const token = authHeader.slice(BEARER_PREFIX.length).trim();
   if (!token) {
-    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, UNAUTHORIZED_STATUS));
+    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, HTTP_STATUS.UNAUTHORIZED));
   }
 
   let decoded;
@@ -68,15 +67,15 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         new AppError(
           "TOKEN_EXPIRED",
           "Your session has expired. Please sign in again.",
-          UNAUTHORIZED_STATUS,
+          HTTP_STATUS.UNAUTHORIZED,
         ),
       );
     }
-    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, UNAUTHORIZED_STATUS));
+    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, HTTP_STATUS.UNAUTHORIZED));
   }
 
   if (!isJWTPayload(decoded) || !decoded.role) {
-    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, UNAUTHORIZED_STATUS));
+    return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, HTTP_STATUS.UNAUTHORIZED));
   }
 
   const principal: AuthPrincipal = { userId: decoded.sub, role: decoded.role };
@@ -93,7 +92,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         new AppError(
           "IMPERSONATION_READ_ONLY",
           "This action isn't allowed during a read-only impersonation session.",
-          FORBIDDEN_STATUS,
+          HTTP_STATUS.FORBIDDEN,
         ),
       );
     }

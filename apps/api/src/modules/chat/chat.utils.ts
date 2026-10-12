@@ -1,8 +1,9 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { type BlockedChatContact, type ChatContact, ChatUnavailableReason } from "./chat.types.js";
 
-const CHAT_UNAVAILABLE_STATUS = 403;
+const CHAT_UNAVAILABLE_STATUS = HTTP_STATUS.FORBIDDEN;
 
 const CHAT_UNAVAILABLE_MESSAGE: Record<ChatUnavailableReason, string> = {
   [ChatUnavailableReason.YOU_TURNED_OFF_THIS_PERSON]:

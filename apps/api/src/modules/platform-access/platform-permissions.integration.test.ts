@@ -6,8 +6,8 @@ import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.j
 import {
   createAdminSession,
   createRoleLimitedStaffSession,
-} from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
 
 import type { PlatformPermissionKey } from "./platform-access.constants.js";
 

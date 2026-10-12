@@ -1,7 +1,7 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import { testApp } from "./testing/integration/testApp.js";
+import { testApp } from "./testing/integration/test-app.js";
 
 describe("security headers", () => {
   it("sets HSTS, a locked-down CSP, and clickjacking protection on every response", async () => {

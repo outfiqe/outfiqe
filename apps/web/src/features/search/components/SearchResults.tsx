@@ -10,7 +10,7 @@ import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProduc
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { formatResultCount } from "@/shared/lib/formatCount";
 
-import { MIN_QUERY_LENGTH } from "../search.constants";
+import { MIN_QUERY_LENGTH } from "../constants/search.constants";
 
 export const SearchResults = () => {
   const searchParams = useSearchParams();

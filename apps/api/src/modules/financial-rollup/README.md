@@ -13,19 +13,19 @@ own; this module is pure read-only aggregation over their tables, owns none of i
 
 ## Structure
 
-- `financialRollup.routes.ts` — `GET /` (admin-only, `?range=cycle|30d|all`), `GET /ledger`
+- `financial-rollup.routes.ts` — `GET /` (admin-only, `?range=cycle|30d|all`), `GET /ledger`
   (paginated, filterable), `GET /ledger/export` (same filters, unpaginated CSV, capped).
-- `financialRollup.controller.ts` — reads the validated query, calls the service; `exportLedger`
+- `financial-rollup.controller.ts` — reads the validated query, calls the service; `exportLedger`
   additionally logs the export event and sets the CSV response headers.
-- `financialRollup.service.ts` — resolves `range` to a `since` cutoff date (or `null` for `all`),
+- `financial-rollup.service.ts` — resolves `range` to a `since` cutoff date (or `null` for `all`),
   composes the rollup view, and owns ledger cursor encode/decode and the export row-cap check.
-- `financialRollup.repository.ts` — the aggregation and ledger queries themselves.
-- `financialRollup.constants.ts` — which `BrandPayoutStatus` / `CommissionStatus` values count as
+- `financial-rollup.repository.ts` — the aggregation and ledger queries themselves.
+- `financial-rollup.constants.ts` — which `BrandPayoutStatus` / `CommissionStatus` values count as
   still-owed, plus the ledger page-size/export-row-cap constants.
-- `financialRollup.utils.ts` — pure helpers: `sumStatusBuckets`, `buildPaymentMethodBreakdown`,
+- `financial-rollup.utils.ts` — pure helpers: `sumStatusBuckets`, `buildPaymentMethodBreakdown`,
   `buildAttributionView`, the ledger cursor encode/decode pair, and `toLedgerCsv`.
-- `financialRollup.schemas.ts` — Zod validation for all three routes.
-- `financialRollup.types.ts` — the rollup view shape, the ledger row/page shape, and the small
+- `financial-rollup.schemas.ts` — Zod validation for all three routes.
+- `financial-rollup.types.ts` — the rollup view shape, the ledger row/page shape, and the small
   per-payment-method / attribution aggregate shapes the repository returns before they're folded
   into the view.
 
@@ -35,8 +35,8 @@ own; this module is pure read-only aggregation over their tables, owns none of i
 gateway-side numbers next to ledger-side numbers, a GMV-by-payment-method breakdown, and — below
 all of that — a filterable, paginated order-level ledger table they can export to CSV.
 
-**Technical:** `financialRollup.routes.ts` → `financialRollup.controller.ts` →
-`financialRollup.service.ts` → `financialRollup.repository.ts` → Postgres. The ledger and export
+**Technical:** `financial-rollup.routes.ts` → `financial-rollup.controller.ts` →
+`financial-rollup.service.ts` → `financial-rollup.repository.ts` → Postgres. The ledger and export
 routes share the same repository query (`listLedger`) and the same filter shape
 (`financialLedgerQuerySchema`/`financialLedgerExportQuerySchema` share a base `ledgerFilterFields`
 object) — export is just "the ledger query with no cursor, a much higher row cap, and CSV instead
@@ -50,7 +50,7 @@ of JSON" rather than a separate code path.
   summing a _joined_ table's column, which Prisma's `aggregate`/`groupBy` can't express (they only
   aggregate fields on the model being queried). This is exactly the "ORM genuinely can't express
   it → raw SQL" case this codebase's query-preference order already documents (see
-  `creatorLook.repository.ts` for other precedent). A real `SUM()` also avoids pulling every
+  `creator-look.repository.ts` for other precedent). A real `SUM()` also avoids pulling every
   matching row into memory for the `all` range, which could be the whole table. The same reasoning
   extends to `sumOrderTotalsByPaymentMethod` (needs `orders.payment_method`, a joined column) and
   `sumRealizedBrandPayoutFeesByPaymentMethod`/`sumAttributionCounts` (need a

@@ -1,5 +1,6 @@
 import { addDays } from "date-fns/addDays";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CrmTaskStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta } from "#lib/crm-counters.js";
@@ -19,9 +20,6 @@ import type {
   Timeline,
 } from "./crm-activities.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const BAD_REQUEST_STATUS = 400;
-
 type TenantOrganization = { id: string; linkedBrandId: string | null };
 
 const requireValidSubject = async (
@@ -30,19 +28,27 @@ const requireValidSubject = async (
 ): Promise<void> => {
   if (subject.subjectType === "partner") {
     if (!(await crmRelationshipsService.isPartner(organization, subject.subjectId))) {
-      throw new AppError("SUBJECT_NOT_FOUND", "That partner isn't in this CRM.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "SUBJECT_NOT_FOUND",
+        "That partner isn't in this CRM.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     return;
   }
   if (subject.subjectType === "customer") {
     if (!(await crmRelationshipsService.isCustomer(organization, subject.subjectId))) {
-      throw new AppError("SUBJECT_NOT_FOUND", "That customer isn't in this CRM.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "SUBJECT_NOT_FOUND",
+        "That customer isn't in this CRM.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     return;
   }
   const deal = await crmPipelineRepository.findDeal(organization.id, subject.subjectId);
   if (!deal) {
-    throw new AppError("SUBJECT_NOT_FOUND", "That deal isn't in this CRM.", NOT_FOUND_STATUS);
+    throw new AppError("SUBJECT_NOT_FOUND", "That deal isn't in this CRM.", HTTP_STATUS.NOT_FOUND);
   }
 };
 
@@ -95,7 +101,7 @@ export const crmActivitiesService = {
   async deleteActivity(organizationId: string, activityId: string): Promise<void> {
     const existing = await crmActivitiesRepository.findActivity(organizationId, activityId);
     if (!existing)
-      throw new AppError("ACTIVITY_NOT_FOUND", "Activity not found.", NOT_FOUND_STATUS);
+      throw new AppError("ACTIVITY_NOT_FOUND", "Activity not found.", HTTP_STATUS.NOT_FOUND);
     await crmActivitiesRepository.deleteActivity(organizationId, activityId);
   },
 
@@ -189,7 +195,7 @@ export const crmActivitiesService = {
     actorUserId: string | null,
   ): Promise<TaskRecord> {
     const existing = await crmActivitiesRepository.findTask(organizationId, taskId);
-    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", NOT_FOUND_STATUS);
+    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", HTTP_STATUS.NOT_FOUND);
 
     let reassignedUserId: string | null = null;
     if (data.assigneeMembershipId && data.assigneeMembershipId !== existing.assigneeMembershipId) {
@@ -217,7 +223,7 @@ export const crmActivitiesService = {
 
   async deleteTask(organizationId: string, taskId: string): Promise<void> {
     const existing = await crmActivitiesRepository.findTask(organizationId, taskId);
-    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", NOT_FOUND_STATUS);
+    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", HTTP_STATUS.NOT_FOUND);
     await crmActivitiesRepository.deleteTask(organizationId, taskId);
   },
 
@@ -230,7 +236,7 @@ export const crmActivitiesService = {
       throw new AppError(
         "MEMBERSHIP_NOT_FOUND",
         "That teammate isn't a member of this organization.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
     return membership;

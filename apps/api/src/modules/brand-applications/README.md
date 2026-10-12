@@ -8,19 +8,19 @@ time-limited invite the brand uses to set up their account.
 
 ## Structure
 
-- `brandApplication.routes.ts` — `POST /` (public, rate-limited), `GET /` (admin, cursor-paginated,
+- `brand-application.routes.ts` — `POST /` (public, rate-limited), `GET /` (admin, cursor-paginated,
   filterable by status), `POST /:id/approve`, `POST /:id/reject` (both admin-only).
-- `brandApplication.controller.ts` — reads validated request data, calls the service, sends the
+- `brand-application.controller.ts` — reads validated request data, calls the service, sends the
   response envelope.
-- `brandApplication.service.ts` — business rules: only a `PENDING` application can be reviewed,
+- `brand-application.service.ts` — business rules: only a `PENDING` application can be reviewed,
   approving creates the `Brand` + `BrandInvite` in one transaction and emails an invite link,
   rejecting emails the brand with an optional reason.
-- `brandApplication.repository.ts` — Prisma queries, including the `approve` transaction (brand +
+- `brand-application.repository.ts` — Prisma queries, including the `approve` transaction (brand +
   invite + application status, all-or-nothing).
-- `brandApplication.schemas.ts` — Zod request validation (create body, list query, id param, reject
+- `brand-application.schemas.ts` — Zod request validation (create body, list query, id param, reject
   body).
-- `brandApplication.types.ts` — shared types derived from the schemas and Prisma model.
-- `brandApplication.integration.test.ts` — colocated integration test; exercises the routes above
+- `brand-application.types.ts` — shared types derived from the schemas and Prisma model.
+- `brand-application.integration.test.ts` — colocated integration test; exercises the routes above
   end-to-end through `testApp` + a real test database (see `apps/api/src/testing/README.md`).
 
 ## Funnel
@@ -34,8 +34,8 @@ time-limited invite the brand uses to set up their account.
 
 **Technical:**
 
-`brandApplication.routes.ts` → `brandApplication.controller.ts` → `brandApplication.service.ts` →
-`brandApplication.repository.ts` → Postgres (via Prisma). Approval additionally writes a `Brand`
+`brand-application.routes.ts` → `brand-application.controller.ts` → `brand-application.service.ts` →
+`brand-application.repository.ts` → Postgres (via Prisma). Approval additionally writes a `Brand`
 and a `BrandInvite` in the same DB transaction as the status update, so a brand is never left
 half-provisioned.
 
@@ -45,7 +45,7 @@ half-provisioned.
   against a double-click or two admins approving the same application concurrently; only the first
   request wins. The service-level check is a fast-path pre-check only; the actual guarantee is an
   atomic `updateMany({ where: { id, status: PENDING } })` inside the same transaction as the
-  `Brand`/`BrandInvite` writes (`brandApplication.repository.ts`) — a plain read-then-write here
+  `Brand`/`BrandInvite` writes (`brand-application.repository.ts`) — a plain read-then-write here
   would let two concurrent `approve` calls (or a racing `approve` + `reject`) both pass the read
   and each provision its own `Brand`, so the status flip is the thing that's atomic, not just the
   earlier read.

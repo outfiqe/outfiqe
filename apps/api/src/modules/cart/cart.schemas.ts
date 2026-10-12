@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { citySchema } from "#modules/delivery-zones/deliveryZone.schemas.js";
+import { citySchema } from "#modules/delivery-zones/delivery-zone.schemas.js";
 
 import { MAX_CART_ITEM_QTY } from "./cart.constants.js";
 

@@ -6,9 +6,9 @@ Lets admins create, publish, reorder and re-image the shopper-facing categories.
 
 ## Structure
 
-- `CategoriesPage.tsx` — the create form, the reorderable list, and the publish and image actions.
-- `categoryForm.schema.ts` — the zod schema and empty values for the create form. Its limits mirror the API's `createCategorySchema` (name and slug 2 to 60 characters, slug lowercase letters, numbers and single hyphens).
-- `api.ts`, `schemas.ts` — the API client and the response shapes.
+- `components/CategoriesPage.tsx` — the create form, the reorderable list, and the publish and image actions.
+- `schemas/categoryForm.schema.ts` — the zod schema and empty values for the create form. Its limits mirror the API's `createCategorySchema` (name and slug 2 to 60 characters, slug lowercase letters, numbers and single hyphens).
+- `api/categoriesApi.ts`, `api/categoriesSchemas.ts` — the API client and the response shapes.
 
 ## Funnel
 

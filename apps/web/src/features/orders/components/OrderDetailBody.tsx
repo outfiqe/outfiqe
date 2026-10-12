@@ -139,9 +139,9 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
       </div>
 
       <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">
-        {items.map((item) => (
-          <li key={item.id}>
-            {item.productName} · {item.sizeLabel} × {item.qty}
+        {items.map((orderItem) => (
+          <li key={orderItem.id}>
+            {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
           </li>
         ))}
       </ul>

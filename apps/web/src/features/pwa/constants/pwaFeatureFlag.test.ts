@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { PWA_KILL_SWITCH_ATTRIBUTE } from "./pwaKillSwitch";
+import { PWA_KILL_SWITCH_ATTRIBUTE } from "../service-worker/constants/pwaKillSwitch";
 
 const importIsPwaEnabled = async () => {
   vi.resetModules();

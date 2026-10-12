@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import multer from "multer";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
@@ -17,7 +18,7 @@ const MAX_FILES = 6;
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const INVALID_FILE_STATUS = 422;
+const INVALID_FILE_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const messageForMulterError = (code: multer.MulterError["code"]): string => {
   switch (code) {
@@ -49,8 +50,6 @@ const upload = multer({
   },
 });
 
-const TOO_MANY_REQUESTS_STATUS = 429;
-
 const checkImagePipelineBackPressure = async (_req: Request, res: Response, next: NextFunction) => {
   const decision = await checkImageIngestBackPressure();
   if (decision.allowed) {
@@ -62,7 +61,7 @@ const checkImagePipelineBackPressure = async (_req: Request, res: Response, next
     new AppError(
       "IMAGE_QUEUE_SATURATED",
       "The image processing queue is at capacity. Please try again shortly.",
-      TOO_MANY_REQUESTS_STATUS,
+      HTTP_STATUS.TOO_MANY_REQUESTS,
     ),
   );
 };

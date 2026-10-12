@@ -5,32 +5,40 @@ import {
   accountRestoredTemplate,
   accountSuspendedTemplate,
   adminInviteTemplate,
+  creatorApprovedTemplate,
+  creatorRejectedTemplate,
+  passwordResetTemplate,
+  verifyEmailTemplate,
+} from "./account.templates.js";
+import {
   brandApplicationReceivedInternalTemplate,
   brandApprovedTemplate,
   brandRejectedTemplate,
   brandRestoredTemplate,
   brandSuspendedTemplate,
-  creatorApprovedTemplate,
-  creatorRejectedTemplate,
+  productApprovedTemplate,
+  productRejectedTemplate,
+  staleShipmentReminderTemplate,
+} from "./brand.templates.js";
+import {
   crmOrganizationInviteTemplate,
   crmOwnershipTransferRequestTemplate,
   crmSubscriptionRenewalDueTemplate,
+} from "./crm.templates.js";
+import {
   manualRefundNeededTemplate,
   newOrderNotificationTemplate,
   orderCancelledTemplate,
   orderConfirmationTemplate,
-  passwordResetTemplate,
   paymentSettledTemplate,
-  productApprovedTemplate,
-  productRejectedTemplate,
   refundFailedTemplate,
-  staleShipmentReminderTemplate,
+  withdrawRequestReceivedInternalTemplate,
+} from "./order.templates.js";
+import {
   supportRequestReceivedTemplate,
   supportResolvedTemplate,
   supportStaffReplyTemplate,
-  verifyEmailTemplate,
-  withdrawRequestReceivedInternalTemplate,
-} from "./templates.js";
+} from "./support.templates.js";
 
 const XSS_PAYLOAD = '<img src=x onerror="alert(1)">';
 

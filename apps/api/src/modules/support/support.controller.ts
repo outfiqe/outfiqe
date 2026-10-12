@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -21,7 +22,6 @@ import type {
 } from "./support.schemas.js";
 import { supportService } from "./support.service.js";
 
-const CREATED_STATUS = 201;
 const SUPPORT_AUDIT_TARGET = "support-ticket";
 
 const requestContext = (req: Request) => ({
@@ -38,7 +38,7 @@ export const supportController = {
       res,
       { reference: ticket.reference, id: ticket.id },
       "Request submitted.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 
@@ -66,7 +66,7 @@ export const supportController = {
       res,
       await supportService.requesterReply(principal.userId, id, body, attachmentUrls),
       "Reply sent.",
-      CREATED_STATUS,
+      HTTP_STATUS.CREATED,
     );
   },
 
@@ -99,7 +99,7 @@ export const supportController = {
       targetId: id,
     });
 
-    sendSuccess(res, ticket, "Reply sent.", CREATED_STATUS);
+    sendSuccess(res, ticket, "Reply sent.", HTTP_STATUS.CREATED);
   },
 
   async adminChangeStatus(_req: Request, res: Response) {

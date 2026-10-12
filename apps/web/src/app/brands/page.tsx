@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BrandsGrid } from "@/features/brands";
 import { getBrandsFirstPageServer } from "@/features/brands/api/serverBrands";
-import { BRANDS_QUERY_KEY } from "@/features/brands/brands.constants";
+import { BRANDS_QUERY_KEY } from "@/features/brands/constants/brands.constants";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 

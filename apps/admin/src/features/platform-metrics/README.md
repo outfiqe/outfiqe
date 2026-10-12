@@ -11,11 +11,11 @@ section).
 
 ## Structure
 
-- `schemas.ts` — Zod mirrors of the API shapes (`TenantMetricRow`, `PlatformOverview`,
+- `api/platformMetricsSchemas.ts` — Zod mirrors of the API shapes (`TenantMetricRow`, `PlatformOverview`,
   `TenantMetricDetail`, `TenantSparklinePoint`, `PlatformActivityTrendPoint`).
-- `api.ts` — `platformMetricsApi` (`getOverview`, `getActivityTrend`, `listTenants`,
+- `api/platformMetricsApi.ts` — `platformMetricsApi` (`getOverview`, `getActivityTrend`, `listTenants`,
   `getTenantDetail`).
-- `PlatformOverviewPage.tsx` — the `/platform` landing. A `StatCard` KPI row from `getOverview`
+- `components/PlatformOverviewPage.tsx` — the `/platform` landing. A `StatCard` KPI row from `getOverview`
   (tenants / members / contacts / deals / tickets / activities), a "Quick access" row of `Link`
   shortcuts to the most-used admin pages (Orders, Products, Brand applications, Coupons,
   Withdrawal requests, Support requests — a fixed, hand-picked list, not derived from actual
@@ -26,11 +26,11 @@ section).
   rollup it degrades to a one-line note instead of a page-level error. Once the overview has
   loaded it also mounts `features/product-tour`'s `PlatformDashboardTour` and shows a "Take the
   tour" link in the header that replays it — see that feature's own README.
-- `PlatformMetricsPage.tsx` — six overview stat cards + a plan filter, a sort control, and a
+- `components/PlatformMetricsPage.tsx` — six overview stat cards + a plan filter, a sort control, and a
   paginated tenant table. Each row links to the detail.
-- `TenantMetricsDetailPage.tsx` — the tenant's current metrics, its live partner/customer totals,
+- `components/TenantMetricsDetailPage.tsx` — the tenant's current metrics, its live partner/customer totals,
   and a `<TrendChart size="mini">` sparkline of `activityCount` across the rollup series.
-- `PlatformMetricsPage.integration.test.tsx` / `PlatformOverviewPage.integration.test.tsx` — MSW
+- `components/PlatformMetricsPage.integration.test.tsx` / `components/PlatformOverviewPage.integration.test.tsx` — MSW
   render tests (table + empty state; KPI row, activity chart, settlement gap, rollup-forbidden
   degradation, overview error).
 

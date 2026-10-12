@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { buildTenantOrigin, isOnTenantHost } from "@/lib/tenantHost";
 
 import { resolveAdminLanding } from "./adminLanding";

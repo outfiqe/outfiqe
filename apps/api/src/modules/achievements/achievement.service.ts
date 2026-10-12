@@ -4,7 +4,7 @@ import { currentIsoWeekKey } from "#lib/iso-week.utils.js";
 import logger from "#lib/winston.utils.js";
 import { badgeRepository } from "#modules/badges/badge.repository.js";
 import type { BadgeOwnerRecord } from "#modules/badges/badge.types.js";
-import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creatorLeaderboard.repository.js";
+import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creator-leaderboard.repository.js";
 import { xpService } from "#modules/xp/xp.service.js";
 import { describeError } from "#redis/redis.utils.js";
 

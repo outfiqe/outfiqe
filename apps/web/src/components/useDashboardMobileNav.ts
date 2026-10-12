@@ -19,14 +19,14 @@ export const useDashboardMobileNav = (): DashboardMobileNav => {
   const { navItems, accountLabel } = useDashboardNav();
   const { pinnedIds, save, reset } = useNavPreferences();
 
-  const itemById = new Map(navItems.map((item) => [item.id, item]));
+  const itemById = new Map(navItems.map((navItem) => [navItem.id, navItem]));
   const resolvedIds = resolvePinnedIds(navItems, pinnedIds);
   const pinnedIdSet = new Set(resolvedIds);
 
   const pinnedItems = resolvedIds
     .map((id) => itemById.get(id))
-    .filter((item): item is SidebarNavItem => item !== undefined);
-  const overflowItems = navItems.filter((item) => !pinnedIdSet.has(item.id));
+    .filter((navItem): navItem is SidebarNavItem => navItem !== undefined);
+  const overflowItems = navItems.filter((navItem) => !pinnedIdSet.has(navItem.id));
 
   return {
     pinnedItems,

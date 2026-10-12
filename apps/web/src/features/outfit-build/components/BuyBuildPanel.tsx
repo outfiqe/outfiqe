@@ -8,8 +8,8 @@ import { useId, useState } from "react";
 import { useAuth } from "@/features/auth";
 
 import type { BuildCartResult } from "../api/outfitSchemas";
+import type { BuyableBuildItem } from "../board/utils/outfitBoardRules";
 import { useBuyFromBuild } from "../hooks/useBuyFromBuild";
-import type { BuyableBuildItem } from "../utils/outfitBoardRules";
 
 type ItemChoice = { sizeLabel: string; isTicked: boolean };
 
@@ -67,7 +67,7 @@ export const BuyBuildPanel = ({ outfitId, items }: BuyBuildPanelProps) => {
   const { isAuthenticated, isShopper } = useAuth();
   const buyFromBuild = useBuyFromBuild(outfitId);
   const [choiceByProductId, setChoiceByProductId] = useState(
-    () => new Map(items.map((item) => [item.productId, startingChoice(item)])),
+    () => new Map(items.map((buildItem) => [buildItem.productId, startingChoice(buildItem)])),
   );
   const [hasNothingPicked, setHasNothingPicked] = useState(false);
 

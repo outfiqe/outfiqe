@@ -10,7 +10,7 @@ real-time — plain react-query fetch + invalidate, no socket.
 
 - `api/productReviewSchemas.ts` / `api/productReviewsApi.ts` — Zod-validated client for
   `/api/products/:productId/reviews`.
-- `product-reviews.constants.ts` — `productReviewsQueryKey` (the shared query-key builder every
+- `constants/productReviews.constants.ts` — `productReviewsQueryKey` (the shared query-key builder every
   hook here uses so a mutation's `invalidateQueries({ queryKey: ["product-reviews", productId] })`
   catches every sort/filter combination cached for that product), plus the image-count and
   min-body-length constants the write form enforces client-side (mirroring

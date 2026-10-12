@@ -6,8 +6,8 @@ import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { BUILT_IN_ROLE_NAME } from "#modules/crm-access/crm-access.constants.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { PLATFORM_PERMISSION_CATALOG } from "#modules/platform-access/platform-access.constants.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
 
 beforeEach(async () => {
   await prisma.permission.createMany({

@@ -1,5 +1,6 @@
 import { addMinutes } from "date-fns/addMinutes";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
@@ -29,11 +30,6 @@ import type {
   TenantImpersonationLogEntry,
 } from "./platform-impersonation.types.js";
 
-const CONFLICT_STATUS = 409;
-const FORBIDDEN_STATUS = 403;
-const NOT_FOUND_STATUS = 404;
-const BAD_REQUEST_STATUS = 400;
-const GONE_STATUS = 410;
 const SECONDS_PER_MINUTE = 60;
 const MS_PER_SECOND = 1000;
 const TENANT_LOG_LIMIT = 50;
@@ -78,7 +74,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "IMPERSONATION_DISABLED",
         "Impersonation is disabled for this organization.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -90,7 +86,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "TARGET_NOT_A_MEMBER",
         "The target isn't an active member of this organization.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -99,7 +95,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "TARGET_NOT_A_MEMBER",
         "The target account no longer exists.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -107,7 +103,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "TARGET_IS_PLATFORM_STAFF",
         "You can't impersonate another platform staff account.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -119,7 +115,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "SESSION_ALREADY_ACTIVE",
         "You already have an active impersonation session for this organization.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -192,13 +188,17 @@ export const platformImpersonationService = {
   async revoke(sessionId: string, revokedById: string, canManageAny: boolean): Promise<void> {
     const session = await platformImpersonationRepository.findById(sessionId);
     if (!session) {
-      throw new AppError("SESSION_NOT_FOUND", "Impersonation session not found.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "SESSION_NOT_FOUND",
+        "Impersonation session not found.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (!canManageAny && session.impersonatorId !== revokedById) {
       throw new AppError(
         "NOT_YOUR_SESSION",
         "You can only revoke your own impersonation sessions.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
     if (session.revokedAt) return;
@@ -241,13 +241,17 @@ export const platformImpersonationService = {
   ): Promise<OpenImpersonationSessionResult> {
     const session = await platformImpersonationRepository.findById(sessionId);
     if (!session) {
-      throw new AppError("SESSION_NOT_FOUND", "Impersonation session not found.", NOT_FOUND_STATUS);
+      throw new AppError(
+        "SESSION_NOT_FOUND",
+        "Impersonation session not found.",
+        HTTP_STATUS.NOT_FOUND,
+      );
     }
     if (!canManageAny && session.impersonatorId !== requesterId) {
       throw new AppError(
         "NOT_YOUR_SESSION",
         "You can only open your own impersonation sessions.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
 
@@ -256,7 +260,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "IMPERSONATION_ENDED",
         "This impersonation session is no longer active.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -267,7 +271,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "ORGANIZATION_NOT_FOUND",
         "The tenant organization no longer exists.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -276,7 +280,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "TARGET_NOT_A_MEMBER",
         "The target account no longer exists.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -306,7 +310,7 @@ export const platformImpersonationService = {
       throw new AppError(
         "IMPERSONATION_CODE_INVALID",
         "This support link has expired or was already used.",
-        GONE_STATUS,
+        HTTP_STATUS.GONE,
       );
     }
     return { accessToken };

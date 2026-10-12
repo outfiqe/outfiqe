@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { runAuthRetentionSweep } from "./auth.retention.js";
 

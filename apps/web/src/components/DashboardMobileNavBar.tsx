@@ -121,7 +121,7 @@ export const DashboardMobileNavBar = () => {
 
   const leftPins = pinnedItems.slice(0, 2);
   const rightPins = pinnedItems.slice(2, 4);
-  const pinnedIds = pinnedItems.map((item) => item.id);
+  const pinnedIds = pinnedItems.map((navItem) => navItem.id);
 
   return (
     <div className="lg:hidden">
@@ -158,13 +158,13 @@ export const DashboardMobileNavBar = () => {
 
                 {overflowItems.length > 0 && (
                   <ul className="grid grid-cols-2 gap-2">
-                    {overflowItems.map((item) => {
-                      const active = isNavItemActive(item.href, pathname);
-                      const Icon = item.icon;
+                    {overflowItems.map((navItem) => {
+                      const active = isNavItemActive(navItem.href, pathname);
+                      const Icon = navItem.icon;
                       return (
-                        <li key={item.id}>
+                        <li key={navItem.id}>
                           <NavTarget
-                            item={item}
+                            item={navItem}
                             active={active}
                             onNavigate={closeMenu}
                             className={cn(
@@ -175,7 +175,7 @@ export const DashboardMobileNavBar = () => {
                             )}
                           >
                             {Icon && <Icon className="size-5" />}
-                            {item.label}
+                            {navItem.label}
                           </NavTarget>
                         </li>
                       );
@@ -219,12 +219,22 @@ export const DashboardMobileNavBar = () => {
           }}
         />
         <nav aria-label="Dashboard" className="relative flex h-full items-stretch px-2">
-          {leftPins.map((item) => (
-            <PinnedSlot key={item.id} item={item} pathname={pathname} onNavigate={closeMenu} />
+          {leftPins.map((navItem) => (
+            <PinnedSlot
+              key={navItem.id}
+              item={navItem}
+              pathname={pathname}
+              onNavigate={closeMenu}
+            />
           ))}
           <span aria-hidden className="w-20 shrink-0" />
-          {rightPins.map((item) => (
-            <PinnedSlot key={item.id} item={item} pathname={pathname} onNavigate={closeMenu} />
+          {rightPins.map((navItem) => (
+            <PinnedSlot
+              key={navItem.id}
+              item={navItem}
+              pathname={pathname}
+              onNavigate={closeMenu}
+            />
           ))}
         </nav>
       </div>

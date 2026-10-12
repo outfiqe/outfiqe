@@ -1,6 +1,10 @@
 import { LRUCache } from "lru-cache";
 
-import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
+import {
+  creatorApprovedTemplate,
+  creatorRejectedTemplate,
+} from "#email-templates/account.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
@@ -9,7 +13,7 @@ import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { badgeService } from "#modules/badges/badge.service.js";
-import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
+import { creatorLookRepository } from "#modules/creator-looks/creator-look.repository.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -38,10 +42,6 @@ import type {
 } from "./creator.types.js";
 import { toProfile, toSearchResult } from "./creator.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const FORBIDDEN_STATUS = 403;
-
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
 const MS_PER_SECOND = 1000;
@@ -53,7 +53,7 @@ const autocompleteMemoryCache = new LRUCache<string, CreatorSearchResult[]>({
 
 const requireUser = async (userId: string): Promise<UserRecord> => {
   const user = await userRepository.findById(userId);
-  if (!user) throw new AppError("USER_NOT_FOUND", "User not found.", NOT_FOUND_STATUS);
+  if (!user) throw new AppError("USER_NOT_FOUND", "User not found.", HTTP_STATUS.NOT_FOUND);
   return user;
 };
 
@@ -63,7 +63,7 @@ const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
     throw new AppError(
       "NOT_PENDING",
       "This muse application is not pending review.",
-      CONFLICT_STATUS,
+      HTTP_STATUS.CONFLICT,
     );
   }
   return user;
@@ -74,7 +74,7 @@ const assertCanBeCreator = (user: UserRecord): void => {
     throw new AppError(
       "STAFF_CANNOT_APPLY",
       "Staff and brand accounts can't apply to become a muse.",
-      FORBIDDEN_STATUS,
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 };
@@ -91,7 +91,7 @@ export const creatorService = {
       throw new AppError(
         "ALREADY_APPLIED",
         "You've already applied to become a muse.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -125,7 +125,7 @@ export const creatorService = {
   async getPublicProfile(handle: string, viewerId?: string): Promise<PublicCreatorProfile> {
     const user = await userRepository.findWithAvatarAssetByHandle(handle);
     if (!user || !user.isCreator) {
-      throw new AppError("NOT_FOUND", "Muse not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Muse not found.", HTTP_STATUS.NOT_FOUND);
     }
 
     const {

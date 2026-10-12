@@ -1,5 +1,5 @@
-import { PLATFORM_NAV_GROUP_ICONS, PLATFORM_NAV_ITEMS } from "@/components/AdminSidebar";
 import { groupPlatformNavItems } from "@/components/AdminSidebar.utils";
+import { PLATFORM_NAV_GROUP_ICONS, PLATFORM_NAV_ITEMS } from "@/components/adminSidebarNavItems";
 
 import type { PlatformTourStep } from "../constants/platformDashboardTour";
 

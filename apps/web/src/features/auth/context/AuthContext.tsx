@@ -11,7 +11,7 @@ import {
   useReducer,
 } from "react";
 
-import { clearAllOfflineData } from "@/features/pwa/utils/clearOfflineData";
+import { clearAllOfflineData } from "@/features/pwa/offline/utils/clearOfflineData";
 import {
   setAccessToken,
   setSuspendedHandler,
@@ -19,6 +19,7 @@ import {
 } from "@/shared/lib/apiClient";
 
 import { authApi } from "../api/authApi";
+import { buildAccountSuspendedPath } from "../suspension/utils/accountSuspended";
 import {
   type AuthAction,
   AuthActionType,
@@ -27,7 +28,6 @@ import {
   UserRole,
   type UserSession,
 } from "../types";
-import { buildAccountSuspendedPath } from "../utils/accountSuspended";
 import { rememberViewerIsStaff } from "../utils/staffViewerHint";
 import { authReducer, initialAuthState } from "./authReducer";
 

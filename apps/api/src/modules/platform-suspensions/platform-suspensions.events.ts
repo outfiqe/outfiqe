@@ -5,9 +5,8 @@ import {
   accountBannedTemplate,
   accountRestoredTemplate,
   accountSuspendedTemplate,
-  brandRestoredTemplate,
-  brandSuspendedTemplate,
-} from "#email-templates/templates.js";
+} from "#email-templates/account.templates.js";
+import { brandRestoredTemplate, brandSuspendedTemplate } from "#email-templates/brand.templates.js";
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
 import { sendEmail } from "#lib/email.utils.js";

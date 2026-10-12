@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 
-import type { BuyableBuildItem } from "../utils/outfitBoardRules";
+import type { BuyableBuildItem } from "../board/utils/outfitBoardRules";
 import { BuyBuildPanel } from "./BuyBuildPanel";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));

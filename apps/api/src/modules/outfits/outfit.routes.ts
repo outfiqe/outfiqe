@@ -36,7 +36,7 @@ import {
   transferOwnershipSchema,
   updateOutfitSettingsSchema,
 } from "./outfit.schemas.js";
-import { outfitSocialController } from "./outfit-social.controller.js";
+import { outfitSocialController } from "./social/social.controller.js";
 
 const perUserKey = (_req: Request, res: Response) => getAuthPrincipal(res)?.userId;
 

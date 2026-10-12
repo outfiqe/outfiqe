@@ -88,7 +88,7 @@ relay's query stays fast however many published rows are waiting to be cleaned u
   payload. `../../modules/outfits/outfit.notifications.ts` turns it into notifications, so a slow
   notification can never delay a live board update.
 - `chat.message-created` and `chat.member-removed` (realtime queue), written when a build's group
-  chat changes inside a build transaction (`../../modules/chat/build-chat.service.ts`). Their
+  chat changes inside a build transaction (`../../modules/chat/build-chat/build-chat.service.ts`). Their
   handlers (`../../modules/chat/chat.outbox.ts`, registered by the realtime consumers) republish
   the existing `MESSAGE_CREATED` / `CONVERSATION_MEMBER_REMOVED` domain events, so chat's own
   socket delivery and offline notifications do the rest.

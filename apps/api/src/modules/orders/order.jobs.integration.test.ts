@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const sendEmailMock = vi.hoisted(() => vi.fn());
 vi.mock("#lib/email.utils.js", () => ({ sendEmail: sendEmailMock }));

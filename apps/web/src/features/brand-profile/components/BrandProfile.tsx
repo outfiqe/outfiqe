@@ -18,7 +18,7 @@ import { cn } from "@/shared/lib/cn";
 
 const BRAND_PROFILE_BANNER_SIZES = "(min-width: 1152px) 1088px, 100vw";
 
-import { ProfileBuildsTabs } from "@/features/outfit-build/components/ProfileBuildsTabs";
+import { ProfileBuildsTabs } from "@/features/outfit-build/my-builds/components/ProfileBuildsTabs";
 
 import type { BrandProfile as BrandProfileType } from "../api/brandProfileSchemas";
 import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";

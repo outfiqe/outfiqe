@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
@@ -18,8 +19,7 @@ import type {
 } from "./badge.schemas.js";
 import { badgeService } from "./badge.service.js";
 
-const CREATED_STATUS = 201;
-const NO_FILE_STATUS = 422;
+const NO_FILE_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 export const badgeController = {
   async listMyCollection(_req: Request, res: Response) {
@@ -69,13 +69,13 @@ export const badgeController = {
       throw new AppError("NO_FILE", "Attach an image file.", NO_FILE_STATUS);
     }
     const { url } = await badgeService.processIconImage(req.file.buffer);
-    sendSuccess(res, { url }, "Badge icon uploaded.", CREATED_STATUS);
+    sendSuccess(res, { url }, "Badge icon uploaded.", HTTP_STATUS.CREATED);
   },
 
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateBadgeBody>(res);
     const badge = await badgeService.createBadge(body);
-    sendSuccess(res, badge, "Badge created.", CREATED_STATUS);
+    sendSuccess(res, badge, "Badge created.", HTTP_STATUS.CREATED);
   },
 
   async update(_req: Request, res: Response) {
@@ -91,7 +91,7 @@ export const badgeController = {
     const { userId: adminUserId } = requireAuthPrincipal(res);
 
     const result = await badgeService.awardBadgeManually(badgeId, body, adminUserId);
-    sendSuccess(res, result, "Badge awarded.", CREATED_STATUS);
+    sendSuccess(res, result, "Badge awarded.", HTTP_STATUS.CREATED);
   },
 
   async removeUserBadge(_req: Request, res: Response) {

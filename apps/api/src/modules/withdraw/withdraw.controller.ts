@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -16,8 +17,6 @@ import type {
   WithdrawRequestIdParam,
 } from "./withdraw.schemas.js";
 import { withdrawService } from "./withdraw.service.js";
-
-const CREATED_STATUS = 201;
 
 export const withdrawController = {
   async getPolicy(_req: Request, res: Response) {
@@ -37,7 +36,7 @@ export const withdrawController = {
     const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateWithdrawRequestBody>(res);
     const request = await withdrawService.createRequest(userId, body);
-    sendSuccess(res, request, "Withdrawal request submitted.", CREATED_STATUS);
+    sendSuccess(res, request, "Withdrawal request submitted.", HTTP_STATUS.CREATED);
   },
 
   async listMine(_req: Request, res: Response) {

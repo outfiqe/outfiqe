@@ -1,6 +1,6 @@
 import { apiClient } from "@/shared/lib/apiClient";
 
-import type { LeaderboardCategory } from "../leaderboard.constants";
+import type { LeaderboardCategory } from "../constants/leaderboard.constants";
 import { type LeaderboardSnapshot, leaderboardSnapshotSchema } from "./leaderboardSchemas";
 
 export const leaderboardApi = {

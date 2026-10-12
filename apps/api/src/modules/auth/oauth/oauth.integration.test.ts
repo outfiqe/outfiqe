@@ -9,8 +9,8 @@ import { OAuthProvider } from "#generated/prisma/enums.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import {
   OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS,

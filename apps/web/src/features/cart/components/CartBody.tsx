@@ -62,7 +62,7 @@ export const CartBody = () => {
     return <EmptyBag message="Your bag is empty. Have a look at what's trending this week." />;
   }
 
-  const availableItems = cart.items.filter((item) => !item.soldOut);
+  const availableItems = cart.items.filter((cartItem) => !cartItem.soldOut);
   if (availableItems.length === 0) {
     return (
       <EmptyBag message="Everything in your bag sold out while it was sitting here. Have a look at what's trending this week." />
@@ -72,8 +72,8 @@ export const CartBody = () => {
   return (
     <div className="grid gap-8 py-6 lg:grid-cols-[1fr_320px]">
       <div>
-        {cart.items.map((item) => (
-          <CartItemRow key={item.id} item={item} />
+        {cart.items.map((cartItem) => (
+          <CartItemRow key={cartItem.id} item={cartItem} />
         ))}
       </div>
       <div className="lg:sticky lg:top-24 lg:self-start">

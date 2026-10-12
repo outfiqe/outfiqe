@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { FinancialRollupPage } from "@/features/financial-rollup/FinancialRollupPage";
+import { FinancialRollupPage } from "@/features/financial-rollup/components/FinancialRollupPage";
 
 const asString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;

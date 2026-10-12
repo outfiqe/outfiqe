@@ -12,7 +12,7 @@ import { useDeliveryZones } from "@/features/delivery-zones";
 
 import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { useBuyNowPayload } from "../hooks/useBuyNowPayload";
-import { buildBuyNowCart } from "../lib/buildBuyNowCart";
+import { buildBuyNowCart } from "../utils/buildBuyNowCart";
 import { CheckoutForm } from "./CheckoutForm";
 
 export const CheckoutBody = () => {
@@ -88,7 +88,7 @@ export const CheckoutBody = () => {
   }
 
   const cart = cartQuery.data;
-  const purchasableItems = cart?.items.filter((item) => !item.soldOut) ?? [];
+  const purchasableItems = cart?.items.filter((cartItem) => !cartItem.soldOut) ?? [];
   if (!cart || purchasableItems.length === 0) {
     return (
       <div className="py-14 text-center">

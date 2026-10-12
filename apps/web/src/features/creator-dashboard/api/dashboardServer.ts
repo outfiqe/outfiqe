@@ -2,15 +2,18 @@ import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
-import { type BadgeCollectionEntry, badgeCollectionSchema } from "./badgeSchemas";
-import { type PublicChallenge, publicChallengeListSchema } from "./challengeSchemas";
+import { type BadgeCollectionEntry, badgeCollectionSchema } from "../badges/api/badgeSchemas";
+import {
+  type PublicChallenge,
+  publicChallengeListSchema,
+} from "../challenges/api/challengeSchemas";
 import {
   type CommissionEligibility,
   commissionEligibilitySchema,
   type EarningsSummary,
   earningsSummarySchema,
-} from "./commissionSchemas";
-import { type XpProgress, xpProgressSchema } from "./xpSchemas";
+} from "../earnings/api/commissionSchemas";
+import { type XpProgress, xpProgressSchema } from "../progress/api/xpSchemas";
 
 export const getEarningsSummaryServer = async (accessToken: string): Promise<EarningsSummary> => {
   const raw = await serverApiRequest<EarningsSummary>("/commissions/me/summary", { accessToken });

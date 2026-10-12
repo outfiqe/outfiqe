@@ -1,6 +1,7 @@
 import type { ImageAssetRecord, QualityTier } from "@outfiqe/image-pipeline";
 import { computeChecksum } from "@outfiqe/image-pipeline";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { enqueueImageProcessingJob } from "./image-processing.queue.js";
@@ -12,8 +13,6 @@ import { imageOutputStorageAdapter, imageTempStorageAdapter } from "./image-proc
 import type { PublicImageAsset, PublicImageVariant } from "./image-processing.types.js";
 import type { UploaderProfile } from "./image-processing.utils.js";
 import { resolvePriorityTier } from "./image-processing.utils.js";
-
-const NOT_FOUND_STATUS = 404;
 
 export type SubmitUploadInput = {
   ownerId: string;
@@ -72,14 +71,14 @@ export const imageProcessingService = {
     if (uniqueAssetIds.length === 0) return;
     const ownedCount = await imageProcessingRepository.countOwnedByIds(uniqueAssetIds, ownerId);
     if (ownedCount !== uniqueAssetIds.length) {
-      throw new AppError("IMAGE_ASSET_NOT_FOUND", "Image asset not found.", NOT_FOUND_STATUS);
+      throw new AppError("IMAGE_ASSET_NOT_FOUND", "Image asset not found.", HTTP_STATUS.NOT_FOUND);
     }
   },
 
   async getStatus(assetId: string, ownerId: string): Promise<PublicImageAsset> {
     const asset = await prismaImageAssetRepository.findById(assetId).catch(() => null);
     if (!asset || asset.ownerId !== ownerId) {
-      throw new AppError("IMAGE_ASSET_NOT_FOUND", "Image asset not found.", NOT_FOUND_STATUS);
+      throw new AppError("IMAGE_ASSET_NOT_FOUND", "Image asset not found.", HTTP_STATUS.NOT_FOUND);
     }
     return toPublicImageAsset(asset);
   },

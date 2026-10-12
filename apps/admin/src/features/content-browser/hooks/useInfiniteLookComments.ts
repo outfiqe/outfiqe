@@ -1,6 +1,6 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { contentBrowserApi } from "../api";
+import { contentBrowserApi } from "../api/contentBrowserApi";
 
 export const useInfiniteLookComments = (lookId: string, enabled: boolean) => {
   return useInfiniteCursorPage(

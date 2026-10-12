@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { WithdrawRequestsPage } from "@/features/withdraw-requests/WithdrawRequestsPage";
+import { WithdrawRequestsPage } from "@/features/withdraw-requests/components/WithdrawRequestsPage";
 
 export const Route = createFileRoute("/_authenticated/withdraw-requests")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

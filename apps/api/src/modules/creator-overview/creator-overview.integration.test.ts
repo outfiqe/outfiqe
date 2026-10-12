@@ -5,6 +5,7 @@ import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   CommissionSource,
@@ -16,12 +17,10 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
-const OK_STATUS = 200;
-const FORBIDDEN_STATUS = 403;
 const TREND_WINDOW_DAYS = 30;
 
 beforeEach(async () => {
@@ -132,7 +131,7 @@ describe("GET /api/creators/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(shopper.id));
 
-    expect(response.status).toBe(FORBIDDEN_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("returns a full 30-day zero-filled trend for a muse with no activity", async () => {
@@ -140,7 +139,7 @@ describe("GET /api/creators/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(creator.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { kpis, trend, recentCommissions } = response.body.data;
     expect(kpis).toMatchObject({
       totalEarnings: 0,
@@ -176,7 +175,7 @@ describe("GET /api/creators/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(creator.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     const { kpis, trend, recentCommissions } = response.body.data;
 
     expect(kpis.totalEarnings).toBe(400 + 250 + 100 + 500);
@@ -219,7 +218,7 @@ describe("GET /api/creators/me/overview", () => {
 
     const response = await getOverview(authHeaderFor(creator.id));
 
-    expect(response.status).toBe(OK_STATUS);
+    expect(response.status).toBe(HTTP_STATUS.OK);
     expect(response.body.data.recentCommissions).toHaveLength(5);
   });
 });

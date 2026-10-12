@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -19,7 +20,6 @@ import type {
 import { xpService } from "./xp.service.js";
 
 const NEWCOMER_PROGRESS_MESSAGE = "You haven't earned any XP yet.";
-const CREATED_STATUS = 201;
 
 export const xpController = {
   async getMyProgress(_req: Request, res: Response) {
@@ -44,7 +44,7 @@ export const xpController = {
   async createLevel(_req: Request, res: Response) {
     const body = validated.body<CreateLevelBody>(res);
     const level = await xpService.createLevel(body);
-    sendSuccess(res, level, "Level created.", CREATED_STATUS);
+    sendSuccess(res, level, "Level created.", HTTP_STATUS.CREATED);
   },
 
   async updateLevel(_req: Request, res: Response) {
@@ -83,7 +83,7 @@ export const xpController = {
   async createMultiplier(_req: Request, res: Response) {
     const body = validated.body<CreateXpMultiplierBody>(res);
     const multiplier = await xpService.createMultiplier(body);
-    sendSuccess(res, multiplier, "XP multiplier created.", CREATED_STATUS);
+    sendSuccess(res, multiplier, "XP multiplier created.", HTTP_STATUS.CREATED);
   },
 
   async updateMultiplier(_req: Request, res: Response) {

@@ -1,0 +1,77 @@
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+
+import { useDeliveryZoneHistory } from "../hooks/useDeliveryZoneHistory";
+
+const formatDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+
+const HistoryEntrySkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+    <Skeleton className="h-5 w-80 max-w-full" />
+    <Skeleton className="mt-1 h-4 w-full max-w-xl" />
+    <Skeleton className="mt-1 h-4 w-2/3 max-w-lg" />
+  </div>
+);
+
+export const DeliveryZoneHistorySection = () => {
+  const {
+    data: historyQuery,
+    isLoading,
+    isError,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useDeliveryZoneHistory();
+  const historyEntries = historyQuery?.pages.flatMap((page) => page.items) ?? [];
+
+  return (
+    <div>
+      <h2 className="font-display text-lg font-bold text-foreground">Change history</h2>
+      <div className="mt-4 space-y-2">
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => <HistoryEntrySkeleton key={index} />)}
+
+        {isError && (
+          <FormBanner className="flex items-center justify-between gap-3">
+            <span>Couldn&apos;t load change history.</span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </FormBanner>
+        )}
+
+        {!isLoading && !isError && historyEntries.length === 0 && (
+          <p className="text-sm text-muted-foreground">No changes yet.</p>
+        )}
+
+        {historyEntries.map((entry) => (
+          <div key={entry.id} className="rounded-xl border border-border bg-card p-4">
+            <p className="text-sm text-foreground">
+              {entry.changedByName} changed {entry.zoneName} on {formatDateTime(entry.createdAt)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Delivery Rs. {entry.oldValues.standardDeliveryFee} → Rs.{" "}
+              {entry.newValues.standardDeliveryFee} · Free delivery over Rs.{" "}
+              {entry.oldValues.freeDeliveryThreshold} → Rs. {entry.newValues.freeDeliveryThreshold}{" "}
+              · COD fee Rs. {entry.oldValues.codHandlingFee} → Rs. {entry.newValues.codHandlingFee}
+              {entry.oldValues.isDefault !== entry.newValues.isDefault &&
+                (entry.newValues.isDefault ? " · became the default zone" : " · no longer default")}
+            </p>
+          </div>
+        ))}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            isLoading={isFetchingNextPage}
+            className="mx-auto"
+          >
+            Load more
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};

@@ -7,17 +7,17 @@ order, and the form to add or edit one.
 
 ## Structure
 
-- `OutfitSlotTypesPage.tsx` — the list: each row shows the slot's icon, name, on/off badge, key,
+- `components/OutfitSlotTypesPage.tsx` — the list: each row shows the slot's icon, name, on/off badge, key,
   how many items it holds, which garment types fill it and which slots it can't share the board
   with. Rows reorder by drag or by the up/down buttons (`useDragReorder`), with an optimistic
   order that rolls back if saving fails. Loading, empty and error states are shown.
-- `SlotTypeFormModal.tsx` — the create/edit form (react-hook-form + zod) in a design-system
+- `components/SlotTypeFormModal.tsx` — the create/edit form (react-hook-form + zod) in a design-system
   `Modal`. The key fills itself from the name until edited by hand, and can't change once
   created.
-- `slotTypeForm.schema.ts` — the form's zod schema, its empty values and
+- `schemas/slotTypeForm.schema.ts` — the form's zod schema, its empty values and
   `toSlotTypeFormValues` for editing.
-- `api.ts`, `schemas.ts` — the API client and response schema.
-- `outfitSlotTypes.constants.ts` — query keys (it shares `admin-product-types` with the garment
+- `api/outfitSlotTypesApi.ts`, `api/outfitSlotTypesSchemas.ts` — the API client and response schema.
+- `constants/outfitSlotTypes.constants.ts` — query keys (it shares `admin-product-types` with the garment
   types page, so both stay in step).
 
 ## Funnel

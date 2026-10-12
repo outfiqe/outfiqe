@@ -19,8 +19,8 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { EXPLORE_SEARCH_PATH } from "@/shared/lib/exploreMode";
 
+import { AUTOCOMPLETE_DEBOUNCE_MS, MIN_QUERY_LENGTH } from "../constants/search.constants";
 import { useExploreAutocomplete } from "../hooks/useExploreAutocomplete";
-import { AUTOCOMPLETE_DEBOUNCE_MS, MIN_QUERY_LENGTH } from "../search.constants";
 
 type ExploreSearchBoxProps = {
   placeholder: string;

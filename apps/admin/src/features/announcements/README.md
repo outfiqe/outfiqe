@@ -8,20 +8,20 @@ still-pending one.
 
 ## Structure
 
-- `api.ts` — `announcementsApi`: `list` (status-filterable, paginated), `create`, `update`, `send`,
+- `api/announcementsApi.ts` — `announcementsApi`: `list` (status-filterable, paginated), `create`, `update`, `send`,
   `cancel`.
-- `schemas.ts` — Zod response schema (`announcementSchema`) and the plain input types the
+- `api/announcementsSchemas.ts` — Zod response schema (`announcementSchema`) and the plain input types the
   create/update/send calls send.
 - `hooks/useInfiniteAnnouncements.ts` — `useInfiniteCursorPage` wrapper, same pattern as `coupons`/
   `withdraw-requests`.
-- `AnnouncementsPage.tsx` — the routed page (`/announcements`).
-- `AnnouncementsListSection.tsx` — status tabs (URL-bound via `@/lib/useSearchFilter` as `?status=`,
+- `components/AnnouncementsPage.tsx` — the routed page (`/announcements`).
+- `components/AnnouncementsListSection.tsx` — status tabs (URL-bound via `@/lib/useSearchFilter` as `?status=`,
   default `DRAFT`), the announcement list, and the per-status actions (Edit/Send/Discard for a draft,
   Cancel for a scheduled one).
-- `ComposeAnnouncementModal.tsx` — the draft composer: title, body, an `@outfiqe/design-system`
+- `components/ComposeAnnouncementModal.tsx` — the draft composer: title, body, an `@outfiqe/design-system`
   `MultiSelect` over the five audience segments, a call-to-action mode (none/internal/external), and an
   optional expiry date. Shows the `resolvedAudienceCount` the last save returned.
-- `SendConfirmationModal.tsx` — the send/schedule decision in one modal, not two: it folds the PRD's
+- `components/SendConfirmationModal.tsx` — the send/schedule decision in one modal, not two: it folds the PRD's
   "confirm before a large/Everyone send" requirement and the "choose when to send" step together, since
   they're one decision from the admin's point of view. Forces "Schedule" and disables "Send now" once
   the resolved audience is at or above the same 500-recipient threshold the backend enforces, so an
@@ -33,7 +33,7 @@ still-pending one.
 roughly how many people it'll reach, and sends it now or on a schedule — or discards/cancels it before
 it goes out.
 
-**Technical:** `AnnouncementsPage` → `AnnouncementsListSection` → `api.ts` →
+**Technical:** `AnnouncementsPage` → `AnnouncementsListSection` → `api/announcementsApi.ts` →
 `GET/POST/PATCH /api/admin/announcements/*` → `announcement.controller.ts` → `.service.ts`.
 
 ## Non-obvious rationale

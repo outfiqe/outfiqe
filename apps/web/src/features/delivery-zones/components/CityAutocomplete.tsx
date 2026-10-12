@@ -12,7 +12,7 @@ import { useDebouncedValue } from "@outfiqe/hooks";
 import { forwardRef, useState } from "react";
 
 import { useCitySearch } from "../hooks/useCitySearch";
-import { groupCitiesByZone } from "../lib/groupCitiesByZone";
+import { groupCitiesByZone } from "../utils/groupCitiesByZone";
 
 const CITY_SEARCH_DEBOUNCE_MS = 300;
 

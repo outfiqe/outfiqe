@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
@@ -14,8 +15,6 @@ import {
 import { platformJobsRepository } from "./platform-jobs.repository.js";
 import type { JobsHealth, QueueHealth } from "./platform-jobs.types.js";
 
-const NOT_FOUND_STATUS = 404;
-const SERVICE_UNAVAILABLE_STATUS = 503;
 const NO_JOBS = 0;
 const FIRST_FAILED_JOB_INDEX = 0;
 const LAST_FAILED_JOB_INDEX = PLATFORM_JOBS_LIMITS.FAILED_JOBS_RETRIED_PER_REQUEST - 1;
@@ -79,7 +78,7 @@ export const platformJobsService = {
       throw new AppError(
         "OUTBOX_EVENT_NOT_FOUND",
         "That event was already sent or no longer exists.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
     await platformAudit.record({
@@ -106,7 +105,7 @@ export const platformJobsService = {
       throw new AppError(
         "QUEUE_UNAVAILABLE",
         "The job queue can't be reached right now. Try again shortly.",
-        SERVICE_UNAVAILABLE_STATUS,
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
       );
     }
     await Promise.all(failedJobs.map((job) => job.retry()));

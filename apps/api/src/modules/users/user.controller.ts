@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -14,13 +15,11 @@ import type {
 } from "./user.schemas.js";
 import { userService } from "./user.service.js";
 
-const CREATED_STATUS = 201;
-
 export const userController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateUserBody>(res);
     const user = await userService.createUser(body);
-    sendSuccess(res, user, "User created successfully", CREATED_STATUS);
+    sendSuccess(res, user, "User created successfully", HTTP_STATUS.CREATED);
   },
 
   async get(_req: Request, res: Response) {

@@ -26,7 +26,7 @@ import {
 
 import { useAuth } from "@/features/auth";
 import { UserRole } from "@/features/auth/types";
-import { useCommissionEligibility } from "@/features/creator-dashboard/hooks/useCommissionEligibility";
+import { useCommissionEligibility } from "@/features/creator-dashboard/earnings/hooks/useCommissionEligibility";
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
@@ -148,8 +148,8 @@ export const useDashboardNav = (): DashboardNav => {
   const canUseOffers = isBrand || isCreator;
   const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
   const baseNavItems = isOutfitBuildOn
-    ? roleNavItems.flatMap((item) =>
-        item === OVERVIEW_NAV_ITEM ? [item, ...outfitBuildNavItems] : [item],
+    ? roleNavItems.flatMap((navItem) =>
+        navItem === OVERVIEW_NAV_ITEM ? [navItem, ...outfitBuildNavItems] : [navItem],
       )
     : roleNavItems;
   const showCrmLink = hasCrmAccess && isOnTenantHost;

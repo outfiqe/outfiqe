@@ -7,9 +7,9 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
-import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createUserWithAccessToken = async (
   overrides: { phone?: string | null; handle?: string } = {},

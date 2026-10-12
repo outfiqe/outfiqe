@@ -11,18 +11,18 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
 
 ## Structure
 
-- `brandPayout.routes.ts` — `GET /me/summary`, `GET /me` (brand member); `GET /commission-rules`,
+- `brand-payout.routes.ts` — `GET /me/summary`, `GET /me` (brand member); `GET /commission-rules`,
   `GET /gateway-fee-rates`, `GET /exemptions` are admin reads (`requirePlatformAccess` +
   `requirePlatformNavItem("platform-commission")`); `POST /commission-rules`, `POST
 /gateway-fee-rates`, `POST /exemptions`, `PATCH /exemptions/:id/revoke` additionally need
   `platform:commissions:manage` (`requirePlatformRole`, see `platform-access/README.md` and
   `commissions/README.md`).
-- `brandPayout.controller.ts` — resolves the caller's brand via `requireBrandId`, reads validated
+- `brand-payout.controller.ts` — resolves the caller's brand via `requireBrandId`, reads validated
   input, calls the service.
-- `brandPayout.service.ts` — summary/ledger listing for a brand; creates a new active commission
+- `brand-payout.service.ts` — summary/ledger listing for a brand; creates a new active commission
   rule (percent input converted to basis points per tier), gateway fee rate versions, and brand
   exemptions.
-- `brandPayout.repository.ts` — Prisma queries: rule + tier CRUD, gateway fee rate CRUD, exemption
+- `brand-payout.repository.ts` — Prisma queries: rule + tier CRUD, gateway fee rate CRUD, exemption
   CRUD and the batched `findActiveExemptBrandIds` lookup, the checkout-time `createPending`, the
   lifecycle-sweep queries (`findApprovableIds`/`findVoidableFor*Ids`, `approve`, `void`), the
   cancel-transaction `voidForOrder`, the return-transaction `voidUnwithdrawnForOrder` /
@@ -31,16 +31,16 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
   The wallet summary (`getSummary`) adds the brand's Build commission (rows with
   `recipientBrandId`, see `../commissions/README.md`) into pending, available and withdrawn, and
   also reports it on its own as `buildCommissionEarnings`.
-- `brandPayout.lifecycle.ts` — `runBrandPayoutLifecycleSweep`, this module's own
+- `brand-payout.lifecycle.ts` — `runBrandPayoutLifecycleSweep`, this module's own
   `PENDING → AVAILABLE`/`VOIDED` sweep, wired into `apps/api/src/jobs/scheduled-jobs.ts` as a
   sibling `brand-payout-lifecycle` job entry running on the same `COMMISSION_SWEEP_INTERVAL_MS`
   cadence as `commissions`' sweep (not a shared function — each module owns its own lifecycle
   logic, per this repo's module-boundary convention — just the same schedule).
-- `brandPayout.schemas.ts` — Zod validation, including the whole-ladder contiguity check on
+- `brand-payout.schemas.ts` — Zod validation, including the whole-ladder contiguity check on
   `createPlatformCommissionRuleSchema` (see Non-obvious rationale).
-- `brandPayout.types.ts` — DB-shaped and view types, including `BrandPayoutView.platformFundedDiscountApplied`
+- `brand-payout.types.ts` — DB-shaped and view types, including `BrandPayoutView.platformFundedDiscountApplied`
   (the coupon trust-signal flag — see Non-obvious rationale).
-- `brandPayout.utils.ts` — `computeTieredPlatformFee` (single-band-match lookup + the FLAT/PERCENT
+- `brand-payout.utils.ts` — `computeTieredPlatformFee` (single-band-match lookup + the FLAT/PERCENT
   fee math), `computeGatewayFee` (COD always `0`), view mappers. Basis-point conversions use the
   shared `BASIS_POINTS_PER_PERCENT` (`#constants/money.constants.js`), also used by `discounts`.
 
@@ -63,7 +63,7 @@ item it then computes `platformFee` via `computeTieredPlatformFee` against the a
 `BrandPayout` row — for every line item, regardless of creator attribution, unlike commissions
 which only exist for attributed sales. `orderService.cancel`'s transaction voids `PENDING` payouts
 the same way it already voids `PENDING` commissions. `runBrandPayoutLifecycleSweep`
-(`brandPayout.lifecycle.ts`) runs the `PENDING → AVAILABLE`/`VOIDED` sweep on the same interval
+(`brand-payout.lifecycle.ts`) runs the `PENDING → AVAILABLE`/`VOIDED` sweep on the same interval
 `commissions`' sweep already uses.
 
 ## Non-obvious rationale

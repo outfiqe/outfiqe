@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AccountStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -9,20 +10,17 @@ import type { ListBrandsQuery, UpdateBrandProfileBody } from "./brand.schemas.js
 import type { BrandProfile, PublicBrandPage, PublicBrandProfile } from "./brand.types.js";
 import { toPublicBrandProfile } from "./brand.utils.js";
 
-const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
-
 export const brandService = {
   async assertActive(brandId: string): Promise<void> {
     const accountStatus = await brandRepository.findAccountStatus(brandId);
     if (!accountStatus) {
-      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", HTTP_STATUS.NOT_FOUND);
     }
     if (accountStatus !== AccountStatus.ACTIVE) {
       throw new AppError(
         "BRAND_SUSPENDED",
         "This brand's account is suspended and can't be acted on right now.",
-        FORBIDDEN_STATUS,
+        HTTP_STATUS.FORBIDDEN,
       );
     }
   },
@@ -34,7 +32,7 @@ export const brandService = {
       throw new AppError(
         "BRAND_NOT_FOUND",
         "No brand is linked to this account.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -50,7 +48,7 @@ export const brandService = {
       throw new AppError(
         "BRAND_NOT_FOUND",
         "No brand is linked to this account.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
 
@@ -69,7 +67,7 @@ export const brandService = {
 
   async getPublicProfile(id: string, viewerId?: string): Promise<PublicBrandProfile> {
     const brand = await brandRepository.findById(id);
-    if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+    if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", HTTP_STATUS.NOT_FOUND);
 
     const [productCount, isFollowing, contactUserId] = await Promise.all([
       brandRepository.countApprovedProducts(id),

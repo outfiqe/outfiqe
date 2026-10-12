@@ -1,5 +1,6 @@
 import { startOfDay } from "date-fns/startOfDay";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 
@@ -13,7 +14,6 @@ import type {
   TenantMetricListPage,
 } from "./platform-metrics.types.js";
 
-const NOT_FOUND_STATUS = 404;
 const RELATIONSHIP_COUNT_QUERY = { query: "", page: 1, pageSize: 1 } as const;
 
 const countTenantRelationships = async (organization: {
@@ -53,7 +53,7 @@ export const platformMetricsService = {
 
   async tenantDetail(organizationId: string): Promise<TenantMetricDetail> {
     const row = await platformMetricsRepository.findTenant(organizationId);
-    if (!row) throw new AppError("TENANT_NOT_FOUND", "Tenant not found.", NOT_FOUND_STATUS);
+    if (!row) throw new AppError("TENANT_NOT_FOUND", "Tenant not found.", HTTP_STATUS.NOT_FOUND);
 
     const [relationships, series] = await Promise.all([
       countTenantRelationships({ id: row.organizationId, linkedBrandId: row.linkedBrandId }),

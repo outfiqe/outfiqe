@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
@@ -27,9 +28,6 @@ import {
   toPrismaTargetType,
 } from "./follow.utils.js";
 
-const BAD_REQUEST_STATUS = 400;
-const NOT_FOUND_STATUS = 404;
-
 const requireTarget = async (targetType: FollowTargetType, targetId: string): Promise<void> => {
   const exists =
     targetType === FollowTargetType.USER
@@ -37,7 +35,7 @@ const requireTarget = async (targetType: FollowTargetType, targetId: string): Pr
       : await brandRepository.findById(targetId);
   if (!exists) {
     const label = targetType === FollowTargetType.USER ? "User" : "Brand";
-    throw new AppError("NOT_FOUND", `${label} not found.`, NOT_FOUND_STATUS);
+    throw new AppError("NOT_FOUND", `${label} not found.`, HTTP_STATUS.NOT_FOUND);
   }
 };
 
@@ -55,7 +53,11 @@ export const followService = {
 
     const targetType = toPrismaTargetType(targetTypeParam);
     if (targetType === FollowTargetType.USER && followerId === targetId) {
-      throw new AppError("CANNOT_SELF_FOLLOW", "You can't follow yourself.", BAD_REQUEST_STATUS);
+      throw new AppError(
+        "CANNOT_SELF_FOLLOW",
+        "You can't follow yourself.",
+        HTTP_STATUS.BAD_REQUEST,
+      );
     }
 
     await requireTarget(targetType, targetId);

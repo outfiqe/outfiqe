@@ -1,6 +1,6 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { type OfferFilter, offersApi } from "../api";
+import { type OfferFilter, offersApi } from "../api/outfitOffersApi";
 
 export const ADMIN_OFFERS_QUERY_KEY = "admin-outfit-offers";
 

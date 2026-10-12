@@ -1,5 +1,5 @@
 import { env } from "#config/env.config.js";
-import { staleShipmentReminderTemplate } from "#email-templates/templates.js";
+import { staleShipmentReminderTemplate } from "#email-templates/brand.templates.js";
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
 

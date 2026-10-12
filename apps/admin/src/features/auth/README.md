@@ -8,7 +8,7 @@ exposes, and clears the resulting session.
 
 ## Structure
 
-- `AuthContext.tsx` — `AuthProvider` restores the session on mount. If the URL carries an
+- `components/AuthContext.tsx` — `AuthProvider` restores the session on mount. If the URL carries an
   `impersonation_code` query param (the platform Impersonation screen's "Open" hand-off, see
   `platform-impersonation`'s README), it redeems that instead of the normal
   `authApi.refresh()` → `authApi.me()` path, then strips the param from the address bar with
@@ -16,14 +16,14 @@ exposes, and clears the resulting session.
   `signed-in`), and exposes `logout`, `updateUser`, `setSession` through `useAuth()`. The
   `signed-out` state carries a `reason` (`"session-ended"` | `"user-signed-out"` |
   `"impersonation-code-invalid"`) — see rationale below.
-- `api.ts` — `authApi`: refresh, me, logout, profile/password updates, the admin- and
+- `api/authApi.ts` — `authApi`: refresh, me, logout, profile/password updates, the admin- and
   CRM-invite registration calls, and `redeemImpersonationCode`.
-- `schemas.ts` — Zod schemas / types for the admin user (including `platformPermissionKeys` and
+- `api/authSchemas.ts` — Zod schemas / types for the admin user (including `platformPermissionKeys` and
   `crmHomeSubdomain` from the session), invites, and profile/password inputs.
-- `usePlatformPermissions.ts` — `canUse(...keys)` for hiding buttons and forms the viewer's role
+- `hooks/usePlatformPermissions.ts` — `canUse(...keys)` for hiding buttons and forms the viewer's role
   can't use, plus `viewerUserId`. Co-founders pass every check. Pages call it with a key from
   `lib/platformManagePermissions.ts`.
-- `RegisterInvitePage.tsx` — the one auth screen the admin app does own: completing an
+- `components/RegisterInvitePage.tsx` — the one auth screen the admin app does own: completing an
   admin/CRM invite (`/register?token=…`).
 
 ## Funnel
@@ -71,4 +71,4 @@ token on `@/lib/apiClient`, `authApi.me()` loads the user → `useAuth()` state 
 
 ## Form validation
 
-The admin and CRM invite registration pages use react-hook-form with `registerForm.schema.ts`: a Nepali mobile number (`NEPAL_PHONE_REGEX` from `@outfiqe/utils`), a password of 8 to 128 characters, and a matching confirmation; the CRM page also asks for a full name. Messages show under each field. Both pages go straight to the app on success, so there is no toast.
+The admin and CRM invite registration pages use react-hook-form with `schemas/registerForm.schema.ts`: a Nepali mobile number (`NEPAL_PHONE_REGEX` from `@outfiqe/utils`), a password of 8 to 128 characters, and a matching confirmation; the CRM page also asks for a full name. Messages show under each field. Both pages go straight to the app on success, so there is no toast.

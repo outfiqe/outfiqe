@@ -8,10 +8,10 @@ import { CategoryStatus, ProductStatus, UserRole } from "#generated/prisma/enums
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { redis } from "#redis/redis.client.js";
-import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
-import { ensureProductType } from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
+import { ensureProductType } from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const CATEGORIES_CACHE_KEY = "cache:categories:all";
 

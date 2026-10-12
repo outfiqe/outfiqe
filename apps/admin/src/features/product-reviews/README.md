@@ -7,11 +7,11 @@ anything that shouldn't be up. There is no cross-product "all reviews" queue —
 
 ## Structure
 
-- `schemas.ts` / `api.ts` — thin client for two existing, already-public API endpoints
+- `api/productReviewsSchemas.ts` / `api/productReviewsApi.ts` — thin client for two existing, already-public API endpoints
   (`GET /products/autocomplete`, used for the product search box) and the review endpoints
   (`GET`/`DELETE /products/:productId/reviews[/​:reviewId]`) — no admin-only backend route was
   added for this page.
-- `ProductReviewsPage.tsx` — the whole feature in one component: a debounced product search, then
+- `components/ProductReviewsPage.tsx` — the whole feature in one component: a debounced product search, then
   the selected product's review list with a delete button per row, cursor-paginated via
   `useInfiniteQuery` with a "Load more" button (same pattern `AuditPage` uses) rather than fetching
   every review for a product in one request.

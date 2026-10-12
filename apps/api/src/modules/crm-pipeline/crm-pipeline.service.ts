@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DealStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
@@ -12,10 +13,6 @@ import type {
   UpdateDealInput,
   UpdateStageInput,
 } from "./crm-pipeline.types.js";
-
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const BAD_REQUEST_STATUS = 400;
 
 type TenantOrganization = { id: string; linkedBrandId: string | null };
 
@@ -42,7 +39,7 @@ const assertNotBothOutcomes = (isWon: boolean, isLost: boolean): void => {
     throw new AppError(
       "STAGE_OUTCOME_CONFLICT",
       "A stage can't be both a won stage and a lost stage.",
-      BAD_REQUEST_STATUS,
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 };
@@ -52,7 +49,8 @@ const requireStage = async (
   stageId: string,
 ): Promise<PipelineStageRecord> => {
   const stage = await crmPipelineRepository.findStage(organizationId, stageId);
-  if (!stage) throw new AppError("STAGE_NOT_FOUND", "Pipeline stage not found.", NOT_FOUND_STATUS);
+  if (!stage)
+    throw new AppError("STAGE_NOT_FOUND", "Pipeline stage not found.", HTTP_STATUS.NOT_FOUND);
   return stage;
 };
 
@@ -72,7 +70,7 @@ export const crmPipelineService = {
       throw new AppError(
         "TOO_MANY_STAGES",
         `A pipeline can have at most ${MAX_PIPELINE_STAGES} stages.`,
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -84,7 +82,7 @@ export const crmPipelineService = {
         throw new AppError(
           "STAGE_NAME_TAKEN",
           "A stage with that name already exists.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -108,7 +106,7 @@ export const crmPipelineService = {
         throw new AppError(
           "STAGE_NAME_TAKEN",
           "A stage with that name already exists.",
-          CONFLICT_STATUS,
+          HTTP_STATUS.CONFLICT,
         );
       }
       throw error;
@@ -123,7 +121,7 @@ export const crmPipelineService = {
       throw new AppError(
         "PIPELINE_TOO_SMALL",
         `A pipeline must keep at least ${MIN_PIPELINE_STAGES} stages.`,
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -132,7 +130,7 @@ export const crmPipelineService = {
       throw new AppError(
         "STAGE_NOT_EMPTY",
         "Move or delete this stage's deals before removing it.",
-        CONFLICT_STATUS,
+        HTTP_STATUS.CONFLICT,
       );
     }
 
@@ -152,7 +150,7 @@ export const crmPipelineService = {
       throw new AppError(
         "INVALID_STAGE_ORDER",
         "The stage order must list every stage exactly once.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
 
@@ -165,7 +163,7 @@ export const crmPipelineService = {
 
   async getDeal(organizationId: string, dealId: string): Promise<DealWithRelations> {
     const deal = await crmPipelineRepository.findDeal(organizationId, dealId);
-    if (!deal) throw new AppError("DEAL_NOT_FOUND", "Deal not found.", NOT_FOUND_STATUS);
+    if (!deal) throw new AppError("DEAL_NOT_FOUND", "Deal not found.", HTTP_STATUS.NOT_FOUND);
     return deal;
   },
 
@@ -237,7 +235,7 @@ export const crmPipelineService = {
       throw new AppError(
         "NOT_A_PARTNER",
         "A deal can only be opened against a partner of this brand.",
-        BAD_REQUEST_STATUS,
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
   },
@@ -255,7 +253,7 @@ export const crmPipelineService = {
       throw new AppError(
         "OWNER_NOT_FOUND",
         "The deal owner isn't a member of this organization.",
-        NOT_FOUND_STATUS,
+        HTTP_STATUS.NOT_FOUND,
       );
     }
   },

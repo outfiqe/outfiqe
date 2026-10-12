@@ -4,7 +4,7 @@ import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { productReviewsApi } from "../api/productReviewsApi";
 import type { ReviewSort } from "../api/productReviewSchemas";
-import { productReviewsQueryKey } from "../product-reviews.constants";
+import { productReviewsQueryKey } from "../constants/productReviews.constants";
 
 export const useProductReviews = (
   productId: string,

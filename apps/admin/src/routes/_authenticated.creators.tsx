@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CreatorsPage } from "@/features/creators/CreatorsPage";
+import { CreatorsPage } from "@/features/creators/components/CreatorsPage";
 
 export const Route = createFileRoute("/_authenticated/creators")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

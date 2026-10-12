@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
@@ -15,8 +16,6 @@ import type {
 } from "./crm-pipeline.schemas.js";
 import { crmPipelineService } from "./crm-pipeline.service.js";
 
-const CREATED_STATUS = 201;
-
 export const crmPipelineController = {
   async listStages(_req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
@@ -27,7 +26,7 @@ export const crmPipelineController = {
     const body = validated.body<CreateStageBody>(res);
     const organization = getResolvedOrganization(res);
     const stage = await crmPipelineService.createStage(organization.id, body);
-    sendSuccess(res, stage, "Stage created.", CREATED_STATUS);
+    sendSuccess(res, stage, "Stage created.", HTTP_STATUS.CREATED);
   },
 
   async updateStage(_req: Request, res: Response) {
@@ -64,7 +63,7 @@ export const crmPipelineController = {
     const body = validated.body<CreateDealBody>(res);
     const organization = getResolvedOrganization(res);
     const deal = await crmPipelineService.createDeal(organization, body);
-    sendSuccess(res, deal, "Deal created.", CREATED_STATUS);
+    sendSuccess(res, deal, "Deal created.", HTTP_STATUS.CREATED);
   },
 
   async updateDeal(_req: Request, res: Response) {

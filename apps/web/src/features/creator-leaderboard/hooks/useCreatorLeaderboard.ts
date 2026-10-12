@@ -14,7 +14,7 @@ import type { CreatorLeaderboardSnapshot } from "../api/creatorLeaderboardSchema
 import {
   CREATOR_LEADERBOARD_SOCKET_EVENTS,
   type CreatorLeaderboardCategory,
-} from "../creatorLeaderboard.constants";
+} from "../constants/creatorLeaderboard.constants";
 
 const creatorLeaderboardQueryKey = (category: CreatorLeaderboardCategory) =>
   ["creator-leaderboard", category] as const;

@@ -21,7 +21,7 @@ vi.mock("@/shared/hooks/useFeatureFlag", () => ({
   useFeatureFlag: () => false,
 }));
 
-vi.mock("@/features/creator-dashboard/hooks/useCommissionEligibility", () => ({
+vi.mock("@/features/creator-dashboard/earnings/hooks/useCommissionEligibility", () => ({
   useCommissionEligibility: () => ({ canEarn: false }),
 }));
 

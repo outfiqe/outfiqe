@@ -9,23 +9,23 @@ packages.
 
 ## Structure
 
-- `AdminNotificationBell.tsx` — mounted in `apps/admin/src/components/AppShell.tsx`'s header, next
+- `components/AdminNotificationBell.tsx` — mounted in `apps/admin/src/components/AppShell.tsx`'s header, next
   to `ThemeToggle`/`AccountMenu`. Always renders (`AppShell` only mounts inside the authenticated
   route tree, unlike `apps/web`'s header, which is also public — no auth gate needed here).
   Subscribes to `apps/admin/src/lib/socketClient.ts`'s connection via `useSyncExternalStore` (see
   `apps/web/src/features/notifications/README.md` for why, not `useState` + `useEffect`).
-- `AdminNotificationBell.tsx`'s select handler navigates by the API-stored destination: an
+- `components/AdminNotificationBell.tsx`'s select handler navigates by the API-stored destination: an
   `ADMIN`-surface `targetPath` goes through `navigate({ href })` (client-side, TanStack resolves
   the concrete path against the route tree), and a `WEB`-surface one is a full-page
   `window.location.assign(${VITE_WEB_URL}${targetPath})` — a DM or wallet notification an admin
   receives lives only on `outfiqe.com`. An absolute link (a CRM assignment's tenant-qualified URL)
   that points into this same admin app opens in place. Any other absolute link opens in a new tab.
-- `adminNotificationBell.utils.ts` — `toSameOriginAdminHref` (turns a same-origin `/admin/...` URL
+- `utils/adminNotificationBell.utils.ts` — `toSameOriginAdminHref` (turns a same-origin `/admin/...` URL
   into an in-app path) and `belongsToTenant` (the tenant bell's live-update filter).
 - `apps/admin/src/lib/notificationsApi.ts` — the bell's API client. On a tenant subdomain it asks
   the API for `scope=tenant`, so the feed, unread count and "mark all as read" cover only that
   tenant.
-- `resolveNotificationHref.ts` — the old per-`type` → `{ to, params }` resolver, kept only as the
+- `utils/resolveNotificationHref.ts` — the old per-`type` → `{ to, params }` resolver, kept only as the
   fallback for notifications created before the API started stamping `targetSurface`/`targetPath`.
   Removed once the backfill has run.
 

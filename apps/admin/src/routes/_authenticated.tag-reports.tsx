@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { TagReportsPage } from "@/features/tag-reports/TagReportsPage";
+import { TagReportsPage } from "@/features/tag-reports/components/TagReportsPage";
 
 export const Route = createFileRoute("/_authenticated/tag-reports")({
   validateSearch: (search: Record<string, unknown>): { status?: string } => ({

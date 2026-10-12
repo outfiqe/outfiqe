@@ -2,12 +2,12 @@ import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
 
-import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
-import type { ChangePasswordInput } from "../schemas/changePassword.schema";
-import type { ForgotPasswordInput } from "../schemas/forgotPassword.schema";
-import type { LoginInput } from "../schemas/login.schema";
-import type { RegisterInput } from "../schemas/register.schema";
-import type { ResetPasswordInput } from "../schemas/resetPassword.schema";
+import type { LoginInput } from "../login/schemas/login.schema";
+import type { ChangePasswordInput } from "../password/schemas/changePassword.schema";
+import type { ForgotPasswordInput } from "../password/schemas/forgotPassword.schema";
+import type { ResetPasswordInput } from "../password/schemas/resetPassword.schema";
+import type { BrandRegisterInput } from "../registration/schemas/brandRegister.schema";
+import type { RegisterInput } from "../registration/schemas/register.schema";
 import type { TokenPurpose, UserSession } from "../types";
 import type { BrandInviteInfo } from "./userSchemas";
 import {

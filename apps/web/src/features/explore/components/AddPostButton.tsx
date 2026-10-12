@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { CreatorStatus, UserRole } from "@/features/auth/types";
 import { ApplyAsCreatorButton } from "@/features/creator-dashboard/components/ApplyAsCreatorButton";
-import { PostModal } from "@/features/creator-dashboard/components/PostModal";
+import { PostModal } from "@/features/creator-dashboard/looks/components/PostModal";
 import { cn } from "@/shared/lib/cn";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";

@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
-import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+import { creatorLookService } from "#modules/creator-looks/creator-look.service.js";
 
 import type {
   AutocompleteQuery,

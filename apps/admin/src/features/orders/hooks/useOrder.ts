@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { ordersApi } from "../api";
+import { ordersApi } from "../api/ordersApi";
 
 export const useOrder = (orderId: string) => {
   return useQuery({

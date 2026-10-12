@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { AdminUser } from "@/features/auth/schemas";
+import type { AdminUser } from "@/features/auth/api/authSchemas";
 
 import { resolveAdminLanding, resolvePlatformPathAccess } from "./adminLanding";
 

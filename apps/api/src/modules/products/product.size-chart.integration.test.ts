@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { InventoryMovementKind, ProductStatus } from "#generated/prisma/enums.js";
-import { createAdminSessionWithPlatformPermissions } from "#test/integration/authHelpers.js";
+import { createAdminSessionWithPlatformPermissions } from "#test/integration/auth-helpers.js";
 import {
   type BrandOwnerSession,
   createBrandOwnerSession,
-} from "#test/integration/productFixtures.js";
-import { testApp } from "#test/integration/testApp.js";
+} from "#test/integration/product-fixtures.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const PRODUCTS_PATH = "/api/products";
 const OK_STATUS = 200;

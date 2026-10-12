@@ -6,7 +6,7 @@ import {
   CREATOR_LEADERBOARD_CATEGORY,
   CREATOR_LEADERBOARD_QUERY_PARAM,
   isCreatorLeaderboardCategory,
-} from "../creatorLeaderboard.constants";
+} from "../constants/creatorLeaderboard.constants";
 import { CreatorCompetitionBanner } from "./CreatorCompetitionBanner";
 import { CreatorLeaderboardList } from "./CreatorLeaderboardList";
 import { CreatorLeaderboardTabs } from "./CreatorLeaderboardTabs";

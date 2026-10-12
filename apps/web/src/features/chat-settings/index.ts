@@ -1,2 +1,2 @@
-export * from "./ChatAvailabilitySettings";
-export * from "./SiteChatAvailabilitySettings";
+export * from "./components/ChatAvailabilitySettings";
+export * from "./components/SiteChatAvailabilitySettings";

@@ -10,11 +10,14 @@ export { getBrandProfileServer } from "./api/getBrandProfileServer";
 export { BrandOverview } from "./components/BrandOverview";
 export { BrandProfileView } from "./components/BrandProfileView";
 export { BrandProfileViewSkeleton } from "./components/BrandProfileViewSkeleton";
-export { BrandShipmentDetail, BrandShipmentDetailSkeleton } from "./components/BrandShipmentDetail";
-export { OrdersSection } from "./components/OrdersSection";
-export { ProductsSection } from "./components/ProductsSection";
-export { TagReviewsSection } from "./components/TagReviewsSection";
-export { WalletSection } from "./components/WalletSection";
-export { WalletSummaryTiles } from "./components/WalletSummaryTiles";
-export { useBrandPayoutSummary } from "./hooks/useBrandPayoutSummary";
-export { useTagReviewPendingCount } from "./hooks/useTagReviewPendingCount";
+export { ProductsSection } from "./products/components/ProductsSection";
+export {
+  BrandShipmentDetail,
+  BrandShipmentDetailSkeleton,
+} from "./shipments/components/BrandShipmentDetail";
+export { OrdersSection } from "./shipments/components/OrdersSection";
+export { TagReviewsSection } from "./tag-reviews/components/TagReviewsSection";
+export { useTagReviewPendingCount } from "./tag-reviews/hooks/useTagReviewPendingCount";
+export { WalletSection } from "./wallet/components/WalletSection";
+export { WalletSummaryTiles } from "./wallet/components/WalletSummaryTiles";
+export { useBrandPayoutSummary } from "./wallet/hooks/useBrandPayoutSummary";

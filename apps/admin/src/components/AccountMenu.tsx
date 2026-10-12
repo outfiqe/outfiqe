@@ -1,7 +1,7 @@
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useNavigate } from "@tanstack/react-router";
 
-import { useAuth } from "@/features/auth/AuthContext";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { isOnTenantHost } from "@/lib/tenantHost";
 
 export const AccountMenu = () => {

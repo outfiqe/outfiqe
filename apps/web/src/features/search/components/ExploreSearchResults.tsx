@@ -7,15 +7,15 @@ import { useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { PostDetailModal } from "@/features/explore/components/PostDetailModal";
-import { PostGridCard } from "@/features/explore/components/PostGridCard";
-import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/explore.constants";
+import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/constants/explore.constants";
+import { PostDetailModal } from "@/features/explore/posts/components/PostDetailModal";
+import { PostGridCard } from "@/features/explore/posts/components/PostGridCard";
 import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
+import { MIN_QUERY_LENGTH } from "../constants/search.constants";
 import { useCreatorSearch, useLookSearch } from "../hooks/useExploreSearch";
-import { MIN_QUERY_LENGTH } from "../search.constants";
 
 export const ExploreSearchResults = () => {
   const searchParams = useSearchParams();

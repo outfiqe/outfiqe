@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { AnnouncementStatus, UserRole } from "#generated/prisma/enums.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
 
 import { runAnnouncementScheduledDispatch } from "./announcement.lifecycle.js";
 import { announcementRepository } from "./announcement.repository.js";

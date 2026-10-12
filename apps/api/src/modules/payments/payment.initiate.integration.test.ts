@@ -11,7 +11,7 @@ import {
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { testApp } from "#test/integration/testApp.js";
+import { testApp } from "#test/integration/test-app.js";
 
 const esewaInitiate = vi.hoisted(() => vi.fn());
 const esewaVerify = vi.hoisted(() => vi.fn());

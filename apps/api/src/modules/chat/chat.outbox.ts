@@ -6,8 +6,8 @@ import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { registerOutboxHandler } from "#outbox/outbox.handlers.js";
 import type { OutboxJobData } from "#outbox/outbox.types.js";
 
-import { messageRepository } from "./message.repository.js";
-import { toMessageBroadcast } from "./message.utils.js";
+import { messageRepository } from "./messages/message.repository.js";
+import { toMessageBroadcast } from "./messages/message.utils.js";
 
 const chatMessageCreatedPayloadSchema = z.object({
   messageId: z.uuid(),

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
-import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
+import { seedPlatformOrganization } from "#test/integration/crm-fixtures.js";
 
 import {
   PLATFORM_PERMISSION_CATALOG,

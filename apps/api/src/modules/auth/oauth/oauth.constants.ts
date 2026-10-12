@@ -1,3 +1,5 @@
+import { OAuthProvider } from "#generated/prisma/enums.js";
+
 export enum OAuthProviderParam {
   GOOGLE = "google",
   FACEBOOK = "facebook",
@@ -30,3 +32,13 @@ export const OAUTH_LINK_CONFIRM_IP_RATE_LIMIT_MAX_REQUESTS = 10;
 
 export const OAUTH_UNLINK_RATE_LIMIT_WINDOW_MS = FIFTEEN_MINUTES_MS;
 export const OAUTH_UNLINK_RATE_LIMIT_MAX_REQUESTS = 10;
+
+export const PROVIDER_PARAM_TO_ENUM: Record<OAuthProviderParam, OAuthProvider> = {
+  [OAuthProviderParam.GOOGLE]: OAuthProvider.GOOGLE,
+  [OAuthProviderParam.FACEBOOK]: OAuthProvider.FACEBOOK,
+};
+
+export const ENUM_TO_PROVIDER_PARAM: Record<OAuthProvider, OAuthProviderParam> = {
+  [OAuthProvider.GOOGLE]: OAuthProviderParam.GOOGLE,
+  [OAuthProvider.FACEBOOK]: OAuthProviderParam.FACEBOOK,
+};

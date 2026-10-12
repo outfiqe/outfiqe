@@ -1,0 +1,148 @@
+import { Badge, Button, Skeleton } from "@outfiqe/design-system";
+import { Link } from "@tanstack/react-router";
+
+import { SkeletonBadge } from "@/components/SkeletonControls";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
+
+import type { FulfilmentStatusValue } from "../api/ordersSchemas";
+import { useInfiniteOrders } from "../hooks/useInfiniteOrders";
+import { FULFILMENT_STATUS_TONE, PAYMENT_STATUS_TONE } from "../utils/orderStatusTone";
+
+const ALL_STATUSES = "ALL";
+type OrdersStatusTab = FulfilmentStatusValue | typeof ALL_STATUSES;
+
+const TABS: OrdersStatusTab[] = [
+  ALL_STATUSES,
+  "PLACED",
+  "PACKED",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "RETURNED",
+];
+
+const ORDERS_STATUS_FILTER = oneOfFilter<OrdersStatusTab>(TABS, ALL_STATUSES);
+
+const ORDER_ROW_SKELETON_COUNT = 6;
+const ORDER_ROW_CLASS =
+  "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4";
+
+const OrderRowSkeleton = () => (
+  <div className={ORDER_ROW_CLASS} aria-hidden>
+    <div>
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="mt-1 h-5 w-72 max-w-full" />
+    </div>
+    <div className="flex shrink-0 gap-1.5">
+      <SkeletonBadge />
+      <SkeletonBadge />
+    </div>
+  </div>
+);
+
+export const OrdersPage = () => {
+  const [tab, setTab] = useSearchFilter("status", ORDERS_STATUS_FILTER);
+
+  const {
+    data: ordersQuery,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteOrders(tab === ALL_STATUSES ? undefined : tab);
+  const orders = ordersQuery?.pages.flatMap((page) => page.orders) ?? [];
+
+  return (
+    <div>
+      <h1 className="font-display text-2xl font-bold text-foreground">Orders</h1>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {TABS.map((status) => (
+          <button
+            key={status}
+            onClick={() => setTab(status)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === status
+                ? "bg-foreground text-background"
+                : "border border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {status[0]}
+            {status.slice(1).toLowerCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 space-y-3">
+        {isLoading &&
+          Array.from({ length: ORDER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <OrderRowSkeleton key={rowIndex} />
+          ))}
+        {error && <p className="text-sm text-destructive">Couldn&apos;t load orders.</p>}
+        {!isLoading && orders.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nothing here right now.</p>
+        )}
+
+        {orders.map((order) => {
+          const {
+            id,
+            buyerName,
+            paymentMethod,
+            paymentStatus,
+            fulfilmentStatus,
+            total,
+            itemCount,
+            firstItemProductName,
+            needsManualRefund,
+          } = order;
+
+          return (
+            <Link
+              key={id}
+              to="/orders/$orderId"
+              params={{ orderId: id }}
+              className={`${ORDER_ROW_CLASS} transition-colors hover:border-foreground`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-bold text-foreground">{buyerName}</h2>
+                  {needsManualRefund && (
+                    <Badge tone="negative" showDot={false}>
+                      Needs manual refund
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {firstItemProductName}
+                  {itemCount > 1 ? ` and ${itemCount - 1} more` : ""} · Rs. {total.toLocaleString()}{" "}
+                  · {paymentMethod}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 gap-1.5">
+                <Badge tone={PAYMENT_STATUS_TONE[paymentStatus]} showDot={false}>
+                  {paymentStatus}
+                </Badge>
+                <Badge tone={FULFILMENT_STATUS_TONE[fulfilmentStatus]} showDot={false}>
+                  {fulfilmentStatus}
+                </Badge>
+              </div>
+            </Link>
+          );
+        })}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            isLoading={isFetchingNextPage}
+            className="mx-auto"
+          >
+            Load more
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};

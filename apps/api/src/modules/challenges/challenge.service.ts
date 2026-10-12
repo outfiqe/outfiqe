@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
 import { badgeRepository } from "#modules/badges/badge.repository.js";
@@ -9,8 +10,6 @@ import {
 import type { CreateChallengeBody, UpdateChallengeBody } from "./challenge.schemas.js";
 import type { ChallengeAdminRecord, PublicChallengeView } from "./challenge.types.js";
 import { computeChallengeStatus } from "./challenge.utils.js";
-
-const NOT_FOUND_STATUS = 404;
 
 const toPublicView = (
   challenge: ChallengeRecordWithAchievementAndBadge,
@@ -86,7 +85,7 @@ const findActiveChallengeForViewer = async (
 ): Promise<PublicChallengeView> => {
   const challenge = await challengeRepository.findActiveChallengeById(challengeId);
   if (!challenge) {
-    throw new AppError("CHALLENGE_NOT_FOUND", "Challenge not found.", NOT_FOUND_STATUS);
+    throw new AppError("CHALLENGE_NOT_FOUND", "Challenge not found.", HTTP_STATUS.NOT_FOUND);
   }
 
   const { completedBadgeIds, progressByAchievementId } = await loadViewerContext(

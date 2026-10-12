@@ -11,7 +11,7 @@ import {
   pwaViewport,
   WEB_MANIFEST_PATH,
 } from "@/features/pwa";
-import { isPwaKillSwitchEngagedOnServer } from "@/features/pwa/utils/pwaKillSwitchServer";
+import { isPwaKillSwitchEngagedOnServer } from "@/features/pwa/service-worker/utils/pwaKillSwitchServer";
 import {
   JsonLd,
   organizationSchema,

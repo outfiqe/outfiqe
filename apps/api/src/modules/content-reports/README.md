@@ -16,25 +16,25 @@ See "Automatic content check" below.
 
 ## Structure
 
-- `contentReport.routes.ts` — `POST /content-reports` (public: `optionalAuth`, per-IP rate limit),
+- `content-report.routes.ts` — `POST /content-reports` (public: `optionalAuth`, per-IP rate limit),
   `GET /content-reports` + `GET /content-reports/open-count` (`requireAuth` + `requirePlatformAccess`
   — coarse, same as `../tag-reports`), `POST /content-reports/:id/resolve` (same coarse gate at the
   route; the fine-grained `platform:content:moderate` check happens inside the service, only when
   the resolution is `REMOVE_CONTENT`).
-- `contentReport.controller.ts` — request/response glue; pulls `req.ip` / `user-agent` for the
+- `content-report.controller.ts` — request/response glue; pulls `req.ip` / `user-agent` for the
   submit path.
-- `contentReport.service.ts` — `submitReport` (drops bot traffic silently, 404s a target that's
+- `content-report.service.ts` — `submitReport` (drops bot traffic silently, 404s a target that's
   already been removed), `listReports` / `countOpen`, and `resolveReport` — marks the report
   `ACTIONED` / `DISMISSED`; on `REMOVE_CONTENT` it explicitly checks
   `platformAccessService.principalHasPermission(principal, CONTENT_MODERATE_PERMISSION_KEY)` itself
   (a clear 403 if missing) before delegating the actual takedown to
   `creatorLookService.remove`/`removeComment`, then bumps the target author's `contentFlagCount`.
-- `contentReport.repository.ts` — Prisma queries: `findReportableTarget` (branches on
+- `content-report.repository.ts` — Prisma queries: `findReportableTarget` (branches on
   `ContentReportTarget` since a look and a comment live in different tables — there's no single
   polymorphic relation Prisma can join), `create`, `countOpen`, the keyset-paginated `listForAdmin`
   (batches a second lookup per target type — `hydrateLookTargets`/`hydrateCommentTargets` — rather
   than N+1 per row), `findResolvableReport`, `markResolved`, `incrementUserFlagCount`.
-- `contentReport.schemas.ts` / `contentReport.types.ts` — Zod validation and DTO shapes.
+- `content-report.schemas.ts` / `content-report.types.ts` — Zod validation and DTO shapes.
 
 ## Funnel
 

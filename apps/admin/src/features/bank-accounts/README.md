@@ -10,14 +10,14 @@ the first place.
 
 ## Structure
 
-- `api.ts` — `GET /bank-accounts/admin` or `GET /brand-bank-accounts/admin` (owner-type
+- `api/bankAccountsApi.ts` — `GET /bank-accounts/admin` or `GET /brand-bank-accounts/admin` (owner-type
   dependent), `PATCH /:id/verify`, `GET /:id/reveal`.
-- `schemas.ts` — `OwnerTypeValue`, `AdminBankAccount`, `RevealedBankAccount`, the
+- `api/bankAccountsSchemas.ts` — `OwnerTypeValue`, `AdminBankAccount`, `RevealedBankAccount`, the
   pending/verified filter values.
 - `hooks/useInfiniteBankAccounts.ts` — the paginated, owner-type- and filter-scoped queue.
-- `BankAccountsListSection.tsx` — the queue: an owner-type tab (Creator/Business), a
+- `components/BankAccountsListSection.tsx` — the queue: an owner-type tab (Creator/Business), a
   pending/verified tab, and per-row Reveal/Verify actions.
-- `BankAccountsPage.tsx` — the route's top-level wrapper.
+- `components/BankAccountsPage.tsx` — the route's top-level wrapper.
 
 ## Funnel
 
@@ -27,7 +27,7 @@ number next to it and compare against what the owner typed in; Verify once they 
 account immediately unblocks that owner's withdrawals — see `apps/api/src/modules/withdraw/README.md`'s
 `hasVerifiedBankAccount` gate.
 
-**Technical:** `BankAccountsListSection.tsx` → `api.ts` → `bank-accounts`/`brand-bank-accounts`
+**Technical:** `components/BankAccountsListSection.tsx` → `api/bankAccountsApi.ts` → `bank-accounts`/`brand-bank-accounts`
 routes → their services/repositories → Postgres.
 
 ## Non-obvious rationale

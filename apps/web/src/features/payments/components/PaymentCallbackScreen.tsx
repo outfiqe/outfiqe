@@ -3,7 +3,7 @@
 import { PaymentVerifyStatus } from "../api/paymentsSchemas";
 import { useInitiatePayment } from "../hooks/useInitiatePayment";
 import { useVerifyPayment } from "../hooks/useVerifyPayment";
-import { redirectToPaymentGateway } from "../paymentRedirect.utils";
+import { redirectToPaymentGateway } from "../utils/paymentRedirect.utils";
 import { PaymentFailed } from "./PaymentFailed";
 import { PaymentPending } from "./PaymentPending";
 import { PaymentStillPending } from "./PaymentStillPending";

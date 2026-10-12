@@ -7,9 +7,9 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
-import { testApp } from "#test/integration/testApp.js";
-import { uniquePhone } from "#test/integration/uniqueValues.js";
+import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const QUEUE_DASHBOARD_PATH = "/internal/queues";
 

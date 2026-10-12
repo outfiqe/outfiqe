@@ -9,17 +9,17 @@ range the brand sets on each size (see `../products/README.md`, "Size charts").
 
 ## Structure
 
-- `sizeStandard.routes.ts` — `GET /` (the brand's active standards), `POST /`, `PATCH /:id`,
+- `size-standard.routes.ts` — `GET /` (the brand's active standards), `POST /`, `PATCH /:id`,
   `DELETE /:id` (archive). Brand owners only; changes are rate-limited per person.
-- `sizeStandard.controller.ts` — auth principal → service.
-- `sizeStandard.service.ts` — resolves the caller's brand, refuses standards that aren't theirs
+- `size-standard.controller.ts` — auth principal → service.
+- `size-standard.service.ts` — resolves the caller's brand, refuses standards that aren't theirs
   (404), turns a duplicate name into `409 SIZE_STANDARD_NAME_TAKEN`, and exposes
   `getOwnedLabelsInStandardOrder` for the products module to resolve the sizes a brand picked.
-- `sizeStandard.repository.ts` — Prisma reads and writes on `brand_size_standards` and
+- `size-standard.repository.ts` — Prisma reads and writes on `brand_size_standards` and
   `brand_size_standard_labels`.
-- `sizeStandard.schemas.ts` — name 1–60 characters; 1–20 sizes of 1–12 characters, trimmed, no two
+- `size-standard.schemas.ts` — name 1–60 characters; 1–20 sizes of 1–12 characters, trimmed, no two
   that differ only by case.
-- `sizeStandard.types.ts` — response shapes.
+- `size-standard.types.ts` — response shapes.
 
 ## Funnel
 
@@ -27,8 +27,8 @@ range the brand sets on each size (see `../products/README.md`, "Size charts").
 sizes in order), then picks it when adding a product and ticks the sizes that product comes in.
 They can rename it, reorder or change its sizes, or archive it.
 
-**Technical:** `sizeStandard.routes.ts` → `sizeStandard.controller.ts` → `sizeStandard.service.ts`
-→ `sizeStandard.repository.ts` → Postgres. Product creation calls
+**Technical:** `size-standard.routes.ts` → `size-standard.controller.ts` → `size-standard.service.ts`
+→ `size-standard.repository.ts` → Postgres. Product creation calls
 `sizeStandardService.getOwnedLabelsInStandardOrder` and copies each picked label onto the new
 `ProductSize`.
 

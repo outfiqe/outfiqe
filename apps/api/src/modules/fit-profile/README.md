@@ -10,14 +10,14 @@ different at every brand, while height and weight don't.
 
 ## Structure
 
-- `fitProfile.routes.ts` — `GET /me`, `PUT /me` with `{ heightCm, weightKg }`, `DELETE /me`. Any
+- `fit-profile.routes.ts` — `GET /me`, `PUT /me` with `{ heightCm, weightKg }`, `DELETE /me`. Any
   signed-in person; changes are rate-limited per person.
-- `fitProfile.controller.ts` — auth principal → service.
-- `fitProfile.service.ts` — read, save (upsert) and remove.
-- `fitProfile.repository.ts` — Prisma reads and writes on `user_fit_profiles`.
-- `fitProfile.schemas.ts` — whole numbers within the bounds shared with size charts
+- `fit-profile.controller.ts` — auth principal → service.
+- `fit-profile.service.ts` — read, save (upsert) and remove.
+- `fit-profile.repository.ts` — Prisma reads and writes on `user_fit_profiles`.
+- `fit-profile.schemas.ts` — whole numbers within the bounds shared with size charts
   (`FIT_HEIGHT_CM_MIN`/`MAX`, `FIT_WEIGHT_KG_MIN`/`MAX` in `@outfiqe/utils`).
-- `fitProfile.types.ts` — the response shape.
+- `fit-profile.types.ts` — the response shape.
 
 ## Funnel
 
@@ -25,8 +25,8 @@ different at every brand, while height and weight don't.
 and saves them, or removes them. After a recommendation in the "Find my size" modal, a signed-in
 person can also choose "Save to my account".
 
-**Technical:** `fitProfile.routes.ts` → `fitProfile.controller.ts` → `fitProfile.service.ts` →
-`fitProfile.repository.ts` → Postgres (`user_fit_profiles`, primary key `user_id`, `ON DELETE
+**Technical:** `fit-profile.routes.ts` → `fit-profile.controller.ts` → `fit-profile.service.ts` →
+`fit-profile.repository.ts` → Postgres (`user_fit_profiles`, primary key `user_id`, `ON DELETE
 CASCADE` with the user, CHECK `user_fit_profiles_measurements_valid` on the bounds).
 
 ## Non-obvious rationale

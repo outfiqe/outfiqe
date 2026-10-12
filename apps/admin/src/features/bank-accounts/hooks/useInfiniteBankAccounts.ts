@@ -1,7 +1,7 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
-import { bankAccountsAdminApi } from "../api";
-import type { OwnerTypeValue, VerifiedFilterValue } from "../schemas";
+import { bankAccountsAdminApi } from "../api/bankAccountsApi";
+import type { OwnerTypeValue, VerifiedFilterValue } from "../api/bankAccountsSchemas";
 
 export const useInfiniteBankAccounts = (
   ownerType: OwnerTypeValue,

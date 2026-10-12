@@ -1,13 +1,12 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type { RemovePushSubscriptionBody, SavePushSubscriptionBody } from "./push.schemas.js";
 import { pushService } from "./push.service.js";
-
-const NO_CONTENT_STATUS = 204;
 
 export const pushController = {
   getPublicKey(_req: Request, res: Response) {
@@ -31,6 +30,6 @@ export const pushController = {
     const body = validated.body<RemovePushSubscriptionBody>(res);
 
     await pushService.removeSubscription(userId, body);
-    res.status(NO_CONTENT_STATUS).end();
+    res.status(HTTP_STATUS.NO_CONTENT).end();
   },
 };

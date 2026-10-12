@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { TenantMetricsDetailPage } from "@/features/platform-metrics/TenantMetricsDetailPage";
+import { TenantMetricsDetailPage } from "@/features/platform-metrics/components/TenantMetricsDetailPage";
 
 export const Route = createFileRoute("/_authenticated/platform/metrics/$orgId")({
   component: TenantMetricsDetailPage,

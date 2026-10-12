@@ -9,18 +9,18 @@ called directly.
 
 ## Structure
 
-- `UsersPage.tsx` — the page: a search box driving the list, a status badge and inline
+- `components/UsersPage.tsx` — the page: a search box driving the list, a status badge and inline
   suspend/ban/unsuspend/unban actions per row (hidden entirely for `ADMIN`-role accounts, which the
   API also refuses to moderate), and the two confirmation modals.
-- `api.ts` — `usersApi`, the typed client for `GET /users` (search + cursor pagination) and the
+- `api/usersApi.ts` — `usersApi`, the typed client for `GET /users` (search + cursor pagination) and the
   `platform-suspensions` action endpoints (`POST /platform/users/:id/suspend|ban|unsuspend|unban`).
 - `hooks/useInfiniteUsers.ts` — wraps `usersApi.list` in the shared `useInfiniteCursorPage`,
   keyed by the (debounced) search term.
-- `schemas.ts` — the `AdminUser`/`AccountStatus` Zod shapes returned by `GET /users`.
+- `api/usersSchemas.ts` — the `AdminUser`/`AccountStatus` Zod shapes returned by `GET /users`.
 - `components/SuspendAccountModal.tsx` — reason (required) + duration (24h/7d/30d/indefinite).
 - `components/BanAccountModal.tsx` — reason only; bans are always indefinite and, per the API,
   can only be lifted by a different admin than the one who imposed them.
-- `UsersPage.integration.test.tsx` — colocated integration test; renders the page against a mocked
+- `components/UsersPage.integration.test.tsx` — colocated integration test; renders the page against a mocked
   API (MSW) and covers the search → suspend flow, a server-error surfacing inline, and that
   `ADMIN`-role rows never render a moderation action.
 
@@ -35,7 +35,7 @@ back" actions. A failed action (e.g. trying to lift a ban you imposed yourself) 
 message inline under that row rather than a toast, so it stays visible next to the account it's
 about.
 
-**Technical:** `UsersPage.tsx` → `useInfiniteUsers` (list) / direct `usersApi` calls (actions) →
+**Technical:** `components/UsersPage.tsx` → `useInfiniteUsers` (list) / direct `usersApi` calls (actions) →
 the API client (`@/lib/apiClient`) → `apps/api`'s `users` module (`GET /users`) and
 `platform-suspensions` module (the action endpoints). Every action invalidates the `["users"]`
 query on success so the row's status refreshes from the server rather than being guessed

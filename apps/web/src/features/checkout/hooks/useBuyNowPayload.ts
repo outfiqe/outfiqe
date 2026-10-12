@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer } from "react";
 
-import { type BuyNowPayload, readBuyNowPayload } from "../lib/buyNowStorage";
+import { type BuyNowPayload, readBuyNowPayload } from "../utils/buyNowStorage";
 
 type BuyNowPayloadState = { isResolved: boolean; payload: BuyNowPayload | null };
 

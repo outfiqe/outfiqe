@@ -1,13 +1,14 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 import { env } from "#config/env.config.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 const AES_ALGORITHM = "aes-256-gcm";
 const GCM_IV_BYTES = 12;
 const CIPHERTEXT_SEGMENT_COUNT = 3;
 const LAST_FOUR_DIGITS = 4;
-const CORRUPT_CIPHERTEXT_STATUS = 500;
+const CORRUPT_CIPHERTEXT_STATUS = HTTP_STATUS.INTERNAL_SERVER_ERROR;
 
 const encryptionKey = Buffer.from(env.BANK_ACCOUNT_ENCRYPTION_KEY, "hex");
 

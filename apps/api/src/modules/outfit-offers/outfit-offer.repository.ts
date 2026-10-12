@@ -11,7 +11,7 @@ import {
   PaymentTransactionType,
   UserRole,
 } from "#generated/prisma/enums.js";
-import { outfitPersonSelect } from "#modules/outfits/outfit.repository.js";
+import { outfitPersonSelect } from "#modules/outfits/outfit.query-helpers.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { OfferRow } from "./outfit-offer.utils.js";

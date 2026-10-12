@@ -84,7 +84,7 @@ same point it already checks blocks and chat-enabled settings. Product/creator-l
 join `brand`/`creator` and filter `accountStatus: ACTIVE` (see
 `apps/api/src/modules/products/product.repository.ts`'s `buildPublicWhere` and every other
 `ProductStatus.APPROVED` query site there, and `hydrateFeedPosts` in
-`apps/api/src/modules/creator-looks/creatorLook.repository.ts`, the single hydration step every
+`apps/api/src/modules/creator-looks/creator-look.repository.ts`, the single hydration step every
 feed tab and the single-post page funnel through).
 
 **Routes gated by `requireActiveAuth` today:** the shopper and brand-owner guards in `orders`,

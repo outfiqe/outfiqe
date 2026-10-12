@@ -1,17 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 
 import { AppError } from "./error-handler.js";
 
-const BAD_REQUEST_STATUS = 400;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
 
 const missingIdempotencyKeyError = () =>
   new AppError(
     "IDEMPOTENCY_KEY_REQUIRED",
     `Send a unique ${IDEMPOTENCY_HEADER} header (8 to 128 letters, numbers, - or _) with this request.`,
-    BAD_REQUEST_STATUS,
+    HTTP_STATUS.BAD_REQUEST,
   );
 
 export const readRequiredIdempotencyKey = (req: Request): string => {

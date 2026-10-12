@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
@@ -31,8 +32,6 @@ import type {
 import { crmAccessService } from "./crm-access.service.js";
 import { toActingPermissionGrant, toOrganizationWithViewerContext } from "./crm-access.utils.js";
 
-const CREATED_STATUS = 201;
-
 export const crmAccessController = {
   async createOrganization(_req: Request, res: Response) {
     const { name, subdomain, targetOwnerUserId, linkedBrandId } =
@@ -46,7 +45,7 @@ export const crmAccessController = {
       targetOwnerUserId,
       linkedBrandId,
     });
-    sendSuccess(res, organization, "Organization created.", CREATED_STATUS);
+    sendSuccess(res, organization, "Organization created.", HTTP_STATUS.CREATED);
   },
 
   async suggestOrganization(_req: Request, res: Response) {
@@ -132,7 +131,7 @@ export const crmAccessController = {
       target: { type: AUDIT_TARGET_TYPE.ROLE, id: role.id },
       metadata: { permissionCount: role.permissionKeys.length },
     });
-    sendSuccess(res, role, "Role created.", CREATED_STATUS);
+    sendSuccess(res, role, "Role created.", HTTP_STATUS.CREATED);
   },
 
   async updateRole(req: Request, res: Response) {
@@ -255,7 +254,7 @@ export const crmAccessController = {
       target: { type: AUDIT_TARGET_TYPE.INVITE, id: null },
       metadata: { email, roleId },
     });
-    sendSuccess(res, null, "Invite sent.", CREATED_STATUS);
+    sendSuccess(res, null, "Invite sent.", HTTP_STATUS.CREATED);
   },
 
   async revokeInvite(req: Request, res: Response) {
@@ -289,7 +288,7 @@ export const crmAccessController = {
       },
       target: { type: AUDIT_TARGET_TYPE.MEMBERSHIP, id: membership.id },
     });
-    sendSuccess(res, membership, "CRM access granted.", CREATED_STATUS);
+    sendSuccess(res, membership, "CRM access granted.", HTTP_STATUS.CREATED);
   },
 
   async createOwnershipTransfer(req: Request, res: Response) {
@@ -312,7 +311,7 @@ export const crmAccessController = {
       target: { type: AUDIT_TARGET_TYPE.OWNERSHIP_TRANSFER, id: toMembershipId },
       metadata: { removeSenderMembership },
     });
-    sendSuccess(res, null, "Ownership transfer requested.", CREATED_STATUS);
+    sendSuccess(res, null, "Ownership transfer requested.", HTTP_STATUS.CREATED);
   },
 
   async acceptOwnershipTransfer(req: Request, res: Response) {

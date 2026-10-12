@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { CreatorStatus } from "@/features/auth/types";
 import { ApplyAsCreatorButton } from "@/features/creator-dashboard/components/ApplyAsCreatorButton";
-import { PostModal } from "@/features/creator-dashboard/components/PostModal";
+import { PostModal } from "@/features/creator-dashboard/looks/components/PostModal";
 import { useSharedPhoto } from "@/features/pwa";
 
 type ShareTargetComposerProps = {

@@ -5,7 +5,7 @@ import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-import { brandApplicationsApi } from "@/features/brand-applications/api";
+import { brandApplicationsApi } from "@/features/brand-applications/api/brandApplicationsApi";
 import { useInfiniteBrandApplications } from "@/features/brand-applications/hooks/useInfiniteBrandApplications";
 
 const API_BASE = "http://localhost:3000/api";

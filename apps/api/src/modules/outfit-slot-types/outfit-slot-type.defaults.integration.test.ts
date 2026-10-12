@@ -1,7 +1,7 @@
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { templateDatabaseUrl } from "#test/integration/workerPool.js";
+import { templateDatabaseUrl } from "#test/integration/worker-pool.js";
 
 const DEFAULT_SLOT_KEYS = ["top", "bottom", "full-outfit", "footwear", "accessory", "extra"];
 
