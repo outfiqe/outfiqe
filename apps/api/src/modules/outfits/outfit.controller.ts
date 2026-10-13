@@ -223,6 +223,17 @@ export const outfitController = {
     sendWriteResult(res, result, "Who can see this build was updated.");
   },
 
+  async listShareRecipients(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<OutfitIdParam>(res);
+    const query = validated.query<ListOutfitsQuery>(res);
+    sendSuccess(
+      res,
+      await outfitVisibilityService.listRecipients(userId, id, query),
+      "People this build was sent to.",
+    );
+  },
+
   async removeShare(req: Request, res: Response) {
     const { id, userId } = validated.params<OutfitMemberParam>(res);
     const result = await outfitVisibilityService.removeShare(toWriteCall(req, res, id), userId);

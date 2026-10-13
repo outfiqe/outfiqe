@@ -360,14 +360,8 @@ export const outfitSocialService = {
     if (!comment || comment.outfitId !== outfitId) throw outfitErrors.commentNotFound();
 
     const isAuthor = comment.userId === principal.userId;
-    const ownerRole = isAuthor
-      ? null
-      : await outfitRepository.findMemberRole(prisma, outfitId, principal.userId);
-    const isBuildMember = ownerRole !== null;
-    const isRemovingAsModerator = !isAuthor && !isBuildMember && (await isModerator(principal));
-    if (!isAuthor && !isBuildMember && !isRemovingAsModerator) {
-      throw outfitErrors.commentNotFound();
-    }
+    const isRemovingAsModerator = !isAuthor && (await isModerator(principal));
+    if (!isAuthor && !isRemovingAsModerator) throw outfitErrors.commentNotFound();
 
     await outfitSocialRepository.softDeleteComment(commentId, new Date());
     if (isRemovingAsModerator) {

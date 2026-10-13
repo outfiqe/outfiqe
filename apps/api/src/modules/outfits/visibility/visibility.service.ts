@@ -1,12 +1,20 @@
-import { OutfitEventType, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
+import { prisma } from "#db/prisma.js";
+import {
+  OutfitEventType,
+  OutfitMemberRole,
+  OutfitStatus,
+  OutfitVisibility,
+} from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
 import { NONE, OUTFIT_IDEMPOTENCY_ENDPOINT } from "../outfit.constants.js";
 import { outfitErrors } from "../outfit.errors.js";
 import { requireReachablePeople } from "../outfit.people.js";
 import { outfitRepository } from "../outfit.repository.js";
-import type { SetVisibilityBody } from "../outfit.schemas.js";
+import type { ListOutfitsQuery, SetVisibilityBody } from "../outfit.schemas.js";
+import type { OutfitPersonView } from "../outfit.types.js";
 import {
   OUTFIT_WRITE_ACCESS,
   type OutfitWriteCall,
@@ -14,11 +22,25 @@ import {
   runOutfitWrite,
   toWriteRequest,
 } from "../outfit.write.js";
+import { outfitShareRepository } from "./visibility.repository.js";
 
 const NOT_ARCHIVED = [OutfitStatus.DRAFT, OutfitStatus.LOCKED] as const;
 const NO_SHARES_REMOVED = 0;
 
 export const outfitVisibilityService = {
+  async listRecipients(
+    viewerId: string,
+    outfitId: string,
+    { cursor, limit }: ListOutfitsQuery,
+  ): Promise<{ items: OutfitPersonView[]; nextCursor: string | null }> {
+    const viewerRole = await outfitRepository.findMemberRole(prisma, outfitId, viewerId);
+    if (viewerRole !== OutfitMemberRole.OWNER) throw outfitErrors.notFound();
+
+    const rows = await outfitShareRepository.listRecipients(outfitId, { cursor, limit });
+    const { items, nextCursor } = buildCursorPage(rows, limit, ({ userId }) => userId);
+    return { items: items.map(({ user }) => user), nextCursor };
+  },
+
   setVisibility(
     call: OutfitWriteCall,
     { visibility, shareWithUserIds }: SetVisibilityBody,

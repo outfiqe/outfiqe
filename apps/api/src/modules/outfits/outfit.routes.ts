@@ -305,6 +305,12 @@ outfitRoutes.put(
   validate({ params: outfitIdParamSchema, body: setVisibilitySchema }),
   outfitController.setVisibility,
 );
+outfitRoutes.get(
+  "/:id/shares",
+  ...outfitReadChain,
+  validate({ params: outfitIdParamSchema, query: listOutfitsQuerySchema }),
+  outfitController.listShareRecipients,
+);
 outfitRoutes.delete(
   "/:id/shares/:userId",
   ...outfitWriteChain,

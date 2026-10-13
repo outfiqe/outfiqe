@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { ContentReportTarget, FeatureFlagRollout } from "#generated/prisma/enums.js";
+import {
+  ContentReportTarget,
+  FeatureFlagRollout,
+  OutfitMemberRole,
+} from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/auth-helpers.js";
@@ -251,6 +255,36 @@ describe("likes, saves and comments", () => {
     expect((await prisma.outfit.findUniqueOrThrow({ where: { id: outfitId } })).commentCount).toBe(
       0,
     );
+  });
+
+  it("lets only a chime's author or a moderator delete it, not the build's people", async () => {
+    const owner = await createOutfitUser("Sita");
+    const editor = await createOutfitUser("Ram");
+    const fan = await createOutfitUser("Gita");
+    const { outfitId } = await lockedBuild(owner);
+    await prisma.outfitMember.create({
+      data: { outfitId, userId: editor.id, role: OutfitMemberRole.EDITOR },
+    });
+    await makePublic(owner, outfitId);
+    const { authHeader: adminAuth } = await createAdminSession();
+    const postChime = async (body: string) =>
+      (
+        await request(testApp)
+          .post(`/api/outfits/${outfitId}/comments`)
+          .set("Authorization", fan.auth)
+          .send({ body })
+      ).body.data.id;
+    const deleteChime = (auth: string, commentId: string) =>
+      request(testApp)
+        .delete(`/api/outfits/${outfitId}/comments/${commentId}`)
+        .set("Authorization", auth);
+    const firstChimeId = await postChime("Love the kurta");
+    const secondChimeId = await postChime("Where are the shoes from?");
+
+    expect((await deleteChime(owner.auth, firstChimeId)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await deleteChime(editor.auth, firstChimeId)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await deleteChime(fan.auth, firstChimeId)).status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect((await deleteChime(adminAuth, secondChimeId)).status).toBe(HTTP_STATUS.NO_CONTENT);
   });
 
   it("keeps a shared build's comments to the people it was sent to", async () => {

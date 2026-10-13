@@ -28,6 +28,7 @@ notifications. The web board and the rest of the feature are added on top (see
   | `POST /:id/lock` · `/unlock` · `/archive`                                                                | Owner only                                                         |
   | `POST /:id/members` · `DELETE /:id/members/:userId` · `POST /:id/leave` · `POST /:id/transfer-ownership` | People                                                             |
   | `PUT /:id/visibility` · `DELETE /:id/shares/:userId`                                                     | Private, shared (sent to named people) or public                   |
+  | `GET /:id/shares`                                                                                        | Who the build was sent to (owner only, cursor pages)               |
 
 - `outfit.controller.ts` — reads the `X-Outfit-Version` header and the idempotency key, and sends every
   write's new version back in the body and in the same header.
@@ -38,7 +39,8 @@ notifications. The web board and the rest of the feature are added on top (see
 - `lifecycle/lifecycle.service.ts` — settings, lock, unlock and archive.
 - `members/member.service.ts` — adding and removing editors, leaving, handing over ownership, and
   keeping the build's group chat in step (through `../chat/build-chat/build-chat.service.ts`).
-- `visibility/visibility.service.ts` — private, shared and public, and who a build was sent to.
+- `visibility/visibility.service.ts` — private, shared and public, and who a build was sent to
+  (listing them for the owner, and stopping sharing with one).
 - `outfit.people.ts` — who can be invited or sent a build: an active shopper or brand account
   that hasn't blocked the owner and isn't blocked by them.
 - `outfit.board.ts` — loads a board and the admin limits and builds the board view.
@@ -295,6 +297,9 @@ as in stock only if one of its buyable sizes is.
   becomes public (`isNewlyPublic` on the change), not when the owner saves Public again or stops
   sharing with someone while it's public. "Shared with you" only goes to people who weren't
   already on the build's share list (`addShares` returns only the rows it created).
+- **Only a chime's author or a platform moderator can delete it,** the same rule as Creator Look
+  chimes. The build's owner and editors can't delete other people's chimes; they report them like
+  anyone else, so every removal of someone else's words goes through moderation and is audited.
 - **Deleting a top-level comment hides its replies too,** and the build's comment count drops by
   all of them, so the count always matches what people can see.
 - **A sold-out item alerts once per sell-out, not once per stock change.** A flash sale can

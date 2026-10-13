@@ -96,6 +96,16 @@ export const summaryInclude = {
 
 export type OutfitSummaryRow = Prisma.OutfitGetPayload<{ include: typeof summaryInclude }>;
 
+export const memberSummaryInclude = (userId: string) =>
+  ({
+    ...summaryInclude,
+    members: { where: { userId }, select: { role: true } },
+  }) satisfies Prisma.OutfitInclude;
+
+export type OutfitMemberSummaryRow = Prisma.OutfitGetPayload<{
+  include: ReturnType<typeof memberSummaryInclude>;
+}>;
+
 export type OutfitSlotCopy = {
   key: string;
   label: string;

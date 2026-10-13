@@ -4,7 +4,13 @@ import { OutfitVisibility } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { OutfitSummaryRow } from "../outfit.query-helpers.js";
-import { activeBuildStatuses, summaryInclude } from "../outfit.query-helpers.js";
+import {
+  activeBuildStatuses,
+  outfitPersonSelect,
+  summaryInclude,
+} from "../outfit.query-helpers.js";
+
+const LOOKAHEAD_ROW = 1;
 
 export const outfitShareRepository = {
   async addShares(
@@ -28,6 +34,18 @@ export const outfitShareRepository = {
   ): Promise<number> {
     const { count } = await tx.outfitShare.deleteMany({ where: { outfitId, userId } });
     return count;
+  },
+
+  async listRecipients(outfitId: string, { cursor, limit }: { cursor?: string; limit: number }) {
+    return prisma.outfitShare.findMany({
+      where: { outfitId },
+      orderBy: [{ createdAt: "desc" }, { userId: "desc" }],
+      take: limit + LOOKAHEAD_ROW,
+      ...(cursor
+        ? { cursor: { outfitId_userId: { outfitId, userId: cursor } }, skip: LOOKAHEAD_ROW }
+        : {}),
+      select: { userId: true, user: { select: outfitPersonSelect } },
+    });
   },
 
   async hasShare(client: DbClient, outfitId: string, userId: string): Promise<boolean> {
