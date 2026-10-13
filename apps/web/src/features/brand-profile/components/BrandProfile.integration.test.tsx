@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useRouter } from "next/navigation";
@@ -232,5 +232,38 @@ describe("BrandProfile follow toggle", () => {
     renderBrandProfile(buildBrand({ isFollowing: false }));
 
     expect(screen.queryByRole("button", { name: "Follow brand" })).not.toBeInTheDocument();
+  });
+});
+
+describe("BrandProfile type filters", () => {
+  it("keeps every type in one sideways-scrolling row and switches the active one", async () => {
+    vi.mocked(useProductTypes, { partial: true }).mockReturnValue({
+      data: [
+        { id: "type-tops", slug: "tops", label: "Tops" },
+        { id: "type-dresses", slug: "dresses", label: "Dresses" },
+      ],
+      isLoading: false,
+    });
+    const user = userEvent.setup();
+    renderBrandProfile(buildBrand());
+
+    const typeRow = screen.getByRole("group", { name: "Filter by type" });
+    expect(
+      within(typeRow)
+        .getAllByRole("button")
+        .map((chip) => chip.textContent),
+    ).toEqual(["All", "Tops", "Dresses"]);
+    expect(within(typeRow).getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(within(typeRow).getByRole("button", { name: "Dresses" }));
+
+    expect(within(typeRow).getByRole("button", { name: "Dresses" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(useInfiniteBrandProducts).toHaveBeenLastCalledWith("brand-1", "dresses", true);
   });
 });
