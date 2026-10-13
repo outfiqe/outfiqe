@@ -5,8 +5,16 @@ import type { DbClient } from "#types/db.types.js";
 
 import { outfitItemRepository } from "./items/item.repository.js";
 import { outfitMemberRepository } from "./members/member.repository.js";
-import type { OutfitAccessRow, OutfitSlotCopy, OutfitSummaryRow } from "./outfit.query-helpers.js";
-import { activeBuildStatuses, outfitAccessSelect, summaryInclude } from "./outfit.query-helpers.js";
+import type {
+  OutfitAccessRow,
+  OutfitMemberSummaryRow,
+  OutfitSlotCopy,
+} from "./outfit.query-helpers.js";
+import {
+  activeBuildStatuses,
+  memberSummaryInclude,
+  outfitAccessSelect,
+} from "./outfit.query-helpers.js";
 import type { OutfitSnapshotItem } from "./outfit.types.js";
 import { outfitShareRepository } from "./visibility/visibility.repository.js";
 
@@ -146,13 +154,13 @@ export const outfitRepository = {
   async listForMember(
     userId: string,
     { cursor, limit }: { cursor?: string; limit: number },
-  ): Promise<OutfitSummaryRow[]> {
+  ): Promise<OutfitMemberSummaryRow[]> {
     return prisma.outfit.findMany({
       where: { status: { in: activeBuildStatuses }, members: { some: { userId } } },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: summaryInclude,
+      include: memberSummaryInclude(userId),
     });
   },
 

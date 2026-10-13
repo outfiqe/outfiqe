@@ -11,6 +11,7 @@ import {
   AccountStatus,
   CreatorStatus,
   OutfitMemberRole,
+  ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { toFitRange } from "#lib/fit-range.utils.js";
@@ -60,15 +61,26 @@ export const canReceiveOffers = (user: {
 export const hasStock = (sizes: readonly { stock: number }[]): boolean =>
   sizes.some((size) => size.stock > NO_STOCK);
 
-export const toItemAvailability = ({
-  sizes,
-  lowStock,
-}: {
-  sizes: readonly { stock: number }[];
-  lowStock: boolean;
-}): OutfitItemAvailability => {
-  if (!hasStock(sizes)) return OUTFIT_ITEM_AVAILABILITY.OUT_OF_STOCK;
-  return lowStock ? OUTFIT_ITEM_AVAILABILITY.LOW_STOCK : OUTFIT_ITEM_AVAILABILITY.IN_STOCK;
+type ProductListingFacts = {
+  status: ProductStatus;
+  deletedAt: Date | null;
+  brand: { accountStatus: AccountStatus };
+};
+
+export const isStillSold = ({ status, deletedAt, brand }: ProductListingFacts): boolean =>
+  status === ProductStatus.APPROVED &&
+  deletedAt === null &&
+  brand.accountStatus === AccountStatus.ACTIVE;
+
+export const isBuyableNow = (
+  product: ProductListingFacts & { sizes: readonly { stock: number }[] },
+): boolean => isStillSold(product) && hasStock(product.sizes);
+
+export const toItemAvailability = (
+  product: ProductListingFacts & { sizes: readonly { stock: number }[]; lowStock: boolean },
+): OutfitItemAvailability => {
+  if (!isBuyableNow(product)) return OUTFIT_ITEM_AVAILABILITY.OUT_OF_STOCK;
+  return product.lowStock ? OUTFIT_ITEM_AVAILABILITY.LOW_STOCK : OUTFIT_ITEM_AVAILABILITY.IN_STOCK;
 };
 
 export const toLiveUnitPrice = ({
@@ -77,22 +89,26 @@ export const toLiveUnitPrice = ({
 }: Pick<OutfitBoardProductRow, "price" | "discounts">): number =>
   resolveBrandFundedUnitPrice(price, toActiveBrandDiscount(discounts[0]));
 
-export const toProductView = (product: OutfitBoardProductRow): OutfitProductView => ({
-  id: product.id,
-  name: product.name,
-  imageUrl: product.imageUrl,
-  price: toLiveUnitPrice(product),
-  listPrice: product.price,
-  productTypeId: product.productTypeId,
-  brand: product.brand,
-  availability: toItemAvailability(product),
-  isStretchable: product.isStretchable,
-  sizes: product.sizes.map(({ label, stock, ...fitColumns }) => ({
-    label,
-    isInStock: stock > NO_STOCK,
-    fitRange: toFitRange(fitColumns),
-  })),
-});
+export const toProductView = (product: OutfitBoardProductRow): OutfitProductView => {
+  const { brand } = product;
+  const isSold = isStillSold(product);
+  return {
+    id: product.id,
+    name: product.name,
+    imageUrl: product.imageUrl,
+    price: toLiveUnitPrice(product),
+    listPrice: product.price,
+    productTypeId: product.productTypeId,
+    brand: { id: brand.id, name: brand.name },
+    availability: toItemAvailability(product),
+    isStretchable: product.isStretchable,
+    sizes: product.sizes.map(({ label, stock, ...fitColumns }) => ({
+      label,
+      isInStock: isSold && stock > NO_STOCK,
+      fitRange: toFitRange(fitColumns),
+    })),
+  };
+};
 
 export const toViewerRole = (memberRole: OutfitMemberRole | null): OutfitViewerRole => {
   if (memberRole === OutfitMemberRole.OWNER) return OUTFIT_VIEWER_ROLE.OWNER;
@@ -185,7 +201,7 @@ export const toBoardView = (
     itemCount: products.length,
     total,
     isOverBudget: board.budget !== null && total > board.budget,
-    isFullyAvailable: products.every((product) => hasStock(product.sizes)),
+    isFullyAvailable: products.every(isBuyableNow),
     isEveryoneHappy: members.every((member) => member.isHappy),
     limits,
   };

@@ -9,6 +9,7 @@ The public Outfiqe site and the signed-in shopper, creator and brand dashboards,
 - `src/app/` — routes. A route file loads data and composes feature components; it holds no feature logic of its own. `src/app/(home)/README.md` explains how the homepage is put together.
 - `src/features/<feature>/` — one folder per product area (see "Feature layout" below). Each has its own `README.md`.
 - `src/components/` — app-wide chrome shared by many routes: the site header and footer, the dashboard sidebar and mobile nav, and modals such as followers/following.
+  - The footer (`SiteFooter`) has two layouts built from one list of link groups (`siteFooter.constants.ts`). On phones, `FooterAppMenu` shows each group as an app-style row with an icon that opens to its links, using native `<details>`, so it needs no JavaScript and every link stays in the page for search engines. A short Terms · Privacy · Help row stays visible below it. From tablet width up, `FooterLinkColumns` shows the same groups as columns.
 - `src/shared/` — code used by several features with no single owner: `api/` (uploads), `components/` (`AppImage`, the photo crop and category/type filter pieces), `hooks/`, `lib/` (the API client and a few small cross-feature API clients, error messages, formatting, the content security policy) and `seo/` (metadata, JSON-LD, sitemap sources).
 - `src/i18n/` — English and Nepali messages and the chosen-language handling (see its `README.md`).
 - `src/testing/` — shared test setup and helpers.

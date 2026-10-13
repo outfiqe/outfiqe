@@ -13,7 +13,7 @@ import {
 import { outfitErrors } from "../outfit.errors.js";
 import { outfitRepository } from "../outfit.repository.js";
 import type { UpdateOutfitSettingsBody } from "../outfit.schemas.js";
-import { hasStock, toSnapshotItems } from "../outfit.utils.js";
+import { isBuyableNow, toSnapshotItems } from "../outfit.utils.js";
 import {
   OUTFIT_WRITE_ACCESS,
   type OutfitWriteCall,
@@ -69,7 +69,7 @@ export const outfitLifecycleService = {
         if (products.length < minItemsToLock) throw outfitErrors.notEnoughItems(minItemsToLock);
 
         const soldOutProductIds = products
-          .filter((product) => !hasStock(product.sizes))
+          .filter((product) => !isBuyableNow(product))
           .map((product) => product.id);
         if (soldOutProductIds.length > NONE) throw outfitErrors.itemsSoldOut(soldOutProductIds);
         if (!board.members.every((member) => member.isHappy)) {

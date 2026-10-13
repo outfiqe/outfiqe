@@ -198,18 +198,17 @@ export const outfitService = {
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
     const rows = await outfitRepository.listForMember(userId, { cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-    const [roles, coversByOutfitId] = await Promise.all([
-      Promise.all(
-        items.map((row) => outfitMemberRepository.findMemberRole(prisma, row.id, userId)),
-      ),
-      loadCoversForBuilds(
-        userId,
-        items.map(({ id }) => id),
-      ),
-    ]);
+    const coversByOutfitId = await loadCoversForBuilds(
+      userId,
+      items.map(({ id }) => id),
+    );
     return {
-      items: items.map((row, index) =>
-        toSummaryView(row, toViewerRole(roles[index] ?? null), coversByOutfitId.get(row.id) ?? []),
+      items: items.map(({ members: [myMembership], ...row }) =>
+        toSummaryView(
+          row,
+          toViewerRole(myMembership?.role ?? null),
+          coversByOutfitId.get(row.id) ?? [],
+        ),
       ),
       nextCursor,
     };

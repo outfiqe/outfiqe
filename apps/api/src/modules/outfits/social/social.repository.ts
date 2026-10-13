@@ -2,7 +2,7 @@ import { PUBLIC_BUILD_SORT, type PublicBuildSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import { OutfitVisibility } from "#generated/prisma/enums.js";
+import { OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
 
 const NO_STOCK = 0;
 const ONE = 1;
@@ -69,6 +69,7 @@ export const outfitSocialRepository = {
       FROM outfits o
       JOIN outfit_snapshots s ON s.outfit_id = o.id AND s.version = o.published_version
       WHERE o.visibility::text = ${OutfitVisibility.PUBLIC}
+        AND o.status::text <> ${OutfitStatus.ARCHIVED}
         AND o.removed_at IS NULL
         AND o.made_public_at IS NOT NULL
         ${optionalCondition(minPrice !== undefined, Prisma.sql`s.total >= ${minPrice}`)}
@@ -167,7 +168,14 @@ export const outfitSocialRepository = {
   async findSocialTarget(outfitId: string) {
     return prisma.outfit.findUnique({
       where: { id: outfitId },
-      select: { id: true, title: true, visibility: true, removedAt: true, publishedVersion: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        visibility: true,
+        removedAt: true,
+        publishedVersion: true,
+      },
     });
   },
 
@@ -265,7 +273,11 @@ export const outfitSocialRepository = {
     return prisma.outfitSave.findMany({
       where: {
         userId,
-        outfit: { visibility: OutfitVisibility.PUBLIC, removedAt: null },
+        outfit: {
+          visibility: OutfitVisibility.PUBLIC,
+          status: { not: OutfitStatus.ARCHIVED },
+          removedAt: null,
+        },
       },
       orderBy: [{ createdAt: "desc" }, { outfitId: "desc" }],
       take,

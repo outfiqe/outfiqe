@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { ContentReportTarget, FeatureFlagRollout } from "#generated/prisma/enums.js";
+import {
+  ContentReportTarget,
+  FeatureFlagRollout,
+  OutfitMemberRole,
+} from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/auth-helpers.js";
@@ -253,6 +257,36 @@ describe("likes, saves and comments", () => {
     );
   });
 
+  it("lets only a chime's author or a moderator delete it, not the build's people", async () => {
+    const owner = await createOutfitUser("Sita");
+    const editor = await createOutfitUser("Ram");
+    const fan = await createOutfitUser("Gita");
+    const { outfitId } = await lockedBuild(owner);
+    await prisma.outfitMember.create({
+      data: { outfitId, userId: editor.id, role: OutfitMemberRole.EDITOR },
+    });
+    await makePublic(owner, outfitId);
+    const { authHeader: adminAuth } = await createAdminSession();
+    const postChime = async (body: string) =>
+      (
+        await request(testApp)
+          .post(`/api/outfits/${outfitId}/comments`)
+          .set("Authorization", fan.auth)
+          .send({ body })
+      ).body.data.id;
+    const deleteChime = (auth: string, commentId: string) =>
+      request(testApp)
+        .delete(`/api/outfits/${outfitId}/comments/${commentId}`)
+        .set("Authorization", auth);
+    const firstChimeId = await postChime("Love the kurta");
+    const secondChimeId = await postChime("Where are the shoes from?");
+
+    expect((await deleteChime(owner.auth, firstChimeId)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await deleteChime(editor.auth, firstChimeId)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await deleteChime(fan.auth, firstChimeId)).status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect((await deleteChime(adminAuth, secondChimeId)).status).toBe(HTTP_STATUS.NO_CONTENT);
+  });
+
   it("keeps a shared build's comments to the people it was sent to", async () => {
     const owner = await createOutfitUser("Sita");
     const recipient = await createOutfitUser("Gita");
@@ -312,5 +346,56 @@ describe("reports and removal", () => {
     expect((await request(testApp).get(`/api/outfits/${outfitId}/public`)).status).toBe(
       HTTP_STATUS.NOT_FOUND,
     );
+  });
+
+  it("drops a removed build from the Shared with me list of the people it was sent to", async () => {
+    const owner = await createOutfitUser("Sita");
+    const recipient = await createOutfitUser("Gita");
+    const { outfitId } = await lockedBuild(owner);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
+      visibility: "SHARED",
+      shareWithUserIds: [recipient.id],
+    });
+    const sharedWithRecipient = () =>
+      request(testApp).get("/api/outfits/shared-with-me").set("Authorization", recipient.auth);
+    expect((await sharedWithRecipient()).body.data.items).toHaveLength(1);
+
+    await prisma.outfit.update({ where: { id: outfitId }, data: { removedAt: new Date() } });
+
+    expect((await sharedWithRecipient()).body.data.items).toEqual([]);
+  });
+});
+
+describe("archived builds", () => {
+  it("takes an archived public build out of every public view", async () => {
+    const owner = await createOutfitUser("Sita");
+    const fan = await createOutfitUser("Gita");
+    const { outfitId, shirt } = await lockedBuild(owner);
+    await makePublic(owner, outfitId);
+    const asFan = (method: "get" | "put" | "post", path: string, body?: Record<string, unknown>) =>
+      request(testApp)[method](`/api/outfits${path}`).set("Authorization", fan.auth).send(body);
+    await asFan("put", `/${outfitId}/save`);
+    expect((await publicFeed()).body.data.items).toHaveLength(1);
+
+    const archived = await writeAtCurrentVersion(owner, "post", outfitId, "/archive");
+    expect(archived.status).toBe(HTTP_STATUS.OK);
+
+    expect((await publicFeed()).body.data.items).toEqual([]);
+    expect((await publicFeed(`?contributorId=${owner.id}`)).body.data.items).toEqual([]);
+    expect((await asFan("get", "/saved")).body.data.items).toEqual([]);
+    expect((await asFan("get", `/${outfitId}/public`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("get", `/${outfitId}/comments`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("put", `/${outfitId}/like`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("post", `/${outfitId}/comments`, { body: "Still here?" })).status).toBe(
+      HTTP_STATUS.NOT_FOUND,
+    );
+    expect(
+      (
+        await asFan("post", `/${outfitId}/cart`, {
+          isFullSet: true,
+          sizes: [{ productId: shirt.id, sizeLabel: "M" }],
+        })
+      ).status,
+    ).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });

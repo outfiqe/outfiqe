@@ -1,48 +1,41 @@
 import Link from "next/link";
 
+import { FooterAppMenu } from "./FooterAppMenu";
+import { FooterLinkColumns } from "./FooterLinkColumns";
 import { Logo } from "./Logo";
-import { FOOTER_LINK_GROUPS } from "./siteFooter.constants";
+import { FOOTER_COMMISSION_DISCLOSURE, FOOTER_ESSENTIAL_LINKS } from "./siteFooter.constants";
 
-export const SiteFooter = () => {
-  return (
-    <footer className="px-6 py-12 sm:py-16 lg:px-10">
-      <div className="grid gap-10 border-t border-border pt-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-        <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
-          <Logo />
-          <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-            The one place Nepali shoppers go for fashion: local brands, real muse looks, one
-            checkout.
-          </p>
-        </div>
+const FIRST_LINK_INDEX = 0;
 
-        {FOOTER_LINK_GROUPS.map(({ title, links }) => (
-          <nav key={title} aria-label={title}>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{title}</h3>
-            <ul className="mt-4 flex flex-col gap-2.5">
-              {links.map(({ href, label }) => (
-                <li key={label}>
-                  <Link
-                    href={href}
-                    prefetch={false}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ))}
-      </div>
+export const SiteFooter = () => (
+  <footer className="px-4 pb-8 pt-10 sm:px-6 md:py-16 lg:px-10">
+    <div className="md:hidden">
+      <FooterAppMenu />
+    </div>
+    <div className="hidden border-t border-border pt-10 md:block">
+      <FooterLinkColumns />
+    </div>
 
-      <div className="mt-10 border-t border-border pt-6">
-        <p className="text-xs text-muted-foreground">
-          Muses may earn a commission when you shop the pieces they&apos;ve tagged in their looks.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
-        </p>
-      </div>
-    </footer>
-  );
-};
+    <div className="mt-8 flex flex-col items-center gap-3 text-center md:mt-10 md:items-start md:border-t md:border-border md:pt-6 md:text-left">
+      <Logo size="sm" className="md:hidden" />
+      <nav aria-label="Legal and help" className="md:hidden">
+        <ul className="flex items-center gap-2 text-xs text-muted-foreground">
+          {FOOTER_ESSENTIAL_LINKS.map(({ href, label }, index) => (
+            <li key={label} className="flex items-center gap-2">
+              {index > FIRST_LINK_INDEX && <span aria-hidden>·</span>}
+              <Link href={href} prefetch={false} className="hover:text-foreground">
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <p className="max-w-sm text-xs text-muted-foreground md:max-w-none">
+        {FOOTER_COMMISSION_DISCLOSURE}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
+      </p>
+    </div>
+  </footer>
+);
