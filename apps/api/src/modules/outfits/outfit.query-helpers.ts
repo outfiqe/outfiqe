@@ -31,7 +31,9 @@ export const boardProductSelect = () =>
     productTypeId: true,
     lowStock: true,
     isStretchable: true,
-    brand: { select: { id: true, name: true } },
+    status: true,
+    deletedAt: true,
+    brand: { select: { id: true, name: true, accountStatus: true } },
     sizes: {
       select: { label: true, stock: true, ...SIZE_FIT_COLUMNS_SELECT },
       orderBy: { sortOrder: "asc" },

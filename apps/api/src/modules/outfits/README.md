@@ -228,6 +228,7 @@ Who can see and react:
 | Shared   | Its members and the people it was sent to | The same people, while `outfit_builder` is on |
 | Private  | Nobody here (members use the board)       | Nobody                                        |
 | Removed  | Nobody                                    | Nobody                                        |
+| Archived | Nobody                                    | Nobody                                        |
 
 Anyone else gets 404. Comments are checked by the same content check. Reports of a build or a
 build comment go into the shared moderation queue (`../content-reports`), and removing one calls
@@ -284,7 +285,16 @@ as in stock only if one of its buyable sizes is.
   items) in one query, so the card a viewer sees is exactly what was filtered. Stock is checked
   live against `product_sizes`, since a locked build's items can sell out later.
 - **Removing a build hides it, it doesn't delete it.** `removed_at` takes it out of every public
-  view, but the owner still has the board, its history and any looks made from it.
+  view and out of "Shared with me", but the owner still has the board, its history and any looks
+  made from it.
+- **Archiving hides a build everywhere, whatever its visibility.** Archiving leaves `visibility`
+  as it was, so every public path (the feed, saved builds, the public page, likes, chimes and
+  buying) also checks the status, the same way `GET /:id` and "Shared with me" already did.
+  Admin's "shared / public right now" counts leave archived builds out too.
+- **Each alert about who can see a build goes out once.** "Made public" only goes out when a build
+  becomes public (`isNewlyPublic` on the change), not when the owner saves Public again or stops
+  sharing with someone while it's public. "Shared with you" only goes to people who weren't
+  already on the build's share list (`addShares` returns only the rows it created).
 - **Deleting a top-level comment hides its replies too,** and the build's comment count drops by
   all of them, so the count always matches what people can see.
 - **A sold-out item alerts once per sell-out, not once per stock change.** A flash sale can
@@ -334,8 +344,13 @@ as in stock only if one of its buyable sizes is.
 - **Any change to the outfit clears everyone's "I'm happy"** — adding, swapping, removing or
   reordering items, and unlocking. Title, budget and the per-person limit don't change the outfit,
   so they don't.
-- **Only in-stock, on-sale products can be placed.** An item can still sell out later; the board
-  shows it as out of stock, and locking refuses until it's swapped (`ITEMS_SOLD_OUT`).
+- **Only in-stock, on-sale products can be placed.** An item can still sell out later, or stop
+  being sold (rejected, deleted, or its brand suspended). Either way the board shows it as out of
+  stock with every size unavailable, and locking refuses until it's swapped (`ITEMS_SOLD_OUT`).
+  One rule decides this everywhere (`isBuyableNow` in `outfit.utils.ts`), so a delisted product
+  can never be locked into a snapshot and published. Products are soft-deleted and keep their
+  stock numbers, so stock alone isn't enough. A delisted item doesn't send a sold-out alert (that
+  comes only from stock changes), but the board flags it the moment anyone opens it.
 - **Viewers aren't member rows.** Only the owner and editors are members. Someone in the chat the
   build started in sees the live board read-only, without the build's own chat. Someone a build
   was sent to (or anyone, once public) sees the published snapshot — never the working board.

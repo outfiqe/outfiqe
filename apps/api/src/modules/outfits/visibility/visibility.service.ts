@@ -49,12 +49,16 @@ export const outfitVisibilityService = {
 
         const members = await outfitRepository.listMembers(tx, outfit.id);
         const memberIds = new Set(members.map((member) => member.userId));
-        const newRecipientIds = (shareWithUserIds ?? []).filter((userId) => !memberIds.has(userId));
-        const isSendingToPeople = newRecipientIds.length > NONE;
-        if (isSendingToPeople) {
-          await requireReachablePeople(tx, actor, newRecipientIds);
-          await outfitRepository.addShares(tx, outfit.id, newRecipientIds, actor.id);
+        const requestedRecipientIds = (shareWithUserIds ?? []).filter(
+          (userId) => !memberIds.has(userId),
+        );
+        if (requestedRecipientIds.length > NONE) {
+          await requireReachablePeople(tx, actor, requestedRecipientIds);
         }
+        const newlySharedUserIds =
+          requestedRecipientIds.length > NONE
+            ? await outfitRepository.addShares(tx, outfit.id, requestedRecipientIds, actor.id)
+            : [];
 
         await outfitRepository.update(tx, outfit.id, {
           visibility,
@@ -62,10 +66,16 @@ export const outfitVisibilityService = {
           ...(isGoingPublic ? { madePublicAt: new Date() } : {}),
         });
         return {
-          eventType: isSendingToPeople
-            ? OutfitEventType.SHARED
-            : OutfitEventType.VISIBILITY_CHANGED,
-          payload: { visibility, publishedVersion, sharedWithUserIds: newRecipientIds },
+          eventType:
+            newlySharedUserIds.length > NONE
+              ? OutfitEventType.SHARED
+              : OutfitEventType.VISIBILITY_CHANGED,
+          payload: {
+            visibility,
+            publishedVersion,
+            sharedWithUserIds: newlySharedUserIds,
+            isNewlyPublic: isGoingPublic,
+          },
         };
       },
     });

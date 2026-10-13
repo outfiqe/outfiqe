@@ -2,7 +2,7 @@ import { PUBLIC_BUILD_SORT, type PublicBuildSort } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { prisma } from "#db/prisma.js";
-import { OutfitPhotoKind, OutfitVisibility } from "#generated/prisma/enums.js";
+import { OutfitPhotoKind, OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -83,7 +83,9 @@ const resolveSocialAccess = async (
   viewerId: string | null,
 ): Promise<SocialAccess | null> => {
   const target = await outfitSocialRepository.findSocialTarget(outfitId);
-  if (!target || target.removedAt !== null || target.publishedVersion === null) return null;
+  if (!target) return null;
+  const isHidden = target.status === OutfitStatus.ARCHIVED || target.removedAt !== null;
+  if (isHidden || target.publishedVersion === null) return null;
 
   if (target.visibility === OutfitVisibility.PUBLIC) {
     const isPublicFeedOn = await featureFlagsService.isEnabledForUser(

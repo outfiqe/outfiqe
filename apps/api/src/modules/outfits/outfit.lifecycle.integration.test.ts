@@ -8,6 +8,7 @@ import {
   MessageKind,
   OutfitOfferStatus,
   PaymentMethod,
+  ProductStatus,
 } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
@@ -34,6 +35,8 @@ beforeEach(async () => {
   await setFeatureFlagRollout("outfit_public_feed", FeatureFlagRollout.OFF);
   await seedOutfitSlotTypes();
 });
+
+type BoardProductResponse = { id: string; availability: string; brand: Record<string, unknown> };
 
 const slotPath = (outfitId: string, slotKey: string, position: number) =>
   `/${outfitId}/slots/${slotKey}/positions/${position}`;
@@ -118,6 +121,39 @@ describe("agreeing and locking", () => {
       code: "ITEMS_SOLD_OUT",
       details: { soldOutProductIds: [shirt.id] },
     });
+  });
+
+  it("shows a product that stopped being sold as out of stock and won't lock with it", async () => {
+    const owner = await createOutfitUser("Sita");
+    const { outfitId, shirt, trousers } = await buildWithTwoItems(owner);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
+    await prisma.product.update({ where: { id: shirt.id }, data: { deletedAt: new Date() } });
+    await prisma.product.update({
+      where: { id: trousers.id },
+      data: { status: ProductStatus.REJECTED },
+    });
+
+    const board = await readBuild(owner, outfitId);
+    const boardProducts: BoardProductResponse[] = board.body.data.slots.flatMap(
+      (slot: { items: { product: BoardProductResponse }[] }) =>
+        slot.items.map(({ product }) => product),
+    );
+    expect(boardProducts.map(({ availability }) => availability)).toEqual([
+      "OUT_OF_STOCK",
+      "OUT_OF_STOCK",
+    ]);
+    expect(board.body.data.isFullyAvailable).toBe(false);
+    expect(boardProducts.map(({ brand }) => Object.keys(brand).sort())).toEqual([
+      ["id", "name"],
+      ["id", "name"],
+    ]);
+
+    const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
+    expect(locked.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(locked.body.code).toBe("ITEMS_SOLD_OUT");
+    expect([...locked.body.details.soldOutProductIds].sort()).toEqual(
+      [shirt.id, trousers.id].sort(),
+    );
   });
 
   it("clears everyone's I'm happy whenever the outfit changes", async () => {

@@ -6,6 +6,7 @@ import {
   ContentReportStatus,
   ContentReportTarget,
   OutfitMemberRole,
+  OutfitStatus,
 } from "#generated/prisma/enums.js";
 import { outfitPersonSelect } from "#modules/outfits/outfit.query-helpers.js";
 
@@ -278,7 +279,9 @@ export const outfitAdminRepository = {
   },
 
   countByVisibility(visibility: OutfitVisibility): Promise<number> {
-    return prismaRead.outfit.count({ where: { visibility, removedAt: null } });
+    return prismaRead.outfit.count({
+      where: { visibility, status: { not: OutfitStatus.ARCHIVED }, removedAt: null },
+    });
   },
 
   async commissionByTier(since: Date) {

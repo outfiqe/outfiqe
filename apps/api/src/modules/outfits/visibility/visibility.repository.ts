@@ -12,11 +12,13 @@ export const outfitShareRepository = {
     outfitId: string,
     userIds: string[],
     sharedById: string,
-  ): Promise<void> {
-    await tx.outfitShare.createMany({
+  ): Promise<string[]> {
+    const createdShares = await tx.outfitShare.createManyAndReturn({
       data: userIds.map((userId) => ({ outfitId, userId, sharedById })),
       skipDuplicates: true,
+      select: { userId: true },
     });
+    return createdShares.map(({ userId }) => userId);
   },
 
   async removeShare(
@@ -45,6 +47,7 @@ export const outfitShareRepository = {
         status: { in: activeBuildStatuses },
         visibility: { in: [OutfitVisibility.SHARED, OutfitVisibility.PUBLIC] },
         publishedVersion: { not: null },
+        removedAt: null,
         shares: { some: { userId } },
       },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],

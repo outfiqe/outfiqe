@@ -313,4 +313,55 @@ describe("reports and removal", () => {
       HTTP_STATUS.NOT_FOUND,
     );
   });
+
+  it("drops a removed build from the Shared with me list of the people it was sent to", async () => {
+    const owner = await createOutfitUser("Sita");
+    const recipient = await createOutfitUser("Gita");
+    const { outfitId } = await lockedBuild(owner);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
+      visibility: "SHARED",
+      shareWithUserIds: [recipient.id],
+    });
+    const sharedWithRecipient = () =>
+      request(testApp).get("/api/outfits/shared-with-me").set("Authorization", recipient.auth);
+    expect((await sharedWithRecipient()).body.data.items).toHaveLength(1);
+
+    await prisma.outfit.update({ where: { id: outfitId }, data: { removedAt: new Date() } });
+
+    expect((await sharedWithRecipient()).body.data.items).toEqual([]);
+  });
+});
+
+describe("archived builds", () => {
+  it("takes an archived public build out of every public view", async () => {
+    const owner = await createOutfitUser("Sita");
+    const fan = await createOutfitUser("Gita");
+    const { outfitId, shirt } = await lockedBuild(owner);
+    await makePublic(owner, outfitId);
+    const asFan = (method: "get" | "put" | "post", path: string, body?: Record<string, unknown>) =>
+      request(testApp)[method](`/api/outfits${path}`).set("Authorization", fan.auth).send(body);
+    await asFan("put", `/${outfitId}/save`);
+    expect((await publicFeed()).body.data.items).toHaveLength(1);
+
+    const archived = await writeAtCurrentVersion(owner, "post", outfitId, "/archive");
+    expect(archived.status).toBe(HTTP_STATUS.OK);
+
+    expect((await publicFeed()).body.data.items).toEqual([]);
+    expect((await publicFeed(`?contributorId=${owner.id}`)).body.data.items).toEqual([]);
+    expect((await asFan("get", "/saved")).body.data.items).toEqual([]);
+    expect((await asFan("get", `/${outfitId}/public`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("get", `/${outfitId}/comments`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("put", `/${outfitId}/like`)).status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await asFan("post", `/${outfitId}/comments`, { body: "Still here?" })).status).toBe(
+      HTTP_STATUS.NOT_FOUND,
+    );
+    expect(
+      (
+        await asFan("post", `/${outfitId}/cart`, {
+          isFullSet: true,
+          sizes: [{ productId: shirt.id, sizeLabel: "M" }],
+        })
+      ).status,
+    ).toBe(HTTP_STATUS.NOT_FOUND);
+  });
 });
