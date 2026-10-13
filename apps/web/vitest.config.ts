@@ -32,6 +32,8 @@ export default defineConfig({
         "src/components/ProductGridSkeleton.tsx",
         "src/components/HomeSectionError.tsx",
         "src/components/SiteFooter.tsx",
+        "src/components/FooterAppMenu.tsx",
+        "src/components/FooterLinkColumns.tsx",
         "src/components/AccountMenu.tsx",
         "src/components/DashboardSidebarLink.tsx",
         "src/components/FollowersModal.tsx",
