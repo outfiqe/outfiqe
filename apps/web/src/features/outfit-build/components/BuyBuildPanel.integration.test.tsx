@@ -127,6 +127,30 @@ describe("BuyBuildPanel", () => {
     expect(screen.getByRole("combobox", { name: "Size of Linen Shirt" })).toHaveValue("");
   });
 
+  it("fills in my size when it arrives after the panel opens, without undoing my own pick", async () => {
+    const { Wrapper } = createTranslatedQueryWrapper();
+    const withoutSuggestion = { ...SHIRT, suggestedSizeLabel: undefined };
+    const { rerender } = render(
+      <BuyBuildPanel outfitId="outfit-1" items={[withoutSuggestion, TROUSERS]} />,
+      { wrapper: Wrapper },
+    );
+    const shirtSize = () => screen.getByRole("combobox", { name: "Size of Linen Shirt" });
+    const trousersSize = () => screen.getByRole("combobox", { name: "Size of Wide Trousers" });
+    expect(shirtSize()).toHaveValue("");
+
+    const user = userEvent.setup();
+    await user.selectOptions(trousersSize(), "32");
+    rerender(
+      <BuyBuildPanel
+        outfitId="outfit-1"
+        items={[SHIRT, { ...TROUSERS, suggestedSizeLabel: undefined }]}
+      />,
+    );
+
+    expect(shirtSize()).toHaveValue("M");
+    expect(trousersSize()).toHaveValue("32");
+  });
+
   it("asks a signed-out visitor to sign in, and shows nothing to a brand account", () => {
     mockAuth({ isAuthenticated: false, isShopper: false });
     const { unmount } = renderPanel();

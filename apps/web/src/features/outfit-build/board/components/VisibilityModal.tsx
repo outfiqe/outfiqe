@@ -8,12 +8,14 @@ import { useState } from "react";
 import { ContactPicker } from "@/features/messaging";
 
 import type { OutfitVisibility } from "../../api/outfitSchemas";
+import { ShareRecipientsList } from "./ShareRecipientsList";
 
 const VISIBILITY_OPTIONS: OutfitVisibility[] = ["PRIVATE", "SHARED", "PUBLIC"];
 const MAX_SHARES_PER_REQUEST = 50;
 const NO_RECIPIENTS = 0;
 
 type VisibilityModalProps = {
+  outfitId: string;
   currentVisibility: OutfitVisibility;
   memberIds: string[];
   hasBeenLocked: boolean;
@@ -22,15 +24,18 @@ type VisibilityModalProps = {
     visibility: OutfitVisibility,
     shareWithUserIds: string[] | undefined,
   ) => Promise<boolean>;
+  onRemoveRecipient: (userId: string) => Promise<boolean>;
   onClose: () => void;
 };
 
 export const VisibilityModal = ({
+  outfitId,
   currentVisibility,
   memberIds,
   hasBeenLocked,
   isSaving,
   onSave,
+  onRemoveRecipient,
   onClose,
 }: VisibilityModalProps) => {
   const t = useTranslations("outfitBuild.visibility");
@@ -89,6 +94,7 @@ export const VisibilityModal = ({
             excludedUserIds={memberIds}
             maxSelectable={MAX_SHARES_PER_REQUEST}
           />
+          <ShareRecipientsList outfitId={outfitId} onRemoveRecipient={onRemoveRecipient} />
         </div>
       )}
     </Modal>

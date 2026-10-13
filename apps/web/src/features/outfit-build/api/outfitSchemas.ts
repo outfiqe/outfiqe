@@ -197,6 +197,13 @@ export const outfitSummaryPageSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 
+export const shareRecipientPageSchema = z.object({
+  items: z.array(personSchema),
+  nextCursor: z.string().nullable(),
+});
+
+export type ShareRecipientPage = z.infer<typeof shareRecipientPageSchema>;
+
 export const outfitEventsPageSchema = z.object({
   events: z.array(
     z.object({

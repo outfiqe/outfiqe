@@ -17,12 +17,9 @@ const CART_PATH = "/cart";
 const NO_ITEMS = 0;
 const NO_SIZE_PICKED = "";
 
-const startingChoice = ({ sizes, suggestedSizeLabel }: BuyableBuildItem): ItemChoice => {
-  const buyableSuggestion = sizes.find(
-    ({ label, isInStock }) => isInStock && label === suggestedSizeLabel,
-  );
-  return { sizeLabel: buyableSuggestion?.label ?? NO_SIZE_PICKED, isTicked: true };
-};
+const findBuyableSuggestedSize = ({ sizes, suggestedSizeLabel }: BuyableBuildItem): string =>
+  sizes.find(({ label, isInStock }) => isInStock && label === suggestedSizeLabel)?.label ??
+  NO_SIZE_PICKED;
 
 const BuyResultSummary = ({
   result,
@@ -68,8 +65,8 @@ export const BuyBuildPanel = ({ outfitId, items }: BuyBuildPanelProps) => {
   const titleId = useId();
   const { isAuthenticated, isShopper } = useAuth();
   const buyFromBuild = useBuyFromBuild(outfitId);
-  const [choiceByProductId, setChoiceByProductId] = useState(
-    () => new Map(items.map((buildItem) => [buildItem.productId, startingChoice(buildItem)])),
+  const [pickedChoiceByProductId, setPickedChoiceByProductId] = useState(
+    () => new Map<string, Partial<ItemChoice>>(),
   );
   const [hasNothingPicked, setHasNothingPicked] = useState(false);
 
@@ -88,12 +85,21 @@ export const BuyBuildPanel = ({ outfitId, items }: BuyBuildPanelProps) => {
   const productNameById = new Map(
     items.map(({ productId, productName }) => [productId, productName]),
   );
-  const choiceFor = (productId: string): ItemChoice =>
-    choiceByProductId.get(productId) ?? { sizeLabel: NO_SIZE_PICKED, isTicked: false };
+  const itemByProductId = new Map(items.map((buildItem) => [buildItem.productId, buildItem]));
+  const choiceFor = (productId: string): ItemChoice => {
+    const buildItem = itemByProductId.get(productId);
+    const pickedChoice = pickedChoiceByProductId.get(productId);
+    return {
+      sizeLabel:
+        pickedChoice?.sizeLabel ??
+        (buildItem ? findBuyableSuggestedSize(buildItem) : NO_SIZE_PICKED),
+      isTicked: pickedChoice?.isTicked ?? true,
+    };
+  };
 
   const updateChoice = (productId: string, change: Partial<ItemChoice>) => {
-    setChoiceByProductId((current) =>
-      new Map(current).set(productId, { ...choiceFor(productId), ...change }),
+    setPickedChoiceByProductId((current) =>
+      new Map(current).set(productId, { ...current.get(productId), ...change }),
     );
     setHasNothingPicked(false);
   };

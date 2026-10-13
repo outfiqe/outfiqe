@@ -23,6 +23,8 @@ import {
   outfitWriteResultSchema,
   type PublishedLook,
   publishedLookSchema,
+  type ShareRecipientPage,
+  shareRecipientPageSchema,
 } from "./outfitSchemas";
 
 const OUTFIT_VERSION_HEADER = "X-Outfit-Version";
@@ -85,6 +87,13 @@ export const outfitApi = {
       params: { cursor },
     });
     return outfitSummaryPageSchema.parse(res.data);
+  },
+
+  async listShareRecipients(outfitId: string, cursor?: string): Promise<ShareRecipientPage> {
+    const res = await apiClient.get<ShareRecipientPage>(`/outfits/${outfitId}/shares`, {
+      params: { cursor },
+    });
+    return shareRecipientPageSchema.parse(res.data);
   },
 
   async listEvents(outfitId: string, sinceVersion: number): Promise<OutfitEventsPage> {
@@ -250,6 +259,14 @@ export const outfitApi = {
     const res = await apiClient.put(
       `/outfits/${write.outfitId}/visibility`,
       { visibility, ...(shareWithUserIds ? { shareWithUserIds } : {}) },
+      writeHeaders(write),
+    );
+    return parseWrite(res.data);
+  },
+
+  async removeShare(write: OutfitWrite, userId: string) {
+    const res = await apiClient.del(
+      `/outfits/${write.outfitId}/shares/${userId}`,
       writeHeaders(write),
     );
     return parseWrite(res.data);

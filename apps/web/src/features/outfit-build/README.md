@@ -107,6 +107,11 @@ Ways in from the rest of the app:
   already imports `ContactPicker` from messaging.
 - The board's `lastLockedVersion` tells `VisibilityModal` whether the build has ever been locked,
   so a board reopened after a lock can still be shared as the version that was locked.
+- Who a build was sent to: with Shared picked, `VisibilityModal` shows `ShareRecipientsList`
+  under the contact picker. It pages through `GET /api/outfits/:id/shares`
+  (`board/hooks/useShareRecipients.ts`, owner only) and each person has a "Stop sharing" button,
+  a normal board write (`outfitApi.removeShare` → `DELETE /api/outfits/:id/shares/:userId`). The
+  list reloads after a removal and after sending the build to more people.
 - Sold-out items: the board shows a banner counting them, and each one gets a visible "Swap"
   button. The API also reports a product that stopped being sold (rejected, deleted, or its
   brand suspended) as `OUT_OF_STOCK`, so it gets the same banner and Swap button. Swapping opens `ProductPickerModal` with "Similar and in stock" suggestions from
@@ -127,9 +132,11 @@ Ways in from the rest of the app:
   so a saved label per kind of clothing would be wrong; an item without a chart shows no size hint.
 - Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes
   prefilled with the size that fits the person, but only when that size is in stock) and under a
-  shared or public build
-  (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). Each item has a tick and a
-  size picker; sold-out sizes can't be picked. "Buy the full set" sends every item with a size,
+  shared or public build (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). The
+  panel keeps only what the shopper changes; an item they haven't touched follows the suggested
+  size live, so a size that loads after the panel opens still fills in, and a size they picked
+  themselves is never replaced. Each item has a tick and a size picker; sold-out sizes can't be
+  picked. "Buy the full set" sends every item with a size,
   "Add the ticked items" sends only the ticked ones (`hooks/useBuyFromBuild.ts` →
   `POST /api/outfits/:id/cart`, then the bag query is refreshed). The panel then says how many
   items were added, links to the bag, and lists anything left out with the reason. Signed-out
