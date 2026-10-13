@@ -53,6 +53,7 @@ export default defineConfig({
         "src/shared/hooks/useOptimisticFollow.ts",
         "src/features/landing/context/CategorySelectionContext.tsx",
         "src/features/landing/components/CategoryResults.tsx",
+        "src/features/landing/components/ProductRail.tsx",
         "src/features/shop/components/ShopResults.tsx",
         "src/features/shop/components/ThriftOnlyToggle.tsx",
         "src/features/explore/feed/components/ExploreFeed.tsx",
