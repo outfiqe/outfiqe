@@ -8,7 +8,9 @@ rating), a follow toggle, and its product catalog filterable by product type wit
 ## Structure
 
 - `components/BrandProfile.tsx` — the page's client component: header, follow toggle, type filters,
-  and the product grid. The follow toggle runs through the shared `useOptimisticFollow("brand")`
+  and the product grid. The type filters sit in the design system's `ScrollRow`, one line that
+  scrolls sideways, the same as the shop and home filters, so a long list of types never wraps
+  onto extra lines on a phone. The follow toggle runs through the shared `useOptimisticFollow("brand")`
   hook (`apps/web/src/shared/hooks`) and calls `router.refresh()` once the request settles so the
   server component re-renders with the corrected `isFollowing` / `followerCount`.
 - `api/brandProfileApi.ts` — client-side API calls used by the infinite-products hook.

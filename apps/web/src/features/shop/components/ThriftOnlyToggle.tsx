@@ -13,7 +13,7 @@ export const ThriftOnlyToggle = ({ active, onToggle }: ThriftOnlyToggleProps) =>
     onClick={onToggle}
     aria-pressed={active}
     className={cn(
-      "h-auto rounded-full border px-3 py-1.5 text-sm font-medium transition-colors sm:px-4 sm:py-2",
+      "h-auto shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors sm:px-4 sm:py-2",
       active
         ? "border-thrift bg-thrift text-thrift-foreground"
         : "border-border text-muted-foreground hover:border-thrift hover:text-thrift-strong",
