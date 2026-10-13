@@ -8,6 +8,7 @@ import {
   MessageKind,
   OutfitOfferStatus,
   PaymentMethod,
+  ProductStatus,
 } from "#generated/prisma/enums.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
@@ -34,6 +35,8 @@ beforeEach(async () => {
   await setFeatureFlagRollout("outfit_public_feed", FeatureFlagRollout.OFF);
   await seedOutfitSlotTypes();
 });
+
+type BoardProductResponse = { id: string; availability: string; brand: Record<string, unknown> };
 
 const slotPath = (outfitId: string, slotKey: string, position: number) =>
   `/${outfitId}/slots/${slotKey}/positions/${position}`;
@@ -118,6 +121,39 @@ describe("agreeing and locking", () => {
       code: "ITEMS_SOLD_OUT",
       details: { soldOutProductIds: [shirt.id] },
     });
+  });
+
+  it("shows a product that stopped being sold as out of stock and won't lock with it", async () => {
+    const owner = await createOutfitUser("Sita");
+    const { outfitId, shirt, trousers } = await buildWithTwoItems(owner);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
+    await prisma.product.update({ where: { id: shirt.id }, data: { deletedAt: new Date() } });
+    await prisma.product.update({
+      where: { id: trousers.id },
+      data: { status: ProductStatus.REJECTED },
+    });
+
+    const board = await readBuild(owner, outfitId);
+    const boardProducts: BoardProductResponse[] = board.body.data.slots.flatMap(
+      (slot: { items: { product: BoardProductResponse }[] }) =>
+        slot.items.map(({ product }) => product),
+    );
+    expect(boardProducts.map(({ availability }) => availability)).toEqual([
+      "OUT_OF_STOCK",
+      "OUT_OF_STOCK",
+    ]);
+    expect(board.body.data.isFullyAvailable).toBe(false);
+    expect(boardProducts.map(({ brand }) => Object.keys(brand).sort())).toEqual([
+      ["id", "name"],
+      ["id", "name"],
+    ]);
+
+    const locked = await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
+    expect(locked.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(locked.body.code).toBe("ITEMS_SOLD_OUT");
+    expect([...locked.body.details.soldOutProductIds].sort()).toEqual(
+      [shirt.id, trousers.id].sort(),
+    );
   });
 
   it("clears everyone's I'm happy whenever the outfit changes", async () => {
@@ -467,6 +503,59 @@ describe("sharing and publishing", () => {
     expect(sharedWithFriend.body.data.items.map((item: { id: string }) => item.id)).toEqual([
       outfitId,
     ]);
+  });
+
+  it("lists who the build was sent to for the owner only, and stops sharing with one", async () => {
+    const owner = await createOutfitUser("Sita");
+    const [firstFriend, secondFriend, thirdFriend] = await Promise.all([
+      createOutfitUser("Ram"),
+      createOutfitUser("Gita"),
+      createOutfitUser("Hari"),
+    ]);
+    const { outfitId } = await buildWithTwoItems(owner);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
+    await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", {
+      visibility: "SHARED",
+      shareWithUserIds: [firstFriend.id, secondFriend.id, thirdFriend.id],
+    });
+    const listRecipients = (caller: OutfitTestUser, query = "") =>
+      request(testApp)
+        .get(`/api/outfits/${outfitId}/shares${query}`)
+        .set("Authorization", caller.auth);
+
+    const firstPage = await listRecipients(owner, "?limit=2");
+    const secondPage = await listRecipients(
+      owner,
+      `?limit=2&cursor=${firstPage.body.data.nextCursor}`,
+    );
+    const pagedRecipientIds = [...firstPage.body.data.items, ...secondPage.body.data.items].map(
+      ({ id }: { id: string }) => id,
+    );
+    expect(pagedRecipientIds.sort()).toEqual(
+      [firstFriend.id, secondFriend.id, thirdFriend.id].sort(),
+    );
+    expect(secondPage.body.data.nextCursor).toBeNull();
+    expect(Object.keys(firstPage.body.data.items[0]).sort()).toEqual([
+      "avatarUrl",
+      "handle",
+      "id",
+      "name",
+    ]);
+    expect((await listRecipients(firstFriend)).status).toBe(HTTP_STATUS.NOT_FOUND);
+
+    const stopped = await writeAtCurrentVersion(
+      owner,
+      "delete",
+      outfitId,
+      `/shares/${secondFriend.id}`,
+    );
+    expect(stopped.status).toBe(HTTP_STATUS.OK);
+    const afterStopping = await listRecipients(owner);
+    expect(afterStopping.body.data.items.map(({ id }: { id: string }) => id).sort()).toEqual(
+      [firstFriend.id, thirdFriend.id].sort(),
+    );
+    expect((await readBuild(secondFriend, outfitId)).status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("keeps public builds behind the public feed flag", async () => {

@@ -117,6 +117,8 @@ describe("ProductDetail out-of-stock handling", () => {
     expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
     expect(cta(/add to cart/i)).toBeDisabled();
     expect(cta(/buy now/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decrease quantity" })).toBeDisabled();
   });
 
   it("shows Out of stock when the only size is sold out", () => {
@@ -171,6 +173,7 @@ describe("ProductDetail out-of-stock handling", () => {
     expect(screen.queryByText("Out of stock")).not.toBeInTheDocument();
     expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
     expect(cta(/add to cart/i)).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeEnabled();
 
     cta(/add to cart/i).click();
     expect(addToCart).toHaveBeenCalledWith(

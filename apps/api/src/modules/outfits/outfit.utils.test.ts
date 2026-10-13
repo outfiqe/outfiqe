@@ -6,12 +6,15 @@ import {
   CreatorStatus,
   DiscountType,
   OutfitMemberRole,
+  ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
 
 import {
   canReceiveOffers,
   hasStock,
+  isBuyableNow,
+  isStillSold,
   parseSnapshotItems,
   parseVersionHeader,
   toItemAvailability,
@@ -46,10 +49,40 @@ describe("stock and price", () => {
     expect(hasStock([])).toBe(false);
   });
 
+  const listedProduct = {
+    status: ProductStatus.APPROVED,
+    deletedAt: null,
+    brand: { accountStatus: AccountStatus.ACTIVE },
+  };
+
   it("describes availability in words, including low stock", () => {
-    expect(toItemAvailability({ sizes: [{ stock: 3 }], lowStock: false })).toBe("IN_STOCK");
-    expect(toItemAvailability({ sizes: [{ stock: 1 }], lowStock: true })).toBe("LOW_STOCK");
-    expect(toItemAvailability({ sizes: [{ stock: 0 }], lowStock: true })).toBe("OUT_OF_STOCK");
+    expect(toItemAvailability({ ...listedProduct, sizes: [{ stock: 3 }], lowStock: false })).toBe(
+      "IN_STOCK",
+    );
+    expect(toItemAvailability({ ...listedProduct, sizes: [{ stock: 1 }], lowStock: true })).toBe(
+      "LOW_STOCK",
+    );
+    expect(toItemAvailability({ ...listedProduct, sizes: [{ stock: 0 }], lowStock: true })).toBe(
+      "OUT_OF_STOCK",
+    );
+  });
+
+  it("treats a product that is no longer sold as out of stock, whatever its stock says", () => {
+    const delistedProducts = [
+      { ...listedProduct, status: ProductStatus.REJECTED },
+      { ...listedProduct, status: ProductStatus.PENDING },
+      { ...listedProduct, deletedAt: new Date() },
+      { ...listedProduct, brand: { accountStatus: AccountStatus.SUSPENDED } },
+    ];
+    for (const delistedProduct of delistedProducts) {
+      expect(isStillSold(delistedProduct)).toBe(false);
+      expect(isBuyableNow({ ...delistedProduct, sizes: [{ stock: 5 }] })).toBe(false);
+      expect(
+        toItemAvailability({ ...delistedProduct, sizes: [{ stock: 5 }], lowStock: false }),
+      ).toBe("OUT_OF_STOCK");
+    }
+    expect(isBuyableNow({ ...listedProduct, sizes: [{ stock: 5 }] })).toBe(true);
+    expect(isBuyableNow({ ...listedProduct, sizes: [{ stock: 0 }] })).toBe(false);
   });
 
   it("uses the list price, or the active brand discount when there is one", () => {

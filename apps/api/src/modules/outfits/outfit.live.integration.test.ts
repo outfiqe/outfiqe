@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { MessageKind, NotificationType } from "#generated/prisma/enums.js";
+import { FeatureFlagRollout, MessageKind, NotificationType } from "#generated/prisma/enums.js";
 import { CHAT_SYSTEM_EVENT } from "#modules/chat/chat.constants.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
@@ -14,6 +14,7 @@ import {
   currentBuildVersion,
   type OutfitTestUser,
   seedOutfitSlotTypes,
+  setFeatureFlagRollout,
   startBuild,
   startBuildOrFail,
   turnOutfitBuilderOn,
@@ -196,6 +197,37 @@ describe("notifications", () => {
     await deliverActivityEvents(outfitId);
 
     expect(await notificationsFor(owner.id, NotificationType.OUTFIT_READY_TO_LOCK)).toHaveLength(1);
+  });
+
+  it("says a build went public once, and sends it to each person once", async () => {
+    await setFeatureFlagRollout("outfit_public_feed", FeatureFlagRollout.EVERYONE);
+    const { owner, editor, outfitId } = await buildWithEditor();
+    const friend = await createOutfitUser("Gita");
+    const [shirt, trousers] = await Promise.all([
+      createOutfitProduct("tops"),
+      createOutfitProduct("bottoms"),
+    ]);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/slots/top/positions/0", {
+      productId: shirt.id,
+    });
+    await writeAtCurrentVersion(owner, "put", outfitId, "/slots/bottom/positions/0", {
+      productId: trousers.id,
+    });
+    await writeAtCurrentVersion(editor, "put", outfitId, "/happy", { isHappy: true });
+    await writeAtCurrentVersion(owner, "put", outfitId, "/happy", { isHappy: true });
+    await writeAtCurrentVersion(owner, "post", outfitId, "/lock");
+    const sendToFriend = { visibility: "SHARED", shareWithUserIds: [friend.id] };
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", sendToFriend);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", sendToFriend);
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", { visibility: "PUBLIC" });
+    await writeAtCurrentVersion(owner, "put", outfitId, "/visibility", { visibility: "PUBLIC" });
+    await writeAtCurrentVersion(owner, "delete", outfitId, `/shares/${friend.id}`);
+
+    await deliverActivityEvents(outfitId);
+
+    expect(await notificationsFor(friend.id, NotificationType.OUTFIT_SHARED)).toHaveLength(1);
+    expect(await notificationsFor(editor.id, NotificationType.OUTFIT_MADE_PUBLIC)).toHaveLength(1);
+    expect(await notificationsFor(owner.id, NotificationType.OUTFIT_MADE_PUBLIC)).toHaveLength(0);
   });
 
   it("does not repeat a notification when the same event is delivered twice", async () => {

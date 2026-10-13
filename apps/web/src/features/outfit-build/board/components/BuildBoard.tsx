@@ -2,6 +2,7 @@
 
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@outfiqe/design-system";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -14,6 +15,7 @@ import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 import { outfitApi } from "../../api/outfitApi";
 import type { OutfitBoard, OutfitVisibility } from "../../api/outfitSchemas";
 import { BuyBuildPanel } from "../../components/BuyBuildPanel";
+import { shareRecipientsQueryKey } from "../../hooks/outfitQueryKeys";
 import { useMySizeByProductId } from "../../hooks/useMySizeByProductId";
 import { PostAsLookPanel } from "../../publishing/components/PostAsLookPanel";
 import {
@@ -51,6 +53,7 @@ export const BuildBoard = ({
   isReconnecting: boolean;
 }) => {
   const t = useTranslations("outfitBuild.board");
+  const queryClient = useQueryClient();
   const { state } = useAuth();
   const currentUserId = state.user?.id;
   const { runWrite, isSaving } = useOutfitWrites(board.id);
@@ -94,8 +97,18 @@ export const BuildBoard = ({
   const runOwnerAction = (action: "lock" | "unlock" | "archive") =>
     void runWrite((write) => outfitApi.runOwnerAction(write, action));
 
-  const saveVisibility = (visibility: OutfitVisibility, shareWithUserIds: string[] | undefined) =>
-    runWrite((write) => outfitApi.setVisibility(write, visibility, shareWithUserIds));
+  const saveVisibility = async (
+    visibility: OutfitVisibility,
+    shareWithUserIds: string[] | undefined,
+  ) => {
+    const isSaved = await runWrite((write) =>
+      outfitApi.setVisibility(write, visibility, shareWithUserIds),
+    );
+    if (isSaved) {
+      void queryClient.invalidateQueries({ queryKey: shareRecipientsQueryKey(board.id) });
+    }
+    return isSaved;
+  };
 
   return (
     <DndContext sensors={sensors} onDragEnd={dropProductOnSlot}>
@@ -256,11 +269,13 @@ export const BuildBoard = ({
       )}
       {openModal === "visibility" && (
         <VisibilityModal
+          outfitId={board.id}
           currentVisibility={board.visibility}
           memberIds={memberIds}
           hasBeenLocked={board.lastLockedVersion !== null}
           isSaving={isSaving}
           onSave={saveVisibility}
+          onRemoveRecipient={(userId) => runWrite((write) => outfitApi.removeShare(write, userId))}
           onClose={() => setOpenModal(null)}
         />
       )}

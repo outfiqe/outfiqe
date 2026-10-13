@@ -300,6 +300,8 @@ export default defineConfig({
         "src/features/explore/feed/hooks/useExploreTabs.ts",
         "src/features/outfit-build/publishing/components/PublishLookModal.tsx",
         "src/features/outfit-build/board/components/BoardPhotosPanel.tsx",
+        "src/features/outfit-build/board/components/ShareRecipientsList.tsx",
+        "src/features/outfit-build/board/hooks/useShareRecipients.ts",
         "src/features/outfit-build/components/BuildCoverGrid.tsx",
         "src/features/outfit-build/public-builds/components/PublicBuildPhotos.tsx",
         "src/features/outfit-build/publishing/components/PublishedBuildView.tsx",

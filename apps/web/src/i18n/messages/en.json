@@ -135,7 +135,13 @@
         }
       },
       "lockFirst": "Lock the build before sharing it or making it public.",
-      "sendTo": "Send it to"
+      "sendTo": "Send it to",
+      "sentTo": "Already sent to",
+      "notSentYet": "You haven't sent it to anyone yet.",
+      "recipientsLoadFailed": "Couldn't load who it was sent to.",
+      "stopSharing": "Stop sharing",
+      "stopSharingWith": "Stop sharing with {name}",
+      "showMoreRecipients": "Show more"
     },
     "settings": {
       "title": "Build settings",

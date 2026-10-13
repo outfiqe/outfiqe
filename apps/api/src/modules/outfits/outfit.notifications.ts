@@ -7,7 +7,6 @@ import {
   NotificationType,
   OutfitEventType,
   OutfitMemberRole,
-  OutfitVisibility,
 } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
@@ -20,7 +19,6 @@ import type { OutboxJobData } from "#outbox/outbox.types.js";
 import {
   type OutfitAnnouncement,
   parseOutfitAnnouncement,
-  readDetailString,
   readDetailStrings,
 } from "./outfit.announcement.js";
 import { outfitRepository } from "./outfit.repository.js";
@@ -153,7 +151,7 @@ const notifyForChange = async (context: NotificationContext): Promise<void> => {
         readDetailStrings(announcement, "sharedWithUserIds"),
       );
     case OutfitEventType.VISIBILITY_CHANGED:
-      if (readDetailString(announcement, "visibility") === OutfitVisibility.PUBLIC) {
+      if (announcement.details.isNewlyPublic === true) {
         await notifyPeople(context, NotificationType.OUTFIT_MADE_PUBLIC, memberIds);
       }
       return;
