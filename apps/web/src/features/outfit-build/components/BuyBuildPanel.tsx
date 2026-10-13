@@ -18,8 +18,10 @@ const NO_ITEMS = 0;
 const NO_SIZE_PICKED = "";
 
 const startingChoice = ({ sizes, suggestedSizeLabel }: BuyableBuildItem): ItemChoice => {
-  const offeredSuggestion = sizes.find(({ label }) => label === suggestedSizeLabel);
-  return { sizeLabel: offeredSuggestion?.label ?? NO_SIZE_PICKED, isTicked: true };
+  const buyableSuggestion = sizes.find(
+    ({ label, isInStock }) => isInStock && label === suggestedSizeLabel,
+  );
+  return { sizeLabel: buyableSuggestion?.label ?? NO_SIZE_PICKED, isTicked: true };
 };
 
 const BuyResultSummary = ({

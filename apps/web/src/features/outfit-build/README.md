@@ -108,7 +108,8 @@ Ways in from the rest of the app:
 - The board's `lastLockedVersion` tells `VisibilityModal` whether the build has ever been locked,
   so a board reopened after a lock can still be shared as the version that was locked.
 - Sold-out items: the board shows a banner counting them, and each one gets a visible "Swap"
-  button. Swapping opens `ProductPickerModal` with "Similar and in stock" suggestions from
+  button. The API also reports a product that stopped being sold (rejected, deleted, or its
+  brand suspended) as `OUT_OF_STOCK`, so it gets the same banner and Swap button. Swapping opens `ProductPickerModal` with "Similar and in stock" suggestions from
   `useReplacementSuggestions` (`GET /api/outfits/:id/slots/:slotKey/positions/:position/replacements`)
   above the normal search. `useOutfitLiveSync` refetches the board on
   `outfit:availability-changed`, so an item selling out shows up without a reload.
@@ -125,7 +126,8 @@ Ways in from the rest of the app:
   person's measurements (`useShopperMeasurements` from `../size-fit`). Sizes differ between brands,
   so a saved label per kind of clothing would be wrong; an item without a chart shows no size hint.
 - Buying: `BuyBuildPanel` appears on a locked board (items from `toBuyableBuildItems`, sizes
-  prefilled with the size that fits the person) and under a shared or public build
+  prefilled with the size that fits the person, but only when that size is in stock) and under a
+  shared or public build
   (`PublicBuildDetailView`, sizes from `GET /api/outfits/:id/public`). Each item has a tick and a
   size picker; sold-out sizes can't be picked. "Buy the full set" sends every item with a size,
   "Add the ticked items" sends only the ticked ones (`hooks/useBuyFromBuild.ts` →

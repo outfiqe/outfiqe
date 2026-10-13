@@ -118,6 +118,15 @@ describe("BuyBuildPanel", () => {
     expect(screen.getByRole("option", { name: "S (sold out)" })).toBeDisabled();
   });
 
+  it("doesn't pre-pick my size when that size is sold out", () => {
+    const { Wrapper } = createTranslatedQueryWrapper();
+    render(<BuyBuildPanel outfitId="outfit-1" items={[{ ...SHIRT, suggestedSizeLabel: "S" }]} />, {
+      wrapper: Wrapper,
+    });
+
+    expect(screen.getByRole("combobox", { name: "Size of Linen Shirt" })).toHaveValue("");
+  });
+
   it("asks a signed-out visitor to sign in, and shows nothing to a brand account", () => {
     mockAuth({ isAuthenticated: false, isShopper: false });
     const { unmount } = renderPanel();
