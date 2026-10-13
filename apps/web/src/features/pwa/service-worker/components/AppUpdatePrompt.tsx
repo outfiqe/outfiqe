@@ -5,6 +5,7 @@ import { useSerwist } from "@serwist/turbopack/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { isRunningStandalone } from "../../utils/standalone";
 import { isUpdatePromptSuppressed } from "../constants/updatePrompt";
 
 export const AppUpdatePrompt = () => {
@@ -16,16 +17,18 @@ export const AppUpdatePrompt = () => {
   useEffect(() => {
     if (!serwist) return;
 
-    const showUpdatePrompt = () => setIsUpdateWaiting(true);
+    const showUpdatePromptInInstalledApp = () => {
+      if (isRunningStandalone()) setIsUpdateWaiting(true);
+    };
     const reloadOnlyIfTheUserAskedFor = () => {
       if (hasAcceptedUpdate.current) window.location.reload();
     };
 
-    serwist.addEventListener("waiting", showUpdatePrompt);
+    serwist.addEventListener("waiting", showUpdatePromptInInstalledApp);
     serwist.addEventListener("controlling", reloadOnlyIfTheUserAskedFor);
 
     return () => {
-      serwist.removeEventListener("waiting", showUpdatePrompt);
+      serwist.removeEventListener("waiting", showUpdatePromptInInstalledApp);
       serwist.removeEventListener("controlling", reloadOnlyIfTheUserAskedFor);
     };
   }, [serwist]);

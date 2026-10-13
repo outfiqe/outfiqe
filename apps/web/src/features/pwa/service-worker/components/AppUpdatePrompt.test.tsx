@@ -36,9 +36,16 @@ vi.mock("next/navigation", () => ({
   usePathname: () => currentPathname,
 }));
 
+let isInstalledApp = true;
+
+vi.mock("../../utils/standalone", () => ({
+  isRunningStandalone: () => isInstalledApp,
+}));
+
 const reloadPage = vi.fn();
 
 beforeEach(() => {
+  isInstalledApp = true;
   listenersByEvent.clear();
   messageSkipWaiting.mockClear();
   reloadPage.mockClear();
@@ -63,6 +70,17 @@ describe("AppUpdatePrompt", () => {
     emit("waiting");
 
     expect(await screen.findByRole("button", { name: /reload/i })).toBeInTheDocument();
+  });
+
+  it("never shows in a browser tab, where every page load is already the latest", async () => {
+    isInstalledApp = false;
+    render(<AppUpdatePrompt />);
+    await vi.waitFor(() => expect(listenersByEvent.get("waiting")?.length).toBe(1));
+
+    emit("waiting");
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(messageSkipWaiting).not.toHaveBeenCalled();
   });
 
   it("applies the update when the user asks for it", async () => {

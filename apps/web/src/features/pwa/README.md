@@ -245,6 +245,13 @@ waiting worker to take over, and the page reloads itself once it has.
 Nothing reloads on its own. The bar also never appears while someone is on the cart, checkout, or
 payment pages, where a mis-tap costs real money or work.
 
+**The bar only appears in the installed app** (`isRunningStandalone`). In a normal browser tab every
+page is fetched from the network first (`NetworkFirst` in `src/app/sw.ts`), so each visit or reload
+already shows the newest version, and the browser has its own reload button. The waiting worker
+there takes over quietly the next time all of the site's tabs are closed, which is the browser's
+normal behaviour. Asking someone browsing the website to "reload for a new version" only made the
+site look like it was broken.
+
 ## The install prompt
 
 Rather than let the browser show its own install banner at a random moment, the app keeps its own
