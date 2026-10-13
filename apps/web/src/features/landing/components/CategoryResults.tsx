@@ -19,6 +19,8 @@ import { resolveDisplayCategories } from "../utils/resolveTasteCategories";
 import { TASTE_RESULTS_SECTION_ID } from "../utils/scrollToTasteResults";
 import { ProductCard } from "./ProductCard";
 
+const NO_RESULTS = 0;
+
 export const CategoryResults = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,6 +84,7 @@ export const CategoryResults = () => {
   const showLoadingGrid = isLoading || isNavigatingCategory || isNavigatingType;
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = isNavigatingCategory ? undefined : productsPages?.pages[0];
+  const hasResults = !showLoadingGrid && products.length > NO_RESULTS;
 
   return (
     <section
@@ -102,18 +105,20 @@ export const CategoryResults = () => {
           )}
         </div>
 
-        <Button
-          variant="link"
-          onClick={() => {
-            const params = new URLSearchParams({ category: slug });
-            if (effectiveActiveType !== ALL_TYPE_ID) params.set("type", effectiveActiveType);
-            router.push(`/shop?${params.toString()}`);
-          }}
-          className="h-auto gap-1 p-0"
-        >
-          View all
-          <ArrowRight className="size-4" />
-        </Button>
+        {hasResults && (
+          <Button
+            variant="link"
+            onClick={() => {
+              const params = new URLSearchParams({ category: slug });
+              if (effectiveActiveType !== ALL_TYPE_ID) params.set("type", effectiveActiveType);
+              router.push(`/shop?${params.toString()}`);
+            }}
+            className="h-auto gap-1 p-0"
+          >
+            View all
+            <ArrowRight className="size-4" />
+          </Button>
+        )}
       </div>
 
       <div className="mt-6">

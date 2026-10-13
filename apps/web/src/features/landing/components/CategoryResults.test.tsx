@@ -266,6 +266,15 @@ describe("CategoryResults", () => {
 
     expect(screen.queryByText(/0 pieces/)).not.toBeInTheDocument();
     expect(screen.getByText("No pieces in Tops yet. Check back soon.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /View all/ })).not.toBeInTheDocument();
+  });
+
+  it("hides View all while the results are still loading", () => {
+    mockInfiniteProducts({ data: undefined, isLoading: true });
+
+    renderCategoryResults();
+
+    expect(screen.queryByRole("button", { name: /View all/ })).not.toBeInTheDocument();
   });
 
   it("offers to show the whole category when a chosen type has no pieces", async () => {

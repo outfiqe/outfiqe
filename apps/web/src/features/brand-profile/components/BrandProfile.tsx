@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, ScrollRow } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -199,7 +199,12 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           buildFilters={{ brandId: id }}
         >
           {filters.length > 1 && (
-            <div className="mt-10 flex flex-wrap justify-center gap-2">
+            <ScrollRow
+              className="mt-10"
+              label="Filter by type"
+              scrollBackLabel="Earlier types"
+              scrollForwardLabel="More types"
+            >
               {filters.map(({ slug, label }) => {
                 const isActive = slug === activeType;
                 return (
@@ -209,7 +214,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
                     aria-pressed={isActive}
                     onClick={() => setActiveType(slug)}
                     className={cn(
-                      "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                      "shrink-0 cursor-pointer whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors",
                       isActive
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -219,7 +224,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
                   </button>
                 );
               })}
-            </div>
+            </ScrollRow>
           )}
 
           {isLoading ? (

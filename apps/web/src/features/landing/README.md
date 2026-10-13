@@ -12,7 +12,7 @@ The sections of the public homepage (`/`): the hero carousel, the taste picker a
 - `components/CategoryResults.tsx` — the product grid for the picked category and product type, loading more on scroll.
 - `components/TrendingNow.tsx`, `components/SaleRail.tsx`, `components/NewArrivals.tsx` — product rails (server components) over `ProductRail`.
 - `components/CreatorLooks.tsx`, `components/LookCard.tsx` — featured creator looks.
-- `components/ProductRail.tsx` — a titled, horizontally scrolling row of `ProductCard`s with a "see more" link.
+- `components/ProductRail.tsx` — a titled, horizontally scrolling row of `ProductCard`s with a "see more" link. The link only shows when the rail has products. An empty section shows just its "check back soon" message, because a "View all" next to nothing makes the page look broken. `CreatorLooks` ("Explore more") and `CategoryResults` ("View all", once the results have loaded and found something) follow the same rule.
 - `components/ProductCard.tsx` — one product tile with its save (heart) button. Also used by `collections` and other product grids, through `products`' `toExploreProduct`.
 - `components/BrandCallout.tsx` — the static "list your brand" band at the bottom.
 - `context/CategorySelectionContext.tsx` — the picked taste categories, shared by `TasteCategories` and `CategoryResults`.

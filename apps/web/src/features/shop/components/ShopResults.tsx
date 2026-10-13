@@ -101,13 +101,15 @@ export const ShopResults = () => {
         <Skeleton className="h-4 w-40" />
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex items-center gap-3">
         {category && (
-          <CategoryTypeFilters
-            activeType={effectiveActiveType}
-            isNavigating={isNavigatingType}
-            onSelectType={selectType}
-          />
+          <div className="min-w-0 flex-1">
+            <CategoryTypeFilters
+              activeType={effectiveActiveType}
+              isNavigating={isNavigatingType}
+              onSelectType={selectType}
+            />
+          </div>
         )}
         <ThriftOnlyToggle active={thriftOnly} onToggle={toggleThriftOnly} />
       </div>

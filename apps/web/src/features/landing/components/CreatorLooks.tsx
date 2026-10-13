@@ -5,8 +5,11 @@ import { getFeaturedCreatorLooksServer } from "@/features/products/api/getProduc
 
 import { LookCard } from "./LookCard";
 
+const NO_LOOKS = 0;
+
 export const CreatorLooks = async () => {
   const looks = await getFeaturedCreatorLooksServer();
+  const hasLooks = looks.length > NO_LOOKS;
 
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
@@ -20,23 +23,25 @@ export const CreatorLooks = async () => {
           </p>
         </div>
 
-        <Link
-          href="/explore"
-          className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
-        >
-          Explore more
-          <ArrowRight className="size-4" />
-        </Link>
+        {hasLooks && (
+          <Link
+            href="/explore"
+            className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
+          >
+            Explore more
+            <ArrowRight className="size-4" />
+          </Link>
+        )}
       </div>
 
-      {looks.length === 0 ? (
-        <p className="mt-8 text-sm text-muted-foreground">No muse looks yet — check back soon.</p>
-      ) : (
+      {hasLooks ? (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {looks.slice(0, 10).map((look) => (
             <LookCard key={look.id} look={look} />
           ))}
         </div>
+      ) : (
+        <p className="mt-8 text-sm text-muted-foreground">No muse looks yet — check back soon.</p>
       )}
     </section>
   );

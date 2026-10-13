@@ -6,6 +6,8 @@ import { cn } from "@/shared/lib/cn";
 
 import { type ExploreProduct, ProductCard } from "./ProductCard";
 
+const NO_PRODUCTS = 0;
+
 type ProductRailProps = {
   eyebrow?: string;
   title: string;
@@ -27,6 +29,8 @@ export const ProductRail = ({
   emptyMessage = "Nothing to show here yet.",
   showTrendingRanks = false,
 }: ProductRailProps) => {
+  const hasProducts = products.length > NO_PRODUCTS;
+
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -49,7 +53,7 @@ export const ProductRail = ({
           )}
         </div>
 
-        {viewAllHref && (
+        {viewAllHref && hasProducts && (
           <Link
             href={viewAllHref}
             className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
@@ -60,9 +64,7 @@ export const ProductRail = ({
         )}
       </div>
 
-      {products.length === 0 ? (
-        <p className="mt-8 text-sm text-muted-foreground">{emptyMessage}</p>
-      ) : (
+      {hasProducts ? (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {products.slice(0, 10).map((product, index) => (
             <ProductCard
@@ -72,6 +74,8 @@ export const ProductRail = ({
             />
           ))}
         </div>
+      ) : (
+        <p className="mt-8 text-sm text-muted-foreground">{emptyMessage}</p>
       )}
     </section>
   );
