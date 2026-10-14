@@ -72,6 +72,7 @@
     "VITE_SOCKET_URL",
     "VITE_SENTRY_DSN"
   ],
+  "globalPassThroughEnv": ["LOCALAPPDATA", "SWC_NATIVE_BINDING_CACHE"],
   "tasks": {
     "db:generate": {
       "cache": false,
