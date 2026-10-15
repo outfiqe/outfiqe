@@ -54,6 +54,8 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
               { label: "Standard delivery fee (Rs.)", width: "small" },
               { label: "Free delivery threshold (Rs.)", width: "small" },
               { label: "COD handling fee (Rs.)", width: "small" },
+              { label: "Shortest delivery (working days)", width: "small" },
+              { label: "Longest delivery (working days)", width: "small" },
             ],
             submitLabel: "Add zone",
           },
@@ -75,6 +77,26 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
       `${FEATURES_DIR}/delivery-zones/components/DeliveryZonesPage.tsx`,
       `${FEATURES_DIR}/delivery-zones/components/DeliveryZonesSection.tsx`,
       `${FEATURES_DIR}/delivery-zones/components/DeliveryZoneHistorySection.tsx`,
+    ],
+  },
+  "/logistics/hubs": {
+    title: "Hubs",
+    description:
+      "Outfiqe's warehouses: their hours, pickup rounds and the areas riders collect from.",
+    headerActionLabel: "Add hub",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasChipRow: true,
+        hasBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Edit", "Pickup areas"],
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/hubs/components/HubsPage.tsx`,
+      `${FEATURES_DIR}/logistics/hubs/components/HubCard.tsx`,
     ],
   },
 };

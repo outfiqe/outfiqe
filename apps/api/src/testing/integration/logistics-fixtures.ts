@@ -4,12 +4,14 @@ import { PICKUP_CODE_LENGTH } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import {
+  FeatureFlagRollout,
   FulfilmentMode,
   FulfilmentStatus,
   PickupStatus,
   ShipmentStatus,
 } from "#generated/prisma/enums.js";
 import { generateRandomCode } from "#lib/random-code.utils.js";
+import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
 import { createBuyer, createOrder, createPurchasableProduct } from "./order-fixtures.js";
 
@@ -22,6 +24,12 @@ const DEFAULT_PRODUCT_PRICE = 1000;
 const ONE_BRAND = 1;
 const NO_BRANDS = 0;
 const READY_CUTOFF_MINUTES = 60;
+const ORDER_LOGISTICS_FLAG = "order_logistics";
+const VALLEY_DELIVERY_FEE = 100;
+const VALLEY_FREE_DELIVERY_THRESHOLD = 5000;
+const NO_COD_HANDLING_FEE = 0;
+const VALLEY_MIN_DELIVERY_DAYS = 1;
+const VALLEY_MAX_DELIVERY_DAYS = 2;
 
 export const createHub = () =>
   prisma.hub.create({
@@ -111,6 +119,53 @@ export const packGroupsIntoParcel = async (
   });
   return shipment;
 };
+
+export const enableOrderLogisticsForBrands = async (brandIds: string[]) => {
+  await prisma.featureFlag.upsert({
+    where: { key: ORDER_LOGISTICS_FLAG },
+    create: {
+      key: ORDER_LOGISTICS_FLAG,
+      rollout: FeatureFlagRollout.ALLOW_LIST,
+      allowedBrandIds: brandIds,
+    },
+    update: { rollout: FeatureFlagRollout.ALLOW_LIST, allowedBrandIds: brandIds },
+  });
+  featureFlagsService.invalidate(ORDER_LOGISTICS_FLAG);
+};
+
+export const createCoveredPickupArea = async (cities: string[]) => {
+  const hub = await createHub();
+  const zone = await prisma.deliveryZone.create({
+    data: {
+      name: `Valley ${randomUUID().slice(0, 6)}`,
+      standardDeliveryFee: VALLEY_DELIVERY_FEE,
+      freeDeliveryThreshold: VALLEY_FREE_DELIVERY_THRESHOLD,
+      codHandlingFee: NO_COD_HANDLING_FEE,
+      minDeliveryDays: VALLEY_MIN_DELIVERY_DAYS,
+      maxDeliveryDays: VALLEY_MAX_DELIVERY_DAYS,
+      cities: {
+        create: cities.map((city) => ({ city, cityNormalized: city.trim().toLowerCase() })),
+      },
+    },
+  });
+  await prisma.hubPickupZone.create({ data: { hubId: hub.id, deliveryZoneId: zone.id } });
+  return { hub, zone };
+};
+
+export const createDefaultPickupLocation = (brandId: string, city: string) =>
+  prisma.brandPickupLocation.create({
+    data: {
+      brandId,
+      label: "Studio",
+      contactName: "Studio Manager",
+      contactPhoneE164: "+9779812345678",
+      address: "Jhamsikhel Road",
+      city,
+      cityNormalized: city.trim().toLowerCase(),
+      countryCode: "NP",
+      isDefault: true,
+    },
+  });
 
 export const requireFixtureId = (id: string | undefined): string => {
   if (!id) throw new Error("The fixture did not create the record this test expects.");

@@ -79,6 +79,7 @@ vi.mock("@/features/delivery-zones", async () => {
   const actual = await vi.importActual<typeof DeliveryZonesModule>("@/features/delivery-zones");
   return {
     ...actual,
+    useDeliveryEstimate: () => ({ data: null }),
     CityAutocomplete: ({
       value,
       onChange,

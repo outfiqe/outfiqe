@@ -18,7 +18,12 @@ import {
 } from "@/features/addresses";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
-import { type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
+import {
+  type DeliveryZone,
+  formatDeliveryWindow,
+  resolveZonePreview,
+  useDeliveryEstimate,
+} from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -100,6 +105,8 @@ export const CheckoutForm = ({
       ? resolvedZone.standardDeliveryFee
       : 0;
   const codHandlingFee = resolvedZone?.codHandlingFee ?? 0;
+  const { data: deliveryEstimate } = useDeliveryEstimate(city);
+  const deliveryWindowLabel = deliveryEstimate ? formatDeliveryWindow(deliveryEstimate) : null;
 
   useEffect(() => {
     if (codRequiresPrepaid && paymentMethod === PaymentMethod.COD) {
@@ -263,6 +270,7 @@ export const CheckoutForm = ({
             deliveryFee={deliveryFee}
             paymentMethod={paymentMethod}
             codHandlingFee={codHandlingFee}
+            deliveryWindowLabel={deliveryWindowLabel}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
             isOnline={isOnline}
             couponSlot={

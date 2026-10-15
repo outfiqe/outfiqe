@@ -7,6 +7,7 @@ export type CreateBrandApplicationInput = {
   phone: string;
   instagram: string;
   makesOwnPieces: MakesOwnPieces;
+  city?: string | null;
 };
 
 export type BrandApplicationRecord = CreateBrandApplicationInput & {

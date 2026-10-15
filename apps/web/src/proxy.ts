@@ -21,6 +21,7 @@ const DYNAMIC_POLICY_PATH_PREFIXES = [
   "/withdraw",
   "/products",
   "/manage-orders",
+  "/pickup-locations",
   "/orders",
   "/dashboard",
   "/login",

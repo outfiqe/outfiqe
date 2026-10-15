@@ -4,33 +4,43 @@ export type DeliveryZoneFeeValues = {
   codHandlingFee: number;
 };
 
+export type DeliveryZoneDeliveryDays = {
+  minDeliveryDays: number | null;
+  maxDeliveryDays: number | null;
+};
+
 export type DeliveryZoneCityRecord = {
   id: string;
   city: string;
   cityNormalized: string;
 };
 
-export type DeliveryZoneRecord = DeliveryZoneFeeValues & {
-  id: string;
-  name: string;
-  isDefault: boolean;
-  cities: DeliveryZoneCityRecord[];
-  updatedAt: Date;
-};
+export type DeliveryZoneRecord = DeliveryZoneFeeValues &
+  DeliveryZoneDeliveryDays & {
+    id: string;
+    name: string;
+    countryCode: string;
+    isDefault: boolean;
+    cities: DeliveryZoneCityRecord[];
+    updatedAt: Date;
+  };
 
-export type DeliveryZoneView = DeliveryZoneFeeValues & {
-  id: string;
-  name: string;
-  isDefault: boolean;
-  cities: string[];
-  updatedAt: string;
-};
+export type DeliveryZoneView = DeliveryZoneFeeValues &
+  DeliveryZoneDeliveryDays & {
+    id: string;
+    name: string;
+    countryCode: string;
+    isDefault: boolean;
+    cities: string[];
+    updatedAt: string;
+  };
 
-export type DeliveryZoneSnapshot = DeliveryZoneFeeValues & {
-  name: string;
-  isDefault: boolean;
-  cities: string[];
-};
+export type DeliveryZoneSnapshot = DeliveryZoneFeeValues &
+  Partial<DeliveryZoneDeliveryDays> & {
+    name: string;
+    isDefault: boolean;
+    cities: string[];
+  };
 
 export type DeliveryZoneHistoryView = {
   id: string;
@@ -46,4 +56,9 @@ export type DeliveryZoneCityMatch = DeliveryZoneFeeValues & {
   zoneId: string;
   zoneName: string;
   isDefault: boolean;
+};
+
+export type DeliveryEstimate = {
+  earliestDate: string;
+  latestDate: string;
 };

@@ -110,6 +110,16 @@ export const PLATFORM_PERMISSION_CATALOG = [
     group: "Orders",
   },
   {
+    key: "platform:logistics:read",
+    label: "View hubs, pickups, riders, parcels and delivery partners",
+    group: "Logistics",
+  },
+  {
+    key: "platform:logistics:manage",
+    label: "Run the hub, riders and delivery partners",
+    group: "Logistics",
+  },
+  {
     key: "platform:users:read",
     label: "View user accounts",
     group: "Users",

@@ -1,7 +1,10 @@
+import { COUNTRY_SETTINGS, PLATFORM_DEFAULT_COUNTRY_CODE } from "#constants/country.constants.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import { normalizeCityName } from "#lib/city.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
+import { addWorkingDaysAsCalendarDate } from "#lib/working-days.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { deliveryZoneRepository } from "./delivery-zone.repository.js";
@@ -11,6 +14,7 @@ import type {
   UpdateDeliveryZoneBody,
 } from "./delivery-zone.schemas.js";
 import type {
+  DeliveryEstimate,
   DeliveryZoneCityMatch,
   DeliveryZoneFeeValues,
   DeliveryZoneHistoryView,
@@ -18,7 +22,9 @@ import type {
   DeliveryZoneSnapshot,
   DeliveryZoneView,
 } from "./delivery-zone.types.js";
-import { normalizeCityName, toFeeValues, toSnapshot, toView } from "./delivery-zone.utils.js";
+import { toFeeValues, toSnapshot, toView } from "./delivery-zone.utils.js";
+
+const NO_ZONES = 0;
 
 const requireZone = async (id: string): Promise<DeliveryZoneRecord> => {
   const zone = await deliveryZoneRepository.findById(id);
@@ -27,8 +33,8 @@ const requireZone = async (id: string): Promise<DeliveryZoneRecord> => {
   return zone;
 };
 
-const requireDefaultZone = async (): Promise<DeliveryZoneRecord> => {
-  const zone = await deliveryZoneRepository.findDefault();
+const requireDefaultZone = async (countryCode: string): Promise<DeliveryZoneRecord> => {
+  const zone = await deliveryZoneRepository.findDefault(countryCode);
   if (!zone) {
     throw new AppError(
       "NO_DEFAULT_ZONE",
@@ -38,6 +44,19 @@ const requireDefaultZone = async (): Promise<DeliveryZoneRecord> => {
   }
   return zone;
 };
+
+const findZoneForCity = async (
+  city: string,
+  countryCode: string,
+): Promise<DeliveryZoneRecord | null> =>
+  deliveryZoneRepository.findByCityNormalized(countryCode, normalizeCityName(city));
+
+const resolveZoneForCity = async (
+  city: string | null,
+  countryCode: string,
+): Promise<DeliveryZoneRecord> =>
+  (city ? await findZoneForCity(city, countryCode) : null) ??
+  (await requireDefaultZone(countryCode));
 
 const withCityConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -60,8 +79,12 @@ export const deliveryZoneService = {
     return zones.map(toView);
   },
 
-  async searchCities(query: string, limit: number): Promise<DeliveryZoneCityMatch[]> {
-    const matches = await deliveryZoneRepository.searchCities(query, limit);
+  async searchCities(
+    query: string,
+    limit: number,
+    countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,
+  ): Promise<DeliveryZoneCityMatch[]> {
+    const matches = await deliveryZoneRepository.searchCities(query, limit, countryCode);
     return matches.map((match) => ({
       city: match.city,
       zoneId: match.zone.id,
@@ -71,20 +94,37 @@ export const deliveryZoneService = {
     }));
   },
 
-  async resolveFeeValuesForCity(city: string | null): Promise<DeliveryZoneFeeValues> {
-    const zone = city
-      ? ((await deliveryZoneRepository.findByCityNormalized(normalizeCityName(city))) ??
-        (await requireDefaultZone()))
-      : await requireDefaultZone();
-    return toFeeValues(zone);
+  findZoneForCity,
+
+  async resolveFeeValuesForCity(
+    city: string | null,
+    countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,
+  ): Promise<DeliveryZoneFeeValues> {
+    return toFeeValues(await resolveZoneForCity(city, countryCode));
+  },
+
+  async estimateDeliveryWindow(
+    city: string | null,
+    placedAt: Date,
+    countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,
+  ): Promise<DeliveryEstimate | null> {
+    const { minDeliveryDays, maxDeliveryDays } = await resolveZoneForCity(city, countryCode);
+    const calendar = COUNTRY_SETTINGS[countryCode];
+    if (minDeliveryDays === null || maxDeliveryDays === null || !calendar) return null;
+
+    return {
+      earliestDate: addWorkingDaysAsCalendarDate(placedAt, minDeliveryDays, calendar),
+      latestDate: addWorkingDaysAsCalendarDate(placedAt, maxDeliveryDays, calendar),
+    };
   },
 
   async createZone(input: CreateDeliveryZoneBody): Promise<DeliveryZoneView> {
     return withCityConflictHandling(async () => {
-      const isFirstZone = (await deliveryZoneRepository.countAll()) === 0;
+      const isFirstZoneInCountry =
+        (await deliveryZoneRepository.countForCountry(input.countryCode)) === NO_ZONES;
       const zone = await deliveryZoneRepository.create(prisma, {
         ...input,
-        isDefault: isFirstZone,
+        isDefault: isFirstZoneInCountry,
       });
       return toView(zone);
     });
@@ -117,10 +157,10 @@ export const deliveryZoneService = {
     const target = await requireZone(zoneId);
     if (target.isDefault) return toView(target);
 
-    const previousDefault = await deliveryZoneRepository.findDefault();
+    const previousDefault = await deliveryZoneRepository.findDefault(target.countryCode);
 
     const updated = await prisma.$transaction(async (tx) => {
-      await deliveryZoneRepository.setDefault(tx, zoneId);
+      await deliveryZoneRepository.setDefault(tx, zoneId, target.countryCode);
 
       if (previousDefault) {
         const previousSnapshot = toSnapshot(previousDefault);

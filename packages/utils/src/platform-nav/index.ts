@@ -29,6 +29,7 @@ export const PLATFORM_NAV_KEYS = [
   "coupons",
   "gamification",
   "delivery-zones",
+  "logistics",
   "organizations",
   "team",
   "announcements",
@@ -43,6 +44,7 @@ export type PlatformNavKey = (typeof PLATFORM_NAV_KEYS)[number];
 
 export const SERVER_ENFORCED_PLATFORM_NAV_KEYS = [
   "gamification",
+  "logistics",
   "commissions",
   "platform-commission",
   "withdraw-requests",

@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/lib/apiClient";
 
 import {
+  type DeliveryEstimate,
+  deliveryEstimateResultSchema,
   type DeliveryZone,
   type DeliveryZoneCityMatch,
   deliveryZoneCitySearchResultSchema,
@@ -21,5 +23,11 @@ export const deliveryZoneApi = {
       `/delivery-zones/cities?${params.toString()}`,
     );
     return deliveryZoneCitySearchResultSchema.parse(res.data).cities;
+  },
+
+  async estimate(city: string): Promise<DeliveryEstimate | null> {
+    const params = new URLSearchParams({ city });
+    const res = await apiClient.get(`/delivery-zones/estimate?${params.toString()}`);
+    return deliveryEstimateResultSchema.parse(res.data).estimate;
   },
 };
