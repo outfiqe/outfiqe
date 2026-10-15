@@ -1,4 +1,3 @@
-◇ injected env (42) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
 -- CreateEnum
 CREATE TYPE "FulfilmentMode" AS ENUM ('BRAND_SHIPS', 'OUTFIQE_LOGISTICS');
 
