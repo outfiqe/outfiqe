@@ -40,6 +40,7 @@ const COUPONS_READ = ["platform:coupons:read", "platform:coupons:manage"] as con
 const CREATORS_READ = ["platform:creators:read", "platform:creators:manage"] as const;
 const GAMIFICATION_READ = ["platform:gamification:read", "platform:gamification:manage"] as const;
 const ORDERS_READ = ["platform:orders:read", "platform:orders:manage"] as const;
+const LOGISTICS_READ = ["platform:logistics:read", "platform:logistics:manage"] as const;
 const ORGANIZATIONS_READ = [
   "platform:organizations:read",
   "platform:organizations:manage",
@@ -177,6 +178,12 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("patch", `/api/delivery-zones/${SOME_ID}`, "platform:orders:manage"),
     route("patch", `/api/delivery-zones/${SOME_ID}/default`, "platform:orders:manage"),
     route("delete", `/api/delivery-zones/${SOME_ID}`, "platform:orders:manage"),
+  ],
+  logistics: [
+    route("get", "/api/logistics/admin/hubs", ...LOGISTICS_READ),
+    route("post", "/api/logistics/admin/hubs", "platform:logistics:manage"),
+    route("put", `/api/logistics/admin/hubs/${SOME_ID}`, "platform:logistics:manage"),
+    route("put", `/api/logistics/admin/hubs/${SOME_ID}/pickup-zones`, "platform:logistics:manage"),
   ],
   users: [
     route("post", "/api/users", "platform:users:manage"),

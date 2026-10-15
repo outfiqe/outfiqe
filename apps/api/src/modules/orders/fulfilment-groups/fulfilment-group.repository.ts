@@ -2,7 +2,7 @@ import { prisma } from "#db/prisma.js";
 import { FulfilmentStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import type { OrderFulfilmentRollup } from "../order.types.js";
+import type { FulfilmentGroupSpec, OrderFulfilmentRollup } from "../order.types.js";
 import { deriveOrderFulfilment } from "../order.utils.js";
 
 const setOrderFulfilmentRollup = async (
@@ -38,9 +38,13 @@ export const orderFulfilmentGroupRepository = {
     });
   },
 
-  async createFulfilmentGroups(client: DbClient, orderId: string, brandIds: string[]) {
+  async createFulfilmentGroups(
+    client: DbClient,
+    orderId: string,
+    groupSpecs: readonly FulfilmentGroupSpec[],
+  ) {
     return client.orderFulfilmentGroup.createManyAndReturn({
-      data: brandIds.map((brandId) => ({ orderId, brandId })),
+      data: groupSpecs.map((groupSpec) => ({ ...groupSpec, orderId })),
       select: { id: true, brandId: true },
     });
   },

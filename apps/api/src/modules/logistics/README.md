@@ -17,6 +17,37 @@ The module is built in steps. This README lists what exists now.
 - `logistics.service.ts` — `logisticsService`, the only object other modules import. It
   spreads in every topic service.
 - `logistics.repository.ts` — `logisticsRepository`, spreading in every topic repository.
+- `logistics.routes.ts` — mounted at `/api/logistics`. It routes `/admin/hubs` to `hubs/` and
+  `/brand/pickup-locations` to `pickup-locations/`.
+- `logistics.rate-limits.ts` — the per-user write limiters shared by every topic's routes: one for
+  staff and one for brands.
+- `logistics.pickup-coverage.ts` — `logisticsPickupCoverage`, shared by `pickup-locations/` and
+  `flow/`:
+  - which active hub collects from a pickup city (a city in a delivery zone listed in a hub's
+    `HubPickupZone`s);
+  - the brands' default pickup locations.
+- `hubs/` — admin-managed hubs.
+  - Endpoints: `GET /`, `POST /`, `PUT /:hubId`, `PUT /:hubId/pickup-zones`.
+  - Guarded by `platformGuards.logisticsRead` / `logisticsManage`.
+  - The schema checks that the hub opens before it closes, and that every pickup round and the
+    partner collection time fall within opening hours.
+  - The hub phone is stored in international form.
+  - Pickup areas must be delivery zones in the hub's own country.
+- `pickup-locations/` — a brand's pickup addresses.
+  - Endpoints: `GET /`, `POST /`, `PUT /:locationId`, `POST /:locationId/default`,
+    `DELETE /:locationId`, for `BRAND_OWNER`s only and scoped to their brand. Another brand's
+    location is a `404`.
+  - At most 10 per brand. The first one becomes the default.
+  - Removing the default promotes the oldest remaining location. Removal deactivates the row,
+    because fulfilment groups keep pointing at the location they were collected from.
+  - Each location says whether an Outfiqe hub collects from its city
+    (`isCoveredByOutfiqePickup`).
+- `flow/` — `resolveFulfilmentAssignments({ brandIds })`, which checkout calls before its
+  transaction to decide each brand's flow.
+  - A brand goes through the hub (`OUTFIQE_LOGISTICS`, with its hub and pickup location) when:
+    - the `order_logistics` flag is on for it (`EVERYONE`, or the brand is on the allow-list);
+    - its default pickup location is in an active hub's pickup area.
+  - Otherwise it stays `BRAND_SHIPS`.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -37,8 +68,22 @@ The module is built in steps. This README lists what exists now.
 
 ## Funnel
 
-**User-facing:** none yet. Brands, riders, hub staff and partners record events through the
-screens and endpoints added in later steps.
+**User-facing:**
+
+- Hub staff set up a hub (address, time zone, working week, opening hours, pickup rounds,
+  ready-by cutoff, partner collection time) and pick the delivery zones its riders collect from.
+- A brand adds its pickup locations and sees whether Outfiqe collects from each one.
+- At checkout, each brand in the order is put on the hub flow or the brand-ships flow, and the
+  order records its delivery promise.
+
+**Technical, at checkout:**
+
+1. `orders/checkout/checkout.fulfilment.ts` calls `logisticsService.resolveFulfilmentAssignments`
+   and `deliveryZoneService.estimateDeliveryWindow`, before the order transaction opens.
+2. `checkout.commit.ts` creates each brand's fulfilment group from the result. A hub-flow group
+   starts at `AWAITING_BRAND` with a fresh pickup code.
+
+**Technical, for status changes:**
 
 **Technical:** a caller builds a `RecordTrackingEventInput` and calls
 `logisticsService.recordEvent`, which runs these steps in one transaction:
@@ -53,6 +98,13 @@ screens and endpoints added in later steps.
 After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing stage changed.
 
 ## Non-obvious rationale
+
+- **Keep the `order_logistics` flag off until delivery partners exist.**
+  - The flow decision today checks the flag and pickup coverage only.
+  - The check that a delivery partner covers the customer's city from the hub arrives with
+    delivery partners (step 6 of `docs/PRD-ORDER-LOGISTICS.md`).
+  - Until then, switching the flag on for a brand would send its orders to a hub that has no
+    partner to deliver them.
 
 - **The existing order status fields are kept and fed, not replaced.**
   - `OrderFulfilmentGroup.status`, `Order.fulfilmentStatus` and `Order.fulfilmentSummary` are

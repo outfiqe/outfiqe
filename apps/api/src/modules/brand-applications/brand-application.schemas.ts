@@ -12,6 +12,7 @@ export const createBrandApplicationSchema = z.object({
   phone: phoneSchema,
   instagram: z.string().min(1).max(100),
   makesOwnPieces: makesOwnPiecesSchema,
+  city: z.string().trim().min(1).max(120).optional(),
 });
 
 const DEFAULT_PAGE_SIZE = 12;

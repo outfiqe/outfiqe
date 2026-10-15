@@ -22,6 +22,7 @@ import {
   redeemCheckoutCoupon,
 } from "./checkout.commit.js";
 import { CHECKOUT_ENDPOINT } from "./checkout.constants.js";
+import { planCheckoutFulfilment } from "./checkout.fulfilment.js";
 import { assertCheckoutLinesInStock, loadCheckoutLines } from "./checkout.lines.js";
 import { priceCheckout } from "./checkout.pricing.js";
 import {
@@ -80,6 +81,13 @@ const checkoutOnce = async (
     orderPlacedAt,
   );
 
+  const fulfilmentPlan = await planCheckoutFulfilment({
+    brandIds: distinctBrandIds,
+    city,
+    phone,
+    orderPlacedAt,
+  });
+
   const orderId = randomUUID();
 
   const { order, createdCommissions } = await prisma.$transaction(async (tx) => {
@@ -90,9 +98,14 @@ const checkoutOnce = async (
       userId,
       fullName,
       phone,
+      phoneE164: fulfilmentPlan.phoneE164,
       address,
       city,
       landmark,
+      countryCode: fulfilmentPlan.countryCode,
+      currency: fulfilmentPlan.currency,
+      promisedDeliveryFrom: fulfilmentPlan.promisedDeliveryFrom,
+      promisedDeliveryBy: fulfilmentPlan.promisedDeliveryBy,
       paymentMethod,
       paymentStatus,
       paymentTransactionStatus,
@@ -118,7 +131,7 @@ const checkoutOnce = async (
       orderId: createdOrder.id,
       orderItems: createdOrder.items,
       pricedLines,
-      distinctBrandIds,
+      fulfilmentGroupSpecs: fulfilmentPlan.fulfilmentGroupSpecs,
     });
 
     const commissionsForCreators = await recordItemPayoutsAndCommissions(tx, {

@@ -1,16 +1,28 @@
 import type {
   BrandPayoutStatus,
   CommissionSource,
+  FulfilmentMode,
   FulfilmentStatus,
   OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
+  PickupStatus,
 } from "#generated/prisma/enums.js";
 
 export type OrderFulfilmentRollup = {
   fulfilmentStatus: FulfilmentStatus;
   fulfilmentSummary: OrderFulfilmentSummary;
+};
+
+export type FulfilmentGroupSpec = {
+  brandId: string;
+  fulfilmentMode: FulfilmentMode;
+  hubId: string | null;
+  pickupLocationId: string | null;
+  pickupStatus: PickupStatus | null;
+  pickupStatusChangedAt: Date | null;
+  pickupCode: string | null;
 };
 
 export type CreateOrderItemInput = {
@@ -43,6 +55,11 @@ export type CreateOrderInput = {
   userId: string;
   fullName: string;
   phone: string;
+  phoneE164: string | null;
+  countryCode: string;
+  currency: string;
+  promisedDeliveryFrom: Date | null;
+  promisedDeliveryBy: Date | null;
   address: string;
   city: string;
   landmark?: string;

@@ -12,7 +12,11 @@ import {
   TrackingEventCode,
   TrackingEventSource,
 } from "#generated/prisma/enums.js";
-import { createHubOrder, packGroupsIntoParcel } from "#test/integration/logistics-fixtures.js";
+import {
+  createHubOrder,
+  packGroupsIntoParcel,
+  requireFixtureId,
+} from "#test/integration/logistics-fixtures.js";
 
 import { logisticsService } from "../logistics.service.js";
 import { ORDER_TRACKING_STAGE, TRACKING_SUBJECT_KIND } from "./tracking.constants.js";
@@ -52,7 +56,7 @@ const parcelEvent = (
 describe("logisticsService.recordEvent", () => {
   it("moves a pickup forward, stamps its time and rolls the order up", async () => {
     const { order, hubGroupIds } = await createHubOrder();
-    const [fulfilmentGroupId] = hubGroupIds;
+    const fulfilmentGroupId = requireFixtureId(hubGroupIds[0]);
 
     const outcome = await logisticsService.recordEvent(
       pickupEvent(fulfilmentGroupId, TrackingEventCode.READY_FOR_PICKUP, {
@@ -74,7 +78,7 @@ describe("logisticsService.recordEvent", () => {
 
   it("stores a repeated event once and changes nothing the second time", async () => {
     const { hubGroupIds } = await createHubOrder();
-    const [fulfilmentGroupId] = hubGroupIds;
+    const fulfilmentGroupId = requireFixtureId(hubGroupIds[0]);
     const readyEvent = pickupEvent(fulfilmentGroupId, TrackingEventCode.READY_FOR_PICKUP);
 
     const firstOutcome = await logisticsService.recordEvent(readyEvent);
@@ -87,7 +91,7 @@ describe("logisticsService.recordEvent", () => {
 
   it("stores but does not apply a move the state machine refuses", async () => {
     const { hubGroupIds } = await createHubOrder();
-    const [fulfilmentGroupId] = hubGroupIds;
+    const fulfilmentGroupId = requireFixtureId(hubGroupIds[0]);
 
     const outcome = await logisticsService.recordEvent(
       pickupEvent(fulfilmentGroupId, TrackingEventCode.AT_HUB),
@@ -163,7 +167,8 @@ describe("logisticsService.recordEvent", () => {
 
   it("delivers the order only when both parcels of a split order are delivered", async () => {
     const { order, hub, hubGroupIds } = await createHubOrder({ hubBrandCount: TWO_BRANDS });
-    const [firstGroupId, secondGroupId] = hubGroupIds;
+    const firstGroupId = requireFixtureId(hubGroupIds[0]);
+    const secondGroupId = requireFixtureId(hubGroupIds[1]);
     const firstParcel = await packGroupsIntoParcel(order.id, hub.id, [firstGroupId]);
     const secondParcel = await packGroupsIntoParcel(order.id, hub.id, [secondGroupId]);
 
@@ -203,7 +208,7 @@ describe("logisticsService.recordEvent", () => {
 
   it("applies only one of two identical moves racing each other", async () => {
     const { hubGroupIds } = await createHubOrder();
-    const [fulfilmentGroupId] = hubGroupIds;
+    const fulfilmentGroupId = requireFixtureId(hubGroupIds[0]);
 
     const outcomes = await Promise.all([
       logisticsService.recordEvent(

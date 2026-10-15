@@ -255,6 +255,7 @@ model BrandApplication {
   phone          String
   instagram      String
   makesOwnPieces MakesOwnPieces         @map("makes_own_pieces")
+  city           String?
   status         BrandApplicationStatus @default(PENDING)
   reviewedAt     DateTime?              @map("reviewed_at")
   reviewedById   String?                @map("reviewed_by_id") @db.Uuid
@@ -1911,6 +1912,9 @@ model CreatorLinkClick {
 model DeliveryZone {
   id                    String   @id @default(uuid()) @db.Uuid
   name                  String
+  countryCode           String   @default("NP") @map("country_code") @db.Char(2)
+  minDeliveryDays       Int?     @map("min_delivery_days")
+  maxDeliveryDays       Int?     @map("max_delivery_days")
   isDefault             Boolean  @default(false) @map("is_default")
   standardDeliveryFee   Int      @map("standard_delivery_fee")
   freeDeliveryThreshold Int      @map("free_delivery_threshold")
@@ -1931,8 +1935,9 @@ model DeliveryZoneCity {
   zone           DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   city           String
   cityNormalized String       @map("city_normalized")
+  countryCode    String       @default("NP") @map("country_code") @db.Char(2)
 
-  @@unique([cityNormalized])
+  @@unique([countryCode, cityNormalized])
   @@index([zoneId])
   @@map("delivery_zone_cities")
 }
