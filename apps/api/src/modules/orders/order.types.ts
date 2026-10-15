@@ -212,6 +212,8 @@ export type BrandFulfilmentGroupSummaryView = {
   orderId: string;
   orderCreatedAt: string;
   status: FulfilmentStatus;
+  fulfilmentMode: FulfilmentMode;
+  pickupStatus: PickupStatus | null;
   carrier: string | null;
   trackingNumber: string | null;
   shippedAt: string | null;
@@ -231,6 +233,9 @@ export type BrandFulfilmentGroupDetailView = Omit<
   "itemCount" | "totalQty" | "firstItemImageUrl" | "firstItemProductName"
 > & {
   packedAt: string | null;
+  readyForPickupAt: string | null;
+  pickedUpAt: string | null;
+  pickupCode: string | null;
   cancellationReason: string | null;
   items: BrandFulfilmentGroupItemView[];
   shipTo: {
@@ -239,6 +244,6 @@ export type BrandFulfilmentGroupDetailView = Omit<
     address: string;
     city: string;
     landmark: string | null;
-  };
+  } | null;
   payout: BrandFulfilmentGroupPayoutView;
 };

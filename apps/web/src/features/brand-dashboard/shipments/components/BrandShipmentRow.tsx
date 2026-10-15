@@ -6,9 +6,8 @@ import { AppImage } from "@/shared/components/AppImage";
 import type { BrandShipmentSummary } from "../api/brandFulfilmentSchemas";
 import {
   badgeToneClass,
+  describeShipmentStatus,
   formatShortOrderId,
-  SHIPMENT_STATUS_LABEL,
-  SHIPMENT_STATUS_TONE,
 } from "../utils/shipmentStatus";
 
 type BrandShipmentRowProps = {
@@ -18,7 +17,6 @@ type BrandShipmentRowProps = {
 export const BrandShipmentRow = ({ shipment }: BrandShipmentRowProps) => {
   const {
     id,
-    status,
     itemCount,
     totalQty,
     firstItemImageUrl,
@@ -30,6 +28,7 @@ export const BrandShipmentRow = ({ shipment }: BrandShipmentRowProps) => {
     cancellationRequestedAt,
   } = shipment;
 
+  const { label: statusLabel, tone: statusTone } = describeShipmentStatus(shipment);
   const extraItemCount = itemCount - 1;
   const itemsLabel =
     extraItemCount > 0 ? `${firstItemProductName} + ${extraItemCount} more` : firstItemProductName;
@@ -60,11 +59,9 @@ export const BrandShipmentRow = ({ shipment }: BrandShipmentRowProps) => {
 
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${badgeToneClass(
-            SHIPMENT_STATUS_TONE[status],
-          )}`}
+          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${badgeToneClass(statusTone)}`}
         >
-          {SHIPMENT_STATUS_LABEL[status]}
+          {statusLabel}
         </span>
         {cancellationRequestedAt && (
           <span className="text-[11px] font-medium text-destructive">Cancellation requested</span>

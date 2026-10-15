@@ -533,6 +533,9 @@ importers:
       lucide-react:
         specifier: ^1.29.0
         version: 1.29.0(react@19.2.8)
+      qrcode:
+        specifier: 1.5.4
+        version: 1.5.4
       socket.io-client:
         specifier: ^4.8.3
         version: 4.8.3(supports-color@8.1.1)
@@ -546,6 +549,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.4(@testing-library/dom@10.4.1)
+      '@types/qrcode':
+        specifier: 1.5.5
+        version: 1.5.5
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -11394,7 +11400,7 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(jsdom@27.4.0(@noble/hashes@1.8.0)(supports-color@8.1.1))(msw@2.15.0(@types/node@26.1.2)(typescript@7.0.2))(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.10)(yaml@2.9.0))
+      vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(jsdom@27.4.0(@noble/hashes@1.8.0)(supports-color@8.1.1))(msw@2.15.0(@types/node@26.1.2)(typescript@6.0.3))(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.10)(yaml@2.9.0))
 
   '@vitest/expect@4.1.10':
     dependencies:

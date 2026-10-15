@@ -1,5 +1,13 @@
-import type { FulfilmentStatus, OrderFulfilmentSummary } from "#generated/prisma/enums.js";
-import { type BrandPayoutStatus, type PaymentStatus } from "#generated/prisma/enums.js";
+import type {
+  FulfilmentStatus,
+  OrderFulfilmentSummary,
+  PickupStatus,
+} from "#generated/prisma/enums.js";
+import {
+  type BrandPayoutStatus,
+  FulfilmentMode,
+  type PaymentStatus,
+} from "#generated/prisma/enums.js";
 
 import type {
   BrandFulfilmentGroupDetailView,
@@ -12,6 +20,8 @@ type BrandFulfilmentGroupSummaryRow = {
   id: string;
   orderId: string;
   status: FulfilmentStatus;
+  fulfilmentMode: FulfilmentMode;
+  pickupStatus: PickupStatus | null;
   carrier: string | null;
   trackingNumber: string | null;
   shippedAt: Date | null;
@@ -36,6 +46,8 @@ export const toBrandFulfilmentGroupSummaryView = (
     orderId: row.orderId,
     orderCreatedAt: row.order.createdAt.toISOString(),
     status: row.status,
+    fulfilmentMode: row.fulfilmentMode,
+    pickupStatus: row.pickupStatus,
     carrier: row.carrier,
     trackingNumber: row.trackingNumber,
     shippedAt: row.shippedAt?.toISOString() ?? null,
@@ -64,6 +76,11 @@ type BrandFulfilmentGroupDetailRow = {
   id: string;
   orderId: string;
   status: FulfilmentStatus;
+  fulfilmentMode: FulfilmentMode;
+  pickupStatus: PickupStatus | null;
+  pickupCode: string | null;
+  readyForPickupAt: Date | null;
+  pickedUpAt: Date | null;
   carrier: string | null;
   trackingNumber: string | null;
   packedAt: Date | null;
@@ -134,6 +151,9 @@ const toBrandFulfilmentGroupPayoutView = (
   };
 };
 
+const isDeliveredByOutfiqe = ({ fulfilmentMode }: { fulfilmentMode: FulfilmentMode }): boolean =>
+  fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS;
+
 export const toBrandFulfilmentGroupDetailView = (
   row: BrandFulfilmentGroupDetailRow,
 ): BrandFulfilmentGroupDetailView => ({
@@ -141,6 +161,11 @@ export const toBrandFulfilmentGroupDetailView = (
   orderId: row.orderId,
   orderCreatedAt: row.order.createdAt.toISOString(),
   status: row.status,
+  fulfilmentMode: row.fulfilmentMode,
+  pickupStatus: row.pickupStatus,
+  pickupCode: row.pickupCode,
+  readyForPickupAt: row.readyForPickupAt?.toISOString() ?? null,
+  pickedUpAt: row.pickedUpAt?.toISOString() ?? null,
   carrier: row.carrier,
   trackingNumber: row.trackingNumber,
   packedAt: row.packedAt?.toISOString() ?? null,
@@ -149,13 +174,15 @@ export const toBrandFulfilmentGroupDetailView = (
   cancellationRequestedAt: row.cancellationRequestedAt?.toISOString() ?? null,
   cancellationReason: row.cancellationReason,
   items: row.items.map(toBrandFulfilmentGroupItemView),
-  shipTo: {
-    fullName: row.order.fullName,
-    phone: row.order.phone,
-    address: row.order.address,
-    city: row.order.city,
-    landmark: row.order.landmark,
-  },
+  shipTo: isDeliveredByOutfiqe(row)
+    ? null
+    : {
+        fullName: row.order.fullName,
+        phone: row.order.phone,
+        address: row.order.address,
+        city: row.order.city,
+        landmark: row.order.landmark,
+      },
   payout: toBrandFulfilmentGroupPayoutView(row.items),
   shipToCity: row.order.city,
   orderPaymentStatus: row.order.paymentStatus,
