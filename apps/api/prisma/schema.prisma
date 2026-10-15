@@ -77,6 +77,7 @@ model User {
   savedProducts                            SavedProduct[]
   cart                                     Cart?
   orders                                   Order[]
+  recordedTrackingEvents                   TrackingEvent[]             @relation("TrackingEventActor")
   savedAddresses                           SavedAddress[]
   idempotencyRequests                      RequestIdempotency[]
   attributedOrderItems                     OrderItem[]                 @relation("AttributedOrderItems")
@@ -320,6 +321,7 @@ model Brand {
   linkedOrganization   Organization?
   supportTickets       SupportTicket[]
   fulfilmentGroups     OrderFulfilmentGroup[]
+  pickupLocations      BrandPickupLocation[]
   buildCommissions     CreatorCommission[]        @relation("BrandBuildCommissions")
   outfitOffers         OutfitOffer[]
   sizeStandards        BrandSizeStandard[]
@@ -1258,16 +1260,114 @@ enum OrderFulfilmentSummary {
   RETURNED
 }
 
+enum FulfilmentMode {
+  BRAND_SHIPS
+  OUTFIQE_LOGISTICS
+}
+
+enum PickupStatus {
+  AWAITING_BRAND
+  READY_FOR_PICKUP
+  PICKED_UP
+  AT_HUB
+  IN_PARCEL
+  CANCELLED
+  RETURN_AT_HUB
+  RETURNING_TO_BRAND
+  RETURNED_TO_BRAND
+}
+
+enum ShipmentStatus {
+  PACKED
+  HANDED_TO_PARTNER
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_FAILED
+  DELIVERED
+  RETURNING
+  RETURNED_TO_HUB
+  CANCELLED
+  LOST
+}
+
+enum ItemInspectionStatus {
+  NOT_INSPECTED
+  PASSED
+  FAILED
+}
+
+enum TrackingEventSource {
+  BRAND
+  RIDER
+  HUB
+  PARTNER_WEBHOOK
+  PARTNER_POLL
+  PARTNER_IMPORT
+  ADMIN
+  SYSTEM
+}
+
+enum TrackingEventCode {
+  AWAITING_BRAND
+  READY_FOR_PICKUP
+  PICKED_UP
+  AT_HUB
+  IN_PARCEL
+  RETURN_AT_HUB
+  RETURNING_TO_BRAND
+  RETURNED_TO_BRAND
+  PACKED
+  HANDED_TO_PARTNER
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_FAILED
+  DELIVERED
+  RETURNING
+  RETURNED_TO_HUB
+  LOST
+  CANCELLED
+  ROUND_ASSIGNED
+  RIDER_ASSIGNED
+  BAG_TAGGED
+  VISIT_WASTED
+  COUNT_MISMATCH
+  INSPECTION_RECORDED
+  BOOKING_REQUESTED
+  BOOKING_CONFIRMED
+  BOOKING_FAILED
+  COD_AMOUNT_CHANGED
+  DELIVERY_RESCHEDULED
+  UNKNOWN_PARTNER_STATUS
+  HANDOVER_NOT_SCANNED
+  DELIVERY_DISPUTED
+  NOTE
+}
+
+enum DeliveryFailureReason {
+  CUSTOMER_UNREACHABLE
+  CUSTOMER_REFUSED
+  WRONG_ADDRESS
+  RESCHEDULED_BY_CUSTOMER
+  WRONG_OR_DAMAGED_ITEM
+  PARTNER_ISSUE
+  OTHER
+}
+
 model Order {
   id     String @id @default(uuid()) @db.Uuid
   userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  fullName String  @map("full_name")
-  phone    String
-  address  String
-  city     String
-  landmark String?
+  fullName    String  @map("full_name")
+  phone       String
+  phoneE164   String? @map("phone_e164")
+  address     String
+  city        String
+  landmark    String?
+  region      String?
+  postalCode  String? @map("postal_code")
+  countryCode String  @default("NP") @map("country_code") @db.Char(2)
+  currency    String  @default("NPR") @db.Char(3)
 
   paymentMethod     PaymentMethod          @map("payment_method")
   paymentStatus     PaymentStatus          @default(INITIATED) @map("payment_status")
@@ -1292,6 +1392,10 @@ model Order {
   returnedAt        DateTime? @map("returned_at")
   returnReason      String?   @map("return_reason")
 
+  refundedAmount       Int       @default(0) @map("refunded_amount")
+  promisedDeliveryFrom DateTime? @map("promised_delivery_from") @db.Date
+  promisedDeliveryBy   DateTime? @map("promised_delivery_by") @db.Date
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1300,6 +1404,7 @@ model Order {
   supportTickets   SupportTicket[]
   couponRedemption CouponRedemption?
   fulfilmentGroups OrderFulfilmentGroup[]
+  shipments        Shipment[]
 
   @@index([userId, createdAt])
   @@index([paymentMethod, createdAt])
@@ -1327,14 +1432,157 @@ model OrderFulfilmentGroup {
   cancellationRequestedAt DateTime? @map("cancellation_requested_at")
   cancellationReason      String?   @map("cancellation_reason")
 
-  items OrderItem[]
+  fulfilmentMode        FulfilmentMode       @default(BRAND_SHIPS) @map("fulfilment_mode")
+  pickupStatus          PickupStatus?        @map("pickup_status")
+  pickupStatusChangedAt DateTime?            @map("pickup_status_changed_at")
+  pickupCode            String?              @unique @map("pickup_code")
+  hubId                 String?              @map("hub_id") @db.Uuid
+  hub                   Hub?                 @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  pickupLocationId      String?              @map("pickup_location_id") @db.Uuid
+  pickupLocation        BrandPickupLocation? @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
+  shipmentId            String?              @map("shipment_id") @db.Uuid
+  shipment              Shipment?            @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  readyForPickupAt      DateTime?            @map("ready_for_pickup_at")
+  pickedUpAt            DateTime?            @map("picked_up_at")
+  atHubAt               DateTime?            @map("at_hub_at")
+
+  items          OrderItem[]
+  trackingEvents TrackingEvent[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([orderId, brandId])
   @@index([brandId, status])
+  @@index([shipmentId])
+  @@index([hubId, pickupStatus])
   @@map("order_fulfilment_groups")
+}
+
+model Hub {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  countryCode           String   @map("country_code") @db.Char(2)
+  address               String
+  city                  String
+  phoneE164             String   @map("phone_e164")
+  timeZone              String   @map("time_zone")
+  workingDays           Int[]    @map("working_days")
+  openTime              String   @map("open_time")
+  closeTime             String   @map("close_time")
+  pickupRoundTimes      String[] @map("pickup_round_times")
+  readyCutoffMinutes    Int      @map("ready_cutoff_minutes")
+  partnerCollectionTime String   @map("partner_collection_time")
+  isActive              Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  pickupZones      HubPickupZone[]
+  fulfilmentGroups OrderFulfilmentGroup[]
+  shipments        Shipment[]
+
+  @@map("hubs")
+}
+
+model HubPickupZone {
+  id             String       @id @default(uuid()) @db.Uuid
+  hubId          String       @map("hub_id") @db.Uuid
+  hub            Hub          @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  deliveryZoneId String       @map("delivery_zone_id") @db.Uuid
+  deliveryZone   DeliveryZone @relation(fields: [deliveryZoneId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([hubId, deliveryZoneId])
+  @@index([deliveryZoneId])
+  @@map("hub_pickup_zones")
+}
+
+model BrandPickupLocation {
+  id               String   @id @default(uuid()) @db.Uuid
+  brandId          String   @map("brand_id") @db.Uuid
+  brand            Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  label            String
+  contactName      String   @map("contact_name")
+  contactPhoneE164 String   @map("contact_phone_e164")
+  address          String
+  landmark         String?
+  city             String
+  cityNormalized   String   @map("city_normalized")
+  countryCode      String   @map("country_code") @db.Char(2)
+  latitude         Decimal? @db.Decimal(9, 6)
+  longitude        Decimal? @db.Decimal(9, 6)
+  openingNote      String?  @map("opening_note")
+  isDefault        Boolean  @default(false) @map("is_default")
+  isActive         Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  fulfilmentGroups OrderFulfilmentGroup[]
+
+  @@index([brandId, isActive])
+  @@index([cityNormalized])
+  @@map("brand_pickup_locations")
+}
+
+model Shipment {
+  id                   String         @id @default(uuid()) @db.Uuid
+  orderId              String         @map("order_id") @db.Uuid
+  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hubId                String         @map("hub_id") @db.Uuid
+  hub                  Hub            @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  trackingCode         String         @unique @map("tracking_code")
+  status               ShipmentStatus @default(PACKED)
+  statusChangedAt      DateTime       @default(now()) @map("status_changed_at")
+  currency             String         @db.Char(3)
+  codAmountToCollect   Int            @map("cod_amount_to_collect")
+  codCollectedAmount   Int?           @map("cod_collected_amount")
+  weightGrams          Int            @map("weight_grams")
+  parcelCount          Int            @map("parcel_count")
+  deliveryAttemptCount Int            @default(0) @map("delivery_attempt_count")
+  lastEventAt          DateTime       @default(now()) @map("last_event_at")
+  deliveredAt          DateTime?      @map("delivered_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  fulfilmentGroups OrderFulfilmentGroup[]
+  trackingEvents   TrackingEvent[]
+
+  @@index([status, lastEventAt])
+  @@index([orderId])
+  @@index([hubId, status])
+  @@map("shipments")
+}
+
+model TrackingEvent {
+  id                String                 @id @default(uuid()) @db.Uuid
+  fulfilmentGroupId String?                @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup?  @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
+  shipmentId        String?                @map("shipment_id") @db.Uuid
+  shipment          Shipment?              @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  code              TrackingEventCode
+  source            TrackingEventSource
+  actorUserId       String?                @map("actor_user_id") @db.Uuid
+  actorUser         User?                  @relation("TrackingEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  partnerId         String?                @map("partner_id") @db.Uuid
+  rawStatus         String?                @map("raw_status")
+  rawPayload        Json?                  @map("raw_payload")
+  reasonCode        DeliveryFailureReason? @map("reason_code")
+  location          String?
+  note              String?
+  occurredAt        DateTime               @map("occurred_at")
+  receivedAt        DateTime               @default(now()) @map("received_at")
+  appliedToStatus   Boolean                @default(false) @map("applied_to_status")
+  isCorrection      Boolean                @default(false) @map("is_correction")
+  dedupeKey         String                 @map("dedupe_key")
+
+  @@unique([source, dedupeKey])
+  @@index([fulfilmentGroupId, occurredAt])
+  @@index([shipmentId, occurredAt])
+  @@map("tracking_events")
 }
 
 model SavedAddress {
@@ -1370,6 +1618,10 @@ model OrderItem {
   listUnitPrice          Int         @map("list_unit_price")
   brandDiscountAmount    Int         @default(0) @map("brand_discount_amount")
   platformDiscountAmount Int         @default(0) @map("platform_discount_amount")
+
+  refundedQty      Int                  @default(0) @map("refunded_qty")
+  inspectionStatus ItemInspectionStatus @default(NOT_INSPECTED) @map("inspection_status")
+  failedQty        Int                  @default(0) @map("failed_qty")
 
   attributedCreatorId     String?           @map("attributed_creator_id") @db.Uuid
   attributedCreator       User?             @relation("AttributedOrderItems", fields: [attributedCreatorId], references: [id], onDelete: SetNull)
@@ -1666,8 +1918,9 @@ model DeliveryZone {
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
-  cities  DeliveryZoneCity[]
-  history DeliveryZoneHistory[]
+  cities         DeliveryZoneCity[]
+  history        DeliveryZoneHistory[]
+  hubPickupZones HubPickupZone[]
 
   @@map("delivery_zones")
 }
@@ -2875,22 +3128,22 @@ model OutfitItem {
 }
 
 model OutfitPhoto {
-  id           String               @id @default(uuid()) @db.Uuid
-  outfitId     String               @map("outfit_id") @db.Uuid
-  uploaderId   String?              @map("uploader_id") @db.Uuid
-  kind         OutfitPhotoKind
-  status       OutfitPhotoStatus    @default(PROCESSING)
-  imageAssetId String               @unique @map("image_asset_id") @db.Uuid
-  imageUrl     String               @map("image_url")
-  coverPosition Int?                @map("cover_position")
-  sortOrder    Int                  @default(0) @map("sort_order")
-  removedAt    DateTime?            @map("removed_at")
-  removedById  String?              @map("removed_by_id") @db.Uuid
-  createdAt    DateTime             @default(now()) @map("created_at")
-  outfit       Outfit               @relation(fields: [outfitId], references: [id], onDelete: Cascade)
-  uploader     User?                @relation("OutfitPhotosUploaded", fields: [uploaderId], references: [id], onDelete: SetNull)
-  removedBy    User?                @relation("OutfitPhotosRemoved", fields: [removedById], references: [id], onDelete: SetNull)
-  imageAsset   ImageProcessingAsset @relation(fields: [imageAssetId], references: [id], onDelete: Cascade)
+  id            String               @id @default(uuid()) @db.Uuid
+  outfitId      String               @map("outfit_id") @db.Uuid
+  uploaderId    String?              @map("uploader_id") @db.Uuid
+  kind          OutfitPhotoKind
+  status        OutfitPhotoStatus    @default(PROCESSING)
+  imageAssetId  String               @unique @map("image_asset_id") @db.Uuid
+  imageUrl      String               @map("image_url")
+  coverPosition Int?                 @map("cover_position")
+  sortOrder     Int                  @default(0) @map("sort_order")
+  removedAt     DateTime?            @map("removed_at")
+  removedById   String?              @map("removed_by_id") @db.Uuid
+  createdAt     DateTime             @default(now()) @map("created_at")
+  outfit        Outfit               @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  uploader      User?                @relation("OutfitPhotosUploaded", fields: [uploaderId], references: [id], onDelete: SetNull)
+  removedBy     User?                @relation("OutfitPhotosRemoved", fields: [removedById], references: [id], onDelete: SetNull)
+  imageAsset    ImageProcessingAsset @relation(fields: [imageAssetId], references: [id], onDelete: Cascade)
 
   @@index([outfitId, status, createdAt])
   @@index([uploaderId])

@@ -15,6 +15,7 @@ export default defineConfig({
         "src/user-role/index.ts",
         "src/outfit-slots/index.ts",
         "src/size-fit/index.ts",
+        "src/logistics-codes/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

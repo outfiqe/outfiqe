@@ -344,6 +344,11 @@ order's commission/payout could never mature. On a multi-brand order this only f
 group has delivered (`deriveOrderFulfilment` only reaches `DELIVERED` there), never on the first
 brand to ship.
 
+`refreshOrderFulfilmentRollup(client, orderId)` (same file) runs the whole recompute in one call:
+it reads the group statuses, applies `deriveOrderFulfilment` and calls `setOrderFulfilmentRollup`.
+The `logistics` module uses it after every applied tracking event, so hub-delivered orders follow
+exactly the same rollup and `deliveredAt` rules as brand-shipped ones.
+
 ## Stale-shipment reminder digest
 
 A brand can mark a group `SHIPPED` and then never come back to mark it `DELIVERED` — there's no

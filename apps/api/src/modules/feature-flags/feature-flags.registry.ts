@@ -26,6 +26,12 @@ export const FEATURE_FLAG_REGISTRY = [
     description:
       "Shows brands' size charts on product pages, the Find my size modal and the Find what fits me page.",
   },
+  {
+    key: "order_logistics",
+    label: "Outfiqe delivery (rider, hub, partners)",
+    description:
+      "New orders from brands with a covered pickup location go through Outfiqe riders, the hub and delivery partners instead of the brand shipping them.",
+  },
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_REGISTRY)[number]["key"];

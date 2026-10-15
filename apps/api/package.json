@@ -79,6 +79,7 @@
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "jsqr": "1.4.0",
+    "libphonenumber-js": "1.12.10",
     "lru-cache": "^11.5.2",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.4",
