@@ -2,6 +2,7 @@ export * from "./avatar";
 export * from "./email-logo";
 export * from "./format";
 export * from "./landing";
+export * from "./logistics-codes";
 export * from "./notifications/formatActorList";
 export * from "./notifications/isExternalNotificationPath";
 export * from "./outfit-slots";
