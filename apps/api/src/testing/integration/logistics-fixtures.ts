@@ -111,3 +111,8 @@ export const packGroupsIntoParcel = async (
   });
   return shipment;
 };
+
+export const requireFixtureId = (id: string | undefined): string => {
+  if (!id) throw new Error("The fixture did not create the record this test expects.");
+  return id;
+};
