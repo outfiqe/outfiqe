@@ -42,6 +42,10 @@ The module is built in steps. This README lists what exists now.
     because fulfilment groups keep pointing at the location they were collected from.
   - Each location says whether an Outfiqe hub collects from its city
     (`isCoveredByOutfiqePickup`).
+- `pickups/` — the brand's "Ready for pickup" (`POST /brand/pickups/:fulfilmentGroupId/ready`, `BRAND_OWNER` only, scoped to their brand, brand write-limited). It only applies to the brand's hub-flow groups; anything else is a `404`.
+  - It records a `READY_FOR_PICKUP` tracking event with a fixed dedupe key per group, so pressing it twice changes nothing.
+  - Once a rider has collected the items, it answers `409 PICKUP_ALREADY_MOVED_ON`.
+  - It returns the pickup code the rider scans.
 - `flow/` — `resolveFulfilmentAssignments({ brandIds })`, which checkout calls before its
   transaction to decide each brand's flow.
   - A brand goes through the hub (`OUTFIQE_LOGISTICS`, with its hub and pickup location) when:
@@ -75,6 +79,12 @@ The module is built in steps. This README lists what exists now.
 - A brand adds its pickup locations and sees whether Outfiqe collects from each one.
 - At checkout, each brand in the order is put on the hub flow or the brand-ships flow, and the
   order records its delivery promise.
+
+**Brand side of a hub order:** `orders/fulfilment-groups` is told about the flow too:
+
+- The brand order list and detail include `fulfilmentMode`, `pickupStatus` and, on the detail, the pickup code.
+- `shipTo` (the customer's name, phone and address) is `null` for hub-flow groups, because the brand never needs it.
+- The brand's own status updates (`PATCH /orders/brand/fulfilment-groups/:groupId`) are refused for hub-flow groups with `409 DELIVERED_BY_OUTFIQE`.
 
 **Technical, at checkout:**
 

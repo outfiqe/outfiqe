@@ -24,6 +24,7 @@ passed in.
   `data-sidebar-item-id` set to the item's `id`, so other UI can point at a specific row without
   depending on its label or href — used by the guided tours in both `apps/web`'s and
   `apps/admin`'s own `features/product-tour`.
+- `qr-code/` — `QrCode`, an accessible SVG of a QR code built straight from the `qrcode` library's module matrix (`buildQrMatrix`, with the standard four-module quiet zone). Drawing it synchronously means it renders on the server and prints cleanly, with no canvas or data URL. The brand's pickup code (`apps/web`) and the hub's bag tags and parcel labels (`apps/admin`) use it.
 - `size-chart/` — `SizeChartTable` (a product's sizes with the height and weight range the brand set for each, built on the design-system `Table`, with an optional `highlightedSizeId` for the recommended size) and `StretchBadge` ("Stretchable fabric" / "Non-stretch fabric", nothing when the brand hasn't said). `apps/web`'s product page and `apps/admin`'s product review both show a brand's size chart, so it lives here rather than in either app.
 - `kanban/` — `KanbanBoardSkeleton` (same column width, border and card styling as the real board, for the loading state) and `KanbanBoard<TCard>`, a generic pipeline board: `columns` + `cards` +
   `renderCard` + `onCardMove(cardId, toColumnId)`. Cards move two ways, both keyboard-accessible —

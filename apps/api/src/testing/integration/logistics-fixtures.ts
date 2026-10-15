@@ -171,3 +171,24 @@ export const requireFixtureId = (id: string | undefined): string => {
   if (!id) throw new Error("The fixture did not create the record this test expects.");
   return id;
 };
+
+export const createPickupForBrand = async (
+  brandId: string,
+  fulfilmentMode: FulfilmentMode = FulfilmentMode.OUTFIQE_LOGISTICS,
+) => {
+  const buyer = await createBuyer();
+  const hub = await createHub();
+  const order = await createOrder(buyer.id);
+  const isHubFlow = fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS;
+  const group = await prisma.orderFulfilmentGroup.create({
+    data: {
+      orderId: order.id,
+      brandId,
+      fulfilmentMode,
+      pickupStatus: isHubFlow ? PickupStatus.AWAITING_BRAND : null,
+      pickupCode: isHubFlow ? generateRandomCode(PICKUP_CODE_LENGTH) : null,
+      hubId: isHubFlow ? hub.id : null,
+    },
+  });
+  return { buyer, hub, order, group };
+};

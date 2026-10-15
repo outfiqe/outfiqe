@@ -16,6 +16,7 @@ export default defineConfig({
         "src/sidebar/useExpandedGroups.ts",
         "src/sidebar/SidebarNavItemView.tsx",
         "src/size-chart/*.{ts,tsx}",
+        "src/qr-code/*.{ts,tsx}",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

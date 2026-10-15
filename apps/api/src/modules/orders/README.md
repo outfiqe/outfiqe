@@ -304,6 +304,12 @@ group (gross / platform fee / gateway fee / net), and the order-level `fulfilmen
 reverses the earlier "brands see item-level rows, no PII" decision — see the git log — because
 brands now self-fulfil, which is what a single-order detail page is for.)
 
+For groups Outfiqe delivers (`fulfilmentMode = OUTFIQE_LOGISTICS`):
+
+- `shipTo` is `null`, because those brands never hand a parcel to a courier.
+- The brand can't advance the status itself (`409 DELIVERED_BY_OUTFIQE`). It only marks the items
+  ready for pickup, through `../logistics`.
+
 `advanceBrandFulfilmentGroup` uses the same forward-only, one-step transition guard as the admin
 path (`FULFILMENT_ADVANCE_FROM`), scoped by the group's current status in the `updateMany` `where`.
 Marking a group `SHIPPED` requires `carrier` + `trackingNumber` (Zod `.refine`). After a successful

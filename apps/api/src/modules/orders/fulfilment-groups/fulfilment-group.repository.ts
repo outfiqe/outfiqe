@@ -212,6 +212,7 @@ export const orderFulfilmentGroupRepository = {
       where: { id: groupId, brandId },
       select: {
         status: true,
+        fulfilmentMode: true,
         order: { select: { id: true, userId: true, fulfilmentStatus: true } },
       },
     });

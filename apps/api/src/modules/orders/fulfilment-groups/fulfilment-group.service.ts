@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { FulfilmentMode } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -62,6 +63,13 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (existing.fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS) {
+      throw new AppError(
+        "DELIVERED_BY_OUTFIQE",
+        "Outfiqe delivers this order. Mark it ready for pickup instead.",
+        HTTP_STATUS.CONFLICT,
+      );
+    }
 
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const advanced = await orderFulfilmentGroupRepository.advanceFulfilmentGroup(
