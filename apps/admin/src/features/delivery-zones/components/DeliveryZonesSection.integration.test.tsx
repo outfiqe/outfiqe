@@ -19,6 +19,9 @@ const zone = (overrides: Partial<Record<string, unknown>> = {}) => ({
   standardDeliveryFee: 100,
   freeDeliveryThreshold: 3000,
   codHandlingFee: 50,
+  countryCode: "NP",
+  minDeliveryDays: 1,
+  maxDeliveryDays: 2,
   updatedAt: "2026-09-01T00:00:00.000Z",
   ...overrides,
 });
@@ -112,6 +115,8 @@ describe("DeliveryZonesSection", () => {
         standardDeliveryFee: 150,
         freeDeliveryThreshold: 4000,
         codHandlingFee: 60,
+        minDeliveryDays: null,
+        maxDeliveryDays: null,
       }),
     );
     expect(await screen.findByText("Delivery zone added.")).toBeInTheDocument();

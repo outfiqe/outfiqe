@@ -41,6 +41,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   announcements: "Announcements",
   gamification: "Gamification",
   "delivery-zones": "Delivery zones",
+  logistics: "Logistics",
   organizations: "Organizations",
   team: "Team",
   "outfit-builds": "Outfit builds",

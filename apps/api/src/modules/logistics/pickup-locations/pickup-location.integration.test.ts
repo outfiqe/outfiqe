@@ -145,7 +145,7 @@ describe("brand pickup locations", () => {
 
     const response = await addLocation(authHeader, { latitude: 27.68 });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
   it("caps how many pickup locations a brand can have", async () => {

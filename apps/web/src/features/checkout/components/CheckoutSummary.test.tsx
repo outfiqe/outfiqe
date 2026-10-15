@@ -17,6 +17,38 @@ const aCart = (overrides: Partial<Cart> = {}): Cart =>
   }) as Cart;
 
 describe("CheckoutSummary", () => {
+  it("shows the estimated delivery window when there is one", () => {
+    render(
+      <CheckoutSummary
+        cart={aCart()}
+        deliveryFee={100}
+        paymentMethod={PaymentMethod.COD}
+        codHandlingFee={50}
+        isSubmitting={false}
+        isOnline={true}
+        deliveryWindowLabel="Fri, Oct 16 – Sun, Oct 18"
+      />,
+    );
+
+    expect(screen.getByText("Estimated delivery")).toBeInTheDocument();
+    expect(screen.getByText("Fri, Oct 16 – Sun, Oct 18")).toBeInTheDocument();
+  });
+
+  it("leaves the estimate out when the city has none", () => {
+    render(
+      <CheckoutSummary
+        cart={aCart()}
+        deliveryFee={100}
+        paymentMethod={PaymentMethod.COD}
+        codHandlingFee={50}
+        isSubmitting={false}
+        isOnline={true}
+      />,
+    );
+
+    expect(screen.queryByText("Estimated delivery")).not.toBeInTheDocument();
+  });
+
   it("offers to place the order when there is a connection", () => {
     render(
       <CheckoutSummary

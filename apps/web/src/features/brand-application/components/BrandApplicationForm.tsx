@@ -14,6 +14,7 @@ import {
 } from "@outfiqe/design-system";
 import { useForm } from "react-hook-form";
 
+import { CityAutocomplete } from "@/features/delivery-zones";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
 import { useSubmitBrandApplication } from "../hooks/useSubmitBrandApplication";
@@ -38,6 +39,7 @@ export const BrandApplicationForm = () => {
       phone: "",
       instagram: "",
       makesOwnPieces: "MAKES",
+      city: "",
     },
     mode: "onBlur",
   });
@@ -133,6 +135,29 @@ export const BrandApplicationForm = () => {
                 </FormControl>
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   This is where we&apos;ll look at your work.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field: { ref, name, value, onChange, onBlur } }) => (
+              <FormItem>
+                <FormLabel>City (optional)</FormLabel>
+                <FormControl>
+                  <CityAutocomplete
+                    ref={ref}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    onBlur={onBlur}
+                  />
+                </FormControl>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Where you pack your orders. It tells us if Outfiqe riders can collect from you.
                 </p>
                 <FormMessage />
               </FormItem>

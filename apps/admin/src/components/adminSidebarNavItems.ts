@@ -48,6 +48,7 @@ import {
   Users,
   VenetianMask,
   Wallet,
+  Warehouse,
   Zap,
 } from "lucide-react";
 
@@ -359,6 +360,21 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     label: "Delivery zones",
     icon: MapPin,
     group: "commerce",
+  },
+  {
+    id: "logistics",
+    href: "/logistics",
+    label: "Logistics",
+    icon: Warehouse,
+    group: "commerce",
+    items: [
+      {
+        id: "logistics-hubs",
+        href: "/logistics/hubs",
+        label: "Hubs",
+        icon: Warehouse,
+      },
+    ],
   },
   {
     id: "organizations",

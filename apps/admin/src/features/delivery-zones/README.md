@@ -13,7 +13,8 @@ Lets the team set delivery pricing by city: each zone lists its cities, a standa
 - `components/CityListInput.tsx` — the input for a zone's list of cities.
 - `components/DeliveryZoneHistorySection.tsx` — who changed which zone, and from what to what.
 - `hooks/useDeliveryZoneHistory.ts` — the paged history query.
-- `schemas/zoneForm.schema.ts` — validation for the zone form (unit-tested beside it).
+- `schemas/zoneForm.schema.ts` — validation for the zone form (unit-tested beside it). The optional shortest and longest delivery days (working days) must be filled in together, with the shortest no more than the longest.
+- `utils/formatDeliveryDays.ts` — the delivery-days text on each zone card.
 - `utils/deliveryZonesCacheUpdate.ts` — the zone list's query key and the helpers that update the cached list in place after a write (add or replace a zone, move the default, remove a zone).
 
 ## Funnel
