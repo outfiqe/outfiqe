@@ -210,6 +210,7 @@ export default defineConfig({
         "src/shared/lib/serverApiClient.ts",
         "src/shared/lib/apiOrigin.ts",
         "src/shared/lib/heicImage.ts",
+        "src/shared/lib/nepalFormatting.ts",
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/bank-accounts/components/BankAccountsList.tsx",
         "src/features/bank-accounts/components/BankAccountCard.tsx",

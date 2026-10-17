@@ -4,9 +4,10 @@ import { Badge } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
+import { formatNepalDateTime } from "@/shared/lib/nepalFormatting";
+
 import type { OutfitSummary } from "../../api/outfitSchemas";
 import { BuildCoverGrid } from "../../components/BuildCoverGrid";
-import { formatNepalDateTime } from "../../utils/outfitFormatting";
 
 export const buildPath = (outfitId: string) => `/builds/${outfitId}`;
 
