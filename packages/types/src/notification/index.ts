@@ -50,6 +50,8 @@ export const NotificationType = {
   OUTFIT_OFFER_RELEASED: "OUTFIT_OFFER_RELEASED",
   OUTFIT_OFFER_REFUNDED: "OUTFIT_OFFER_REFUNDED",
   ACCOUNT_APPROVED: "ACCOUNT_APPROVED",
+  ORDER_REFUND_ISSUED: "ORDER_REFUND_ISSUED",
+  ORDER_REFUND_DETAILS_NEEDED: "ORDER_REFUND_DETAILS_NEEDED",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -116,6 +118,9 @@ export type RecentActor = {
 };
 
 export type NotificationMetadata = {
+  refundId?: string;
+  amount?: number;
+  method?: string | null;
   actor?: RecentActor;
   recentActors?: RecentActor[];
   lookImageUrl?: string;

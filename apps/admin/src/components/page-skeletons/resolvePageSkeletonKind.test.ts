@@ -13,6 +13,8 @@ describe("resolvePageSkeletonKind", () => {
     ["/gamification/badges/7b/edit", PAGE_SKELETON_KIND.DETAIL_FORM],
     ["/profile", PAGE_SKELETON_KIND.DETAIL_FORM],
     ["/orders", PAGE_SKELETON_KIND.LIST],
+    ["/orders/refunds", PAGE_SKELETON_KIND.LIST],
+    ["/orders/unavailable-items", PAGE_SKELETON_KIND.LIST],
     ["/gamification/badges", PAGE_SKELETON_KIND.LIST],
     ["/crm/customers", PAGE_SKELETON_KIND.LIST],
     ["/team", PAGE_SKELETON_KIND.GENERIC],

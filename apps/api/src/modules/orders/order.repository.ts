@@ -9,6 +9,9 @@ import type { DbClient } from "#types/db.types.js";
 
 import { orderFulfilmentGroupRepository } from "./fulfilment-groups/fulfilment-group.repository.js";
 import type { CreateOrderInput } from "./order.types.js";
+import { orderRefundRepository } from "./refunds/refund.repository.js";
+import { orderRefundDestinationRepository } from "./refunds/refund-destination.repository.js";
+import { orderUnavailableItemRepository } from "./unavailable-items/unavailable-item.repository.js";
 
 const withOrderItemDetails = {
   product: { select: { name: true, imageUrl: true, brand: { select: { name: true } } } },
@@ -191,4 +194,10 @@ export const orderRepository = {
   },
 
   ...orderFulfilmentGroupRepository,
+
+  ...orderRefundRepository,
+
+  ...orderRefundDestinationRepository,
+
+  ...orderUnavailableItemRepository,
 };

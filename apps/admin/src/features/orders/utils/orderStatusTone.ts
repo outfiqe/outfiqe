@@ -17,4 +17,5 @@ export const PAYMENT_STATUS_TONE: Record<PaymentStatusValue, BadgeTone> = {
   PAID: "positive",
   FAILED: "negative",
   REFUNDED: "negative",
+  PARTIALLY_REFUNDED: "neutral",
 };

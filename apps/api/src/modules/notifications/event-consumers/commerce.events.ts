@@ -1,3 +1,4 @@
+import { ORDER_REFUND_OUTCOME, type OrderRefundOutcome } from "#constants/commerce.constants.js";
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
 import {
@@ -18,6 +19,11 @@ const WITHDRAW_REQUEST_NOTIFICATION_TYPES: Partial<
   [WithdrawRequestStatus.APPROVED]: NotificationType.WITHDRAW_REQUEST_APPROVED,
   [WithdrawRequestStatus.REJECTED]: NotificationType.WITHDRAW_REQUEST_REJECTED,
   [WithdrawRequestStatus.PAID]: NotificationType.WITHDRAW_REQUEST_PAID,
+};
+
+const REFUND_NOTIFICATION_TYPES: Record<OrderRefundOutcome, NotificationType> = {
+  [ORDER_REFUND_OUTCOME.ISSUED]: NotificationType.ORDER_REFUND_ISSUED,
+  [ORDER_REFUND_OUTCOME.DETAILS_NEEDED]: NotificationType.ORDER_REFUND_DETAILS_NEEDED,
 };
 
 export const registerCommerceNotificationConsumers = (): void => {
@@ -87,6 +93,21 @@ export const registerCommerceNotificationConsumers = (): void => {
         }),
       );
       await notificationService.notifyManyIndividual(inputs);
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.ORDER_REFUND_UPDATED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ orderId, userId, refundId, amount, outcome, method }, { eventId }) => {
+      await notificationService.notifyIndividual({
+        recipientId: userId,
+        type: REFUND_NOTIFICATION_TYPES[outcome],
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.ORDER,
+        entityId: orderId,
+        metadata: { refundId, amount, method },
+      });
     },
   });
 

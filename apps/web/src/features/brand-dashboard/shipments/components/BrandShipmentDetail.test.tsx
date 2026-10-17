@@ -22,6 +22,11 @@ vi.mock("./RequestShipmentCancellationModal", () => ({
   RequestShipmentCancellationModal: ({ open }: { open: boolean }) =>
     open ? <div role="dialog" aria-label="Request cancellation" /> : null,
 }));
+vi.mock("./UnavailableItemsPanel", () => ({
+  UnavailableItemsPanel: ({ canReport }: { canReport: boolean }) => (
+    <section aria-label="Items you can't supply">{canReport ? "can report" : "locked"}</section>
+  ),
+}));
 vi.mock("next/link", () => ({
   __esModule: true,
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -69,6 +74,7 @@ const buildShipment = (
   deliveredAt: null,
   cancellationRequestedAt: null,
   cancellationReason: null,
+  canReportUnavailable: false,
   items: [
     {
       id: "item-1",
@@ -77,6 +83,7 @@ const buildShipment = (
       imageUrl: null,
       sizeLabel: "M",
       qty: 2,
+      refundedQty: 0,
       unitPrice: 800,
       listUnitPrice: 1000,
       brandDiscountAmount: 200,

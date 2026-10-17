@@ -20,6 +20,7 @@ export const PaymentStatus = {
   DUE: "DUE",
   FAILED: "FAILED",
   REFUNDED: "REFUNDED",
+  PARTIALLY_REFUNDED: "PARTIALLY_REFUNDED",
 } as const satisfies Record<string, PaymentStatusType>;
 export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
@@ -81,6 +82,8 @@ export const orderItemSchema = z.object({
   qty: z.number(),
   unitPrice: z.number(),
   attributedCreatorName: z.string().nullable(),
+  refundedQty: z.number().default(0),
+  canCancel: z.boolean().default(false),
 });
 export type OrderItem = z.infer<typeof orderItemSchema>;
 
@@ -110,6 +113,7 @@ export const orderSchema = z.object({
   deliveryFee: z.number(),
   codFee: z.number(),
   total: z.number(),
+  refundedAmount: z.number().default(0),
   items: z.array(orderItemSchema),
   shipments: z.array(orderShipmentSchema).default([]),
   transactions: z.array(paymentTransactionSchema),

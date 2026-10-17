@@ -15,6 +15,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateRandomCode } from "#lib/random-code.utils.js";
+import { ORDER_LOGISTICS_FLAG } from "#modules/feature-flags/feature-flags.registry.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
 import { createBuyer, createOrder, createPurchasableProduct } from "./order-fixtures.js";
@@ -29,7 +30,6 @@ const DEFAULT_PRODUCT_PRICE = 1000;
 const ONE_BRAND = 1;
 const NO_BRANDS = 0;
 const READY_CUTOFF_MINUTES = 60;
-const ORDER_LOGISTICS_FLAG = "order_logistics";
 const VALLEY_DELIVERY_FEE = 100;
 const VALLEY_FREE_DELIVERY_THRESHOLD = 5000;
 const NO_COD_HANDLING_FEE = 0;

@@ -1,4 +1,9 @@
-import { FulfilmentStatus, OrderFulfilmentSummary } from "#generated/prisma/enums.js";
+import {
+  type FulfilmentMode,
+  FulfilmentStatus,
+  OrderFulfilmentSummary,
+  type PickupStatus,
+} from "#generated/prisma/enums.js";
 
 import type {
   AdminFulfilmentGroupView,
@@ -11,6 +16,13 @@ import type {
   OrderView,
   PaymentTransactionView,
 } from "./order.types.js";
+import { isGroupStillWithBrand } from "./refunds/line-cancellation.utils.js";
+import {
+  PAYMENT_STATUSES_WITH_MONEY_TAKEN,
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
+} from "./refunds/refund.constants.js";
+
+const NO_UNITS_LEFT = 0;
 
 const FULFILMENT_PROGRESS: Record<FulfilmentStatus, number> = {
   [FulfilmentStatus.PLACED]: 0,
@@ -84,6 +96,8 @@ type OrderItemRow = {
   listUnitPrice: number;
   brandDiscountAmount: number;
   platformDiscountAmount: number;
+  refundedQty: number;
+  fulfilmentGroupId: string | null;
   product: { name: string; imageUrl: string | null; brand: { name: string } };
   size: { label: string };
   attributedCreator: { name: string } | null;
@@ -91,7 +105,10 @@ type OrderItemRow = {
 
 type OrderShipmentRow = {
   id: string;
+  brandId: string;
   status: FulfilmentStatus;
+  fulfilmentMode: FulfilmentMode;
+  pickupStatus: PickupStatus | null;
   carrier: string | null;
   trackingNumber: string | null;
   shippedAt: Date | null;
@@ -117,6 +134,7 @@ type OrderRow = {
   total: number;
   brandDiscountTotal: number;
   platformDiscountTotal: number;
+  refundedAmount: number;
   items: OrderItemRow[];
   fulfilmentGroups?: OrderShipmentRow[];
   transactions?: PaymentTransactionRow[];
@@ -141,7 +159,10 @@ type PaymentTransactionRow = {
   createdAt: Date;
 };
 
-const toOrderItemView = (row: OrderItemRow): OrderItemView => {
+const toOrderItemView = (
+  row: OrderItemRow,
+  cancellableGroupIds: ReadonlySet<string>,
+): OrderItemView => {
   const {
     id,
     productId,
@@ -150,6 +171,8 @@ const toOrderItemView = (row: OrderItemRow): OrderItemView => {
     listUnitPrice,
     brandDiscountAmount,
     platformDiscountAmount,
+    refundedQty,
+    fulfilmentGroupId,
     product,
     size,
     attributedCreator,
@@ -169,7 +192,30 @@ const toOrderItemView = (row: OrderItemRow): OrderItemView => {
     brandDiscountAmount,
     platformDiscountAmount,
     attributedCreatorName: attributedCreator?.name ?? null,
+    refundedQty,
+    canCancel:
+      qty - refundedQty > NO_UNITS_LEFT &&
+      fulfilmentGroupId !== null &&
+      cancellableGroupIds.has(fulfilmentGroupId),
   };
+};
+
+const NO_BRANDS_ALLOWING_ITEM_CHANGES: ReadonlySet<string> = new Set();
+
+const listCancellableGroupIds = (
+  order: OrderRow,
+  brandIdsAllowingItemChanges: ReadonlySet<string>,
+): ReadonlySet<string> => {
+  const hasSettledPayment =
+    PAYMENT_STATUSES_WITH_MONEY_TAKEN.has(order.paymentStatus) ||
+    PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(order.paymentStatus);
+  if (!hasSettledPayment) return new Set();
+  return new Set(
+    (order.fulfilmentGroups ?? [])
+      .filter((group) => brandIdsAllowingItemChanges.has(group.brandId))
+      .filter(isGroupStillWithBrand)
+      .map((group) => group.id),
+  );
 };
 
 const toPaymentTransactionView = (row: PaymentTransactionRow): PaymentTransactionView => {
@@ -177,7 +223,10 @@ const toPaymentTransactionView = (row: PaymentTransactionRow): PaymentTransactio
   return { id, provider, type, status, transactionRef, createdAt: createdAt.toISOString() };
 };
 
-export const toOrderView = (order: OrderRow): OrderView => {
+export const toOrderView = (
+  order: OrderRow,
+  brandIdsAllowingItemChanges: ReadonlySet<string> = NO_BRANDS_ALLOWING_ITEM_CHANGES,
+): OrderView => {
   const {
     id,
     createdAt,
@@ -195,10 +244,12 @@ export const toOrderView = (order: OrderRow): OrderView => {
     total,
     brandDiscountTotal,
     platformDiscountTotal,
+    refundedAmount,
     items,
     fulfilmentGroups,
     transactions,
   } = order;
+  const cancellableGroupIds = listCancellableGroupIds(order, brandIdsAllowingItemChanges);
 
   return {
     id,
@@ -218,7 +269,8 @@ export const toOrderView = (order: OrderRow): OrderView => {
     total,
     brandDiscountTotal,
     platformDiscountTotal,
-    items: items.map(toOrderItemView),
+    refundedAmount,
+    items: items.map((item) => toOrderItemView(item, cancellableGroupIds)),
     shipments: (fulfilmentGroups ?? []).map(toOrderShipmentView),
     transactions: (transactions ?? []).map(toPaymentTransactionView),
   };

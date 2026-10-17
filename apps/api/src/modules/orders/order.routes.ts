@@ -23,6 +23,8 @@ import {
   requestGroupCancellationSchema,
   returnOrderSchema,
 } from "./order.schemas.js";
+import { orderRefundRoutes } from "./refunds/refund.routes.js";
+import { orderUnavailableItemRoutes } from "./unavailable-items/unavailable-item.routes.js";
 
 const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
 const CHECKOUT_MAX_REQUESTS = 10;
@@ -72,6 +74,9 @@ const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNE
 const requireShopper = [...requireActiveAuth, requireRole(UserRole.CUSTOMER)];
 
 export const orderRoutes = Router();
+
+orderRoutes.use(orderRefundRoutes);
+orderRoutes.use(orderUnavailableItemRoutes);
 
 /*
   Static/prefixed paths first — Express would otherwise never reach them once the

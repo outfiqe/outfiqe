@@ -34,7 +34,7 @@ const DETAIL_FORM_PATHS = new Set([
 ]);
 
 const DETAIL_FORM_PATH_PATTERNS = [
-  /^\/orders\/[^/]+$/,
+  /^\/orders\/(?!refunds$|unavailable-items$)[^/]+$/,
   /^\/support\/[^/]+$/,
   /^\/crm\/customers\/[^/]+$/,
   /^\/crm\/partners\/[^/]+$/,
@@ -70,6 +70,8 @@ const LIST_PATHS = new Set([
   "/logistics/pickup-board",
   "/logistics/riders",
   "/orders",
+  "/orders/refunds",
+  "/orders/unavailable-items",
   "/organizations",
   "/outfit-builds",
   "/outfit-slot-types",

@@ -39,8 +39,16 @@ import {
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
 import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications/notification.constants.js";
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
-import { STALE_SHIPMENT_REMINDER_INTERVAL_MS } from "#modules/orders/order.constants.js";
+import {
+  REFUND_DETAILS_REMINDER_INTERVAL_MS,
+  STALE_PENDING_REFUND_SWEEP_INTERVAL_MS,
+  STALE_SHIPMENT_REMINDER_INTERVAL_MS,
+} from "#modules/orders/order.constants.js";
 import { runStaleShipmentReminderDigest } from "#modules/orders/order.jobs.js";
+import {
+  runRefundDetailsReminder,
+  runStalePendingRefundSweep,
+} from "#modules/orders/refunds/refund.jobs.js";
 import { OFFER_LIFECYCLE_INTERVAL_MS } from "#modules/outfit-offers/outfit-offer.constants.js";
 import { runOutfitOfferLifecycleSweep } from "#modules/outfit-offers/outfit-offer.lifecycle.js";
 import { OUTFIT_PHOTO_CLEANUP } from "#modules/outfits/outfit.constants.js";
@@ -251,6 +259,16 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "stale-shipment-reminder-digest",
     run: runStaleShipmentReminderDigest,
     intervalMs: STALE_SHIPMENT_REMINDER_INTERVAL_MS,
+  },
+  {
+    name: "stale-pending-refund-sweep",
+    run: runStalePendingRefundSweep,
+    intervalMs: STALE_PENDING_REFUND_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "refund-details-reminder",
+    run: runRefundDetailsReminder,
+    intervalMs: REFUND_DETAILS_REMINDER_INTERVAL_MS,
   },
   {
     name: "suspension-expiry-sweep",

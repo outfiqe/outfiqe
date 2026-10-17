@@ -40,6 +40,7 @@ export type PaymentVerifyResult = {
 export type PaymentRefundInput = {
   gatewayTransactionId: string;
   payerPhone: string;
+  amount: number;
 };
 
 export type PaymentRefundResult = {

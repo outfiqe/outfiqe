@@ -15,6 +15,7 @@ import type {
   BrandFulfilmentGroupPayoutView,
   BrandFulfilmentGroupSummaryView,
 } from "../order.types.js";
+import { isGroupStillWithBrand } from "../refunds/line-cancellation.utils.js";
 
 type BrandFulfilmentGroupSummaryRow = {
   id: string;
@@ -92,6 +93,7 @@ type BrandFulfilmentGroupDetailRow = {
     id: string;
     productId: string;
     qty: number;
+    refundedQty: number;
     unitPrice: number;
     listUnitPrice: number;
     brandDiscountAmount: number;
@@ -121,6 +123,7 @@ const toBrandFulfilmentGroupItemView = (
   imageUrl: item.product.imageUrl,
   sizeLabel: item.size.label,
   qty: item.qty,
+  refundedQty: item.refundedQty,
   unitPrice: item.unitPrice,
   listUnitPrice: item.listUnitPrice,
   brandDiscountAmount: item.brandDiscountAmount,
@@ -156,6 +159,7 @@ const isDeliveredByOutfiqe = ({ fulfilmentMode }: { fulfilmentMode: FulfilmentMo
 
 export const toBrandFulfilmentGroupDetailView = (
   row: BrandFulfilmentGroupDetailRow,
+  { allowsItemReports }: { allowsItemReports: boolean },
 ): BrandFulfilmentGroupDetailView => ({
   id: row.id,
   orderId: row.orderId,
@@ -173,6 +177,7 @@ export const toBrandFulfilmentGroupDetailView = (
   deliveredAt: row.deliveredAt?.toISOString() ?? null,
   cancellationRequestedAt: row.cancellationRequestedAt?.toISOString() ?? null,
   cancellationReason: row.cancellationReason,
+  canReportUnavailable: allowsItemReports && isGroupStillWithBrand(row),
   items: row.items.map(toBrandFulfilmentGroupItemView),
   shipTo: isDeliveredByOutfiqe(row)
     ? null

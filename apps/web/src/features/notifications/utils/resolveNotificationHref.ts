@@ -61,6 +61,8 @@ export const resolveNotificationHref = (
     case NotificationType.NEW_ORDER:
       return WEB_NOTIFICATION_ROUTES.manageOrders;
     case NotificationType.ORDER_STATUS_CHANGED:
+    case NotificationType.ORDER_REFUND_ISSUED:
+    case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
       return entityId
         ? orderDetailPath(WEB_NOTIFICATION_ROUTES.ordersList, entityId)
         : WEB_NOTIFICATION_ROUTES.ordersList;

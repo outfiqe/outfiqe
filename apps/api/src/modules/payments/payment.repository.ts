@@ -173,14 +173,12 @@ export const paymentRepository = {
 
   async recordRefund(
     client: DbClient,
-    orderId: string,
-    provider: PaymentMethod,
-    rawResponse: unknown,
+    refund: { orderId: string; provider: PaymentMethod; amount: number; rawResponse: unknown },
   ): Promise<void> {
+    const { rawResponse, ...refundFields } = refund;
     await client.paymentTransaction.create({
       data: {
-        orderId,
-        provider,
+        ...refundFields,
         type: PaymentTransactionType.REFUND,
         status: PaymentTransactionStatus.SUCCEEDED,
         rawResponse: rawResponse as Prisma.InputJsonValue,

@@ -1,0 +1,3 @@
+ALTER TYPE "PaymentStatus" ADD VALUE 'PARTIALLY_REFUNDED';
+
+ALTER TYPE "InventoryMovementSource" ADD VALUE 'ORDER_REFUND';

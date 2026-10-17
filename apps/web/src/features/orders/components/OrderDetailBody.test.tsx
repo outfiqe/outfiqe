@@ -55,6 +55,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   deliveryFee: 260,
   codFee: 0,
   total: 2760,
+  refundedAmount: 0,
   items: [
     {
       id: "item-1",
@@ -66,6 +67,8 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
       qty: 1,
       unitPrice: 2500,
       attributedCreatorName: null,
+      refundedQty: 0,
+      canCancel: false,
     },
   ],
   shipments: [],
