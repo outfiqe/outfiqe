@@ -5,7 +5,7 @@ import {
   NotificationType,
   OrderRefundMethod,
 } from "@outfiqe/types";
-import { formatActorList } from "@outfiqe/utils";
+import { formatActorList, ORDER_TRACKING_STAGE_MESSAGES } from "@outfiqe/utils";
 
 const actorList = (notification: Notification): string =>
   formatActorList(notification.metadata.recentActors ?? [], notification.actorCount);
@@ -54,7 +54,9 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.NEW_ORDER:
       return "You received a new order";
     case NotificationType.ORDER_STATUS_CHANGED:
-      return `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
+      return metadata.trackingStage
+        ? ORDER_TRACKING_STAGE_MESSAGES[metadata.trackingStage]
+        : `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return `${metadata.brandName ?? "A brand"} submitted an application`;
     case NotificationType.PRODUCT_REVIEWED:
