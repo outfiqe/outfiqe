@@ -19,6 +19,45 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     ],
     sourceFiles: [`${FEATURES_DIR}/orders/components/OrdersPage.tsx`],
   },
+  "/orders/refunds": {
+    title: "Refunds to pay",
+    description:
+      "Refunds that couldn't go back automatically. Send the money, then mark each one paid with the transfer reference.",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Mark as paid"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/orders/refunds/components/RefundQueuePage.tsx`,
+      `${FEATURES_DIR}/orders/refunds/components/RefundQueueCard.tsx`,
+    ],
+  },
+  "/orders/unavailable-items": {
+    title: "Items brands can't supply",
+    description:
+      "Approving refunds the customer for those units. Rejecting tells the brand to send them.",
+    blocks: [
+      { kind: "filterTabs", labels: ["To review", "Approved", "Rejected"] },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Approve and refund", "Reject"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/orders/unavailable-items/components/UnavailableItemsPage.tsx`,
+      `${FEATURES_DIR}/orders/unavailable-items/constants/unavailableItemLabels.ts`,
+    ],
+  },
   "/coupons": {
     title: "Coupons",
     blocks: [

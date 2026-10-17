@@ -11,7 +11,10 @@ export type DetailRouteSkeletonKey =
   (typeof DETAIL_ROUTE_SKELETON_KEY)[keyof typeof DETAIL_ROUTE_SKELETON_KEY];
 
 const KEY_BY_PATH_PATTERN: readonly { pattern: RegExp; key: DetailRouteSkeletonKey }[] = [
-  { pattern: /^\/orders\/[^/]+$/, key: DETAIL_ROUTE_SKELETON_KEY.ORDER },
+  {
+    pattern: /^\/orders\/(?!refunds$|unavailable-items$)[^/]+$/,
+    key: DETAIL_ROUTE_SKELETON_KEY.ORDER,
+  },
   { pattern: /^\/support\/[^/]+$/, key: DETAIL_ROUTE_SKELETON_KEY.SUPPORT_TICKET },
   { pattern: /^\/platform\/metrics\/[^/]+$/, key: DETAIL_ROUTE_SKELETON_KEY.TENANT_METRICS },
   { pattern: /^\/gamification\/badges\/new$/, key: DETAIL_ROUTE_SKELETON_KEY.BADGE_FORM },

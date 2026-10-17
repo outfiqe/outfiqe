@@ -46,6 +46,8 @@ export const resolveNotificationHref = (
     case NotificationType.COMMISSION_EARNED:
     case NotificationType.NEW_ORDER:
     case NotificationType.ORDER_STATUS_CHANGED:
+    case NotificationType.ORDER_REFUND_ISSUED:
+    case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
     case NotificationType.WITHDRAW_REQUEST_APPROVED:
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:

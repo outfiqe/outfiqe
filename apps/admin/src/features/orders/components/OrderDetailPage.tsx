@@ -12,6 +12,8 @@ import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { ordersApi } from "../api/ordersApi";
 import type { FulfilmentStatusValue } from "../api/ordersSchemas";
 import { useOrder } from "../hooks/useOrder";
+import { OrderRefundsCard } from "../refunds/components/OrderRefundsCard";
+import { RefundItemsModal } from "../refunds/components/RefundItemsModal";
 import { FULFILMENT_STATUS_TONE, PAYMENT_STATUS_TONE } from "../utils/orderStatusTone";
 import { OrderDetailSkeleton } from "./OrderDetailSkeleton";
 
@@ -23,6 +25,8 @@ const NEXT_FULFILMENT_STATUS: Partial<Record<FulfilmentStatusValue, FulfilmentSt
 
 const CANCELLABLE_STATUSES: FulfilmentStatusValue[] = ["PLACED", "PACKED"];
 const RETURNABLE_STATUSES: FulfilmentStatusValue[] = ["SHIPPED", "DELIVERED"];
+
+const NOTHING_REFUNDED = 0;
 
 const CLAWBACK_WARNING =
   "Some earnings from this order were already paid out. Recover them manually.";
@@ -37,6 +41,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   const { data: order, isLoading, error } = useOrder(orderId);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [hasPaidOutEarnings, setHasPaidOutEarnings] = useState(false);
 
   const advance = useApiMutation({
@@ -92,6 +97,9 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
 
   const nextStatus = NEXT_FULFILMENT_STATUS[fulfilmentStatus];
   const isActing = advance.isPending || cancel.isPending || markReturned.isPending;
+  const hasUnitsLeftToRefund = items.some(
+    (orderItem) => orderItem.qty - orderItem.refundedQty > NOTHING_REFUNDED,
+  );
 
   return (
     <div>
@@ -143,6 +151,11 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
         {canManageOrders && RETURNABLE_STATUSES.includes(fulfilmentStatus) && (
           <Button variant="outline" onClick={() => setIsReturnModalOpen(true)} disabled={isActing}>
             Mark as returned
+          </Button>
+        )}
+        {canManageOrders && hasUnitsLeftToRefund && (
+          <Button variant="outline" onClick={() => setIsRefundModalOpen(true)} disabled={isActing}>
+            Refund items
           </Button>
         )}
       </div>
@@ -203,6 +216,8 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
               <div>
                 <p className="text-foreground">
                   {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
+                  {orderItem.refundedQty > NOTHING_REFUNDED &&
+                    ` (${orderItem.refundedQty} refunded)`}
                 </p>
                 <p className="text-muted-foreground">
                   {orderItem.brandName}
@@ -216,6 +231,8 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
           ))}
         </div>
       </div>
+
+      <OrderRefundsCard orderId={id} />
 
       {transactions.length > 0 && (
         <div className="mt-4 rounded-xl border border-border bg-card p-4">
@@ -255,6 +272,9 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
         onConfirm={(reason) => markReturned.mutate(reason)}
         onCancel={() => setIsReturnModalOpen(false)}
       />
+      {isRefundModalOpen && (
+        <RefundItemsModal orderId={id} items={items} onClose={() => setIsRefundModalOpen(false)} />
+      )}
     </div>
   );
 };

@@ -22,6 +22,7 @@ const paymentStatusValues = [
   "DUE",
   "FAILED",
   "REFUNDED",
+  "PARTIALLY_REFUNDED",
 ] satisfies PaymentStatus[];
 export const paymentStatusSchema = z.enum(paymentStatusValues);
 export type PaymentStatusValue = z.infer<typeof paymentStatusSchema>;
@@ -34,6 +35,7 @@ export const orderItemSchema = z.object({
   imageUrl: z.string().nullable(),
   sizeLabel: z.string(),
   qty: z.number(),
+  refundedQty: z.number(),
   unitPrice: z.number(),
   attributedCreatorName: z.string().nullable(),
 });
@@ -64,6 +66,7 @@ export const adminOrderSchema = z.object({
   deliveryFee: z.number(),
   codFee: z.number(),
   total: z.number(),
+  refundedAmount: z.number(),
   items: z.array(orderItemSchema),
   transactions: z.array(paymentTransactionSchema),
   buyerName: z.string(),
