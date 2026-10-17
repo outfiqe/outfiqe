@@ -86,6 +86,7 @@ const checkoutOnce = async (
     city,
     phone,
     orderPlacedAt,
+    requiresCashOnDelivery: isCashOnDelivery,
   });
 
   const orderId = randomUUID();

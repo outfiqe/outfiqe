@@ -21,9 +21,18 @@ The module is built in steps. This README lists what exists now.
   - `/admin/hubs` → `hubs/`, `/admin/riders` → `riders/`, `/admin/bag-tag-batches` → `bag-tags/`;
   - `/admin/pickup-board` and `/admin/rider-tasks` → `rounds/` (staff);
   - `/brand/pickup-locations` → `pickup-locations/`, `/brand/pickups` → `pickups/`;
-  - `/rider/tasks` → `rounds/` (riders).
+  - `/rider/tasks` → `rounds/` (riders);
+  - `/admin/partners` → `partners/`;
+  - `/hub` → `hub-operations/` and `shipments/` (hub staff).
 - `logistics.rate-limits.ts` — the per-user limiters shared by every topic's routes: staff writes,
-  brand writes and rider scans.
+  brand writes, rider scans and hub scans (check-in and handover, 120 a minute).
+- `logistics.constants.ts` — pickup statuses that mean a bag is no longer on its way to the hub,
+  shared by packing and the "orders to pack" list.
+- `logistics.partner-events.ts` — `logisticsPartnerEvents.applyPartnerTrackingEvent`, the one
+  place a partner's update becomes a tracking event. Spreadsheet imports use it now; webhooks and
+  polling will use it too. It matches the update to a booking (the partner's parcel number first,
+  then our parcel code with any `-2` rebook suffix removed), maps their status word through the
+  status map, and records the event with a dedupe key built from the booking, status and time.
 - `logistics.guards.ts` — `requireActiveRider(userId)`: loads the signed-in rider's profile, or
   answers `403` when there is none or it isn't `ACTIVE`.
 - `logistics.pickup-coverage.ts` — `logisticsPickupCoverage`, shared by `pickup-locations/` and
@@ -83,12 +92,57 @@ The module is built in steps. This README lists what exists now.
     - `POST /rider/tasks/:taskId/wasted` (nothing collected, with a reason; records
       `VISIT_WASTED`) and `POST /rider/tasks/:taskId/finish` (some collected; the rest go back on
       the board).
-- `flow/` — `resolveFulfilmentAssignments({ brandIds })`, which checkout calls before its
-  transaction to decide each brand's flow.
+- `flow/` — `resolveFulfilmentAssignments({ brandIds, deliveryCity, countryCode,
+requiresCashOnDelivery })`, which checkout calls before its transaction to decide each brand's
+  flow.
   - A brand goes through the hub (`OUTFIQE_LOGISTICS`, with its hub and pickup location) when:
     - the `order_logistics` flag is on for it (`EVERYONE`, or the brand is on the allow-list);
-    - its default pickup location is in an active hub's pickup area.
+    - its default pickup location is in an active hub's pickup area;
+    - an active delivery partner with an active account at that hub delivers to the customer's
+      delivery zone (and collects cash, when the order is cash on delivery).
   - Otherwise it stays `BRAND_SHIPS`.
+- `partners/` — delivery partners (`platformGuards.logisticsRead` / `logisticsManage`).
+  - Endpoints: `GET /`, `POST /`, `GET /:partnerId`, `PUT /:partnerId`,
+    `PUT /:partnerId/accounts/:hubId`, `PUT /:partnerId/zones` (replaces one hub's areas),
+    `PUT /:partnerId/status-map`, `POST /:partnerId/status-imports`,
+    `GET /:partnerId/status-imports/:importId`.
+  - `adapters/` — `partner-adapter.types.ts` (the contract every partner connection implements),
+    `manual.adapter.ts` (no API calls; staff book by hand) and `partner-adapter.registry.ts`
+    (adapter by `adapterKey`, plus what each one supports). A partner's "supports booking /
+    webhooks / polling" flags come from its adapter, never from the request.
+  - `partner-status.utils.ts` — status word and reference normalising, the rebook reference
+    (`OFQ…-2`), the dedupe key, and the parcel-number pattern check.
+  - `partner-status-import.*` — the CSV status sheet. `#lib/csv.utils.ts` parses it; the first row
+    names the columns (the usual spellings are recognised); up to 500 rows; times without a zone
+    are read in the time zone of the partner's hub. Every row is reported back as applied, saved
+    with no change, already recorded, no matching parcel, unknown status or a bad row.
+- `hub-operations/` — what hub staff do with bags and parcels (`logisticsManage` for writes).
+  - `check-in.service.ts` — `POST /hub/check-ins` (`Idempotency-Key`): a bag sticker or pickup code
+    plus the units counted. Moves the pickup to `AT_HUB`; a wrong count also records
+    `COUNT_MISMATCH`.
+  - `inspection.service.ts` — `POST /hub/pickups/:groupId/inspection`: a result for every item.
+    Failed units are refunded through `orderService.refundOrderItems` (cause
+    `HUB_INSPECTION_FAILED`, one idempotency key per pickup) before the inspection is saved.
+  - `packing.service.ts` — `POST /hub/orders/:orderId/parcels`: packs every bag of the order at the
+    hub into one parcel (`OFQ` + 8 characters). Refused while bags are still coming unless
+    `packsOnlyPickupsAtHub` is set. Creates a `REQUESTED` booking with the first eligible partner
+    (`parcel-partner.ts`: lowest priority number for the hub and the customer's zone, cash-capable
+    for COD).
+  - `parcel-cash.ts` — the cash a parcel collects: its bags' remaining goods (from
+    `orderService.calculateCashToCollect`), plus the order's delivery and COD fees on the order's
+    first parcel; zero unless the order is unpaid cash on delivery.
+  - `parcel-booking.service.ts` — `POST /hub/shipments/:shipmentId/booking` (the partner's parcel
+    number, checked against their pattern and unique per partner) and
+    `POST /hub/shipments/:shipmentId/rebook` (cancels the live booking, books another partner).
+  - `handover.service.ts` — `GET /hub/shipments/:shipmentId/label`,
+    `POST /hub/shipments/:shipmentId/label-printed`, and `POST /hub/handovers`
+    (`Idempotency-Key`): refused unless the parcel is booked and its printed label shows the
+    current cash to collect.
+- `shipments/` — the hub's parcel queues: `GET /hub/orders-to-pack`, `GET /hub/shipments?queue=`
+  (`TO_BOOK`, `TO_HAND_OVER`, `WITH_PARTNER`, `FINISHED`), `GET /hub/shipments/:shipmentId`
+  (contents, booking and the event timeline), and `POST /hub/shipments/:shipmentId/events` (a
+  status a partner gave by phone; corrections can leave a final status and are audit-logged).
+  `shipment-booking.repository.ts` holds every booking read and write.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -134,6 +188,21 @@ The module is built in steps. This README lists what exists now.
 - If the shop is closed the rider marks the visit wasted; if only some bags are ready they finish
   with what they have. Either way the rest go back on the board.
 
+**At the hub and with the partner:**
+
+- Staff set up each delivery partner once: our merchant account at the hub, the delivery zones
+  they cover (with a priority), and how their status words map to ours.
+- When a rider brings bags in, staff count the units and scan each bag's sticker. Then they inspect
+  each bag; failed units are refunded to the customer straight away.
+- Once every bag of the order is in (or staff choose to pack only what's there), they pack one
+  parcel. It gets an `OFQ` code and is offered to the best partner for the customer's area.
+- Staff book it in the partner's own portal, typing our code into their reference field, then type
+  the partner's parcel number back into Outfiqe and print our label.
+- When the partner's rider collects, staff scan each label. Parcels that aren't booked, or whose
+  label shows old cash, are refused.
+- The partner's daily status sheet is uploaded; each row moves its parcel on, and "delivered"
+  delivers the order to the customer, every brand in it, and their payouts.
+
 **Technical, for a collection scan** (`rider-task.service.ts`), in one transaction:
 
 1. Load the visit (it must be this rider's) and the active collect stop for the pickup code.
@@ -170,6 +239,29 @@ After commit, `announceStageChange` tells the customer if their order's stage mo
 After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing stage changed.
 
 ## Non-obvious rationale
+
+- **Checkout imports `flow/flow.service.ts`, not `logisticsService`.** Hub operations call
+  `orderService` (refunds and cash to collect), and `orderService` loads checkout. If checkout
+  imported the logistics root object, loading the app would go round that loop and the root would
+  spread a topic service before it existed, crashing at start-up ("Cannot access … before
+  initialization"). `flow/` imports nothing from orders, so checkout uses it directly.
+- **A parcel's cash is recomputed, not pushed.** A refund after packing doesn't reach into
+  logistics. Instead the label, the "label printed" step and the handover scan all recompute the
+  parcel's cash from the order. A change records `COD_AMOUNT_CHANGED`, and the handover is blocked
+  until a new label is printed (`labelCodAmount` is what the printed label shows). Orders stay free
+  of any dependency on logistics, and a parcel still can't leave with an old amount.
+- **Partner events dedupe by booking.** The same update can arrive by the partner's number in one
+  sheet and by our parcel code in another. Hashing the matched booking, not whichever reference
+  the row used, makes both count once. Partner dedupe keys start with the partner id, so the
+  existing `(source, dedupeKey)` unique key still keeps partners apart.
+- **An unknown adapter key falls back to manual.** Keys are checked when a partner is saved, so
+  this only matters if an adapter is removed later; the safe fallback is staff booking by hand.
+- **A partner's first update can skip the handover scan.** If the partner reports a status past
+  "collected" for a parcel still `PACKED`, the update is applied and `HANDOVER_NOT_SCANNED` is
+  recorded for follow-up.
+- **Status sheets go through the normal JSON body limit.** A sheet is capped at 80,000 characters
+  and 500 rows rather than raising the API-wide body limit; each row is its own short transaction,
+  applied in sheet order.
 
 - **Keep the `order_logistics` flag off until delivery partners exist.**
   - The flow decision today checks the flag and pickup coverage only.

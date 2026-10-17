@@ -41,6 +41,8 @@ const DETAIL_FORM_PATH_PATTERNS = [
   /^\/crm\/billing\/return\/[^/]+$/,
   /^\/gamification\/badges\/[^/]+\/edit$/,
   /^\/outfit-builds\/[^/]+$/,
+  /^\/logistics\/parcels\/[^/]+$/,
+  /^\/logistics\/partners\/[^/]+$/,
 ];
 
 const LIST_PATHS = new Set([
@@ -67,6 +69,9 @@ const LIST_PATHS = new Set([
   "/hero-slides",
   "/logistics/bag-tags",
   "/logistics/hubs",
+  "/logistics/packing",
+  "/logistics/parcels",
+  "/logistics/partners",
   "/logistics/pickup-board",
   "/logistics/riders",
   "/orders",

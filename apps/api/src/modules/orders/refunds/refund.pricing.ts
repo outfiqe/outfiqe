@@ -3,6 +3,9 @@ import type { RefundableItem, RefundLineRequest, RefundPricing } from "./refund.
 const NO_UNITS = 0;
 const NOTHING = 0;
 
+type ItemAmounts = Pick<RefundableItem, "unitPrice" | "qty" | "platformDiscountAmount">;
+type ItemUnits = Pick<RefundableItem, "qty" | "refundedQty">;
+
 export const REFUND_PRICING_PROBLEM = {
   UNKNOWN_ITEM: "UNKNOWN_ITEM",
   TOO_MANY_UNITS: "TOO_MANY_UNITS",
@@ -12,7 +15,7 @@ export const REFUND_PRICING_PROBLEM = {
 export type RefundPricingProblem =
   (typeof REFUND_PRICING_PROBLEM)[keyof typeof REFUND_PRICING_PROBLEM];
 
-export const lineNetAmount = ({ unitPrice, qty, platformDiscountAmount }: RefundableItem): number =>
+export const lineNetAmount = ({ unitPrice, qty, platformDiscountAmount }: ItemAmounts): number =>
   unitPrice * qty - platformDiscountAmount;
 
 export const proportionalShare = (wholeAmount: number, units: number, totalUnits: number): number =>
@@ -27,7 +30,12 @@ const shareForUnits = (
   proportionalShare(wholeAmount, alreadyRefundedUnits + unitsToRefund, totalUnits) -
   proportionalShare(wholeAmount, alreadyRefundedUnits, totalUnits);
 
-export const remainingUnits = ({ qty, refundedQty }: RefundableItem): number => qty - refundedQty;
+export const remainingUnits = ({ qty, refundedQty }: ItemUnits): number => qty - refundedQty;
+
+export const remainingNetAmount = (item: ItemAmounts & ItemUnits): number => {
+  const netAmount = lineNetAmount(item);
+  return netAmount - proportionalShare(netAmount, item.refundedQty, item.qty);
+};
 
 const findPricingProblem = (
   itemsById: ReadonlyMap<string, RefundableItem>,

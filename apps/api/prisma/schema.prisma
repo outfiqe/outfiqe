@@ -162,6 +162,10 @@ model User {
   requestedOrderRefunds                    OrderRefund[]               @relation("OrderRefundRequester")
   paidOrderRefunds                         OrderRefund[]               @relation("OrderRefundPayer")
   requestedBrandUnavailables               BrandUnavailableRequest[]   @relation("BrandUnavailableRequester")
+  packedShipments                          Shipment[]                  @relation("ShipmentPackedBy")
+  requestedShipmentBookings                ShipmentPartnerBooking[]    @relation("ShipmentBookingRequestedBy")
+  bookedShipmentBookings                   ShipmentPartnerBooking[]    @relation("ShipmentBookingBookedBy")
+  partnerStatusImports                     PartnerStatusImport[]       @relation("PartnerStatusImportUploader")
   decidedBrandUnavailables                 BrandUnavailableRequest[]   @relation("BrandUnavailableDecider")
 
   @@index([isCreator, creatorStatus, followerCount])
@@ -1357,6 +1361,34 @@ enum TrackingEventCode {
   NOTE
 }
 
+enum DeliveryPartnerConnection {
+  API
+  MANUAL
+}
+
+enum PartnerBookingStatus {
+  REQUESTED
+  BOOKED
+  BOOKING_FAILED
+  CANCELLED
+}
+
+enum PartnerWebhookVerification {
+  SIGNATURE
+  HEADER_TOKEN
+  NOTIFY_THEN_FETCH
+  NONE
+}
+
+enum PartnerStatusImportRowOutcome {
+  APPLIED
+  NOT_APPLIED
+  DUPLICATE
+  UNMATCHED_REFERENCE
+  UNKNOWN_STATUS
+  INVALID_ROW
+}
+
 enum DeliveryFailureReason {
   CUSTOMER_UNREACHABLE
   CUSTOMER_REFUSED
@@ -1504,6 +1536,8 @@ model Hub {
   riders           Rider[]
   riderTasks       RiderTask[]
   bagTagBatches    BagTagBatch[]
+  partnerAccounts  DeliveryPartnerAccount[]
+  partnerZones     DeliveryPartnerZone[]
 
   @@map("hubs")
 }
@@ -1568,12 +1602,17 @@ model Shipment {
   deliveryAttemptCount Int            @default(0) @map("delivery_attempt_count")
   lastEventAt          DateTime       @default(now()) @map("last_event_at")
   deliveredAt          DateTime?      @map("delivered_at")
+  packedById           String?        @map("packed_by_id") @db.Uuid
+  packedBy             User?          @relation("ShipmentPackedBy", fields: [packedById], references: [id], onDelete: SetNull)
+  labelCodAmount       Int?           @map("label_cod_amount")
+  labelPrintedAt       DateTime?      @map("label_printed_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   fulfilmentGroups OrderFulfilmentGroup[]
   trackingEvents   TrackingEvent[]
+  bookings         ShipmentPartnerBooking[]
 
   @@index([status, lastEventAt])
   @@index([orderId])
@@ -1592,6 +1631,7 @@ model TrackingEvent {
   actorUserId       String?                @map("actor_user_id") @db.Uuid
   actorUser         User?                  @relation("TrackingEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
   partnerId         String?                @map("partner_id") @db.Uuid
+  partner           DeliveryPartner?       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   rawStatus         String?                @map("raw_status")
   rawPayload        Json?                  @map("raw_payload")
   reasonCode        DeliveryFailureReason? @map("reason_code")
@@ -1607,6 +1647,157 @@ model TrackingEvent {
   @@index([fulfilmentGroupId, occurredAt])
   @@index([shipmentId, occurredAt])
   @@map("tracking_events")
+}
+
+model DeliveryPartner {
+  id                      String                     @id @default(uuid()) @db.Uuid
+  code                    String                     @unique
+  name                    String
+  countryCode             String                     @map("country_code") @db.Char(2)
+  adapterKey              String                     @map("adapter_key")
+  isActive                Boolean                    @default(true) @map("is_active")
+  supportsBooking         Boolean                    @default(false) @map("supports_booking")
+  supportsWebhooks        Boolean                    @default(false) @map("supports_webhooks")
+  supportsPolling         Boolean                    @default(false) @map("supports_polling")
+  supportsCod             Boolean                    @default(true) @map("supports_cod")
+  supportsCodAmountUpdate Boolean                    @default(false) @map("supports_cod_amount_update")
+  supportsCancel          Boolean                    @default(false) @map("supports_cancel")
+  webhookVerification     PartnerWebhookVerification @default(NONE) @map("webhook_verification")
+  referencePattern        String?                    @map("reference_pattern")
+  codRemittanceDays       Int                        @default(7) @map("cod_remittance_days")
+  trackingUrlTemplate     String?                    @map("tracking_url_template")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  accounts       DeliveryPartnerAccount[]
+  zones          DeliveryPartnerZone[]
+  statusMappings DeliveryPartnerStatusMap[]
+  bookings       ShipmentPartnerBooking[]
+  statusImports  PartnerStatusImport[]
+  trackingEvents TrackingEvent[]
+
+  @@index([countryCode, isActive])
+  @@map("delivery_partners")
+}
+
+model DeliveryPartnerAccount {
+  id                 String          @id @default(uuid()) @db.Uuid
+  partnerId          String          @map("partner_id") @db.Uuid
+  partner            DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  hubId              String          @map("hub_id") @db.Uuid
+  hub                Hub             @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  merchantAccountRef String          @map("merchant_account_ref")
+  pickupPointRef     String?         @map("pickup_point_ref")
+  credentialsKey     String?         @map("credentials_key")
+  isActive           Boolean         @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookings ShipmentPartnerBooking[]
+
+  @@unique([partnerId, hubId])
+  @@map("delivery_partner_accounts")
+}
+
+model DeliveryPartnerZone {
+  id             String          @id @default(uuid()) @db.Uuid
+  partnerId      String          @map("partner_id") @db.Uuid
+  partner        DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  hubId          String          @map("hub_id") @db.Uuid
+  hub            Hub             @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  deliveryZoneId String          @map("delivery_zone_id") @db.Uuid
+  deliveryZone   DeliveryZone    @relation(fields: [deliveryZoneId], references: [id], onDelete: Cascade)
+  priority       Int             @default(0)
+  isActive       Boolean         @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([partnerId, hubId, deliveryZoneId])
+  @@index([hubId, deliveryZoneId, isActive])
+  @@map("delivery_partner_zones")
+}
+
+model DeliveryPartnerStatusMap {
+  id            String                 @id @default(uuid()) @db.Uuid
+  partnerId     String                 @map("partner_id") @db.Uuid
+  partner       DeliveryPartner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  rawStatus     String                 @map("raw_status")
+  canonicalCode TrackingEventCode      @map("canonical_code")
+  reasonCode    DeliveryFailureReason? @map("reason_code")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([partnerId, rawStatus])
+  @@map("delivery_partner_status_maps")
+}
+
+model ShipmentPartnerBooking {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  shipmentId         String                    @map("shipment_id") @db.Uuid
+  shipment           Shipment                  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  partnerId          String                    @map("partner_id") @db.Uuid
+  partner            DeliveryPartner           @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  partnerAccountId   String                    @map("partner_account_id") @db.Uuid
+  partnerAccount     DeliveryPartnerAccount    @relation(fields: [partnerAccountId], references: [id], onDelete: Restrict)
+  merchantReference  String                    @map("merchant_reference")
+  partnerReference   String?                   @map("partner_reference")
+  status             PartnerBookingStatus      @default(REQUESTED)
+  connection         DeliveryPartnerConnection
+  partnerLabelUrl    String?                   @map("partner_label_url")
+  partnerTrackingUrl String?                   @map("partner_tracking_url")
+  partnerFee         Int?                      @map("partner_fee")
+  failureReason      String?                   @map("failure_reason")
+  requestedAt        DateTime                  @default(now()) @map("requested_at")
+  requestedById      String?                   @map("requested_by_id") @db.Uuid
+  requestedBy        User?                     @relation("ShipmentBookingRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  bookedAt           DateTime?                 @map("booked_at")
+  bookedById         String?                   @map("booked_by_id") @db.Uuid
+  bookedBy           User?                     @relation("ShipmentBookingBookedBy", fields: [bookedById], references: [id], onDelete: SetNull)
+  cancelledAt        DateTime?                 @map("cancelled_at")
+  cancelReason       String?                   @map("cancel_reason")
+
+  @@unique([partnerId, partnerReference])
+  @@index([partnerId, status])
+  @@index([partnerId, merchantReference])
+  @@index([shipmentId])
+  @@map("shipment_partner_bookings")
+}
+
+model PartnerStatusImport {
+  id           String          @id @default(uuid()) @db.Uuid
+  partnerId    String          @map("partner_id") @db.Uuid
+  partner      DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  uploadedById String?         @map("uploaded_by_id") @db.Uuid
+  uploadedBy   User?           @relation("PartnerStatusImportUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  fileName     String          @map("file_name")
+  rowCount     Int             @map("row_count")
+  appliedCount Int             @map("applied_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  rows PartnerStatusImportRow[]
+
+  @@index([partnerId, createdAt])
+  @@map("partner_status_imports")
+}
+
+model PartnerStatusImportRow {
+  id                String                         @id @default(uuid()) @db.Uuid
+  importId          String                         @map("import_id") @db.Uuid
+  statusImport      PartnerStatusImport            @relation(fields: [importId], references: [id], onDelete: Cascade)
+  rowNumber         Int                            @map("row_number")
+  partnerReference  String?                        @map("partner_reference")
+  merchantReference String?                        @map("merchant_reference")
+  rawStatus         String?                        @map("raw_status")
+  outcome           PartnerStatusImportRowOutcome
+  message           String?
+  trackingEventId   String?                        @map("tracking_event_id") @db.Uuid
+
+  @@unique([importId, rowNumber])
+  @@map("partner_status_import_rows")
 }
 
 model SavedAddress {
@@ -1952,6 +2143,7 @@ model DeliveryZone {
   cities         DeliveryZoneCity[]
   history        DeliveryZoneHistory[]
   hubPickupZones HubPickupZone[]
+  partnerZones   DeliveryPartnerZone[]
 
   @@map("delivery_zones")
 }

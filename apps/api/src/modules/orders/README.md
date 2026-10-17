@@ -33,6 +33,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `refund.engine.ts` — `orderRefundEngine`, the two calls every flow uses: `claimAndApplyInTransaction` and `finishAfterCommit`.
   - `refund.service.ts`, `refund.controller.ts`, `refund.routes.ts` — staff "refund items", the refund lists and the manual queue.
   - `line-cancellation.*` — a customer cancelling single items.
+  - `refund.outstanding.ts` — `calculateCashToCollect({ orderId, fulfilmentGroupIds, includesOrderFees })`: what an unpaid cash-on-delivery order still owes for some of its brands' items (each line's unrefunded share), plus the delivery and COD fees when asked. Logistics uses it for the cash a parcel collects.
   - `refund-destination.*` — the customer's refund details (Khalti, eSewa or bank) and staff reveal of a bank account number.
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
   - `item-change-access.ts` — `orderItemChangeAccess`: which brands are on the `order_logistics` feature flag, and so allow customer item cancellation and "can't supply" reports.

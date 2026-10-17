@@ -14,8 +14,11 @@ to any one app.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
 - `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
-  `normalizeTypedCode` and `isCrockfordCode`, shared by every app that handles the delivery codes
-  (pickup codes, bag tags):
+  `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,
+  `normalizeParcelCode`, `formatParcelCode`), shared by every app that handles the delivery codes
+  (pickup codes, bag tags, parcel codes). A parcel code is stored as `OFQ` + 8 characters and shown
+  as `OFQ-XXXX-XXXX`; `normalizeParcelCode` accepts it typed with dashes, spaces, lower case or a
+  zero for the O, and returns `null` for anything else:
   - `apps/api` generates the codes from this alphabet.
   - The rider and hub screens normalise a code someone typed by hand before sending it.
   - The alphabet leaves out I, L, O and U. When typing, I and L are read as 1 and O as 0, so a
