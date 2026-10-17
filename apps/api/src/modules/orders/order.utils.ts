@@ -3,6 +3,7 @@ import {
   FulfilmentStatus,
   OrderFulfilmentSummary,
   type PickupStatus,
+  type ShipmentStatus,
 } from "#generated/prisma/enums.js";
 
 import type {
@@ -16,6 +17,7 @@ import type {
   OrderView,
   PaymentTransactionView,
 } from "./order.types.js";
+import { toOrderDeliveryPromise, toOrderTrackingStage } from "./order-tracking.utils.js";
 import { isGroupStillWithBrand } from "./refunds/line-cancellation.utils.js";
 import {
   PAYMENT_STATUSES_WITH_MONEY_TAKEN,
@@ -109,6 +111,8 @@ type OrderShipmentRow = {
   status: FulfilmentStatus;
   fulfilmentMode: FulfilmentMode;
   pickupStatus: PickupStatus | null;
+  shipmentId: string | null;
+  shipment?: { status: ShipmentStatus } | null;
   carrier: string | null;
   trackingNumber: string | null;
   shippedAt: Date | null;
@@ -135,6 +139,8 @@ type OrderRow = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   refundedAmount: number;
+  promisedDeliveryFrom?: Date | null;
+  promisedDeliveryBy?: Date | null;
   items: OrderItemRow[];
   fulfilmentGroups?: OrderShipmentRow[];
   transactions?: PaymentTransactionRow[];
@@ -144,6 +150,7 @@ const toOrderShipmentView = (group: OrderShipmentRow): OrderShipmentView => ({
   id: group.id,
   brandName: group.brand.name,
   status: group.status,
+  fulfilmentMode: group.fulfilmentMode,
   carrier: group.carrier,
   trackingNumber: group.trackingNumber,
   shippedAt: group.shippedAt?.toISOString() ?? null,
@@ -270,6 +277,8 @@ export const toOrderView = (
     brandDiscountTotal,
     platformDiscountTotal,
     refundedAmount,
+    trackingStage: toOrderTrackingStage(fulfilmentGroups),
+    promisedDelivery: toOrderDeliveryPromise(order),
     items: items.map((item) => toOrderItemView(item, cancellableGroupIds)),
     shipments: (fulfilmentGroups ?? []).map(toOrderShipmentView),
     transactions: (transactions ?? []).map(toPaymentTransactionView),
@@ -277,7 +286,12 @@ export const toOrderView = (
 };
 
 export const toOrderSummaryView = (order: OrderRow): OrderSummaryView => {
-  const { items, shipments: _shipments, ...rest } = toOrderView(order);
+  const {
+    items,
+    shipments: _shipments,
+    trackingStage: _trackingStage,
+    ...rest
+  } = toOrderView(order);
   const [firstItem] = items;
 
   return {

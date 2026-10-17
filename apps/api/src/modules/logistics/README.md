@@ -22,6 +22,7 @@ The module is built in steps. This README lists what exists now.
   - `/admin/pickup-board` and `/admin/rider-tasks` → `rounds/` (staff);
   - `/brand/pickup-locations` → `pickup-locations/`, `/brand/pickups` → `pickups/`;
   - `/rider/tasks` → `rounds/` (riders);
+  - `/orders/:orderId` → `customer-tracking/` (the buyer);
   - `/admin/partners` → `partners/`, `/admin/partners/:partnerId/webhook-receipts` →
     `partner-webhooks/`;
   - `/hub` → `hub-operations/` and `shipments/` (hub staff).
@@ -212,6 +213,18 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
       Each parcel is stamped `lastPolledAt` before the call; one partner failing doesn't stop the
       rest.
   - `partner-webhook.signature.ts` — signing and the constant-time secret checks.
+- `customer-tracking/` — what the buyer sees (`CUSTOMER` role, their own order only; anyone
+  else's order is a `404`).
+  - `GET /orders/:orderId/tracking` — the order's stage, each parcel (our parcel code, the
+    partner's name and tracking link: the link the partner gave us, or their template with the
+    parcel number filled in) and up to 100 events, newest first. Only events meant for the buyer
+    are shown: status events that were applied, plus "rescheduled" and "you told us it didn't
+    arrive". Internal ones (bag tags, counts, bookings, notes, unknown partner words) never are.
+  - `POST /orders/:orderId/delivery-disputes` — "I didn't receive this" for one parcel, with what
+    happened (10–1000 characters). Only for a delivered parcel, within 3 days of delivery, once per
+    parcel (`409 DELIVERY_ALREADY_REPORTED`; a fixed dedupe key per parcel makes a double tap one
+    event), 5 an hour per buyer. It records `DELIVERY_DISPUTED` on the parcel with the buyer as the
+    actor and their words as the note, so staff see it on the parcel's timeline.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -320,7 +333,10 @@ After commit, `announceStageChange` tells the customer if their order's stage mo
 4. Stamp the coarse group status.
 5. Recompute the order through `orderRepository.refreshOrderFulfilmentRollup`.
 
-After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing stage changed.
+After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing stage changed. It
+carries the new `trackingStage`, so the notification and the push message say where the order is
+("Your order is out for delivery") using `ORDER_TRACKING_STAGE_MESSAGES` from `@outfiqe/utils`.
+The web order page listens for that notification and refreshes itself.
 
 ## Non-obvious rationale
 

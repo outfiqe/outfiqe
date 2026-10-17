@@ -1,3 +1,5 @@
+import type { OrderTrackingStage } from "@outfiqe/utils";
+
 import type { OrderRefundOutcome } from "#constants/commerce.constants.js";
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
 import type {
@@ -156,6 +158,7 @@ export type DomainEventPayloads = {
     orderId: string;
     userId: string;
     status: FulfilmentStatus;
+    trackingStage?: OrderTrackingStage;
   };
   [DomainEvents.ORDER_REFUND_UPDATED]: {
     orderId: string;

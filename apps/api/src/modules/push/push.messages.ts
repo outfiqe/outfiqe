@@ -1,4 +1,8 @@
-import { isExternalNotificationPath } from "@outfiqe/utils";
+import {
+  isExternalNotificationPath,
+  isOrderTrackingStage,
+  ORDER_TRACKING_STAGE_MESSAGES,
+} from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import {
@@ -88,7 +92,10 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   },
   [NotificationType.ORDER_STATUS_CHANGED]: {
     title: "Order update",
-    body: () => "There's an update on one of your orders",
+    body: (payload) =>
+      isOrderTrackingStage(payload.metadata.trackingStage)
+        ? ORDER_TRACKING_STAGE_MESSAGES[payload.metadata.trackingStage]
+        : "There's an update on one of your orders",
   },
   [NotificationType.BRAND_APPLICATION_SUBMITTED]: {
     title: "New brand application",

@@ -69,14 +69,14 @@ export const registerCommerceNotificationConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ORDER_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ orderId, userId, status }, { eventId }): Promise<void> => {
+    handler: async ({ orderId, userId, status, trackingStage }, { eventId }): Promise<void> => {
       await notificationService.notifyIndividual({
         recipientId: userId,
         type: NotificationType.ORDER_STATUS_CHANGED,
         sourceEventId: eventId,
         entityType: NotificationEntityType.ORDER,
         entityId: orderId,
-        metadata: { status },
+        metadata: { status, ...(trackingStage ? { trackingStage } : {}) },
       });
 
       if (status !== FulfilmentStatus.DELIVERED) return;

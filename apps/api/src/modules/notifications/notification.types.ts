@@ -1,3 +1,5 @@
+import type { OrderTrackingStage } from "@outfiqe/utils";
+
 import type {
   NotificationEntityType,
   NotificationSurface,
@@ -33,6 +35,7 @@ export type NotificationMetadata = {
   orderTotal?: number;
   brandName?: string;
   status?: string;
+  trackingStage?: OrderTrackingStage;
   productName?: string;
   productImageUrl?: string | null;
   rating?: number;

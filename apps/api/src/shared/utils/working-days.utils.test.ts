@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { PLATFORM_DEFAULT_COUNTRY_SETTINGS } from "#constants/country.constants.js";
 
-import { addWorkingDaysAsCalendarDate, calendarDateToUtcMidnight } from "./working-days.utils.js";
+import {
+  addWorkingDaysAsCalendarDate,
+  calendarDateToUtcMidnight,
+  utcMidnightToCalendarDate,
+} from "./working-days.utils.js";
 
 const nepalCalendar = PLATFORM_DEFAULT_COUNTRY_SETTINGS;
 
@@ -59,5 +63,11 @@ describe("addWorkingDaysAsCalendarDate", () => {
 describe("calendarDateToUtcMidnight", () => {
   it("stores a calendar date as midnight UTC so a date column keeps the same day", () => {
     expect(calendarDateToUtcMidnight("2026-10-18").toISOString()).toBe("2026-10-18T00:00:00.000Z");
+  });
+});
+
+describe("utcMidnightToCalendarDate", () => {
+  it("reads a stored date column back as the same calendar day", () => {
+    expect(utcMidnightToCalendarDate(calendarDateToUtcMidnight("2026-10-18"))).toBe("2026-10-18");
   });
 });
