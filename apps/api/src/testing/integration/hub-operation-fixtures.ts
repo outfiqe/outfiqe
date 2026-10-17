@@ -14,6 +14,7 @@ import {
   createBagTag,
   createCoveredPickupArea,
   createDeliveryPartnerCovering,
+  type PartnerApiConnection,
 } from "./logistics-fixtures.js";
 import { createRefundableOrder } from "./refund-fixtures.js";
 
@@ -32,6 +33,7 @@ export const createOrderOnItsWayToHub = async ({
   deliveryFee,
   partnerSupportsCod = true,
   referencePattern = null,
+  partnerApiConnection = null,
 }: {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -39,6 +41,7 @@ export const createOrderOnItsWayToHub = async ({
   deliveryFee?: number;
   partnerSupportsCod?: boolean;
   referencePattern?: string | null;
+  partnerApiConnection?: PartnerApiConnection | null;
 }) => {
   const { hub, zone } = await createCoveredPickupArea([CUSTOMER_CITY]);
   const partner = await createDeliveryPartnerCovering({
@@ -46,6 +49,7 @@ export const createOrderOnItsWayToHub = async ({
     deliveryZoneIds: [zone.id],
     supportsCod: partnerSupportsCod,
     referencePattern,
+    apiConnection: partnerApiConnection,
   });
   const { order, buyer, items } = await createRefundableOrder({
     paymentMethod,

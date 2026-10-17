@@ -1670,12 +1670,13 @@ model DeliveryPartner {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  accounts       DeliveryPartnerAccount[]
-  zones          DeliveryPartnerZone[]
-  statusMappings DeliveryPartnerStatusMap[]
-  bookings       ShipmentPartnerBooking[]
-  statusImports  PartnerStatusImport[]
-  trackingEvents TrackingEvent[]
+  accounts        DeliveryPartnerAccount[]
+  zones           DeliveryPartnerZone[]
+  statusMappings  DeliveryPartnerStatusMap[]
+  bookings        ShipmentPartnerBooking[]
+  statusImports   PartnerStatusImport[]
+  trackingEvents  TrackingEvent[]
+  webhookReceipts PartnerWebhookReceipt[]
 
   @@index([countryCode, isActive])
   @@map("delivery_partners")
@@ -1750,7 +1751,10 @@ model ShipmentPartnerBooking {
   partnerTrackingUrl String?                   @map("partner_tracking_url")
   partnerFee         Int?                      @map("partner_fee")
   failureReason      String?                   @map("failure_reason")
-  requestedAt        DateTime                  @default(now()) @map("requested_at")
+  bookingAttempts    Int                       @default(0) @map("booking_attempts")
+  lastAttemptAt      DateTime?                 @map("last_attempt_at")
+  lastPolledAt       DateTime?                 @map("last_polled_at")
+  requestedAt       DateTime                  @default(now()) @map("requested_at")
   requestedById      String?                   @map("requested_by_id") @db.Uuid
   requestedBy        User?                     @relation("ShipmentBookingRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
   bookedAt           DateTime?                 @map("booked_at")
@@ -1763,7 +1767,26 @@ model ShipmentPartnerBooking {
   @@index([partnerId, status])
   @@index([partnerId, merchantReference])
   @@index([shipmentId])
+  @@index([status, connection])
   @@map("shipment_partner_bookings")
+}
+
+model PartnerWebhookReceipt {
+  id              String          @id @default(uuid()) @db.Uuid
+  partnerId       String          @map("partner_id") @db.Uuid
+  partner         DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  rawBody         String          @map("raw_body")
+  signatureValid  Boolean         @map("signature_valid")
+  receivedAt      DateTime        @default(now()) @map("received_at")
+  processedAt     DateTime?       @map("processed_at")
+  processingError String?         @map("processing_error")
+  eventCount      Int             @default(0) @map("event_count")
+  appliedCount    Int             @default(0) @map("applied_count")
+  unknownCount    Int             @default(0) @map("unknown_count")
+
+  @@index([partnerId, receivedAt])
+  @@index([receivedAt])
+  @@map("partner_webhook_receipts")
 }
 
 model PartnerStatusImport {
@@ -1785,16 +1808,16 @@ model PartnerStatusImport {
 }
 
 model PartnerStatusImportRow {
-  id                String                         @id @default(uuid()) @db.Uuid
-  importId          String                         @map("import_id") @db.Uuid
-  statusImport      PartnerStatusImport            @relation(fields: [importId], references: [id], onDelete: Cascade)
-  rowNumber         Int                            @map("row_number")
-  partnerReference  String?                        @map("partner_reference")
-  merchantReference String?                        @map("merchant_reference")
-  rawStatus         String?                        @map("raw_status")
+  id                String                        @id @default(uuid()) @db.Uuid
+  importId          String                        @map("import_id") @db.Uuid
+  statusImport      PartnerStatusImport           @relation(fields: [importId], references: [id], onDelete: Cascade)
+  rowNumber         Int                           @map("row_number")
+  partnerReference  String?                       @map("partner_reference")
+  merchantReference String?                       @map("merchant_reference")
+  rawStatus         String?                       @map("raw_status")
   outcome           PartnerStatusImportRowOutcome
   message           String?
-  trackingEventId   String?                        @map("tracking_event_id") @db.Uuid
+  trackingEventId   String?                       @map("tracking_event_id") @db.Uuid
 
   @@unique([importId, rowNumber])
   @@map("partner_status_import_rows")

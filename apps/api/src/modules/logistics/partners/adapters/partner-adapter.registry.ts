@@ -1,3 +1,4 @@
+import { createHttpJsonAdapter, HTTP_JSON_ADAPTER_KEY } from "./http-json.adapter.js";
 import { createManualAdapter, MANUAL_ADAPTER_KEY } from "./manual.adapter.js";
 import type {
   CreateDeliveryPartnerAdapter,
@@ -21,8 +22,14 @@ const MANUAL_REGISTRATION: PartnerAdapterRegistration = {
   capabilities: { supportsBooking: false, supportsWebhooks: false, supportsPolling: false },
 };
 
+const HTTP_JSON_REGISTRATION: PartnerAdapterRegistration = {
+  createAdapter: createHttpJsonAdapter,
+  capabilities: { supportsBooking: true, supportsWebhooks: true, supportsPolling: true },
+};
+
 const ADAPTER_REGISTRATIONS: Readonly<Record<string, PartnerAdapterRegistration>> = {
   [MANUAL_ADAPTER_KEY]: MANUAL_REGISTRATION,
+  [HTTP_JSON_ADAPTER_KEY]: HTTP_JSON_REGISTRATION,
 };
 
 export const PARTNER_ADAPTER_KEYS: readonly string[] = Object.keys(ADAPTER_REGISTRATIONS);

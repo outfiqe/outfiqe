@@ -14,6 +14,7 @@ import { generateRandomCode } from "#lib/random-code.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { PICKUP_STATUSES_NOT_COMING_TO_HUB } from "../logistics.constants.js";
+import { logisticsPartnerBookingService } from "../partner-bookings/partner-booking.service.js";
 import { merchantReferenceForBooking } from "../partners/partner-status.utils.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
@@ -184,6 +185,12 @@ const packInTransaction = async (
         requestedById: staffUserId,
       })
     : null;
+  if (booking && partner) {
+    await logisticsPartnerBookingService.queueApiBooking(tx, {
+      bookingId: booking.id,
+      connection: partner.connection,
+    });
+  }
   const pickupOutcomes = await recordParcelEvents(tx, {
     staffUserId,
     shipmentId: shipment.id,
@@ -249,8 +256,11 @@ export const logisticsPackingService = {
               partnerId: partner.partnerId,
               partnerName: partner.partnerName,
               status: PartnerBookingStatus.REQUESTED,
+              connection: partner.connection,
               merchantReference: shipment.trackingCode,
               partnerReference: null,
+              partnerTrackingUrl: null,
+              failureReason: null,
             }
           : null,
     };

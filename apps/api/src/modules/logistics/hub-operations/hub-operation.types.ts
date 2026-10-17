@@ -1,4 +1,5 @@
 import type {
+  DeliveryPartnerConnection,
   PartnerBookingStatus,
   PickupStatus,
   ShipmentStatus,
@@ -27,8 +28,11 @@ export type ParcelBookingSummary = {
   partnerId: string;
   partnerName: string;
   status: PartnerBookingStatus;
+  connection: DeliveryPartnerConnection;
   merchantReference: string;
   partnerReference: string | null;
+  partnerTrackingUrl: string | null;
+  failureReason: string | null;
 };
 
 export type PackedParcelView = {

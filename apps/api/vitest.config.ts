@@ -42,6 +42,7 @@ export default defineConfig({
       include: [
         "src/app.ts",
         "src/config/app-env.ts",
+        "src/config/delivery-partner.config.ts",
         "src/processes/consumers.ts",
         "src/shared/utils/readiness.utils.ts",
         "src/testing/integration/worker-pool.ts",

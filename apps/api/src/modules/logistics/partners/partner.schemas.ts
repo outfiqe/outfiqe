@@ -10,7 +10,7 @@ import { countryCodeSchema } from "#lib/country.utils.js";
 import { isKnownPartnerAdapterKey } from "./adapters/partner-adapter.registry.js";
 import { compileReferencePattern } from "./partner-status.utils.js";
 
-const PARTNER_CODE_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
+export const PARTNER_CODE_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
 const CREDENTIALS_KEY_PATTERN = /^[A-Z][A-Z0-9_]{1,39}$/;
 const MAX_REFERENCE_PATTERN_LENGTH = 120;
 const MAX_COD_REMITTANCE_DAYS = 60;

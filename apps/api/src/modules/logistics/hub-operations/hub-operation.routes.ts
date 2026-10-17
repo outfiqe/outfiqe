@@ -57,6 +57,14 @@ logisticsHubOperationRoutes.post(
 );
 
 logisticsHubOperationRoutes.post(
+  "/shipments/:shipmentId/booking/retry",
+  ...platformGuards.logisticsManage,
+  logisticsStaffWriteRateLimit,
+  validate({ params: shipmentIdParamSchema }),
+  logisticsHubOperationController.retryParcelBooking,
+);
+
+logisticsHubOperationRoutes.post(
   "/shipments/:shipmentId/rebook",
   ...platformGuards.logisticsManage,
   logisticsStaffWriteRateLimit,
