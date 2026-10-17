@@ -245,4 +245,11 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
     sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
   },
+  "/logistics/reliability": {
+    title: "Brand reliability",
+    description:
+      "Brands with 3 or more problems in the last 30 days: missing items, failed quality checks and wasted rider visits. At 6 a brand needs review; suspending it stays your decision.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/reliability/components/BrandReliabilityPage.tsx`],
+  },
 };

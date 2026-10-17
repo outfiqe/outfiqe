@@ -108,6 +108,14 @@ vi.mock("../hooks/useCheckout", () => ({
   useCheckout: () => ({ mutateAsync: checkoutMutateAsync, isPending: false }),
 }));
 
+let isCashOnDeliveryAllowed = true;
+
+vi.mock("../hooks/useCodEligibility", () => ({
+  useCodEligibility: () => ({
+    data: { isCashOnDeliveryAllowed, refusalCount: 0, refusalLimit: 2, windowDays: 365 },
+  }),
+}));
+
 const aCart = (): Cart =>
   ({
     subtotal: 1000,
@@ -166,6 +174,7 @@ const aSavedAddress = (overrides: Partial<SavedAddress> = {}): SavedAddress => (
 
 beforeEach(() => {
   isOnline = true;
+  isCashOnDeliveryAllowed = true;
   savedAddresses = [];
   checkoutMutateAsync.mockReset();
   initiatePaymentMutateAsync.mockReset();
@@ -197,6 +206,17 @@ describe("CheckoutForm", () => {
       ),
     );
     expect(checkoutMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("switches to paying online and explains why after refused deliveries", async () => {
+    isCashOnDeliveryAllowed = false;
+    checkoutMutateAsync.mockResolvedValue({ id: "order-5", paymentMethod: "ESEWA" });
+    renderCheckoutForm();
+
+    const cashOnDelivery = screen.getByRole("button", { name: /Cash on delivery/ });
+    expect(cashOnDelivery).toBeDisabled();
+    expect(screen.getByText(/after refused deliveries/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /eSewa/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows the default zone's delivery fee before a city is chosen", () => {

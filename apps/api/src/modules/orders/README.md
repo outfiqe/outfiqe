@@ -247,7 +247,16 @@ counts.
 
 `POST /orders/admin/:orderId/return` (`ordersManage`, with a reason) handles a parcel that comes
 back after it left: refused at the door, undeliverable, or returned after delivery. There is no
-courier integration; an admin records it. Only `SHIPPED` or `DELIVERED` orders qualify.
+courier integration; an admin records it. Only `SHIPPED` or `DELIVERED` orders qualify, and only
+brand-shipped ones: an order with any group delivered through the Outfiqe hub answers
+`409 RETURN_CHECKED_IN_AT_HUB`, because its return is the hub checking the real parcel back in
+(`logistics/returns/`).
+
+**Fees on a refund that empties the order** come back when the cause returns fees, and also
+whenever nothing has been paid yet (cash on delivery still due): a refused cash order owes
+nothing, so its delivery and COD fees are dropped rather than left unpaid
+(`refunds/refund.claim.ts`). `PARTNER_FAILED` (the delivery partner lost or damaged it) returns
+fees and releases coupon budget, like the hub's own failures.
 
 In one transaction it moves the order and its fulfilment groups to `RETURNED` (stamping
 `returnedAt`/`returnReason`, guarded by the status it is leaving, so a double click returns

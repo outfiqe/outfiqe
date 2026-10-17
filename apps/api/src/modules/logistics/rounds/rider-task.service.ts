@@ -2,6 +2,7 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import {
+  BrandIncidentKind,
   PickupStatus,
   RiderTaskStatus,
   TrackingEventCode,
@@ -13,6 +14,7 @@ import { AppError } from "#middlewares/error-handler.js";
 
 import { logisticsBagTagRepository } from "../bag-tags/bag-tag.repository.js";
 import { requireActiveRider } from "../logistics.guards.js";
+import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import type { RecordTrackingEventOutcome, TrackingSubject } from "../tracking/tracking.types.js";
@@ -274,7 +276,7 @@ export const logisticsRiderTaskService = {
   ): Promise<RiderTaskView> {
     const rider = await requireActiveRider(userId);
     await prisma.$transaction(async (tx) => {
-      await requireOpenTask(tx, taskId, rider.id);
+      const { brandId } = await requireOpenTask(tx, taskId, rider.id);
       const { scannedStopCount } = await logisticsRoundRepository.countStops(tx, taskId);
       if (scannedStopCount > NO_STOPS_SCANNED) {
         throw new AppError(
@@ -297,6 +299,16 @@ export const logisticsRiderTaskService = {
         wastedReason: reason,
       });
       if (!hasMoved) throw riderTaskClosedError();
+      await brandIncidentRepository.recordIncidents(tx, [
+        {
+          brandId,
+          kind: BrandIncidentKind.WASTED_VISIT,
+          sourceKey: taskId,
+          orderId: null,
+          note: reason,
+          occurredAt: new Date(),
+        },
+      ]);
     });
     return requireRiderTaskView(taskId, rider.id);
   },

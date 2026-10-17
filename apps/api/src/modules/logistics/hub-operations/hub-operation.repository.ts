@@ -61,6 +61,7 @@ export const logisticsHubOperationRepository = {
       select: {
         id: true,
         orderId: true,
+        brandId: true,
         hubId: true,
         pickupStatus: true,
         items: {

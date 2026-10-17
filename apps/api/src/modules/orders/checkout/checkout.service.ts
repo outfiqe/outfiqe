@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { PLATFORM_DEFAULT_COUNTRY_CODE } from "#constants/country.constants.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { PaymentMethod, PaymentStatus, PaymentTransactionStatus } from "#generated/prisma/enums.js";
@@ -8,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creator-link.repository.js";
+import { checkCashOnDeliveryEligibility } from "#modules/logistics/refusals/refusal.eligibility.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderRepository } from "../order.repository.js";
@@ -31,6 +33,20 @@ import {
 } from "./checkout.settlement.js";
 import { toAttributedOrderItems } from "./checkout.utils.js";
 
+const assertCashOnDeliveryAllowed = async (userId: string, phone: string): Promise<void> => {
+  const { isCashOnDeliveryAllowed } = await checkCashOnDeliveryEligibility({
+    userId,
+    phone,
+    countryCode: PLATFORM_DEFAULT_COUNTRY_CODE,
+  });
+  if (isCashOnDeliveryAllowed) return;
+  throw new AppError(
+    "COD_UNAVAILABLE_REFUSALS",
+    "Cash on delivery isn't available for this account after refused deliveries. Please pay online.",
+    HTTP_STATUS.UNPROCESSABLE_ENTITY,
+  );
+};
+
 const checkoutOnce = async (
   userId: string,
   userEmail: string,
@@ -38,6 +54,8 @@ const checkoutOnce = async (
 ): Promise<OrderView> => {
   const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow, couponCode } =
     body;
+
+  if (paymentMethod === PaymentMethod.COD) await assertCashOnDeliveryAllowed(userId, phone);
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 

@@ -225,6 +225,61 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     parcel (`409 DELIVERY_ALREADY_REPORTED`; a fixed dedupe key per parcel makes a double tap one
     event), 5 an hour per buyer. It records `DELIVERY_DISPUTED` on the parcel with the buyer as the
     actor and their words as the note, so staff see it on the parcel's timeline.
+- `returns/` — parcels that come back, and parcels the partner loses.
+  - `return-check-in.service.ts` — `POST /hub/shipments/:shipmentId/return-check-in`
+    (`logisticsManage`, staff write-limited). Staff confirm why it came back and grade every unit
+    still in it as resellable or damaged, exactly once. Then:
+    1. the remaining units are refunded through `orderService.refundOrderItems` with one key per
+       parcel, so a retry never refunds twice;
+    2. in one transaction: the parcel is marked checked in (a guarded update, so a second
+       check-in is `409`), `RETURNED_TO_HUB` and each pickup's `RETURN_AT_HUB` are recorded, one
+       `BrandReturn` per brand holds that brand's graded units, and the outcome's consequences
+       are written;
+    3. the check-in goes to the platform audit log.
+  - `return-outcome.utils.ts` — `resolveReturnOutcome`, the PRD §12.1 table:
+
+    | Outcome                            | Refund cause                                        | Refusal recorded | Brand incident                | Partner claim             |
+    | ---------------------------------- | --------------------------------------------------- | ---------------- | ----------------------------- | ------------------------- |
+    | Refused or unreachable, items fine | `CUSTOMER_REFUSED` (a prepaid delivery fee is kept) | yes              | no                            | no                        |
+    | Wrong or damaged item              | `HUB_INSPECTION_FAILED` (everything back)           | no               | `FAILED_INSPECTION` per brand | no                        |
+    | Damaged by the partner             | `PARTNER_FAILED` (everything back)                  | no               | no                            | yes, for the goods' value |
+
+    It also checks the grading covers every unit and works out the goods' value still in the
+    parcel.
+
+  - `lost-parcel.service.ts` — `settleLostParcel(shipmentId)`. When any event moves a parcel to
+    `LOST`, the tracking service queues `logistics.parcel-lost` in the same transaction; the
+    handler refunds every unit still in it plus the fees (`PARTNER_FAILED`, through
+    `orderService.refundOrderItemsBySystem`, since no staff member did it) and opens the partner
+    claim. A second run finds nothing left to refund and the claim already open, so it does
+    nothing.
+  - `BrandReturn` (with `BrandReturnLine`s) is how items physically go back to a brand. It is
+    created by a return check-in (`PARCEL_RETURNED`) and by a hub inspection with failed units
+    (`FAILED_INSPECTION`, every unit damaged), one per bag and source. It starts `AT_HUB`;
+    carrying it back on a rider round, the brand confirming it and restocking resellable units are
+    the next step.
+- `refusals/` — refused deliveries and cash on delivery.
+  - `refusal.eligibility.ts` — `checkCashOnDeliveryEligibility({ userId, phone, countryCode })`:
+    cash on delivery is off once the account or the phone number (E.164) has `codRefusalLimit`
+    refusals that haven't been cleared within `codRefusalWindowDays` (2 in 365 days for Nepal,
+    `COUNTRY_SETTINGS`). Checkout calls it before anything else for a COD order and answers
+    `422 COD_UNAVAILABLE_REFUSALS`; it imports nothing from orders, so checkout can use it
+    directly.
+  - Endpoints: `GET /cod-eligibility?phone=` (the buyer, for the checkout page),
+    `GET /admin/orders/:orderId/delivery-refusals` and `POST …/clear` (a reason of 5–500
+    characters, written to the platform audit log). Clearing marks the refusals cleared rather
+    than deleting them.
+- `reliability/` — brand reliability.
+  - `brand-incident.repository.ts` — `recordIncidents(tx, incidents)`, called inside the
+    transaction of whatever went wrong: an approved unavailable item (`orders/unavailable-items`),
+    a hub inspection with failed units, a wasted rider visit, a return checked in as wrong or
+    damaged. `(kind, sourceKey)` is unique and inserts skip duplicates, so a retried step counts
+    once. Customer refusals and partner failures are never incidents.
+  - Endpoints: `GET /brand/reliability` (the brand's count and incidents for the last 30 days,
+    its level, cursor-paged) and `GET /admin/brand-reliability` (`logisticsRead`; brands with 3 or
+    more, most first).
+  - `reliability.utils.ts` — `describeReliabilityLevel`: warned at 3 incidents, review at 6.
+    Suspension stays an admin decision with the existing brand tools.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -339,6 +394,16 @@ carries the new `trackingStage`, so the notification and the push message say wh
 The web order page listens for that notification and refreshes itself.
 
 ## Non-obvious rationale
+
+- **Who pays for a return is decided at the hub, not from the partner's word.** The partner says
+  "refused" or "returning"; only staff holding the parcel can tell a genuine refusal from a wrong
+  item or partner damage, so refunds, refusals, incidents and claims all wait for the check-in.
+- **A lost parcel is settled from the outbox, not where `LOST` is recorded.** `LOST` can arrive
+  from a webhook, a poll, a status sheet or a staff update. Queuing the settlement inside the
+  tracking transaction catches every one of them, and a refund that fails is retried by the
+  outbox rather than lost.
+- **Refusals match on the phone number as well as the account**, so a new account with the same
+  number doesn't get cash on delivery back.
 
 - **Checkout imports `flow/flow.service.ts`, not `logisticsService`.** Hub operations call
   `orderService` (refunds and cash to collect), and `orderService` loads checkout. If checkout

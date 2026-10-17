@@ -70,6 +70,10 @@ const shipmentDetailSelect = {
   deliveryAttemptCount: true,
   deliveredAt: true,
   labelPrintedAt: true,
+  returnOutcome: true,
+  returnCheckedInAt: true,
+  partnerClaimAmount: true,
+  partnerClaimStatus: true,
   fulfilmentGroups: {
     orderBy: { createdAt: "asc" },
     select: {

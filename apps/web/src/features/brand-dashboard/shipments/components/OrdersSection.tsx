@@ -3,6 +3,7 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { MissingPickupLocationBanner } from "../../pickups/components/MissingPickupLocationBanner";
+import { DeliveryReliabilityPanel } from "../../reliability/components/DeliveryReliabilityPanel";
 import { useBrandShipments } from "../hooks/useBrandShipments";
 import { BrandShipmentRow } from "./BrandShipmentRow";
 
@@ -22,6 +23,7 @@ export const OrdersSection = () => {
           One shipment per order — pack, ship and track your items.
         </p>
       </div>
+      <DeliveryReliabilityPanel />
 
       {isError && (
         <div className="mt-6">

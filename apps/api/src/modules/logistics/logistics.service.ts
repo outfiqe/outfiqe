@@ -10,6 +10,10 @@ import { logisticsPartnerService } from "./partners/partner.service.js";
 import { logisticsPartnerStatusImportService } from "./partners/partner-status-import.service.js";
 import { logisticsPickupLocationService } from "./pickup-locations/pickup-location.service.js";
 import { logisticsPickupService } from "./pickups/pickup.service.js";
+import { logisticsRefusalService } from "./refusals/refusal.service.js";
+import { logisticsReliabilityService } from "./reliability/reliability.service.js";
+import { logisticsLostParcelService } from "./returns/lost-parcel.service.js";
+import { logisticsReturnCheckInService } from "./returns/return-check-in.service.js";
 import { logisticsRiderService } from "./riders/rider.service.js";
 import { logisticsRiderTaskService } from "./rounds/rider-task.service.js";
 import { logisticsRoundService } from "./rounds/rounds.service.js";
@@ -34,4 +38,8 @@ export const logisticsService = {
   ...logisticsPartnerWebhookService,
   ...logisticsPartnerPollingService,
   ...logisticsCustomerTrackingService,
+  ...logisticsReturnCheckInService,
+  ...logisticsLostParcelService,
+  ...logisticsRefusalService,
+  ...logisticsReliabilityService,
 };

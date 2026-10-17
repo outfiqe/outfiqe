@@ -444,6 +444,12 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
         label: "Delivery partners",
         icon: Handshake,
       },
+      {
+        id: "logistics-reliability",
+        href: "/logistics/reliability",
+        label: "Brand reliability",
+        icon: ShieldAlert,
+      },
     ],
   },
   {
