@@ -10,6 +10,10 @@ import {
   type PartnerZonesBody,
   type StatusImport,
   statusImportSchema,
+  type WebhookReceiptPage,
+  webhookReceiptPageSchema,
+  type WebhookReplay,
+  webhookReplaySchema,
 } from "./partnersSchemas";
 
 const PARTNERS_PATH = "/logistics/admin/partners";
@@ -55,6 +59,20 @@ export const partnersApi = {
   ): Promise<DeliveryPartner> {
     const res = await apiClient.put(`${PARTNERS_PATH}/${partnerId}/status-map`, { mappings });
     return deliveryPartnerSchema.parse(res.data);
+  },
+
+  async listWebhookReceipts(partnerId: string, cursor?: string): Promise<WebhookReceiptPage> {
+    const res = await apiClient.get(`${PARTNERS_PATH}/${partnerId}/webhook-receipts`, {
+      params: { cursor },
+    });
+    return webhookReceiptPageSchema.parse(res.data);
+  },
+
+  async replayWebhookReceipts(partnerId: string, since: string): Promise<WebhookReplay> {
+    const res = await apiClient.post(`${PARTNERS_PATH}/${partnerId}/webhook-receipts/replay`, {
+      since,
+    });
+    return webhookReplaySchema.parse(res.data);
   },
 
   async importStatuses(

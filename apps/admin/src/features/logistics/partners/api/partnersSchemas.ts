@@ -6,6 +6,7 @@ export const WEBHOOK_VERIFICATIONS = [
   "NOTIFY_THEN_FETCH",
   "NONE",
 ] as const;
+export type WebhookVerification = (typeof WEBHOOK_VERIFICATIONS)[number];
 
 export const PARTNER_STATUS_CODES = [
   "HANDED_TO_PARTNER",
@@ -49,6 +50,7 @@ export const deliveryPartnerSchema = z.object({
   referencePattern: z.string().nullable(),
   codRemittanceDays: z.number(),
   trackingUrlTemplate: z.string().nullable(),
+  webhookUrl: z.string().nullable(),
   accounts: z.array(
     z.object({
       hubId: z.string(),
@@ -56,6 +58,12 @@ export const deliveryPartnerSchema = z.object({
       merchantAccountRef: z.string(),
       pickupPointRef: z.string().nullable(),
       credentialsKey: z.string().nullable(),
+      credentials: z.object({
+        hasApiKey: z.boolean(),
+        hasBaseUrl: z.boolean(),
+        hasWebhookSecret: z.boolean(),
+        hasPreviousWebhookSecret: z.boolean(),
+      }),
       isActive: z.boolean(),
     }),
   ),
@@ -102,6 +110,27 @@ export const statusImportSchema = z.object({
 });
 export type StatusImport = z.infer<typeof statusImportSchema>;
 
+export const webhookReceiptSchema = z.object({
+  id: z.string(),
+  signatureValid: z.boolean(),
+  receivedAt: z.string(),
+  processedAt: z.string().nullable(),
+  processingError: z.string().nullable(),
+  eventCount: z.number(),
+  appliedCount: z.number(),
+  unknownCount: z.number(),
+});
+export type WebhookReceipt = z.infer<typeof webhookReceiptSchema>;
+
+export const webhookReceiptPageSchema = z.object({
+  items: z.array(webhookReceiptSchema),
+  nextCursor: z.string().nullable(),
+});
+export type WebhookReceiptPage = z.infer<typeof webhookReceiptPageSchema>;
+
+export const webhookReplaySchema = z.object({ replayedCount: z.number() });
+export type WebhookReplay = z.infer<typeof webhookReplaySchema>;
+
 export type DeliveryPartnerBody = {
   code: string;
   name: string;
@@ -109,6 +138,7 @@ export type DeliveryPartnerBody = {
   adapterKey: string;
   isActive: boolean;
   supportsCod: boolean;
+  webhookVerification: WebhookVerification;
   referencePattern: string | null;
   codRemittanceDays: number;
   trackingUrlTemplate: string | null;

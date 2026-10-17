@@ -71,6 +71,7 @@ import { imageProcessingRoutes } from "./modules/image-processing/image-processi
 import { resolvedImageStorageRootDir } from "./modules/image-processing/image-processing.storage.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { logisticsRoutes } from "./modules/logistics/logistics.routes.js";
+import { partnerWebhookRoutes } from "./modules/logistics/partner-webhooks/partner-webhook.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepal-bank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
@@ -143,6 +144,7 @@ export const createApp = () => {
       credentials: true,
     }),
   );
+  app.use("/api/webhooks/delivery-partners", httpLogger, partnerWebhookRoutes);
   app.use(express.json());
   app.use(cookieParser());
   app.use(httpLogger);

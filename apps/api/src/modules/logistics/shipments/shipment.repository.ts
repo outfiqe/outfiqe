@@ -2,6 +2,7 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { PartnerBookingStatus, PickupStatus, ShipmentStatus } from "#generated/prisma/enums.js";
 
+import { SHIPMENT_STATUSES_WITH_PARTNER } from "../logistics.constants.js";
 import { SHIPMENT_QUEUE, type ShipmentQueue } from "./shipment.schemas.js";
 
 const PAGE_LOOKAHEAD = 1;
@@ -9,14 +10,6 @@ const PAGE_LOOKAHEAD = 1;
 const LIVE_BOOKING_WHERE = {
   status: { not: PartnerBookingStatus.CANCELLED },
 } satisfies Prisma.ShipmentPartnerBookingWhereInput;
-
-const STATUSES_WITH_PARTNER = [
-  ShipmentStatus.HANDED_TO_PARTNER,
-  ShipmentStatus.IN_TRANSIT,
-  ShipmentStatus.OUT_FOR_DELIVERY,
-  ShipmentStatus.DELIVERY_FAILED,
-  ShipmentStatus.RETURNING,
-];
 
 const FINISHED_STATUSES = [
   ShipmentStatus.DELIVERED,
@@ -34,7 +27,7 @@ const QUEUE_WHERE: Readonly<Record<ShipmentQueue, Prisma.ShipmentWhereInput>> = 
     status: ShipmentStatus.PACKED,
     bookings: { some: { status: PartnerBookingStatus.BOOKED } },
   },
-  [SHIPMENT_QUEUE.WITH_PARTNER]: { status: { in: STATUSES_WITH_PARTNER } },
+  [SHIPMENT_QUEUE.WITH_PARTNER]: { status: { in: SHIPMENT_STATUSES_WITH_PARTNER } },
   [SHIPMENT_QUEUE.FINISHED]: { status: { in: FINISHED_STATUSES } },
 };
 
@@ -54,8 +47,11 @@ const shipmentSummarySelect = {
       id: true,
       partnerId: true,
       status: true,
+      connection: true,
       merchantReference: true,
       partnerReference: true,
+      partnerTrackingUrl: true,
+      failureReason: true,
       partner: { select: { name: true } },
     },
   },

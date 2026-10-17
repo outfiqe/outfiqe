@@ -2,6 +2,9 @@ import { logisticsBagTagService } from "./bag-tags/bag-tag.service.js";
 import { logisticsFlowService } from "./flow/flow.service.js";
 import { logisticsHubOperationService } from "./hub-operations/hub-operation.service.js";
 import { logisticsHubService } from "./hubs/hub.service.js";
+import { logisticsPartnerBookingService } from "./partner-bookings/partner-booking.service.js";
+import { logisticsPartnerPollingService } from "./partner-webhooks/partner-polling.service.js";
+import { logisticsPartnerWebhookService } from "./partner-webhooks/partner-webhook.service.js";
 import { logisticsPartnerService } from "./partners/partner.service.js";
 import { logisticsPartnerStatusImportService } from "./partners/partner-status-import.service.js";
 import { logisticsPickupLocationService } from "./pickup-locations/pickup-location.service.js";
@@ -26,4 +29,7 @@ export const logisticsService = {
   ...logisticsPartnerStatusImportService,
   ...logisticsHubOperationService,
   ...logisticsShipmentService,
+  ...logisticsPartnerBookingService,
+  ...logisticsPartnerWebhookService,
+  ...logisticsPartnerPollingService,
 };

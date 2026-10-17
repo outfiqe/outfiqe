@@ -1,3 +1,5 @@
+import type { PartnerWebhookVerification } from "#generated/prisma/enums.js";
+
 export type DeliveryPartnerAccountConfig = {
   accountId: string;
   partnerId: string;
@@ -51,10 +53,15 @@ export type PartnerTrackingEvent = {
 export type DeliveryPartnerAdapter = {
   isManual: boolean;
   createShipment?(request: PartnerBookingRequest): Promise<PartnerBookingResult>;
+  findShipment?(merchantReference: string): Promise<PartnerBookingResult | null>;
   cancelShipment?(partnerReference: string): Promise<void>;
   updateCodAmount?(partnerReference: string, codAmount: number): Promise<void>;
   fetchTrackingEvents?(partnerReference: string, since: Date): Promise<PartnerTrackingEvent[]>;
-  verifyWebhook?(headers: Record<string, string>, rawBody: Buffer): boolean;
+  verifyWebhook?(
+    headers: Record<string, string>,
+    rawBody: Buffer,
+    verification: PartnerWebhookVerification,
+  ): boolean;
   parseWebhook?(rawBody: Buffer): PartnerTrackingEvent[];
 };
 

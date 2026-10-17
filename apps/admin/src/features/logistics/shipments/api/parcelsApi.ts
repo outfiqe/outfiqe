@@ -35,6 +35,11 @@ export const parcelsApi = {
     return parcelBookingSchema.parse(res.data);
   },
 
+  async retryBooking(shipmentId: string): Promise<ParcelBooking> {
+    const res = await apiClient.post(`${HUB_SHIPMENTS_PATH}/${shipmentId}/booking/retry`);
+    return parcelBookingSchema.parse(res.data);
+  },
+
   async rebookParcel(
     shipmentId: string,
     body: { partnerId: string; reason: string },

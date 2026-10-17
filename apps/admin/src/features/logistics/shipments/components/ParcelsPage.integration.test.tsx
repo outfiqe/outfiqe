@@ -29,8 +29,11 @@ const parcelToBook = {
     partnerId: "partner-1",
     partnerName: "Valley Courier",
     status: "REQUESTED",
+    connection: "MANUAL",
     merchantReference: "OFQ7K2M9QAB",
     partnerReference: null,
+    partnerTrackingUrl: null,
+    failureReason: null,
   },
 };
 
@@ -110,6 +113,61 @@ describe("ParcelsPage", () => {
     await user.click(screen.getByRole("button", { name: "Save booking" }));
 
     await waitFor(() => expect(bookingBody).toEqual({ partnerReference: "PX-55821" }));
+  });
+
+  it("waits for a connected partner instead of asking for their number", async () => {
+    const parcelBeingBooked = {
+      ...parcelToBook,
+      booking: { ...parcelToBook.booking, connection: "API" },
+    };
+    mswServer.use(
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(SHIPMENTS_URL, () => okJson({ items: [parcelBeingBooked], nextCursor: null })),
+    );
+
+    renderWithRouter(<ParcelsPage />, { path: "/logistics/parcels" });
+
+    expect(await screen.findByText(/Booking with Valley Courier/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Valley Courier's parcel number")).not.toBeInTheDocument();
+  });
+
+  it("shows why a connected partner's booking failed and tries it again", async () => {
+    let wasRetried = false;
+    const parcelWithFailedBooking = {
+      ...parcelToBook,
+      booking: {
+        ...parcelToBook.booking,
+        connection: "API",
+        status: "BOOKING_FAILED",
+        failureReason: "The partner answered 422.",
+      },
+    };
+    mswServer.use(
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(SHIPMENTS_URL, () => okJson({ items: [parcelWithFailedBooking], nextCursor: null })),
+      http.post(`${SHIPMENTS_URL}/shipment-1/booking/retry`, () => {
+        wasRetried = true;
+        return okJson({
+          ...parcelWithFailedBooking.booking,
+          status: "REQUESTED",
+          failureReason: null,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(
+      <>
+        <ParcelsPage />
+        <Toaster />
+      </>,
+      { path: "/logistics/parcels" },
+    );
+
+    expect(await screen.findByText(/The partner answered 422\./)).toBeInTheDocument();
+    expect(screen.getByLabelText("Valley Courier's parcel number")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    await waitFor(() => expect(wasRetried).toBe(true));
   });
 });
 

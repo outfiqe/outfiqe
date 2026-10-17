@@ -22,15 +22,25 @@ The module is built in steps. This README lists what exists now.
   - `/admin/pickup-board` and `/admin/rider-tasks` → `rounds/` (staff);
   - `/brand/pickup-locations` → `pickup-locations/`, `/brand/pickups` → `pickups/`;
   - `/rider/tasks` → `rounds/` (riders);
-  - `/admin/partners` → `partners/`;
+  - `/admin/partners` → `partners/`, `/admin/partners/:partnerId/webhook-receipts` →
+    `partner-webhooks/`;
   - `/hub` → `hub-operations/` and `shipments/` (hub staff).
+- `app.ts` also mounts `partner-webhooks/`'s receiver at `/api/webhooks/delivery-partners`, before
+  `express.json()` (see the rationale below).
+- `logistics.outbox.ts` — `registerLogisticsOutboxHandlers`, called from `processes/consumers.ts`:
+  partner updates received and partner bookings requested, both on the `outbox-logistics` queue.
+- `logistics.jobs.ts` — the partner polling, stuck-booking and receipt clean-up jobs that
+  `src/jobs/scheduled-jobs.ts` runs.
+- `logistics.partner-adapters.ts` — `logisticsPartnerAdapters.forAccount(partner, account)`, the
+  adapter for one of our merchant accounts with a partner.
 - `logistics.rate-limits.ts` — the per-user limiters shared by every topic's routes: staff writes,
   brand writes, rider scans and hub scans (check-in and handover, 120 a minute).
-- `logistics.constants.ts` — pickup statuses that mean a bag is no longer on its way to the hub,
-  shared by packing and the "orders to pack" list.
+- `logistics.constants.ts` — pickup statuses that mean a bag is no longer on its way to the hub
+  (packing and the "orders to pack" list), and parcel statuses that mean the partner has it (the
+  "with partner" queue and polling).
 - `logistics.partner-events.ts` — `logisticsPartnerEvents.applyPartnerTrackingEvent`, the one
-  place a partner's update becomes a tracking event. Spreadsheet imports use it now; webhooks and
-  polling will use it too. It matches the update to a booking (the partner's parcel number first,
+  place a partner's update becomes a tracking event. Spreadsheet imports, webhooks and polling all
+  use it. It matches the update to a booking (the partner's parcel number first,
   then our parcel code with any `-2` rebook suffix removed), maps their status word through the
   status map, and records the event with a dedupe key built from the booking, status and time.
 - `logistics.guards.ts` — `requireActiveRider(userId)`: loads the signed-in rider's profile, or
@@ -106,10 +116,25 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     `PUT /:partnerId/accounts/:hubId`, `PUT /:partnerId/zones` (replaces one hub's areas),
     `PUT /:partnerId/status-map`, `POST /:partnerId/status-imports`,
     `GET /:partnerId/status-imports/:importId`.
+  - `GET /:partnerId` also returns the `webhookUrl` to paste into the partner's dashboard, and for
+    each account which secrets are set in the environment (never the secrets themselves).
   - `adapters/` — `partner-adapter.types.ts` (the contract every partner connection implements),
-    `manual.adapter.ts` (no API calls; staff book by hand) and `partner-adapter.registry.ts`
-    (adapter by `adapterKey`, plus what each one supports). A partner's "supports booking /
-    webhooks / polling" flags come from its adapter, never from the request.
+    `manual.adapter.ts` (no API calls; staff book by hand), `http-json.adapter.ts` and
+    `partner-adapter.registry.ts` (adapter by `adapterKey`, plus what each one supports). A
+    partner's "supports booking / webhooks / polling" flags come from its adapter, never from the
+    request.
+  - `http-json.adapter.ts` (`HTTP_JSON`) — the reference API connection, contract-tested against
+    the recorded replies in `fixtures/http-json/`. Bearer API key, 10-second timeout, every reply
+    checked with zod. Webhooks are verified by an HMAC-SHA256 hex signature of the raw body in
+    `x-partner-signature`, or the shared secret in `x-partner-token`, with the current or previous
+    secret. A real partner gets its own adapter file and registry entry once they give us API
+    access.
+  - `partner-request.error.ts` — `PartnerRequestError(message, isRetryable)`: timeouts and `5xx`
+    are worth retrying; `4xx`, missing secrets and replies in the wrong shape are not.
+  - Secrets live in the environment, named by the account's `credentialsKey`
+    (`#config/delivery-partner.config.ts`): `DELIVERY_PARTNER_<KEY>_API_KEY`, `_BASE_URL`,
+    `_WEBHOOK_SECRET` and `_WEBHOOK_SECRET_PREVIOUS` (for rotation). A value that is missing or too
+    short counts as not set.
   - `partner-status.utils.ts` — status word and reference normalising, the rebook reference
     (`OFQ…-2`), the dedupe key, and the parcel-number pattern check.
   - `partner-status-import.*` — the CSV status sheet. `#lib/csv.utils.ts` parses it; the first row
@@ -127,13 +152,17 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     hub into one parcel (`OFQ` + 8 characters). Refused while bags are still coming unless
     `packsOnlyPickupsAtHub` is set. Creates a `REQUESTED` booking with the first eligible partner
     (`parcel-partner.ts`: lowest priority number for the hub and the customer's zone, cash-capable
-    for COD).
+    for COD). For an API partner the booking is queued for `partner-bookings/` in the same
+    transaction.
   - `parcel-cash.ts` — the cash a parcel collects: its bags' remaining goods (from
     `orderService.calculateCashToCollect`), plus the order's delivery and COD fees on the order's
     first parcel; zero unless the order is unpaid cash on delivery.
   - `parcel-booking.service.ts` — `POST /hub/shipments/:shipmentId/booking` (the partner's parcel
-    number, checked against their pattern and unique per partner) and
-    `POST /hub/shipments/:shipmentId/rebook` (cancels the live booking, books another partner).
+    number, checked against their pattern and unique per partner; refused with
+    `409 BOOKING_IN_PROGRESS` while an API booking is still being made),
+    `POST /hub/shipments/:shipmentId/booking/retry` (a failed API booking, see `partner-bookings/`)
+    and `POST /hub/shipments/:shipmentId/rebook` (cancels the live booking, books another partner,
+    queued the same way as packing).
   - `handover.service.ts` — `GET /hub/shipments/:shipmentId/label`,
     `POST /hub/shipments/:shipmentId/label-printed`, and `POST /hub/handovers`
     (`Idempotency-Key`): refused unless the parcel is booked and its printed label shows the
@@ -142,7 +171,47 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
   (`TO_BOOK`, `TO_HAND_OVER`, `WITH_PARTNER`, `FINISHED`), `GET /hub/shipments/:shipmentId`
   (contents, booking and the event timeline), and `POST /hub/shipments/:shipmentId/events` (a
   status a partner gave by phone; corrections can leave a final status and are audit-logged).
-  `shipment-booking.repository.ts` holds every booking read and write.
+  `shipment-booking.repository.ts` holds the booking reads and writes the hub and partner updates
+  share; `shipment.utils.ts` `toParcelBookingSummary` is the one booking shape every answer uses
+  (status, connection, both references, the partner's tracking link and any failure reason).
+- `partner-bookings/` — booking parcels with API partners.
+  - `partner-booking.service.ts` — `logisticsPartnerBookingService`:
+    - `queueApiBooking(tx, booking)` — queues `logistics.partner-booking-requested` for an API
+      booking (manual ones are left for staff).
+    - `processBookingRequest(bookingId)` — the outbox handler. Claims an attempt, then asks the
+      partner, looking the parcel up first if it was tried before, and records `BOOKING_CONFIRMED`.
+      A retryable failure is thrown so the outbox tries again; the fifth try, or a failure that
+      isn't worth retrying, marks the booking `BOOKING_FAILED` and records `BOOKING_FAILED`.
+    - `retryFailedBooking(staffUserId, shipmentId)` — puts a failed booking back to `REQUESTED`
+      with a fresh attempt count and queues it again.
+    - `sweepStuckBookings()` — every 10 minutes, marks an API booking that has waited more than 30
+      minutes without an attempt as failed, so staff see it.
+  - `partner-booking.utils.ts` — the request sent to the partner (our hub as the pickup, the
+    buyer as the recipient, the units still in the parcel as the declared value) and the attempt
+    rules.
+  - `partner-booking.repository.ts`, `partner-booking.constants.ts`.
+- `partner-webhooks/` — updates the partner sends us, and the ones we fetch.
+  - `partner-webhook.routes.ts` — `POST /api/webhooks/delivery-partners/:partnerCode` (raw body up
+    to 256 KB, 300 a minute per partner and address), plus the staff routes
+    `GET /admin/partners/:partnerId/webhook-receipts` and `POST …/webhook-receipts/replay`.
+  - `partner-webhook.service.ts` — `logisticsPartnerWebhookService`:
+    - `receivePartnerWebhook` — checks the update by the partner's `webhookVerification`
+      (`SIGNATURE`, `HEADER_TOKEN`, `NOTIFY_THEN_FETCH` trusts nothing in the body, `NONE` refuses),
+      saves a `PartnerWebhookReceipt` and, when genuine, queues it in the same transaction, then
+      answers `200`. An unknown or switched-off partner is `404`; a failed check is `401`.
+    - `processWebhookReceipt` — the outbox handler. Reads the events (or fetches them from the
+      partner for `NOTIFY_THEN_FETCH`), applies each through `applyPartnerTrackingEvent` and
+      stores the event, applied and unknown counts.
+    - `replayWebhookReceipts` — re-queues up to 200 receipts since a time that failed or had
+      unknown statuses, after staff map the new status words.
+    - `deleteOldWebhookReceipts` — daily, removes receipts older than 90 days.
+  - `partner-polling.service.ts` — `pollPartnerTracking`, every 15 minutes, up to 50 booked parcels
+    with the partner:
+    - partners that send no webhooks (`NONE`) are asked every 15 minutes;
+    - partners that do are asked only about a parcel with no news for 24 hours, at most once a day.
+      Each parcel is stamped `lastPolledAt` before the call; one partner failing doesn't stop the
+      rest.
+  - `partner-webhook.signature.ts` — signing and the constant-time secret checks.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -202,6 +271,21 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
   label shows old cash, are refused.
 - The partner's daily status sheet is uploaded; each row moves its parcel on, and "delivered"
   delivers the order to the customer, every brand in it, and their payouts.
+- With a partner connected by API, none of the typing happens: packing books the parcel with the
+  partner in the background, and the partner's updates arrive by webhook (or we ask for them).
+  Staff paste our webhook address and secret into the partner's dashboard once. A booking the
+  partner refuses shows as failed with the reason, and staff press "Try again" or pick another
+  partner. Updates with a status word we don't know are kept; staff map the word and replay them.
+
+**Technical, for an API partner:**
+
+1. Packing (or rebooking) creates the booking and an outbox event in one transaction.
+2. The outbox worker runs `processBookingRequest`, which sends our parcel code as the merchant
+   reference and the booking id as the idempotency key.
+3. The partner's webhook is saved as a receipt and queued in one transaction, and `200` goes back
+   straight away.
+4. The worker runs `processWebhookReceipt`, and each event goes through
+   `applyPartnerTrackingEvent` → `recordEvent`, exactly as a status sheet row does.
 
 **Technical, for a collection scan** (`rider-task.service.ts`), in one transaction:
 
@@ -263,12 +347,23 @@ After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing 
   and 500 rows rather than raising the API-wide body limit; each row is its own short transaction,
   applied in sheet order.
 
-- **Keep the `order_logistics` flag off until delivery partners exist.**
-  - The flow decision today checks the flag and pickup coverage only.
-  - The check that a delivery partner covers the customer's city from the hub arrives with
-    delivery partners (step 6 of `docs/PRD-ORDER-LOGISTICS.md`).
-  - Until then, switching the flag on for a brand would send its orders to a hub that has no
-    partner to deliver them.
+- **The webhook receiver is mounted before `express.json()`.** The signature is over the exact
+  bytes the partner sent; parsing and re-serialising JSON would change them. The route reads the
+  raw body itself and has its own size limit, rate limit and request logging.
+- **A webhook is saved first and worked on later.** Answering `200` only after the receipt and
+  its outbox event commit means a crash can't lose an update, and a slow tracking write can't make
+  the partner time out and resend. Partners resend anyway, so every event is deduped by booking.
+- **An update that fails the check is recorded without its body.** The receipt row shows staff
+  that something was turned away, but storing up to 256 KB from anyone who can reach the address
+  would let them fill the database.
+- **Booking looks the parcel up before trying again.** A timeout can hide a booking the partner
+  did make. Asking by our parcel code first (and sending the booking id as the idempotency key)
+  stops one parcel being booked twice.
+- **Reasons shown to staff are ours, not the raw error.** A booking's `failureReason` and a
+  receipt's `processingError` hold the partner-facing message from `PartnerRequestError`, or a
+  generic line; the full error goes to the log.
+- **Partner work has its own outbox queue** (`outbox-logistics`), so a slow partner API can't hold
+  up notifications or stock updates.
 
 - **A bag can be on only one active visit, enforced by the database.** The partial unique index
   `rider_task_stops_one_active_stop_per_group_direction_key` (one active stop per group and

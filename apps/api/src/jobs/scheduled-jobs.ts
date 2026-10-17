@@ -37,6 +37,14 @@ import {
   TRENDING_RECOMPUTE_INTERVAL_MS,
 } from "#modules/leaderboard/leaderboard.constants.js";
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
+import {
+  PARTNER_TRACKING_POLL_INTERVAL_MS,
+  PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
+  runPartnerTrackingPoll,
+  runPartnerWebhookReceiptRetentionSweep,
+  runStuckPartnerBookingSweep,
+  STUCK_PARTNER_BOOKING_SWEEP_INTERVAL_MS,
+} from "#modules/logistics/logistics.jobs.js";
 import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications/notification.constants.js";
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import {
@@ -274,6 +282,21 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "suspension-expiry-sweep",
     run: runSuspensionExpirySweep,
     intervalMs: SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "logistics-partner-tracking-poll",
+    run: runPartnerTrackingPoll,
+    intervalMs: PARTNER_TRACKING_POLL_INTERVAL_MS,
+  },
+  {
+    name: "logistics-stuck-partner-booking-sweep",
+    run: runStuckPartnerBookingSweep,
+    intervalMs: STUCK_PARTNER_BOOKING_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "logistics-partner-webhook-receipt-retention",
+    run: runPartnerWebhookReceiptRetentionSweep,
+    intervalMs: PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
   },
 ];
 
