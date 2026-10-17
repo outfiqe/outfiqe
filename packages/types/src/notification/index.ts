@@ -1,3 +1,5 @@
+import type { OrderTrackingStage } from "@outfiqe/utils";
+
 export const NotificationType = {
   LOOK_LIKED: "LOOK_LIKED",
   LOOK_COMMENTED: "LOOK_COMMENTED",
@@ -136,6 +138,7 @@ export type NotificationMetadata = {
   orderTotal?: number;
   brandName?: string;
   status?: string;
+  trackingStage?: OrderTrackingStage;
   productName?: string;
   productImageUrl?: string | null;
   outfitTitle?: string | null;

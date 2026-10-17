@@ -39,6 +39,10 @@ to any one app.
 - `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
   each) and `POST_LAYOUT_LABEL` (the picker's display labels).
+- `order-tracking/` — `OrderTrackingStage` (the one customer-facing stage of a hub-delivered
+  order), `ORDER_TRACKING_STAGE_MESSAGES` (the words for each, used by in-app and push
+  notifications) and `isOrderTrackingStage`. It lives here rather than in `@outfiqe/types` because
+  `@outfiqe/types` depends on this package, so the messages and the stage must sit together here.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
   orders (newest, most cheriqed, price low to high, price high to low). The API validates the

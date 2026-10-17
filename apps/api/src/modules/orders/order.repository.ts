@@ -49,7 +49,7 @@ export const orderRepository = {
         transactions: { orderBy: { createdAt: "asc" } },
         fulfilmentGroups: {
           orderBy: { createdAt: "asc" },
-          include: { brand: { select: { name: true } } },
+          include: { brand: { select: { name: true } }, shipment: { select: { status: true } } },
         },
       },
     });
@@ -89,6 +89,7 @@ export const orderRepository = {
           orderBy: { createdAt: "asc" },
           include: {
             brand: { select: { name: true } },
+            shipment: { select: { status: true } },
             items: { select: { product: { select: { name: true } } } },
           },
         },

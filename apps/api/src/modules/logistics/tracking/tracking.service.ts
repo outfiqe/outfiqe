@@ -222,10 +222,12 @@ const announceStageChange = async (outcome: RecordTrackingEventOutcome): Promise
     outcome.appliedToStatus && hasTrackingStageChanged(outcome.stageBefore, outcome.stageAfter);
   if (!shouldAnnounce) return;
 
+  const { orderId, orderUserId, orderFulfilmentStatus, stageAfter } = outcome;
   await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
-    orderId: outcome.orderId,
-    userId: outcome.orderUserId,
-    status: outcome.orderFulfilmentStatus,
+    orderId,
+    userId: orderUserId,
+    status: orderFulfilmentStatus,
+    ...(stageAfter ? { trackingStage: stageAfter.stage } : {}),
   });
 };
 

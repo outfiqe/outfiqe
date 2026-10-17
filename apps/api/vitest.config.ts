@@ -62,6 +62,7 @@ export default defineConfig({
         "src/modules/orders/checkout/checkout.fulfilment.ts",
         "src/modules/logistics/**/*.ts",
         "src/modules/orders/refunds/**/*.ts",
+        "src/modules/orders/order-tracking.utils.ts",
         "src/modules/orders/unavailable-items/**/*.ts",
         "src/modules/auth/invites/rider-invite.service.ts",
         "src/shared/utils/web-cache.utils.ts",

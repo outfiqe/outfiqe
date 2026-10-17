@@ -1,4 +1,5 @@
 import { logisticsBagTagService } from "./bag-tags/bag-tag.service.js";
+import { logisticsCustomerTrackingService } from "./customer-tracking/customer-tracking.service.js";
 import { logisticsFlowService } from "./flow/flow.service.js";
 import { logisticsHubOperationService } from "./hub-operations/hub-operation.service.js";
 import { logisticsHubService } from "./hubs/hub.service.js";
@@ -32,4 +33,5 @@ export const logisticsService = {
   ...logisticsPartnerBookingService,
   ...logisticsPartnerWebhookService,
   ...logisticsPartnerPollingService,
+  ...logisticsCustomerTrackingService,
 };
