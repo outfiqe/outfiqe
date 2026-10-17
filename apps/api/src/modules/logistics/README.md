@@ -286,6 +286,21 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
     `GET /admin/orders/:orderId/delivery-refusals` and `POST …/clear` (a reason of 5–500
     characters, written to the platform audit log). Clearing marks the refusals cleared rather
     than deleting them.
+- `cod/` — cash partners collected on delivery, and the payments they make back to Outfiqe.
+  - `cod.repository.ts` — `logisticsCodRepository`:
+    - `summarizeUnremittedCashByPartner` is raw SQL, because "overdue" compares each parcel's
+      `deliveredAt` plus its own partner's `codRemittanceDays` with now;
+    - the unpaid-in parcel list for one partner, cursor-paged, oldest delivery first;
+    - the in-transaction check that ticked parcels can be paid in;
+    - the remittance insert with its lines, and the remittance list and detail.
+  - `cod.service.ts` — `logisticsCodService`: the report, the parcel list (with the "overdue
+    only" filter worked out from the partner's limit) and `recordRemittance`.
+  - `cod.utils.ts` — the views: due-by date, overdue flag and cash mismatch flag per parcel.
+  - Endpoints, all under `/admin/cod`:
+    - `GET /summary` and `GET /parcels?partnerId=&onlyOverdue=` (`logisticsRead`);
+    - `GET /remittances?partnerId=` and `GET /remittances/:remittanceId` (`logisticsRead`);
+    - `POST /remittances` (`logisticsManage`, staff write-limited, written to the platform audit
+      log).
 - `reliability/` — brand reliability.
   - `brand-incident.repository.ts` — `recordIncidents(tx, incidents)`, called inside the
     transaction of whatever went wrong: an approved unavailable item (`orders/unavailable-items`),
@@ -508,3 +523,27 @@ The web order page listens for that notification and refreshes itself.
     the hub) also counts as `CANCELLED`.
   - A pickup coming back from a returned parcel counts as `RETURNED`.
   - This keeps the existing "every group closed" rule in `deriveOrderFulfilment` correct.
+- **Cash collected is stored when the parcel moves to `DELIVERED`, not on every event.**
+  - The partner's amount comes from its webhook, its tracking poll, the status spreadsheet or a
+    staff update (`codCollectedAmount`, only allowed with "Delivered").
+  - When nobody reports an amount, the parcel's `codAmountToCollect` is taken as collected.
+  - A different amount still delivers the parcel. It adds a `COD_COLLECTED_MISMATCH` event and a
+    warning log, and the parcel shows "Label said …" in Partner cash.
+  - A repeated "delivered" doesn't move the status, so it never overwrites the stored amount.
+  - The order itself moves from `DUE` to `PAID` in the orders rollup (see `orders/README.md`).
+- **A parcel's cash can be paid in only once.**
+  - `CodRemittanceLine.shipmentId` is unique, so two payments recorded at the same moment for the
+    same parcel can't both succeed. The loser gets `409 PARCELS_NOT_REMITTABLE`.
+  - `(partnerId, reference)` is unique, so a retried form gets `409 REMITTANCE_ALREADY_RECORDED`
+    instead of a second payment.
+- **The server works out every remittance amount.**
+  - Each line's cash is read from the parcel, never sent by the browser.
+  - Staff send only the parcels, the fee per parcel and the amount the bank shows.
+  - When that amount isn't the parcels' cash minus the fees, the payment is refused
+    (`422 REMITTANCE_TOTAL_MISMATCH`), so finance fixes the ticks rather than saving a wrong
+    record.
+  - CHECK constraints hold the same sums in the database.
+- **The partner that holds a parcel's cash is its live (`BOOKED`) booking.** A rebooked parcel's
+  cash belongs to the partner that delivered it.
+- Overdue cash and mismatched amounts show on the Partner cash page and in the logs. They don't
+  raise staff alerts yet; that comes with the time-limit alerts.

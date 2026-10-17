@@ -69,6 +69,8 @@ const shipmentDetailSelect = {
   parcelCount: true,
   deliveryAttemptCount: true,
   deliveredAt: true,
+  codCollectedAmount: true,
+  codRemittanceLine: { select: { remittanceId: true } },
   labelPrintedAt: true,
   returnOutcome: true,
   returnCheckedInAt: true,
