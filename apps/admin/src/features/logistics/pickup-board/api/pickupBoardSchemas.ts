@@ -25,8 +25,19 @@ export const pickupBoardLocationSchema = z.object({
       readyForPickupAt: z.string().nullable(),
     }),
   ),
+  returns: z
+    .array(
+      z.object({
+        brandReturnId: z.string(),
+        orderId: z.string(),
+        source: z.enum(["PARCEL_RETURNED", "FAILED_INSPECTION"]),
+        unitCount: z.number(),
+      }),
+    )
+    .default([]),
 });
 export type PickupBoardLocation = z.infer<typeof pickupBoardLocationSchema>;
+export type BoardReturn = PickupBoardLocation["returns"][number];
 
 export const pickupBoardPageSchema = z.object({
   items: z.array(pickupBoardLocationSchema),
@@ -60,5 +71,6 @@ export type AssignRiderTaskBody = {
   riderId: string;
   pickupLocationId: string;
   fulfilmentGroupIds: string[];
+  brandReturnIds: string[];
   roundStartsAt: string;
 };

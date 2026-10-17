@@ -44,10 +44,11 @@ feature layout.
 - `pickup-board/` — the Pickup board page (`/logistics/pickup-board`).
   - `api/pickupBoardApi.ts` — waiting bags by location, rider visits, assign, cancel, against
     `/api/logistics/admin/pickup-board` and `/api/logistics/admin/rider-tasks`.
-  - `components/`: `PickupBoardPage`, `PickupLocationCard` (one location's waiting bags, all
-    ticked by default), `AssignRiderModal` (rider, round start with one-tap buttons for today's
-    round times), `RiderTasksSection` and `RiderTaskRow` (visits with progress; "Cancel visit"
-    before anything is collected).
+  - `components/`: `PickupBoardPage`, `PickupLocationCard` (one location's waiting bags to
+    collect and returns to take back, all ticked by default; a visit can be returns only),
+    `AssignRiderModal` (rider, round start with one-tap buttons for today's round times),
+    `RiderTasksSection` and `RiderTaskRow` (visits with progress; "Cancel visit" before anything
+    is collected, which puts its returns back at the hub).
   - `utils/roundTime.utils.ts` — round time ↔ `datetime-local` value.
 - `bag-tags/` — the Bag stickers pages.
   - `/logistics/bag-tags` — `BagTagsPage` with `CreateBagTagBatchForm` (1–500 stickers) and the

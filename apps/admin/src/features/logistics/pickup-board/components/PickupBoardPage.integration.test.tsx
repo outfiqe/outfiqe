@@ -93,6 +93,44 @@ describe("PickupBoardPage", () => {
     );
   });
 
+  it("sends returns back to the brand on a visit", async () => {
+    let assignBody: unknown;
+    const returnOnlyLocation = {
+      ...waitingLocation,
+      pickups: [],
+      returns: [
+        {
+          brandReturnId: "return-1",
+          orderId: "8b3f4e3a-6dac",
+          source: "PARCEL_RETURNED",
+          unitCount: 2,
+        },
+      ],
+    };
+    mswServer.use(
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(PICKUP_BOARD_URL, () => okJson({ items: [returnOnlyLocation], nextCursor: null })),
+      http.get(RIDER_TASKS_URL, () => okJson(emptyPage)),
+      http.get(RIDERS_URL, () => okJson({ items: [buildRider()], nextCursor: null })),
+      http.post(RIDER_TASKS_URL, async ({ request }) => {
+        assignBody = await request.json();
+        return okJson(assignedTask, 201);
+      }),
+    );
+    const user = userEvent.setup();
+    renderBoard();
+
+    expect(await screen.findByText(/Take back order #8B3F4E3A/)).toBeInTheDocument();
+    expect(screen.getByText(/parcel came back/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Assign rider" }));
+    await screen.findByRole("option", { name: "Asha Rider" });
+    await user.click(screen.getByRole("button", { name: "Assign visit" }));
+
+    await waitFor(() =>
+      expect(assignBody).toMatchObject({ fulfilmentGroupIds: [], brandReturnIds: ["return-1"] }),
+    );
+  });
+
   it("says when nothing is waiting and lists earlier visits", async () => {
     mswServer.use(
       http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
