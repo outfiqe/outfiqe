@@ -6,6 +6,8 @@ export const PLATFORM_AUDIT_ACTION = {
   RIDER_INVITED: "rider.invited",
   RIDER_IDENTITY_VERIFIED: "rider.identity-verified",
   RIDER_STATUS_CHANGED: "rider.status-changed",
+  LOGISTICS_STATUS_CORRECTED: "logistics.status-corrected",
+  LOGISTICS_PARCEL_UPDATED: "logistics.parcel-updated",
   IMPERSONATION_START: "impersonation.start",
   IMPERSONATION_END: "impersonation.end",
   FEATURE_OVERRIDE_SET: "feature.override.set",

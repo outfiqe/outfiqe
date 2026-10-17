@@ -17,6 +17,7 @@ export const buildFulfilmentAssignments = (
   brandIds: readonly string[],
   defaultLocations: readonly DefaultPickupLocation[],
   hubIdByCoverageKey: ReadonlyMap<string, string>,
+  { hubIdsWithDeliveryPartner }: { hubIdsWithDeliveryPartner: ReadonlySet<string> },
 ): FulfilmentAssignment[] => {
   const locationByBrandId = new Map(
     defaultLocations.map((location) => [location.brandId, location]),
@@ -27,7 +28,9 @@ export const buildFulfilmentAssignments = (
     const hubId = location
       ? hubIdByCoverageKey.get(logisticsPickupCoverage.toCoverageKey(location))
       : undefined;
-    if (!location || !hubId) return brandShipsAssignment(brandId);
+    if (!location || !hubId || !hubIdsWithDeliveryPartner.has(hubId)) {
+      return brandShipsAssignment(brandId);
+    }
 
     return {
       brandId,

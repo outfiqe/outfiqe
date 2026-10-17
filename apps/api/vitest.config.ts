@@ -53,6 +53,8 @@ export default defineConfig({
         "src/shared/utils/random-code.utils.ts",
         "src/shared/utils/phone.utils.ts",
         "src/shared/utils/working-days.utils.ts",
+        "src/shared/utils/csv.utils.ts",
+        "src/shared/utils/stored-json.utils.ts",
         "src/shared/utils/country.utils.ts",
         "src/shared/utils/city.utils.ts",
         "src/modules/delivery-zones/**/*.ts",

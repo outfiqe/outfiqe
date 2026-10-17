@@ -1,5 +1,7 @@
 import { prisma } from "#db/prisma.js";
 
+const NO_HUBS = 0;
+
 export type PickupCityKey = {
   countryCode: string;
   cityNormalized: string;
@@ -62,6 +64,29 @@ export const logisticsPickupCoverage = {
       ),
     );
     return new Map(coverageByCountry.flat());
+  },
+
+  async findHubIdsWithDeliveryPartner(params: {
+    hubIds: readonly string[];
+    deliveryZoneId: string;
+    requiresCashOnDelivery: boolean;
+  }): Promise<Set<string>> {
+    if (params.hubIds.length === NO_HUBS) return new Set();
+    const partnerZones = await prisma.deliveryPartnerZone.findMany({
+      where: {
+        hubId: { in: [...params.hubIds] },
+        deliveryZoneId: params.deliveryZoneId,
+        isActive: true,
+        partner: {
+          isActive: true,
+          ...(params.requiresCashOnDelivery ? { supportsCod: true } : {}),
+        },
+        hub: { partnerAccounts: { some: { isActive: true } } },
+      },
+      distinct: ["hubId"],
+      select: { hubId: true },
+    });
+    return new Set(partnerZones.map(({ hubId }) => hubId));
   },
 
   async listDefaultLocationsForBrands(

@@ -27,6 +27,7 @@ import {
 } from "./order.utils.js";
 import { orderItemChangeAccess } from "./refunds/item-change-access.js";
 import { orderLineCancellationService } from "./refunds/line-cancellation.service.js";
+import { orderOutstandingAmountService } from "./refunds/refund.outstanding.js";
 import { orderRefundService } from "./refunds/refund.service.js";
 import { orderRefundDestinationService } from "./refunds/refund-destination.service.js";
 import { orderReturnService } from "./returns/return.service.js";
@@ -127,4 +128,6 @@ export const orderService = {
   ...orderLineCancellationService,
 
   ...orderUnavailableItemService,
+
+  ...orderOutstandingAmountService,
 };
