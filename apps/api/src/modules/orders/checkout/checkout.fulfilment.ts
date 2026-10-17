@@ -9,7 +9,7 @@ import { toE164PhoneNumber } from "#lib/phone.utils.js";
 import { generateRandomCode } from "#lib/random-code.utils.js";
 import { calendarDateToUtcMidnight } from "#lib/working-days.utils.js";
 import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
-import { logisticsService } from "#modules/logistics/logistics.service.js";
+import { logisticsFlowService } from "#modules/logistics/flow/flow.service.js";
 
 import type { FulfilmentGroupSpec } from "../order.types.js";
 
@@ -39,7 +39,7 @@ export const planCheckoutFulfilment = async ({
 }: CheckoutFulfilmentInput): Promise<CheckoutFulfilmentPlan> => {
   const countryCode = PLATFORM_DEFAULT_COUNTRY_CODE;
   const [assignments, deliveryEstimate] = await Promise.all([
-    logisticsService.resolveFulfilmentAssignments({
+    logisticsFlowService.resolveFulfilmentAssignments({
       brandIds,
       deliveryCity: city,
       countryCode,

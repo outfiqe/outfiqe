@@ -240,6 +240,11 @@ After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing 
 
 ## Non-obvious rationale
 
+- **Checkout imports `flow/flow.service.ts`, not `logisticsService`.** Hub operations call
+  `orderService` (refunds and cash to collect), and `orderService` loads checkout. If checkout
+  imported the logistics root object, loading the app would go round that loop and the root would
+  spread a topic service before it existed, crashing at start-up ("Cannot access … before
+  initialization"). `flow/` imports nothing from orders, so checkout uses it directly.
 - **A parcel's cash is recomputed, not pushed.** A refund after packing doesn't reach into
   logistics. Instead the label, the "label printed" step and the handover scan all recompute the
   parcel's cash from the order. A change records `COD_AMOUNT_CHANGED`, and the handover is blocked
