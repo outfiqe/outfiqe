@@ -7,13 +7,15 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { useHubs } from "../../hubs/hooks/useHubs";
-import { ADAPTER_LABELS } from "../constants/partnerLabels";
+import { ADAPTER_LABELS, MANUAL_ADAPTER_KEY } from "../constants/partnerLabels";
 import { useDeliveryPartner } from "../hooks/useDeliveryPartner";
 import { PartnerAccountsSection } from "./PartnerAccountsSection";
 import { PartnerAreasSection } from "./PartnerAreasSection";
+import { PartnerConnectionSection } from "./PartnerConnectionSection";
 import { PartnerFormModal } from "./PartnerFormModal";
 import { PartnerStatusImportSection } from "./PartnerStatusImportSection";
 import { PartnerStatusNamesSection } from "./PartnerStatusNamesSection";
+import { PartnerWebhookReceiptsSection } from "./PartnerWebhookReceiptsSection";
 
 type PartnerDetailPageProps = { partnerId: string };
 
@@ -33,6 +35,8 @@ export const PartnerDetailPage = ({ partnerId }: PartnerDetailPageProps) => {
       </div>
     );
   }
+
+  const isConnectedPartner = partner.adapterKey !== MANUAL_ADAPTER_KEY;
 
   return (
     <div className="space-y-8">
@@ -65,6 +69,7 @@ export const PartnerDetailPage = ({ partnerId }: PartnerDetailPageProps) => {
         </div>
       </div>
 
+      {isConnectedPartner && <PartnerConnectionSection partner={partner} />}
       <PartnerAccountsSection partner={partner} hubs={hubs ?? []} canManage={canManage} />
       <PartnerAreasSection key={partner.zones.length} partner={partner} canManage={canManage} />
       <PartnerStatusNamesSection
@@ -73,6 +78,9 @@ export const PartnerDetailPage = ({ partnerId }: PartnerDetailPageProps) => {
         canManage={canManage}
       />
       <PartnerStatusImportSection partnerId={partner.id} canManage={canManage} />
+      {isConnectedPartner && (
+        <PartnerWebhookReceiptsSection partnerId={partner.id} canManage={canManage} />
+      )}
 
       {isEditing && <PartnerFormModal partner={partner} onClose={() => setIsEditing(false)} />}
     </div>
