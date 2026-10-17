@@ -19,6 +19,7 @@ import type { RefundPricing } from "./refund.types.js";
 
 const brandShippedGroup = {
   id: "group-1",
+  brandId: "brand-1",
   fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
   status: FulfilmentStatus.PLACED,
   pickupStatus: null,
