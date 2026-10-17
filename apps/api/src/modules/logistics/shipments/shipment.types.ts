@@ -1,6 +1,8 @@
 import type {
   DeliveryFailureReason,
   ItemInspectionStatus,
+  ParcelReturnOutcome,
+  PartnerClaimStatus,
   PaymentMethod,
   PickupStatus,
   ShipmentStatus,
@@ -46,6 +48,10 @@ export type ShipmentDetailView = ShipmentSummaryView & {
   deliveryAttemptCount: number;
   deliveredAt: string | null;
   labelPrintedAt: string | null;
+  returnOutcome: ParcelReturnOutcome | null;
+  returnCheckedInAt: string | null;
+  partnerClaimAmount: number | null;
+  partnerClaimStatus: PartnerClaimStatus | null;
   pickups: {
     fulfilmentGroupId: string;
     brandName: string;

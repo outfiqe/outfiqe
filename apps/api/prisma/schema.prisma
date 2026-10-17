@@ -165,6 +165,10 @@ model User {
   packedShipments                          Shipment[]                  @relation("ShipmentPackedBy")
   requestedShipmentBookings                ShipmentPartnerBooking[]    @relation("ShipmentBookingRequestedBy")
   bookedShipmentBookings                   ShipmentPartnerBooking[]    @relation("ShipmentBookingBookedBy")
+  returnCheckedInShipments                 Shipment[]                  @relation("ShipmentReturnCheckedInBy")
+  deliveryRefusals                         CustomerDeliveryRefusal[]   @relation("DeliveryRefusalCustomer")
+  clearedDeliveryRefusals                  CustomerDeliveryRefusal[]   @relation("DeliveryRefusalClearer")
+  confirmedBrandReturns                    BrandReturn[]               @relation("BrandReturnConfirmer")
   partnerStatusImports                     PartnerStatusImport[]       @relation("PartnerStatusImportUploader")
   decidedBrandUnavailables                 BrandUnavailableRequest[]   @relation("BrandUnavailableDecider")
 
@@ -341,6 +345,8 @@ model Brand {
   sizeStandards            BrandSizeStandard[]
   riderTasks               RiderTask[]
   brandUnavailableRequests BrandUnavailableRequest[]
+  fulfilmentIncidents      BrandFulfilmentIncident[]
+  brandReturns             BrandReturn[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -1453,6 +1459,7 @@ model Order {
   shipments         Shipment[]
   refunds           OrderRefund[]
   refundDestination OrderRefundDestination?
+  deliveryRefusals  CustomerDeliveryRefusal[]
 
   @@index([userId, createdAt])
   @@index([paymentMethod, createdAt])
@@ -1501,6 +1508,7 @@ model OrderFulfilmentGroup {
   updatedAt                DateTime                  @updatedAt @map("updated_at")
   riderTaskStops           RiderTaskStop[]
   bagTag                   BagTag?
+  brandReturns             BrandReturn[]
   brandUnavailableRequests BrandUnavailableRequest[]
 
   @@unique([orderId, brandId])
@@ -1538,6 +1546,7 @@ model Hub {
   bagTagBatches    BagTagBatch[]
   partnerAccounts  DeliveryPartnerAccount[]
   partnerZones     DeliveryPartnerZone[]
+  brandReturns     BrandReturn[]
 
   @@map("hubs")
 }
@@ -1586,26 +1595,32 @@ model BrandPickupLocation {
 }
 
 model Shipment {
-  id                   String         @id @default(uuid()) @db.Uuid
-  orderId              String         @map("order_id") @db.Uuid
-  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  hubId                String         @map("hub_id") @db.Uuid
-  hub                  Hub            @relation(fields: [hubId], references: [id], onDelete: Restrict)
-  trackingCode         String         @unique @map("tracking_code")
-  status               ShipmentStatus @default(PACKED)
-  statusChangedAt      DateTime       @default(now()) @map("status_changed_at")
-  currency             String         @db.Char(3)
-  codAmountToCollect   Int            @map("cod_amount_to_collect")
-  codCollectedAmount   Int?           @map("cod_collected_amount")
-  weightGrams          Int            @map("weight_grams")
-  parcelCount          Int            @map("parcel_count")
-  deliveryAttemptCount Int            @default(0) @map("delivery_attempt_count")
-  lastEventAt          DateTime       @default(now()) @map("last_event_at")
-  deliveredAt          DateTime?      @map("delivered_at")
-  packedById           String?        @map("packed_by_id") @db.Uuid
-  packedBy             User?          @relation("ShipmentPackedBy", fields: [packedById], references: [id], onDelete: SetNull)
-  labelCodAmount       Int?           @map("label_cod_amount")
-  labelPrintedAt       DateTime?      @map("label_printed_at")
+  id                   String               @id @default(uuid()) @db.Uuid
+  orderId              String               @map("order_id") @db.Uuid
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hubId                String               @map("hub_id") @db.Uuid
+  hub                  Hub                  @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  trackingCode         String               @unique @map("tracking_code")
+  status               ShipmentStatus       @default(PACKED)
+  statusChangedAt      DateTime             @default(now()) @map("status_changed_at")
+  currency             String               @db.Char(3)
+  codAmountToCollect   Int                  @map("cod_amount_to_collect")
+  codCollectedAmount   Int?                 @map("cod_collected_amount")
+  weightGrams          Int                  @map("weight_grams")
+  parcelCount          Int                  @map("parcel_count")
+  deliveryAttemptCount Int                  @default(0) @map("delivery_attempt_count")
+  lastEventAt          DateTime             @default(now()) @map("last_event_at")
+  deliveredAt          DateTime?            @map("delivered_at")
+  packedById           String?              @map("packed_by_id") @db.Uuid
+  packedBy             User?                @relation("ShipmentPackedBy", fields: [packedById], references: [id], onDelete: SetNull)
+  labelCodAmount       Int?                 @map("label_cod_amount")
+  labelPrintedAt       DateTime?            @map("label_printed_at")
+  returnOutcome        ParcelReturnOutcome? @map("return_outcome")
+  returnCheckedInAt    DateTime?            @map("return_checked_in_at")
+  returnCheckedInById  String?              @map("return_checked_in_by_id") @db.Uuid
+  returnCheckedInBy    User?                @relation("ShipmentReturnCheckedInBy", fields: [returnCheckedInById], references: [id], onDelete: SetNull)
+  partnerClaimAmount   Int?                 @map("partner_claim_amount")
+  partnerClaimStatus   PartnerClaimStatus?  @map("partner_claim_status")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1613,6 +1628,8 @@ model Shipment {
   fulfilmentGroups OrderFulfilmentGroup[]
   trackingEvents   TrackingEvent[]
   bookings         ShipmentPartnerBooking[]
+  deliveryRefusal  CustomerDeliveryRefusal?
+  brandReturns     BrandReturn[]
 
   @@index([status, lastEventAt])
   @@index([orderId])
@@ -1754,7 +1771,7 @@ model ShipmentPartnerBooking {
   bookingAttempts    Int                       @default(0) @map("booking_attempts")
   lastAttemptAt      DateTime?                 @map("last_attempt_at")
   lastPolledAt       DateTime?                 @map("last_polled_at")
-  requestedAt       DateTime                  @default(now()) @map("requested_at")
+  requestedAt        DateTime                  @default(now()) @map("requested_at")
   requestedById      String?                   @map("requested_by_id") @db.Uuid
   requestedBy        User?                     @relation("ShipmentBookingRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
   bookedAt           DateTime?                 @map("booked_at")
@@ -1880,6 +1897,7 @@ model OrderItem {
 
   createdAt                DateTime                  @default(now()) @map("created_at")
   orderRefundLines         OrderRefundLine[]
+  brandReturnLines         BrandReturnLine[]
   brandUnavailableRequests BrandUnavailableRequest[]
 
   @@index([productId])
@@ -1969,6 +1987,7 @@ enum InventoryMovementSource {
   ORDER
   BRAND_ADJUSTMENT
   ORDER_REFUND
+  BRAND_RETURN
 }
 
 model InventoryLedgerEntry {
@@ -4372,6 +4391,8 @@ model RiderTaskStop {
   direction         RiderStopDirection
   isActive          Boolean              @default(true) @map("is_active")
   scannedAt         DateTime?            @map("scanned_at")
+  brandReturnId     String?              @map("brand_return_id") @db.Uuid
+  brandReturn       BrandReturn?         @relation(fields: [brandReturnId], references: [id], onDelete: SetNull)
 
   @@index([riderTaskId])
   @@index([fulfilmentGroupId])
@@ -4414,6 +4435,7 @@ enum OrderRefundCause {
   RETURNED
   CUSTOMER_REFUSED
   STAFF_ADJUSTMENT
+  PARTNER_FAILED
 }
 
 enum OrderRefundStatus {
@@ -4527,4 +4549,112 @@ model BrandUnavailableRequest {
   @@index([brandId, createdAt])
   @@index([orderItemId])
   @@map("brand_unavailable_requests")
+}
+
+enum ParcelReturnOutcome {
+  CUSTOMER_REFUSED_OR_UNREACHABLE
+  WRONG_OR_DAMAGED_ITEM
+  PARTNER_DAMAGED_OR_LOST
+}
+
+enum PartnerClaimStatus {
+  OPEN
+  RECOVERED
+  WRITTEN_OFF
+}
+
+enum BrandIncidentKind {
+  UNAVAILABLE_ITEM
+  FAILED_INSPECTION
+  WASTED_VISIT
+  MISSED_ROUND
+}
+
+enum BrandReturnSource {
+  PARCEL_RETURNED
+  FAILED_INSPECTION
+}
+
+enum BrandReturnStatus {
+  AT_HUB
+  ON_ROUND
+  DROPPED_OFF
+  CONFIRMED
+}
+
+model CustomerDeliveryRefusal {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  user        User      @relation("DeliveryRefusalCustomer", fields: [userId], references: [id], onDelete: Cascade)
+  phoneE164   String?   @map("phone_e164")
+  orderId     String    @map("order_id") @db.Uuid
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shipmentId  String    @unique @map("shipment_id") @db.Uuid
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  refusedAt   DateTime  @map("refused_at")
+  clearedAt   DateTime? @map("cleared_at")
+  clearedById String?   @map("cleared_by_id") @db.Uuid
+  clearedBy   User?     @relation("DeliveryRefusalClearer", fields: [clearedById], references: [id], onDelete: SetNull)
+  clearReason String?   @map("clear_reason")
+
+  @@index([userId, refusedAt])
+  @@index([phoneE164, refusedAt])
+  @@map("customer_delivery_refusals")
+}
+
+model BrandFulfilmentIncident {
+  id         String            @id @default(uuid()) @db.Uuid
+  brandId    String            @map("brand_id") @db.Uuid
+  brand      Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  kind       BrandIncidentKind
+  sourceKey  String            @map("source_key")
+  orderId    String?           @map("order_id") @db.Uuid
+  note       String?
+  occurredAt DateTime          @map("occurred_at")
+
+  @@unique([kind, sourceKey])
+  @@index([brandId, occurredAt])
+  @@map("brand_fulfilment_incidents")
+}
+
+model BrandReturn {
+  id                String               @id @default(uuid()) @db.Uuid
+  brandId           String               @map("brand_id") @db.Uuid
+  brand             Brand                @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  hubId             String               @map("hub_id") @db.Uuid
+  hub               Hub                  @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  fulfilmentGroupId String               @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
+  shipmentId        String?              @map("shipment_id") @db.Uuid
+  shipment          Shipment?            @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
+  source            BrandReturnSource
+  status            BrandReturnStatus    @default(AT_HUB)
+  createdAt         DateTime             @default(now()) @map("created_at")
+  droppedOffAt      DateTime?            @map("dropped_off_at")
+  confirmedAt       DateTime?            @map("confirmed_at")
+  confirmedById     String?              @map("confirmed_by_id") @db.Uuid
+  confirmedBy       User?                @relation("BrandReturnConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  isAutoConfirmed   Boolean              @default(false) @map("is_auto_confirmed")
+
+  lines BrandReturnLine[]
+  stops RiderTaskStop[]
+
+  @@unique([fulfilmentGroupId, source])
+  @@index([brandId, status])
+  @@index([hubId, status])
+  @@index([status, droppedOffAt])
+  @@map("brand_returns")
+}
+
+model BrandReturnLine {
+  id            String      @id @default(uuid()) @db.Uuid
+  brandReturnId String      @map("brand_return_id") @db.Uuid
+  brandReturn   BrandReturn @relation(fields: [brandReturnId], references: [id], onDelete: Cascade)
+  orderItemId   String      @map("order_item_id") @db.Uuid
+  orderItem     OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  resellableQty Int         @map("resellable_qty")
+  damagedQty    Int         @map("damaged_qty")
+
+  @@unique([brandReturnId, orderItemId])
+  @@map("brand_return_lines")
 }

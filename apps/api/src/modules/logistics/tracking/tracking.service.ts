@@ -2,9 +2,11 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import { PickupStatus } from "#generated/prisma/enums.js";
+import { PickupStatus, ShipmentStatus } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
+import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
+import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 
 import { TRACKING_SUBJECT_KIND } from "./tracking.constants.js";
 import {
@@ -141,6 +143,13 @@ const tryMoveShipmentStatus = async (
     }),
     input.occurredAt,
   );
+  if (nextStatus === ShipmentStatus.LOST) {
+    await enqueueOutboxEvent(tx, {
+      topic: OUTBOX_TOPIC.LOGISTICS_PARCEL_LOST,
+      aggregateId: shipmentId,
+      payload: { shipmentId },
+    });
+  }
   return true;
 };
 
