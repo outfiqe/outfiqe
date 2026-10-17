@@ -24,6 +24,7 @@ const buildShipment = (overrides: Partial<BrandShipmentDetail> = {}): BrandShipm
   deliveredAt: null,
   cancellationRequestedAt: null,
   cancellationReason: null,
+  canReportUnavailable: false,
   items: [
     {
       id: "item-1",
@@ -32,6 +33,7 @@ const buildShipment = (overrides: Partial<BrandShipmentDetail> = {}): BrandShipm
       imageUrl: null,
       sizeLabel: "M",
       qty: 2,
+      refundedQty: 0,
       unitPrice: 1000,
       listUnitPrice: 1000,
       brandDiscountAmount: 0,

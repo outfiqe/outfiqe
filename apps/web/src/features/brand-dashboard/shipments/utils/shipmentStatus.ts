@@ -38,6 +38,7 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatusValue, string> = {
   DUE: "Cash on delivery",
   FAILED: "Payment failed",
   REFUNDED: "Refunded",
+  PARTIALLY_REFUNDED: "Partly refunded",
 };
 
 const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
