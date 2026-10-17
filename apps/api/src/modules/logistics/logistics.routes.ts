@@ -16,6 +16,7 @@ import {
   logisticsAdminReliabilityRoutes,
   logisticsBrandReliabilityRoutes,
 } from "./reliability/reliability.routes.js";
+import { logisticsBrandReturnRoutes } from "./returns/brand-return.routes.js";
 import { logisticsReturnRoutes } from "./returns/return.routes.js";
 import { logisticsRiderRoutes } from "./riders/rider.routes.js";
 import { logisticsRiderTaskRoutes } from "./rounds/rider-task.routes.js";
@@ -40,6 +41,7 @@ logisticsRoutes.use("/hub", logisticsReturnRoutes);
 logisticsRoutes.use("/admin/brand-reliability", logisticsAdminReliabilityRoutes);
 logisticsRoutes.use("/admin/orders/:orderId/delivery-refusals", logisticsAdminRefusalRoutes);
 logisticsRoutes.use("/brand/reliability", logisticsBrandReliabilityRoutes);
+logisticsRoutes.use("/brand/returns", logisticsBrandReturnRoutes);
 logisticsRoutes.use("/cod-eligibility", logisticsCodEligibilityRoutes);
 logisticsRoutes.use("/brand/pickup-locations", logisticsPickupLocationRoutes);
 logisticsRoutes.use("/brand/pickups", logisticsPickupRoutes);

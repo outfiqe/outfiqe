@@ -12,6 +12,7 @@ import { logisticsPickupLocationService } from "./pickup-locations/pickup-locati
 import { logisticsPickupService } from "./pickups/pickup.service.js";
 import { logisticsRefusalService } from "./refusals/refusal.service.js";
 import { logisticsReliabilityService } from "./reliability/reliability.service.js";
+import { logisticsBrandReturnService } from "./returns/brand-return.service.js";
 import { logisticsLostParcelService } from "./returns/lost-parcel.service.js";
 import { logisticsReturnCheckInService } from "./returns/return-check-in.service.js";
 import { logisticsRiderService } from "./riders/rider.service.js";
@@ -40,6 +41,7 @@ export const logisticsService = {
   ...logisticsCustomerTrackingService,
   ...logisticsReturnCheckInService,
   ...logisticsLostParcelService,
+  ...logisticsBrandReturnService,
   ...logisticsRefusalService,
   ...logisticsReliabilityService,
 };

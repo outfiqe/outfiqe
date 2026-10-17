@@ -42,4 +42,22 @@ describe("assignRiderTaskSchema", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("takes a visit with only returns, but not an empty one", () => {
+    expect(
+      assignRiderTaskSchema.safeParse({
+        riderId: GROUP_ID,
+        pickupLocationId: GROUP_ID,
+        brandReturnIds: [GROUP_ID],
+        roundStartsAt: SCANNED_AT,
+      }).success,
+    ).toBe(true);
+    expect(
+      assignRiderTaskSchema.safeParse({
+        riderId: GROUP_ID,
+        pickupLocationId: GROUP_ID,
+        roundStartsAt: SCANNED_AT,
+      }).success,
+    ).toBe(false);
+  });
 });

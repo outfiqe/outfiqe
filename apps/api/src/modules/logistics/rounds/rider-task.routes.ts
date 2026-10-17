@@ -8,7 +8,12 @@ import { validate } from "#middlewares/validate.js";
 
 import { logisticsRiderScanRateLimit } from "../logistics.rate-limits.js";
 import { logisticsRiderTaskController } from "./rider-task.controller.js";
-import { collectScanSchema, riderTaskIdParamSchema, wastedVisitSchema } from "./rounds.schemas.js";
+import {
+  collectScanSchema,
+  returnDropOffSchema,
+  riderTaskIdParamSchema,
+  wastedVisitSchema,
+} from "./rounds.schemas.js";
 
 const requireRider = [...requireActiveAuth, requireRole(UserRole.RIDER)];
 
@@ -30,6 +35,14 @@ logisticsRiderTaskRoutes.post(
   requireIdempotencyKey,
   validate({ params: riderTaskIdParamSchema, body: collectScanSchema }),
   logisticsRiderTaskController.collect,
+);
+
+logisticsRiderTaskRoutes.post(
+  "/:taskId/return-drop-offs",
+  ...requireRider,
+  logisticsRiderScanRateLimit,
+  validate({ params: riderTaskIdParamSchema, body: returnDropOffSchema }),
+  logisticsRiderTaskController.dropOffReturn,
 );
 
 logisticsRiderTaskRoutes.post(
