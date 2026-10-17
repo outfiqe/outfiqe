@@ -106,6 +106,19 @@ feature layout.
   and **Clear refusals** with a required reason (`TextPromptModal`), which the API writes to the
   audit log. The card hides itself for staff without logistics access (the request answers
   `403`).
+- `cod/` — `CodPage` (`/logistics/cod`, "Partner cash"):
+  - `CodPartnerSummaryList` — one card per partner holding cash: how much, how many parcels, the
+    oldest delivery and how much is past the partner's limit.
+  - `UnremittedParcelsSection` + `UnremittedParcelsTable` — that partner's delivered cash parcels
+    not paid in yet, with an "only overdue" filter. Staff with manage access tick parcels and
+    adjust each partner fee, which starts at the partner's quoted fee.
+  - `RecordRemittanceModal` — reference, arrival date and the amount the bank shows. It warns
+    when that amount isn't the ticked cash minus fees; the API refuses it either way.
+  - `CodRemittancesSection` + `CodRemittanceDetailModal` — payments already recorded, and the
+    parcels each one covered.
+  - `utils/codRemittance.utils.ts` — the ticked totals, the starting fee and date helpers.
+- The parcel page shows what the partner collected and whether it has been paid in. "Record an
+  update" asks for the cash collected when the update is "Delivered".
 - `reliability/` — `BrandReliabilityPage` (`/logistics/reliability`): brands with 3 or more
   delivery problems in the last 30 days, with how many and whether they are warned or need review.
 
@@ -134,6 +147,9 @@ feature layout.
     collects.
 11. The partner's daily sheet is uploaded on the partner's page; parcels move on, and the report
     lists any row that couldn't be used and why.
+12. When a partner pays in the cash it collected, finance opens Partner cash, picks the partner,
+    ticks the parcels the payment covers, checks each fee and records the payment with the bank
+    reference. Those parcels leave the list and the payment shows under "Payments received".
 
 **Technical:** `routes/_authenticated.logistics.hubs.tsx` → `HubsPage` → `useHubs` /
 `HubFormModal` / `HubPickupZonesModal` → `hubsApi` → `/api/logistics/admin/hubs` (guarded by

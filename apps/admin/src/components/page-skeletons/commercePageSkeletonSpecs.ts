@@ -245,6 +245,13 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
     sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
   },
+  "/logistics/cod": {
+    title: "Partner cash",
+    description:
+      "Cash delivery partners collected on our parcels and haven't paid in yet. When a payment arrives, tick the parcels it covers, enter each partner fee and record it, so no parcel's cash is counted twice.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/cod/components/CodPage.tsx`],
+  },
   "/logistics/reliability": {
     title: "Brand reliability",
     description:
