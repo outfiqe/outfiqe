@@ -3,6 +3,7 @@ import {
   CrmItemKind,
   type Notification,
   NotificationType,
+  OrderRefundMethod,
 } from "@outfiqe/types";
 import { formatActorList } from "@outfiqe/utils";
 
@@ -156,6 +157,12 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `Your ${offerAmount(notification)} for ${outfitName(notification)} is ready to withdraw`;
     case NotificationType.OUTFIT_OFFER_REFUNDED:
       return `Your ${offerAmount(notification)} offer on ${outfitName(notification)} is being refunded`;
+    case NotificationType.ORDER_REFUND_ISSUED:
+      return metadata.method === OrderRefundMethod.CASH_NOT_COLLECTED
+        ? `You'll pay Rs. ${metadata.amount ?? ""} less on delivery`
+        : `We've refunded Rs. ${metadata.amount ?? ""} on your order`;
+    case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
+      return `Tell us where to send your Rs. ${metadata.amount ?? ""} refund`;
     case NotificationType.ACCOUNT_APPROVED:
       return metadata.approvedAccountKind === ApprovedAccountKind.BRAND
         ? `Welcome to Outfiqe! ${metadata.brandName ?? "Your brand"} is set up. Add your first products to start selling.`
