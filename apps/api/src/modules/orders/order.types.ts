@@ -97,6 +97,8 @@ export type OrderItemView = {
   brandDiscountAmount: number;
   platformDiscountAmount: number;
   attributedCreatorName: string | null;
+  refundedQty: number;
+  canCancel: boolean;
 };
 
 export type OrderShipmentView = {
@@ -127,6 +129,7 @@ export type OrderView = {
   total: number;
   brandDiscountTotal: number;
   platformDiscountTotal: number;
+  refundedAmount: number;
   items: OrderItemView[];
   shipments: OrderShipmentView[];
   transactions: PaymentTransactionView[];
@@ -184,6 +187,7 @@ export type BrandFulfilmentGroupItemView = {
   imageUrl: string | null;
   sizeLabel: string;
   qty: number;
+  refundedQty: number;
   unitPrice: number;
   listUnitPrice: number;
   brandDiscountAmount: number;
@@ -237,6 +241,7 @@ export type BrandFulfilmentGroupDetailView = Omit<
   pickedUpAt: string | null;
   pickupCode: string | null;
   cancellationReason: string | null;
+  canReportUnavailable: boolean;
   items: BrandFulfilmentGroupItemView[];
   shipTo: {
     fullName: string;

@@ -40,6 +40,7 @@ export const DomainEvents = {
   LEVEL_UP: "user.leveled_up",
   BRAND_APPLICATION_SUBMITTED: "brand.application.submitted",
   ORDER_STATUS_CHANGED: "order.status.changed",
+  ORDER_REFUND_UPDATED: "order.refund.updated",
   PRODUCT_REVIEWED: "product.reviewed",
   WITHDRAW_REQUEST_STATUS_CHANGED: "withdraw.request.status.changed",
   NOTIFICATION_CREATED: "notification.created",

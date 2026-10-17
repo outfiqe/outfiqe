@@ -16,6 +16,9 @@ export type NotificationActorSnapshot = {
 };
 
 export type NotificationMetadata = {
+  refundId?: string;
+  amount?: number;
+  method?: string | null;
   actor?: NotificationActorSnapshot;
   recentActors?: NotificationActorSnapshot[];
   lookImageUrl?: string;

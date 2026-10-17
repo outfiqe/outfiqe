@@ -25,13 +25,21 @@ import {
   toOrderSummaryView,
   toOrderView,
 } from "./order.utils.js";
+import { orderItemChangeAccess } from "./refunds/item-change-access.js";
+import { orderLineCancellationService } from "./refunds/line-cancellation.service.js";
+import { orderRefundService } from "./refunds/refund.service.js";
+import { orderRefundDestinationService } from "./refunds/refund-destination.service.js";
 import { orderReturnService } from "./returns/return.service.js";
+import { orderUnavailableItemService } from "./unavailable-items/unavailable-item.service.js";
 
 export const orderService = {
   async getOrder(userId: string, orderId: string): Promise<OrderView> {
     const order = await orderRepository.findByIdForUser(userId, orderId);
     if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
-    return toOrderView(order);
+    const brandIdsAllowingItemChanges = await orderItemChangeAccess.listBrandIdsAllowingItemChanges(
+      order.fulfilmentGroups.map(({ brandId }) => brandId),
+    );
+    return toOrderView(order, brandIdsAllowingItemChanges);
   },
 
   async listOrders(
@@ -111,4 +119,12 @@ export const orderService = {
   ...orderReturnService,
 
   ...orderFulfilmentGroupService,
+
+  ...orderRefundService,
+
+  ...orderRefundDestinationService,
+
+  ...orderLineCancellationService,
+
+  ...orderUnavailableItemService,
 };

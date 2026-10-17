@@ -1,71 +1,72 @@
-import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { refundFailedTemplate } from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import type { PaymentMethod } from "#generated/prisma/enums.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
   FulfilmentStatus,
   InventoryMovementKind,
   InventoryMovementSource,
-  PaymentStatus,
+  OrderRefundCause,
 } from "#generated/prisma/enums.js";
-import { sendEmail } from "#lib/email.utils.js";
-import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandPayoutRepository } from "#modules/brand-payouts/brand-payout.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
-import { paymentRepository } from "#modules/payments/payment.repository.js";
-import { paymentService } from "#modules/payments/payment.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { productService } from "#modules/products/product.service.js";
-import { describeError } from "#redis/redis.utils.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
 import { NOTHING_ALREADY_PAID, ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
 import { orderRepository } from "../order.repository.js";
 import type { OrderReturnOutcome } from "../order.types.js";
+import { listRemainingUnits } from "../refunds/refund.claim.js";
+import {
+  PAYMENT_STATUSES_WITH_MONEY_TAKEN,
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
+} from "../refunds/refund.constants.js";
+import { type AppliedRefund, orderRefundEngine } from "../refunds/refund.engine.js";
+import { REFUND_SETTLEMENT, type RefundSettlement } from "../refunds/refund.payment.js";
+import { orderRefundRepository } from "../refunds/refund.repository.js";
 
 const RETURNABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
   FulfilmentStatus.SHIPPED,
   FulfilmentStatus.DELIVERED,
 ];
 
-const alertOpsOfManualRefund = (orderId: string, total: number): void => {
-  const { subject, html } = refundFailedTemplate({ orderId, total });
-  void sendEmail({
-    to: env.OPS_NOTIFICATION_EMAIL,
-    subject,
-    body: `Order ${orderId} needs a manual refund — automatic refund failed.`,
-    html,
-  });
+const NO_REMAINING_UNITS = 0;
+
+const REFUNDED_BY_SETTLEMENT: Record<RefundSettlement, boolean | null> = {
+  [REFUND_SETTLEMENT.PAID_BY_GATEWAY]: true,
+  [REFUND_SETTLEMENT.NEEDS_MANUAL]: false,
+  [REFUND_SETTLEMENT.CASH_NOT_COLLECTED]: null,
+  [REFUND_SETTLEMENT.ALREADY_SETTLED]: null,
 };
 
-const refundReturnedOrder = async (
+const refundReturnedUnits = async (
+  tx: Prisma.TransactionClient,
   orderId: string,
-  paymentMethod: PaymentMethod,
-  payerPhone: string,
-  total: number,
-): Promise<boolean> => {
-  try {
-    const refundOutcome = await paymentService.refund(orderId, paymentMethod, payerPhone);
-    await prisma.$transaction(async (tx) => {
-      await paymentRepository.recordRefund(tx, orderId, paymentMethod, refundOutcome.rawResponse);
-      if (refundOutcome.succeeded) {
-        await orderRepository.markRefunded(tx, orderId);
-      } else {
-        await orderRepository.markNeedsManualRefund(tx, orderId);
-      }
-    });
-    if (!refundOutcome.succeeded) alertOpsOfManualRefund(orderId, total);
-    return refundOutcome.succeeded;
-  } catch (error) {
-    logger.error(`Refund for returned order ${orderId} failed: ${describeError(error)}`);
-    await orderRepository.markNeedsManualRefund(prisma, orderId);
-    alertOpsOfManualRefund(orderId, total);
-    return false;
-  }
+  adminUserId: string,
+  reason: string,
+): Promise<AppliedRefund | null> => {
+  const order = await orderRefundRepository.findOrderForRefund(tx, orderId);
+  if (!order) return null;
+  const hasMoneyPosition =
+    PAYMENT_STATUSES_WITH_MONEY_TAKEN.has(order.paymentStatus) ||
+    PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(order.paymentStatus);
+  const remainingUnits = listRemainingUnits(order);
+  if (!hasMoneyPosition || remainingUnits.length === NO_REMAINING_UNITS) return null;
+
+  return orderRefundEngine.claimAndApplyInTransaction(
+    tx,
+    {
+      orderId,
+      lineRequests: remainingUnits,
+      cause: OrderRefundCause.RETURNED,
+      reason,
+      requestedById: adminUserId,
+    },
+    { restockUnits: false, actorUserId: adminUserId },
+  );
 };
 
 export const orderReturnService = {
@@ -110,13 +111,17 @@ export const orderReturnService = {
         commissionRepository.countPaidForOrder(tx, orderId),
         brandPayoutRepository.countWithdrawnForOrder(tx, orderId),
       ]);
+      const appliedRefund = await refundReturnedUnits(tx, orderId, adminUserId, reason);
 
       return {
-        voidedCommissionCount,
-        voidedPayoutCount,
-        paidCommissionCount,
-        withdrawnPayoutCount,
-        needsClawback: paidCommissionCount + withdrawnPayoutCount > NOTHING_ALREADY_PAID,
+        appliedRefund,
+        counts: {
+          voidedCommissionCount,
+          voidedPayoutCount,
+          paidCommissionCount,
+          withdrawnPayoutCount,
+          needsClawback: paidCommissionCount + withdrawnPayoutCount > NOTHING_ALREADY_PAID,
+        },
       };
     });
 
@@ -128,11 +133,14 @@ export const orderReturnService = {
       );
     }
 
-    const refunded =
-      order.paymentStatus === PaymentStatus.PAID
-        ? await refundReturnedOrder(orderId, order.paymentMethod, order.phone, order.total)
-        : null;
-    const returnOutcome: OrderReturnOutcome = { ...settlementOutcome, refunded };
+    const { appliedRefund, counts } = settlementOutcome;
+    const settlement = appliedRefund
+      ? await orderRefundEngine.finishAfterCommit(appliedRefund)
+      : null;
+    const returnOutcome: OrderReturnOutcome = {
+      ...counts,
+      refunded: settlement ? REFUNDED_BY_SETTLEMENT[settlement] : null,
+    };
 
     await platformAudit.record({
       actorUserId: adminUserId,
