@@ -89,9 +89,12 @@ The module is built in steps. This README lists what exists now.
 - `rounds/` — pickup rounds:
   - Staff (`rounds.routes.ts`, `rounds.service.ts`):
     - `GET /admin/pickup-board?hubId=` — pickup locations with bags marked ready and not yet on an
-      active visit, cursor-paged by location.
+      active visit, or with brand returns waiting at the hub to go back there, cursor-paged by
+      location. Each location lists its `pickups` and its `returns`.
     - `POST /admin/rider-tasks` — one visit: one active rider at the rider's hub, one pickup
-      location, 1–50 of its waiting bags. Records `RIDER_ASSIGNED` per bag.
+      location, and 1–50 stops: waiting bags to collect (`fulfilmentGroupIds`) and brand returns
+      to hand back (`brandReturnIds`). Records `RIDER_ASSIGNED` per bag and moves each return
+      `AT_HUB` → `ON_ROUND`, refusing the whole visit if any of them moved meanwhile.
     - `GET /admin/rider-tasks?hubId=` and `POST /admin/rider-tasks/:taskId/cancel` (only before
       anything is collected).
   - Riders (`rider-task.routes.ts`, `rider-task.service.ts`, `RIDER` role, `ACTIVE` profile, scan
@@ -100,9 +103,14 @@ The module is built in steps. This README lists what exists now.
       contact and bags.
     - `POST /rider/tasks/:taskId/collect-scans` — pickup code + sticker code + phone scan time,
       with a required `Idempotency-Key`. See the funnel below.
-    - `POST /rider/tasks/:taskId/wasted` (nothing collected, with a reason; records
-      `VISIT_WASTED`) and `POST /rider/tasks/:taskId/finish` (some collected; the rest go back on
-      the board).
+    - `POST /rider/tasks/:taskId/return-drop-offs` — `{ brandReturnId }`: the rider handed a
+      return to the brand. Marks the stop scanned and the return `DROPPED_OFF`; for a returned
+      parcel it records `RETURNING_TO_BRAND` on the bag. A repeat is answered without changing
+      anything.
+    - `POST /rider/tasks/:taskId/wasted` (nothing done, with a reason; records `VISIT_WASTED`
+      and a brand incident) and `POST /rider/tasks/:taskId/finish` (something done; the rest go
+      back on the board). Releasing a visit (wasted, finished early or cancelled by staff) puts
+      every return it hadn't handed over back `AT_HUB`.
 - `flow/` — `resolveFulfilmentAssignments({ brandIds, deliveryCity, countryCode,
 requiresCashOnDelivery })`, which checkout calls before its transaction to decide each brand's
   flow.
@@ -255,9 +263,18 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     nothing.
   - `BrandReturn` (with `BrandReturnLine`s) is how items physically go back to a brand. It is
     created by a return check-in (`PARCEL_RETURNED`) and by a hub inspection with failed units
-    (`FAILED_INSPECTION`, every unit damaged), one per bag and source. It starts `AT_HUB`;
-    carrying it back on a rider round, the brand confirming it and restocking resellable units are
-    the next step.
+    (`FAILED_INSPECTION`, every unit damaged), one per bag and source. Its life:
+    `AT_HUB` → (put on a rider visit) `ON_ROUND` → (rider hands it over) `DROPPED_OFF` →
+    (brand confirms, or 48 hours pass) `CONFIRMED`.
+  - `brand-return.service.ts` — `GET /brand/returns` (the brand's returns, newest first,
+    cursor-paged, with each item's fine and damaged units) and
+    `POST /brand/returns/:brandReturnId/confirm` (brand write-limited; another brand's return is
+    a `404`). Confirming, in one transaction: a guarded `DROPPED_OFF` → `CONFIRMED` (a second
+    confirm is `409`), the resellable units go back into stock (`InventoryMovementSource.
+BRAND_RETURN`, so each return restocks once), and a returned parcel's bag records
+    `RETURNED_TO_BRAND`. `confirmOverdueBrandReturns` runs hourly from `logistics.jobs.ts` and
+    confirms, as the system, anything handed over more than 48 hours ago. Damaged units are never
+    restocked.
 - `refusals/` — refused deliveries and cash on delivery.
   - `refusal.eligibility.ts` — `checkCashOnDeliveryEligibility({ userId, phone, countryCode })`:
     cash on delivery is off once the account or the phone number (E.164) has `codRefusalLimit`
@@ -446,9 +463,13 @@ The web order page listens for that notification and refreshes itself.
 - **Partner work has its own outbox queue** (`outbox-logistics`), so a slow partner API can't hold
   up notifications or stock updates.
 
-- **A bag can be on only one active visit, enforced by the database.** The partial unique index
-  `rider_task_stops_one_active_stop_per_group_direction_key` (one active stop per group and
-  direction) turns two staff assigning the same bag at once into one `409 PICKUPS_NOT_ASSIGNABLE`.
+- **A bag or a return can be on only one active visit, enforced by the database.** The partial
+  unique indexes `rider_task_stops_one_active_collect_stop_per_group_key` (one active collection
+  per bag) and `rider_task_stops_one_active_stop_per_return_key` (one active stop per brand
+  return) turn two staff assigning the same stop at once into one `409 PICKUPS_NOT_ASSIGNABLE`.
+  Returns are keyed by the return, not the bag, because one bag can send two returns back (a
+  failed inspection and a refused parcel). A check constraint makes every `RETURN` stop name its
+  return and no `COLLECT` stop name one.
   Releasing a stop sets `is_active = false`, which puts the bag back on the board.
 - **Scans are idempotent twice over.** The `Idempotency-Key` (generated once per scan on the phone
   and kept with the queued scan) replays the stored answer for the same key. A retry with a new key

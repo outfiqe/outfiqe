@@ -1,4 +1,11 @@
-import { RIDER_TASK_STATUS, type RiderTaskStatus } from "../api/riderSchemas";
+import { RIDER_TASK_STATUS, type RiderTaskStatus, type RiderTaskStop } from "../api/riderSchemas";
+
+type ReturnSource = NonNullable<RiderTaskStop["brandReturn"]>["source"];
+
+export const RETURN_SOURCE_LABELS: Record<ReturnSource, string> = {
+  PARCEL_RETURNED: "parcel came back",
+  FAILED_INSPECTION: "failed our quality check",
+};
 
 export const RIDER_TASK_STATUS_LABELS: Record<RiderTaskStatus, string> = {
   [RIDER_TASK_STATUS.ASSIGNED]: "Not started",

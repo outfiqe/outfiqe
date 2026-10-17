@@ -1,4 +1,13 @@
-import { RIDER_TASK_STATUS, type RiderTaskStatus } from "../api/pickupBoardSchemas";
+import {
+  type BoardReturn,
+  RIDER_TASK_STATUS,
+  type RiderTaskStatus,
+} from "../api/pickupBoardSchemas";
+
+export const BOARD_RETURN_SOURCE_LABELS: Record<BoardReturn["source"], string> = {
+  PARCEL_RETURNED: "parcel came back",
+  FAILED_INSPECTION: "failed our quality check",
+};
 
 type BadgeTone = "neutral" | "positive" | "success" | "negative";
 

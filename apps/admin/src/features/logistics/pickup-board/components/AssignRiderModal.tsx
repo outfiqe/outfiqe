@@ -16,6 +16,7 @@ type AssignRiderModalProps = {
   hub: Hub;
   location: PickupBoardLocation;
   fulfilmentGroupIds: string[];
+  brandReturnIds: string[];
   onClose: () => void;
 };
 
@@ -23,6 +24,7 @@ export const AssignRiderModal = ({
   hub,
   location,
   fulfilmentGroupIds,
+  brandReturnIds,
   onClose,
 }: AssignRiderModalProps) => {
   const { data: activeRiders, isPending: isLoadingRiders } = useActiveRiders(hub.id);
@@ -41,6 +43,7 @@ export const AssignRiderModal = ({
         riderId,
         pickupLocationId: location.pickupLocationId,
         fulfilmentGroupIds,
+        brandReturnIds,
         roundStartsAt: new Date(roundStart).toISOString(),
       }),
     invalidateKeys: [PICKUP_BOARD_QUERY_KEY, RIDER_TASKS_QUERY_KEY],
@@ -53,7 +56,7 @@ export const AssignRiderModal = ({
       open
       onClose={onClose}
       title={`Assign a rider to ${location.brandName}`}
-      description={`${fulfilmentGroupIds.length} bag(s) at ${location.label}, ${location.city}.`}
+      description={`${fulfilmentGroupIds.length} bag(s) to collect and ${brandReturnIds.length} return(s) to hand back at ${location.label}, ${location.city}.`}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>

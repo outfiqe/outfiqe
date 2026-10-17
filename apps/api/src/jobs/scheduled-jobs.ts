@@ -38,8 +38,10 @@ import {
 } from "#modules/leaderboard/leaderboard.constants.js";
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
 import {
+  BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS,
   PARTNER_TRACKING_POLL_INTERVAL_MS,
   PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
+  runBrandReturnAutoConfirm,
   runPartnerTrackingPoll,
   runPartnerWebhookReceiptRetentionSweep,
   runStuckPartnerBookingSweep,
@@ -297,6 +299,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "logistics-partner-webhook-receipt-retention",
     run: runPartnerWebhookReceiptRetentionSweep,
     intervalMs: PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
+  },
+  {
+    name: "logistics-brand-return-auto-confirm",
+    run: runBrandReturnAutoConfirm,
+    intervalMs: BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS,
   },
 ];
 

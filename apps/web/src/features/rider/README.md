@@ -18,13 +18,18 @@ wasted. Scans made without signal are kept on the phone and sent later.
 - `utils/riderTask.utils.ts` — short order ids, collected counts, the map link, wording.
 - `constants/` — query keys, visit status labels, the queue's storage key, retry interval and the
   error codes that mean "try again later" (`RETRYABLE_SCAN_ERROR_CODES`).
-- `hooks/` — `useRiderTasks`, `useRiderTask`, `useMarkVisitWasted`, `useFinishVisit`.
+- `hooks/` — `useRiderTasks`, `useRiderTask`, `useMarkVisitWasted`, `useFinishVisit`,
+  `useDropOffReturn` (`POST /api/logistics/rider/tasks/:id/return-drop-offs`).
 - `components/`:
   - `RiderShell` — the slim mobile header with the rider's name and `RiderLogoutButton`.
   - `RiderLogoutButton` — warns before signing out while scans are still waiting.
   - `RiderTasksPage` — today's open visits (`RiderTaskCard`), with loading, error and empty states.
-  - `RiderVisitPage` — one visit: address, call and directions buttons, the bags, the scan flow,
-    and the "nothing to collect" / "leave without the other bags" actions.
+  - `RiderVisitPage` — one visit: address, call and directions buttons, the returns to hand back
+    (`ReturnStopsSection`), the bags to collect, the scan flow, and the "nothing to collect" /
+    "leave without the rest" actions. Each stop says whether it is a collection or a return
+    (`direction`); returns not handed over go back to the hub when the visit ends.
+  - `ReturnStopsSection` — each return's order, unit count and why it came back, with
+    **Handed to the brand** (no scan: the brand checks and confirms the items themselves).
   - `CollectScanFlow` — step 1 scans the pickup slip, step 2 the bag sticker, using the shared
     `QrScanner` from `@outfiqe/components` (camera, or typing the code).
   - `PendingScansList` — scans not sent yet, with "Try again" and "Remove" for refused ones.

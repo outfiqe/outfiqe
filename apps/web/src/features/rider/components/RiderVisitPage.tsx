@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import { RIDER_STOP_DIRECTION } from "../api/riderSchemas";
 import { OPEN_RIDER_TASK_STATUSES, RIDER_TASK_STATUS_LABELS } from "../constants/riderTaskLabels";
 import { useFinishVisit } from "../hooks/useFinishVisit";
 import { useRiderTask } from "../hooks/useRiderTask";
@@ -17,6 +18,7 @@ import {
 } from "../utils/riderTask.utils";
 import { CollectScanFlow } from "./CollectScanFlow";
 import { PendingScansList } from "./PendingScansList";
+import { ReturnStopsSection } from "./ReturnStopsSection";
 import { WastedVisitModal } from "./WastedVisitModal";
 
 const NOTHING_COLLECTED = 0;
@@ -42,9 +44,13 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
   }
 
   const { brandName, pickupLocation, stops, status } = task;
-  const collectedCount = countCollectedStops(task);
+  const collectStops = stops.filter(({ direction }) => direction === RIDER_STOP_DIRECTION.COLLECT);
+  const returnStops = stops.filter(({ direction }) => direction === RIDER_STOP_DIRECTION.RETURN);
+  const collectedCount = countCollectedStops({ stops: collectStops });
   const isOpen = OPEN_RIDER_TASK_STATUSES.has(status);
-  const hasUncollectedStops = collectedCount < stops.length;
+  const hasUncollectedBags = collectedCount < collectStops.length;
+  const hasUnfinishedStops = countCollectedStops(task) < stops.length;
+  const hasDoneNothing = countCollectedStops(task) === NOTHING_COLLECTED;
 
   const confirmFinishVisit = () => {
     finishVisit.mutate(undefined, {
@@ -89,46 +95,52 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
         </div>
       </section>
 
-      <section aria-labelledby="bags-heading" className="mt-4">
-        <h2 id="bags-heading" className="font-semibold text-foreground">
-          Bags: {collectedCount} of {stops.length} collected
-        </h2>
-        <ul className="mt-2 space-y-2">
-          {stops.map((stop) => (
-            <li
-              key={stop.id}
-              className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm"
-            >
-              <span>
-                Order {formatShortOrderId(stop.orderId)} · {describeItemCount(stop.itemCount)}
-              </span>
-              <span
-                className={
-                  stop.isCollected ? "font-medium text-foreground" : "text-muted-foreground"
-                }
+      {returnStops.length > NOTHING_COLLECTED && (
+        <ReturnStopsSection taskId={taskId} returnStops={returnStops} isVisitOpen={isOpen} />
+      )}
+
+      {collectStops.length > NOTHING_COLLECTED && (
+        <section aria-labelledby="bags-heading" className="mt-4">
+          <h2 id="bags-heading" className="font-semibold text-foreground">
+            Bags: {collectedCount} of {collectStops.length} collected
+          </h2>
+          <ul className="mt-2 space-y-2">
+            {collectStops.map((stop) => (
+              <li
+                key={stop.id}
+                className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm"
               >
-                {stop.isCollected ? `Collected · ${stop.bagTagCode}` : "Waiting"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+                <span>
+                  Order {formatShortOrderId(stop.orderId)} · {describeItemCount(stop.itemCount)}
+                </span>
+                <span
+                  className={
+                    stop.isCollected ? "font-medium text-foreground" : "text-muted-foreground"
+                  }
+                >
+                  {stop.isCollected ? `Collected · ${stop.bagTagCode}` : "Waiting"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {isOpen ? (
         <div className="mt-4 space-y-3">
-          {hasUncollectedStops && <CollectScanFlow taskId={taskId} />}
-          {collectedCount === NOTHING_COLLECTED ? (
+          {hasUncollectedBags && <CollectScanFlow taskId={taskId} />}
+          {hasDoneNothing ? (
             <Button variant="ghost" onClick={() => setIsWastedModalOpen(true)}>
               Nothing to collect here
             </Button>
           ) : (
-            hasUncollectedStops && (
+            hasUnfinishedStops && (
               <Button
                 variant="outline"
                 onClick={confirmFinishVisit}
                 isLoading={finishVisit.isPending}
               >
-                Leave without the other bags
+                Leave without the rest
               </Button>
             )
           )}
