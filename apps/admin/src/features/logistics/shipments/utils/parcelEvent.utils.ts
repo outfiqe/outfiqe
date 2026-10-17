@@ -1,0 +1,31 @@
+const TRACKING_EVENT_LABELS: Readonly<Record<string, string>> = {
+  AWAITING_BRAND: "Brand is packing",
+  READY_FOR_PICKUP: "Ready for pickup",
+  PICKED_UP: "Rider collected the bag",
+  AT_HUB: "Checked in at the hub",
+  IN_PARCEL: "Packed into the parcel",
+  PACKED: "Parcel packed",
+  HANDED_TO_PARTNER: "Handed to the partner",
+  IN_TRANSIT: "In transit",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERY_FAILED: "Delivery attempt failed",
+  DELIVERED: "Delivered",
+  RETURNING: "Coming back",
+  RETURNED_TO_HUB: "Back at the hub",
+  LOST: "Lost",
+  CANCELLED: "Cancelled",
+  COUNT_MISMATCH: "Count didn't match",
+  INSPECTION_RECORDED: "Inspected",
+  BOOKING_REQUESTED: "Partner chosen",
+  BOOKING_CONFIRMED: "Booked with the partner",
+  BOOKING_FAILED: "Booking failed",
+  COD_AMOUNT_CHANGED: "Cash to collect changed",
+  DELIVERY_RESCHEDULED: "Delivery rescheduled",
+  UNKNOWN_PARTNER_STATUS: "Partner status we don't know yet",
+  HANDOVER_NOT_SCANNED: "Left the hub without a handover scan",
+  DELIVERY_DISPUTED: "Customer says it didn't arrive",
+  NOTE: "Note",
+};
+
+export const describeParcelEventCode = (code: string): string =>
+  TRACKING_EVENT_LABELS[code] ?? code;

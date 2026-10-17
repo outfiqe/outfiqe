@@ -123,4 +123,14 @@
     width: 100%;
     border: none;
   }
+
+  [data-parcel-label] {
+    page: parcel-label;
+    width: 100mm;
+  }
+}
+
+@page parcel-label {
+  size: 100mm 150mm;
+  margin: 0;
 }

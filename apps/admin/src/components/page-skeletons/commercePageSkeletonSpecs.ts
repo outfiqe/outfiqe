@@ -195,4 +195,54 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     ],
     sourceFiles: [`${FEATURES_DIR}/logistics/bag-tags/components/BagTagsPage.tsx`],
   },
+  "/logistics/packing": {
+    title: "Inspect and pack",
+    description:
+      "Orders with bags at the hub. Inspect each bag, then pack the order into one parcel.",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        textLineCount: 3,
+        actionLabels: ["Pack parcel"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/hub-operations/components/PackingPage.tsx`,
+      `${FEATURES_DIR}/logistics/hub-operations/components/OrderToPackCard.tsx`,
+    ],
+  },
+  "/logistics/parcels": {
+    title: "Parcels",
+    description:
+      "Book packed parcels with a partner, print labels and follow them to the customer.",
+    blocks: [
+      {
+        kind: "filterTabs",
+        labels: ["To book", "Ready to hand over", "With the partner", "Finished"],
+      },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Print label", "Open"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/shipments/components/ParcelsPage.tsx`,
+      `${FEATURES_DIR}/logistics/shipments/components/ParcelCard.tsx`,
+      `${FEATURES_DIR}/logistics/shipments/constants/parcelLabels.ts`,
+    ],
+  },
+  "/logistics/partners": {
+    title: "Delivery partners",
+    description:
+      "The couriers that deliver parcels from the hub, where they deliver and how their status names map to ours.",
+    headerActionLabel: "Add partner",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
+  },
 };

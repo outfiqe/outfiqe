@@ -55,6 +55,38 @@ feature layout.
   - `/logistics/bag-tags/$batchId` — `BagTagSheetPage`, a printable grid of the batch's unused
     stickers (QR via the shared `QrCode` + the code underneath). It prints through the
     `[data-print-sheet]` rule in `src/index.css`, which hides the rest of the admin shell.
+- `hub-operations/` — the hub floor, against `/api/logistics/hub`.
+  - `CheckInPage` (`/logistics/check-in`) — staff type the units in a bag, then scan or type its
+    sticker or pickup code (`QrScanner` from `@outfiqe/components`; a USB scanner types into its
+    code box). Each scan gets its own `Idempotency-Key`. `ScanLog` lists this session's results,
+    with short counts and refusals called out.
+  - `PackingPage` (`/logistics/packing`) — orders with bags at the hub. `OrderToPackCard` shows
+    each bag; `InspectionModal` records failed units (refunded by the API); `PackParcelModal` asks
+    for weight and pieces, and for "pack only what's here" when bags are still coming. "Pack
+    parcel" waits until every bag here is inspected.
+  - `HandoverPage` (`/logistics/handover`) — scan each parcel label as the partner collects it.
+  - `api/`, `hooks/` (one per call), `constants/` (pickup status labels, parcel defaults, query
+    keys).
+- `shipments/` — parcels, against `/api/logistics/hub/shipments`.
+  - `ParcelsPage` (`/logistics/parcels`, `?queue=`) — To book / Ready to hand over / With the
+    partner / Finished. `ParcelCard` shows the code large with a copy button, the cash to
+    collect, a "Label needs printing" badge, `ManualBookingForm` (the partner's parcel number)
+    and "Change partner" (`RebookParcelModal`).
+  - `ParcelDetailPage` (`/logistics/parcels/$shipmentId`) — contents, partner and the full event
+    timeline (`utils/parcelEvent.utils.ts` turns event codes into words), plus
+    `RecordParcelUpdateModal` for a status the partner gave by phone (or a logged correction).
+  - `ParcelLabelPrintPage` (`/logistics/parcels/$shipmentId/label`) — the 100 × 150 mm label: our
+    code as text and QR, the recipient, the cash to collect and the partner. Printing marks the
+    label printed, which is what the handover scan checks. The `[data-parcel-label]` rule and
+    `@page parcel-label` in `src/index.css` set the page size.
+- `partners/` — delivery partners, against `/api/logistics/admin/partners`.
+  - `PartnersPage` (`/logistics/partners`) and `PartnerFormModal` (name, code, connection,
+    parcel-number pattern, cash days, tracking link, collects cash, active).
+  - `PartnerDetailPage` (`/logistics/partners/$partnerId`) — `PartnerAccountsSection` (our merchant
+    account per hub in the partner's country), `PartnerAreasSection` (delivery zones per hub with
+    a priority), `PartnerStatusNamesSection` (their status words → ours) and
+    `PartnerStatusImportSection` (upload a CSV; a row-by-row report comes back).
+    `utils/readTextFile.ts` reads the file with `FileReader`.
 
 ## Funnel
 
@@ -72,6 +104,15 @@ feature layout.
 7. On the Pickup board they see each brand location with bags marked ready, untick any bag that
    shouldn't go yet, and assign the rest to a rider for a round. The visit then shows under
    "Rider visits" with its progress as the rider scans.
+8. Under Delivery partners they add each courier once: the merchant account at the hub, the zones
+   they deliver to and their status names.
+9. When riders bring bags in, "Check in bags" takes a unit count and a scan per bag. "Inspect and
+   pack" then shows each order: inspect every bag, then pack the parcel.
+10. Under Parcels, "To book" lists new parcels: copy our code into the partner's portal, type
+    their parcel number back, and print the label. "Hand over" scans each label as their rider
+    collects.
+11. The partner's daily sheet is uploaded on the partner's page; parcels move on, and the report
+    lists any row that couldn't be used and why.
 
 **Technical:** `routes/_authenticated.logistics.hubs.tsx` → `HubsPage` → `useHubs` /
 `HubFormModal` / `HubPickupZonesModal` → `hubsApi` → `/api/logistics/admin/hubs` (guarded by
