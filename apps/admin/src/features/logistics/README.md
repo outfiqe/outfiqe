@@ -71,10 +71,18 @@ feature layout.
   - `ParcelsPage` (`/logistics/parcels`, `?queue=`) — To book / Ready to hand over / With the
     partner / Finished. `ParcelCard` shows the code large with a copy button, the cash to
     collect, a "Label needs printing" badge, `ManualBookingForm` (the partner's parcel number)
-    and "Change partner" (`RebookParcelModal`).
+    and "Change partner" (`RebookParcelModal`). `ParcelBookingActions` decides what booking help
+    to show: "Booking with …" while a connected partner is booking it, the partner's reason and
+    **Try again** (`useRetryParcelBooking`) when that booking failed, and `ManualBookingForm` for
+    a manual partner or a failed booking.
   - `ParcelDetailPage` (`/logistics/parcels/$shipmentId`) — contents, partner and the full event
     timeline (`utils/parcelEvent.utils.ts` turns event codes into words), plus
     `RecordParcelUpdateModal` for a status the partner gave by phone (or a logged correction).
+    For a parcel that went out with a partner, **Check in return** opens `ReturnCheckInModal`:
+    why it came back (refused or unreachable, wrong or damaged item, damaged by the partner, with
+    what each one means for the refund in `RETURN_OUTCOME_HINTS`) and, per item, how many units
+    are fine and how many are damaged (`POST /api/logistics/hub/shipments/:id/return-check-in`).
+    Once checked in, the page says what was decided and any claim against the partner.
   - `ParcelLabelPrintPage` (`/logistics/parcels/$shipmentId/label`) — the 100 × 150 mm label: our
     code as text and QR, the recipient, the cash to collect and the partner. Printing marks the
     label printed, which is what the handover scan checks. The `[data-parcel-label]` rule and
@@ -87,6 +95,18 @@ feature layout.
     a priority), `PartnerStatusNamesSection` (their status words → ours) and
     `PartnerStatusImportSection` (upload a CSV; a row-by-row report comes back).
     `utils/readTextFile.ts` reads the file with `FileReader`.
+  - For a connected partner (any connection but manual) the form also asks how they send parcel
+    updates, and the detail page adds `PartnerConnectionSection` (the webhook address with a copy
+    button, and per hub account which secrets are set — never the secrets) and
+    `PartnerWebhookReceiptsSection` (every update received, cursor-paged, with **Send missed
+    updates again** for the last day, 7 or 30 days).
+- `refusals/` — `DeliveryRefusalsCard`, on the admin order page: whether cash on delivery is on for
+  that order's customer, how many deliveries they refused in the last year (by account or phone),
+  and **Clear refusals** with a required reason (`TextPromptModal`), which the API writes to the
+  audit log. The card hides itself for staff without logistics access (the request answers
+  `403`).
+- `reliability/` — `BrandReliabilityPage` (`/logistics/reliability`): brands with 3 or more
+  delivery problems in the last 30 days, with how many and whether they are warned or need review.
 
 ## Funnel
 
