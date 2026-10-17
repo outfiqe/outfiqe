@@ -8,6 +8,7 @@ import { validated } from "#middlewares/validate.js";
 import type {
   CreateDeliveryZoneBody,
   DeliveryZoneIdParam,
+  EstimateDeliveryQuery,
   ListDeliveryZoneHistoryQuery,
   SearchDeliveryZoneCitiesQuery,
   UpdateDeliveryZoneBody,
@@ -30,6 +31,12 @@ export const deliveryZoneController = {
     const { q, limit } = validated.query<SearchDeliveryZoneCitiesQuery>(res);
     const cities = await deliveryZoneService.searchCities(q, limit);
     sendSuccess(res, { cities }, "Delivery zone cities.");
+  },
+
+  async estimate(_req: Request, res: Response) {
+    const { city } = validated.query<EstimateDeliveryQuery>(res);
+    const estimate = await deliveryZoneService.estimateDeliveryWindow(city, new Date());
+    sendSuccess(res, { estimate }, "Delivery estimate.");
   },
 
   async create(_req: Request, res: Response) {

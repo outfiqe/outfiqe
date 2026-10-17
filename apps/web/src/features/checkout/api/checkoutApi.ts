@@ -15,6 +15,14 @@ const buyNowCouponPreviewSchema = z.object({
 });
 export type BuyNowCouponPreview = z.infer<typeof buyNowCouponPreviewSchema>;
 
+const codEligibilitySchema = z.object({
+  isCashOnDeliveryAllowed: z.boolean(),
+  refusalCount: z.number(),
+  refusalLimit: z.number(),
+  windowDays: z.number(),
+});
+export type CodEligibility = z.infer<typeof codEligibilitySchema>;
+
 export const checkoutApi = {
   async submit(
     input: CheckoutInput,
@@ -36,5 +44,12 @@ export const checkoutApi = {
       ...line,
     });
     return buyNowCouponPreviewSchema.parse(res.data);
+  },
+
+  async getCodEligibility(phone: string): Promise<CodEligibility> {
+    const res = await apiClient.get<CodEligibility>("/logistics/cod-eligibility", {
+      params: phone ? { phone } : {},
+    });
+    return codEligibilitySchema.parse(res.data);
   },
 };

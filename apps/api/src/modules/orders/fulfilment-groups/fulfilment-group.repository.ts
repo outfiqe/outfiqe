@@ -1,8 +1,56 @@
 import { prisma } from "#db/prisma.js";
-import { FulfilmentStatus } from "#generated/prisma/enums.js";
+import {
+  FulfilmentMode,
+  FulfilmentStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import type { OrderFulfilmentRollup } from "../order.types.js";
+import type { FulfilmentGroupSpec, OrderFulfilmentRollup } from "../order.types.js";
+import { deriveOrderFulfilment } from "../order.utils.js";
+
+const CLOSED_GROUP_STATUSES = [FulfilmentStatus.CANCELLED, FulfilmentStatus.RETURNED];
+
+const markHubCollectedCashPaid = async (client: DbClient, orderId: string): Promise<void> => {
+  await client.order.updateMany({
+    where: {
+      id: orderId,
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      fulfilmentGroups: {
+        some: { fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS },
+        none: {
+          fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
+          status: { notIn: CLOSED_GROUP_STATUSES },
+        },
+      },
+    },
+    data: { paymentStatus: PaymentStatus.PAID },
+  });
+};
+
+const setOrderFulfilmentRollup = async (
+  client: DbClient,
+  orderId: string,
+  rollup: OrderFulfilmentRollup,
+): Promise<void> => {
+  await client.order.update({
+    where: { id: orderId },
+    data: {
+      fulfilmentStatus: rollup.fulfilmentStatus,
+      fulfilmentSummary: rollup.fulfilmentSummary,
+    },
+  });
+
+  if (rollup.fulfilmentStatus === FulfilmentStatus.DELIVERED) {
+    await client.order.updateMany({
+      where: { id: orderId, deliveredAt: null },
+      data: { deliveredAt: new Date() },
+    });
+    await markHubCollectedCashPaid(client, orderId);
+  }
+};
 
 export const orderFulfilmentGroupRepository = {
   async returnFulfilmentGroupsForOrder(
@@ -16,9 +64,13 @@ export const orderFulfilmentGroupRepository = {
     });
   },
 
-  async createFulfilmentGroups(client: DbClient, orderId: string, brandIds: string[]) {
+  async createFulfilmentGroups(
+    client: DbClient,
+    orderId: string,
+    groupSpecs: readonly FulfilmentGroupSpec[],
+  ) {
     return client.orderFulfilmentGroup.createManyAndReturn({
-      data: brandIds.map((brandId) => ({ orderId, brandId })),
+      data: groupSpecs.map((groupSpec) => ({ ...groupSpec, orderId })),
       select: { id: true, brandId: true },
     });
   },
@@ -45,25 +97,19 @@ export const orderFulfilmentGroupRepository = {
     return groups.map((group) => group.status);
   },
 
-  async setOrderFulfilmentRollup(
+  setOrderFulfilmentRollup,
+
+  async refreshOrderFulfilmentRollup(
     client: DbClient,
     orderId: string,
-    rollup: OrderFulfilmentRollup,
-  ): Promise<void> {
-    await client.order.update({
-      where: { id: orderId },
-      data: {
-        fulfilmentStatus: rollup.fulfilmentStatus,
-        fulfilmentSummary: rollup.fulfilmentSummary,
-      },
+  ): Promise<OrderFulfilmentRollup> {
+    const groups = await client.orderFulfilmentGroup.findMany({
+      where: { orderId },
+      select: { status: true },
     });
-
-    if (rollup.fulfilmentStatus === FulfilmentStatus.DELIVERED) {
-      await client.order.updateMany({
-        where: { id: orderId, deliveredAt: null },
-        data: { deliveredAt: new Date() },
-      });
-    }
+    const rollup = deriveOrderFulfilment(groups.map((group) => group.status));
+    await setOrderFulfilmentRollup(client, orderId, rollup);
+    return rollup;
   },
 
   async listBrandsWithStaleShippedShipments(
@@ -192,6 +238,7 @@ export const orderFulfilmentGroupRepository = {
       where: { id: groupId, brandId },
       select: {
         status: true,
+        fulfilmentMode: true,
         order: { select: { id: true, userId: true, fulfilmentStatus: true } },
       },
     });

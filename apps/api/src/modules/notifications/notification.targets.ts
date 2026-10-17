@@ -144,6 +144,8 @@ export const resolveNotificationTarget = ({
     case NotificationType.NEW_ORDER:
       return web(WEB_ROUTES.manageOrders);
     case NotificationType.ORDER_STATUS_CHANGED:
+    case NotificationType.ORDER_REFUND_ISSUED:
+    case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
       return entityId ? web(`${WEB_ROUTES.ordersList}/${entityId}`) : web(WEB_ROUTES.ordersList);
     case NotificationType.PRODUCT_REVIEWED:
       return web(WEB_ROUTES.brandProducts);

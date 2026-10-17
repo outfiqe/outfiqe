@@ -37,6 +37,8 @@ const buildShipment = (id: string): BrandShipmentSummary => ({
   orderId: `order-${id}`,
   orderCreatedAt: "2026-08-01T00:00:00.000Z",
   status: "PLACED",
+  fulfilmentMode: "BRAND_SHIPS",
+  pickupStatus: null,
   carrier: null,
   trackingNumber: null,
   shippedAt: null,

@@ -39,9 +39,12 @@ import {
   upsertZoneInCache,
   ZONES_QUERY_KEY,
 } from "../utils/deliveryZonesCacheUpdate";
+import { formatDeliveryDays } from "../utils/formatDeliveryDays";
 import { CityListInput } from "./CityListInput";
 
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
+
+const optionalDays = (raw: string): number | null => (raw === "" ? null : Number(raw));
 
 const toZoneInput = (values: ZoneFormValues): DeliveryZoneInput => ({
   name: values.name.trim(),
@@ -49,6 +52,8 @@ const toZoneInput = (values: ZoneFormValues): DeliveryZoneInput => ({
   standardDeliveryFee: Number(values.standardDeliveryFee),
   freeDeliveryThreshold: Number(values.freeDeliveryThreshold),
   codHandlingFee: Number(values.codHandlingFee),
+  minDeliveryDays: optionalDays(values.minDeliveryDays),
+  maxDeliveryDays: optionalDays(values.maxDeliveryDays),
 });
 
 const formValuesForZone = (zone: DeliveryZone): ZoneFormValues => ({
@@ -57,12 +62,19 @@ const formValuesForZone = (zone: DeliveryZone): ZoneFormValues => ({
   standardDeliveryFee: String(zone.standardDeliveryFee),
   freeDeliveryThreshold: String(zone.freeDeliveryThreshold),
   codHandlingFee: String(zone.codHandlingFee),
+  minDeliveryDays: zone.minDeliveryDays === null ? "" : String(zone.minDeliveryDays),
+  maxDeliveryDays: zone.maxDeliveryDays === null ? "" : String(zone.maxDeliveryDays),
 });
 
-type FeeFieldName = "standardDeliveryFee" | "freeDeliveryThreshold" | "codHandlingFee";
+type NumberFieldName =
+  | "standardDeliveryFee"
+  | "freeDeliveryThreshold"
+  | "codHandlingFee"
+  | "minDeliveryDays"
+  | "maxDeliveryDays";
 
 const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
-  const feeField = (name: FeeFieldName, label: string, widthClass: string) => (
+  const feeField = (name: NumberFieldName, label: string, widthClass: string) => (
     <FormField
       control={form.control}
       name={name}
@@ -108,6 +120,10 @@ const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
         {feeField("standardDeliveryFee", "Standard delivery fee (Rs.)", "w-40")}
         {feeField("freeDeliveryThreshold", "Free delivery threshold (Rs.)", "w-44")}
         {feeField("codHandlingFee", "COD handling fee (Rs.)", "w-36")}
+      </div>
+      <div className="flex flex-wrap items-start gap-3">
+        {feeField("minDeliveryDays", "Shortest delivery (working days)", "w-48")}
+        {feeField("maxDeliveryDays", "Longest delivery (working days)", "w-48")}
       </div>
     </div>
   );
@@ -275,6 +291,7 @@ export const DeliveryZonesSection = () => {
                   Rs. {zone.standardDeliveryFee.toLocaleString()} delivery · free over Rs.{" "}
                   {zone.freeDeliveryThreshold.toLocaleString()} · Rs.{" "}
                   {zone.codHandlingFee.toLocaleString()} COD fee
+                  {formatDeliveryDays(zone)}
                 </p>
                 {zone.cities.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">

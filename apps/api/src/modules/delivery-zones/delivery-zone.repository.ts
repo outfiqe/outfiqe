@@ -1,9 +1,9 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
+import { normalizeCityName } from "#lib/city.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { DeliveryZoneRecord, DeliveryZoneSnapshot } from "./delivery-zone.types.js";
-import { normalizeCityName } from "./delivery-zone.utils.js";
 
 const zoneWithCities = { cities: true } satisfies Prisma.DeliveryZoneInclude;
 
@@ -12,12 +12,17 @@ type DeliveryZoneScalarInput = {
   standardDeliveryFee: number;
   freeDeliveryThreshold: number;
   codHandlingFee: number;
+  minDeliveryDays: number | null;
+  maxDeliveryDays: number | null;
 };
+
+const toCityRows = (cities: string[], countryCode: string) =>
+  cities.map((city) => ({ city, cityNormalized: normalizeCityName(city), countryCode }));
 
 export const deliveryZoneRepository = {
   async listAll(): Promise<DeliveryZoneRecord[]> {
     return prisma.deliveryZone.findMany({
-      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+      orderBy: [{ countryCode: "asc" }, { isDefault: "desc" }, { name: "asc" }],
       include: zoneWithCities,
     });
   },
@@ -26,9 +31,9 @@ export const deliveryZoneRepository = {
     return client.deliveryZone.findUnique({ where: { id }, include: zoneWithCities });
   },
 
-  async searchCities(query: string, limit: number) {
+  async searchCities(query: string, limit: number, countryCode: string) {
     return prisma.deliveryZoneCity.findMany({
-      where: { city: { contains: query, mode: "insensitive" } },
+      where: { countryCode, city: { contains: query, mode: "insensitive" } },
       orderBy: { city: "asc" },
       take: limit,
       include: { zone: true },
@@ -36,36 +41,38 @@ export const deliveryZoneRepository = {
   },
 
   async findByCityNormalized(
+    countryCode: string,
     cityNormalized: string,
     client: DbClient = prisma,
   ): Promise<DeliveryZoneRecord | null> {
     const match = await client.deliveryZoneCity.findUnique({
-      where: { cityNormalized },
+      where: { countryCode_cityNormalized: { countryCode, cityNormalized } },
       include: { zone: { include: zoneWithCities } },
     });
     return match?.zone ?? null;
   },
 
-  async findDefault(client: DbClient = prisma): Promise<DeliveryZoneRecord | null> {
-    return client.deliveryZone.findFirst({ where: { isDefault: true }, include: zoneWithCities });
+  async findDefault(
+    countryCode: string,
+    client: DbClient = prisma,
+  ): Promise<DeliveryZoneRecord | null> {
+    return client.deliveryZone.findFirst({
+      where: { isDefault: true, countryCode },
+      include: zoneWithCities,
+    });
   },
 
-  async countAll(): Promise<number> {
-    return prisma.deliveryZone.count();
+  async countForCountry(countryCode: string): Promise<number> {
+    return prisma.deliveryZone.count({ where: { countryCode } });
   },
 
   async create(
     client: DbClient,
-    input: DeliveryZoneScalarInput & { isDefault: boolean; cities: string[] },
+    input: DeliveryZoneScalarInput & { countryCode: string; isDefault: boolean; cities: string[] },
   ): Promise<DeliveryZoneRecord> {
     const { cities, ...scalars } = input;
     return client.deliveryZone.create({
-      data: {
-        ...scalars,
-        cities: {
-          create: cities.map((city) => ({ city, cityNormalized: normalizeCityName(city) })),
-        },
-      },
+      data: { ...scalars, cities: { create: toCityRows(cities, input.countryCode) } },
       include: zoneWithCities,
     });
   },
@@ -82,14 +89,14 @@ export const deliveryZoneRepository = {
     }
 
     if (cities !== undefined) {
+      const { countryCode } = await client.deliveryZone.findUniqueOrThrow({
+        where: { id },
+        select: { countryCode: true },
+      });
       await client.deliveryZoneCity.deleteMany({ where: { zoneId: id } });
       if (cities.length > 0) {
         await client.deliveryZoneCity.createMany({
-          data: cities.map((city) => ({
-            zoneId: id,
-            city,
-            cityNormalized: normalizeCityName(city),
-          })),
+          data: toCityRows(cities, countryCode).map((cityRow) => ({ ...cityRow, zoneId: id })),
         });
       }
     }
@@ -97,9 +104,9 @@ export const deliveryZoneRepository = {
     return client.deliveryZone.findUniqueOrThrow({ where: { id }, include: zoneWithCities });
   },
 
-  async setDefault(client: DbClient, zoneId: string): Promise<void> {
+  async setDefault(client: DbClient, zoneId: string, countryCode: string): Promise<void> {
     await client.deliveryZone.updateMany({
-      where: { isDefault: true, id: { not: zoneId } },
+      where: { isDefault: true, countryCode, id: { not: zoneId } },
       data: { isDefault: false },
     });
     await client.deliveryZone.update({ where: { id: zoneId }, data: { isDefault: true } });

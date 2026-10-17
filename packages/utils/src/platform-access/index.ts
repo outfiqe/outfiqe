@@ -36,6 +36,7 @@ export const PLATFORM_SECTION_ACCESS: Record<PlatformNavKey, PlatformSectionAcce
   trending: CATALOG_ACCESS,
   orders: ORDERS_ACCESS,
   "delivery-zones": ORDERS_ACCESS,
+  logistics: anyOf("platform:logistics:read", "platform:logistics:manage"),
   support: anyOf("platform:support:read", "platform:support:respond", "platform:support:manage"),
   "product-reviews": REVIEW_MODERATION_ACCESS,
   "tag-reviews": REVIEW_MODERATION_ACCESS,

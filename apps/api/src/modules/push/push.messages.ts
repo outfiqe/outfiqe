@@ -1,7 +1,15 @@
-import { isExternalNotificationPath } from "@outfiqe/utils";
+import {
+  isExternalNotificationPath,
+  isOrderTrackingStage,
+  ORDER_TRACKING_STAGE_MESSAGES,
+} from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
-import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import {
+  NotificationSurface,
+  NotificationType,
+  OrderRefundMethod,
+} from "#generated/prisma/enums.js";
 import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 export type PushMessage = {
@@ -84,7 +92,10 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   },
   [NotificationType.ORDER_STATUS_CHANGED]: {
     title: "Order update",
-    body: () => "There's an update on one of your orders",
+    body: (payload) =>
+      isOrderTrackingStage(payload.metadata.trackingStage)
+        ? ORDER_TRACKING_STAGE_MESSAGES[payload.metadata.trackingStage]
+        : "There's an update on one of your orders",
   },
   [NotificationType.BRAND_APPLICATION_SUBMITTED]: {
     title: "New brand application",
@@ -256,6 +267,18 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Offer refunded",
     body: (payload) => `Your money for the offer on ${outfitNameFrom(payload)} is on its way back`,
   },
+  [NotificationType.ORDER_REFUND_ISSUED]: {
+    title: "Refund on its way",
+    body: (payload) =>
+      payload.metadata.method === OrderRefundMethod.CASH_NOT_COLLECTED
+        ? `Rs. ${String(payload.metadata.amount ?? "")} less to pay on delivery`
+        : `We've refunded Rs. ${String(payload.metadata.amount ?? "")} on your order`,
+  },
+  [NotificationType.ORDER_REFUND_DETAILS_NEEDED]: {
+    title: "Where should we send your refund?",
+    body: (payload) =>
+      `Add your Khalti, eSewa or bank details for your Rs. ${String(payload.metadata.amount ?? "")} refund`,
+  },
   [NotificationType.ACCOUNT_APPROVED]: {
     title: "Welcome to Outfiqe",
     body: (payload) =>
@@ -282,6 +305,8 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.NEW_ORDER:
       return "/manage-orders";
     case NotificationType.ORDER_STATUS_CHANGED:
+    case NotificationType.ORDER_REFUND_ISSUED:
+    case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
       return payload.entityId ? `/orders/${payload.entityId}` : "/orders";
     case NotificationType.PRODUCT_REVIEWED:
       return "/products";

@@ -16,6 +16,7 @@ export const brandApplicationSchema = z.object({
     ),
   instagram: z.string().trim().min(1, "Enter your Instagram or TikTok handle").max(100),
   makesOwnPieces: makesOwnPiecesSchema,
+  city: z.string().trim().max(120),
 });
 
 export type BrandApplicationInput = z.infer<typeof brandApplicationSchema>;

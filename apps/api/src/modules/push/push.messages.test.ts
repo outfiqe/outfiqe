@@ -88,6 +88,24 @@ describe("toPushMessage", () => {
     expect(message.url).toBe(`/orders/${orderId}`);
   });
 
+  it("says where a hub-delivered order is, or gives a general update", () => {
+    const stagedMessage = toPushMessage(
+      aNotification({
+        type: NotificationType.ORDER_STATUS_CHANGED,
+        metadata: { status: "SHIPPED", trackingStage: "OUT_FOR_DELIVERY" },
+      }),
+    );
+    const generalMessage = toPushMessage(
+      aNotification({
+        type: NotificationType.ORDER_STATUS_CHANGED,
+        metadata: { status: "SHIPPED" },
+      }),
+    );
+
+    expect(stagedMessage.body).toBe("Your order is out for delivery");
+    expect(generalMessage.body).toBe("There's an update on one of your orders");
+  });
+
   it("falls back to the orders list when an order update has no entity id", () => {
     const message = toPushMessage(
       aNotification({ type: NotificationType.ORDER_STATUS_CHANGED, entityId: null }),

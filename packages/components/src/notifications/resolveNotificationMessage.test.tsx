@@ -250,3 +250,21 @@ describe("resolveNotificationMessage", () => {
     ).toBe("Your subscription was canceled because it wasn't renewed");
   });
 });
+
+describe("resolveNotificationMessage for order updates", () => {
+  it("describes the delivery stage when there is one, and the order status otherwise", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_STATUS_CHANGED",
+          metadata: { status: "SHIPPED", trackingStage: "OUT_FOR_DELIVERY" },
+        }),
+      ),
+    ).toBe("Your order is out for delivery");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "ORDER_STATUS_CHANGED", metadata: { status: "SHIPPED" } }),
+      ),
+    ).toBe("Your order was shipped");
+  });
+});

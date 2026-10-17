@@ -13,6 +13,16 @@ to any one app.
 - `email-logo/` — `EMAIL_LOGO_PATH`, `EMAIL_LOGO_RENDER_SIZE`/`EMAIL_LOGO_DISPLAY_SIZE` and `emailLogoUrl(siteOrigin)`: the one agreement between `apps/web`, which draws the logo PNG at that path (`app/email/logo.png`), and `apps/api`'s email layout, which shows it. The image is drawn at twice the size it is displayed so it stays sharp on high-density screens.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
+- `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
+  `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,
+  `normalizeParcelCode`, `formatParcelCode`), shared by every app that handles the delivery codes
+  (pickup codes, bag tags, parcel codes). A parcel code is stored as `OFQ` + 8 characters and shown
+  as `OFQ-XXXX-XXXX`; `normalizeParcelCode` accepts it typed with dashes, spaces, lower case or a
+  zero for the O, and returns `null` for anything else:
+  - `apps/api` generates the codes from this alphabet.
+  - The rider and hub screens normalise a code someone typed by hand before sending it.
+  - The alphabet leaves out I, L, O and U. When typing, I and L are read as 1 and O as 0, so a
+    misread code still matches.
 - `tenant/` — `extractTenantSubdomain(host, baseDomain)` / `isTenantHost(host, baseDomain)` plus
   `TENANT_SUBDOMAIN_REGEX`/`RESERVED_TENANT_SUBDOMAINS`, the one definition of "what counts as a
   tenant subdomain". `apps/api`'s `crm-access` module re-exports these as `extractSubdomain`/
@@ -29,6 +39,10 @@ to any one app.
 - `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
   each) and `POST_LAYOUT_LABEL` (the picker's display labels).
+- `order-tracking/` — `OrderTrackingStage` (the one customer-facing stage of a hub-delivered
+  order), `ORDER_TRACKING_STAGE_MESSAGES` (the words for each, used by in-app and push
+  notifications) and `isOrderTrackingStage`. It lives here rather than in `@outfiqe/types` because
+  `@outfiqe/types` depends on this package, so the messages and the stage must sit together here.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
   orders (newest, most cheriqed, price low to high, price high to low). The API validates the
