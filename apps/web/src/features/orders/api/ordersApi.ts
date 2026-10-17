@@ -12,6 +12,13 @@ import {
   orderRefundsResponseSchema,
   type SaveRefundDestinationBody,
 } from "./refundSchemas";
+import {
+  type CustomerOrderTracking,
+  customerOrderTrackingSchema,
+  type CustomerParcel,
+  customerParcelSchema,
+  type ReportNotReceivedBody,
+} from "./trackingSchemas";
 
 export const ordersApi = {
   async get(orderId: string): Promise<Order> {
@@ -58,5 +65,15 @@ export const ordersApi = {
   ): Promise<MyRefundDestination> {
     const res = await apiClient.put(`/orders/${orderId}/refund-destination`, body);
     return myRefundDestinationSchema.parse(res.data);
+  },
+
+  async getTracking(orderId: string): Promise<CustomerOrderTracking> {
+    const res = await apiClient.get(`/logistics/orders/${orderId}/tracking`);
+    return customerOrderTrackingSchema.parse(res.data);
+  },
+
+  async reportNotReceived(orderId: string, body: ReportNotReceivedBody): Promise<CustomerParcel> {
+    const res = await apiClient.post(`/logistics/orders/${orderId}/delivery-disputes`, body);
+    return customerParcelSchema.parse(res.data);
   },
 };
