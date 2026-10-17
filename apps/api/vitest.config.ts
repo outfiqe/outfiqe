@@ -58,6 +58,7 @@ export default defineConfig({
         "src/modules/delivery-zones/**/*.ts",
         "src/modules/orders/checkout/checkout.fulfilment.ts",
         "src/modules/logistics/**/*.ts",
+        "src/modules/auth/invites/rider-invite.service.ts",
         "src/shared/utils/web-cache.utils.ts",
         "src/shared/utils/backoff.utils.ts",
         "src/shared/email-templates/**/*.ts",

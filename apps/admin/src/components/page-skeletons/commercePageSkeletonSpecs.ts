@@ -99,4 +99,61 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
       `${FEATURES_DIR}/logistics/hubs/components/HubCard.tsx`,
     ],
   },
+  "/logistics/riders": {
+    title: "Riders",
+    description:
+      "The people who collect bags from brands. Invite them, check IDs in person and manage their access.",
+    headerActionLabel: "Invite rider",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasBadge: true,
+        textLineCount: 2,
+        actionLabels: ["Suspend", "Offboard"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/riders/components/RidersPage.tsx`,
+      `${FEATURES_DIR}/logistics/riders/utils/riderActions.utils.ts`,
+    ],
+  },
+  "/logistics/pickup-board": {
+    title: "Pickup board",
+    description:
+      "Bags brands have marked ready. Pick the bags at a location and give them to a rider.",
+    blocks: [
+      {
+        kind: "section",
+        title: "Waiting for a rider",
+        blocks: [
+          {
+            kind: "cardRows",
+            count: ROW_COUNT,
+            textLineCount: 3,
+            actionLabels: ["Assign rider"],
+            actionSize: "sm",
+          },
+        ],
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/pickup-board/components/PickupBoardPage.tsx`,
+      `${FEATURES_DIR}/logistics/pickup-board/components/PickupLocationCard.tsx`,
+    ],
+  },
+  "/logistics/bag-tags": {
+    title: "Bag stickers",
+    description:
+      "Print sheets of QR stickers for riders. Each sticker goes on one bag when it's collected.",
+    blocks: [
+      {
+        kind: "actionRows",
+        count: ROW_COUNT,
+        actionLabel: "Open sheet",
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/logistics/bag-tags/components/BagTagsPage.tsx`],
+  },
 };

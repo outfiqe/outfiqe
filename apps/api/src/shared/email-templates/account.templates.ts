@@ -62,6 +62,22 @@ export const creatorRejectedTemplate = (): { subject: string; html: string } => 
   }),
 });
 
+export const riderInviteTemplate = (
+  name: string,
+  inviteUrl: string,
+): { subject: string; html: string } => ({
+  subject: "You've been invited to ride with Outfiqe",
+  html: renderEmailLayout({
+    preheader: "Set up your Outfiqe rider account.",
+    bodyHtml: `
+      ${emailEyebrow("Rider invite")}
+      ${emailHeading(`Hi ${name}`)}
+      ${emailLede("You've been invited to collect orders for Outfiqe. Set up your account on your phone. This link expires in 7 days.")}
+      ${emailButtonHtml("Set up your rider account", inviteUrl)}
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,
