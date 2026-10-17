@@ -54,6 +54,10 @@ model User {
   reviewedApplications                     BrandApplication[]          @relation("BrandApplicationReviewer")
   approvedInvites                          BrandInvite[]               @relation("BrandInviteApprover")
   sentAdminInvites                         AdminInvite[]               @relation("AdminInviteSender")
+  riderProfile                             Rider?
+  sentRiderInvites                         RiderInvite[]               @relation("RiderInviteSender")
+  verifiedRiders                           Rider[]                     @relation("RiderIdentityVerifier")
+  assignedRiderTasks                       RiderTask[]                 @relation("RiderTaskAssigner")
   sentAnnouncements                        Announcement[]
   reviewedProducts                         Product[]                   @relation("ProductReviewer")
   createdProductDiscounts                  ProductDiscount[]           @relation("ProductDiscountCreatedBy")
@@ -169,6 +173,7 @@ enum UserRole {
   BRAND_OWNER
   ADMIN
   TENANT_STAFF
+  RIDER
 }
 
 enum AccountStatus {
@@ -326,6 +331,7 @@ model Brand {
   buildCommissions     CreatorCommission[]        @relation("BrandBuildCommissions")
   outfitOffers         OutfitOffer[]
   sizeStandards        BrandSizeStandard[]
+  riderTasks           RiderTask[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -1450,8 +1456,10 @@ model OrderFulfilmentGroup {
   items          OrderItem[]
   trackingEvents TrackingEvent[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  riderTaskStops RiderTaskStop[]
+  bagTag         BagTag?
 
   @@unique([orderId, brandId])
   @@index([brandId, status])
@@ -1482,6 +1490,10 @@ model Hub {
   pickupZones      HubPickupZone[]
   fulfilmentGroups OrderFulfilmentGroup[]
   shipments        Shipment[]
+  riderInvites     RiderInvite[]
+  riders           Rider[]
+  riderTasks       RiderTask[]
+  bagTagBatches    BagTagBatch[]
 
   @@map("hubs")
 }
@@ -1522,6 +1534,7 @@ model BrandPickupLocation {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   fulfilmentGroups OrderFulfilmentGroup[]
+  riderTasks       RiderTask[]
 
   @@index([brandId, isActive])
   @@index([cityNormalized])
@@ -4015,4 +4028,149 @@ enum PushPlatform {
   IOS
   DESKTOP
   OTHER
+}
+
+enum RiderEmploymentType {
+  EMPLOYEE
+  CONTRACTOR
+}
+
+enum RiderStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  OFFBOARDED
+}
+
+enum IdentityDocumentType {
+  CITIZENSHIP
+  DRIVING_LICENCE
+  PASSPORT
+  NATIONAL_ID
+}
+
+enum RiderTaskStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  WASTED
+  CANCELLED
+}
+
+enum RiderStopDirection {
+  COLLECT
+  RETURN
+}
+
+model RiderInvite {
+  id             String              @id @default(uuid()) @db.Uuid
+  email          String
+  name           String
+  hubId          String              @map("hub_id") @db.Uuid
+  hub            Hub                 @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  employmentType RiderEmploymentType @map("employment_type")
+  tokenHash      String              @unique @map("token_hash")
+  expiresAt      DateTime            @map("expires_at")
+  acceptedAt     DateTime?           @map("accepted_at")
+  invitedById    String              @map("invited_by_id") @db.Uuid
+  invitedBy      User                @relation("RiderInviteSender", fields: [invitedById], references: [id])
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("rider_invites")
+}
+
+model Rider {
+  id                    String                @id @default(uuid()) @db.Uuid
+  userId                String                @unique @map("user_id") @db.Uuid
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hubId                 String                @map("hub_id") @db.Uuid
+  hub                   Hub                   @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  employmentType        RiderEmploymentType   @map("employment_type")
+  status                RiderStatus           @default(PENDING_VERIFICATION)
+  vehicleType           String?               @map("vehicle_type")
+  vehicleNumber         String?               @map("vehicle_number")
+  identityDocumentType  IdentityDocumentType? @map("identity_document_type")
+  identityDocumentLast4 String?               @map("identity_document_last4")
+  identityVerifiedAt    DateTime?             @map("identity_verified_at")
+  identityVerifiedById  String?               @map("identity_verified_by_id") @db.Uuid
+  identityVerifiedBy    User?                 @relation("RiderIdentityVerifier", fields: [identityVerifiedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tasks           RiderTask[]
+  attachedBagTags BagTag[]
+
+  @@index([hubId, status])
+  @@map("riders")
+}
+
+model RiderTask {
+  id               String              @id @default(uuid()) @db.Uuid
+  riderId          String              @map("rider_id") @db.Uuid
+  rider            Rider               @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  hubId            String              @map("hub_id") @db.Uuid
+  hub              Hub                 @relation(fields: [hubId], references: [id], onDelete: Restrict)
+  brandId          String              @map("brand_id") @db.Uuid
+  brand            Brand               @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  pickupLocationId String              @map("pickup_location_id") @db.Uuid
+  pickupLocation   BrandPickupLocation @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
+  roundStartsAt    DateTime            @map("round_starts_at")
+  status           RiderTaskStatus     @default(ASSIGNED)
+  assignedById     String              @map("assigned_by_id") @db.Uuid
+  assignedBy       User                @relation("RiderTaskAssigner", fields: [assignedById], references: [id])
+  assignedAt       DateTime            @default(now()) @map("assigned_at")
+  completedAt      DateTime?           @map("completed_at")
+  wastedReason     String?             @map("wasted_reason")
+
+  stops RiderTaskStop[]
+
+  @@index([riderId, roundStartsAt])
+  @@index([hubId, roundStartsAt])
+  @@map("rider_tasks")
+}
+
+model RiderTaskStop {
+  id                String               @id @default(uuid()) @db.Uuid
+  riderTaskId       String               @map("rider_task_id") @db.Uuid
+  riderTask         RiderTask            @relation(fields: [riderTaskId], references: [id], onDelete: Cascade)
+  fulfilmentGroupId String               @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
+  direction         RiderStopDirection
+  isActive          Boolean              @default(true) @map("is_active")
+  scannedAt         DateTime?            @map("scanned_at")
+
+  @@index([riderTaskId])
+  @@index([fulfilmentGroupId])
+  @@map("rider_task_stops")
+}
+
+model BagTagBatch {
+  id          String   @id @default(uuid()) @db.Uuid
+  hubId       String   @map("hub_id") @db.Uuid
+  hub         Hub      @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  tagCount    Int      @map("tag_count")
+  createdById String   @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tags BagTag[]
+
+  @@index([hubId, createdAt])
+  @@map("bag_tag_batches")
+}
+
+model BagTag {
+  id                String                @id @default(uuid()) @db.Uuid
+  code              String                @unique
+  batchId           String                @map("batch_id") @db.Uuid
+  batch             BagTagBatch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  fulfilmentGroupId String?               @unique @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup? @relation(fields: [fulfilmentGroupId], references: [id], onDelete: SetNull)
+  attachedAt        DateTime?             @map("attached_at")
+  attachedByRiderId String?               @map("attached_by_rider_id") @db.Uuid
+  attachedByRider   Rider?                @relation(fields: [attachedByRiderId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@map("bag_tags")
 }

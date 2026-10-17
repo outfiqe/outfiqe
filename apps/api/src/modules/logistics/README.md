@@ -17,10 +17,15 @@ The module is built in steps. This README lists what exists now.
 - `logistics.service.ts` — `logisticsService`, the only object other modules import. It
   spreads in every topic service.
 - `logistics.repository.ts` — `logisticsRepository`, spreading in every topic repository.
-- `logistics.routes.ts` — mounted at `/api/logistics`. It routes `/admin/hubs` to `hubs/` and
-  `/brand/pickup-locations` to `pickup-locations/`.
-- `logistics.rate-limits.ts` — the per-user write limiters shared by every topic's routes: one for
-  staff and one for brands.
+- `logistics.routes.ts` — mounted at `/api/logistics`:
+  - `/admin/hubs` → `hubs/`, `/admin/riders` → `riders/`, `/admin/bag-tag-batches` → `bag-tags/`;
+  - `/admin/pickup-board` and `/admin/rider-tasks` → `rounds/` (staff);
+  - `/brand/pickup-locations` → `pickup-locations/`, `/brand/pickups` → `pickups/`;
+  - `/rider/tasks` → `rounds/` (riders).
+- `logistics.rate-limits.ts` — the per-user limiters shared by every topic's routes: staff writes,
+  brand writes and rider scans.
+- `logistics.guards.ts` — `requireActiveRider(userId)`: loads the signed-in rider's profile, or
+  answers `403` when there is none or it isn't `ACTIVE`.
 - `logistics.pickup-coverage.ts` — `logisticsPickupCoverage`, shared by `pickup-locations/` and
   `flow/`:
   - which active hub collects from a pickup city (a city in a delivery zone listed in a hub's
@@ -46,6 +51,38 @@ The module is built in steps. This README lists what exists now.
   - It records a `READY_FOR_PICKUP` tracking event with a fixed dedupe key per group, so pressing it twice changes nothing.
   - Once a rider has collected the items, it answers `409 PICKUP_ALREADY_MOVED_ON`.
   - It returns the pickup code the rider scans.
+- `riders/` — admin rider management (`platformGuards.logisticsRead` / `logisticsManage`, staff
+  write-limited).
+  - Endpoints: `GET /` (by hub and status, cursor-paged), `GET /invites`, `POST /invites`,
+    `POST /:riderId/identity-check`, `PATCH /:riderId/status`, `PATCH /:riderId/vehicle`.
+  - An invite stores only a token hash and expires in 7 days. The email links to
+    `/register/rider?token=…` on the web app. Sign-up itself lives in
+    `auth/invites/rider-invite.service.ts` (`POST /auth/register/rider`, `GET /auth/invite/rider`).
+  - A new employee starts `ACTIVE`; a new contractor starts `PENDING_VERIFICATION` and can't be
+    activated (`409 RIDER_IDENTITY_NOT_CHECKED`) until staff record an in-person ID check.
+  - Suspending or offboarding cancels the rider's open visits (their unscanned bags go back on the
+    board) and deletes every refresh token, in one transaction.
+  - Invites, ID checks and status changes are written to the platform audit log.
+- `bag-tags/` — sticker batches (`GET /`, `POST /`, `GET /:batchId`). A batch belongs to one open
+  hub and holds 1–500 random 10-character codes (unique; collisions are re-drawn). A sticker is
+  "used" once it is attached to a pickup, and can only ever be attached once.
+- `rounds/` — pickup rounds:
+  - Staff (`rounds.routes.ts`, `rounds.service.ts`):
+    - `GET /admin/pickup-board?hubId=` — pickup locations with bags marked ready and not yet on an
+      active visit, cursor-paged by location.
+    - `POST /admin/rider-tasks` — one visit: one active rider at the rider's hub, one pickup
+      location, 1–50 of its waiting bags. Records `RIDER_ASSIGNED` per bag.
+    - `GET /admin/rider-tasks?hubId=` and `POST /admin/rider-tasks/:taskId/cancel` (only before
+      anything is collected).
+  - Riders (`rider-task.routes.ts`, `rider-task.service.ts`, `RIDER` role, `ACTIVE` profile, scan
+    rate limit):
+    - `GET /rider/tasks`, `GET /rider/tasks/:taskId` — their open visits, with the pickup address,
+      contact and bags.
+    - `POST /rider/tasks/:taskId/collect-scans` — pickup code + sticker code + phone scan time,
+      with a required `Idempotency-Key`. See the funnel below.
+    - `POST /rider/tasks/:taskId/wasted` (nothing collected, with a reason; records
+      `VISIT_WASTED`) and `POST /rider/tasks/:taskId/finish` (some collected; the rest go back on
+      the board).
 - `flow/` — `resolveFulfilmentAssignments({ brandIds })`, which checkout calls before its
   transaction to decide each brand's flow.
   - A brand goes through the hub (`OUTFIQE_LOGISTICS`, with its hub and pickup location) when:
@@ -86,6 +123,31 @@ The module is built in steps. This README lists what exists now.
 - `shipTo` (the customer's name, phone and address) is `null` for hub-flow groups, because the brand never needs it.
 - The brand's own status updates (`PATCH /orders/brand/fulfilment-groups/:groupId`) are refused for hub-flow groups with `409 DELIVERED_BY_OUTFIQE`.
 
+**Riders and rounds:**
+
+- Staff invite a rider, who sets a password from the email link. Staff check a contractor's ID in
+  person, then activate them.
+- Staff print a sticker sheet, open the pickup board, tick the ready bags at a brand location and
+  assign them to a rider for a round.
+- The rider opens the visit on their phone, scans the brand's pickup slip, sticks a new sticker on
+  the bag and scans it. With no signal, the scan waits on the phone and sends later.
+- If the shop is closed the rider marks the visit wasted; if only some bags are ready they finish
+  with what they have. Either way the rest go back on the board.
+
+**Technical, for a collection scan** (`rider-task.service.ts`), in one transaction:
+
+1. Load the visit (it must be this rider's) and the active collect stop for the pickup code.
+2. If that stop is already scanned with the same sticker, answer success without changing
+   anything (an offline retry with a new key). A different sticker is `409`.
+3. Refuse a closed visit, a pickup that is no longer `READY_FOR_PICKUP` (cancelled meanwhile), an
+   unknown sticker, a sticker from another hub, or a used sticker.
+4. Work out the event time from the phone's scan time (see below).
+5. Attach the sticker and mark the stop scanned, each with a guarded `updateMany`.
+6. Record `PICKED_UP` and `BAG_TAGGED` through `recordEventInTransaction`.
+7. Move the visit to `COMPLETED` when every active stop is scanned, otherwise `IN_PROGRESS`.
+
+After commit, `announceStageChange` tells the customer if their order's stage moved.
+
 **Technical, at checkout:**
 
 1. `orders/checkout/checkout.fulfilment.ts` calls `logisticsService.resolveFulfilmentAssignments`
@@ -116,6 +178,22 @@ After commit, `ORDER_STATUS_CHANGED` is published only when the customer-facing 
   - Until then, switching the flag on for a brand would send its orders to a hub that has no
     partner to deliver them.
 
+- **A bag can be on only one active visit, enforced by the database.** The partial unique index
+  `rider_task_stops_one_active_stop_per_group_direction_key` (one active stop per group and
+  direction) turns two staff assigning the same bag at once into one `409 PICKUPS_NOT_ASSIGNABLE`.
+  Releasing a stop sets `is_active = false`, which puts the bag back on the board.
+- **Scans are idempotent twice over.** The `Idempotency-Key` (generated once per scan on the phone
+  and kept with the queued scan) replays the stored answer for the same key. A retry with a new key
+  still can't scan twice: the stop and the sticker are claimed with guarded updates, and a repeat
+  of the same pickup + sticker pair is answered as success.
+- **The phone's scan time is trusted, within limits** (`resolveScanOccurredAt` in
+  `rounds.utils.ts`):
+  - a time in the future becomes "now";
+  - a time before the brand marked the bag ready (a slow phone clock) is moved up to that moment,
+    so the state machine doesn't drop it as out of order;
+  - a scan more than 24 hours old is refused (`422 SCAN_TOO_OLD`) and handled by hub staff.
+- **Suspension revokes sessions in the same transaction as the status change**, so a suspended
+  rider's phone can't refresh its way back in, and their visits can't keep collecting.
 - **The existing order status fields are kept and fed, not replaced.**
   - `OrderFulfilmentGroup.status`, `Order.fulfilmentStatus` and `Order.fulfilmentSummary` are
     still the only things existing screens, reports, commission sweeps and payout sweeps read.

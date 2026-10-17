@@ -3,6 +3,9 @@ export const DEFAULT_PLATFORM_AUDIT_PAGE_SIZE = 25;
 export const MAX_PLATFORM_AUDIT_PAGE_SIZE = 100;
 
 export const PLATFORM_AUDIT_ACTION = {
+  RIDER_INVITED: "rider.invited",
+  RIDER_IDENTITY_VERIFIED: "rider.identity-verified",
+  RIDER_STATUS_CHANGED: "rider.status-changed",
   IMPERSONATION_START: "impersonation.start",
   IMPERSONATION_END: "impersonation.end",
   FEATURE_OVERRIDE_SET: "feature.override.set",

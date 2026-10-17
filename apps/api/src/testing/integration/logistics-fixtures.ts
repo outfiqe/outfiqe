@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { PICKUP_CODE_LENGTH } from "@outfiqe/utils";
+import { BAG_TAG_CODE_LENGTH, PICKUP_CODE_LENGTH } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import {
@@ -8,12 +8,17 @@ import {
   FulfilmentMode,
   FulfilmentStatus,
   PickupStatus,
+  RiderEmploymentType,
+  RiderStatus,
   ShipmentStatus,
+  UserRole,
 } from "#generated/prisma/enums.js";
+import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateRandomCode } from "#lib/random-code.utils.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
 import { createBuyer, createOrder, createPurchasableProduct } from "./order-fixtures.js";
+import { uniquePhone } from "./unique-values.js";
 
 const KATHMANDU_TIME_ZONE = "Asia/Kathmandu";
 const SUNDAY_TO_FRIDAY = [0, 1, 2, 3, 4, 5];
@@ -170,6 +175,72 @@ export const createDefaultPickupLocation = (brandId: string, city: string) =>
 export const requireFixtureId = (id: string | undefined): string => {
   if (!id) throw new Error("The fixture did not create the record this test expects.");
   return id;
+};
+
+type RiderSessionOptions = {
+  hubId: string;
+  status?: RiderStatus;
+  employmentType?: RiderEmploymentType;
+};
+
+export const createRiderSession = async ({
+  hubId,
+  status = RiderStatus.ACTIVE,
+  employmentType = RiderEmploymentType.CONTRACTOR,
+}: RiderSessionOptions) => {
+  const suffix = randomUUID().slice(0, 8);
+  const user = await prisma.user.create({
+    data: {
+      email: `rider-${suffix}@outfiqe.test`,
+      name: "Test Rider",
+      handle: `test-rider-${suffix}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role: UserRole.RIDER,
+      emailVerified: true,
+    },
+  });
+  const rider = await prisma.rider.create({
+    data: { userId: user.id, hubId, employmentType, status },
+  });
+  const { accessToken } = generateTokenpair({ sub: user.id, role: UserRole.RIDER });
+  return { userId: user.id, riderId: rider.id, authHeader: `Bearer ${accessToken}` };
+};
+
+export const createBagTag = async (hubId: string, createdById: string) => {
+  const batch = await prisma.bagTagBatch.create({
+    data: { hubId, tagCount: SINGLE_PACKAGE, createdById },
+  });
+  return prisma.bagTag.create({
+    data: { batchId: batch.id, code: generateRandomCode(BAG_TAG_CODE_LENGTH) },
+  });
+};
+
+export const createReadyPickupsAtLocation = async (hubId: string, pickupCount: number) => {
+  const buyer = await createBuyer();
+  const { brand } = await createPurchasableProduct(DEFAULT_PRODUCT_PRICE);
+  const pickupLocation = await createDefaultPickupLocation(brand.id, "Lalitpur");
+  const readyAt = new Date();
+  const groups = await Promise.all(
+    Array.from({ length: pickupCount }, async () => {
+      const order = await createOrder(buyer.id);
+      return prisma.orderFulfilmentGroup.create({
+        data: {
+          orderId: order.id,
+          brandId: brand.id,
+          fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS,
+          pickupStatus: PickupStatus.READY_FOR_PICKUP,
+          pickupStatusChangedAt: readyAt,
+          readyForPickupAt: readyAt,
+          status: FulfilmentStatus.PACKED,
+          pickupCode: generateRandomCode(PICKUP_CODE_LENGTH),
+          hubId,
+          pickupLocationId: pickupLocation.id,
+        },
+      });
+    }),
+  );
+  return { brand, pickupLocation, groups };
 };
 
 export const createPickupForBrand = async (

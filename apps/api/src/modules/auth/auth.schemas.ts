@@ -93,6 +93,19 @@ export const crmInviteQuerySchema = z.object({
   token: z.string().min(1),
 });
 
+export const riderInviteQuerySchema = z.object({
+  token: z.string().min(1),
+});
+
+export const registerRiderSchema = z
+  .object({
+    inviteToken: z.string().min(1),
+    phone: phoneSchema,
+    password: passwordField,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
+
 export const registerCrmInviteSchema = z
   .object({
     inviteToken: z.string().min(1),
@@ -124,5 +137,7 @@ export type RegisterAdminBody = z.infer<typeof registerAdminSchema>;
 export type AdminInviteQuery = z.infer<typeof adminInviteQuerySchema>;
 export type CrmInviteQuery = z.infer<typeof crmInviteQuerySchema>;
 export type RegisterCrmInviteBody = z.infer<typeof registerCrmInviteSchema>;
+export type RiderInviteQuery = z.infer<typeof riderInviteQuerySchema>;
+export type RegisterRiderBody = z.infer<typeof registerRiderSchema>;
 export type ValidateTokenQuery = z.infer<typeof validateTokenQuerySchema>;
 export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>;
