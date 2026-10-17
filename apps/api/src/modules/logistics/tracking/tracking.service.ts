@@ -2,7 +2,13 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import { PickupStatus, ShipmentStatus } from "#generated/prisma/enums.js";
+import {
+  PickupStatus,
+  ShipmentStatus,
+  TrackingEventCode,
+  TrackingEventSource,
+} from "#generated/prisma/enums.js";
+import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
@@ -30,6 +36,7 @@ import type {
 const STATUS_MOVE_ATTEMPTS = 2;
 const NO_ATTEMPTS_LEFT = 0;
 const NEXT_ATTEMPT_STEP = 1;
+const COD_COLLECTED_MISMATCH_DEDUPE_PREFIX = "cod-collected-mismatch";
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -101,6 +108,29 @@ const tryMovePickupStatus = async (
   );
 };
 
+const recordCollectedCashMismatch = async (
+  tx: TransactionClient,
+  {
+    shipmentId,
+    expectedAmount,
+    collectedAmount,
+    occurredAt,
+  }: { shipmentId: string; expectedAmount: number; collectedAmount: number; occurredAt: Date },
+): Promise<void> => {
+  logger.warn(
+    `Parcel ${shipmentId} was delivered with ${collectedAmount} collected, but ${expectedAmount} was due.`,
+  );
+  await logisticsTrackingRepository.insertTrackingEvent(tx, {
+    shipmentId,
+    code: TrackingEventCode.COD_COLLECTED_MISMATCH,
+    source: TrackingEventSource.SYSTEM,
+    dedupeKey: `${COD_COLLECTED_MISMATCH_DEDUPE_PREFIX}:${shipmentId}`,
+    occurredAt,
+    codCollectedAmount: collectedAmount,
+    note: `The partner collected ${collectedAmount}, but the label asked for ${expectedAmount}.`,
+  });
+};
+
 const tryMoveShipmentStatus = async (
   tx: TransactionClient,
   shipmentId: string,
@@ -123,14 +153,27 @@ const tryMoveShipmentStatus = async (
   });
   if (!canMove) return false;
 
+  const codCollectedAmount = input.codCollectedAmount ?? shipment.codAmountToCollect;
   const hasMoved = await logisticsTrackingRepository.moveShipmentStatus(tx, {
     shipmentId,
     fromStatus: shipment.status,
     toStatus: nextStatus,
     changedAt: input.occurredAt,
+    codCollectedAmount,
   });
   if (!hasMoved) {
     return tryMoveShipmentStatus(tx, shipmentId, input, attemptsLeft - NEXT_ATTEMPT_STEP);
+  }
+
+  const hasCollectedDifferentCash =
+    nextStatus === ShipmentStatus.DELIVERED && codCollectedAmount !== shipment.codAmountToCollect;
+  if (hasCollectedDifferentCash) {
+    await recordCollectedCashMismatch(tx, {
+      shipmentId,
+      expectedAmount: shipment.codAmountToCollect,
+      collectedAmount: codCollectedAmount,
+      occurredAt: input.occurredAt,
+    });
   }
 
   await logisticsTrackingRepository.setCoarseStatusForParcelGroups(

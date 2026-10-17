@@ -379,6 +379,20 @@ it reads the group statuses, applies `deriveOrderFulfilment` and calls `setOrder
 The `logistics` module uses it after every applied tracking event, so hub-delivered orders follow
 exactly the same rollup and `deliveredAt` rules as brand-shipped ones.
 
+When the rollup reaches `DELIVERED`, `setOrderFulfilmentRollup` also moves a cash-on-delivery
+order from `paymentStatus: DUE` to `PAID`, but only when Outfiqe's delivery partners collected all
+of it:
+
+- at least one group went through the hub (`OUTFIQE_LOGISTICS`), and
+- no `BRAND_SHIPS` group is still open (cancelled or returned ones don't count).
+
+A brand that ships its own part collects its own cash, and nothing records that yet, so a mixed
+order stays `DUE`, the same as a brand-only COD order always has. Because it runs inside the
+rollup, the same rule applies when a refund closes the last undelivered parcel and leaves the rest
+delivered. Once `PAID`, a later refund on the order is real money back and goes through the manual
+refund queue, not the "cash not collected" path. What the partner collected and paid back to
+Outfiqe is tracked per parcel in `logistics/cod`.
+
 ## Stale-shipment reminder digest
 
 A brand can mark a group `SHIPPED` and then never come back to mark it `DELIVERED` — there's no

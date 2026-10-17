@@ -169,6 +169,7 @@ model User {
   deliveryRefusals                         CustomerDeliveryRefusal[]   @relation("DeliveryRefusalCustomer")
   clearedDeliveryRefusals                  CustomerDeliveryRefusal[]   @relation("DeliveryRefusalClearer")
   confirmedBrandReturns                    BrandReturn[]               @relation("BrandReturnConfirmer")
+  recordedCodRemittances                   CodRemittance[]             @relation("CodRemittanceRecorder")
   partnerStatusImports                     PartnerStatusImport[]       @relation("PartnerStatusImportUploader")
   decidedBrandUnavailables                 BrandUnavailableRequest[]   @relation("BrandUnavailableDecider")
 
@@ -1365,6 +1366,7 @@ enum TrackingEventCode {
   HANDOVER_NOT_SCANNED
   DELIVERY_DISPUTED
   NOTE
+  COD_COLLECTED_MISMATCH
 }
 
 enum DeliveryPartnerConnection {
@@ -1625,11 +1627,12 @@ model Shipment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  fulfilmentGroups OrderFulfilmentGroup[]
-  trackingEvents   TrackingEvent[]
-  bookings         ShipmentPartnerBooking[]
-  deliveryRefusal  CustomerDeliveryRefusal?
-  brandReturns     BrandReturn[]
+  fulfilmentGroups  OrderFulfilmentGroup[]
+  trackingEvents    TrackingEvent[]
+  bookings          ShipmentPartnerBooking[]
+  deliveryRefusal   CustomerDeliveryRefusal?
+  brandReturns      BrandReturn[]
+  codRemittanceLine CodRemittanceLine?
 
   @@index([status, lastEventAt])
   @@index([orderId])
@@ -1638,27 +1641,28 @@ model Shipment {
 }
 
 model TrackingEvent {
-  id                String                 @id @default(uuid()) @db.Uuid
-  fulfilmentGroupId String?                @map("fulfilment_group_id") @db.Uuid
-  fulfilmentGroup   OrderFulfilmentGroup?  @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
-  shipmentId        String?                @map("shipment_id") @db.Uuid
-  shipment          Shipment?              @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  code              TrackingEventCode
-  source            TrackingEventSource
-  actorUserId       String?                @map("actor_user_id") @db.Uuid
-  actorUser         User?                  @relation("TrackingEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  partnerId         String?                @map("partner_id") @db.Uuid
-  partner           DeliveryPartner?       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
-  rawStatus         String?                @map("raw_status")
-  rawPayload        Json?                  @map("raw_payload")
-  reasonCode        DeliveryFailureReason? @map("reason_code")
-  location          String?
-  note              String?
-  occurredAt        DateTime               @map("occurred_at")
-  receivedAt        DateTime               @default(now()) @map("received_at")
-  appliedToStatus   Boolean                @default(false) @map("applied_to_status")
-  isCorrection      Boolean                @default(false) @map("is_correction")
-  dedupeKey         String                 @map("dedupe_key")
+  id                 String                 @id @default(uuid()) @db.Uuid
+  fulfilmentGroupId  String?                @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup    OrderFulfilmentGroup?  @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
+  shipmentId         String?                @map("shipment_id") @db.Uuid
+  shipment           Shipment?              @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  code               TrackingEventCode
+  source             TrackingEventSource
+  actorUserId        String?                @map("actor_user_id") @db.Uuid
+  actorUser          User?                  @relation("TrackingEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  partnerId          String?                @map("partner_id") @db.Uuid
+  partner            DeliveryPartner?       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  rawStatus          String?                @map("raw_status")
+  rawPayload         Json?                  @map("raw_payload")
+  reasonCode         DeliveryFailureReason? @map("reason_code")
+  location           String?
+  note               String?
+  occurredAt         DateTime               @map("occurred_at")
+  receivedAt         DateTime               @default(now()) @map("received_at")
+  appliedToStatus    Boolean                @default(false) @map("applied_to_status")
+  isCorrection       Boolean                @default(false) @map("is_correction")
+  codCollectedAmount Int?                   @map("cod_collected_amount")
+  dedupeKey          String                 @map("dedupe_key")
 
   @@unique([source, dedupeKey])
   @@index([fulfilmentGroupId, occurredAt])
@@ -1694,6 +1698,7 @@ model DeliveryPartner {
   statusImports   PartnerStatusImport[]
   trackingEvents  TrackingEvent[]
   webhookReceipts PartnerWebhookReceipt[]
+  codRemittances  CodRemittance[]
 
   @@index([countryCode, isActive])
   @@map("delivery_partners")
@@ -4657,4 +4662,39 @@ model BrandReturnLine {
 
   @@unique([brandReturnId, orderItemId])
   @@map("brand_return_lines")
+}
+
+model CodRemittance {
+  id               String          @id @default(uuid()) @db.Uuid
+  partnerId        String          @map("partner_id") @db.Uuid
+  partner          DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  reference        String
+  currency         String          @db.Char(3)
+  receivedAt       DateTime        @map("received_at")
+  collectedAmount  Int             @map("collected_amount")
+  partnerFeeAmount Int             @map("partner_fee_amount")
+  receivedAmount   Int             @map("received_amount")
+  note             String?
+  recordedById     String?         @map("recorded_by_id") @db.Uuid
+  recordedBy       User?           @relation("CodRemittanceRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  lines CodRemittanceLine[]
+
+  @@unique([partnerId, reference])
+  @@index([partnerId, receivedAt])
+  @@map("cod_remittances")
+}
+
+model CodRemittanceLine {
+  id               String        @id @default(uuid()) @db.Uuid
+  remittanceId     String        @map("remittance_id") @db.Uuid
+  remittance       CodRemittance @relation(fields: [remittanceId], references: [id], onDelete: Cascade)
+  shipmentId       String        @unique @map("shipment_id") @db.Uuid
+  shipment         Shipment      @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  collectedAmount  Int           @map("collected_amount")
+  partnerFeeAmount Int           @map("partner_fee_amount")
+
+  @@index([remittanceId])
+  @@map("cod_remittance_lines")
 }

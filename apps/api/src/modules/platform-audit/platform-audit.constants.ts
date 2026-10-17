@@ -10,6 +10,7 @@ export const PLATFORM_AUDIT_ACTION = {
   LOGISTICS_PARCEL_UPDATED: "logistics.parcel-updated",
   LOGISTICS_PARCEL_RETURN_CHECKED_IN: "logistics.parcel-return-checked-in",
   LOGISTICS_DELIVERY_REFUSALS_CLEARED: "logistics.delivery-refusals-cleared",
+  LOGISTICS_COD_REMITTANCE_RECORDED: "logistics.cod-remittance-recorded",
   IMPERSONATION_START: "impersonation.start",
   IMPERSONATION_END: "impersonation.end",
   FEATURE_OVERRIDE_SET: "feature.override.set",
