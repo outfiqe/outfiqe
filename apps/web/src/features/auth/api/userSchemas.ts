@@ -32,6 +32,13 @@ export const currentUserSchema = z.union([customerUserSchema, brandUserSchema]);
 export const brandInviteInfoSchema = z.object({ email: z.email(), brandName: z.string() });
 export type BrandInviteInfo = z.infer<typeof brandInviteInfoSchema>;
 
+export const riderInviteInfoSchema = z.object({
+  email: z.email(),
+  name: z.string(),
+  hubName: z.string(),
+});
+export type RiderInviteInfo = z.infer<typeof riderInviteInfoSchema>;
+
 export const validateTokenResponseSchema = z.object({ valid: z.boolean() });
 
 export const sessionResponseSchema = z.object({
