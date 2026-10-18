@@ -18,6 +18,8 @@ export type CustomerRefusalsView = CashOnDeliveryEligibility & {
   refusals: { id: string; orderId: string; refusedAt: string }[];
 };
 
+export type ShopperCodEligibility = Omit<CashOnDeliveryEligibility, "refusalCount">;
+
 const requireOrderCustomer = async (orderId: string) => {
   const customer = await logisticsRefusalRepository.findOrderCustomer(orderId);
   if (!customer) throw new AppError("ORDER_NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
@@ -36,12 +38,14 @@ export const logisticsRefusalService = {
   async getMyCodEligibility(
     userId: string,
     { phone }: CodEligibilityQuery,
-  ): Promise<CashOnDeliveryEligibility> {
-    return checkCashOnDeliveryEligibility({
-      userId,
-      phone: phone ?? null,
-      countryCode: PLATFORM_DEFAULT_COUNTRY_CODE,
-    });
+  ): Promise<ShopperCodEligibility> {
+    const { isCashOnDeliveryAllowed, refusalLimit, windowDays } =
+      await checkCashOnDeliveryEligibility({
+        userId,
+        phone: phone ?? null,
+        countryCode: PLATFORM_DEFAULT_COUNTRY_CODE,
+      });
+    return { isCashOnDeliveryAllowed, refusalLimit, windowDays };
   },
 
   async getOrderCustomerRefusals(orderId: string): Promise<CustomerRefusalsView> {

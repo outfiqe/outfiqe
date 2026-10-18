@@ -80,3 +80,13 @@ wasted. Scans made without signal are kept on the phone and sent later.
   `Permissions-Policy: camera=(self)` for those paths and `camera=()` everywhere else.
 - **The pickup code check on the phone is format-only.** The rider never sees which codes belong
   to the visit; the API decides, so a wrong bag is refused even offline-then-synced.
+- **A visit can't be ended while its scans are still on the phone.**
+  - The server only knows about scans that have arrived, so the visit page still counts an
+    offline-scanned bag as "Waiting".
+  - Finishing or wasting the visit at that point would close it, and the queued scans would then
+    be refused. So "Leave without the rest" and "Nothing to collect here" are replaced by a
+    "saved on this phone" message until those scans send.
+  - Scanning a pickup code that is already waiting on the phone is refused with a hint, so the
+    rider doesn't put a second sticker on the same bag.
+- **"Leave without the rest" asks first** (`LeaveVisitModal`), because it can't be undone: the
+  bags left behind go back on the pickup board.

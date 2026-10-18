@@ -28,7 +28,8 @@ export const ParcelsPage = () => {
   const { canUse } = usePlatformPermissions();
   const canManage = canUse(PLATFORM_MANAGE_PERMISSION.LOGISTICS);
   const [queue, setQueue] = useSearchFilter("queue", PARCEL_QUEUE_FILTER);
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const parcelsQuery = useInfiniteParcels(selectedHub?.id ?? null, queue);
   const parcels = parcelsQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const isLoading = isLoadingHubs || (selectedHub !== null && parcelsQuery.isPending);
@@ -42,7 +43,9 @@ export const ParcelsPage = () => {
         </p>
       </div>
 
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
       )}
