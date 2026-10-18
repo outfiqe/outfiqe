@@ -10,6 +10,7 @@ import {
 } from "@outfiqe/utils";
 import { useState } from "react";
 
+import { PENDING_SCAN_STATE } from "../constants/pendingScans";
 import { SCAN_OUTCOME, usePendingScans } from "../context/PendingScansContext";
 
 const SCAN_STEP = {
@@ -22,7 +23,14 @@ type ScanStep = (typeof SCAN_STEP)[keyof typeof SCAN_STEP];
 type CollectScanFlowProps = { taskId: string };
 
 export const CollectScanFlow = ({ taskId }: CollectScanFlowProps) => {
-  const { queueCollectScan } = usePendingScans();
+  const { queueCollectScan, pendingScans } = usePendingScans();
+  const isSavedOnPhone = (code: string) =>
+    pendingScans.some(
+      (pendingScan) =>
+        pendingScan.taskId === taskId &&
+        pendingScan.pickupCode === code &&
+        pendingScan.state === PENDING_SCAN_STATE.WAITING,
+    );
   const [scanStep, setScanStep] = useState<ScanStep>(SCAN_STEP.PICKUP_CODE);
   const [pickupCode, setPickupCode] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -55,6 +63,12 @@ export const CollectScanFlow = ({ taskId }: CollectScanFlowProps) => {
       }
       if (!isCrockfordCode(code, PICKUP_CODE_LENGTH)) {
         setScanHint("That isn't an Outfiqe pickup code. Try again.");
+        return;
+      }
+      if (isSavedOnPhone(code)) {
+        setScanHint(
+          "This bag is already saved on this phone. It sends when you have signal, so don't tag it again.",
+        );
         return;
       }
       setPickupCode(code);
