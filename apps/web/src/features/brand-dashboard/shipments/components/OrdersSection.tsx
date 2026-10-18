@@ -27,7 +27,7 @@ export const OrdersSection = () => {
           One shipment per order — pack, ship and track your items.
         </p>
       </div>
-      <DeliveryReliabilityPanel isOrderLogisticsOn={isOrderLogisticsOn} />
+      <DeliveryReliabilityPanel />
       <BrandReturnsPanel isOrderLogisticsOn={isOrderLogisticsOn} />
 
       {isError && (

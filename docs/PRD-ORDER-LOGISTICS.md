@@ -987,10 +987,16 @@ notifications to admins holding `logisticsManage`.
 Every `BrandFulfilmentIncident` (unavailable item, failed inspection, wasted visit, missed round)
 counts toward a rolling 30-day score:
 
-- The brand sees its incidents and score in its dashboard, with the reason for each.
-- At **3** incidents in 30 days, the brand gets an automatic warning.
-- At **6**, the brand is listed for admin review. Suspension stays an admin decision, using the
-  existing brand moderation tools.
+- The brand sees a "Delivery problems" panel only once it has had one, with the reason for each and
+  a plain note that customer refusals and returns never count.
+- **Warning:** at least **5** incidents **and** more than **10%** of the brand's hub pickups in the
+  30 days. A flat count would treat a brand with 300 pickups the same as one with 5.
+- **Review:** at least **10** incidents **and** more than **20%**. Suspension stays an admin
+  decision, using the existing brand moderation tools.
+- **New brands are never warned** during their first 30 days of Outfiqe pickup, or until they have
+  had 20 hub pickups, whichever comes later.
+- Staff see every brand from **3** incidents on (Logistics → Brand reliability), with its pickups
+  and share, so they can reach out before anything formal.
 - Brands are never charged for a customer's refusal or a partner's failure; those aren't incidents.
 
 ## 16. Built for more countries
@@ -1343,8 +1349,10 @@ DELIVERED_BY_OUTFIQE`.
    many units are fine or damaged.
    - After the rider's hand-over, "Confirm received" restocks the fine units.
    - After 48 hours it is confirmed automatically.
-4. **Reliability.** The "Delivery reliability" panel shows the last 30 days' incidents. The brand
-   is warned at 3 and reviewed at 6. Customer refusals and partner faults never count.
+4. **Reliability.** Once the brand has a problem, a "Delivery problems" panel shows the last 30
+   days' incidents. The brand is warned at 5 problems that are over 10% of its pickups, and
+   reviewed at 10 over 20%. New brands (first 30 days or first 20 pickups) are never warned.
+   Customer refusals and partner faults never count.
 
 ### 22.3 Rider
 

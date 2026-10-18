@@ -3,32 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLogout } from "@/features/auth";
 
-import { PENDING_SCAN_STATE } from "../constants/pendingScans";
-import { usePendingScans } from "../context/PendingScansContext";
-import { RiderLogoutButton } from "./RiderLogoutButton";
+import { useUnsentScanCount } from "../context/PendingScansContext";
+import { useSignOutWithScanCheck } from "../hooks/useSignOutWithScanCheck";
+import { UnsentScansSignOutModal } from "./UnsentScansSignOutModal";
 
 vi.mock("@/features/auth", () => ({ useLogout: vi.fn() }));
-vi.mock("../context/PendingScansContext", () => ({ usePendingScans: vi.fn() }));
+vi.mock("../context/PendingScansContext", () => ({ useUnsentScanCount: vi.fn() }));
 
 const mutate = vi.fn();
-
-const pendingScan = {
-  scanId: "scan-1",
-  taskId: "task-1",
-  pickupCode: "7K2M9QAB",
-  bagTagCode: "ABCDEFGHJK",
-  scannedAt: "2026-10-16T08:00:00.000Z",
-  state: PENDING_SCAN_STATE.WAITING,
-  errorMessage: null,
-};
-
-const mockPendingScans = (pendingScans: (typeof pendingScan)[]) =>
-  vi.mocked(usePendingScans).mockReturnValue({
-    pendingScans,
-    queueCollectScan: vi.fn(),
-    retryPendingScan: vi.fn(),
-    discardPendingScan: vi.fn(),
-  });
 
 const buildIdleLogoutMutation = (): ReturnType<typeof useLogout> => ({
   context: undefined,
@@ -49,15 +31,27 @@ const buildIdleLogoutMutation = (): ReturnType<typeof useLogout> => ({
   reset: vi.fn(),
 });
 
+const SignOutHarness = () => {
+  const signOutCheck = useSignOutWithScanCheck();
+  return (
+    <>
+      <button type="button" onClick={signOutCheck.requestSignOut}>
+        Sign out
+      </button>
+      <UnsentScansSignOutModal signOutCheck={signOutCheck} />
+    </>
+  );
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
 });
 
-describe("RiderLogoutButton", () => {
-  it("signs out straight away when every scan has been sent", () => {
-    mockPendingScans([]);
-    render(<RiderLogoutButton />);
+describe("signing out with scans on the phone", () => {
+  it("signs out straight away when every scan has been sent, or for anyone who isn't a rider", () => {
+    vi.mocked(useUnsentScanCount).mockReturnValue(0);
+    render(<SignOutHarness />);
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
@@ -65,13 +59,17 @@ describe("RiderLogoutButton", () => {
   });
 
   it("warns before signing out with scans still waiting", () => {
-    mockPendingScans([pendingScan]);
-    render(<RiderLogoutButton />);
+    vi.mocked(useUnsentScanCount).mockReturnValue(1);
+    render(<SignOutHarness />);
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     expect(screen.getByText("1 scan still waiting on this phone.")).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Stay signed in" }));
+    expect(mutate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     fireEvent.click(screen.getByRole("button", { name: "Sign out anyway" }));
     expect(mutate).toHaveBeenCalledTimes(1);
   });

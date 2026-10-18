@@ -7,6 +7,9 @@ export const brandToWatchSchema = z.object({
   brandId: z.string(),
   brandName: z.string(),
   incidentCount: z.number(),
+  pickupCount: z.number(),
+  incidentRatePercent: z.number(),
+  isNewToPickup: z.boolean(),
   level: z.enum(RELIABILITY_LEVELS),
 });
 export type BrandToWatch = z.infer<typeof brandToWatchSchema>;

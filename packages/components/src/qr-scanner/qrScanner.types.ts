@@ -22,6 +22,13 @@ export const QR_SCANNER_STATUS = {
 
 export type QrScannerStatus = (typeof QR_SCANNER_STATUS)[keyof typeof QR_SCANNER_STATUS];
 
+export const QR_CAMERA_START_MODE = {
+  AUTOMATIC: "automatic",
+  ON_REQUEST: "on-request",
+} as const;
+
+export type QrCameraStartMode = (typeof QR_CAMERA_START_MODE)[keyof typeof QR_CAMERA_START_MODE];
+
 export type QrFrameDecoder = (
   video: HTMLVideoElement,
   canvas: HTMLCanvasElement,

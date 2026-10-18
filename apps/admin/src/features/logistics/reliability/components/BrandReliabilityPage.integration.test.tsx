@@ -9,14 +9,42 @@ import { BrandReliabilityPage } from "./BrandReliabilityPage";
 
 const RELIABILITY_URL = `${LOGISTICS_API_BASE}/brand-reliability`;
 
+const brandToWatch = {
+  brandId: "brand-1",
+  brandName: "Thread Co",
+  incidentCount: 12,
+  pickupCount: 40,
+  incidentRatePercent: 30,
+  isNewToPickup: false,
+  level: "REVIEW",
+};
+
 describe("BrandReliabilityPage", () => {
-  it("lists brands to watch with how many problems they had", async () => {
+  it("lists brands to watch with their problems, pickups and share", async () => {
     mswServer.use(
       http.get(RELIABILITY_URL, () =>
         okJson({
           brands: [
-            { brandId: "brand-1", brandName: "Thread Co", incidentCount: 6, level: "REVIEW" },
-            { brandId: "brand-2", brandName: "Knit Hut", incidentCount: 3, level: "WARNING" },
+            brandToWatch,
+            {
+              ...brandToWatch,
+              brandId: "brand-2",
+              brandName: "Knit Hut",
+              incidentCount: 3,
+              pickupCount: 60,
+              incidentRatePercent: 5,
+              level: "GOOD",
+            },
+            {
+              ...brandToWatch,
+              brandId: "brand-3",
+              brandName: "New Loom",
+              incidentCount: 4,
+              pickupCount: 6,
+              incidentRatePercent: 67,
+              isNewToPickup: true,
+              level: "GOOD",
+            },
           ],
         }),
       ),
@@ -25,7 +53,9 @@ describe("BrandReliabilityPage", () => {
 
     expect(await screen.findByText("Thread Co")).toBeInTheDocument();
     expect(screen.getByText("Needs review")).toBeInTheDocument();
-    expect(screen.getByText("3 problems in 30 days")).toBeInTheDocument();
+    expect(screen.getByText("12 problems in 30 days · 40 pickups (30%)")).toBeInTheDocument();
+    expect(screen.getAllByText("Watching")).toHaveLength(2);
+    expect(screen.getByText("New to pickup")).toBeInTheDocument();
   });
 
   it("says so when no brand needs watching", async () => {

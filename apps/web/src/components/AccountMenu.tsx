@@ -3,9 +3,11 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 
-import { useAuth, useLogout } from "@/features/auth";
+import { useAuth } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
-import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
+import { ADMIN_URL, RIDER_HOME_PATH } from "@/features/auth/utils/getDefaultRoute";
+import { UnsentScansSignOutModal } from "@/features/rider/components/UnsentScansSignOutModal";
+import { useSignOutWithScanCheck } from "@/features/rider/hooks/useSignOutWithScanCheck";
 import { AppImage } from "@/shared/components/AppImage";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -13,12 +15,25 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 const OVERVIEW_PATH = "/overview";
 const PROFILE_PATH = "/profile";
 
+const dashboardHrefFor = (isRider: boolean, hasOwnOverview: boolean): string => {
+  if (isRider) return RIDER_HOME_PATH;
+  return hasOwnOverview ? OVERVIEW_PATH : PROFILE_PATH;
+};
+
 export const AccountMenu = () => {
-  const { state, isAuthenticated, isBrandOwner, isStaff, isCreator, isShopper, hasCrmAccess } =
-    useAuth();
-  const logout = useLogout();
+  const {
+    state,
+    isAuthenticated,
+    isBrandOwner,
+    isStaff,
+    isCreator,
+    isShopper,
+    isRider,
+    hasCrmAccess,
+  } = useAuth();
+  const signOutCheck = useSignOutWithScanCheck();
   const isOnTenantHost = useTenantHost();
-  const dashboardHref = isBrandOwner || isCreator ? OVERVIEW_PATH : PROFILE_PATH;
+  const dashboardHref = dashboardHrefFor(isRider, isBrandOwner || isCreator);
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
     return <Skeleton aria-hidden className="hidden size-9 rounded-full lg:block" />;
@@ -103,12 +118,14 @@ export const AccountMenu = () => {
               CRM
             </a>
           )}
-          <Link
-            href="/wishlist"
-            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-          >
-            Your stash
-          </Link>
+          {!isRider && (
+            <Link
+              href="/wishlist"
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Your stash
+            </Link>
+          )}
           {isShopper && (
             <>
               <Link
@@ -126,7 +143,7 @@ export const AccountMenu = () => {
             </>
           )}
 
-          {!isBrandOwner && !isStaff && !isCreator && (
+          {!isBrandOwner && !isStaff && !isCreator && !isRider && (
             <>
               <div className="my-1.5 h-px bg-border" />
               <Link
@@ -141,14 +158,15 @@ export const AccountMenu = () => {
           <div className="my-1.5 h-px bg-border" />
           <button
             type="button"
-            onClick={() => logout.mutate()}
-            disabled={logout.isPending}
+            onClick={signOutCheck.requestSignOut}
+            disabled={signOutCheck.isSigningOut}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted disabled:opacity-60"
           >
-            {logout.isPending ? "Signing out…" : "Sign out"}
+            {signOutCheck.isSigningOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
       </div>
+      <UnsentScansSignOutModal signOutCheck={signOutCheck} />
     </div>
   );
 };

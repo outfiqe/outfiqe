@@ -112,5 +112,28 @@ describe("RiderTasksPage", () => {
     renderTasksPage();
 
     expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(screen.getByText(/Check your signal and try again/)).toBeInTheDocument();
+  });
+
+  it("tells a rider who isn't activated yet why, instead of blaming their signal", async () => {
+    mswServer.use(
+      http.get(RIDER_TASKS_URL, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "Your rider account isn't active yet. Ask your hub lead.",
+            code: "RIDER_NOT_ACTIVE",
+          },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    renderTasksPage();
+
+    expect(
+      await screen.findByText("Your rider account isn't active yet. Ask your hub lead."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Check your signal/)).not.toBeInTheDocument();
   });
 });

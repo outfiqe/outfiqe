@@ -355,11 +355,25 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
     a hub inspection with failed units, a wasted rider visit, a return checked in as wrong or
     damaged. `(kind, sourceKey)` is unique and inserts skip duplicates, so a retried step counts
     once. Customer refusals and partner failures are never incidents.
-  - Endpoints: `GET /brand/reliability` (the brand's count and incidents for the last 30 days,
-    its level, cursor-paged) and `GET /admin/brand-reliability` (`logisticsRead`; brands with 3 or
-    more, most first).
-  - `reliability.utils.ts` — `describeReliabilityLevel`: warned at 3 incidents, review at 6.
-    Suspension stays an admin decision with the existing brand tools.
+  - `brand-pickup-history.repository.ts` — per brand: its first hub pickup, how many it has had in
+    all, and how many in the last 30 days (two `groupBy` queries on `order_fulfilment_groups`).
+  - Endpoints:
+    - `GET /brand/reliability`: the brand's problems and incidents for the last 30 days
+      (cursor-paged), its hub pickups in that time, the share that had a problem, whether it is
+      still new to Outfiqe pickup, and its level.
+    - `GET /admin/brand-reliability` (`logisticsRead`): every brand with 3 or more problems, most
+      first, with the same figures. The watch list stays at 3 so staff can step in early, before
+      the brand is warned.
+  - `reliability.utils.ts` — how the level is decided (`RELIABILITY_THRESHOLDS`,
+    `NEW_BRAND_GRACE`):
+    - **Warning:** at least 5 problems **and** more than 10% of the brand's hub pickups in the
+      window.
+    - **Review:** at least 10 problems **and** more than 20%.
+    - **No level for new brands:** a brand stays in good standing during its first 30 days of
+      Outfiqe pickup, and until it has had 20 hub pickups, whichever comes later.
+
+    A share with no pickups in the window counts as 100%. Suspension stays an admin decision with
+    the existing brand tools.
 - `tracking/` — the single write path for every pickup and parcel status change.
   - `tracking.service.ts` — `logisticsTrackingService`:
     - `recordEvent(input)` opens its own transaction and announces stage changes after commit.
@@ -474,6 +488,15 @@ carries the new `trackingStage`, so the notification and the push message say wh
 The web order page listens for that notification and refreshes itself.
 
 ## Non-obvious rationale
+
+- **Brand reliability uses a rate and a grace period, not a flat count.** It started as "warned at 3
+  problems in 30 days". That is excellent for a brand with 300 pickups and alarming for one with 5,
+  and it would have warned new brands while they were still learning the flow at launch. So:
+  - a warning needs both enough problems (5) and a meaningful share of pickups (over 10%);
+  - brands in their first 30 days or first 20 pickups are never warned.
+
+  Staff still see every brand from 3 problems on, so a person can reach out before anything
+  formal happens.
 
 - **Who pays for a return is decided at the hub, not from the partner's word.** The partner says
   "refused" or "returning"; only staff holding the parcel can tell a genuine refusal from a wrong

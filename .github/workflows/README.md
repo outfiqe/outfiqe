@@ -65,6 +65,10 @@ or cancelled:
 - `coverage.yml` runs on `pull_request` into `main` only. `validate-branch.yml` guarantees that
   is always the `dev -> main` promotion PR, so coverage gates the release without adding a
   skipped job to every feature PR's CI run. It stays non-blocking here, same as before.
+  Its time limit is 50 minutes. It runs every test with coverage one package at a time
+  (`--concurrency=1`), which took 28 minutes in October 2026 and grows with the suite. A run
+  that hits the limit is cancelled with no coverage report, so raise the limit before it gets
+  close rather than after a release goes out unmeasured.
 - `commit-messages.yml` and `coverage.yml` are separate files rather than `if:`-gated jobs inside
   `ci.yml` precisely so they never show up as permanently-"skipped" jobs on runs where they
   don't apply.

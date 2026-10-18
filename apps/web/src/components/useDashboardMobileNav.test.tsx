@@ -20,7 +20,7 @@ const reset = vi.fn();
 beforeEach(() => {
   vi.mocked(useDashboardNav).mockReturnValue({
     navItems,
-    isBrand: false,
+    navSectionId: "creator",
     accountLabel: "Muse account",
   });
   vi.mocked(useNavPreferences).mockReturnValue({

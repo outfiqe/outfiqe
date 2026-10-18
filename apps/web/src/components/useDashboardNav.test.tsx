@@ -42,7 +42,7 @@ describe("useDashboardNav", () => {
 
     const { result } = renderHook(() => useDashboardNav());
 
-    expect(result.current.isBrand).toBe(true);
+    expect(result.current.accountLabel).toBe("Brand account");
     expect(result.current.navItems.map((item) => item.id)).not.toContain("addresses");
   });
 
@@ -93,6 +93,22 @@ describe("useDashboardNav", () => {
 
     expect(navIdsFor(UserRole.BRAND_OWNER)).toContain("pickup-locations");
     expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("pickup-locations");
+  });
+
+  it("gives riders their own menu: visits, earnings, security and support", () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+    mockAuth(UserRole.RIDER);
+
+    const { result } = renderHook(() => useDashboardNav());
+
+    expect(result.current.navItems.map((item) => item.href)).toEqual([
+      "/rider",
+      "/rider/earnings",
+      "/settings/security",
+      "/support",
+    ]);
+    expect(result.current.accountLabel).toBe("Rider account");
+    expect(result.current.navSectionId).toBe("rider");
   });
 
   it("keeps Earnings and Withdraw away from shoppers who haven't earned anything", () => {
