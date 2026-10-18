@@ -69,7 +69,15 @@ export const logisticsShipmentService = {
   async recordParcelEvent(
     staffUserId: string,
     shipmentId: string,
-    { code, rawStatus, reasonCode, occurredAt, note, isCorrection }: RecordParcelEventBody,
+    {
+      code,
+      rawStatus,
+      reasonCode,
+      occurredAt,
+      note,
+      isCorrection,
+      codCollectedAmount,
+    }: RecordParcelEventBody,
   ): Promise<ShipmentDetailView> {
     await requireShipmentDetail(shipmentId);
     const outcome = await logisticsTrackingService.recordEvent({
@@ -83,6 +91,7 @@ export const logisticsShipmentService = {
       isCorrection,
       ...(rawStatus ? { rawStatus } : {}),
       ...(reasonCode ? { reasonCode } : {}),
+      ...(codCollectedAmount === undefined ? {} : { codCollectedAmount }),
     });
     await platformAudit.record({
       actorUserId: staffUserId,
@@ -92,7 +101,13 @@ export const logisticsShipmentService = {
       summary: `Recorded ${code} on parcel ${shipmentId}`,
       targetType: SHIPMENT_AUDIT_TARGET_TYPE,
       targetId: shipmentId,
-      metadata: { code, note, isCorrection, appliedToStatus: outcome.appliedToStatus },
+      metadata: {
+        code,
+        note,
+        isCorrection,
+        appliedToStatus: outcome.appliedToStatus,
+        ...(codCollectedAmount === undefined ? {} : { codCollectedAmount }),
+      },
     });
     return requireShipmentDetail(shipmentId);
   },

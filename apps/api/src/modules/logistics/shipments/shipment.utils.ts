@@ -66,6 +66,8 @@ export const toShipmentDetailView = (shipment: ShipmentDetailRecord): ShipmentDe
   parcelCount: shipment.parcelCount,
   deliveryAttemptCount: shipment.deliveryAttemptCount,
   deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
+  codCollectedAmount: shipment.codCollectedAmount,
+  codRemittanceId: shipment.codRemittanceLine?.remittanceId ?? null,
   labelPrintedAt: shipment.labelPrintedAt?.toISOString() ?? null,
   returnOutcome: shipment.returnOutcome,
   returnCheckedInAt: shipment.returnCheckedInAt?.toISOString() ?? null,

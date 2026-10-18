@@ -21,7 +21,8 @@ const formatBatchDate = (createdAt: string) =>
 export const BagTagsPage = () => {
   const { canUse } = usePlatformPermissions();
   const canManageStickers = canUse(PLATFORM_MANAGE_PERMISSION.LOGISTICS);
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const batchesQuery = useInfiniteBagTagBatches(selectedHub?.id ?? null);
   const batches = batchesQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const isLoading = isLoadingHubs || (selectedHub !== null && batchesQuery.isPending);
@@ -36,7 +37,9 @@ export const BagTagsPage = () => {
         </p>
       </div>
 
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
       )}

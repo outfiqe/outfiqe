@@ -72,6 +72,12 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
               : "prepaid"}{" "}
             · {parcel.weightGrams} g · {parcel.parcelCount} piece(s)
           </p>
+          {parcel.codCollectedAmount !== null && parcel.codCollectedAmount > NOTHING_TO_COLLECT && (
+            <p className="text-sm text-muted-foreground">
+              Partner collected Rs. {parcel.codCollectedAmount.toLocaleString()} ·{" "}
+              {parcel.codRemittanceId ? "paid in to Outfiqe" : "not paid in yet"}
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             {parcel.booking
               ? `${parcel.booking.partnerName} · ${parcel.booking.partnerReference ?? "not booked yet"}`
@@ -176,6 +182,7 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
       {isUpdateModalOpen && (
         <RecordParcelUpdateModal
           shipmentId={shipmentId}
+          codAmountToCollect={parcel.codAmountToCollect}
           onClose={() => setIsUpdateModalOpen(false)}
         />
       )}

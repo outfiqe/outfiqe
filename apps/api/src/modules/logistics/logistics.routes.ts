@@ -1,6 +1,8 @@
 import { Router } from "express";
 
+import { logisticsAlertRoutes } from "./alerts/alert.routes.js";
 import { logisticsBagTagRoutes } from "./bag-tags/bag-tag.routes.js";
+import { logisticsCodRoutes } from "./cod/cod.routes.js";
 import { logisticsCustomerTrackingRoutes } from "./customer-tracking/customer-tracking.routes.js";
 import { logisticsHubOperationRoutes } from "./hub-operations/hub-operation.routes.js";
 import { logisticsHubRoutes } from "./hubs/hub.routes.js";
@@ -18,6 +20,11 @@ import {
 } from "./reliability/reliability.routes.js";
 import { logisticsBrandReturnRoutes } from "./returns/brand-return.routes.js";
 import { logisticsReturnRoutes } from "./returns/return.routes.js";
+import {
+  logisticsRiderEarningAdminRoutes,
+  logisticsRiderEarningRoutes,
+  logisticsRiderPayRateRoutes,
+} from "./rider-pay/rider-pay.routes.js";
 import { logisticsRiderRoutes } from "./riders/rider.routes.js";
 import { logisticsRiderTaskRoutes } from "./rounds/rider-task.routes.js";
 import {
@@ -30,11 +37,15 @@ export const logisticsRoutes = Router();
 
 logisticsRoutes.use("/admin/hubs", logisticsHubRoutes);
 logisticsRoutes.use("/admin/riders", logisticsRiderRoutes);
+logisticsRoutes.use("/admin/rider-pay-rates", logisticsRiderPayRateRoutes);
+logisticsRoutes.use("/admin/rider-earnings", logisticsRiderEarningAdminRoutes);
 logisticsRoutes.use("/admin/bag-tag-batches", logisticsBagTagRoutes);
 logisticsRoutes.use("/admin/pickup-board", logisticsPickupBoardRoutes);
 logisticsRoutes.use("/admin/rider-tasks", logisticsRiderTaskAdminRoutes);
 logisticsRoutes.use("/admin/partners/:partnerId/webhook-receipts", partnerWebhookReceiptRoutes);
 logisticsRoutes.use("/admin/partners", logisticsPartnerRoutes);
+logisticsRoutes.use("/admin/cod", logisticsCodRoutes);
+logisticsRoutes.use("/admin/alerts", logisticsAlertRoutes);
 logisticsRoutes.use("/hub", logisticsHubOperationRoutes);
 logisticsRoutes.use("/hub", logisticsHubShipmentRoutes);
 logisticsRoutes.use("/hub", logisticsReturnRoutes);
@@ -46,4 +57,5 @@ logisticsRoutes.use("/cod-eligibility", logisticsCodEligibilityRoutes);
 logisticsRoutes.use("/brand/pickup-locations", logisticsPickupLocationRoutes);
 logisticsRoutes.use("/brand/pickups", logisticsPickupRoutes);
 logisticsRoutes.use("/rider/tasks", logisticsRiderTaskRoutes);
+logisticsRoutes.use("/rider/earnings", logisticsRiderEarningRoutes);
 logisticsRoutes.use("/orders/:orderId", logisticsCustomerTrackingRoutes);

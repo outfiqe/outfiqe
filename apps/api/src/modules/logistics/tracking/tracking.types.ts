@@ -29,6 +29,7 @@ export type RecordTrackingEventInput = {
   location?: string;
   note?: string;
   isCorrection?: boolean;
+  codCollectedAmount?: number;
 };
 
 export type OrderTrackingStageSummary = {

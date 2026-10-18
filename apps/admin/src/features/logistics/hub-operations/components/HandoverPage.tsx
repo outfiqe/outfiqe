@@ -14,7 +14,8 @@ import { useHandOverParcel } from "../hooks/useHandOverParcel";
 import { ScanLog } from "./ScanLog";
 
 export const HandoverPage = () => {
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const handOverParcel = useHandOverParcel();
   const [scanLog, setScanLog] = useState<ScanLogEntry[]>([]);
 
@@ -55,7 +56,9 @@ export const HandoverPage = () => {
       </div>
 
       {isLoadingHubs && <Skeleton className="h-16 w-full max-w-xs rounded-xl" />}
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <>
           <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />

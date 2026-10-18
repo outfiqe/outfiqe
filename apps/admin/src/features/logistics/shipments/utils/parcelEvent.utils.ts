@@ -20,6 +20,7 @@ const TRACKING_EVENT_LABELS: Readonly<Record<string, string>> = {
   BOOKING_CONFIRMED: "Booked with the partner",
   BOOKING_FAILED: "Booking failed",
   COD_AMOUNT_CHANGED: "Cash to collect changed",
+  COD_COLLECTED_MISMATCH: "Cash collected didn't match the label",
   DELIVERY_RESCHEDULED: "Delivery rescheduled",
   UNKNOWN_PARTNER_STATUS: "Partner status we don't know yet",
   HANDOVER_NOT_SCANNED: "Left the hub without a handover scan",

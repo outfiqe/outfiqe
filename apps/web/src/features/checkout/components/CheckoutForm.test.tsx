@@ -112,7 +112,7 @@ let isCashOnDeliveryAllowed = true;
 
 vi.mock("../hooks/useCodEligibility", () => ({
   useCodEligibility: () => ({
-    data: { isCashOnDeliveryAllowed, refusalCount: 0, refusalLimit: 2, windowDays: 365 },
+    data: { isCashOnDeliveryAllowed, refusalLimit: 2, windowDays: 365 },
   }),
 }));
 

@@ -5,6 +5,7 @@ import { CRM_ASSIGNMENT_VIEW_PERMISSION_KEYS } from "#modules/crm-access/crm-acc
 import {
   BRAND_REVIEW_PERMISSION_KEYS,
   COUPON_MANAGEMENT_PERMISSION_KEYS,
+  LOGISTICS_MANAGEMENT_PERMISSION_KEYS,
   SUPPORT_AGENT_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
 
@@ -160,6 +161,11 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.ACCOUNT_APPROVED]: creatorsAndBusinesses,
   [NotificationType.ORDER_REFUND_ISSUED]: shopperAccounts,
   [NotificationType.ORDER_REFUND_DETAILS_NEEDED]: shopperAccounts,
+  [NotificationType.LOGISTICS_STAFF_ALERT]: platformStaffHolding(
+    LOGISTICS_MANAGEMENT_PERMISSION_KEYS,
+  ),
+  [NotificationType.LOGISTICS_BRAND_NOTICE]: businessAccounts,
+  [NotificationType.ORDER_DELIVERY_LATE]: shopperAccounts,
 };
 
 export const canReceiveNotificationType = (

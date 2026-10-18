@@ -268,3 +268,28 @@ describe("resolveNotificationMessage for order updates", () => {
     ).toBe("Your order was shipped");
   });
 });
+
+describe("resolveNotificationMessage for delivery alerts", () => {
+  it("names the alert for staff, with a fallback", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "LOGISTICS_STAFF_ALERT",
+          metadata: { logisticsAlertType: "PARTNER_NOT_COLLECTED" },
+        }),
+      ),
+    ).toBe("The delivery partner hasn't collected a parcel");
+    expect(resolveNotificationMessage(buildNotification({ type: "LOGISTICS_STAFF_ALERT" }))).toBe(
+      "A delivery needs attention",
+    );
+  });
+
+  it("asks the brand to mark a bag ready and says sorry to a late customer", () => {
+    expect(resolveNotificationMessage(buildNotification({ type: "LOGISTICS_BRAND_NOTICE" }))).toBe(
+      "An order is waiting for you to mark its bag ready for pickup",
+    );
+    expect(resolveNotificationMessage(buildNotification({ type: "ORDER_DELIVERY_LATE" }))).toBe(
+      "Sorry, your order is running late. We're on it and will keep you posted",
+    );
+  });
+});

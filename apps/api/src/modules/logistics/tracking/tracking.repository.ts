@@ -27,6 +27,7 @@ const shipmentSubjectSelect = {
   orderId: true,
   status: true,
   statusChangedAt: true,
+  codAmountToCollect: true,
 } satisfies Prisma.ShipmentSelect;
 
 type PickupStatusMove = {
@@ -42,13 +43,15 @@ type ShipmentStatusMove = {
   fromStatus: ShipmentStatus;
   toStatus: ShipmentStatus;
   changedAt: Date;
+  codCollectedAmount: number;
 };
 
-const buildShipmentStatusSideEffects = (
-  toStatus: ShipmentStatus,
-  changedAt: Date,
-): Prisma.ShipmentUpdateManyMutationInput => {
-  if (toStatus === ShipmentStatus.DELIVERED) return { deliveredAt: changedAt };
+const buildShipmentStatusSideEffects = ({
+  toStatus,
+  changedAt,
+  codCollectedAmount,
+}: ShipmentStatusMove): Prisma.ShipmentUpdateManyMutationInput => {
+  if (toStatus === ShipmentStatus.DELIVERED) return { deliveredAt: changedAt, codCollectedAmount };
   if (toStatus === ShipmentStatus.DELIVERY_FAILED) {
     return { deliveryAttemptCount: { increment: DELIVERY_ATTEMPT_STEP } };
   }
@@ -116,16 +119,14 @@ export const logisticsTrackingRepository = {
     return count > NO_ROWS_UPDATED;
   },
 
-  async moveShipmentStatus(
-    client: DbClient,
-    { shipmentId, fromStatus, toStatus, changedAt }: ShipmentStatusMove,
-  ): Promise<boolean> {
+  async moveShipmentStatus(client: DbClient, shipmentMove: ShipmentStatusMove): Promise<boolean> {
+    const { shipmentId, fromStatus, toStatus, changedAt } = shipmentMove;
     const { count } = await client.shipment.updateMany({
       where: { id: shipmentId, status: fromStatus },
       data: {
         status: toStatus,
         statusChangedAt: changedAt,
-        ...buildShipmentStatusSideEffects(toStatus, changedAt),
+        ...buildShipmentStatusSideEffects(shipmentMove),
       },
     });
     return count > NO_ROWS_UPDATED;

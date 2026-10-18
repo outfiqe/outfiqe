@@ -157,6 +157,9 @@ export const logisticsPartnerEvents = {
       ...(mapping.reasonCode ? { reasonCode: mapping.reasonCode } : {}),
       ...(event.location ? { location: event.location } : {}),
       ...(event.rawReason ? { note: event.rawReason } : {}),
+      ...(event.codCollectedAmount === null
+        ? {}
+        : { codCollectedAmount: event.codCollectedAmount }),
     });
 
     const skippedHandoverScan =

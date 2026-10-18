@@ -1,5 +1,19 @@
 import { PickupStatus, ShipmentStatus } from "#generated/prisma/enums.js";
 
+export const LOGISTICS_TIME_LIMITS: Readonly<{
+  brandNotReadyWorkingDays: number;
+  brandNotReadyEscalationWorkingDays: number;
+  missedRoundGraceMinutes: number;
+  noPartnerUpdateWorkingDays: number;
+  promiseAtRiskDaysBefore: number;
+}> = {
+  brandNotReadyWorkingDays: 1,
+  brandNotReadyEscalationWorkingDays: 2,
+  missedRoundGraceMinutes: 120,
+  noPartnerUpdateWorkingDays: 2,
+  promiseAtRiskDaysBefore: 1,
+};
+
 export const SHIPMENT_STATUSES_WITH_PARTNER = [
   ShipmentStatus.HANDED_TO_PARTNER,
   ShipmentStatus.IN_TRANSIT,

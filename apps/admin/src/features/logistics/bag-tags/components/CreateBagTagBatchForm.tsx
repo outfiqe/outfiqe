@@ -3,6 +3,8 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useId, useState } from "react";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import { bagTagsApi } from "../api/bagTagsApi";
 import { BAG_TAG_BATCHES_QUERY_KEY } from "../constants/bagTagQueryKeys";
 
@@ -23,6 +25,7 @@ export const CreateBagTagBatchForm = ({ hubId }: CreateBagTagBatchFormProps) => 
     parsedTagCount <= MAX_TAG_COUNT;
 
   const createBatch = useApiMutation({
+    errorMessage: getErrorMessage,
     mutationFn: () => bagTagsApi.create(hubId, parsedTagCount),
     invalidateKeys: [BAG_TAG_BATCHES_QUERY_KEY],
     successMessage: "Stickers made. Print them now.",
