@@ -11,8 +11,15 @@ import { orderQueryKey } from "../constants/trackingQueryKeys";
 const NOTIFICATION_CREATED_EVENT = "notification:created";
 const NOTIFICATION_UPDATED_EVENT = "notification:updated";
 
+const ORDER_UPDATE_NOTIFICATION_TYPES: ReadonlySet<string> = new Set([
+  NotificationType.ORDER_STATUS_CHANGED,
+  NotificationType.ORDER_REFUND_ISSUED,
+  NotificationType.ORDER_REFUND_DETAILS_NEEDED,
+  NotificationType.ORDER_DELIVERY_LATE,
+]);
+
 const isUpdateForOrder = (notification: Notification, orderId: string) =>
-  notification.type === NotificationType.ORDER_STATUS_CHANGED && notification.entityId === orderId;
+  ORDER_UPDATE_NOTIFICATION_TYPES.has(notification.type) && notification.entityId === orderId;
 
 export const useOrderLiveUpdates = (orderId: string): void => {
   const queryClient = useQueryClient();

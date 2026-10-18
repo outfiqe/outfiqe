@@ -30,7 +30,9 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
+import { COD_UNAVAILABLE_REASON } from "../constants/checkout.constants";
 import { useCheckout } from "../hooks/useCheckout";
+import { useCodEligibility } from "../hooks/useCodEligibility";
 import type { BuyNowPayload } from "../utils/buyNowStorage";
 import { clearBuyNowPayload } from "../utils/buyNowStorage";
 import { BuyNowCouponForm } from "./BuyNowCouponForm";
@@ -97,7 +99,15 @@ export const CheckoutForm = ({
 
   const paymentMethod = form.watch("paymentMethod");
   const city = form.watch("city");
+  const phone = form.watch("phone");
   const codRequiresPrepaid = cart.appliedCoupon?.prepaidOnly ?? false;
+  const { data: codEligibility } = useCodEligibility(phone, state.user !== null);
+  const isCodBlockedByRefusals = codEligibility?.isCashOnDeliveryAllowed === false;
+  const codUnavailableReason = codRequiresPrepaid
+    ? COD_UNAVAILABLE_REASON.PREPAID_COUPON
+    : isCodBlockedByRefusals
+      ? COD_UNAVAILABLE_REASON.REFUSED_DELIVERIES
+      : null;
 
   const resolvedZone = useMemo(() => resolveZonePreview(zones, city), [zones, city]);
   const deliveryFee =
@@ -109,10 +119,10 @@ export const CheckoutForm = ({
   const deliveryWindowLabel = deliveryEstimate ? formatDeliveryWindow(deliveryEstimate) : null;
 
   useEffect(() => {
-    if (codRequiresPrepaid && paymentMethod === PaymentMethod.COD) {
+    if (codUnavailableReason !== null && paymentMethod === PaymentMethod.COD) {
       form.setValue("paymentMethod", PaymentMethod.ESEWA);
     }
-  }, [codRequiresPrepaid, paymentMethod, form]);
+  }, [codUnavailableReason, paymentMethod, form]);
 
   useEffect(() => {
     if (!savedAddresses || hasInitializedFromSavedAddresses.current) return;
@@ -254,7 +264,7 @@ export const CheckoutForm = ({
             <PaymentMethodField
               value={paymentMethod}
               onChange={(value) => form.setValue("paymentMethod", value)}
-              codRequiresPrepaid={codRequiresPrepaid}
+              codUnavailableReason={codUnavailableReason}
             />
             {paymentMethod === PaymentMethod.COD && (
               <p className="mt-3 text-xs text-muted-foreground">

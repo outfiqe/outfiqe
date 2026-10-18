@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
+  BrandIncidentKind,
+  BrandReturnSource,
+  BrandReturnStatus,
   FulfilmentStatus,
   OrderRefundCause,
   PartnerBookingStatus,
@@ -236,6 +239,20 @@ describe("inspecting and packing", () => {
       await prisma.orderRefund.findFirstOrThrow({ where: { orderId: order.id } }),
     ).toMatchObject({ cause: OrderRefundCause.HUB_INSPECTION_FAILED, totalAmount: 700 });
     expect(packed.body.data.codAmountToCollect).toBe(700 + DELIVERY_FEE);
+    const failedUnitsReturn = await prisma.brandReturn.findFirstOrThrow({
+      where: { fulfilmentGroupId: requireFixtureId(pickup?.groupId) },
+      include: { lines: true },
+    });
+    expect(failedUnitsReturn).toMatchObject({
+      source: BrandReturnSource.FAILED_INSPECTION,
+      status: BrandReturnStatus.AT_HUB,
+      lines: [expect.objectContaining({ resellableQty: 0, damagedQty: 1 })],
+    });
+    expect(
+      await prisma.brandFulfilmentIncident.count({
+        where: { orderId: order.id, kind: BrandIncidentKind.FAILED_INSPECTION },
+      }),
+    ).toBe(1);
   });
 
   it("waits for every bag unless staff choose to pack only what has arrived", async () => {

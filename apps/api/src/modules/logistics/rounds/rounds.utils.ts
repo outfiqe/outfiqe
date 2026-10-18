@@ -4,11 +4,17 @@ import { max } from "date-fns/max";
 import { subHours } from "date-fns/subHours";
 
 import type {
+  BrandReturnForRoundRecord,
   PickupBoardLocationRecord,
   RiderTaskDetailRecord,
   RiderTaskSummaryRecord,
 } from "./rounds.repository.js";
-import type { PickupBoardLocation, RiderTaskSummary, RiderTaskView } from "./rounds.types.js";
+import type {
+  BoardReturnView,
+  PickupBoardLocation,
+  RiderTaskSummary,
+  RiderTaskView,
+} from "./rounds.types.js";
 
 export const RIDER_SCAN_MAX_AGE_HOURS = 24;
 
@@ -40,8 +46,26 @@ export const resolveScanOccurredAt = ({
   return { verdict: SCAN_TIME_VERDICT.ACCEPTED, occurredAt };
 };
 
+const NO_UNITS = 0;
+
+export const toBoardReturnView = ({
+  id,
+  source,
+  fulfilmentGroup,
+  lines,
+}: BrandReturnForRoundRecord): BoardReturnView => ({
+  brandReturnId: id,
+  orderId: fulfilmentGroup.orderId,
+  source,
+  unitCount: lines.reduce(
+    (unitCount, { resellableQty, damagedQty }) => unitCount + resellableQty + damagedQty,
+    NO_UNITS,
+  ),
+});
+
 export const toPickupBoardLocation = (
   location: PickupBoardLocationRecord,
+  returnsWaiting: readonly BrandReturnForRoundRecord[],
 ): PickupBoardLocation => ({
   pickupLocationId: location.id,
   label: location.label,
@@ -55,6 +79,7 @@ export const toPickupBoardLocation = (
     itemCount: group._count.items,
     readyForPickupAt: group.readyForPickupAt?.toISOString() ?? null,
   })),
+  returns: returnsWaiting.map(toBoardReturnView),
 });
 
 export const toRiderTaskSummary = (task: RiderTaskSummaryRecord): RiderTaskSummary => ({
@@ -86,6 +111,8 @@ export const toRiderTaskView = (task: RiderTaskDetailRecord): RiderTaskView => {
     },
     stops: task.stops.map((stop) => ({
       id: stop.id,
+      direction: stop.direction,
+      brandReturn: stop.brandReturn ? toBoardReturnView(stop.brandReturn) : null,
       fulfilmentGroupId: stop.fulfilmentGroup.id,
       orderId: stop.fulfilmentGroup.orderId,
       itemCount: stop.fulfilmentGroup._count.items,

@@ -61,6 +61,31 @@ export const parcelEventSchema = z.object({
 });
 export type ParcelEvent = z.infer<typeof parcelEventSchema>;
 
+export const PARCEL_RETURN_OUTCOMES = [
+  "CUSTOMER_REFUSED_OR_UNREACHABLE",
+  "WRONG_OR_DAMAGED_ITEM",
+  "PARTNER_DAMAGED_OR_LOST",
+] as const;
+export type ParcelReturnOutcome = (typeof PARCEL_RETURN_OUTCOMES)[number];
+
+export type ReturnCheckInLine = {
+  orderItemId: string;
+  resellableQty: number;
+  damagedQty: number;
+};
+
+export type ReturnCheckInBody = { outcome: ParcelReturnOutcome; lines: ReturnCheckInLine[] };
+
+export const returnedParcelSchema = z.object({
+  shipmentId: z.string(),
+  outcome: z.enum(PARCEL_RETURN_OUTCOMES),
+  refundId: z.string().nullable(),
+  brandReturnIds: z.array(z.string()),
+  recordedRefusal: z.boolean(),
+  partnerClaimAmount: z.number().nullable(),
+});
+export type ReturnedParcel = z.infer<typeof returnedParcelSchema>;
+
 export const parcelDetailSchema = parcelSummarySchema.extend({
   hubId: z.string(),
   currency: z.string(),
@@ -68,7 +93,13 @@ export const parcelDetailSchema = parcelSummarySchema.extend({
   parcelCount: z.number(),
   deliveryAttemptCount: z.number(),
   deliveredAt: z.string().nullable(),
+  codCollectedAmount: z.number().nullable(),
+  codRemittanceId: z.string().nullable(),
   labelPrintedAt: z.string().nullable(),
+  returnOutcome: z.enum(PARCEL_RETURN_OUTCOMES).nullable(),
+  returnCheckedInAt: z.string().nullable(),
+  partnerClaimAmount: z.number().nullable(),
+  partnerClaimStatus: z.enum(["OPEN", "RECOVERED", "WRITTEN_OFF"]).nullable(),
   pickups: z.array(
     z.object({
       fulfilmentGroupId: z.string(),
@@ -124,4 +155,5 @@ export type RecordParcelUpdateBody = {
   note: string;
   rawStatus?: string;
   isCorrection: boolean;
+  codCollectedAmount?: number;
 };

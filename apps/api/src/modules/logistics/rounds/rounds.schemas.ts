@@ -11,6 +11,7 @@ import { RiderTaskStatus } from "#generated/prisma/enums.js";
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 const MAX_PICKUPS_PER_VISIT = 50;
+const NO_STOPS = 0;
 const MIN_REASON_LENGTH = 3;
 const MAX_REASON_LENGTH = 200;
 
@@ -31,16 +32,32 @@ const pageFields = {
 
 export const pickupBoardQuerySchema = z.object({ hubId: z.uuid(), ...pageFields });
 
-export const assignRiderTaskSchema = z.object({
-  riderId: z.uuid(),
-  pickupLocationId: z.uuid(),
-  fulfilmentGroupIds: z
-    .array(z.uuid())
-    .min(1)
-    .max(MAX_PICKUPS_PER_VISIT)
-    .refine(hasNoDuplicates, "Each pickup can only be added once."),
-  roundStartsAt: isoDateSchema,
-});
+export const assignRiderTaskSchema = z
+  .object({
+    riderId: z.uuid(),
+    pickupLocationId: z.uuid(),
+    fulfilmentGroupIds: z
+      .array(z.uuid())
+      .max(MAX_PICKUPS_PER_VISIT)
+      .refine(hasNoDuplicates, "Each pickup can only be added once.")
+      .default([]),
+    brandReturnIds: z
+      .array(z.uuid())
+      .max(MAX_PICKUPS_PER_VISIT)
+      .refine(hasNoDuplicates, "Each return can only be added once.")
+      .default([]),
+    roundStartsAt: isoDateSchema,
+  })
+  .refine(
+    ({ fulfilmentGroupIds, brandReturnIds }) =>
+      fulfilmentGroupIds.length + brandReturnIds.length > NO_STOPS,
+    { message: "Add at least one pickup or return to the visit.", path: ["fulfilmentGroupIds"] },
+  )
+  .refine(
+    ({ fulfilmentGroupIds, brandReturnIds }) =>
+      fulfilmentGroupIds.length + brandReturnIds.length <= MAX_PICKUPS_PER_VISIT,
+    { message: "A visit can hold at most 50 stops.", path: ["brandReturnIds"] },
+  );
 
 export const listRiderTasksQuerySchema = z.object({
   hubId: z.uuid(),
@@ -57,6 +74,8 @@ export const collectScanSchema = z.object({
   scannedAt: isoDateSchema,
 });
 
+export const returnDropOffSchema = z.object({ brandReturnId: z.uuid() });
+
 export const wastedVisitSchema = z.object({
   reason: z.string().trim().min(MIN_REASON_LENGTH).max(MAX_REASON_LENGTH),
 });
@@ -67,3 +86,4 @@ export type ListRiderTasksQuery = z.infer<typeof listRiderTasksQuerySchema>;
 export type RiderTaskIdParam = z.infer<typeof riderTaskIdParamSchema>;
 export type CollectScanBody = z.infer<typeof collectScanSchema>;
 export type WastedVisitBody = z.infer<typeof wastedVisitSchema>;
+export type ReturnDropOffBody = z.infer<typeof returnDropOffSchema>;

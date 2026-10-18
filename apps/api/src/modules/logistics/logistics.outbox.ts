@@ -7,9 +7,11 @@ import type { OutboxJobData } from "#outbox/outbox.types.js";
 
 import { logisticsPartnerBookingService } from "./partner-bookings/partner-booking.service.js";
 import { logisticsPartnerWebhookService } from "./partner-webhooks/partner-webhook.service.js";
+import { logisticsLostParcelService } from "./returns/lost-parcel.service.js";
 
 const webhookReceivedSchema = z.object({ receiptId: z.uuid() });
 const bookingRequestedSchema = z.object({ bookingId: z.uuid() });
+const parcelLostSchema = z.object({ shipmentId: z.uuid() });
 
 export const processPartnerWebhookReceived = async ({
   outboxEventId,
@@ -35,6 +37,18 @@ export const processPartnerBookingRequested = async ({
   await logisticsPartnerBookingService.processBookingRequest(parsed.data.bookingId);
 };
 
+export const processParcelLost = async ({
+  outboxEventId,
+  payload,
+}: OutboxJobData): Promise<void> => {
+  const parsed = parcelLostSchema.safeParse(payload);
+  if (!parsed.success) {
+    logger.error(`Outbox event ${outboxEventId} for a lost parcel is unreadable`);
+    return;
+  }
+  await logisticsLostParcelService.settleLostParcel(parsed.data.shipmentId);
+};
+
 export const registerLogisticsOutboxHandlers = (): void => {
   registerOutboxHandler(
     OUTBOX_TOPIC.LOGISTICS_PARTNER_WEBHOOK_RECEIVED,
@@ -44,4 +58,5 @@ export const registerLogisticsOutboxHandlers = (): void => {
     OUTBOX_TOPIC.LOGISTICS_PARTNER_BOOKING_REQUESTED,
     processPartnerBookingRequested,
   );
+  registerOutboxHandler(OUTBOX_TOPIC.LOGISTICS_PARCEL_LOST, processParcelLost);
 };

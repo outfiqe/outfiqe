@@ -54,11 +54,20 @@ export const recordParcelEventSchema = z
     occurredAt: z.coerce.date().optional(),
     note: z.string().trim().min(MIN_NOTE_LENGTH).max(MAX_NOTE_LENGTH),
     isCorrection: z.boolean().default(false),
+    codCollectedAmount: z.number().int().min(0).optional(),
   })
   .refine(({ occurredAt }) => occurredAt === undefined || !isFuture(occurredAt), {
     message: "The time can't be in the future.",
     path: ["occurredAt"],
-  });
+  })
+  .refine(
+    ({ code, codCollectedAmount }) =>
+      codCollectedAmount === undefined || code === TrackingEventCode.DELIVERED,
+    {
+      message: "Cash collected only goes with a Delivered update.",
+      path: ["codCollectedAmount"],
+    },
+  );
 
 export type ListShipmentsQuery = z.infer<typeof listShipmentsQuerySchema>;
 export type ListOrdersToPackQuery = z.infer<typeof listOrdersToPackQuerySchema>;

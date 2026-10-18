@@ -15,7 +15,8 @@ const NO_ORDERS = 0;
 export const PackingPage = () => {
   const { canUse } = usePlatformPermissions();
   const canManage = canUse(PLATFORM_MANAGE_PERMISSION.LOGISTICS);
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const ordersQuery = useInfiniteOrdersToPack(selectedHub?.id ?? null);
   const orders = ordersQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const isLoading = isLoadingHubs || (selectedHub !== null && ordersQuery.isPending);
@@ -29,7 +30,9 @@ export const PackingPage = () => {
         </p>
       </div>
 
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
       )}

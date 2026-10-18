@@ -59,10 +59,12 @@ export const resolveNotificationHref = (
     case NotificationType.COMMISSION_EARNED:
       return WEB_NOTIFICATION_ROUTES.earnings;
     case NotificationType.NEW_ORDER:
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
       return WEB_NOTIFICATION_ROUTES.manageOrders;
     case NotificationType.ORDER_STATUS_CHANGED:
     case NotificationType.ORDER_REFUND_ISSUED:
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
+    case NotificationType.ORDER_DELIVERY_LATE:
       return entityId
         ? orderDetailPath(WEB_NOTIFICATION_ROUTES.ordersList, entityId)
         : WEB_NOTIFICATION_ROUTES.ordersList;
@@ -97,6 +99,8 @@ export const resolveNotificationHref = (
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:
       return adminAppPath(ADMIN_APP_ROUTES.coupons);
+    case NotificationType.LOGISTICS_STAFF_ALERT:
+      return adminAppPath(ADMIN_APP_ROUTES.logisticsAlerts);
     case NotificationType.COUPON_REDEMPTION_FLAGGED:
       return entityId
         ? adminAppPath(orderDetailPath(ADMIN_APP_ROUTES.ordersList, entityId))

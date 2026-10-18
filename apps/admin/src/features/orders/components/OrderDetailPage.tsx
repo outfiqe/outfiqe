@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
+import { DeliveryRefusalsCard } from "@/features/logistics/refusals/components/DeliveryRefusalsCard";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
@@ -233,6 +234,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
       </div>
 
       <OrderRefundsCard orderId={id} />
+      <DeliveryRefusalsCard orderId={id} />
 
       {transactions.length > 0 && (
         <div className="mt-4 rounded-xl border border-border bg-card p-4">

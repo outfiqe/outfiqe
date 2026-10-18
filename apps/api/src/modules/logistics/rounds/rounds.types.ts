@@ -1,4 +1,15 @@
-import type { RiderTaskStatus } from "#generated/prisma/enums.js";
+import type {
+  BrandReturnSource,
+  RiderStopDirection,
+  RiderTaskStatus,
+} from "#generated/prisma/enums.js";
+
+export type BoardReturnView = {
+  brandReturnId: string;
+  orderId: string;
+  source: BrandReturnSource;
+  unitCount: number;
+};
 
 export type PickupBoardLocation = {
   pickupLocationId: string;
@@ -13,6 +24,7 @@ export type PickupBoardLocation = {
     itemCount: number;
     readyForPickupAt: string | null;
   }[];
+  returns: BoardReturnView[];
 };
 
 export type RiderTaskSummary = {
@@ -32,6 +44,8 @@ export type RiderTaskSummary = {
 
 export type RiderTaskStopView = {
   id: string;
+  direction: RiderStopDirection;
+  brandReturn: BoardReturnView | null;
   fulfilmentGroupId: string;
   orderId: string;
   itemCount: number;

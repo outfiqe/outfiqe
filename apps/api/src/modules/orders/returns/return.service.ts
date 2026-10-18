@@ -34,6 +34,7 @@ const RETURNABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
 ];
 
 const NO_REMAINING_UNITS = 0;
+const NO_HUB_GROUPS = 0;
 
 const REFUNDED_BY_SETTLEMENT: Record<RefundSettlement, boolean | null> = {
   [REFUND_SETTLEMENT.PAID_BY_GATEWAY]: true,
@@ -77,6 +78,13 @@ export const orderReturnService = {
   ): Promise<OrderReturnOutcome> {
     const order = await orderRepository.findForAdminAction(orderId);
     if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (order.fulfilmentGroups.length > NO_HUB_GROUPS) {
+      throw new AppError(
+        "RETURN_CHECKED_IN_AT_HUB",
+        "This order was delivered through the Outfiqe hub. Check the parcel in at the hub when it comes back instead.",
+        HTTP_STATUS.CONFLICT,
+      );
+    }
     if (!RETURNABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
         "INVALID_TRANSITION",

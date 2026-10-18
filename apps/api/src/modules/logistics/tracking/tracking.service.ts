@@ -2,10 +2,20 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import { PickupStatus } from "#generated/prisma/enums.js";
+import {
+  LogisticsAlertType,
+  PickupStatus,
+  ShipmentStatus,
+  TrackingEventCode,
+  TrackingEventSource,
+} from "#generated/prisma/enums.js";
+import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
+import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
+import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 
+import { logisticsAlertRepository } from "../alerts/alert.repository.js";
 import { TRACKING_SUBJECT_KIND } from "./tracking.constants.js";
 import {
   pickupStatusForEventCode,
@@ -28,6 +38,12 @@ import type {
 const STATUS_MOVE_ATTEMPTS = 2;
 const NO_ATTEMPTS_LEFT = 0;
 const NEXT_ATTEMPT_STEP = 1;
+const COD_COLLECTED_MISMATCH_DEDUPE_PREFIX = "cod-collected-mismatch";
+
+const ALERT_TYPE_BY_EVENT_CODE: Partial<Record<TrackingEventCode, LogisticsAlertType>> = {
+  [TrackingEventCode.UNKNOWN_PARTNER_STATUS]: LogisticsAlertType.UNKNOWN_PARTNER_STATUS,
+  [TrackingEventCode.COUNT_MISMATCH]: LogisticsAlertType.COUNT_MISMATCH,
+};
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -99,6 +115,70 @@ const tryMovePickupStatus = async (
   );
 };
 
+const recordCollectedCashMismatch = async (
+  tx: TransactionClient,
+  {
+    shipmentId,
+    orderId,
+    expectedAmount,
+    collectedAmount,
+    occurredAt,
+  }: {
+    shipmentId: string;
+    orderId: string;
+    expectedAmount: number;
+    collectedAmount: number;
+    occurredAt: Date;
+  },
+): Promise<void> => {
+  logger.warn(
+    `Parcel ${shipmentId} was delivered with ${collectedAmount} collected, but ${expectedAmount} was due.`,
+  );
+  const note = `The partner collected ${collectedAmount}, but the label asked for ${expectedAmount}.`;
+  await logisticsTrackingRepository.insertTrackingEvent(tx, {
+    shipmentId,
+    code: TrackingEventCode.COD_COLLECTED_MISMATCH,
+    source: TrackingEventSource.SYSTEM,
+    dedupeKey: `${COD_COLLECTED_MISMATCH_DEDUPE_PREFIX}:${shipmentId}`,
+    occurredAt,
+    codCollectedAmount: collectedAmount,
+    note,
+  });
+  await logisticsAlertRepository.insertAlerts(tx, [
+    {
+      alertType: LogisticsAlertType.COD_COLLECTED_MISMATCH,
+      subjectKey: `shipment:${shipmentId}`,
+      orderId,
+      shipmentId,
+      detail: note,
+    },
+  ]);
+};
+
+const raiseEventAlert = async (
+  tx: TransactionClient,
+  orderId: string,
+  { code, subject, rawStatus, note }: RecordTrackingEventInput,
+): Promise<void> => {
+  const alertType = ALERT_TYPE_BY_EVENT_CODE[code];
+  if (!alertType) return;
+  const subjectColumns =
+    subject.kind === TRACKING_SUBJECT_KIND.PICKUP
+      ? { fulfilmentGroupId: subject.fulfilmentGroupId }
+      : { shipmentId: subject.shipmentId };
+  const subjectId =
+    subject.kind === TRACKING_SUBJECT_KIND.PICKUP ? subject.fulfilmentGroupId : subject.shipmentId;
+  await logisticsAlertRepository.insertAlerts(tx, [
+    {
+      alertType,
+      subjectKey: [subject.kind, subjectId, rawStatus].filter(Boolean).join(":"),
+      orderId,
+      ...subjectColumns,
+      ...(rawStatus || note ? { detail: rawStatus ?? note } : {}),
+    },
+  ]);
+};
+
 const tryMoveShipmentStatus = async (
   tx: TransactionClient,
   shipmentId: string,
@@ -121,14 +201,28 @@ const tryMoveShipmentStatus = async (
   });
   if (!canMove) return false;
 
+  const codCollectedAmount = input.codCollectedAmount ?? shipment.codAmountToCollect;
   const hasMoved = await logisticsTrackingRepository.moveShipmentStatus(tx, {
     shipmentId,
     fromStatus: shipment.status,
     toStatus: nextStatus,
     changedAt: input.occurredAt,
+    codCollectedAmount,
   });
   if (!hasMoved) {
     return tryMoveShipmentStatus(tx, shipmentId, input, attemptsLeft - NEXT_ATTEMPT_STEP);
+  }
+
+  const hasCollectedDifferentCash =
+    nextStatus === ShipmentStatus.DELIVERED && codCollectedAmount !== shipment.codAmountToCollect;
+  if (hasCollectedDifferentCash) {
+    await recordCollectedCashMismatch(tx, {
+      shipmentId,
+      orderId: shipment.orderId,
+      expectedAmount: shipment.codAmountToCollect,
+      collectedAmount: codCollectedAmount,
+      occurredAt: input.occurredAt,
+    });
   }
 
   await logisticsTrackingRepository.setCoarseStatusForParcelGroups(
@@ -141,6 +235,13 @@ const tryMoveShipmentStatus = async (
     }),
     input.occurredAt,
   );
+  if (nextStatus === ShipmentStatus.LOST) {
+    await enqueueOutboxEvent(tx, {
+      topic: OUTBOX_TOPIC.LOGISTICS_PARCEL_LOST,
+      aggregateId: shipmentId,
+      payload: { shipmentId },
+    });
+  }
   return true;
 };
 
@@ -195,6 +296,7 @@ const recordEventInTransaction = async (
     };
   }
 
+  await raiseEventAlert(tx, orderId, input);
   const appliedToStatus = await applyStatusChange(tx, input);
   if (appliedToStatus) {
     await logisticsTrackingRepository.markTrackingEventApplied(tx, insertedEvent.id);
