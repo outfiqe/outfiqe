@@ -20,7 +20,7 @@ The feature is split into topic folders, each with the usual layer folders insid
   puts the fine units back into stock. Unconfirmed returns are confirmed automatically after 48
   hours, and the panel says so. Backed by `useBrandReturns` → `returns/api/brandReturnApi.ts` →
   `GET /logistics/brand/returns` (cursor-paged).
-- `reliability/` — `DeliveryReliabilityPanel`, shown at the top of the Orders page: how many delivery problems the brand had in the last 30 days (items it couldn't supply, items that failed the hub's quality check, rider visits with nothing ready), what that means (fine, warned at 3, reviewed by Outfiqe at 6) and each problem with its date and note. Backed by `useDeliveryReliability` → `reliability/api/reliabilityApi.ts` → `GET /logistics/brand/reliability` (cursor-paged). The panel hides itself if the request fails, because it is information, not something the page needs to work.
+- `reliability/` — `DeliveryReliabilityPanel`, at the top of the Orders page once the brand has had a delivery problem in the last 30 days (an item it couldn't supply, an item that failed the hub's quality check, a rider visit with nothing ready). It lists each problem with its date and note, says plainly that customer refusals and returns never count, and words the level kindly: nothing to worry about, a nudge to have orders ready, or that the team will get in touch. A brand new to Outfiqe pickup is told its problems don't count yet. The API decides the level (see `apps/api/src/modules/logistics/README.md`). Backed by `useDeliveryReliability` → `reliability/api/reliabilityApi.ts` → `GET /logistics/brand/reliability` (cursor-paged). The panel renders nothing while loading, when there are no problems, or if the request fails: it is information, not something the page needs to work.
 - `wallet/` — the payout summary.
 
 Files:
@@ -90,15 +90,16 @@ Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empt
 **Outfiqe delivery stays out of sight until the `order_logistics` switch is on for the brand.**
 Every part of the Orders page that belongs to Outfiqe delivery checks
 `useFeatureFlag("order_logistics")` first, and so does the "Pickup locations" sidebar item
-(`useDashboardNav`). That covers the missing pickup location banner, `DeliveryReliabilityPanel`
-and `BrandReturnsPanel`. Without the check, every brand saw an empty reliability score, "No
+(`useDashboardNav`). That covers the missing pickup location banner and `BrandReturnsPanel`
+(`DeliveryReliabilityPanel` already stays hidden until a brand has a problem). Without the check, every brand saw an empty reliability score, "No
 returns right now" and a nudge to add a pickup location, all for a feature that isn't live for
 them. The `/pickup-locations` page still works if opened directly, like the other switched
 features; the API decides what actually happens.
 
-The two panels still show when the switch is off but they have something real in them. Turning
-the switch off only stops new orders from using the hub: orders already in it carry on, so a
-brand can still have a return to confirm, or problems from the last 30 days to read.
+The returns panel still shows when the switch is off but it has a return in it, and the problems
+panel shows whenever there are problems. Turning the switch off only stops new orders from using
+the hub: orders already in it carry on, so a brand can still have a return to confirm, or
+problems from the last 30 days to read.
 
 **Switching Tag-reviews tabs used to feel slow because each click was a full page navigation.** The tab came from `useSearchParams()` and was changed with `router.replace("?status=…")`, but `/tag-reviews` is a Server Component page that re-checks the session on the server on every render. So a click waited on a server render first (the underline did not even move until it finished), and only then did the new query key start its own API request and show a skeleton: two serial waits with nothing on screen for the first one. The tab is now local state (instant highlight), the URL is kept in sync with `history.replaceState` so reload and shared links still land on the right tab, and the other two queues are prefetched, so a switch shows cached rows with no skeleton. A skeleton appears only for a tab with no cached data yet, and a small pulsing dot on the active tab marks a background refresh of stale cached data. Deliberate tradeoff: a soft navigation to `/tag-reviews?status=…` while the page is already mounted (for example from a notification) does not move the tab, because the tab is no longer derived from the URL after mount.
 

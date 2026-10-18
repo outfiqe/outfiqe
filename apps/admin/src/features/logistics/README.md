@@ -138,7 +138,9 @@ feature layout.
 - The parcel page shows what the partner collected and whether it has been paid in. "Record an
   update" asks for the cash collected when the update is "Delivered".
 - `reliability/` — `BrandReliabilityPage` (`/logistics/reliability`): brands with 3 or more
-  delivery problems in the last 30 days, with how many and whether they are warned or need review.
+  delivery problems in the last 30 days. For each brand it shows how many problems, how many hub
+  pickups and the share of those that had a problem, a "New to pickup" badge, and the level
+  (Watching, Warned, Needs review). The API decides the level; the page header explains the rule.
 
 ## Funnel
 

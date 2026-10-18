@@ -25,9 +25,10 @@ const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "o
 const quietReliability = {
   windowDays: 30,
   incidentCount: 0,
+  pickupCount: 0,
+  incidentRatePercent: 0,
+  isNewToPickup: true,
   level: "GOOD",
-  warningAt: 3,
-  reviewAt: 6,
   incidents: [],
   nextCursor: null,
 };
@@ -55,16 +56,40 @@ describe("OrdersSection", () => {
     expect(await screen.findByText(/No sales yet/)).toBeInTheDocument();
     expect(useFeatureFlag).toHaveBeenCalledWith("order_logistics");
     expect(screen.queryByText(MISSING_PICKUP_LOCATION_MESSAGE)).not.toBeInTheDocument();
-    expect(screen.queryByText("Delivery reliability")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delivery problems")).not.toBeInTheDocument();
     expect(screen.queryByText("Returns coming back to you")).not.toBeInTheDocument();
   });
 
-  it("shows the pickup banner and the delivery panels once the switch is on for the brand", async () => {
+  it("shows the pickup banner and the returns panel once the switch is on for the brand", async () => {
     vi.mocked(useFeatureFlag).mockReturnValue(true);
     renderOrders();
 
     expect(await screen.findByText(MISSING_PICKUP_LOCATION_MESSAGE)).toBeInTheDocument();
-    expect(await screen.findByText("Delivery reliability")).toBeInTheDocument();
     expect(await screen.findByText("Returns coming back to you")).toBeInTheDocument();
+    expect(screen.queryByText("Delivery problems")).not.toBeInTheDocument();
+  });
+
+  it("shows delivery problems once the brand has had one", async () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+    mswServer.use(
+      http.get("/api/logistics/brand/reliability", () =>
+        okJson({
+          ...quietReliability,
+          incidentCount: 1,
+          incidents: [
+            {
+              id: "incident-1",
+              kind: "WASTED_VISIT",
+              orderId: null,
+              note: null,
+              occurredAt: "2026-10-16T08:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+    renderOrders();
+
+    expect(await screen.findByText("Delivery problems")).toBeInTheDocument();
   });
 });
