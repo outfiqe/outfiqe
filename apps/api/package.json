@@ -60,6 +60,7 @@
   "dependencies": {
     "@bull-board/api": "^6.5.4",
     "@bull-board/express": "^6.5.4",
+    "@date-fns/tz": "1.2.0",
     "@node-rs/argon2": "^2.1.0",
     "@outfiqe/image-pipeline": "workspace:*",
     "@outfiqe/types": "workspace:*",
@@ -79,6 +80,7 @@
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "jsqr": "1.4.0",
+    "libphonenumber-js": "1.12.10",
     "lru-cache": "^11.5.2",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.4",

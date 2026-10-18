@@ -20,6 +20,8 @@ export type DeliveryZoneInput = {
   standardDeliveryFee: number;
   freeDeliveryThreshold: number;
   codHandlingFee: number;
+  minDeliveryDays: number | null;
+  maxDeliveryDays: number | null;
 };
 export type UpdateDeliveryZoneInput = Partial<DeliveryZoneInput>;
 

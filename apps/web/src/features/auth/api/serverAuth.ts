@@ -10,6 +10,8 @@ import type { TokenPurpose, UserSession } from "../types";
 import {
   type BrandInviteInfo,
   brandInviteInfoSchema,
+  type RiderInviteInfo,
+  riderInviteInfoSchema,
   sessionResponseSchema,
   toUserSession,
   validateTokenResponseSchema,
@@ -70,6 +72,17 @@ export const getBrandInviteServer = async (token: string): Promise<BrandInviteIn
       `/auth/invite?token=${encodeURIComponent(token)}`,
     );
     return brandInviteInfoSchema.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+export const getRiderInviteServer = async (token: string): Promise<RiderInviteInfo | null> => {
+  try {
+    const raw = await serverApiRequest<RiderInviteInfo>(
+      `/auth/invite/rider?token=${encodeURIComponent(token)}`,
+    );
+    return riderInviteInfoSchema.parse(raw);
   } catch {
     return null;
   }

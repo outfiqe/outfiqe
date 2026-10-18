@@ -9,6 +9,9 @@ const deliveryZoneFeeValuesSchema = z.object({
 export const deliveryZoneSchema = deliveryZoneFeeValuesSchema.extend({
   id: z.string(),
   name: z.string(),
+  countryCode: z.string(),
+  minDeliveryDays: z.number().nullable(),
+  maxDeliveryDays: z.number().nullable(),
   isDefault: z.boolean(),
   cities: z.array(z.string()),
   updatedAt: z.string(),

@@ -1,3 +1,6 @@
+import type { OrderTrackingStage } from "@outfiqe/utils";
+
+import type { OrderRefundOutcome } from "#constants/commerce.constants.js";
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
 import type {
   CreatorLeaderboardCategory,
@@ -6,6 +9,7 @@ import type {
   NotificationEntityType,
   NotificationSurface,
   NotificationType,
+  OrderRefundMethod,
   SubscriptionStatus,
   SupportCategory,
   TagRejectionReason,
@@ -154,6 +158,15 @@ export type DomainEventPayloads = {
     orderId: string;
     userId: string;
     status: FulfilmentStatus;
+    trackingStage?: OrderTrackingStage;
+  };
+  [DomainEvents.ORDER_REFUND_UPDATED]: {
+    orderId: string;
+    userId: string;
+    refundId: string;
+    amount: number;
+    outcome: OrderRefundOutcome;
+    method: OrderRefundMethod | null;
   };
   [DomainEvents.PRODUCT_REVIEWED]: {
     productId: string;

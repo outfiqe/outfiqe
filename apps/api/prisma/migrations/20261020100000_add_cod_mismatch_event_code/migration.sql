@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TrackingEventCode" ADD VALUE 'COD_COLLECTED_MISMATCH';

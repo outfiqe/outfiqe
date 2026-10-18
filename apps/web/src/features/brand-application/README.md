@@ -8,6 +8,7 @@ The "List your brand" form on `/apply`: a brand that wants to sell on Outfiqe se
 
 - `components/BrandApplicationForm.tsx` — the form: brand name, contact name, email, phone, Instagram/TikTok handle and whether the brand makes its own pieces. Shows `BrandApplicationSuccess` once the application is sent.
 - `components/ProductionField.tsx` — the "Do you design or make your own pieces?" question, drawn as a `ChipGroup`.
+- The optional city field reuses `CityAutocomplete` from `delivery-zones`. It tells the team whether Outfiqe riders can collect from the brand. `api/brandApplicationApi.ts` leaves the city out of the request when it is empty.
 - `components/ChipGroup.tsx` — a row of single-choice chips (`role="radio"`).
 - `components/BrandApplicationSuccess.tsx` — the "Application sent" message; its heading takes focus when it appears so screen readers announce it.
 - `schemas/brandApplication.schema.ts` — the form's Zod schema (`BrandApplicationInput`); the email is lower-cased and the phone must be a Nepali number starting with 98.

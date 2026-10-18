@@ -3,10 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { ordersApi } from "../api/ordersApi";
+import { orderQueryKey } from "../constants/trackingQueryKeys";
 
 export const useOrder = (orderId: string) => {
   return useQuery({
-    queryKey: ["orders", orderId],
+    queryKey: orderQueryKey(orderId),
     queryFn: () => ordersApi.get(orderId),
   });
 };

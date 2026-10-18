@@ -15,6 +15,7 @@ type CheckoutSummaryProps = {
   isSubmitting: boolean;
   isOnline: boolean;
   couponSlot?: ReactNode;
+  deliveryWindowLabel?: string | null;
 };
 
 export const CheckoutSummary = ({
@@ -25,6 +26,7 @@ export const CheckoutSummary = ({
   isSubmitting,
   isOnline,
   couponSlot,
+  deliveryWindowLabel = null,
 }: CheckoutSummaryProps) => {
   const { subtotal, platformDiscountTotal, appliedCoupon } = cart;
   const codFee = paymentMethod === PaymentMethod.COD ? codHandlingFee : 0;
@@ -54,6 +56,12 @@ export const CheckoutSummary = ({
         <span>Delivery</span>
         <span>{deliveryFee === 0 ? "Free" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
       </div>
+      {deliveryWindowLabel && (
+        <div className="flex justify-between py-2 text-sm text-muted-foreground">
+          <span>Estimated delivery</span>
+          <span className="text-foreground">{deliveryWindowLabel}</span>
+        </div>
+      )}
       {codFee > 0 && (
         <div className="flex justify-between py-2 text-sm text-muted-foreground">
           <span>COD handling</span>

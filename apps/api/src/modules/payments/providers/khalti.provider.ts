@@ -104,13 +104,14 @@ export const khaltiProvider: PaymentProvider = {
   async refund({
     gatewayTransactionId,
     payerPhone,
+    amount,
   }: PaymentRefundInput): Promise<PaymentRefundResult> {
     const res = await fetch(
       new URL(`merchant-transaction/${gatewayTransactionId}/refund/`, env.KHALTI_BASE_URL),
       {
         method: "POST",
         headers: khaltiHeaders,
-        body: JSON.stringify({ mobile: payerPhone }),
+        body: JSON.stringify({ mobile: payerPhone, amount: amount * RUPEES_TO_PAISA }),
       },
     );
 

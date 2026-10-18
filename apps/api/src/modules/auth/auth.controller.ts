@@ -22,8 +22,10 @@ import type {
   RegisterBody,
   RegisterBrandBody,
   RegisterCrmInviteBody,
+  RegisterRiderBody,
   ResendVerificationBody,
   ResetPasswordBody,
+  RiderInviteQuery,
   ValidateTokenQuery,
   VerifyEmailBody,
 } from "./auth.schemas.js";
@@ -165,6 +167,22 @@ export const authController = {
     const invite = await authService.getAdminInvite(token);
 
     sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async getRiderInvite(_req: Request, res: Response) {
+    const { token } = validated.query<RiderInviteQuery>(res);
+    const invite = await authService.getRiderInvite(token);
+
+    sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async registerRider(_req: Request, res: Response) {
+    const { inviteToken, phone, password } = validated.body<RegisterRiderBody>(res);
+    const { accessToken, refreshToken, refreshTokenTtlSeconds, user } =
+      await authService.registerRider({ inviteToken, phone, password });
+
+    setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
+    sendSuccess(res, { accessToken, user }, "Rider account created.", HTTP_STATUS.CREATED);
   },
 
   async getCrmInvite(_req: Request, res: Response) {

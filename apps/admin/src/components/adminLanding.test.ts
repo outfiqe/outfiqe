@@ -1,3 +1,4 @@
+import { PLATFORM_NAV_KEYS, type PlatformNavKey } from "@outfiqe/utils";
 import { describe, expect, it } from "vitest";
 
 import type { AdminUser } from "@/features/auth/api/authSchemas";
@@ -11,45 +12,10 @@ const AUTHENTICATED_ROUTE_PREFIX = "_authenticated.";
 const AUTHENTICATED_LAYOUT_FILE = "_authenticated.tsx";
 const PATHS_OUTSIDE_THE_PLATFORM = ["/", "/profile", "/platform"];
 
-const EVERY_SECTION_BUT_SUPPORT = [
-  "brand-applications",
-  "platform-metrics",
-  "platform-features",
-  "platform-impersonation",
-  "platform-nav-access",
-  "users",
-  "products",
-  "collections",
-  "categories",
-  "product-types",
-  "outfit-slot-types",
-  "hero-slides",
-  "orders",
-  "product-reviews",
-  "tag-reviews",
-  "tag-reports",
-  "content-reports",
-  "content-browser",
-  "trending",
-  "creators",
-  "commissions",
-  "platform-commission",
-  "withdraw-requests",
-  "withdraw-policy",
-  "bank-accounts",
-  "financial-rollup",
-  "coupons",
-  "gamification",
-  "delivery-zones",
-  "organizations",
-  "team",
-  "announcements",
-  "outfit-builds",
-  "platform-switches",
-  "platform-settings",
-  "platform-audit",
-  "platform-jobs",
-];
+const SUPPORT_SECTION = "support";
+const EVERY_SECTION_BUT_SUPPORT: PlatformNavKey[] = PLATFORM_NAV_KEYS.filter(
+  (sectionKey) => sectionKey !== SUPPORT_SECTION,
+);
 
 const buildUser = (overrides: Partial<AdminUser> = {}): AdminUser => ({
   id: "user-1",

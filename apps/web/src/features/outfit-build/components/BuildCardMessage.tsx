@@ -7,10 +7,10 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
 
 import { useOutfit } from "../board/hooks/useOutfit";
 import { buildPath } from "../my-builds/components/BuildSummaryCard";
-import { formatLakhAmount } from "../utils/outfitFormatting";
 
 const PREVIEW_IMAGE_COUNT = 3;
 const NO_ITEMS = 0;

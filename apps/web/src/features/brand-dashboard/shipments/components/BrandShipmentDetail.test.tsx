@@ -9,6 +9,11 @@ import { BrandShipmentDetail } from "./BrandShipmentDetail";
 
 vi.mock("../hooks/useBrandShipment", () => ({ useBrandShipment: vi.fn() }));
 vi.mock("../hooks/useAdvanceShipment", () => ({ useAdvanceShipment: vi.fn() }));
+vi.mock("../../pickups/components/HubPickupPanel", () => ({
+  HubPickupPanel: ({ pickupCode }: { pickupCode: string | null }) => (
+    <section aria-label="Outfiqe pickup">{pickupCode}</section>
+  ),
+}));
 vi.mock("./MarkShipmentShippedModal", () => ({
   MarkShipmentShippedModal: ({ open }: { open: boolean }) =>
     open ? <div role="dialog" aria-label="Mark as shipped" /> : null,
@@ -16,6 +21,11 @@ vi.mock("./MarkShipmentShippedModal", () => ({
 vi.mock("./RequestShipmentCancellationModal", () => ({
   RequestShipmentCancellationModal: ({ open }: { open: boolean }) =>
     open ? <div role="dialog" aria-label="Request cancellation" /> : null,
+}));
+vi.mock("./UnavailableItemsPanel", () => ({
+  UnavailableItemsPanel: ({ canReport }: { canReport: boolean }) => (
+    <section aria-label="Items you can't supply">{canReport ? "can report" : "locked"}</section>
+  ),
 }));
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -52,6 +62,11 @@ const buildShipment = (
   orderId: "0123456789abcdef",
   orderCreatedAt: "2026-09-01T00:00:00.000Z",
   status: "PLACED",
+  fulfilmentMode: "BRAND_SHIPS",
+  pickupStatus: null,
+  pickupCode: null,
+  readyForPickupAt: null,
+  pickedUpAt: null,
   carrier: null,
   trackingNumber: null,
   packedAt: null,
@@ -59,6 +74,7 @@ const buildShipment = (
   deliveredAt: null,
   cancellationRequestedAt: null,
   cancellationReason: null,
+  canReportUnavailable: false,
   items: [
     {
       id: "item-1",
@@ -67,6 +83,7 @@ const buildShipment = (
       imageUrl: null,
       sizeLabel: "M",
       qty: 2,
+      refundedQty: 0,
       unitPrice: 800,
       listUnitPrice: 1000,
       brandDiscountAmount: 200,
@@ -144,6 +161,23 @@ describe("BrandShipmentDetail", () => {
 
     expect(screen.getByText(/Cancellation requested — Sold out in store/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Mark/ })).not.toBeInTheDocument();
+  });
+
+  it("hands an Outfiqe-delivered order to the pickup panel and hides the customer", () => {
+    mockShipment({
+      data: buildShipment({
+        fulfilmentMode: "OUTFIQE_LOGISTICS",
+        pickupStatus: "READY_FOR_PICKUP",
+        pickupCode: "7K2M9QAB",
+        shipTo: null,
+      }),
+    });
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.getByRole("region", { name: "Outfiqe pickup" })).toHaveTextContent("7K2M9QAB");
+    expect(screen.queryByRole("button", { name: "Mark packed" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Buyer Person")).not.toBeInTheDocument();
+    expect(screen.getByText("Ready for pickup")).toBeInTheDocument();
   });
 
   it("shows an error banner when the shipment fails to load", () => {

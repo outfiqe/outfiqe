@@ -7,6 +7,7 @@ import { couponRepository } from "#modules/coupons/coupon.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
+import type { FulfilmentGroupSpec } from "../order.types.js";
 import { ITEMS_UNAVAILABLE_STATUS } from "./checkout.constants.js";
 import type {
   CheckoutCouponResolution,
@@ -87,22 +88,22 @@ type AssignBrandFulfilmentGroupsInput = {
   orderId: string;
   orderItems: { id: string }[];
   pricedLines: PricedCheckoutLine[];
-  distinctBrandIds: string[];
+  fulfilmentGroupSpecs: FulfilmentGroupSpec[];
 };
 
 export const assignBrandFulfilmentGroups = async (
   tx: Prisma.TransactionClient,
-  { orderId, orderItems, pricedLines, distinctBrandIds }: AssignBrandFulfilmentGroupsInput,
+  { orderId, orderItems, pricedLines, fulfilmentGroupSpecs }: AssignBrandFulfilmentGroupsInput,
 ): Promise<void> => {
   const fulfilmentGroups = await orderFulfilmentGroupRepository.createFulfilmentGroups(
     tx,
     orderId,
-    distinctBrandIds,
+    fulfilmentGroupSpecs,
   );
   const fulfilmentGroupIdByBrandId = new Map(
     fulfilmentGroups.map((group) => [group.brandId, group.id]),
   );
-  for (const brandId of distinctBrandIds) {
+  for (const { brandId } of fulfilmentGroupSpecs) {
     const fulfilmentGroupId = fulfilmentGroupIdByBrandId.get(brandId);
     if (!fulfilmentGroupId) continue;
     const itemIdsForBrand = orderItems

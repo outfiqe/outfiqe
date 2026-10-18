@@ -1,9 +1,16 @@
+import { hoursToMilliseconds } from "date-fns/hoursToMilliseconds";
+import { minutesToMilliseconds } from "date-fns/minutesToMilliseconds";
+
 import { FulfilmentStatus } from "#generated/prisma/enums.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const STALE_SHIPMENT_REMINDER_MIN_AGE_DAYS = 7;
 export const STALE_SHIPMENT_REMINDER_INTERVAL_MS = DAY_MS;
+
+export const STALE_PENDING_REFUND_SWEEP_INTERVAL_MS = minutesToMilliseconds(5);
+
+export const REFUND_DETAILS_REMINDER_INTERVAL_MS = hoursToMilliseconds(6);
 
 export const FULFILMENT_ADVANCE_FROM: Partial<Record<FulfilmentStatus, FulfilmentStatus[]>> = {
   [FulfilmentStatus.PACKED]: [FulfilmentStatus.PLACED],

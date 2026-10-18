@@ -3,7 +3,9 @@
 ## Purpose
 
 The buyer's view of their own orders — the list at `/orders` and the single-order page at
-`/orders/[id]`, including resuming or cancelling an unpaid wallet order.
+`/orders/[id]`, including resuming or cancelling an unpaid wallet order, cancelling single items
+while the brand still has them, seeing each refund, and telling us where to send a refund that
+can't go back automatically.
 
 ## Structure
 
@@ -12,8 +14,16 @@ The buyer's view of their own orders — the list at `/orders` and the single-or
   `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
-  payment state and composes `OrderTracker` (or `ShipmentTrackers` for a multi-brand order) /
-  `PendingPaymentPanel` / `TransactionLedger`.
+  payment state and composes `OrderTrackingTimeline` (an order with `trackingStage`, delivered
+  through the Outfiqe hub, plus `ShipmentTrackers` for any brand-shipped groups in it), otherwise
+  `OrderTracker` (or `ShipmentTrackers` for a multi-brand order), then `PendingPaymentPanel` /
+  `TransactionLedger`.
+- `components/OrderTrackingTimeline.tsx` — the hub-delivered order's tracking: `TrackingStageSummary`
+  (the current stage, a progress bar along the forward stages, "collected from 1 of 2 brands"
+  and the delivery promise), a `TrackedParcelCard` per parcel (our parcel code, the partner's
+  tracking link, "I didn't receive this" → `ReportNotReceivedModal`), and `TrackingEventList`
+  (what happened, newest first, in Nepal time). Its text comes from the `orders.tracking.*`
+  messages in `@/i18n/messages`.
 - `components/OrderTracker.tsx` — the PLACED→PACKED→SHIPPED→DELIVERED stepper (or a "cancelled"
   line).
 - `components/ShipmentTrackers.tsx` — when the order has more than one shipment (`order.shipments`,
@@ -23,12 +33,37 @@ The buyer's view of their own orders — the list at `/orders` and the single-or
   `SHIPPED`/`FULFILLED`/`CANCELLED`) is the coarse order-level status behind the scenes.
 - `components/PendingPaymentPanel.tsx` — shown on the detail page for an unpaid wallet order:
   Resume payment (re-initiate + redirect to the gateway) and Cancel order (with a confirm modal).
+- `components/CancelItemsModal.tsx` — "Cancel items": a units picker per cancellable line
+  (`item.canCancel`, worked out by the API) plus an optional reason. Sends
+  `POST /orders/:id/line-cancellations` with an `Idempotency-Key`.
+- `components/OrderRefundsSection.tsx` — every refund on the order: amount, why, how the money
+  came back (`constants/refundLabels.ts`), and the lines it covered. Shown once
+  `order.refundedAmount > 0`.
+- `components/RefundDetailsCard.tsx` — "Where should we send your refund?": Khalti ID, eSewa ID or
+  a bank account (banks from `@/features/nepal-banks`), account holder name and a required "This
+  account is mine" box. Prefilled from the order (`suggestedKind`/`suggestedWalletId`). Editable
+  until staff mark the refund paid; after that it shows the saved details read-only, a bank
+  account as its last 4 digits only.
 - `components/StatusBadge.tsx` / `components/TransactionLedger.tsx` — payment/fulfilment badge and
   the transaction history block.
-- `api/ordersApi.ts` / `orderSchemas.ts` — `GET /orders`, `GET /orders/:id`,
-  `POST /orders/:id/cancel`, and the response shapes (mirrored from `apps/api`'s order module).
+- `api/ordersApi.ts` / `orderSchemas.ts` / `refundSchemas.ts` — `GET /orders`, `GET /orders/:id`,
+  `POST /orders/:id/cancel`, `GET /orders/:id/refunds`, `POST /orders/:id/line-cancellations`,
+  `GET`/`PUT /orders/:id/refund-destination`, and the response shapes (mirrored from `apps/api`'s
+  order module).
 - `hooks/useOrder.ts` / `useInfiniteOrders.ts` / `useCancelOrder.ts` — the read queries and the
   cancel mutation.
+- `api/trackingSchemas.ts`, `hooks/useOrderTracking.ts` / `useReportNotReceived.ts` /
+  `useOrderLiveUpdates.ts`, `constants/trackingStages.ts` / `trackingQueryKeys.ts` — the tracking
+  read (`GET /logistics/orders/:id/tracking`), the "didn't arrive" report
+  (`POST /logistics/orders/:id/delivery-disputes`) and the live refresh: an
+  `ORDER_STATUS_CHANGED` notification for this order over the socket invalidates
+  `["orders", id]`, which refetches the order and its tracking.
+- `hooks/useOrderRefunds.ts` / `useCancelOrderItems.ts` / `useRefundDestination.ts` /
+  `useSaveRefundDestination.ts` — the refund reads and writes. `useCancelOrderItems` keeps one
+  idempotency key per attempt and only makes a new one after a success, so a retried click can't
+  cancel twice.
+- `constants/refundLabels.ts` / `refundQueryKeys.ts`, `utils/refundDestination.utils.ts` — labels,
+  query keys and the destination-kind type guard.
 
 ## Funnel
 
@@ -36,10 +71,25 @@ The buyer's view of their own orders — the list at `/orders` and the single-or
 wallet order whose payment never completed shows "Payment not completed" with Resume payment /
 Cancel order instead of a delivery tracker.
 
+**Hub-delivered orders**: the page shows where the order is ("Collecting from the brands", "Out
+for delivery" and so on), when it should arrive, each parcel with a link to the delivery
+partner's own tracking, and a list of what has happened. It updates by itself when the order
+moves. For three days after delivery the buyer can say a parcel didn't arrive; staff see it on the
+parcel's timeline.
+
+**Refunds**: on an order still with the brand, "Cancel items" lets the buyer drop some units.
+Khalti payments go straight back; a COD order just owes less; anything else (eSewa today) needs a
+payout account, so the refund details card appears and the buyer gets an email and a notification
+asking for it, then a reminder every 3 days until they add it. Staff pay it by hand and the buyer
+is told when it's sent.
+
 **Technical**: `OrderDetailBody` → `useOrder` → `GET /orders/:id`. Resume payment →
 `useInitiatePayment` → `redirectToPaymentGateway` (see `../payments/README.md`). Cancel →
 `useCancelOrder` → `POST /orders/:id/cancel`, then the `["orders"]` query cache is invalidated so
-the page and list re-read.
+the page and list re-read. Refunds: `CancelItemsModal` → `useCancelOrderItems` →
+`POST /orders/:id/line-cancellations`; `OrderRefundsSection` → `useOrderRefunds` →
+`GET /orders/:id/refunds`; `RefundDetailsCard` → `useRefundDestination` / `useSaveRefundDestination`
+→ `GET`/`PUT /orders/:id/refund-destination` (only fetched once the order has a refund).
 
 ## An unpaid wallet order is not "placed"
 

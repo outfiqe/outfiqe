@@ -84,7 +84,11 @@ export const refundOfferPayment = async (
     };
   }
 
-  const { succeeded, rawResponse } = await provider.refund({ gatewayTransactionId, payerPhone });
+  const { succeeded, rawResponse } = await provider.refund({
+    gatewayTransactionId,
+    payerPhone,
+    amount: offer.amount,
+  });
   return {
     result: succeeded ? OFFER_REFUND_RESULT.REFUNDED : OFFER_REFUND_RESULT.NEEDS_MANUAL_REFUND,
     rawResponse,

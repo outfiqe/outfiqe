@@ -8,21 +8,23 @@ import { useState } from "react";
 import { AppImage } from "@/shared/components/AppImage";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import { HubPickupPanel } from "../../pickups/components/HubPickupPanel";
 import type { BrandShipmentDetail as BrandShipmentDetailData } from "../api/brandFulfilmentSchemas";
 import { useAdvanceShipment } from "../hooks/useAdvanceShipment";
 import { useBrandShipment } from "../hooks/useBrandShipment";
 import {
   badgeToneClass,
   canRequestCancellation,
+  describeShipmentStatus,
   formatShortOrderId,
+  isDeliveredByOutfiqe,
   nextShipmentStatus,
   ORDER_SUMMARY_LABEL,
   PAYMENT_STATUS_LABEL,
-  SHIPMENT_STATUS_LABEL,
-  SHIPMENT_STATUS_TONE,
 } from "../utils/shipmentStatus";
 import { MarkShipmentShippedModal } from "./MarkShipmentShippedModal";
 import { RequestShipmentCancellationModal } from "./RequestShipmentCancellationModal";
+import { UnavailableItemsPanel } from "./UnavailableItemsPanel";
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
@@ -45,7 +47,9 @@ export const BrandShipmentDetailSkeleton = () => (
   </div>
 );
 
-const ShipToCard = ({ shipTo }: { shipTo: BrandShipmentDetailData["shipTo"] }) => (
+type ShipTo = NonNullable<BrandShipmentDetailData["shipTo"]>;
+
+const ShipToCard = ({ shipTo }: { shipTo: ShipTo }) => (
   <section className="rounded-2xl border border-border p-4">
     <h2 className="text-sm font-semibold text-foreground">Ship to</h2>
     <p className="mt-2 text-sm text-foreground">{shipTo.fullName}</p>
@@ -218,10 +222,10 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
               </div>
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${badgeToneClass(
-                  SHIPMENT_STATUS_TONE[shipment.status],
+                  describeShipmentStatus(shipment).tone,
                 )}`}
               >
-                {SHIPMENT_STATUS_LABEL[shipment.status]}
+                {describeShipmentStatus(shipment).label}
               </span>
             </div>
 
@@ -231,17 +235,30 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
               </p>
             )}
 
-            <ShipmentActions
-              shipment={shipment}
-              isAdvancing={advanceShipment.isPending}
-              onMarkPacked={() => void advanceWithoutDetails("PACKED")}
-              onMarkDelivered={() => void advanceWithoutDetails("DELIVERED")}
-              onOpenShippedModal={() => setIsShippedModalOpen(true)}
-              onOpenCancelModal={() => setIsCancelModalOpen(true)}
-            />
+            {isDeliveredByOutfiqe(shipment) ? (
+              <HubPickupPanel
+                fulfilmentGroupId={shipment.id}
+                pickupStatus={shipment.pickupStatus}
+                pickupCode={shipment.pickupCode}
+              />
+            ) : (
+              <ShipmentActions
+                shipment={shipment}
+                isAdvancing={advanceShipment.isPending}
+                onMarkPacked={() => void advanceWithoutDetails("PACKED")}
+                onMarkDelivered={() => void advanceWithoutDetails("DELIVERED")}
+                onOpenShippedModal={() => setIsShippedModalOpen(true)}
+                onOpenCancelModal={() => setIsCancelModalOpen(true)}
+              />
+            )}
 
-            <ShipToCard shipTo={shipment.shipTo} />
+            {shipment.shipTo && <ShipToCard shipTo={shipment.shipTo} />}
             <ItemsCard items={shipment.items} />
+            <UnavailableItemsPanel
+              groupId={shipment.id}
+              items={shipment.items}
+              canReport={shipment.canReportUnavailable}
+            />
             <PayoutCard payout={shipment.payout} />
           </div>
         )}

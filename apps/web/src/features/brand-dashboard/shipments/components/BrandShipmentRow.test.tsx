@@ -27,6 +27,8 @@ const buildShipment = (overrides: Partial<BrandShipmentSummary> = {}): BrandShip
   orderId: "0123456789abcdef",
   orderCreatedAt: "2026-09-01T00:00:00.000Z",
   status: "PLACED",
+  fulfilmentMode: "BRAND_SHIPS",
+  pickupStatus: null,
   carrier: null,
   trackingNumber: null,
   shippedAt: null,

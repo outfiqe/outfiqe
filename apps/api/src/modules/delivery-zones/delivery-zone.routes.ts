@@ -9,6 +9,7 @@ import { deliveryZoneController } from "./delivery-zone.controller.js";
 import {
   createDeliveryZoneSchema,
   deliveryZoneIdParamSchema,
+  estimateDeliveryQuerySchema,
   listDeliveryZoneHistoryQuerySchema,
   searchDeliveryZoneCitiesQuerySchema,
   updateDeliveryZoneSchema,
@@ -37,6 +38,12 @@ deliveryZoneRoutes.get(
   "/cities",
   validate({ query: searchDeliveryZoneCitiesQuerySchema }),
   deliveryZoneController.searchCities,
+);
+
+deliveryZoneRoutes.get(
+  "/estimate",
+  validate({ query: estimateDeliveryQuerySchema }),
+  deliveryZoneController.estimate,
 );
 
 deliveryZoneRoutes.get(

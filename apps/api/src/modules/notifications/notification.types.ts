@@ -1,3 +1,5 @@
+import type { LogisticsAlertType, OrderTrackingStage } from "@outfiqe/utils";
+
 import type {
   NotificationEntityType,
   NotificationSurface,
@@ -16,6 +18,9 @@ export type NotificationActorSnapshot = {
 };
 
 export type NotificationMetadata = {
+  refundId?: string;
+  amount?: number;
+  method?: string | null;
   actor?: NotificationActorSnapshot;
   recentActors?: NotificationActorSnapshot[];
   lookImageUrl?: string;
@@ -30,6 +35,10 @@ export type NotificationMetadata = {
   orderTotal?: number;
   brandName?: string;
   status?: string;
+  trackingStage?: OrderTrackingStage;
+  logisticsAlertType?: LogisticsAlertType;
+  logisticsAlertId?: string;
+  trackingCode?: string | null;
   productName?: string;
   productImageUrl?: string | null;
   rating?: number;

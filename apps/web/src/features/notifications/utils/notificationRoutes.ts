@@ -22,6 +22,7 @@ export const ADMIN_APP_ROUTES = {
   crmSupport: "/crm/support",
   coupons: "/coupons",
   ordersList: "/orders",
+  logisticsAlerts: "/logistics/alerts",
 } as const;
 
 const CREATOR_PROFILE_PREFIX = "/creator";
