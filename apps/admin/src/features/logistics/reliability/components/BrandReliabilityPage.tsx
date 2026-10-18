@@ -22,7 +22,10 @@ export const BrandReliabilityPage = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Brand reliability</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Brands with 3 or more problems in the last 30 days: missing items, failed quality checks
-          and wasted rider visits. At 6 a brand needs review; suspending it stays your decision.
+          and wasted rider visits. A brand is warned at 5 problems that are more than 10% of its
+          pickups, and needs review at 10 that are more than 20%. Brands new to Outfiqe pickup
+          (first 30 days or first 20 pickups) are never warned. Reaching out early, and any
+          suspension, stays your decision.
         </p>
       </div>
 
@@ -41,17 +44,37 @@ export const BrandReliabilityPage = () => {
       )}
       {brands && brands.length > NO_BRANDS && (
         <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-          {brands.map(({ brandId, brandName, incidentCount, level }) => (
-            <li key={brandId} className="flex flex-wrap items-center justify-between gap-2 p-4">
-              <div>
-                <p className="font-medium text-foreground">{brandName}</p>
-                <p className="text-sm text-muted-foreground">{incidentCount} problems in 30 days</p>
-              </div>
-              <Badge tone={LEVEL_TONES[level]} showDot={false}>
-                {RELIABILITY_LEVEL_LABELS[level]}
-              </Badge>
-            </li>
-          ))}
+          {brands.map(
+            ({
+              brandId,
+              brandName,
+              incidentCount,
+              pickupCount,
+              incidentRatePercent,
+              isNewToPickup,
+              level,
+            }) => (
+              <li key={brandId} className="flex flex-wrap items-center justify-between gap-2 p-4">
+                <div>
+                  <p className="font-medium text-foreground">{brandName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {incidentCount} problems in 30 days · {pickupCount} pickups (
+                    {incidentRatePercent}%)
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {isNewToPickup && (
+                    <Badge tone="neutral" showDot={false}>
+                      New to pickup
+                    </Badge>
+                  )}
+                  <Badge tone={LEVEL_TONES[level]} showDot={false}>
+                    {RELIABILITY_LEVEL_LABELS[level]}
+                  </Badge>
+                </div>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </div>

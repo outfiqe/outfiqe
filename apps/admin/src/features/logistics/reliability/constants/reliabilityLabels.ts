@@ -1,7 +1,7 @@
 import type { ReliabilityLevel } from "../api/reliabilitySchemas";
 
 export const RELIABILITY_LEVEL_LABELS: Record<ReliabilityLevel, string> = {
-  GOOD: "Fine",
+  GOOD: "Watching",
   WARNING: "Warned",
   REVIEW: "Needs review",
 };

@@ -10,19 +10,21 @@ export type BrandIncidentView = {
   occurredAt: string;
 };
 
-export type BrandReliabilityView = {
-  windowDays: number;
+export type BrandReliabilitySummary = {
   incidentCount: number;
+  pickupCount: number;
+  incidentRatePercent: number;
+  isNewToPickup: boolean;
   level: BrandReliabilityLevel;
-  warningAt: number;
-  reviewAt: number;
+};
+
+export type BrandReliabilityView = BrandReliabilitySummary & {
+  windowDays: number;
   incidents: BrandIncidentView[];
   nextCursor: string | null;
 };
 
-export type BrandForReviewView = {
+export type BrandForReviewView = BrandReliabilitySummary & {
   brandId: string;
   brandName: string;
-  incidentCount: number;
-  level: BrandReliabilityLevel;
 };

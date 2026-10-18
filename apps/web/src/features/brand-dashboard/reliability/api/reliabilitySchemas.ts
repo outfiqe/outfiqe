@@ -14,9 +14,10 @@ export type ReliabilityLevel = (typeof RELIABILITY_LEVELS)[number];
 export const deliveryReliabilitySchema = z.object({
   windowDays: z.number(),
   incidentCount: z.number(),
+  pickupCount: z.number(),
+  incidentRatePercent: z.number(),
+  isNewToPickup: z.boolean(),
   level: z.enum(RELIABILITY_LEVELS),
-  warningAt: z.number(),
-  reviewAt: z.number(),
   incidents: z.array(
     z.object({
       id: z.string(),

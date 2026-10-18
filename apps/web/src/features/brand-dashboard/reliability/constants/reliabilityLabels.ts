@@ -8,7 +8,14 @@ export const BRAND_INCIDENT_LABELS: Record<BrandIncidentKind, string> = {
 };
 
 export const RELIABILITY_LEVEL_MESSAGES: Record<ReliabilityLevel, string> = {
-  GOOD: "Things are running smoothly.",
-  WARNING: "A few problems recently. Please make sure orders are ready on time.",
-  REVIEW: "Too many problems recently. Our team will review your shop.",
+  GOOD: "Nothing to worry about. Here's what held up a few orders, so you can avoid it next time.",
+  WARNING:
+    "Several of your orders ran into problems recently. Having orders ready on time keeps them moving.",
+  REVIEW: "Quite a few orders ran into problems recently. Our team will get in touch to help.",
 };
+
+export const NEW_TO_PICKUP_MESSAGE =
+  "You're new to Outfiqe pickup, so these don't count against you while you settle in.";
+
+export const WHAT_COUNTS_MESSAGE =
+  "Only things in your hands count: items you couldn't supply, items that failed our quality check and rider visits with nothing ready. Customer refusals and returns never count.";

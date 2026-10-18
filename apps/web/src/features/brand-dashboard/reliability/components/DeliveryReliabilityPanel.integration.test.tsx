@@ -4,6 +4,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
+import {
+  NEW_TO_PICKUP_MESSAGE,
+  RELIABILITY_LEVEL_MESSAGES,
+  WHAT_COUNTS_MESSAGE,
+} from "../constants/reliabilityLabels";
 import { DeliveryReliabilityPanel } from "./DeliveryReliabilityPanel";
 
 const RELIABILITY_URL = "/api/logistics/brand/reliability";
@@ -12,10 +17,11 @@ const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "o
 
 const reliability = {
   windowDays: 30,
-  incidentCount: 3,
+  incidentCount: 5,
+  pickupCount: 30,
+  incidentRatePercent: 17,
+  isNewToPickup: false,
   level: "WARNING",
-  warningAt: 3,
-  reviewAt: 6,
   incidents: [
     {
       id: "incident-1",
@@ -28,66 +34,55 @@ const reliability = {
   nextCursor: null,
 };
 
-describe("DeliveryReliabilityPanel", () => {
-  it("shows the brand its recent problems and the warning", async () => {
-    mswServer.use(http.get(RELIABILITY_URL, () => okJson(reliability)));
-    render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
-      wrapper: createQueryClientWrapper(),
-    });
+const renderPanel = (respond: () => Response) => {
+  let requestCount = 0;
+  mswServer.use(
+    http.get(RELIABILITY_URL, () => {
+      requestCount += 1;
+      return respond();
+    }),
+  );
+  const { container } = render(<DeliveryReliabilityPanel />, {
+    wrapper: createQueryClientWrapper(),
+  });
+  return { container, readRequestCount: () => requestCount };
+};
 
-    expect(await screen.findByText("3 in the last 30 days")).toBeInTheDocument();
-    expect(screen.getByText(/A few problems recently/)).toBeInTheDocument();
+describe("DeliveryReliabilityPanel", () => {
+  it("lists the brand's recent problems with a gentle nudge and what counts", async () => {
+    renderPanel(() => okJson(reliability));
+
+    expect(await screen.findByText("5 in the last 30 days")).toBeInTheDocument();
+    expect(screen.getByText(RELIABILITY_LEVEL_MESSAGES.WARNING)).toBeInTheDocument();
+    expect(screen.getByText(WHAT_COUNTS_MESSAGE)).toBeInTheDocument();
     expect(screen.getByText("Rider visit with nothing ready")).toBeInTheDocument();
     expect(screen.getByText(/Shop was closed/)).toBeInTheDocument();
   });
 
-  it("says when there have been no problems", async () => {
-    mswServer.use(
-      http.get(RELIABILITY_URL, () =>
-        okJson({ ...reliability, incidentCount: 0, level: "GOOD", incidents: [] }),
-      ),
-    );
-    render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
-      wrapper: createQueryClientWrapper(),
-    });
+  it("tells a brand new to Outfiqe pickup that its problems don't count yet", async () => {
+    renderPanel(() => okJson({ ...reliability, isNewToPickup: true, level: "GOOD" }));
 
-    expect(await screen.findByText("No problems in the last 30 days.")).toBeInTheDocument();
+    expect(await screen.findByText(NEW_TO_PICKUP_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByText(RELIABILITY_LEVEL_MESSAGES.GOOD)).not.toBeInTheDocument();
   });
 
-  it("stays hidden while Outfiqe delivery is off and there is nothing to show", async () => {
-    let requestCount = 0;
-    mswServer.use(
-      http.get(RELIABILITY_URL, () => {
-        requestCount += 1;
-        return okJson({ ...reliability, incidentCount: 0, level: "GOOD", incidents: [] });
-      }),
+  it("shows nothing at all when the brand has had no problems", async () => {
+    const { container, readRequestCount } = renderPanel(() =>
+      okJson({ ...reliability, incidentCount: 0, level: "GOOD", incidents: [] }),
     );
-    const { container } = render(<DeliveryReliabilityPanel isOrderLogisticsOn={false} />, {
-      wrapper: createQueryClientWrapper(),
-    });
 
-    await waitFor(() => expect(requestCount).toBe(1));
-    expect(screen.queryByLabelText("Loading reliability")).not.toBeInTheDocument();
+    await waitFor(() => expect(readRequestCount()).toBe(1));
     expect(container.querySelector("section")).toBeNull();
+    expect(screen.queryByText(/in the last 30 days/)).not.toBeInTheDocument();
   });
 
-  it("still shows past problems after Outfiqe delivery is switched off", async () => {
-    mswServer.use(http.get(RELIABILITY_URL, () => okJson(reliability)));
-    render(<DeliveryReliabilityPanel isOrderLogisticsOn={false} />, {
-      wrapper: createQueryClientWrapper(),
-    });
+  it("stays out of the way while loading and when it can't load", async () => {
+    const { container, readRequestCount } = renderPanel(() =>
+      HttpResponse.json({}, { status: 500 }),
+    );
 
-    expect(await screen.findByText("3 in the last 30 days")).toBeInTheDocument();
-  });
-
-  it("stays out of the way when it can't load", async () => {
-    mswServer.use(http.get(RELIABILITY_URL, () => HttpResponse.json({}, { status: 500 })));
-    const { container } = render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
-      wrapper: createQueryClientWrapper(),
-    });
-
-    await screen.findByLabelText("Loading reliability");
-    await expect(screen.findByText(/Delivery reliability/)).rejects.toThrow();
+    expect(container.querySelector("section")).toBeNull();
+    await waitFor(() => expect(readRequestCount()).toBeGreaterThan(0));
     expect(container.querySelector("section")).toBeNull();
   });
 });
