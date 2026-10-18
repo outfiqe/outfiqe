@@ -12,7 +12,18 @@ flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
 ## Structure
 
-The module is built in steps. This README lists what exists now.
+- `logistics.journeys.integration.test.ts` — the whole flow through the real endpoints, from a
+  brand pressing "Ready for pickup" to the customer. It covers:
+  - three brands in one cash parcel, delivered by spreadsheet, with the cash and rider pay
+    settled;
+  - a late brand sent in a second parcel;
+  - a mixed hub and brand-shipped order;
+  - a refusal coming back, refunded and restocked;
+  - a lost parcel;
+  - a coupon order with a unit that fails inspection;
+  - a connected partner, booked by API and delivered by signed webhook.
+
+  Its steps live in `src/testing/integration/logistics-journey.ts`, one helper per real request.
 
 - `logistics.service.ts` — `logisticsService`, the only object other modules import. It
   spreads in every topic service.
@@ -631,3 +642,52 @@ The web order page listens for that notification and refreshes itself.
   alerts; resolving such alerts by hand is rare.
 - Brand-shipped orders keep the old daily stale-shipment email; it now leaves hub orders out,
   because their alerts replace it.
+
+## Going live
+
+Everything above ships switched off. The order of a safe launch:
+
+1. **Set up the hub in admin.**
+   - Logistics → Hubs: the hub's address, time zone, working days, hours, pickup round times, the
+     ready-by cutoff and the partner collection time.
+   - Pickup areas: the delivery zones its riders cover.
+   - Delivery zones: shortest and longest delivery days for each zone. The delivery promise and
+     the "promise at risk" and "promise missed" alerts read them.
+2. **Set up each delivery partner.**
+   - Logistics → Delivery partners: the merchant account at the hub, the zones it delivers to, and
+     its status names.
+   - A partner with API access also needs its `DELIVERY_PARTNER_<KEY>_*` secrets in the
+     environment, and our webhook address pasted into the partner's dashboard.
+3. **Set up the people.**
+   - Hub staff: a Team-page role with `platform:logistics:read` or `platform:logistics:manage`.
+     Manage holders receive delivery alerts.
+   - Riders: invite them, check each contractor's ID in person, then activate them.
+   - Print at least one sheet of bag stickers.
+4. **Check the money settings.**
+   - Rider pay: set a rate under Logistics → Rider pay, or keep the launch default (Rs 70 / 15 /
+     35).
+   - Withdrawals: the "Muses and riders" withdrawal policy applies to riders too.
+   - COD: each partner's paying-in limit (`codRemittanceDays`).
+5. **Make sure the scheduled jobs run** on the process that runs jobs:
+   - `logistics-alerts` (every 10 minutes);
+   - `logistics-rider-earning-release` and `logistics-brand-return-auto-confirm` (hourly);
+   - partner polling, and the stuck-booking and webhook-receipt sweeps.
+6. **Switch it on for a few brands first.**
+   - Admin → Feature switches → `order_logistics`: add test brands to the allow-list.
+   - Those brands add a pickup location. Orders placed after that use the hub; earlier orders
+     keep the brand-shipped flow.
+   - Run the checks below, then widen the allow-list, and switch to everyone last.
+7. **Before switching to everyone:**
+   - a lawyer has checked the contractor terms;
+   - rider pay rates are confirmed with riders;
+   - a second partial refund has been tried in the Khalti sandbox;
+   - a rider has scanned with a real phone (camera, typed code, and offline then back online);
+   - labels and sticker sheets have printed on the hub's printer;
+   - a full order has gone through by hand with the flag on: pickup location, multi-brand order,
+     ready for pickup, rider scan, check-in, an inspection failure with a refund, packing and the
+     label, manual booking, the status spreadsheet, the customer's live timeline, and the payouts
+     maturing.
+
+**Switching it off** stops new orders from using the hub; they go back to the brand-shipped flow.
+Orders already in the hub flow carry on through it, so keep the hub, riders and partners running
+until those are delivered or returned.
