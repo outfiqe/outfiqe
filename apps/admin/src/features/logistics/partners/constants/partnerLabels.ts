@@ -5,8 +5,14 @@ export const HTTP_JSON_ADAPTER_KEY = "HTTP_JSON";
 
 export const ADAPTER_LABELS: Readonly<Record<string, string>> = {
   [MANUAL_ADAPTER_KEY]: "Manual — staff book in the partner's portal",
-  [HTTP_JSON_ADAPTER_KEY]: "Connected — standard JSON API",
+  [HTTP_JSON_ADAPTER_KEY]: "Connected — reference JSON API (for testing)",
 };
+
+export const CONNECTED_PARTNER_HINTS = [
+  "Pick a connected option only once a developer has built the connection for this partner. Until then, choose Manual.",
+  "Their API address and keys go in the server settings, never here. After saving, add a hub account on the partner's page with the secret name the developer gives you.",
+  "The address they send updates to appears on the partner's page after you save, with a copy button.",
+];
 
 export const NO_WEBHOOKS: WebhookVerification = "NONE";
 
