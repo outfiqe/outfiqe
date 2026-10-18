@@ -1,4 +1,4 @@
-import { QrScanner } from "@outfiqe/components";
+import { QR_CAMERA_START_MODE, QrScanner } from "@outfiqe/components";
 import { Skeleton } from "@outfiqe/design-system";
 import { formatParcelCode } from "@outfiqe/utils";
 import { useState } from "react";
@@ -66,6 +66,7 @@ export const HandoverPage = () => {
             onCode={handOverScannedCode}
             typedCodeLabel="Parcel code"
             isPaused={handOverParcel.isPending}
+            cameraStartMode={QR_CAMERA_START_MODE.ON_REQUEST}
             className="max-w-md"
           />
           <ScanLog entries={scanLog} emptyMessage="No parcels handed over yet." />
