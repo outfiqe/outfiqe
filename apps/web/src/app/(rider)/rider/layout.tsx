@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { PendingScansProvider, RiderShell } from "@/features/rider";
+import { DashboardShell } from "@/components/DashboardShell";
+import { PendingScansProvider } from "@/features/rider";
 
 import { requireRiderSession } from "../requireRiderSession";
 
@@ -15,7 +16,7 @@ const RiderLayout = async ({ children }: { children: ReactNode }) => {
 
   return (
     <PendingScansProvider riderUserId={user.id}>
-      <RiderShell riderName={user.name}>{children}</RiderShell>
+      <DashboardShell>{children}</DashboardShell>
     </PendingScansProvider>
   );
 };

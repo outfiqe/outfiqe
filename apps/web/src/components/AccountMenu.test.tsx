@@ -158,6 +158,21 @@ describe("AccountMenu", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/overview");
   });
 
+  it("sends a rider to their visits and leaves out shopper links", () => {
+    const rider = buildUser({ role: UserRole.RIDER });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: rider, accessToken: "token" },
+      isAuthenticated: true,
+      isRider: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/rider");
+    expect(screen.queryByRole("link", { name: "Your stash" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Become a muse" })).not.toBeInTheDocument();
+  });
+
   it("does not offer a muse a way to switch to muse mode", () => {
     const creator = buildUser({ isCreator: true, creatorStatus: CreatorStatus.APPROVED });
     mockAuth({

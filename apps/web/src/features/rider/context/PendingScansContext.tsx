@@ -49,6 +49,8 @@ type PendingScansContextValue = {
   discardPendingScan: (scanId: string) => Promise<void>;
 };
 
+const NO_UNSENT_SCANS = 0;
+
 const PendingScansContext = createContext<PendingScansContextValue | null>(null);
 
 const isRefusedByServer = (error: unknown): error is ApiClientError =>
@@ -162,6 +164,9 @@ export const PendingScansProvider = ({ riderUserId, children }: PendingScansProv
     <PendingScansContext.Provider value={contextValue}>{children}</PendingScansContext.Provider>
   );
 };
+
+export const useUnsentScanCount = (): number =>
+  useContext(PendingScansContext)?.pendingScans.length ?? NO_UNSENT_SCANS;
 
 export const usePendingScans = (): PendingScansContextValue => {
   const pendingScansContext = useContext(PendingScansContext);

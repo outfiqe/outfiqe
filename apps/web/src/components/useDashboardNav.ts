@@ -4,6 +4,7 @@ import type { SidebarNavItem } from "@outfiqe/components";
 import {
   Award,
   BanknoteArrowUp,
+  Bike,
   HandCoins,
   LayoutDashboard,
   LayoutGrid,
@@ -132,6 +133,13 @@ const brandNavItems = (isOrderLogisticsOn: boolean): SidebarNavItem[] =>
     ? BRAND_NAV
     : BRAND_NAV.filter(({ id }) => !ORDER_LOGISTICS_ONLY_NAV_IDS.has(id));
 
+const RIDER_NAV: SidebarNavItem[] = [
+  { id: "rider-visits", href: "/rider", label: "Visits", icon: Bike },
+  { id: "rider-earnings", href: "/rider/earnings", label: "Earnings", icon: Wallet },
+  SECURITY_NAV_ITEM,
+  SUPPORT_NAV_ITEM,
+];
+
 const CRM_NAV_ITEM: SidebarNavItem = {
   id: "crm",
   href: "/admin/crm",
@@ -141,8 +149,48 @@ const CRM_NAV_ITEM: SidebarNavItem = {
 
 type DashboardNav = {
   navItems: SidebarNavItem[];
-  isBrand: boolean;
+  navSectionId: string;
   accountLabel: string;
+};
+
+const ACCOUNT_KIND = {
+  BRAND: "brand",
+  RIDER: "rider",
+  MUSE: "muse",
+  SHOPPER: "shopper",
+} as const;
+
+type AccountKind = (typeof ACCOUNT_KIND)[keyof typeof ACCOUNT_KIND];
+
+const ACCOUNT_LABELS: Record<AccountKind, string> = {
+  [ACCOUNT_KIND.BRAND]: "Brand account",
+  [ACCOUNT_KIND.RIDER]: "Rider account",
+  [ACCOUNT_KIND.MUSE]: "Muse account",
+  [ACCOUNT_KIND.SHOPPER]: "Shopper account",
+};
+
+const NAV_SECTION_IDS: Record<AccountKind, string> = {
+  [ACCOUNT_KIND.BRAND]: "brand",
+  [ACCOUNT_KIND.RIDER]: "rider",
+  [ACCOUNT_KIND.MUSE]: "creator",
+  [ACCOUNT_KIND.SHOPPER]: "creator",
+};
+
+type NavChoices = { isOrderLogisticsOn: boolean; isCreator: boolean; canEarn: boolean };
+
+const describeAccountKind = (role: UserRole | undefined, isCreator: boolean): AccountKind => {
+  if (role === UserRole.BRAND_OWNER) return ACCOUNT_KIND.BRAND;
+  if (role === UserRole.RIDER) return ACCOUNT_KIND.RIDER;
+  return isCreator ? ACCOUNT_KIND.MUSE : ACCOUNT_KIND.SHOPPER;
+};
+
+const navItemsForAccount = (
+  accountKind: AccountKind,
+  { isOrderLogisticsOn, isCreator, canEarn }: NavChoices,
+): SidebarNavItem[] => {
+  if (accountKind === ACCOUNT_KIND.BRAND) return brandNavItems(isOrderLogisticsOn);
+  if (accountKind === ACCOUNT_KIND.RIDER) return RIDER_NAV;
+  return navItemsForShopper(isCreator, canEarn);
 };
 
 export const useDashboardNav = (): DashboardNav => {
@@ -152,11 +200,9 @@ export const useDashboardNav = (): DashboardNav => {
   const isOrderLogisticsOn = useFeatureFlag("order_logistics");
   const { canEarn } = useCommissionEligibility();
 
-  const isBrand = state.user?.role === UserRole.BRAND_OWNER;
-  const roleNavItems = isBrand
-    ? brandNavItems(isOrderLogisticsOn)
-    : navItemsForShopper(isCreator, canEarn);
-  const canUseOffers = isBrand || isCreator;
+  const accountKind = describeAccountKind(state.user?.role, isCreator);
+  const roleNavItems = navItemsForAccount(accountKind, { isOrderLogisticsOn, isCreator, canEarn });
+  const canUseOffers = accountKind === ACCOUNT_KIND.BRAND || isCreator;
   const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
   const baseNavItems = isOutfitBuildOn
     ? roleNavItems.flatMap((navItem) =>
@@ -166,7 +212,9 @@ export const useDashboardNav = (): DashboardNav => {
   const showCrmLink = hasCrmAccess && isOnTenantHost;
   const navItems = showCrmLink ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
 
-  const accountLabel = isBrand ? "Brand account" : isCreator ? "Muse account" : "Shopper account";
-
-  return { navItems, isBrand, accountLabel };
+  return {
+    navItems,
+    navSectionId: NAV_SECTION_IDS[accountKind],
+    accountLabel: ACCOUNT_LABELS[accountKind],
+  };
 };

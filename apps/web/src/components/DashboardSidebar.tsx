@@ -9,8 +9,10 @@ import {
 } from "@outfiqe/components";
 import { LogOut } from "lucide-react";
 
-import { useAuth, useLogout } from "@/features/auth";
+import { useAuth } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { UnsentScansSignOutModal } from "@/features/rider/components/UnsentScansSignOutModal";
+import { useSignOutWithScanCheck } from "@/features/rider/hooks/useSignOutWithScanCheck";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -22,10 +24,10 @@ import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 export const DashboardSidebar = () => {
   const { state } = useAuth();
-  const logout = useLogout();
+  const signOutCheck = useSignOutWithScanCheck();
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
-  const { navItems, isBrand, accountLabel } = useDashboardNav();
+  const { navItems, navSectionId, accountLabel } = useDashboardNav();
   useIdlePrefetchSidebarLinks(navItems.map((navItem) => navItem.href));
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
@@ -41,7 +43,7 @@ export const DashboardSidebar = () => {
 
   const { avatarUrl, id, name } = user;
 
-  const sections: SidebarNavSection[] = [{ id: isBrand ? "brand" : "creator", items: navItems }];
+  const sections: SidebarNavSection[] = [{ id: navSectionId, items: navItems }];
 
   const header = (
     <div className={cn("flex min-w-0 items-center gap-2.5", collapsed && "justify-center")}>
@@ -77,13 +79,13 @@ export const DashboardSidebar = () => {
   const footer = (
     <button
       type="button"
-      onClick={() => logout.mutate()}
-      disabled={logout.isPending}
+      onClick={signOutCheck.requestSignOut}
+      disabled={signOutCheck.isSigningOut}
       title={collapsed ? "Sign out" : undefined}
       className={cn(footerButtonClassName, "hover:bg-destructive/10 hover:text-destructive")}
     >
       <LogOut className="size-[18px] shrink-0" />
-      {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
+      {!collapsed && (signOutCheck.isSigningOut ? "Signing out…" : "Sign out")}
     </button>
   );
 
@@ -100,6 +102,7 @@ export const DashboardSidebar = () => {
           footer={footer}
         />
       </SidebarPendingNavProvider>
+      <UnsentScansSignOutModal signOutCheck={signOutCheck} />
     </aside>
   );
 };

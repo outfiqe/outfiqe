@@ -5,10 +5,12 @@ import { ChevronDown, ChevronRight, Menu, Moon, ShoppingBag, Sun, X } from "luci
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { useAuth, useLogout } from "@/features/auth";
+import { useAuth } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
-import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
+import { ADMIN_URL, RIDER_HOME_PATH } from "@/features/auth/utils/getDefaultRoute";
 import { useCart } from "@/features/cart";
+import { UnsentScansSignOutModal } from "@/features/rider/components/UnsentScansSignOutModal";
+import { useSignOutWithScanCheck } from "@/features/rider/hooks/useSignOutWithScanCheck";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -67,8 +69,8 @@ const AccountRow = ({
 export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated, isStaff, isCreator, isShopper } = useAuth();
-  const logout = useLogout();
+  const { state, isAuthenticated, isStaff, isCreator, isShopper, isRider } = useAuth();
+  const signOutCheck = useSignOutWithScanCheck();
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
   const { theme, toggleTheme } = useTheme();
@@ -152,14 +154,16 @@ export const MobileNav = () => {
             </nav>
 
             <div className="mt-4 flex flex-col gap-0.5 border-t border-border pt-4 text-sm">
-              <Link
-                href="/wishlist"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <CheriqIcon className="size-4" />
-                Your stash
-              </Link>
+              {!isRider && (
+                <Link
+                  href="/wishlist"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <CheriqIcon className="size-4" />
+                  Your stash
+                </Link>
+              )}
               {isShopper && (
                 <Link
                   href="/cart"
@@ -197,13 +201,15 @@ export const MobileNav = () => {
                     subtitle={
                       isStaff
                         ? "Admin console"
-                        : state.user.role === UserRole.BRAND_OWNER
-                          ? "Manage your brand"
-                          : isCreator
-                            ? "Your muse space"
-                            : "Your account"
+                        : isRider
+                          ? "Your visits and earnings"
+                          : state.user.role === UserRole.BRAND_OWNER
+                            ? "Manage your brand"
+                            : isCreator
+                              ? "Your muse space"
+                              : "Your account"
                     }
-                    href={isStaff ? ADMIN_URL : "/overview"}
+                    href={isStaff ? ADMIN_URL : isRider ? RIDER_HOME_PATH : "/overview"}
                     isExternal={isStaff}
                     onNavigate={() => setOpen(false)}
                   />
@@ -211,9 +217,9 @@ export const MobileNav = () => {
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
-                      logout.mutate();
+                      signOutCheck.requestSignOut();
                     }}
-                    isLoading={logout.isPending}
+                    isLoading={signOutCheck.isSigningOut}
                   >
                     Sign out
                   </Button>
@@ -236,6 +242,7 @@ export const MobileNav = () => {
           </div>
         </>
       )}
+      <UnsentScansSignOutModal signOutCheck={signOutCheck} />
     </div>
   );
 };
