@@ -1,3 +1,4 @@
+export { RiderEarningsPage } from "./components/RiderEarningsPage";
 export { RiderInviteUnavailable } from "./components/RiderInviteUnavailable";
 export { RiderShell } from "./components/RiderShell";
 export { RiderTasksPage } from "./components/RiderTasksPage";

@@ -6,7 +6,7 @@ import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
-import { logisticsStaffWriteRateLimit } from "../logistics.rate-limits.js";
+import { codEligibilityRateLimit, logisticsStaffWriteRateLimit } from "../logistics.rate-limits.js";
 import { logisticsRefusalController } from "./refusal.controller.js";
 import {
   clearRefusalsSchema,
@@ -21,6 +21,7 @@ export const logisticsCodEligibilityRoutes = Router();
 logisticsCodEligibilityRoutes.get(
   "/",
   ...requireShopper,
+  codEligibilityRateLimit,
   validate({ query: codEligibilityQuerySchema }),
   logisticsRefusalController.getMyCodEligibility,
 );

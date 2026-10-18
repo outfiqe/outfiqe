@@ -1,6 +1,7 @@
 import { hoursToMilliseconds } from "date-fns/hoursToMilliseconds";
 import { minutesToMilliseconds } from "date-fns/minutesToMilliseconds";
 
+import { logisticsAlertService } from "./alerts/alert.service.js";
 import { logisticsPartnerBookingService } from "./partner-bookings/partner-booking.service.js";
 import {
   logisticsPartnerPollingService,
@@ -8,10 +9,13 @@ import {
 } from "./partner-webhooks/partner-polling.service.js";
 import { logisticsPartnerWebhookService } from "./partner-webhooks/partner-webhook.service.js";
 import { logisticsBrandReturnService } from "./returns/brand-return.service.js";
+import { logisticsRiderPayService } from "./rider-pay/rider-pay.service.js";
 
 const STUCK_BOOKING_SWEEP_MINUTES = 10;
 const WEBHOOK_RECEIPT_RETENTION_SWEEP_HOURS = 24;
 const BRAND_RETURN_AUTO_CONFIRM_SWEEP_HOURS = 1;
+const RIDER_EARNING_RELEASE_SWEEP_HOURS = 1;
+const ALERT_SWEEP_MINUTES = 10;
 
 export const PARTNER_TRACKING_POLL_INTERVAL_MS = minutesToMilliseconds(
   PARTNER_POLL_INTERVAL_MINUTES,
@@ -38,3 +42,15 @@ export const BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS = hoursToMilliseconds(
 
 export const runBrandReturnAutoConfirm = (): Promise<void> =>
   logisticsBrandReturnService.confirmOverdueBrandReturns();
+
+export const RIDER_EARNING_RELEASE_INTERVAL_MS = hoursToMilliseconds(
+  RIDER_EARNING_RELEASE_SWEEP_HOURS,
+);
+
+export const runRiderEarningRelease = (): Promise<void> =>
+  logisticsRiderPayService.releaseDueRiderEarnings();
+
+export const LOGISTICS_ALERT_SWEEP_INTERVAL_MS = minutesToMilliseconds(ALERT_SWEEP_MINUTES);
+
+export const runLogisticsAlertSweep = (): Promise<void> =>
+  logisticsAlertService.runLogisticsAlertSweep();

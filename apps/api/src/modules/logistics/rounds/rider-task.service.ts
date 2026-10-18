@@ -16,6 +16,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { logisticsBagTagRepository } from "../bag-tags/bag-tag.repository.js";
 import { requireActiveRider } from "../logistics.guards.js";
 import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
+import { logisticsRiderPayService } from "../rider-pay/rider-pay.service.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import type { RecordTrackingEventOutcome, TrackingSubject } from "../tracking/tracking.types.js";
@@ -130,11 +131,14 @@ const closeTaskIfFullyCollected = async (tx: TransactionClient, taskId: string) 
     taskId,
   );
   const isFullyCollected = scannedStopCount === activeStopCount;
-  await logisticsRoundRepository.moveTaskStatus(tx, taskId, {
+  const hasMoved = await logisticsRoundRepository.moveTaskStatus(tx, taskId, {
     fromStatuses: OPEN_RIDER_TASK_STATUSES,
     toStatus: isFullyCollected ? RiderTaskStatus.COMPLETED : RiderTaskStatus.IN_PROGRESS,
     ...(isFullyCollected ? { completedAt: new Date() } : {}),
   });
+  if (hasMoved && isFullyCollected) {
+    await logisticsRiderPayService.recordVisitEarning(tx, taskId);
+  }
 };
 
 const collectBagInTransaction = async (
@@ -353,6 +357,7 @@ export const logisticsRiderTaskService = {
         wastedReason: reason,
       });
       if (!hasMoved) throw riderTaskClosedError();
+      await logisticsRiderPayService.recordVisitEarning(tx, taskId);
       await brandIncidentRepository.recordIncidents(tx, [
         {
           brandId,
@@ -392,6 +397,7 @@ export const logisticsRiderTaskService = {
         completedAt: new Date(),
       });
       if (!hasMoved) throw riderTaskClosedError();
+      await logisticsRiderPayService.recordVisitEarning(tx, taskId);
     });
     return requireRiderTaskView(taskId, rider.id);
   },

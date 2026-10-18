@@ -170,6 +170,9 @@ model User {
   clearedDeliveryRefusals                  CustomerDeliveryRefusal[]   @relation("DeliveryRefusalClearer")
   confirmedBrandReturns                    BrandReturn[]               @relation("BrandReturnConfirmer")
   recordedCodRemittances                   CodRemittance[]             @relation("CodRemittanceRecorder")
+  resolvedLogisticsAlerts                  LogisticsAlert[]            @relation("LogisticsAlertResolver")
+  createdRiderPayRates                     RiderPayRate[]              @relation("RiderPayRateCreator")
+  voidedRiderEarnings                      RiderEarning[]              @relation("RiderEarningVoider")
   partnerStatusImports                     PartnerStatusImport[]       @relation("PartnerStatusImportUploader")
   decidedBrandUnavailables                 BrandUnavailableRequest[]   @relation("BrandUnavailableDecider")
 
@@ -346,6 +349,7 @@ model Brand {
   sizeStandards            BrandSizeStandard[]
   riderTasks               RiderTask[]
   brandUnavailableRequests BrandUnavailableRequest[]
+  logisticsAlerts          LogisticsAlert[]
   fulfilmentIncidents      BrandFulfilmentIncident[]
   brandReturns             BrandReturn[]
 
@@ -1462,6 +1466,7 @@ model Order {
   refunds           OrderRefund[]
   refundDestination OrderRefundDestination?
   deliveryRefusals  CustomerDeliveryRefusal[]
+  logisticsAlerts   LogisticsAlert[]
 
   @@index([userId, createdAt])
   @@index([paymentMethod, createdAt])
@@ -1512,6 +1517,7 @@ model OrderFulfilmentGroup {
   bagTag                   BagTag?
   brandReturns             BrandReturn[]
   brandUnavailableRequests BrandUnavailableRequest[]
+  logisticsAlerts          LogisticsAlert[]
 
   @@unique([orderId, brandId])
   @@index([brandId, status])
@@ -1549,6 +1555,7 @@ model Hub {
   partnerAccounts  DeliveryPartnerAccount[]
   partnerZones     DeliveryPartnerZone[]
   brandReturns     BrandReturn[]
+  logisticsAlerts  LogisticsAlert[]
 
   @@map("hubs")
 }
@@ -1633,6 +1640,7 @@ model Shipment {
   deliveryRefusal   CustomerDeliveryRefusal?
   brandReturns      BrandReturn[]
   codRemittanceLine CodRemittanceLine?
+  logisticsAlerts   LogisticsAlert[]
 
   @@index([status, lastEventAt])
   @@index([orderId])
@@ -2550,6 +2558,9 @@ enum NotificationType {
   ACCOUNT_APPROVED
   ORDER_REFUND_ISSUED
   ORDER_REFUND_DETAILS_NEEDED
+  LOGISTICS_STAFF_ALERT
+  LOGISTICS_BRAND_NOTICE
+  ORDER_DELIVERY_LATE
 }
 
 enum NotificationEntityType {
@@ -3020,6 +3031,7 @@ enum LedgerEntryKind {
   CREATOR_COMMISSION
   BRAND_PAYOUT
   OFFER_PAYOUT
+  RIDER_EARNING
 }
 
 model WithdrawRequestLedgerEntry {
@@ -3033,6 +3045,8 @@ model WithdrawRequestLedgerEntry {
   brandPayout         BrandPayout?       @relation(fields: [brandPayoutId], references: [id])
   outfitOfferId       String?            @unique @map("outfit_offer_id") @db.Uuid
   outfitOffer         OutfitOffer?       @relation(fields: [outfitOfferId], references: [id], onDelete: SetNull)
+  riderEarningId      String?            @unique @map("rider_earning_id") @db.Uuid
+  riderEarning        RiderEarning?      @relation(fields: [riderEarningId], references: [id])
   createdAt           DateTime           @default(now()) @map("created_at")
 
   @@index([withdrawRequestId])
@@ -4357,6 +4371,7 @@ model Rider {
 
   tasks           RiderTask[]
   attachedBagTags BagTag[]
+  earnings        RiderEarning[]
 
   @@index([hubId, status])
   @@map("riders")
@@ -4380,7 +4395,8 @@ model RiderTask {
   completedAt      DateTime?           @map("completed_at")
   wastedReason     String?             @map("wasted_reason")
 
-  stops RiderTaskStop[]
+  stops   RiderTaskStop[]
+  earning RiderEarning?
 
   @@index([riderId, roundStartsAt])
   @@index([hubId, roundStartsAt])
@@ -4697,4 +4713,117 @@ model CodRemittanceLine {
 
   @@index([remittanceId])
   @@map("cod_remittance_lines")
+}
+
+enum RiderEarningKind {
+  VISIT
+  WASTED_VISIT
+}
+
+enum RiderEarningStatus {
+  PENDING
+  AVAILABLE
+  WITHDRAWN
+  VOIDED
+}
+
+model RiderPayRate {
+  id                String              @id @default(uuid()) @db.Uuid
+  countryCode       String              @map("country_code") @db.Char(2)
+  currency          String              @db.Char(3)
+  employmentType    RiderEmploymentType @map("employment_type")
+  visitAmount       Int                 @map("visit_amount")
+  extraStopAmount   Int                 @map("extra_stop_amount")
+  wastedVisitAmount Int                 @map("wasted_visit_amount")
+  effectiveFrom     DateTime            @map("effective_from")
+  isActive          Boolean             @default(true) @map("is_active")
+  createdById       String?             @map("created_by_id") @db.Uuid
+  createdBy         User?               @relation("RiderPayRateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  earnings RiderEarning[]
+
+  @@index([countryCode, employmentType, isActive, effectiveFrom])
+  @@map("rider_pay_rates")
+}
+
+model RiderEarning {
+  id                String             @id @default(uuid()) @db.Uuid
+  riderId           String             @map("rider_id") @db.Uuid
+  rider             Rider              @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  riderTaskId       String             @unique @map("rider_task_id") @db.Uuid
+  riderTask         RiderTask          @relation(fields: [riderTaskId], references: [id], onDelete: Restrict)
+  payRateId         String?            @map("pay_rate_id") @db.Uuid
+  payRate           RiderPayRate?      @relation(fields: [payRateId], references: [id], onDelete: SetNull)
+  kind              RiderEarningKind
+  currency          String             @db.Char(3)
+  stopCount         Int                @map("stop_count")
+  visitAmount       Int                @map("visit_amount")
+  extraStopAmount   Int                @map("extra_stop_amount")
+  wastedVisitAmount Int                @map("wasted_visit_amount")
+  amount            Int
+  status            RiderEarningStatus @default(PENDING)
+  earnedAt          DateTime           @map("earned_at")
+  releasesAt        DateTime           @map("releases_at")
+  availableAt       DateTime?          @map("available_at")
+  withdrawnAt       DateTime?          @map("withdrawn_at")
+  voidedAt          DateTime?          @map("voided_at")
+  voidedById        String?            @map("voided_by_id") @db.Uuid
+  voidedBy          User?              @relation("RiderEarningVoider", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason        String?            @map("void_reason")
+  createdAt         DateTime           @default(now()) @map("created_at")
+
+  ledgerEntry WithdrawRequestLedgerEntry?
+
+  @@index([riderId, status, earnedAt])
+  @@index([status, releasesAt])
+  @@map("rider_earnings")
+}
+
+enum LogisticsAlertType {
+  BRAND_NOT_READY
+  BRAND_NOT_READY_ESCALATED
+  MISSED_ROUND
+  WAITING_AT_HUB
+  PARTNER_NOT_COLLECTED
+  NO_PARTNER_UPDATE
+  PROMISE_AT_RISK
+  PROMISE_MISSED
+  UNKNOWN_PARTNER_STATUS
+  COUNT_MISMATCH
+  COD_COLLECTED_MISMATCH
+  COD_REMITTANCE_OVERDUE
+}
+
+model LogisticsAlert {
+  id                String                @id @default(uuid()) @db.Uuid
+  alertType         LogisticsAlertType    @map("alert_type")
+  subjectKey        String                @map("subject_key")
+  orderId           String?               @map("order_id") @db.Uuid
+  order             Order?                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fulfilmentGroupId String?               @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup? @relation(fields: [fulfilmentGroupId], references: [id], onDelete: Cascade)
+  shipmentId        String?               @map("shipment_id") @db.Uuid
+  shipment          Shipment?             @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  brandId           String?               @map("brand_id") @db.Uuid
+  brand             Brand?                @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  hubId             String?               @map("hub_id") @db.Uuid
+  hub               Hub?                  @relation(fields: [hubId], references: [id], onDelete: Cascade)
+  detail            String?
+  raisedAt          DateTime              @default(now()) @map("raised_at")
+  notifiedAt        DateTime?             @map("notified_at")
+  resolvedAt        DateTime?             @map("resolved_at")
+  isAutoResolved    Boolean               @default(false) @map("is_auto_resolved")
+  resolvedById      String?               @map("resolved_by_id") @db.Uuid
+  resolvedBy        User?                 @relation("LogisticsAlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolutionNote    String?               @map("resolution_note")
+
+  @@unique([alertType, subjectKey])
+  @@index([resolvedAt, raisedAt])
+  @@index([notifiedAt, raisedAt])
+  @@index([alertType, resolvedAt])
+  @@index([orderId, alertType])
+  @@index([fulfilmentGroupId, alertType])
+  @@index([shipmentId, alertType])
+  @@map("logistics_alerts")
 }

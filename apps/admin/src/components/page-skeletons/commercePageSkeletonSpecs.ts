@@ -245,6 +245,23 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
     sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
   },
+  "/logistics/alerts": {
+    title: "Delivery alerts",
+    description:
+      "Bags and parcels that are running late or need someone to look at them. Most clear on their own once the bag or parcel moves on; resolve the rest with a note.",
+    blocks: [
+      { kind: "filterTabs", labels: ["Open", "Resolved"] },
+      { kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: false, actionLabels: [] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/logistics/alerts/components/LogisticsAlertsPage.tsx`],
+  },
+  "/logistics/rider-pay": {
+    title: "Rider pay",
+    description:
+      "What contractor riders earn per visit. Each earning is held for 7 days, then riders can withdraw it to their bank. Employees are paid salary outside Outfiqe.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/rider-pay/components/RiderPayPage.tsx`],
+  },
   "/logistics/cod": {
     title: "Partner cash",
     description:
