@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import type { Prisma } from "#generated/prisma/client.js";
+import { toStoredJson } from "#lib/stored-json.utils.js";
 
 import { proportionalShare } from "./refund.pricing.js";
 import type { OrderRefundRecord, RefundQueueRecord } from "./refund.repository.js";
@@ -52,10 +51,8 @@ export const toOrderRefundView = (refund: OrderRefundRecord): OrderRefundView =>
 const NOTHING = 0;
 const UNREADABLE_GATEWAY_RESPONSE = { note: "The gateway's reply couldn't be stored." };
 
-export const toStoredGatewayResponse = (rawResponse: unknown): Prisma.InputJsonValue => {
-  const parsed = z.json().safeParse(rawResponse);
-  return parsed.success && parsed.data !== null ? parsed.data : UNREADABLE_GATEWAY_RESPONSE;
-};
+export const toStoredGatewayResponse = (rawResponse: unknown): Prisma.InputJsonValue =>
+  toStoredJson(rawResponse, UNREADABLE_GATEWAY_RESPONSE);
 
 export type ResizedBrandPayout = {
   grossAmount: number;

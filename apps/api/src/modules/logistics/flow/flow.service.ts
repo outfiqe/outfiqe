@@ -1,3 +1,4 @@
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import { ORDER_LOGISTICS_FLAG } from "#modules/feature-flags/feature-flags.registry.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
 
@@ -10,6 +11,9 @@ const NO_ENABLED_BRANDS = 0;
 export const logisticsFlowService = {
   async resolveFulfilmentAssignments({
     brandIds,
+    deliveryCity,
+    countryCode,
+    requiresCashOnDelivery,
   }: ResolveFulfilmentAssignmentsInput): Promise<FulfilmentAssignment[]> {
     const enabledBrandIds = await featureFlagsService.isEnabledForBrands(
       ORDER_LOGISTICS_FLAG,
@@ -22,6 +26,17 @@ export const logisticsFlowService = {
     ]);
     const hubIdByCoverageKey =
       await logisticsPickupCoverage.findHubIdsByCoverageKey(defaultLocations);
-    return buildFulfilmentAssignments(brandIds, defaultLocations, hubIdByCoverageKey);
+    const deliveryZoneId = await deliveryZoneService.resolveZoneIdForCity(
+      deliveryCity,
+      countryCode,
+    );
+    const hubIdsWithDeliveryPartner = await logisticsPickupCoverage.findHubIdsWithDeliveryPartner({
+      hubIds: [...new Set(hubIdByCoverageKey.values())],
+      deliveryZoneId,
+      requiresCashOnDelivery,
+    });
+    return buildFulfilmentAssignments(brandIds, defaultLocations, hubIdByCoverageKey, {
+      hubIdsWithDeliveryPartner,
+    });
   },
 };

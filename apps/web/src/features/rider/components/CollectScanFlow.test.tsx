@@ -2,6 +2,7 @@ import type * as DesignSystem from "@outfiqe/design-system";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PENDING_SCAN_STATE } from "../constants/pendingScans";
 import type * as PendingScansContextModule from "../context/PendingScansContext";
 import { SCAN_OUTCOME, usePendingScans } from "../context/PendingScansContext";
 import { CollectScanFlow } from "./CollectScanFlow";
@@ -78,6 +79,31 @@ describe("CollectScanFlow", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("That's a bag sticker.");
     expect(queueCollectScan).not.toHaveBeenCalled();
+  });
+
+  it("won't tag a bag again while its first scan is still saved on the phone", () => {
+    vi.mocked(usePendingScans).mockReturnValue({
+      pendingScans: [
+        {
+          scanId: "scan-1",
+          taskId: "task-1",
+          pickupCode: "7K2M9QAB",
+          bagTagCode: "ABCDEFGHJK",
+          scannedAt: "2026-10-17T05:20:00.000Z",
+          state: PENDING_SCAN_STATE.WAITING,
+          errorMessage: null,
+        },
+      ],
+      queueCollectScan,
+      retryPendingScan: vi.fn(),
+      discardPendingScan: vi.fn(),
+    });
+    render(<CollectScanFlow taskId="task-1" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Scan pickup slip" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("already saved on this phone");
+    expect(screen.getByText("Step 1: scan the pickup slip")).toBeInTheDocument();
   });
 
   it("warns when a pickup slip is scanned as the sticker", () => {

@@ -7,16 +7,20 @@ import {
   FeatureFlagRollout,
   FulfilmentMode,
   FulfilmentStatus,
+  PartnerWebhookVerification,
   PickupStatus,
   RiderEmploymentType,
   RiderStatus,
   ShipmentStatus,
+  TrackingEventCode,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateRandomCode } from "#lib/random-code.utils.js";
 import { ORDER_LOGISTICS_FLAG } from "#modules/feature-flags/feature-flags.registry.js";
 import { featureFlagsService } from "#modules/feature-flags/feature-flags.service.js";
+import { HTTP_JSON_ADAPTER_KEY } from "#modules/logistics/partners/adapters/http-json.adapter.js";
+import { MANUAL_ADAPTER_KEY } from "#modules/logistics/partners/adapters/manual.adapter.js";
 
 import { createBuyer, createOrder, createPurchasableProduct } from "./order-fixtures.js";
 import { uniquePhone } from "./unique-values.js";
@@ -35,6 +39,19 @@ const VALLEY_FREE_DELIVERY_THRESHOLD = 5000;
 const NO_COD_HANDLING_FEE = 0;
 const VALLEY_MIN_DELIVERY_DAYS = 1;
 const VALLEY_MAX_DELIVERY_DAYS = 2;
+
+export type PartnerApiConnection = {
+  credentialsKey: string;
+  webhookVerification: PartnerWebhookVerification;
+};
+
+const DEFAULT_PARTNER_STATUS_MAP = [
+  { rawStatus: "PICKED UP", canonicalCode: TrackingEventCode.HANDED_TO_PARTNER },
+  { rawStatus: "IN TRANSIT", canonicalCode: TrackingEventCode.IN_TRANSIT },
+  { rawStatus: "OUT FOR DELIVERY", canonicalCode: TrackingEventCode.OUT_FOR_DELIVERY },
+  { rawStatus: "DELIVERED", canonicalCode: TrackingEventCode.DELIVERED },
+  { rawStatus: "RETURNED", canonicalCode: TrackingEventCode.RETURNED_TO_HUB },
+];
 
 export const createHub = () =>
   prisma.hub.create({
@@ -262,4 +279,47 @@ export const createPickupForBrand = async (
     },
   });
   return { buyer, hub, order, group };
+};
+
+export const createDeliveryPartnerCovering = async ({
+  hubId,
+  deliveryZoneIds,
+  supportsCod = true,
+  referencePattern = null,
+  apiConnection = null,
+}: {
+  hubId: string;
+  deliveryZoneIds: string[];
+  supportsCod?: boolean;
+  referencePattern?: string | null;
+  apiConnection?: PartnerApiConnection | null;
+}) => {
+  const suffix = randomUUID().slice(0, 8);
+  const isApiPartner = apiConnection !== null;
+  return prisma.deliveryPartner.create({
+    data: {
+      code: `partner-${suffix}`,
+      name: `Courier ${suffix}`,
+      countryCode: "NP",
+      adapterKey: isApiPartner ? HTTP_JSON_ADAPTER_KEY : MANUAL_ADAPTER_KEY,
+      supportsBooking: isApiPartner,
+      supportsWebhooks: isApiPartner,
+      supportsPolling: isApiPartner,
+      webhookVerification: apiConnection?.webhookVerification ?? PartnerWebhookVerification.NONE,
+      supportsCod,
+      referencePattern,
+      accounts: {
+        create: {
+          hubId,
+          merchantAccountRef: `OUTFIQE-${suffix}`,
+          credentialsKey: apiConnection?.credentialsKey ?? null,
+        },
+      },
+      zones: {
+        create: deliveryZoneIds.map((deliveryZoneId) => ({ hubId, deliveryZoneId, priority: 0 })),
+      },
+      statusMappings: { create: DEFAULT_PARTNER_STATUS_MAP },
+    },
+    include: { accounts: true },
+  });
 };

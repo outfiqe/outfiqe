@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLakhAmount, formatNepalDateTime } from "./outfitFormatting";
+import { formatLakhAmount, formatNepalDateTime } from "./nepalFormatting";
 
 describe("formatLakhAmount", () => {
   it("groups rupees the Nepali way, in lakhs", () => {

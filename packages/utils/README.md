@@ -14,8 +14,11 @@ to any one app.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
 - `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
-  `normalizeTypedCode` and `isCrockfordCode`, shared by every app that handles the delivery codes
-  (pickup codes, bag tags):
+  `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,
+  `normalizeParcelCode`, `formatParcelCode`), shared by every app that handles the delivery codes
+  (pickup codes, bag tags, parcel codes). A parcel code is stored as `OFQ` + 8 characters and shown
+  as `OFQ-XXXX-XXXX`; `normalizeParcelCode` accepts it typed with dashes, spaces, lower case or a
+  zero for the O, and returns `null` for anything else:
   - `apps/api` generates the codes from this alphabet.
   - The rider and hub screens normalise a code someone typed by hand before sending it.
   - The alphabet leaves out I, L, O and U. When typing, I and L are read as 1 and O as 0, so a
@@ -36,6 +39,14 @@ to any one app.
 - `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
   each) and `POST_LAYOUT_LABEL` (the picker's display labels).
+- `logistics-alerts/` — `LogisticsAlertType`, `LOGISTICS_ALERT_TYPES`, `LOGISTICS_ALERT_LABELS`
+  (the plain-English name of each delivery alert, shared by the admin alerts page, the staff
+  notification and its push) and `isLogisticsAlertType`. It sits here for the same reason as
+  `order-tracking/` below.
+- `order-tracking/` — `OrderTrackingStage` (the one customer-facing stage of a hub-delivered
+  order), `ORDER_TRACKING_STAGE_MESSAGES` (the words for each, used by in-app and push
+  notifications) and `isOrderTrackingStage`. It lives here rather than in `@outfiqe/types` because
+  `@outfiqe/types` depends on this package, so the messages and the stage must sit together here.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `public-build-sort/` — `PUBLIC_BUILD_SORT`/`PublicBuildSort`, the public Builds feed's sort
   orders (newest, most cheriqed, price low to high, price high to low). The API validates the

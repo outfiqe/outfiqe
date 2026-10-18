@@ -7,6 +7,7 @@ export type AdminNotificationTarget =
   | { to: "/crm/tasks" }
   | { to: "/crm/support" }
   | { to: "/coupons" }
+  | { to: "/logistics/alerts" }
   | { to: "/orders/$orderId"; params: { orderId: string } };
 
 const supportTicketTarget = (ticketId: string | null): AdminNotificationTarget =>
@@ -36,6 +37,8 @@ export const resolveNotificationHref = (
       return entityId
         ? { to: "/orders/$orderId", params: { orderId: entityId } }
         : { to: "/coupons" };
+    case NotificationType.LOGISTICS_STAFF_ALERT:
+      return { to: "/logistics/alerts" };
     case NotificationType.LOOK_LIKED:
     case NotificationType.LOOK_COMMENTED:
     case NotificationType.COMMENT_REPLIED:
@@ -48,6 +51,8 @@ export const resolveNotificationHref = (
     case NotificationType.ORDER_STATUS_CHANGED:
     case NotificationType.ORDER_REFUND_ISSUED:
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
+    case NotificationType.ORDER_DELIVERY_LATE:
     case NotificationType.WITHDRAW_REQUEST_APPROVED:
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:

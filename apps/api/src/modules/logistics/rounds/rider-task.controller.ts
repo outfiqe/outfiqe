@@ -6,7 +6,12 @@ import { readRequiredIdempotencyKey } from "#middlewares/require-idempotency-key
 import { validated } from "#middlewares/validate.js";
 
 import { logisticsRiderTaskService } from "./rider-task.service.js";
-import type { CollectScanBody, RiderTaskIdParam, WastedVisitBody } from "./rounds.schemas.js";
+import type {
+  CollectScanBody,
+  ReturnDropOffBody,
+  RiderTaskIdParam,
+  WastedVisitBody,
+} from "./rounds.schemas.js";
 
 export const logisticsRiderTaskController = {
   async listOpen(_req: Request, res: Response) {
@@ -43,6 +48,17 @@ export const logisticsRiderTaskController = {
       validated.body<WastedVisitBody>(res),
     );
     sendSuccess(res, task, "Visit marked as wasted.");
+  },
+
+  async dropOffReturn(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { taskId } = validated.params<RiderTaskIdParam>(res);
+    const task = await logisticsRiderTaskService.dropOffReturn(
+      userId,
+      taskId,
+      validated.body<ReturnDropOffBody>(res),
+    );
+    sendSuccess(res, task, "Return handed to the brand.");
   },
 
   async finish(_req: Request, res: Response) {

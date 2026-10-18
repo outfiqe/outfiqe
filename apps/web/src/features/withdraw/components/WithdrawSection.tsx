@@ -16,9 +16,15 @@ type WithdrawSectionProps = {
   ownerType: OwnerTypeValue;
   title: string;
   description: string;
+  headingLevel?: "h1" | "h2";
 };
 
-export const WithdrawSection = ({ ownerType, title, description }: WithdrawSectionProps) => {
+export const WithdrawSection = ({
+  ownerType,
+  title,
+  description,
+  headingLevel: Heading = "h1",
+}: WithdrawSectionProps) => {
   const {
     data: policy,
     isPending: isPolicyPending,
@@ -44,7 +50,7 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
   return (
     <div>
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">{title}</h1>
+        <Heading className="font-display text-2xl font-bold text-foreground">{title}</Heading>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
 

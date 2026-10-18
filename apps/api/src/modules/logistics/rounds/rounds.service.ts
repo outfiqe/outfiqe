@@ -84,14 +84,28 @@ export const logisticsRoundService = {
       query.limit,
       (location) => location.id,
     );
-    return { items: items.map(toPickupBoardLocation), nextCursor };
+    const returnsWaiting = await logisticsRoundRepository.listReturnsWaitingAtLocations(
+      query.hubId,
+      items.map(({ id }) => id),
+    );
+    return {
+      items: items.map((location) =>
+        toPickupBoardLocation(
+          location,
+          returnsWaiting.filter(
+            ({ fulfilmentGroup }) => fulfilmentGroup.pickupLocationId === location.id,
+          ),
+        ),
+      ),
+      nextCursor,
+    };
   },
 
   async assignRiderTask(
     body: AssignRiderTaskBody,
     assignedById: string,
   ): Promise<RiderTaskSummary> {
-    const { riderId, pickupLocationId, fulfilmentGroupIds, roundStartsAt } = body;
+    const { riderId, pickupLocationId, fulfilmentGroupIds, brandReturnIds, roundStartsAt } = body;
     const rider = await requireAssignableRider(riderId);
     const pickupLocation = await logisticsRoundRepository.findPickupLocationBrand(pickupLocationId);
     if (!pickupLocation) {
@@ -110,6 +124,12 @@ export const logisticsRoundService = {
           fulfilmentGroupIds,
         });
         if (collectableCount !== fulfilmentGroupIds.length) throw pickupsNotAssignableError();
+        const returnsToCarry = await logisticsRoundRepository.listReturnsToCarry(tx, {
+          hubId: rider.hubId,
+          pickupLocationId,
+          brandReturnIds,
+        });
+        if (returnsToCarry.length !== brandReturnIds.length) throw pickupsNotAssignableError();
 
         const { id } = await logisticsRoundRepository.createRiderTask(tx, {
           riderId,
@@ -119,7 +139,13 @@ export const logisticsRoundService = {
           roundStartsAt,
           assignedById,
           fulfilmentGroupIds,
+          returnsToCarry,
         });
+        const movedReturnCount = await logisticsRoundRepository.moveReturnsOnRound(
+          tx,
+          brandReturnIds,
+        );
+        if (movedReturnCount !== brandReturnIds.length) throw pickupsNotAssignableError();
         await recordAssignmentEvents(tx, {
           taskId: id,
           fulfilmentGroupIds,

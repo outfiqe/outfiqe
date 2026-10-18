@@ -286,6 +286,21 @@ describe("resolveNotificationHref", () => {
     ).toBe("/admin/coupons");
 
     expect(
+      resolveNotificationHref(buildNotification({ type: "LOGISTICS_STAFF_ALERT" }), OWN_HANDLE),
+    ).toBe("/admin/logistics/alerts");
+
+    expect(
+      resolveNotificationHref(buildNotification({ type: "LOGISTICS_BRAND_NOTICE" }), OWN_HANDLE),
+    ).toBe("/manage-orders");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "ORDER_DELIVERY_LATE", entityId: "order-9" }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/orders/order-9");
+
+    expect(
       resolveNotificationHref(
         buildNotification({ type: "COUPON_REDEMPTION_FLAGGED", entityId: "order-4" }),
         OWN_HANDLE,

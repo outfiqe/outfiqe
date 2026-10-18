@@ -8,7 +8,10 @@ fetch/mutate/socket-sync logic.
 
 ## Structure
 
-- `useApiMutation.ts` — drop-in replacement for react-query's `useMutation`, taking an extra
+- `useApiMutation.ts` — drop-in replacement for react-query's `useMutation`. Its optional
+  `errorMessage` formatter (each app passes its own `getErrorMessage`) shows a toast when the
+  request fails; use it for every action whose screen doesn't show the error inline, because
+  nothing else reports a failed mutation. It also takes an extra
   `invalidateKeys` option (an array of query keys, or a function of `(data, variables)` returning
   one). It awaits every invalidated query's refetch, then the caller's own `onSuccess`, before its
   own `onSuccess` resolves — so `mutation.isPending` (and therefore any `Button isLoading={...}`

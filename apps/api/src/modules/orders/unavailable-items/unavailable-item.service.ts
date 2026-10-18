@@ -1,10 +1,15 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { BrandUnavailableRequestStatus, OrderRefundCause } from "#generated/prisma/enums.js";
+import {
+  BrandIncidentKind,
+  BrandUnavailableRequestStatus,
+  OrderRefundCause,
+} from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { brandIncidentRepository } from "#modules/logistics/reliability/brand-incident.repository.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
@@ -145,6 +150,16 @@ export const orderUnavailableItemService = {
         refundId: applied.claim.refundId,
       });
       if (!isDecided) throw requestAlreadyDecidedError();
+      await brandIncidentRepository.recordIncidents(tx, [
+        {
+          brandId: request.brandId,
+          kind: BrandIncidentKind.UNAVAILABLE_ITEM,
+          sourceKey: requestId,
+          orderId,
+          note: request.reason,
+          occurredAt: new Date(),
+        },
+      ]);
       return applied;
     });
     await orderRefundEngine.finishAfterCommit(appliedRefund);

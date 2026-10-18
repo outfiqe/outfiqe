@@ -10,6 +10,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
 - `order.service.ts` — `orderService`, the only object the controller and other modules import. It holds the shopper/admin reads (`getOrder`, `listOrders`, `listAllAdmin`, `getOrderAdmin`) and `advanceFulfilment`, and spreads in every topic service below.
 - `order.repository.ts` — `orderRepository`: order reads and writes, payment-state changes (`markCancelled`, `markReturned`, `markRefunded`, `failUnsettledPayment`, `markNeedsManualRefund`), and `listSettledPurchasedProductIds`. Spreads in `orderFulfilmentGroupRepository`.
 - `order.utils.ts` — the order, item, payment and admin view mappers, and `deriveOrderFulfilment` (the order-level fulfilment rollup, unit-tested in `order.utils.test.ts`).
+- `order-tracking.utils.ts` — the order view's `trackingStage` (the customer stage of a hub-delivered order, `null` when every brand ships itself) and `promisedDelivery` (`{ from, by }` calendar dates, or `null`). The stage comes from `logistics/tracking/tracking.stage.ts`, a plain function file that imports nothing from orders, so orders can use it without loading the logistics module (which depends on orders). Each brand group in `shipments` also says its `fulfilmentMode`. The parcels, partner links and event timeline live in `logistics/customer-tracking/` (`GET /api/logistics/orders/:orderId/tracking`).
 - `order.attribution.utils.ts` — creator attribution for each line (see "Attribution" below).
 - `order.constants.ts` — `FULFILMENT_ADVANCE_FROM` (which statuses each step can move from), the audit target type, and the stale-shipment reminder settings.
 - `order.jobs.ts` — the stale-shipment reminder job.
@@ -33,6 +34,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `refund.engine.ts` — `orderRefundEngine`, the two calls every flow uses: `claimAndApplyInTransaction` and `finishAfterCommit`.
   - `refund.service.ts`, `refund.controller.ts`, `refund.routes.ts` — staff "refund items", the refund lists and the manual queue.
   - `line-cancellation.*` — a customer cancelling single items.
+  - `refund.outstanding.ts` — `calculateCashToCollect({ orderId, fulfilmentGroupIds, includesOrderFees })`: what an unpaid cash-on-delivery order still owes for some of its brands' items (each line's unrefunded share), plus the delivery and COD fees when asked. Logistics uses it for the cash a parcel collects.
   - `refund-destination.*` — the customer's refund details (Khalti, eSewa or bank) and staff reveal of a bank account number.
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
   - `item-change-access.ts` — `orderItemChangeAccess`: which brands are on the `order_logistics` feature flag, and so allow customer item cancellation and "can't supply" reports.
@@ -245,7 +247,16 @@ counts.
 
 `POST /orders/admin/:orderId/return` (`ordersManage`, with a reason) handles a parcel that comes
 back after it left: refused at the door, undeliverable, or returned after delivery. There is no
-courier integration; an admin records it. Only `SHIPPED` or `DELIVERED` orders qualify.
+courier integration; an admin records it. Only `SHIPPED` or `DELIVERED` orders qualify, and only
+brand-shipped ones: an order with any group delivered through the Outfiqe hub answers
+`409 RETURN_CHECKED_IN_AT_HUB`, because its return is the hub checking the real parcel back in
+(`logistics/returns/`).
+
+**Fees on a refund that empties the order** come back when the cause returns fees, and also
+whenever nothing has been paid yet (cash on delivery still due): a refused cash order owes
+nothing, so its delivery and COD fees are dropped rather than left unpaid
+(`refunds/refund.claim.ts`). `PARTNER_FAILED` (the delivery partner lost or damaged it) returns
+fees and releases coupon budget, like the hub's own failures.
 
 In one transaction it moves the order and its fulfilment groups to `RETURNED` (stamping
 `returnedAt`/`returnReason`, guarded by the status it is leaving, so a double click returns
@@ -367,6 +378,20 @@ brand to ship.
 it reads the group statuses, applies `deriveOrderFulfilment` and calls `setOrderFulfilmentRollup`.
 The `logistics` module uses it after every applied tracking event, so hub-delivered orders follow
 exactly the same rollup and `deliveredAt` rules as brand-shipped ones.
+
+When the rollup reaches `DELIVERED`, `setOrderFulfilmentRollup` also moves a cash-on-delivery
+order from `paymentStatus: DUE` to `PAID`, but only when Outfiqe's delivery partners collected all
+of it:
+
+- at least one group went through the hub (`OUTFIQE_LOGISTICS`), and
+- no `BRAND_SHIPS` group is still open (cancelled or returned ones don't count).
+
+A brand that ships its own part collects its own cash, and nothing records that yet, so a mixed
+order stays `DUE`, the same as a brand-only COD order always has. Because it runs inside the
+rollup, the same rule applies when a refund closes the last undelivered parcel and leaves the rest
+delivered. Once `PAID`, a later refund on the order is real money back and goes through the manual
+refund queue, not the "cash not collected" path. What the partner collected and paid back to
+Outfiqe is tracked per parcel in `logistics/cod`.
 
 ## Stale-shipment reminder digest
 

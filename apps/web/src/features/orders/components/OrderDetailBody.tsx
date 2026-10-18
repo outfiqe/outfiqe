@@ -7,12 +7,18 @@ import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 
-import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "../api/orderSchemas";
+import {
+  BRAND_SHIPS_MODE,
+  FulfilmentStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
+import { OrderTrackingTimeline } from "./OrderTrackingTimeline";
 import { PendingPaymentPanel } from "./PendingPaymentPanel";
 import { RefundDetailsCard } from "./RefundDetailsCard";
 import { ShipmentTrackers } from "./ShipmentTrackers";
@@ -20,6 +26,7 @@ import { StatusBadge } from "./StatusBadge";
 import { TransactionLedger } from "./TransactionLedger";
 
 const NOTHING_REFUNDED = 0;
+const NO_SHIPMENTS = 0;
 
 type OrderDetailBodyProps = {
   orderId: string;
@@ -62,8 +69,13 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     items,
     shipments,
     transactions,
+    trackingStage,
+    promisedDelivery,
   } = order;
   const hasMultipleShipments = shipments.length > 1;
+  const brandShippedShipments = shipments.filter(
+    ({ fulfilmentMode }) => fulfilmentMode === BRAND_SHIPS_MODE,
+  );
   const cancellableItems = items.filter((orderItem) => orderItem.canCancel);
   const refundDestination = refundDestinationQuery.data;
   const showsRefundDetails =
@@ -124,7 +136,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
 
       <div className="mt-6 rounded-2xl border border-border p-5">
         {!awaitingPayment &&
-          (hasMultipleShipments ? (
+          (trackingStage ? (
+            <div className="space-y-5">
+              <OrderTrackingTimeline
+                orderId={id}
+                trackingStage={trackingStage}
+                promisedDelivery={promisedDelivery}
+              />
+              {brandShippedShipments.length > NO_SHIPMENTS && (
+                <ShipmentTrackers shipments={brandShippedShipments} />
+              )}
+            </div>
+          ) : hasMultipleShipments ? (
             <ShipmentTrackers shipments={shipments} />
           ) : (
             <OrderTracker fulfilmentStatus={fulfilmentStatus} />

@@ -5,7 +5,11 @@ import {
   NotificationType,
   OrderRefundMethod,
 } from "@outfiqe/types";
-import { formatActorList } from "@outfiqe/utils";
+import {
+  formatActorList,
+  LOGISTICS_ALERT_LABELS,
+  ORDER_TRACKING_STAGE_MESSAGES,
+} from "@outfiqe/utils";
 
 const actorList = (notification: Notification): string =>
   formatActorList(notification.metadata.recentActors ?? [], notification.actorCount);
@@ -54,7 +58,9 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.NEW_ORDER:
       return "You received a new order";
     case NotificationType.ORDER_STATUS_CHANGED:
-      return `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
+      return metadata.trackingStage
+        ? ORDER_TRACKING_STAGE_MESSAGES[metadata.trackingStage]
+        : `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return `${metadata.brandName ?? "A brand"} submitted an application`;
     case NotificationType.PRODUCT_REVIEWED:
@@ -163,6 +169,14 @@ export const resolveNotificationMessage = (notification: Notification): string =
         : `We've refunded Rs. ${metadata.amount ?? ""} on your order`;
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
       return `Tell us where to send your Rs. ${metadata.amount ?? ""} refund`;
+    case NotificationType.LOGISTICS_STAFF_ALERT:
+      return metadata.logisticsAlertType
+        ? LOGISTICS_ALERT_LABELS[metadata.logisticsAlertType]
+        : "A delivery needs attention";
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
+      return "An order is waiting for you to mark its bag ready for pickup";
+    case NotificationType.ORDER_DELIVERY_LATE:
+      return "Sorry, your order is running late. We're on it and will keep you posted";
     case NotificationType.ACCOUNT_APPROVED:
       return metadata.approvedAccountKind === ApprovedAccountKind.BRAND
         ? `Welcome to Outfiqe! ${metadata.brandName ?? "Your brand"} is set up. Add your first products to start selling.`

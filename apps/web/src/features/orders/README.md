@@ -14,8 +14,16 @@ can't go back automatically.
   `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
-  payment state and composes `OrderTracker` (or `ShipmentTrackers` for a multi-brand order) /
-  `PendingPaymentPanel` / `TransactionLedger`.
+  payment state and composes `OrderTrackingTimeline` (an order with `trackingStage`, delivered
+  through the Outfiqe hub, plus `ShipmentTrackers` for any brand-shipped groups in it), otherwise
+  `OrderTracker` (or `ShipmentTrackers` for a multi-brand order), then `PendingPaymentPanel` /
+  `TransactionLedger`.
+- `components/OrderTrackingTimeline.tsx` — the hub-delivered order's tracking: `TrackingStageSummary`
+  (the current stage, a progress bar along the forward stages, "collected from 1 of 2 brands"
+  and the delivery promise), a `TrackedParcelCard` per parcel (our parcel code, the partner's
+  tracking link, "I didn't receive this" → `ReportNotReceivedModal`), and `TrackingEventList`
+  (what happened, newest first, in Nepal time). Its text comes from the `orders.tracking.*`
+  messages in `@/i18n/messages`.
 - `components/OrderTracker.tsx` — the PLACED→PACKED→SHIPPED→DELIVERED stepper (or a "cancelled"
   line).
 - `components/ShipmentTrackers.tsx` — when the order has more than one shipment (`order.shipments`,
@@ -44,6 +52,12 @@ can't go back automatically.
   order module).
 - `hooks/useOrder.ts` / `useInfiniteOrders.ts` / `useCancelOrder.ts` — the read queries and the
   cancel mutation.
+- `api/trackingSchemas.ts`, `hooks/useOrderTracking.ts` / `useReportNotReceived.ts` /
+  `useOrderLiveUpdates.ts`, `constants/trackingStages.ts` / `trackingQueryKeys.ts` — the tracking
+  read (`GET /logistics/orders/:id/tracking`), the "didn't arrive" report
+  (`POST /logistics/orders/:id/delivery-disputes`) and the live refresh: an
+  `ORDER_STATUS_CHANGED` notification for this order over the socket invalidates
+  `["orders", id]`, which refetches the order and its tracking.
 - `hooks/useOrderRefunds.ts` / `useCancelOrderItems.ts` / `useRefundDestination.ts` /
   `useSaveRefundDestination.ts` — the refund reads and writes. `useCancelOrderItems` keeps one
   idempotency key per attempt and only makes a new one after a success, so a retried click can't
@@ -56,6 +70,12 @@ can't go back automatically.
 **User-facing**: open `/orders`, tap an order. A paid or COD order shows its delivery progress. A
 wallet order whose payment never completed shows "Payment not completed" with Resume payment /
 Cancel order instead of a delivery tracker.
+
+**Hub-delivered orders**: the page shows where the order is ("Collecting from the brands", "Out
+for delivery" and so on), when it should arrive, each parcel with a link to the delivery
+partner's own tracking, and a list of what has happened. It updates by itself when the order
+moves. For three days after delivery the buyer can say a parcel didn't arrive; staff see it on the
+parcel's timeline.
 
 **Refunds**: on an order still with the brand, "Cancel items" lets the buyer drop some units.
 Khalti payments go straight back; a COD order just owes less; anything else (eSewa today) needs a

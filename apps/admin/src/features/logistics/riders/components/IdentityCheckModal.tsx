@@ -14,6 +14,8 @@ import {
 import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import { ridersApi } from "../api/ridersApi";
 import { IDENTITY_DOCUMENT_TYPE, type Rider } from "../api/ridersSchemas";
 import { IDENTITY_DOCUMENT_TYPE_LABELS } from "../constants/riderLabels";
@@ -38,6 +40,7 @@ export const IdentityCheckModal = ({ rider, onClose }: IdentityCheckModalProps) 
   });
 
   const recordIdentityCheck = useApiMutation({
+    errorMessage: getErrorMessage,
     mutationFn: (values: IdentityCheckFormValues) =>
       ridersApi.recordIdentityCheck(rider.id, values),
     invalidateKeys: [RIDERS_QUERY_KEY],
