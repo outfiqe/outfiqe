@@ -93,6 +93,8 @@ export const parcelDetailSchema = parcelSummarySchema.extend({
   parcelCount: z.number(),
   deliveryAttemptCount: z.number(),
   deliveredAt: z.string().nullable(),
+  codCollectedAmount: z.number().nullable(),
+  codRemittanceId: z.string().nullable(),
   labelPrintedAt: z.string().nullable(),
   returnOutcome: z.enum(PARCEL_RETURN_OUTCOMES).nullable(),
   returnCheckedInAt: z.string().nullable(),
@@ -153,4 +155,5 @@ export type RecordParcelUpdateBody = {
   note: string;
   rawStatus?: string;
   isCorrection: boolean;
+  codCollectedAmount?: number;
 };

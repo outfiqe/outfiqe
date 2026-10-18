@@ -15,7 +15,8 @@ import { ScanLog } from "./ScanLog";
 const MIN_COUNTED_UNITS = 0;
 
 export const CheckInPage = () => {
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const checkInPickup = useCheckInPickup();
   const [countedUnits, setCountedUnits] = useState("");
   const [scanLog, setScanLog] = useState<ScanLogEntry[]>([]);
@@ -63,7 +64,9 @@ export const CheckInPage = () => {
       </div>
 
       {isLoadingHubs && <Skeleton className="h-16 w-full max-w-xs rounded-xl" />}
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <>
           <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
@@ -78,18 +81,17 @@ export const CheckInPage = () => {
               onChange={(event) => setCountedUnits(event.target.value)}
             />
           </div>
-          {hasCount ? (
-            <QrScanner
-              onCode={checkInScannedCode}
-              typedCodeLabel="Sticker or pickup code"
-              isPaused={checkInPickup.isPending}
-              className="max-w-md"
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
+          {!hasCount && (
+            <p className="text-sm text-muted-foreground" role="status">
               Enter how many units are in the bag to start scanning.
             </p>
           )}
+          <QrScanner
+            onCode={checkInScannedCode}
+            typedCodeLabel="Sticker or pickup code"
+            isPaused={checkInPickup.isPending || !hasCount}
+            className="max-w-md"
+          />
           <ScanLog entries={scanLog} emptyMessage="No bags checked in yet." />
         </>
       )}

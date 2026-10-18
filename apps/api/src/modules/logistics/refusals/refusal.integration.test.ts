@@ -66,11 +66,9 @@ describe("cash on delivery after refusals", () => {
     const buyer = await createBuyer();
     const otherAccount = await createBuyer();
 
-    expect((await getEligibility(buyer.id)).body.data).toMatchObject({
-      isCashOnDeliveryAllowed: true,
-      refusalCount: 0,
-      refusalLimit: 2,
-    });
+    const firstLook = (await getEligibility(buyer.id)).body.data;
+    expect(firstLook).toMatchObject({ isCashOnDeliveryAllowed: true, refusalLimit: 2 });
+    expect(firstLook).not.toHaveProperty("refusalCount");
 
     await recordRefusals(buyer.id);
 

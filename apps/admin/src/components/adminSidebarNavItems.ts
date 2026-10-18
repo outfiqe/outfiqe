@@ -2,6 +2,7 @@ import { type SidebarIcon, type SidebarNavItem } from "@outfiqe/components";
 import {
   Activity,
   Award,
+  Banknote,
   BanknoteArrowUp,
   BarChart3,
   Bike,
@@ -41,6 +42,7 @@ import {
   ShieldCheck,
   Shirt,
   ShoppingBag,
+  Siren,
   SlidersHorizontal,
   Star,
   Tags,
@@ -391,6 +393,12 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     group: "commerce",
     items: [
       {
+        id: "logistics-alerts",
+        href: "/logistics/alerts",
+        label: "Delivery alerts",
+        icon: Siren,
+      },
+      {
         id: "logistics-hubs",
         href: "/logistics/hubs",
         label: "Hubs",
@@ -443,6 +451,18 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
         href: "/logistics/partners",
         label: "Delivery partners",
         icon: Handshake,
+      },
+      {
+        id: "logistics-rider-pay",
+        href: "/logistics/rider-pay",
+        label: "Rider pay",
+        icon: Wallet,
+      },
+      {
+        id: "logistics-cod",
+        href: "/logistics/cod",
+        label: "Partner cash",
+        icon: Banknote,
       },
       {
         id: "logistics-reliability",

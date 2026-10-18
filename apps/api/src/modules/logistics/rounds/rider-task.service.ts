@@ -3,6 +3,7 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import {
   BrandIncidentKind,
+  BrandReturnSource,
   PickupStatus,
   RiderTaskStatus,
   TrackingEventCode,
@@ -15,11 +16,12 @@ import { AppError } from "#middlewares/error-handler.js";
 import { logisticsBagTagRepository } from "../bag-tags/bag-tag.repository.js";
 import { requireActiveRider } from "../logistics.guards.js";
 import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
+import { logisticsRiderPayService } from "../rider-pay/rider-pay.service.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import type { RecordTrackingEventOutcome, TrackingSubject } from "../tracking/tracking.types.js";
 import { logisticsRoundRepository, OPEN_RIDER_TASK_STATUSES } from "./rounds.repository.js";
-import type { CollectScanBody, WastedVisitBody } from "./rounds.schemas.js";
+import type { CollectScanBody, ReturnDropOffBody, WastedVisitBody } from "./rounds.schemas.js";
 import type { RiderTaskView } from "./rounds.types.js";
 import { resolveScanOccurredAt, SCAN_TIME_VERDICT, toRiderTaskView } from "./rounds.utils.js";
 
@@ -28,6 +30,7 @@ const PICKED_UP_DEDUPE_PREFIX = "picked-up";
 const BAG_TAGGED_DEDUPE_PREFIX = "bag-tagged";
 const VISIT_WASTED_DEDUPE_PREFIX = "visit-wasted";
 const VISIT_FINISHED_DEDUPE_PREFIX = "visit-finished-uncollected";
+const RETURN_DROPPED_OFF_DEDUPE_PREFIX = "return-dropped-off";
 const NO_STOPS_SCANNED = 0;
 
 type TransactionClient = Prisma.TransactionClient;
@@ -128,11 +131,14 @@ const closeTaskIfFullyCollected = async (tx: TransactionClient, taskId: string) 
     taskId,
   );
   const isFullyCollected = scannedStopCount === activeStopCount;
-  await logisticsRoundRepository.moveTaskStatus(tx, taskId, {
+  const hasMoved = await logisticsRoundRepository.moveTaskStatus(tx, taskId, {
     fromStatuses: OPEN_RIDER_TASK_STATUSES,
     toStatus: isFullyCollected ? RiderTaskStatus.COMPLETED : RiderTaskStatus.IN_PROGRESS,
     ...(isFullyCollected ? { completedAt: new Date() } : {}),
   });
+  if (hasMoved && isFullyCollected) {
+    await logisticsRiderPayService.recordVisitEarning(tx, taskId);
+  }
 };
 
 const collectBagInTransaction = async (
@@ -269,6 +275,58 @@ export const logisticsRiderTaskService = {
     );
   },
 
+  async dropOffReturn(
+    userId: string,
+    taskId: string,
+    { brandReturnId }: ReturnDropOffBody,
+  ): Promise<RiderTaskView> {
+    const rider = await requireActiveRider(userId);
+    const pickupOutcome = await prisma.$transaction(async (tx) => {
+      await requireOpenTask(tx, taskId, rider.id);
+      const stop = await logisticsRoundRepository.findActiveReturnStop(tx, taskId, brandReturnId);
+      if (!stop) {
+        throw new AppError(
+          "RETURN_NOT_ON_VISIT",
+          "This return isn't on your visit.",
+          HTTP_STATUS.NOT_FOUND,
+        );
+      }
+      if (stop.scannedAt !== null) return null;
+
+      const droppedOffAt = new Date();
+      const isStopScanned = await logisticsRoundRepository.markStopScanned(
+        tx,
+        stop.id,
+        droppedOffAt,
+      );
+      const isDroppedOff = await logisticsRoundRepository.markReturnDroppedOff(
+        tx,
+        brandReturnId,
+        droppedOffAt,
+      );
+      if (!isStopScanned || !isDroppedOff) return null;
+
+      const returnedParcelPickup =
+        stop.brandReturn?.source === BrandReturnSource.PARCEL_RETURNED
+          ? await logisticsTrackingService.recordEventInTransaction(tx, {
+              subject: {
+                kind: TRACKING_SUBJECT_KIND.PICKUP,
+                fulfilmentGroupId: stop.fulfilmentGroupId,
+              },
+              code: TrackingEventCode.RETURNING_TO_BRAND,
+              source: TrackingEventSource.RIDER,
+              actorUserId: userId,
+              dedupeKey: `${RETURN_DROPPED_OFF_DEDUPE_PREFIX}:${brandReturnId}`,
+              occurredAt: droppedOffAt,
+            })
+          : null;
+      await closeTaskIfFullyCollected(tx, taskId);
+      return returnedParcelPickup;
+    });
+    if (pickupOutcome) await logisticsTrackingService.announceStageChange(pickupOutcome);
+    return requireRiderTaskView(taskId, rider.id);
+  },
+
   async markVisitWasted(
     userId: string,
     taskId: string,
@@ -299,6 +357,7 @@ export const logisticsRiderTaskService = {
         wastedReason: reason,
       });
       if (!hasMoved) throw riderTaskClosedError();
+      await logisticsRiderPayService.recordVisitEarning(tx, taskId);
       await brandIncidentRepository.recordIncidents(tx, [
         {
           brandId,
@@ -338,6 +397,7 @@ export const logisticsRiderTaskService = {
         completedAt: new Date(),
       });
       if (!hasMoved) throw riderTaskClosedError();
+      await logisticsRiderPayService.recordVisitEarning(tx, taskId);
     });
     return requireRiderTaskView(taskId, rider.id);
   },

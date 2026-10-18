@@ -30,6 +30,8 @@ const parcelOnItsWayBack = {
   parcelCount: 1,
   deliveryAttemptCount: 2,
   deliveredAt: null,
+  codCollectedAmount: null,
+  codRemittanceId: null,
   labelPrintedAt: "2026-10-16T08:00:00.000Z",
   returnOutcome: null,
   returnCheckedInAt: null,

@@ -4,6 +4,7 @@ import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { MissingPickupLocationBanner } from "../../pickups/components/MissingPickupLocationBanner";
 import { DeliveryReliabilityPanel } from "../../reliability/components/DeliveryReliabilityPanel";
+import { BrandReturnsPanel } from "../../returns/components/BrandReturnsPanel";
 import { useBrandShipments } from "../hooks/useBrandShipments";
 import { BrandShipmentRow } from "./BrandShipmentRow";
 
@@ -24,6 +25,7 @@ export const OrdersSection = () => {
         </p>
       </div>
       <DeliveryReliabilityPanel />
+      <BrandReturnsPanel />
 
       {isError && (
         <div className="mt-6">

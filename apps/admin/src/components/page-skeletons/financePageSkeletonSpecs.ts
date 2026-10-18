@@ -28,7 +28,7 @@ export const financePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
   "/withdraw-policy": {
     title: "Withdrawal policy",
     blocks: [
-      { kind: "filterTabs", labels: ["Muse", "Business"] },
+      { kind: "filterTabs", labels: ["Muses and riders", "Business"] },
       {
         kind: "formCard",
         layout: "grid",

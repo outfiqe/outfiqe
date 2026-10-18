@@ -11,8 +11,20 @@ export const RIDER_TASK_STATUS = {
 export const riderTaskStatusSchema = z.enum(RIDER_TASK_STATUS);
 export type RiderTaskStatus = z.infer<typeof riderTaskStatusSchema>;
 
+export const RIDER_STOP_DIRECTION = { COLLECT: "COLLECT", RETURN: "RETURN" } as const;
+
 export const riderTaskStopSchema = z.object({
   id: z.string(),
+  direction: z.enum(RIDER_STOP_DIRECTION).default(RIDER_STOP_DIRECTION.COLLECT),
+  brandReturn: z
+    .object({
+      brandReturnId: z.string(),
+      orderId: z.string(),
+      source: z.enum(["PARCEL_RETURNED", "FAILED_INSPECTION"]),
+      unitCount: z.number(),
+    })
+    .nullable()
+    .default(null),
   fulfilmentGroupId: z.string(),
   orderId: z.string(),
   itemCount: z.number(),

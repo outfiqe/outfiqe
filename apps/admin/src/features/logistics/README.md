@@ -44,10 +44,11 @@ feature layout.
 - `pickup-board/` — the Pickup board page (`/logistics/pickup-board`).
   - `api/pickupBoardApi.ts` — waiting bags by location, rider visits, assign, cancel, against
     `/api/logistics/admin/pickup-board` and `/api/logistics/admin/rider-tasks`.
-  - `components/`: `PickupBoardPage`, `PickupLocationCard` (one location's waiting bags, all
-    ticked by default), `AssignRiderModal` (rider, round start with one-tap buttons for today's
-    round times), `RiderTasksSection` and `RiderTaskRow` (visits with progress; "Cancel visit"
-    before anything is collected).
+  - `components/`: `PickupBoardPage`, `PickupLocationCard` (one location's waiting bags to
+    collect and returns to take back, all ticked by default; a visit can be returns only),
+    `AssignRiderModal` (rider, round start with one-tap buttons for today's round times),
+    `RiderTasksSection` and `RiderTaskRow` (visits with progress; "Cancel visit" before anything
+    is collected, which puts its returns back at the hub).
   - `utils/roundTime.utils.ts` — round time ↔ `datetime-local` value.
 - `bag-tags/` — the Bag stickers pages.
   - `/logistics/bag-tags` — `BagTagsPage` with `CreateBagTagBatchForm` (1–500 stickers) and the
@@ -59,7 +60,11 @@ feature layout.
   - `CheckInPage` (`/logistics/check-in`) — staff type the units in a bag, then scan or type its
     sticker or pickup code (`QrScanner` from `@outfiqe/components`; a USB scanner types into its
     code box). Each scan gets its own `Idempotency-Key`. `ScanLog` lists this session's results,
-    with short counts and refusals called out.
+    with short counts and refusals called out. The camera stays on between bags and only pauses
+    until the next count is typed, so it doesn't restart for every bag.
+  - Every hub page (check-in, packing, hand-over, parcels, pickup board, riders, bag stickers)
+    shows "couldn't load the hubs" with **Try again** when the hubs request fails, instead of
+    "No open hubs".
   - `PackingPage` (`/logistics/packing`) — orders with bags at the hub. `OrderToPackCard` shows
     each bag; `InspectionModal` records failed units (refunded by the API); `PackParcelModal` asks
     for weight and pieces, and for "pack only what's here" when bags are still coming. "Pack
@@ -105,6 +110,33 @@ feature layout.
   and **Clear refusals** with a required reason (`TextPromptModal`), which the API writes to the
   audit log. The card hides itself for staff without logistics access (the request answers
   `403`).
+- `alerts/` — `LogisticsAlertsPage` (`/logistics/alerts`, "Delivery alerts"), first in the
+  Logistics group:
+  - open or resolved alerts, filtered by type with each type's open count;
+  - each `LogisticsAlertRow` links to its parcel or order, and says how a resolved alert was
+    cleared (on its own, or by whom and why);
+  - **Resolve** asks for a note (`TextPromptModal`), for staff with manage access;
+  - names come from `LOGISTICS_ALERT_LABELS` in `@outfiqe/utils`, the same text the staff
+    notification and push use.
+- `rider-pay/` — `RiderPayPage` (`/logistics/rider-pay`, "Rider pay"):
+  - `RiderPayRateSection` — the contractor pay in effect, flagged when it's still the launch
+    default, and every rate set with **Switch off** for active ones. **Change pay** opens
+    `RiderPayRateModal`: per visit, per extra bag, wasted visit and an optional start time.
+  - `RiderEarningsSection` — every rider's earnings, filtered by status, with **Void** and a
+    required reason (`TextPromptModal`) for on-hold or ready ones.
+- `cod/` — `CodPage` (`/logistics/cod`, "Partner cash"):
+  - `CodPartnerSummaryList` — one card per partner holding cash: how much, how many parcels, the
+    oldest delivery and how much is past the partner's limit.
+  - `UnremittedParcelsSection` + `UnremittedParcelsTable` — that partner's delivered cash parcels
+    not paid in yet, with an "only overdue" filter. Staff with manage access tick parcels and
+    adjust each partner fee, which starts at the partner's quoted fee.
+  - `RecordRemittanceModal` — reference, arrival date and the amount the bank shows. It warns
+    when that amount isn't the ticked cash minus fees; the API refuses it either way.
+  - `CodRemittancesSection` + `CodRemittanceDetailModal` — payments already recorded, and the
+    parcels each one covered.
+  - `utils/codRemittance.utils.ts` — the ticked totals, the starting fee and date helpers.
+- The parcel page shows what the partner collected and whether it has been paid in. "Record an
+  update" asks for the cash collected when the update is "Delivered".
 - `reliability/` — `BrandReliabilityPage` (`/logistics/reliability`): brands with 3 or more
   delivery problems in the last 30 days, with how many and whether they are warned or need review.
 
@@ -133,6 +165,9 @@ feature layout.
     collects.
 11. The partner's daily sheet is uploaded on the partner's page; parcels move on, and the report
     lists any row that couldn't be used and why.
+12. When a partner pays in the cash it collected, finance opens Partner cash, picks the partner,
+    ticks the parcels the payment covers, checks each fee and records the payment with the bank
+    reference. Those parcels leave the list and the payment shows under "Payments received".
 
 **Technical:** `routes/_authenticated.logistics.hubs.tsx` → `HubsPage` → `useHubs` /
 `HubFormModal` / `HubPickupZonesModal` → `hubsApi` → `/api/logistics/admin/hubs` (guarded by

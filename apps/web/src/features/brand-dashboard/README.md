@@ -13,6 +13,13 @@ The feature is split into topic folders, each with the usual layer folders insid
 - `shipments/` — orders to fulfil: the shipment list, a shipment's detail, marking shipped and asking to cancel.
 - `pickups/` — the brand's pickup locations (`/pickup-locations`): where Outfiqe riders collect orders, which one is the default, and whether a hub covers each one. It also holds the banner on the Orders page that asks a brand with no location to add one.
 - `tag-reviews/` — reviewing creators' product tags and the brand's tag policy.
+- `returns/` — `BrandReturnsPanel`, on the Orders page under the reliability panel: items Outfiqe
+  is bringing back (a parcel the customer didn't take, or items that failed the hub's quality
+  check), where each one is, and how many units are fine or damaged. Once the rider has handed
+  one over, **Confirm received** (`useConfirmBrandReturn` → `POST /logistics/brand/returns/:id/confirm`)
+  puts the fine units back into stock. Unconfirmed returns are confirmed automatically after 48
+  hours, and the panel says so. Backed by `useBrandReturns` → `returns/api/brandReturnApi.ts` →
+  `GET /logistics/brand/returns` (cursor-paged).
 - `reliability/` — `DeliveryReliabilityPanel`, shown at the top of the Orders page: how many delivery problems the brand had in the last 30 days (items it couldn't supply, items that failed the hub's quality check, rider visits with nothing ready), what that means (fine, warned at 3, reviewed by Outfiqe at 6) and each problem with its date and note. Backed by `useDeliveryReliability` → `reliability/api/reliabilityApi.ts` → `GET /logistics/brand/reliability` (cursor-paged). The panel hides itself if the request fails, because it is information, not something the page needs to work.
 - `wallet/` — the payout summary.
 

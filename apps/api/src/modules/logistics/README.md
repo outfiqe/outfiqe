@@ -12,7 +12,18 @@ flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
 ## Structure
 
-The module is built in steps. This README lists what exists now.
+- `logistics.journeys.integration.test.ts` — the whole flow through the real endpoints, from a
+  brand pressing "Ready for pickup" to the customer. It covers:
+  - three brands in one cash parcel, delivered by spreadsheet, with the cash and rider pay
+    settled;
+  - a late brand sent in a second parcel;
+  - a mixed hub and brand-shipped order;
+  - a refusal coming back, refunded and restocked;
+  - a lost parcel;
+  - a coupon order with a unit that fails inspection;
+  - a connected partner, booked by API and delivered by signed webhook.
+
+  Its steps live in `src/testing/integration/logistics-journey.ts`, one helper per real request.
 
 - `logistics.service.ts` — `logisticsService`, the only object other modules import. It
   spreads in every topic service.
@@ -83,15 +94,35 @@ The module is built in steps. This README lists what exists now.
   - Suspending or offboarding cancels the rider's open visits (their unscanned bags go back on the
     board) and deletes every refresh token, in one transaction.
   - Invites, ID checks and status changes are written to the platform audit log.
+- `alerts/` — time-limit and event alerts (PRD §14.2).
+  - `alert.rules.ts` — one rule per time limit, listed in `TIME_LIMIT_ALERT_RULES`: brand not ready
+    (then escalated), missed round, waiting at the hub, partner hasn't collected, no partner update,
+    COD remittance overdue, promise at risk and promise missed. Limits are in
+    `LOGISTICS_TIME_LIMITS` (`logistics.constants.ts`).
+  - `alert-candidates.repository.ts` — the database side of each rule: oldest first, in batches,
+    skipping subjects that already have an alert of that type.
+  - `alert-deadlines.utils.ts` — working days at the hub, the next partner collection, and dates in
+    the country's time zone.
+  - `alert.repository.ts` — `logisticsAlertRepository`: inserting alerts (duplicates skipped),
+    claiming notifications, closing alerts whose subject moved on, and the admin list.
+  - `alert.notifications.ts` — who hears about each alert.
+  - `alert.service.ts` — `runLogisticsAlertSweep` (the 10-minute `logistics-alerts` job), the list
+    and resolving with a note.
+  - Endpoints: `GET /admin/alerts?status=OPEN|RESOLVED&alertType=` (`logisticsRead`, with open
+    counts by type) and `POST /admin/alerts/:alertId/resolve` (`logisticsManage`, a note,
+    staff write-limited).
 - `bag-tags/` — sticker batches (`GET /`, `POST /`, `GET /:batchId`). A batch belongs to one open
   hub and holds 1–500 random 10-character codes (unique; collisions are re-drawn). A sticker is
   "used" once it is attached to a pickup, and can only ever be attached once.
 - `rounds/` — pickup rounds:
   - Staff (`rounds.routes.ts`, `rounds.service.ts`):
     - `GET /admin/pickup-board?hubId=` — pickup locations with bags marked ready and not yet on an
-      active visit, cursor-paged by location.
+      active visit, or with brand returns waiting at the hub to go back there, cursor-paged by
+      location. Each location lists its `pickups` and its `returns`.
     - `POST /admin/rider-tasks` — one visit: one active rider at the rider's hub, one pickup
-      location, 1–50 of its waiting bags. Records `RIDER_ASSIGNED` per bag.
+      location, and 1–50 stops: waiting bags to collect (`fulfilmentGroupIds`) and brand returns
+      to hand back (`brandReturnIds`). Records `RIDER_ASSIGNED` per bag and moves each return
+      `AT_HUB` → `ON_ROUND`, refusing the whole visit if any of them moved meanwhile.
     - `GET /admin/rider-tasks?hubId=` and `POST /admin/rider-tasks/:taskId/cancel` (only before
       anything is collected).
   - Riders (`rider-task.routes.ts`, `rider-task.service.ts`, `RIDER` role, `ACTIVE` profile, scan
@@ -100,9 +131,14 @@ The module is built in steps. This README lists what exists now.
       contact and bags.
     - `POST /rider/tasks/:taskId/collect-scans` — pickup code + sticker code + phone scan time,
       with a required `Idempotency-Key`. See the funnel below.
-    - `POST /rider/tasks/:taskId/wasted` (nothing collected, with a reason; records
-      `VISIT_WASTED`) and `POST /rider/tasks/:taskId/finish` (some collected; the rest go back on
-      the board).
+    - `POST /rider/tasks/:taskId/return-drop-offs` — `{ brandReturnId }`: the rider handed a
+      return to the brand. Marks the stop scanned and the return `DROPPED_OFF`; for a returned
+      parcel it records `RETURNING_TO_BRAND` on the bag. A repeat is answered without changing
+      anything.
+    - `POST /rider/tasks/:taskId/wasted` (nothing done, with a reason; records `VISIT_WASTED`
+      and a brand incident) and `POST /rider/tasks/:taskId/finish` (something done; the rest go
+      back on the board). Releasing a visit (wasted, finished early or cancelled by staff) puts
+      every return it hadn't handed over back `AT_HUB`.
 - `flow/` — `resolveFulfilmentAssignments({ brandIds, deliveryCity, countryCode,
 requiresCashOnDelivery })`, which checkout calls before its transaction to decide each brand's
   flow.
@@ -255,9 +291,18 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     nothing.
   - `BrandReturn` (with `BrandReturnLine`s) is how items physically go back to a brand. It is
     created by a return check-in (`PARCEL_RETURNED`) and by a hub inspection with failed units
-    (`FAILED_INSPECTION`, every unit damaged), one per bag and source. It starts `AT_HUB`;
-    carrying it back on a rider round, the brand confirming it and restocking resellable units are
-    the next step.
+    (`FAILED_INSPECTION`, every unit damaged), one per bag and source. Its life:
+    `AT_HUB` → (put on a rider visit) `ON_ROUND` → (rider hands it over) `DROPPED_OFF` →
+    (brand confirms, or 48 hours pass) `CONFIRMED`.
+  - `brand-return.service.ts` — `GET /brand/returns` (the brand's returns, newest first,
+    cursor-paged, with each item's fine and damaged units) and
+    `POST /brand/returns/:brandReturnId/confirm` (brand write-limited; another brand's return is
+    a `404`). Confirming, in one transaction: a guarded `DROPPED_OFF` → `CONFIRMED` (a second
+    confirm is `409`), the resellable units go back into stock (`InventoryMovementSource.
+BRAND_RETURN`, so each return restocks once), and a returned parcel's bag records
+    `RETURNED_TO_BRAND`. `confirmOverdueBrandReturns` runs hourly from `logistics.jobs.ts` and
+    confirms, as the system, anything handed over more than 48 hours ago. Damaged units are never
+    restocked.
 - `refusals/` — refused deliveries and cash on delivery.
   - `refusal.eligibility.ts` — `checkCashOnDeliveryEligibility({ userId, phone, countryCode })`:
     cash on delivery is off once the account or the phone number (E.164) has `codRefusalLimit`
@@ -265,10 +310,45 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     `COUNTRY_SETTINGS`). Checkout calls it before anything else for a COD order and answers
     `422 COD_UNAVAILABLE_REFUSALS`; it imports nothing from orders, so checkout can use it
     directly.
-  - Endpoints: `GET /cod-eligibility?phone=` (the buyer, for the checkout page),
+  - Endpoints: `GET /cod-eligibility?phone=` (the buyer, for the checkout page; it answers only
+    whether cash on delivery is allowed, never how many refusals a phone has, and is limited to 20
+    checks a minute, because any phone can be typed into checkout),
     `GET /admin/orders/:orderId/delivery-refusals` and `POST …/clear` (a reason of 5–500
     characters, written to the platform audit log). Clearing marks the refusals cleared rather
     than deleting them.
+- `cod/` — cash partners collected on delivery, and the payments they make back to Outfiqe.
+  - `cod.repository.ts` — `logisticsCodRepository`:
+    - `summarizeUnremittedCashByPartner` is raw SQL, because "overdue" compares each parcel's
+      `deliveredAt` plus its own partner's `codRemittanceDays` with now;
+    - the unpaid-in parcel list for one partner, cursor-paged, oldest delivery first;
+    - the in-transaction check that ticked parcels can be paid in;
+    - the remittance insert with its lines, and the remittance list and detail.
+  - `cod.service.ts` — `logisticsCodService`: the report, the parcel list (with the "overdue
+    only" filter worked out from the partner's limit) and `recordRemittance`.
+  - `cod.utils.ts` — the views: due-by date, overdue flag and cash mismatch flag per parcel.
+  - Endpoints, all under `/admin/cod`:
+    - `GET /summary` and `GET /parcels?partnerId=&onlyOverdue=` (`logisticsRead`);
+    - `GET /remittances?partnerId=` and `GET /remittances/:remittanceId` (`logisticsRead`);
+    - `POST /remittances` (`logisticsManage`, staff write-limited, written to the platform audit
+      log).
+- `rider-pay/` — what contractor riders earn per visit.
+  - `rider-pay.service.ts` — `logisticsRiderPayService`:
+    - `recordVisitEarning(tx, taskId)` runs inside the transaction that completes or wastes a
+      visit (last scan, "finish", "wasted");
+    - `releaseDueRiderEarnings` is the hourly release job;
+    - pay rates, the rider's own earnings, and the admin list and void.
+  - `rider-pay.repository.ts` — `logisticsRiderPayRepository`. The withdraw module also uses it
+    for the rider side of the balance and the mark-paid claim.
+  - `rider-pay.utils.ts` — `calculateVisitEarning` and the views.
+  - Endpoints:
+    - `GET /admin/rider-pay-rates?countryCode=` (`logisticsRead`): the rate in effect and the
+      history;
+    - `POST /admin/rider-pay-rates` and `POST /admin/rider-pay-rates/:rateId/deactivate`
+      (`logisticsManage`, staff write-limited, audit-logged);
+    - `GET /admin/rider-earnings?riderId=&status=` (`logisticsRead`);
+    - `POST /admin/rider-earnings/:earningId/void` (`logisticsManage`, a reason, audit-logged);
+    - `GET /rider/earnings` (the signed-in rider: totals by status and their earnings, newest
+      first).
 - `reliability/` — brand reliability.
   - `brand-incident.repository.ts` — `recordIncidents(tx, incidents)`, called inside the
     transaction of whatever went wrong: an approved unavailable item (`orders/unavailable-items`),
@@ -446,9 +526,13 @@ The web order page listens for that notification and refreshes itself.
 - **Partner work has its own outbox queue** (`outbox-logistics`), so a slow partner API can't hold
   up notifications or stock updates.
 
-- **A bag can be on only one active visit, enforced by the database.** The partial unique index
-  `rider_task_stops_one_active_stop_per_group_direction_key` (one active stop per group and
-  direction) turns two staff assigning the same bag at once into one `409 PICKUPS_NOT_ASSIGNABLE`.
+- **A bag or a return can be on only one active visit, enforced by the database.** The partial
+  unique indexes `rider_task_stops_one_active_collect_stop_per_group_key` (one active collection
+  per bag) and `rider_task_stops_one_active_stop_per_return_key` (one active stop per brand
+  return) turn two staff assigning the same stop at once into one `409 PICKUPS_NOT_ASSIGNABLE`.
+  Returns are keyed by the return, not the bag, because one bag can send two returns back (a
+  failed inspection and a refused parcel). A check constraint makes every `RETURN` stop name its
+  return and no `COLLECT` stop name one.
   Releasing a stop sets `is_active = false`, which puts the bag back on the board.
 - **Scans are idempotent twice over.** The `Idempotency-Key` (generated once per scan on the phone
   and kept with the queued scan) replays the stored answer for the same key. A retry with a new key
@@ -487,3 +571,139 @@ The web order page listens for that notification and refreshes itself.
     the hub) also counts as `CANCELLED`.
   - A pickup coming back from a returned parcel counts as `RETURNED`.
   - This keeps the existing "every group closed" rule in `deriveOrderFulfilment` correct.
+- **Cash collected is stored when the parcel moves to `DELIVERED`, not on every event.**
+  - The partner's amount comes from its webhook, its tracking poll, the status spreadsheet or a
+    staff update (`codCollectedAmount`, only allowed with "Delivered").
+  - When nobody reports an amount, the parcel's `codAmountToCollect` is taken as collected.
+  - A different amount still delivers the parcel. It adds a `COD_COLLECTED_MISMATCH` event and a
+    warning log, and the parcel shows "Label said …" in Partner cash.
+  - A repeated "delivered" doesn't move the status, so it never overwrites the stored amount.
+  - The order itself moves from `DUE` to `PAID` in the orders rollup (see `orders/README.md`).
+- **A parcel's cash can be paid in only once.**
+  - `CodRemittanceLine.shipmentId` is unique, so two payments recorded at the same moment for the
+    same parcel can't both succeed. The loser gets `409 PARCELS_NOT_REMITTABLE`.
+  - `(partnerId, reference)` is unique, so a retried form gets `409 REMITTANCE_ALREADY_RECORDED`
+    instead of a second payment.
+- **The server works out every remittance amount.**
+  - Each line's cash is read from the parcel, never sent by the browser.
+  - Staff send only the parcels, the fee per parcel and the amount the bank shows.
+  - When that amount isn't the parcels' cash minus the fees, the payment is refused
+    (`422 REMITTANCE_TOTAL_MISMATCH`), so finance fixes the ticks rather than saving a wrong
+    record.
+  - CHECK constraints hold the same sums in the database.
+- **The partner that holds a parcel's cash is its live (`BOOKED`) booking.** A rebooked parcel's
+  cash belongs to the partner that delivered it.
+- **Rider pay is earned in the same transaction that ends the visit.**
+  - A finished visit pays `visitAmount + extraStopAmount × (stops − 1)`. Stops are the bags
+    collected and returns handed over on that visit.
+  - A wasted visit pays `wastedVisitAmount`; a cancelled visit pays nothing.
+  - `RiderEarning.riderTaskId` is unique and inserts skip duplicates, so a retried scan or
+    "finish" can't pay twice.
+  - Employees get no earning rows; their salary is outside Outfiqe.
+- **The rate is copied onto each earning.** A new rate (which can start now or later, never in
+  the past) changes only visits finished after it starts.
+- **No rate set falls back to the country default** (`COUNTRY_SETTINGS.contractorRiderPay`, the
+  launch Rs 70 / 15 / 35) and logs a warning. A missing setting never loses a rider's pay, and it
+  never blocks a scan.
+- **Earnings are held for the brand-payout holding period** (`RETURN_WINDOW_MS`), then move to
+  available.
+  - Riders withdraw on the person (`CREATOR`) side of the withdraw system. Its balance and
+    mark-paid claim count rider earnings next to commission and Offer money.
+  - A withdrawn earning can't be voided; staff void only on-hold or available ones.
+- **Each alert fires once per stage of its subject.**
+  - `(alertType, subjectKey)` is unique and inserts skip duplicates, so the job can run as often
+    as it likes.
+  - The subject key carries the stage where one subject can need the same alert again: the
+    round for a missed round, the booking for a partner that didn't collect, and the parcel's
+    status and last event time for partner silence.
+- **Time-based alerts clear themselves** when their subject moves on: the bag is marked ready or
+  picked up, the parcel is packed or moves, the order is delivered, the cash is paid in.
+  - "No partner update" compares two columns (a new event after the alert was raised), so it
+    clears with one raw SQL update.
+  - Event alerts (an unknown partner status, a count or cash mismatch) wait for staff to resolve
+    them with a note.
+- **Event alerts are raised in the same transaction as the event.** The tracking service inserts
+  the alert when it records `UNKNOWN_PARTNER_STATUS` or `COUNT_MISMATCH`, and when a delivered
+  parcel's cash doesn't match. A rolled-back event never leaves an alert behind.
+- **Notifications are sent after the alert is saved, by the job, and at most once.**
+  - The job claims each new alert (`notifiedAt`) before sending, so two overlapping runs can't
+    both send it.
+  - If a send fails, it is logged and not retried. The alerts page is the record; notifications
+    are the nudge.
+  - Who hears about it:
+    - the brand (`LOGISTICS_BRAND_NOTICE`) for a bag not marked ready after 1 working day;
+    - staff with `platform:logistics:manage` (`LOGISTICS_STAFF_ALERT`) for everything else,
+      including COD and remittance alerts;
+    - the customer (`ORDER_DELIVERY_LATE`, an apology) when the promised date passes.
+- **Working days are the hub's.** The database narrows the candidates by calendar days, which is
+  never later than working days. The exact deadline is then worked out in the hub's time zone and
+  working week.
+- **Batches.** A rule looks at up to 200 subjects per run, oldest first. A parcel whose
+  "no partner update" alert was resolved by hand while it is still quiet stays a candidate (its
+  key already exists, so nothing new is raised). Many of those at once could slow other parcels'
+  alerts; resolving such alerts by hand is rare.
+- **The job's queries have their own indexes** (`20261023100000_index_logistics_alert_scans`):
+  - orders by promised date;
+  - waiting bags by pickup status and age, and by hub arrival time;
+  - unscanned rider stops;
+  - alerts by order, bag or parcel and type.
+
+  The partial ones use only conditions the planner can prove from Prisma's parameters (`IS NULL`,
+  or a range on the indexed column), so they are used even with prepared statements.
+
+- **The status spreadsheet is applied one row at a time, in the request.** Each row is about 15
+  queries, so a 500-row sheet takes tens of seconds. Running rows in parallel would hold several
+  of the small production pool's connections (`DATABASE_POOL_MAX=3`) for the whole import and slow
+  every other request, so it stays sequential. If daily sheets grow past a few hundred rows, move
+  the import to a background job and let the page poll for the report.
+- Brand-shipped orders keep the old daily stale-shipment email; it now leaves hub orders out,
+  because their alerts replace it.
+
+## Going live
+
+Everything above ships switched off. The order of a safe launch:
+
+1. **Set up the hub in admin.**
+   - Logistics → Hubs: the hub's address, time zone, working days, hours, pickup round times, the
+     ready-by cutoff and the partner collection time.
+   - Pickup areas: the delivery zones its riders cover.
+   - Delivery zones: shortest and longest delivery days for each zone. The delivery promise and
+     the "promise at risk" and "promise missed" alerts read them.
+2. **Set up each delivery partner.**
+   - Logistics → Delivery partners: the merchant account at the hub, the zones it delivers to, and
+     its status names.
+   - A partner with API access also needs its `DELIVERY_PARTNER_<KEY>_*` secrets in the
+     environment, and our webhook address pasted into the partner's dashboard.
+3. **Set up the people.**
+   - Hub staff: a Team-page role with `platform:logistics:read` or `platform:logistics:manage`.
+     Manage holders receive delivery alerts.
+   - Riders: invite them, check each contractor's ID in person, then activate them.
+   - Print at least one sheet of bag stickers.
+4. **Check the money settings.**
+   - Rider pay: set a rate under Logistics → Rider pay, or keep the launch default (Rs 70 / 15 /
+     35).
+   - Withdrawals: the "Muses and riders" withdrawal policy applies to riders too.
+   - COD: each partner's paying-in limit (`codRemittanceDays`).
+5. **Make sure the scheduled jobs run** on the process that runs jobs:
+   - `logistics-alerts` (every 10 minutes);
+   - `logistics-rider-earning-release` and `logistics-brand-return-auto-confirm` (hourly);
+   - partner polling, and the stuck-booking and webhook-receipt sweeps.
+6. **Switch it on for a few brands first.**
+   - Admin → Feature switches → `order_logistics`: add test brands to the allow-list.
+   - Those brands add a pickup location. Orders placed after that use the hub; earlier orders
+     keep the brand-shipped flow.
+   - Run the checks below, then widen the allow-list, and switch to everyone last.
+7. **Before switching to everyone:**
+   - a lawyer has checked the contractor terms;
+   - rider pay rates are confirmed with riders;
+   - a second partial refund has been tried in the Khalti sandbox;
+   - a rider has scanned with a real phone (camera, typed code, and offline then back online);
+   - labels and sticker sheets have printed on the hub's printer;
+   - a full order has gone through by hand with the flag on: pickup location, multi-brand order,
+     ready for pickup, rider scan, check-in, an inspection failure with a refund, packing and the
+     label, manual booking, the status spreadsheet, the customer's live timeline, and the payouts
+     maturing.
+
+**Switching it off** stops new orders from using the hub; they go back to the brand-shipped flow.
+Orders already in the hub flow carry on through it, so keep the hub, riders and partners running
+until those are delivered or returned.
