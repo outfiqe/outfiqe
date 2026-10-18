@@ -54,6 +54,7 @@ const brandShipmentItemSchema = z.object({
   imageUrl: z.string().nullable(),
   sizeLabel: z.string(),
   qty: z.number(),
+  refundedQty: z.number(),
   unitPrice: z.number(),
   listUnitPrice: z.number(),
   brandDiscountAmount: z.number(),
@@ -94,6 +95,7 @@ export const brandShipmentDetailSchema = z.object({
   deliveredAt: z.string().nullable(),
   cancellationRequestedAt: z.string().nullable(),
   cancellationReason: z.string().nullable(),
+  canReportUnavailable: z.boolean(),
   items: z.array(brandShipmentItemSchema),
   shipTo: z
     .object({

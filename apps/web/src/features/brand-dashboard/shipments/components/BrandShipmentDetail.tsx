@@ -24,6 +24,7 @@ import {
 } from "../utils/shipmentStatus";
 import { MarkShipmentShippedModal } from "./MarkShipmentShippedModal";
 import { RequestShipmentCancellationModal } from "./RequestShipmentCancellationModal";
+import { UnavailableItemsPanel } from "./UnavailableItemsPanel";
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
@@ -253,6 +254,11 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
 
             {shipment.shipTo && <ShipToCard shipTo={shipment.shipTo} />}
             <ItemsCard items={shipment.items} />
+            <UnavailableItemsPanel
+              groupId={shipment.id}
+              items={shipment.items}
+              canReport={shipment.canReportUnavailable}
+            />
             <PayoutCard payout={shipment.payout} />
           </div>
         )}

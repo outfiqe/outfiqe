@@ -246,7 +246,13 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
     expect(response.status).toBe(HTTP_STATUS.OK);
     const detail = response.body.data;
     expect(detail.items).toHaveLength(1);
-    expect(detail.items[0]).toMatchObject({ qty: 2, unitPrice: 1000, listUnitPrice: 1000 });
+    expect(detail.items[0]).toMatchObject({
+      qty: 2,
+      refundedQty: 0,
+      unitPrice: 1000,
+      listUnitPrice: 1000,
+    });
+    expect(detail.canReportUnavailable).toBe(false);
     expect(detail.shipTo).toMatchObject({
       fullName: "Buyer Person",
       phone: "9812345678",

@@ -6,10 +6,10 @@ import { Plus, RefreshCw, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
 
 import type { OutfitProduct, OutfitSlot } from "../../api/outfitSchemas";
 import { PersonAvatar } from "../../components/PersonAvatar";
-import { formatLakhAmount } from "../../utils/outfitFormatting";
 import { describeSizeFit, SIZE_FIT } from "../utils/outfitBoardRules";
 import { AvailabilityLabel } from "./AvailabilityLabel";
 

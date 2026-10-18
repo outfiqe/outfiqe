@@ -52,4 +52,9 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.OUTFIT_OFFER_RELEASED]: "Offer money ready to withdraw",
   [NotificationType.OUTFIT_OFFER_REFUNDED]: "Refunds for your offers",
   [NotificationType.ACCOUNT_APPROVED]: "Account approval and welcome",
+  [NotificationType.ORDER_REFUND_ISSUED]: "Refunds on your orders",
+  [NotificationType.ORDER_REFUND_DETAILS_NEEDED]: "Requests for refund details",
+  [NotificationType.LOGISTICS_STAFF_ALERT]: "Delivery alerts",
+  [NotificationType.LOGISTICS_BRAND_NOTICE]: "Bags to mark ready for pickup",
+  [NotificationType.ORDER_DELIVERY_LATE]: "Late deliveries",
 };

@@ -23,6 +23,7 @@ const DYNAMIC_POLICY_PATH_PREFIXES = [
   "/manage-orders",
   "/pickup-locations",
   "/print",
+  "/rider",
   "/orders",
   "/dashboard",
   "/login",

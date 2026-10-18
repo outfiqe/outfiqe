@@ -4,11 +4,8 @@ import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
-import {
-  formatLakhAmount,
-  formatNepalDateTime,
-} from "@/features/outfit-build/utils/outfitFormatting";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { formatLakhAmount, formatNepalDateTime } from "@/shared/lib/nepalFormatting";
 
 import {
   type Offer,

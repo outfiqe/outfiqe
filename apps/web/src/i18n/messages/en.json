@@ -426,5 +426,65 @@
         "stillCheckingBody": "This is taking longer than usual. We'll keep checking, and the offer will show as sent once the payment is confirmed."
       }
     }
+  },
+  "orders": {
+    "tracking": {
+      "title": "Where your order is",
+      "promise": "Expected {from} to {by}",
+      "collectedBrands": "Collected from {collected} of {total} brands",
+      "loadError": "We couldn't load the latest updates. Pull down or try again in a moment.",
+      "noEvents": "Updates will show here as your order moves.",
+      "parcel": "Parcel {code}",
+      "trackWithPartner": "Track with {partner}",
+      "notReceived": "I didn't receive this",
+      "reported": "You told us this parcel didn't arrive. Our team is looking into it.",
+      "stages": {
+        "ORDER_PLACED": "Order placed",
+        "COLLECTING_ITEMS": "Collecting from the brands",
+        "AT_HUB": "At our hub",
+        "PACKED": "Packed",
+        "ON_ITS_WAY": "On its way",
+        "DELIVERY_ATTEMPT_FAILED": "Delivery attempt missed",
+        "OUT_FOR_DELIVERY": "Out for delivery",
+        "DELIVERED": "Delivered",
+        "RETURNING": "Coming back to us",
+        "CANCELLED": "Cancelled"
+      },
+      "events": {
+        "READY_FOR_PICKUP": "Items ready for collection",
+        "PICKED_UP": "Collected by our rider",
+        "AT_HUB": "Reached our hub",
+        "PACKED": "Packed into your parcel",
+        "HANDED_TO_PARTNER": "Handed to the delivery partner",
+        "IN_TRANSIT": "On its way",
+        "OUT_FOR_DELIVERY": "Out for delivery",
+        "DELIVERY_FAILED": "Delivery attempt missed",
+        "DELIVERED": "Delivered",
+        "RETURNING": "Coming back to us",
+        "RETURNED_TO_HUB": "Back at our hub",
+        "LOST": "Lost on the way. You'll be refunded",
+        "CANCELLED": "Cancelled",
+        "DELIVERY_RESCHEDULED": "Delivery moved to another day",
+        "DELIVERY_DISPUTED": "You told us it didn't arrive"
+      },
+      "failureReasons": {
+        "CUSTOMER_UNREACHABLE": "The rider couldn't reach you",
+        "CUSTOMER_REFUSED": "The parcel was refused",
+        "WRONG_ADDRESS": "The address couldn't be found",
+        "RESCHEDULED_BY_CUSTOMER": "You asked for another day",
+        "WRONG_OR_DAMAGED_ITEM": "There was a problem with the items",
+        "PARTNER_ISSUE": "The delivery partner had a problem",
+        "OTHER": "Something else went wrong"
+      },
+      "report": {
+        "title": "Tell us it didn't arrive",
+        "description": "We'll check with the delivery partner and get back to you.",
+        "detailsLabel": "What happened?",
+        "detailsHint": "At least 10 characters.",
+        "submit": "Send",
+        "cancel": "Cancel",
+        "sent": "Thanks for telling us. Our team will be in touch."
+      }
+    }
   }
 }

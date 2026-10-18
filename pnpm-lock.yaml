@@ -530,6 +530,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.102.8
         version: 5.102.8(react@19.2.8)
+      jsqr:
+        specifier: 1.4.0
+        version: 1.4.0
       lucide-react:
         specifier: ^1.29.0
         version: 1.29.0(react@19.2.8)

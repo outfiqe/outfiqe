@@ -37,10 +37,32 @@ import {
   TRENDING_RECOMPUTE_INTERVAL_MS,
 } from "#modules/leaderboard/leaderboard.constants.js";
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
+import {
+  BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS,
+  LOGISTICS_ALERT_SWEEP_INTERVAL_MS,
+  PARTNER_TRACKING_POLL_INTERVAL_MS,
+  PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
+  RIDER_EARNING_RELEASE_INTERVAL_MS,
+  runBrandReturnAutoConfirm,
+  runLogisticsAlertSweep,
+  runPartnerTrackingPoll,
+  runPartnerWebhookReceiptRetentionSweep,
+  runRiderEarningRelease,
+  runStuckPartnerBookingSweep,
+  STUCK_PARTNER_BOOKING_SWEEP_INTERVAL_MS,
+} from "#modules/logistics/logistics.jobs.js";
 import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications/notification.constants.js";
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
-import { STALE_SHIPMENT_REMINDER_INTERVAL_MS } from "#modules/orders/order.constants.js";
+import {
+  REFUND_DETAILS_REMINDER_INTERVAL_MS,
+  STALE_PENDING_REFUND_SWEEP_INTERVAL_MS,
+  STALE_SHIPMENT_REMINDER_INTERVAL_MS,
+} from "#modules/orders/order.constants.js";
 import { runStaleShipmentReminderDigest } from "#modules/orders/order.jobs.js";
+import {
+  runRefundDetailsReminder,
+  runStalePendingRefundSweep,
+} from "#modules/orders/refunds/refund.jobs.js";
 import { OFFER_LIFECYCLE_INTERVAL_MS } from "#modules/outfit-offers/outfit-offer.constants.js";
 import { runOutfitOfferLifecycleSweep } from "#modules/outfit-offers/outfit-offer.lifecycle.js";
 import { OUTFIT_PHOTO_CLEANUP } from "#modules/outfits/outfit.constants.js";
@@ -253,9 +275,49 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     intervalMs: STALE_SHIPMENT_REMINDER_INTERVAL_MS,
   },
   {
+    name: "stale-pending-refund-sweep",
+    run: runStalePendingRefundSweep,
+    intervalMs: STALE_PENDING_REFUND_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "refund-details-reminder",
+    run: runRefundDetailsReminder,
+    intervalMs: REFUND_DETAILS_REMINDER_INTERVAL_MS,
+  },
+  {
     name: "suspension-expiry-sweep",
     run: runSuspensionExpirySweep,
     intervalMs: SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "logistics-partner-tracking-poll",
+    run: runPartnerTrackingPoll,
+    intervalMs: PARTNER_TRACKING_POLL_INTERVAL_MS,
+  },
+  {
+    name: "logistics-stuck-partner-booking-sweep",
+    run: runStuckPartnerBookingSweep,
+    intervalMs: STUCK_PARTNER_BOOKING_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "logistics-partner-webhook-receipt-retention",
+    run: runPartnerWebhookReceiptRetentionSweep,
+    intervalMs: PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
+  },
+  {
+    name: "logistics-brand-return-auto-confirm",
+    run: runBrandReturnAutoConfirm,
+    intervalMs: BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS,
+  },
+  {
+    name: "logistics-rider-earning-release",
+    run: runRiderEarningRelease,
+    intervalMs: RIDER_EARNING_RELEASE_INTERVAL_MS,
+  },
+  {
+    name: "logistics-alerts",
+    run: runLogisticsAlertSweep,
+    intervalMs: LOGISTICS_ALERT_SWEEP_INTERVAL_MS,
   },
 ];
 

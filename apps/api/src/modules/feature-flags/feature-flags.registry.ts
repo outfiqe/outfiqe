@@ -36,6 +36,8 @@ export const FEATURE_FLAG_REGISTRY = [
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_REGISTRY)[number]["key"];
 
+export const ORDER_LOGISTICS_FLAG = "order_logistics" satisfies FeatureFlagKey;
+
 const FEATURE_FLAG_KEY_SET: ReadonlySet<string> = new Set(
   FEATURE_FLAG_REGISTRY.map((entry) => entry.key),
 );

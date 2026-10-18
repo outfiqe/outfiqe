@@ -8,21 +8,22 @@ import { PAYMENT_METHODS } from "../constants/checkout.constants";
 type PaymentMethodFieldProps = {
   value: PaymentMethodValue;
   onChange: (value: PaymentMethodValue) => void;
-  codRequiresPrepaid?: boolean;
+  codUnavailableReason?: string | null;
 };
 
 export const PaymentMethodField = ({
   value,
   onChange,
-  codRequiresPrepaid = false,
+  codUnavailableReason = null,
 }: PaymentMethodFieldProps) => {
   return (
     <div>
       <p className="mb-2 text-xs text-muted-foreground">Payment method</p>
       <div className="space-y-2">
         {PAYMENT_METHODS.map((method) => {
-          const isCodBlockedByCoupon = codRequiresPrepaid && method.value === PaymentMethod.COD;
-          const isEnabled = method.enabled && !isCodBlockedByCoupon;
+          const isCodUnavailable =
+            codUnavailableReason !== null && method.value === PaymentMethod.COD;
+          const isEnabled = method.enabled && !isCodUnavailable;
 
           return (
             <button
@@ -53,8 +54,8 @@ export const PaymentMethodField = ({
               <span className="flex-1">
                 <span className="block text-sm font-semibold text-foreground">{method.label}</span>
                 <span className="block text-xs text-muted-foreground">
-                  {isCodBlockedByCoupon
-                    ? "Your coupon requires a prepaid payment method"
+                  {isCodUnavailable
+                    ? codUnavailableReason
                     : method.enabled
                       ? method.description
                       : "Coming soon"}
