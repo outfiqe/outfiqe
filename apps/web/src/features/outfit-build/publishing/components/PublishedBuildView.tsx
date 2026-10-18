@@ -3,10 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount, formatNepalDateTime } from "@/shared/lib/nepalFormatting";
 
 import type { OutfitPublished } from "../../api/outfitSchemas";
 import { PersonAvatar } from "../../components/PersonAvatar";
-import { formatLakhAmount, formatNepalDateTime } from "../../utils/outfitFormatting";
 
 const NO_CONTRIBUTORS = 0;
 

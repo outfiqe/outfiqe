@@ -19,6 +19,45 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     ],
     sourceFiles: [`${FEATURES_DIR}/orders/components/OrdersPage.tsx`],
   },
+  "/orders/refunds": {
+    title: "Refunds to pay",
+    description:
+      "Refunds that couldn't go back automatically. Send the money, then mark each one paid with the transfer reference.",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Mark as paid"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/orders/refunds/components/RefundQueuePage.tsx`,
+      `${FEATURES_DIR}/orders/refunds/components/RefundQueueCard.tsx`,
+    ],
+  },
+  "/orders/unavailable-items": {
+    title: "Items brands can't supply",
+    description:
+      "Approving refunds the customer for those units. Rejecting tells the brand to send them.",
+    blocks: [
+      { kind: "filterTabs", labels: ["To review", "Approved", "Rejected"] },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Approve and refund", "Reject"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/orders/unavailable-items/components/UnavailableItemsPage.tsx`,
+      `${FEATURES_DIR}/orders/unavailable-items/constants/unavailableItemLabels.ts`,
+    ],
+  },
   "/coupons": {
     title: "Coupons",
     blocks: [
@@ -155,5 +194,86 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
       },
     ],
     sourceFiles: [`${FEATURES_DIR}/logistics/bag-tags/components/BagTagsPage.tsx`],
+  },
+  "/logistics/packing": {
+    title: "Inspect and pack",
+    description:
+      "Orders with bags at the hub. Inspect each bag, then pack the order into one parcel.",
+    blocks: [
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        textLineCount: 3,
+        actionLabels: ["Pack parcel"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/hub-operations/components/PackingPage.tsx`,
+      `${FEATURES_DIR}/logistics/hub-operations/components/OrderToPackCard.tsx`,
+    ],
+  },
+  "/logistics/parcels": {
+    title: "Parcels",
+    description:
+      "Book packed parcels with a partner, print labels and follow them to the customer.",
+    blocks: [
+      {
+        kind: "filterTabs",
+        labels: ["To book", "Ready to hand over", "With the partner", "Finished"],
+      },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasTrailingBadge: true,
+        textLineCount: 3,
+        actionLabels: ["Print label", "Open"],
+        actionSize: "sm",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/logistics/shipments/components/ParcelsPage.tsx`,
+      `${FEATURES_DIR}/logistics/shipments/components/ParcelCard.tsx`,
+      `${FEATURES_DIR}/logistics/shipments/constants/parcelLabels.ts`,
+    ],
+  },
+  "/logistics/partners": {
+    title: "Delivery partners",
+    description:
+      "The couriers that deliver parcels from the hub, where they deliver and how their status names map to ours.",
+    headerActionLabel: "Add partner",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
+  },
+  "/logistics/alerts": {
+    title: "Delivery alerts",
+    description:
+      "Bags and parcels that are running late or need someone to look at them. Most clear on their own once the bag or parcel moves on; resolve the rest with a note.",
+    blocks: [
+      { kind: "filterTabs", labels: ["Open", "Resolved"] },
+      { kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: false, actionLabels: [] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/logistics/alerts/components/LogisticsAlertsPage.tsx`],
+  },
+  "/logistics/rider-pay": {
+    title: "Rider pay",
+    description:
+      "What contractor riders earn per visit. Each earning is held for 7 days, then riders can withdraw it to their bank. Employees are paid salary outside Outfiqe.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/rider-pay/components/RiderPayPage.tsx`],
+  },
+  "/logistics/cod": {
+    title: "Partner cash",
+    description:
+      "Cash delivery partners collected on our parcels and haven't paid in yet. When a payment arrives, tick the parcels it covers, enter each partner fee and record it, so no parcel's cash is counted twice.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/cod/components/CodPage.tsx`],
+  },
+  "/logistics/reliability": {
+    title: "Brand reliability",
+    description:
+      "Brands with 3 or more problems in the last 30 days: missing items, failed quality checks and wasted rider visits. At 6 a brand needs review; suspending it stays your decision.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/reliability/components/BrandReliabilityPage.tsx`],
   },
 };

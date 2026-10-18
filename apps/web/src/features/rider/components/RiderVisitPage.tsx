@@ -1,13 +1,13 @@
 "use client";
 
-import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useState } from "react";
 
-import { getErrorMessage } from "@/shared/lib/errorMessages";
-
+import { RIDER_STOP_DIRECTION } from "../api/riderSchemas";
+import { PENDING_SCAN_STATE } from "../constants/pendingScans";
 import { OPEN_RIDER_TASK_STATUSES, RIDER_TASK_STATUS_LABELS } from "../constants/riderTaskLabels";
-import { useFinishVisit } from "../hooks/useFinishVisit";
+import { usePendingScans } from "../context/PendingScansContext";
 import { useRiderTask } from "../hooks/useRiderTask";
 import {
   buildMapsLink,
@@ -16,17 +16,25 @@ import {
   formatShortOrderId,
 } from "../utils/riderTask.utils";
 import { CollectScanFlow } from "./CollectScanFlow";
+import { LeaveVisitModal } from "./LeaveVisitModal";
 import { PendingScansList } from "./PendingScansList";
+import { ReturnStopsSection } from "./ReturnStopsSection";
 import { WastedVisitModal } from "./WastedVisitModal";
 
 const NOTHING_COLLECTED = 0;
+const SINGLE_SCAN = 1;
 
 type RiderVisitPageProps = { taskId: string };
 
 export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
   const { data: task, isPending, isError } = useRiderTask(taskId);
-  const finishVisit = useFinishVisit(taskId);
+  const { pendingScans } = usePendingScans();
   const [isWastedModalOpen, setIsWastedModalOpen] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const scansWaitingToSendCount = pendingScans.filter(
+    (pendingScan) =>
+      pendingScan.taskId === taskId && pendingScan.state === PENDING_SCAN_STATE.WAITING,
+  ).length;
 
   if (isError) {
     return <FormBanner>We couldn&apos;t load this visit. Go back and try again.</FormBanner>;
@@ -42,16 +50,14 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
   }
 
   const { brandName, pickupLocation, stops, status } = task;
-  const collectedCount = countCollectedStops(task);
+  const collectStops = stops.filter(({ direction }) => direction === RIDER_STOP_DIRECTION.COLLECT);
+  const returnStops = stops.filter(({ direction }) => direction === RIDER_STOP_DIRECTION.RETURN);
+  const collectedCount = countCollectedStops({ stops: collectStops });
   const isOpen = OPEN_RIDER_TASK_STATUSES.has(status);
-  const hasUncollectedStops = collectedCount < stops.length;
-
-  const confirmFinishVisit = () => {
-    finishVisit.mutate(undefined, {
-      onSuccess: () => toast.success("Visit finished. Bags not ready go back on the board."),
-      onError: (error) => toast.error(getErrorMessage(error)),
-    });
-  };
+  const hasUncollectedBags = collectedCount < collectStops.length;
+  const hasUnfinishedStops = countCollectedStops(task) < stops.length;
+  const hasDoneNothing = countCollectedStops(task) === NOTHING_COLLECTED;
+  const hasScansWaitingToSend = scansWaitingToSendCount > NOTHING_COLLECTED;
 
   return (
     <>
@@ -89,46 +95,55 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
         </div>
       </section>
 
-      <section aria-labelledby="bags-heading" className="mt-4">
-        <h2 id="bags-heading" className="font-semibold text-foreground">
-          Bags: {collectedCount} of {stops.length} collected
-        </h2>
-        <ul className="mt-2 space-y-2">
-          {stops.map((stop) => (
-            <li
-              key={stop.id}
-              className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm"
-            >
-              <span>
-                Order {formatShortOrderId(stop.orderId)} · {describeItemCount(stop.itemCount)}
-              </span>
-              <span
-                className={
-                  stop.isCollected ? "font-medium text-foreground" : "text-muted-foreground"
-                }
+      {returnStops.length > NOTHING_COLLECTED && (
+        <ReturnStopsSection taskId={taskId} returnStops={returnStops} isVisitOpen={isOpen} />
+      )}
+
+      {collectStops.length > NOTHING_COLLECTED && (
+        <section aria-labelledby="bags-heading" className="mt-4">
+          <h2 id="bags-heading" className="font-semibold text-foreground">
+            Bags: {collectedCount} of {collectStops.length} collected
+          </h2>
+          <ul className="mt-2 space-y-2">
+            {collectStops.map((stop) => (
+              <li
+                key={stop.id}
+                className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm"
               >
-                {stop.isCollected ? `Collected · ${stop.bagTagCode}` : "Waiting"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+                <span>
+                  Order {formatShortOrderId(stop.orderId)} · {describeItemCount(stop.itemCount)}
+                </span>
+                <span
+                  className={
+                    stop.isCollected ? "font-medium text-foreground" : "text-muted-foreground"
+                  }
+                >
+                  {stop.isCollected ? `Collected · ${stop.bagTagCode}` : "Waiting"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {isOpen ? (
         <div className="mt-4 space-y-3">
-          {hasUncollectedStops && <CollectScanFlow taskId={taskId} />}
-          {collectedCount === NOTHING_COLLECTED ? (
+          {hasUncollectedBags && <CollectScanFlow taskId={taskId} />}
+          {hasScansWaitingToSend ? (
+            <p className="rounded-2xl bg-muted p-4 text-sm text-foreground">
+              {scansWaitingToSendCount === SINGLE_SCAN
+                ? "1 scan is saved on this phone and hasn't sent yet."
+                : `${scansWaitingToSendCount} scans are saved on this phone and haven't sent yet.`}{" "}
+              Finish the visit once they&apos;ve sent, so none of your bags are lost.
+            </p>
+          ) : hasDoneNothing ? (
             <Button variant="ghost" onClick={() => setIsWastedModalOpen(true)}>
               Nothing to collect here
             </Button>
           ) : (
-            hasUncollectedStops && (
-              <Button
-                variant="outline"
-                onClick={confirmFinishVisit}
-                isLoading={finishVisit.isPending}
-              >
-                Leave without the other bags
+            hasUnfinishedStops && (
+              <Button variant="outline" onClick={() => setIsLeaveModalOpen(true)}>
+                Leave without the rest
               </Button>
             )
           )}
@@ -144,6 +159,12 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
         taskId={taskId}
         open={isWastedModalOpen}
         onClose={() => setIsWastedModalOpen(false)}
+      />
+      <LeaveVisitModal
+        taskId={taskId}
+        uncollectedBagCount={collectStops.length - collectedCount}
+        open={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
       />
     </>
   );

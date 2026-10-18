@@ -12,6 +12,7 @@ export type WorkingCalendar = {
 const NEXT_DAY_STEP = 1;
 const NO_WORKING_DAYS_LEFT = 0;
 const CALENDAR_DATE_FORMAT = "yyyy-MM-dd";
+const UTC_TIME_ZONE = "UTC";
 
 const nextWorkingDay = (day: TZDate, calendar: WorkingCalendar): TZDate => {
   const followingDay = addDays(day, NEXT_DAY_STEP);
@@ -43,3 +44,6 @@ export const addWorkingDaysAsCalendarDate = (
 
 export const calendarDateToUtcMidnight = (calendarDate: string): Date =>
   new Date(`${calendarDate}T00:00:00.000Z`);
+
+export const utcMidnightToCalendarDate = (utcMidnight: Date): string =>
+  format(new TZDate(utcMidnight, UTC_TIME_ZONE), CALENDAR_DATE_FORMAT);

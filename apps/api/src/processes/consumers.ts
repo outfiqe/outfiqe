@@ -20,6 +20,7 @@ import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
 } from "#modules/leaderboard/leaderboard.socket.js";
+import { registerLogisticsOutboxHandlers } from "#modules/logistics/logistics.outbox.js";
 import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerNotificationSocketEventConsumer } from "#modules/notifications/notification.socket.js";
 import { registerOutfitOfferNotificationHandlers } from "#modules/outfit-offers/outfit-offer.notifications.js";
@@ -67,4 +68,5 @@ export const registerBackgroundConsumers = (): void => {
   registerOutfitNotificationHandlers();
   registerOutfitStockHandlers();
   registerOutfitOfferNotificationHandlers();
+  registerLogisticsOutboxHandlers();
 };

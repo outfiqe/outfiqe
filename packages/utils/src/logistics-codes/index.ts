@@ -24,3 +24,32 @@ export const normalizeTypedCode = (typedCode: string): string =>
 export const isCrockfordCode = (code: string, expectedLength: number): boolean =>
   code.length === expectedLength &&
   [...code].every((character) => CROCKFORD_BASE32_ALPHABET.includes(character));
+
+export const PARCEL_CODE_PREFIX = "OFQ";
+
+export const PARCEL_CODE_BODY_LENGTH = 8;
+
+const PARCEL_CODE_GROUP_LENGTH = 4;
+const FIRST_CHARACTER_INDEX = 0;
+const PARCEL_PREFIX_TYPED_WITH_ZERO = "0FQ";
+
+export const normalizeParcelCode = (typedCode: string): string | null => {
+  const compactCode = typedCode.toUpperCase().replace(CODE_SEPARATOR_PATTERN, "");
+  const hasParcelPrefix =
+    compactCode.startsWith(PARCEL_CODE_PREFIX) ||
+    compactCode.startsWith(PARCEL_PREFIX_TYPED_WITH_ZERO);
+  if (!hasParcelPrefix) return null;
+  const codeBody = normalizeTypedCode(compactCode.slice(PARCEL_CODE_PREFIX.length));
+  return isCrockfordCode(codeBody, PARCEL_CODE_BODY_LENGTH)
+    ? `${PARCEL_CODE_PREFIX}${codeBody}`
+    : null;
+};
+
+export const formatParcelCode = (parcelCode: string): string => {
+  const codeBody = parcelCode.slice(PARCEL_CODE_PREFIX.length);
+  return [
+    PARCEL_CODE_PREFIX,
+    codeBody.slice(FIRST_CHARACTER_INDEX, PARCEL_CODE_GROUP_LENGTH),
+    codeBody.slice(PARCEL_CODE_GROUP_LENGTH),
+  ].join("-");
+};

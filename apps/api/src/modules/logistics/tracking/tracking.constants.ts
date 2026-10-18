@@ -1,17 +1,8 @@
-export const ORDER_TRACKING_STAGE = {
-  ORDER_PLACED: "ORDER_PLACED",
-  COLLECTING_ITEMS: "COLLECTING_ITEMS",
-  AT_HUB: "AT_HUB",
-  PACKED: "PACKED",
-  ON_ITS_WAY: "ON_ITS_WAY",
-  DELIVERY_ATTEMPT_FAILED: "DELIVERY_ATTEMPT_FAILED",
-  OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
-  DELIVERED: "DELIVERED",
-  RETURNING: "RETURNING",
-  CANCELLED: "CANCELLED",
-} as const;
+import { OrderTrackingStage as SharedOrderTrackingStage } from "@outfiqe/utils";
 
-export type OrderTrackingStage = (typeof ORDER_TRACKING_STAGE)[keyof typeof ORDER_TRACKING_STAGE];
+export const ORDER_TRACKING_STAGE = SharedOrderTrackingStage;
+
+export type OrderTrackingStage = SharedOrderTrackingStage;
 
 export const TRACKING_SUBJECT_KIND = {
   PICKUP: "PICKUP",

@@ -37,6 +37,13 @@ export const riderApi = {
     return riderTaskSchema.parse(res.data);
   },
 
+  async dropOffReturn(taskId: string, brandReturnId: string): Promise<RiderTask> {
+    const res = await apiClient.post(`${RIDER_TASKS_PATH}/${taskId}/return-drop-offs`, {
+      brandReturnId,
+    });
+    return riderTaskSchema.parse(res.data);
+  },
+
   async finishVisit(taskId: string): Promise<RiderTask> {
     const res = await apiClient.post(`${RIDER_TASKS_PATH}/${taskId}/finish`);
     return riderTaskSchema.parse(res.data);

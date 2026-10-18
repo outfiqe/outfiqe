@@ -9,4 +9,7 @@ export type FulfilmentAssignment = {
 
 export type ResolveFulfilmentAssignmentsInput = {
   brandIds: readonly string[];
+  deliveryCity: string;
+  countryCode: string;
+  requiresCashOnDelivery: boolean;
 };

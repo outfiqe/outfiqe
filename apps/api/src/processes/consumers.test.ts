@@ -24,6 +24,7 @@ const fns = vi.hoisted(() => ({
   registerNotificationEventConsumers: vi.fn(),
   registerOutfitNotificationHandlers: vi.fn(),
   registerOutfitStockHandlers: vi.fn(),
+  registerLogisticsOutboxHandlers: vi.fn(),
 }));
 
 vi.mock("#socket/socket.listeners.js", () => ({
@@ -74,6 +75,9 @@ vi.mock("#modules/outfits/outfit.notifications.js", () => ({
 vi.mock("#modules/outfits/stock/stock.events.js", () => ({
   registerOutfitStockHandlers: fns.registerOutfitStockHandlers,
 }));
+vi.mock("#modules/logistics/logistics.outbox.js", () => ({
+  registerLogisticsOutboxHandlers: fns.registerLogisticsOutboxHandlers,
+}));
 vi.mock("#modules/xp/xp.events.js", () => ({
   registerXpEventConsumers: fns.registerXpEventConsumers,
 }));
@@ -113,6 +117,7 @@ const BACKGROUND_REGISTRATIONS = [
   "registerNotificationEventConsumers",
   "registerOutfitNotificationHandlers",
   "registerOutfitStockHandlers",
+  "registerLogisticsOutboxHandlers",
 ] as const satisfies ReadonlyArray<keyof typeof fns>;
 
 beforeEach(() => {

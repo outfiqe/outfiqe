@@ -1,13 +1,13 @@
-import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { orderCancelledTemplate, refundFailedTemplate } from "#email-templates/order.templates.js";
+import { orderCancelledTemplate } from "#email-templates/order.templates.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
-  CouponRedemptionStatus,
   FulfilmentStatus,
   InventoryMovementKind,
   InventoryMovementSource,
   OrderFulfilmentSummary,
+  OrderRefundCause,
   PaymentMethod,
   PaymentStatus,
 } from "#generated/prisma/enums.js";
@@ -16,20 +16,62 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandPayoutRepository } from "#modules/brand-payouts/brand-payout.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
-import { couponRepository } from "#modules/coupons/coupon.repository.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
-import { paymentService } from "#modules/payments/payment.service.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
 import { orderRepository } from "../order.repository.js";
 import type { CancelOrderActor } from "../order.types.js";
+import { listRemainingUnits } from "../refunds/refund.claim.js";
+import {
+  PAYMENT_STATUSES_WITH_MONEY_TAKEN,
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
+} from "../refunds/refund.constants.js";
+import { type AppliedRefund, orderRefundEngine } from "../refunds/refund.engine.js";
+import { REFUND_SETTLEMENT } from "../refunds/refund.payment.js";
+import { orderRefundRepository } from "../refunds/refund.repository.js";
 
 const CANCELLABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
   FulfilmentStatus.PLACED,
   FulfilmentStatus.PACKED,
 ];
+
+const NO_REFUND = null;
+const NO_REMAINING_UNITS = 0;
+
+const refundCauseFor = (actor: CancelOrderActor): OrderRefundCause =>
+  actor.type === "BUYER" ? OrderRefundCause.CUSTOMER_CANCELLED : OrderRefundCause.STAFF_ADJUSTMENT;
+
+const actorUserIdOf = (actor: CancelOrderActor): string =>
+  actor.type === "ADMIN" ? actor.adminUserId : actor.userId;
+
+const refundRemainingUnits = async (
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  actor: CancelOrderActor,
+  reason: string,
+): Promise<AppliedRefund | null> => {
+  const order = await orderRefundRepository.findOrderForRefund(tx, orderId);
+  if (!order) return NO_REFUND;
+  const hasMoneyPosition =
+    PAYMENT_STATUSES_WITH_MONEY_TAKEN.has(order.paymentStatus) ||
+    PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(order.paymentStatus);
+  const remainingUnits = listRemainingUnits(order);
+  if (!hasMoneyPosition || remainingUnits.length === NO_REMAINING_UNITS) return NO_REFUND;
+
+  return orderRefundEngine.claimAndApplyInTransaction(
+    tx,
+    {
+      orderId,
+      lineRequests: remainingUnits,
+      cause: refundCauseFor(actor),
+      reason,
+      requestedById: actorUserIdOf(actor),
+    },
+    { restockUnits: false, actorUserId: actorUserIdOf(actor) },
+  );
+};
 
 export const orderCancellationService = {
   async cancel(orderId: string, actor: CancelOrderActor, reason: string): Promise<void> {
@@ -46,17 +88,16 @@ export const orderCancellationService = {
       );
     }
 
-    const refundOutcome =
-      order.paymentStatus === PaymentStatus.PAID
-        ? await paymentService.refund(orderId, order.paymentMethod, order.phone)
-        : null;
-
     const stockWasCommitted =
       order.paymentMethod === PaymentMethod.COD || order.paymentStatus === PaymentStatus.PAID;
 
-    const cancelled = await prisma.$transaction(async (tx) => {
-      const ok = await orderRepository.markCancelled(tx, orderId, CANCELLABLE_FULFILMENT_STATUSES);
-      if (!ok) return false;
+    const cancellation = await prisma.$transaction(async (tx) => {
+      const isMarked = await orderRepository.markCancelled(
+        tx,
+        orderId,
+        CANCELLABLE_FULFILMENT_STATUSES,
+      );
+      if (!isMarked) return null;
 
       await orderFulfilmentGroupRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
       await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, {
@@ -79,41 +120,10 @@ export const orderCancellationService = {
       await commissionRepository.voidForOrder(tx, orderId, reason);
       await brandPayoutRepository.voidForOrder(tx, orderId, reason);
 
-      const redemption = await couponRepository.findRedemptionByOrderId(orderId, tx);
-      if (redemption && redemption.status !== CouponRedemptionStatus.RELEASED) {
-        if (actor.type === "ADMIN") {
-          await couponRepository.markRedemptionReleased(
-            tx,
-            redemption.id,
-            CouponRedemptionStatus.RELEASED,
-            reason,
-          );
-          await couponRepository.releaseBudget(
-            tx,
-            redemption.couponId,
-            redemption.platformFundedAmount,
-          );
-        }
-      }
-
-      if (refundOutcome) {
-        await paymentRepository.recordRefund(
-          tx,
-          orderId,
-          order.paymentMethod,
-          refundOutcome.rawResponse,
-        );
-        if (refundOutcome.succeeded) {
-          await orderRepository.markRefunded(tx, orderId);
-        } else {
-          await orderRepository.markNeedsManualRefund(tx, orderId);
-        }
-      }
-
-      return true;
+      return { appliedRefund: await refundRemainingUnits(tx, orderId, actor, reason) };
     });
 
-    if (!cancelled) {
+    if (!cancellation) {
       throw new AppError(
         "INVALID_TRANSITION",
         "This order's status changed — refresh and try again.",
@@ -121,27 +131,21 @@ export const orderCancellationService = {
       );
     }
 
+    const settlement = cancellation.appliedRefund
+      ? await orderRefundEngine.finishAfterCommit(cancellation.appliedRefund)
+      : null;
+
     const buyer = await userRepository.findById(order.userId);
     if (buyer) {
       const { subject, html } = orderCancelledTemplate({
         orderId,
         total: order.total,
-        refunded: refundOutcome?.succeeded ?? false,
+        refunded: settlement === REFUND_SETTLEMENT.PAID_BY_GATEWAY,
       });
       void sendEmail({
         to: buyer.email,
         subject,
         body: `Order ${orderId} has been cancelled.`,
-        html,
-      });
-    }
-
-    if (refundOutcome && !refundOutcome.succeeded) {
-      const { subject, html } = refundFailedTemplate({ orderId, total: order.total });
-      void sendEmail({
-        to: env.OPS_NOTIFICATION_EMAIL,
-        subject,
-        body: `Order ${orderId} needs a manual refund — automatic refund failed.`,
         html,
       });
     }
