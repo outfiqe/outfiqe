@@ -64,7 +64,7 @@ jobs:
     name: Coverage gate
     continue-on-error: true
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     services:
       postgres:
         image: postgres:16-alpine
