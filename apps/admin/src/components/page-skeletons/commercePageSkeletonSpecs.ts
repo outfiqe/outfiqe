@@ -272,7 +272,7 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
   "/logistics/reliability": {
     title: "Brand reliability",
     description:
-      "Brands with 3 or more problems in the last 30 days: missing items, failed quality checks and wasted rider visits. At 6 a brand needs review; suspending it stays your decision.",
+      "Brands with 3 or more problems in the last 30 days: missing items, failed quality checks and wasted rider visits. A brand is warned at 5 problems that are more than 10% of its pickups, and needs review at 10 that are more than 20%. Brands new to Outfiqe pickup (first 30 days or first 20 pickups) are never warned. Reaching out early, and any suspension, stays your decision.",
     blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
     sourceFiles: [`${FEATURES_DIR}/logistics/reliability/components/BrandReliabilityPage.tsx`],
   },
