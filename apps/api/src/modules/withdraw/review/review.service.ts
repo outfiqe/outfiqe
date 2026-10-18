@@ -9,6 +9,7 @@ import { bankAccountRepository } from "#modules/bank-accounts/bank-account.repos
 import { brandBankAccountRepository } from "#modules/brand-bank-accounts/brand-bank-account.repository.js";
 import { brandPayoutRepository } from "#modules/brand-payouts/brand-payout.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { logisticsRiderPayRepository } from "#modules/logistics/rider-pay/rider-pay.repository.js";
 import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 
 import { LEDGER_ROW_KIND } from "../withdraw.constants.js";
@@ -56,13 +57,15 @@ const listAvailableLedgerRows = async (
   { ownerType, creatorId, brandId }: WithdrawRequestRecord,
 ): Promise<LedgerRow[] | null> => {
   if (ownerType === "CREATOR" && creatorId) {
-    const [commissionRows, offerPayoutRows] = await Promise.all([
+    const [commissionRows, offerPayoutRows, riderEarningRows] = await Promise.all([
       commissionRepository.listAvailableForCreator(tx, creatorId),
       outfitOfferRepository.listAvailablePayoutsForCreator(tx, creatorId),
+      logisticsRiderPayRepository.listAvailableForUser(tx, creatorId),
     ]);
     return [
       ...withKind(commissionRows, LEDGER_ROW_KIND.COMMISSION),
       ...withKind(offerPayoutRows, LEDGER_ROW_KIND.OFFER_PAYOUT),
+      ...withKind(riderEarningRows, LEDGER_ROW_KIND.RIDER_EARNING),
     ];
   }
   if (ownerType === "BUSINESS" && brandId) {
@@ -91,17 +94,21 @@ const claimLedgerRows = async (
     brandPayoutIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.BRAND_PAYOUT),
     creatorCommissionIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.COMMISSION),
     outfitOfferIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.OFFER_PAYOUT),
+    riderEarningIds: idsOfKind(pickedRows, LEDGER_ROW_KIND.RIDER_EARNING),
   };
-  const { brandPayoutIds, creatorCommissionIds, outfitOfferIds } = claimedRows;
-  const [withdrawnPayoutCount, paidCommissionCount, paidOfferCount] = await Promise.all([
-    brandPayoutRepository.markAvailableAsWithdrawn(tx, brandPayoutIds),
-    commissionRepository.markAvailableAsPaid(tx, creatorCommissionIds),
-    outfitOfferRepository.markPayoutsPaid(tx, outfitOfferIds),
-  ]);
+  const { brandPayoutIds, creatorCommissionIds, outfitOfferIds, riderEarningIds } = claimedRows;
+  const [withdrawnPayoutCount, paidCommissionCount, paidOfferCount, withdrawnEarningCount] =
+    await Promise.all([
+      brandPayoutRepository.markAvailableAsWithdrawn(tx, brandPayoutIds),
+      commissionRepository.markAvailableAsPaid(tx, creatorCommissionIds),
+      outfitOfferRepository.markPayoutsPaid(tx, outfitOfferIds),
+      logisticsRiderPayRepository.markAvailableAsWithdrawn(tx, riderEarningIds),
+    ]);
   const isEveryRowClaimed =
     withdrawnPayoutCount === brandPayoutIds.length &&
     paidCommissionCount === creatorCommissionIds.length &&
-    paidOfferCount === outfitOfferIds.length;
+    paidOfferCount === outfitOfferIds.length &&
+    withdrawnEarningCount === riderEarningIds.length;
   return isEveryRowClaimed ? claimedRows : null;
 };
 

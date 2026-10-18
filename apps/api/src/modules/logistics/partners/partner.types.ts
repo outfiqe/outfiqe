@@ -5,12 +5,20 @@ import type {
   TrackingEventCode,
 } from "#generated/prisma/enums.js";
 
+export type PartnerCredentialsStatus = {
+  hasApiKey: boolean;
+  hasBaseUrl: boolean;
+  hasWebhookSecret: boolean;
+  hasPreviousWebhookSecret: boolean;
+};
+
 export type PartnerAccountView = {
   hubId: string;
   hubName: string;
   merchantAccountRef: string;
   pickupPointRef: string | null;
   credentialsKey: string | null;
+  credentials: PartnerCredentialsStatus;
   isActive: boolean;
 };
 
@@ -45,6 +53,7 @@ export type PartnerView = {
   referencePattern: string | null;
   codRemittanceDays: number;
   trackingUrlTemplate: string | null;
+  webhookUrl: string | null;
   accounts: PartnerAccountView[];
   zones: PartnerZoneView[];
   statusMappings: PartnerStatusMappingView[];

@@ -42,6 +42,7 @@ export default defineConfig({
       include: [
         "src/app.ts",
         "src/config/app-env.ts",
+        "src/config/delivery-partner.config.ts",
         "src/processes/consumers.ts",
         "src/shared/utils/readiness.utils.ts",
         "src/testing/integration/worker-pool.ts",
@@ -61,6 +62,7 @@ export default defineConfig({
         "src/modules/orders/checkout/checkout.fulfilment.ts",
         "src/modules/logistics/**/*.ts",
         "src/modules/orders/refunds/**/*.ts",
+        "src/modules/orders/order-tracking.utils.ts",
         "src/modules/orders/unavailable-items/**/*.ts",
         "src/modules/auth/invites/rider-invite.service.ts",
         "src/shared/utils/web-cache.utils.ts",

@@ -20,6 +20,7 @@ import { brandBankAccountRepository } from "#modules/brand-bank-accounts/brand-b
 import { brandPayoutRepository } from "#modules/brand-payouts/brand-payout.repository.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { logisticsRiderPayRepository } from "#modules/logistics/rider-pay/rider-pay.repository.js";
 import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
@@ -40,7 +41,9 @@ const resolveOwner = async (
   ownerType: OwnerContext["ownerType"],
 ): Promise<OwnerContext> => {
   if (ownerType === "CREATOR") {
-    await requireCommissionEarner(userId, "You don't have any commission earnings to withdraw.");
+    if (!(await logisticsRiderPayRepository.isContractorRider(userId))) {
+      await requireCommissionEarner(userId, "You don't have any commission earnings to withdraw.");
+    }
     return { ownerType, creatorId: userId };
   }
   const brandId = await requireBrandId(userId);
@@ -49,13 +52,15 @@ const resolveOwner = async (
 
 const getAvailableLedgerBalance = async (owner: OwnerContext): Promise<number> => {
   if (owner.ownerType === "CREATOR") {
-    const [commissionSums, offerPayoutSums] = await Promise.all([
+    const [commissionSums, offerPayoutSums, availableRiderEarnings] = await Promise.all([
       commissionRepository.sumByStatusForCreator(owner.creatorId),
       outfitOfferRepository.sumPayoutsByStatusForCreator(owner.creatorId),
+      logisticsRiderPayRepository.sumAvailableForUser(owner.creatorId),
     ]);
     return (
       (commissionSums[CommissionStatus.AVAILABLE] ?? 0) +
-      (offerPayoutSums[OutfitOfferPayoutStatus.AVAILABLE] ?? 0)
+      (offerPayoutSums[OutfitOfferPayoutStatus.AVAILABLE] ?? 0) +
+      availableRiderEarnings
     );
   }
   const [payoutSums, buildCommissionSums] = await Promise.all([

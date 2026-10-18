@@ -3,17 +3,26 @@ import { type FormEvent, useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import type { DeliveryPartner } from "../api/partnersSchemas";
+import {
+  type DeliveryPartner,
+  WEBHOOK_VERIFICATIONS,
+  type WebhookVerification,
+} from "../api/partnersSchemas";
 import {
   ADAPTER_LABELS,
   DEFAULT_COD_REMITTANCE_DAYS,
   DEFAULT_PARTNER_COUNTRY_CODE,
   MANUAL_ADAPTER_KEY,
   MAX_COD_REMITTANCE_DAYS,
+  NO_WEBHOOKS,
+  WEBHOOK_VERIFICATION_LABELS,
 } from "../constants/partnerLabels";
 import { useSaveDeliveryPartner } from "../hooks/useSaveDeliveryPartner";
 
 const MIN_COD_REMITTANCE_DAYS = 0;
+
+const readWebhookVerification = (value: string): WebhookVerification =>
+  WEBHOOK_VERIFICATIONS.find((verification) => verification === value) ?? NO_WEBHOOKS;
 
 type PartnerFormModalProps = { partner: DeliveryPartner | null; onClose: () => void };
 
@@ -27,7 +36,11 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
   const [code, setCode] = useState(partner?.code ?? "");
   const [name, setName] = useState(partner?.name ?? "");
   const [adapterKey, setAdapterKey] = useState(partner?.adapterKey ?? MANUAL_ADAPTER_KEY);
+  const [webhookVerification, setWebhookVerification] = useState<WebhookVerification>(
+    partner?.webhookVerification ?? NO_WEBHOOKS,
+  );
   const [supportsCod, setSupportsCod] = useState(partner?.supportsCod ?? true);
+  const isConnectedPartner = adapterKey !== MANUAL_ADAPTER_KEY;
   const [isActive, setIsActive] = useState(partner?.isActive ?? true);
   const [referencePattern, setReferencePattern] = useState(partner?.referencePattern ?? "");
   const [codRemittanceDays, setCodRemittanceDays] = useState(
@@ -48,6 +61,7 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
         adapterKey,
         isActive,
         supportsCod,
+        webhookVerification: isConnectedPartner ? webhookVerification : NO_WEBHOOKS,
         referencePattern: toOptionalText(referencePattern),
         codRemittanceDays: Number(codRemittanceDays),
         trackingUrlTemplate: toOptionalText(trackingUrlTemplate),
@@ -100,6 +114,24 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
             ))}
           </Select>
         </div>
+        {isConnectedPartner && (
+          <div>
+            <Label htmlFor={`${fieldIdPrefix}-verification`}>How they send parcel updates</Label>
+            <Select
+              id={`${fieldIdPrefix}-verification`}
+              value={webhookVerification}
+              onChange={(event) =>
+                setWebhookVerification(readWebhookVerification(event.target.value))
+              }
+            >
+              {WEBHOOK_VERIFICATIONS.map((verification) => (
+                <option key={verification} value={verification}>
+                  {WEBHOOK_VERIFICATION_LABELS[verification]}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
         <div>
           <Label htmlFor={`${fieldIdPrefix}-pattern`}>Their parcel number pattern (optional)</Label>
           <Input

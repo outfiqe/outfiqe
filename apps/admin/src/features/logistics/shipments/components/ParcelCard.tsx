@@ -9,7 +9,7 @@ import type {
 } from "../../hub-operations/api/hubOperationsSchemas";
 import type { ParcelSummary } from "../api/parcelsSchemas";
 import { PARCEL_STATUS_LABELS } from "../constants/parcelLabels";
-import { ManualBookingForm } from "./ManualBookingForm";
+import { ParcelBookingActions } from "./ParcelBookingActions";
 import { RebookParcelModal } from "./RebookParcelModal";
 
 const NOTHING_TO_COLLECT = 0;
@@ -87,7 +87,7 @@ export const ParcelCard = ({ parcel, canManage }: ParcelCardProps) => {
 
       <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
         {canManage && isWaitingForBooking && booking && (
-          <ManualBookingForm shipmentId={shipmentId} partnerName={booking.partnerName} />
+          <ParcelBookingActions shipmentId={shipmentId} booking={booking} />
         )}
         <div className="flex flex-wrap gap-2">
           {isAtHub && (

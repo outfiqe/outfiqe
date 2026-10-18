@@ -63,6 +63,13 @@ export const logisticsHubOperationController = {
     sendSuccess(res, booking, "Booking saved.");
   },
 
+  async retryParcelBooking(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { shipmentId } = validated.params<ShipmentIdParam>(res);
+    const booking = await logisticsHubOperationService.retryParcelBooking(userId, shipmentId);
+    sendSuccess(res, booking, "Booking sent to the partner again.");
+  },
+
   async rebookParcel(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { shipmentId } = validated.params<ShipmentIdParam>(res);

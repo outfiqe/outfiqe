@@ -2,6 +2,8 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import { ridersApi } from "../api/ridersApi";
 import type { Rider, RiderStatus } from "../api/ridersSchemas";
 import {
@@ -32,6 +34,7 @@ export const RiderCard = ({ rider, canManage }: RiderCardProps) => {
   } = rider;
 
   const changeStatus = useApiMutation({
+    errorMessage: getErrorMessage,
     mutationFn: (nextStatus: RiderStatus) => ridersApi.setStatus(rider.id, nextStatus),
     invalidateKeys: [RIDERS_QUERY_KEY],
     successMessage: "Rider updated.",

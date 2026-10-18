@@ -102,7 +102,9 @@ export const claimRefundInTransaction = async (
     items: toRefundableItems(order),
     lineRequests,
     orderFees: { deliveryFee: order.deliveryFee, codFee: order.codFee },
-    refundsOrderFeesWhenEmptied: CAUSES_RETURNING_ORDER_FEES.has(cause),
+    refundsOrderFeesWhenEmptied:
+      CAUSES_RETURNING_ORDER_FEES.has(cause) ||
+      PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(order.paymentStatus),
   });
   if ("problem" in priced) throw PRICING_PROBLEM_ERRORS[priced.problem]();
   const { pricing } = priced;

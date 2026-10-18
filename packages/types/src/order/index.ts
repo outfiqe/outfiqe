@@ -27,6 +27,7 @@ export const OrderRefundCause = {
   RETURNED: "RETURNED",
   CUSTOMER_REFUSED: "CUSTOMER_REFUSED",
   STAFF_ADJUSTMENT: "STAFF_ADJUSTMENT",
+  PARTNER_FAILED: "PARTNER_FAILED",
 } as const;
 export type OrderRefundCause = (typeof OrderRefundCause)[keyof typeof OrderRefundCause];
 

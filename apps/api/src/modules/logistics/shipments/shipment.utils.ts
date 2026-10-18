@@ -1,7 +1,13 @@
 import { formatParcelCode } from "@outfiqe/utils";
 
-import { ItemInspectionStatus, PickupStatus } from "#generated/prisma/enums.js";
+import {
+  type DeliveryPartnerConnection,
+  ItemInspectionStatus,
+  type PartnerBookingStatus,
+  PickupStatus,
+} from "#generated/prisma/enums.js";
 
+import type { ParcelBookingSummary } from "../hub-operations/hub-operation.types.js";
 import { PICKUP_STATUSES_NOT_COMING_TO_HUB } from "../logistics.constants.js";
 import type {
   OrderToPackRecord,
@@ -9,6 +15,30 @@ import type {
   ShipmentSummaryRecord,
 } from "./shipment.repository.js";
 import type { OrderToPackView, ShipmentDetailView, ShipmentSummaryView } from "./shipment.types.js";
+
+type BookingForSummary = {
+  id: string;
+  partnerId: string;
+  status: PartnerBookingStatus;
+  connection: DeliveryPartnerConnection;
+  merchantReference: string;
+  partnerReference: string | null;
+  partnerTrackingUrl: string | null;
+  failureReason: string | null;
+  partner: { name: string };
+};
+
+export const toParcelBookingSummary = (booking: BookingForSummary): ParcelBookingSummary => ({
+  bookingId: booking.id,
+  partnerId: booking.partnerId,
+  partnerName: booking.partner.name,
+  status: booking.status,
+  connection: booking.connection,
+  merchantReference: booking.merchantReference,
+  partnerReference: booking.partnerReference,
+  partnerTrackingUrl: booking.partnerTrackingUrl,
+  failureReason: booking.failureReason,
+});
 
 export const toShipmentSummaryView = (shipment: ShipmentSummaryRecord): ShipmentSummaryView => {
   const [liveBooking] = shipment.bookings;
@@ -24,16 +54,7 @@ export const toShipmentSummaryView = (shipment: ShipmentSummaryRecord): Shipment
     city: shipment.order.city,
     packedAt: shipment.createdAt.toISOString(),
     lastEventAt: shipment.lastEventAt.toISOString(),
-    booking: liveBooking
-      ? {
-          bookingId: liveBooking.id,
-          partnerId: liveBooking.partnerId,
-          partnerName: liveBooking.partner.name,
-          status: liveBooking.status,
-          merchantReference: liveBooking.merchantReference,
-          partnerReference: liveBooking.partnerReference,
-        }
-      : null,
+    booking: liveBooking ? toParcelBookingSummary(liveBooking) : null,
   };
 };
 
@@ -45,7 +66,13 @@ export const toShipmentDetailView = (shipment: ShipmentDetailRecord): ShipmentDe
   parcelCount: shipment.parcelCount,
   deliveryAttemptCount: shipment.deliveryAttemptCount,
   deliveredAt: shipment.deliveredAt?.toISOString() ?? null,
+  codCollectedAmount: shipment.codCollectedAmount,
+  codRemittanceId: shipment.codRemittanceLine?.remittanceId ?? null,
   labelPrintedAt: shipment.labelPrintedAt?.toISOString() ?? null,
+  returnOutcome: shipment.returnOutcome,
+  returnCheckedInAt: shipment.returnCheckedInAt?.toISOString() ?? null,
+  partnerClaimAmount: shipment.partnerClaimAmount,
+  partnerClaimStatus: shipment.partnerClaimStatus,
   pickups: shipment.fulfilmentGroups.map(({ id, brand, items }) => ({
     fulfilmentGroupId: id,
     brandName: brand.name,

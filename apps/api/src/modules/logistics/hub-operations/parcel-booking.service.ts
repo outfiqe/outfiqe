@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
+  DeliveryPartnerConnection,
   PartnerBookingStatus,
   ShipmentStatus,
   TrackingEventCode,
@@ -9,11 +10,13 @@ import {
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsPartnerBookingService } from "../partner-bookings/partner-booking.service.js";
 import {
   isReferenceAllowedByPattern,
   merchantReferenceForBooking,
   normalizePartnerReference,
 } from "../partners/partner-status.utils.js";
+import { toParcelBookingSummary } from "../shipments/shipment.utils.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
@@ -31,6 +34,13 @@ const BOOKABLE_STATUSES: ReadonlySet<PartnerBookingStatus> = new Set([
   PartnerBookingStatus.BOOKING_FAILED,
 ]);
 
+const isBeingBookedAutomatically = (booking: {
+  status: PartnerBookingStatus;
+  connection: DeliveryPartnerConnection;
+}) =>
+  booking.status === PartnerBookingStatus.REQUESTED &&
+  booking.connection === DeliveryPartnerConnection.API;
+
 const parcelNotFoundError = () =>
   new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
 
@@ -47,29 +57,13 @@ const requirePackedParcel = async (shipmentId: string) => {
   return shipment;
 };
 
-const toBookingSummary = (booking: {
-  id: string;
-  partnerId: string;
-  status: PartnerBookingStatus;
-  merchantReference: string;
-  partnerReference: string | null;
-  partner: { name: string };
-}): ParcelBookingSummary => ({
-  bookingId: booking.id,
-  partnerId: booking.partnerId,
-  partnerName: booking.partner.name,
-  status: booking.status,
-  merchantReference: booking.merchantReference,
-  partnerReference: booking.partnerReference,
-});
-
 const requireLiveBookingSummary = async (shipmentId: string) => {
   const booking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
     prisma,
     shipmentId,
   );
   if (!booking) throw parcelNotFoundError();
-  return toBookingSummary(booking);
+  return toParcelBookingSummary(booking);
 };
 
 export const logisticsParcelBookingService = {
@@ -87,6 +81,13 @@ export const logisticsParcelBookingService = {
       throw new AppError(
         "PARCEL_NOT_WAITING_FOR_BOOKING",
         "This parcel isn't waiting for a booking. Choose a partner first.",
+        HTTP_STATUS.CONFLICT,
+      );
+    }
+    if (isBeingBookedAutomatically(booking)) {
+      throw new AppError(
+        "BOOKING_IN_PROGRESS",
+        `We're booking this parcel with ${booking.partner.name} now. Wait for it to finish or fail.`,
         HTTP_STATUS.CONFLICT,
       );
     }
@@ -134,6 +135,11 @@ export const logisticsParcelBookingService = {
         HTTP_STATUS.CONFLICT,
       );
     }
+    return requireLiveBookingSummary(shipmentId);
+  },
+
+  async retryParcelBooking(staffUserId: string, shipmentId: string): Promise<ParcelBookingSummary> {
+    await logisticsPartnerBookingService.retryFailedBooking(staffUserId, shipmentId);
     return requireLiveBookingSummary(shipmentId);
   },
 
@@ -202,6 +208,10 @@ export const logisticsParcelBookingService = {
         partnerId: partner.partnerId,
         dedupeKey: `${HUB_EVENT_DEDUPE_PREFIX.BOOKING_REQUESTED}:${shipmentId}:${booking.id}`,
         occurredAt,
+      });
+      await logisticsPartnerBookingService.queueApiBooking(tx, {
+        bookingId: booking.id,
+        connection: partner.connection,
       });
     });
     return requireLiveBookingSummary(shipmentId);

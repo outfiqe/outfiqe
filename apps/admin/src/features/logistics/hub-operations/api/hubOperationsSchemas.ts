@@ -47,13 +47,19 @@ export const pickupCheckInSchema = z.object({
 });
 export type PickupCheckIn = z.infer<typeof pickupCheckInSchema>;
 
+export const BOOKING_CONNECTIONS = ["API", "MANUAL"] as const;
+export const bookingConnectionSchema = z.enum(BOOKING_CONNECTIONS);
+
 export const parcelBookingSchema = z.object({
   bookingId: z.string(),
   partnerId: z.string(),
   partnerName: z.string(),
   status: bookingStatusSchema,
+  connection: bookingConnectionSchema,
   merchantReference: z.string(),
   partnerReference: z.string().nullable(),
+  partnerTrackingUrl: z.string().nullable(),
+  failureReason: z.string().nullable(),
 });
 export type ParcelBooking = z.infer<typeof parcelBookingSchema>;
 

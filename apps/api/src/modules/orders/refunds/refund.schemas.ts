@@ -21,6 +21,7 @@ const STAFF_REFUND_CAUSES = [
   OrderRefundCause.BRAND_UNAVAILABLE,
   OrderRefundCause.HUB_INSPECTION_FAILED,
   OrderRefundCause.CUSTOMER_REFUSED,
+  OrderRefundCause.PARTNER_FAILED,
 ] as const;
 
 export const refundReasonSchema = z

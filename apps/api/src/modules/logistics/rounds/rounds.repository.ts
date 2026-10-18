@@ -1,6 +1,11 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import { PickupStatus, RiderStopDirection, RiderTaskStatus } from "#generated/prisma/enums.js";
+import {
+  BrandReturnStatus,
+  PickupStatus,
+  RiderStopDirection,
+  RiderTaskStatus,
+} from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 export const OPEN_RIDER_TASK_STATUSES: RiderTaskStatus[] = [
@@ -14,6 +19,22 @@ const waitingForCollectionWhere = (hubId: string): Prisma.OrderFulfilmentGroupWh
   pickupStatus: PickupStatus.READY_FOR_PICKUP,
   riderTaskStops: { none: { isActive: true, direction: RiderStopDirection.COLLECT } },
 });
+
+const waitingToGoBackWhere = (hubId: string): Prisma.BrandReturnWhereInput => ({
+  hubId,
+  status: BrandReturnStatus.AT_HUB,
+});
+
+const returnStopSelect = {
+  id: true,
+  source: true,
+  fulfilmentGroup: { select: { orderId: true, pickupLocationId: true } },
+  lines: { select: { resellableQty: true, damagedQty: true } },
+} satisfies Prisma.BrandReturnSelect;
+
+export type BrandReturnForRoundRecord = Prisma.BrandReturnGetPayload<{
+  select: typeof returnStopSelect;
+}>;
 
 const boardLocationInclude = (hubId: string) =>
   ({
@@ -66,6 +87,8 @@ const riderTaskDetailInclude = {
     select: {
       id: true,
       scannedAt: true,
+      direction: true,
+      brandReturn: { select: returnStopSelect },
       fulfilmentGroup: {
         select: {
           id: true,
@@ -89,12 +112,86 @@ export const logisticsRoundRepository = {
     limit: number;
   }): Promise<PickupBoardLocationRecord[]> {
     return prisma.brandPickupLocation.findMany({
-      where: { fulfilmentGroups: { some: waitingForCollectionWhere(params.hubId) } },
+      where: {
+        OR: [
+          { fulfilmentGroups: { some: waitingForCollectionWhere(params.hubId) } },
+          {
+            fulfilmentGroups: {
+              some: { brandReturns: { some: waitingToGoBackWhere(params.hubId) } },
+            },
+          },
+        ],
+      },
       orderBy: { id: "asc" },
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: boardLocationInclude(params.hubId),
     });
+  },
+
+  async listReturnsWaitingAtLocations(
+    hubId: string,
+    pickupLocationIds: readonly string[],
+  ): Promise<BrandReturnForRoundRecord[]> {
+    return prisma.brandReturn.findMany({
+      where: {
+        ...waitingToGoBackWhere(hubId),
+        fulfilmentGroup: { pickupLocationId: { in: [...pickupLocationIds] } },
+      },
+      orderBy: { createdAt: "asc" },
+      select: returnStopSelect,
+    });
+  },
+
+  async listReturnsToCarry(
+    client: DbClient,
+    params: { hubId: string; pickupLocationId: string; brandReturnIds: string[] },
+  ) {
+    return client.brandReturn.findMany({
+      where: {
+        ...waitingToGoBackWhere(params.hubId),
+        id: { in: params.brandReturnIds },
+        fulfilmentGroup: { pickupLocationId: params.pickupLocationId },
+      },
+      select: { id: true, fulfilmentGroupId: true },
+    });
+  },
+
+  async moveReturnsOnRound(client: DbClient, brandReturnIds: string[]): Promise<number> {
+    const { count } = await client.brandReturn.updateMany({
+      where: { id: { in: brandReturnIds }, status: BrandReturnStatus.AT_HUB },
+      data: { status: BrandReturnStatus.ON_ROUND },
+    });
+    return count;
+  },
+
+  async findActiveReturnStop(client: DbClient, taskId: string, brandReturnId: string) {
+    return client.riderTaskStop.findFirst({
+      where: {
+        riderTaskId: taskId,
+        isActive: true,
+        direction: RiderStopDirection.RETURN,
+        brandReturnId,
+      },
+      select: {
+        id: true,
+        scannedAt: true,
+        fulfilmentGroupId: true,
+        brandReturn: { select: { source: true } },
+      },
+    });
+  },
+
+  async markReturnDroppedOff(
+    client: DbClient,
+    brandReturnId: string,
+    droppedOffAt: Date,
+  ): Promise<boolean> {
+    const { count } = await client.brandReturn.updateMany({
+      where: { id: brandReturnId, status: BrandReturnStatus.ON_ROUND },
+      data: { status: BrandReturnStatus.DROPPED_OFF, droppedOffAt },
+    });
+    return count > 0;
   },
 
   async findPickupLocationBrand(pickupLocationId: string) {
@@ -127,18 +224,26 @@ export const logisticsRoundRepository = {
       roundStartsAt: Date;
       assignedById: string;
       fulfilmentGroupIds: string[];
+      returnsToCarry: { id: string; fulfilmentGroupId: string }[];
     },
   ) {
-    const { fulfilmentGroupIds, ...taskFields } = task;
+    const { fulfilmentGroupIds, returnsToCarry, ...taskFields } = task;
     return client.riderTask.create({
       data: {
         ...taskFields,
         stops: {
           createMany: {
-            data: fulfilmentGroupIds.map((fulfilmentGroupId) => ({
-              fulfilmentGroupId,
-              direction: RiderStopDirection.COLLECT,
-            })),
+            data: [
+              ...fulfilmentGroupIds.map((fulfilmentGroupId) => ({
+                fulfilmentGroupId,
+                direction: RiderStopDirection.COLLECT,
+              })),
+              ...returnsToCarry.map(({ id, fulfilmentGroupId }) => ({
+                fulfilmentGroupId,
+                brandReturnId: id,
+                direction: RiderStopDirection.RETURN,
+              })),
+            ],
           },
         },
       },
@@ -239,13 +344,25 @@ export const logisticsRoundRepository = {
 
   async listUnscannedStopGroupIds(client: DbClient, taskId: string): Promise<string[]> {
     const unscannedStops = await client.riderTaskStop.findMany({
-      where: { riderTaskId: taskId, isActive: true, scannedAt: null },
+      where: {
+        riderTaskId: taskId,
+        isActive: true,
+        scannedAt: null,
+        direction: RiderStopDirection.COLLECT,
+      },
       select: { fulfilmentGroupId: true },
     });
     return unscannedStops.map(({ fulfilmentGroupId }) => fulfilmentGroupId);
   },
 
   async releaseUnscannedStops(client: DbClient, taskId: string): Promise<void> {
+    await client.brandReturn.updateMany({
+      where: {
+        status: BrandReturnStatus.ON_ROUND,
+        stops: { some: { riderTaskId: taskId, isActive: true, scannedAt: null } },
+      },
+      data: { status: BrandReturnStatus.AT_HUB },
+    });
     await client.riderTaskStop.updateMany({
       where: { riderTaskId: taskId, isActive: true, scannedAt: null },
       data: { isActive: false },

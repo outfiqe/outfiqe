@@ -30,6 +30,7 @@ const buildPartner = (overrides: Record<string, unknown> = {}) => ({
   referencePattern: null,
   codRemittanceDays: 7,
   trackingUrlTemplate: null,
+  webhookUrl: null,
   accounts: [
     {
       hubId: "hub-1",
@@ -37,6 +38,12 @@ const buildPartner = (overrides: Record<string, unknown> = {}) => ({
       merchantAccountRef: "OUTFIQE-01",
       pickupPointRef: null,
       credentialsKey: null,
+      credentials: {
+        hasApiKey: false,
+        hasBaseUrl: false,
+        hasWebhookSecret: false,
+        hasPreviousWebhookSecret: false,
+      },
       isActive: true,
     },
   ],
@@ -78,13 +85,138 @@ describe("PartnersPage", () => {
         countryCode: "NP",
         adapterKey: "MANUAL",
         supportsCod: true,
+        webhookVerification: "NONE",
         referencePattern: null,
+      }),
+    );
+  });
+
+  it("asks how a connected partner sends updates", async () => {
+    let createdBody: unknown;
+    mswServer.use(
+      http.get(PARTNERS_URL, () => okJson({ partners: [] })),
+      http.post(PARTNERS_URL, async ({ request }) => {
+        createdBody = await request.json();
+        return okJson(buildPartner({ adapterKey: "HTTP_JSON" }), 201);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(<PartnersPage />, { path: "/logistics/partners" });
+
+    await user.click(await screen.findByRole("button", { name: "Add partner" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByLabelText("How they send parcel updates")).not.toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText("Name"), "Valley Courier");
+    await user.type(within(dialog).getByLabelText("Short code"), "valley");
+    await user.selectOptions(within(dialog).getByLabelText("Connection"), "HTTP_JSON");
+    await user.selectOptions(
+      within(dialog).getByLabelText("How they send parcel updates"),
+      "SIGNATURE",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Save partner" }));
+
+    await waitFor(() =>
+      expect(createdBody).toMatchObject({
+        adapterKey: "HTTP_JSON",
+        webhookVerification: "SIGNATURE",
       }),
     );
   });
 });
 
 describe("PartnerDetailPage", () => {
+  it("shows a connected partner's update address, secrets and updates, and replays missed ones", async () => {
+    let replayBody: unknown;
+    const connectedPartner = buildPartner({
+      adapterKey: "HTTP_JSON",
+      supportsBooking: true,
+      supportsWebhooks: true,
+      webhookVerification: "SIGNATURE",
+      webhookUrl: "https://api.outfiqe.com/api/webhooks/delivery-partners/valley",
+      accounts: [
+        {
+          hubId: "hub-1",
+          hubName: "Kathmandu Hub",
+          merchantAccountRef: "OUTFIQE-01",
+          pickupPointRef: null,
+          credentialsKey: "VALLEY_KTM",
+          credentials: {
+            hasApiKey: true,
+            hasBaseUrl: true,
+            hasWebhookSecret: false,
+            hasPreviousWebhookSecret: false,
+          },
+          isActive: true,
+        },
+      ],
+    });
+    mswServer.use(
+      http.get(`${PARTNERS_URL}/partner-1`, () => okJson(connectedPartner)),
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(DELIVERY_ZONES_URL, () => okJson([])),
+      http.get(`${PARTNERS_URL}/partner-1/webhook-receipts`, () =>
+        okJson({
+          items: [
+            {
+              id: "receipt-1",
+              signatureValid: true,
+              receivedAt: "2026-10-17T08:00:00.000Z",
+              processedAt: "2026-10-17T08:00:01.000Z",
+              processingError: null,
+              eventCount: 1,
+              appliedCount: 0,
+              unknownCount: 1,
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+      http.post(`${PARTNERS_URL}/partner-1/webhook-receipts/replay`, async ({ request }) => {
+        replayBody = await request.json();
+        return okJson({ replayedCount: 1 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(
+      <>
+        <PartnerDetailPage partnerId="partner-1" />
+        <Toaster />
+      </>,
+      { path: "/logistics/partners/partner-1" },
+    );
+
+    expect(
+      await screen.findByText("https://api.outfiqe.com/api/webhooks/delivery-partners/valley"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("API key: set")).toBeInTheDocument();
+    expect(screen.getByText("Update secret: not set")).toBeInTheDocument();
+    expect(await screen.findByText("1 with a status we don't know")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send missed updates again" }));
+
+    await waitFor(() =>
+      expect(replayBody).toEqual({ since: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) }),
+    );
+  });
+
+  it("shows when a connected partner hasn't sent any updates yet", async () => {
+    mswServer.use(
+      http.get(`${PARTNERS_URL}/partner-1`, () =>
+        okJson(buildPartner({ adapterKey: "HTTP_JSON", webhookVerification: "NONE" })),
+      ),
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(DELIVERY_ZONES_URL, () => okJson([])),
+      http.get(`${PARTNERS_URL}/partner-1/webhook-receipts`, () =>
+        okJson({ items: [], nextCursor: null }),
+      ),
+    );
+    renderWithRouter(<PartnerDetailPage partnerId="partner-1" />, {
+      path: "/logistics/partners/partner-1",
+    });
+
+    expect(await screen.findByText("No updates from this partner yet.")).toBeInTheDocument();
+    expect(screen.getByText(/we ask them/)).toBeInTheDocument();
+  });
+
   it("uploads a status sheet and lists what happened to each row", async () => {
     let importBody: unknown;
     mswServer.use(

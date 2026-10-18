@@ -1,5 +1,20 @@
 import type { ShipmentStatusValue } from "../../hub-operations/api/hubOperationsSchemas";
-import type { ParcelEventCode, ParcelQueue } from "../api/parcelsSchemas";
+import type { ParcelEventCode, ParcelQueue, ParcelReturnOutcome } from "../api/parcelsSchemas";
+
+export const RETURN_OUTCOME_LABELS: Record<ParcelReturnOutcome, string> = {
+  CUSTOMER_REFUSED_OR_UNREACHABLE: "Refused or couldn't be reached — items fine",
+  WRONG_OR_DAMAGED_ITEM: "Wrong or damaged item from the brand",
+  PARTNER_DAMAGED_OR_LOST: "Damaged by the delivery partner",
+};
+
+export const RETURN_OUTCOME_HINTS: Record<ParcelReturnOutcome, string> = {
+  CUSTOMER_REFUSED_OR_UNREACHABLE:
+    "The customer is refunded the goods (a prepaid delivery fee is kept) and the refusal counts towards switching off cash on delivery.",
+  WRONG_OR_DAMAGED_ITEM:
+    "The customer gets everything back, including delivery, and it counts against each brand in the parcel.",
+  PARTNER_DAMAGED_OR_LOST:
+    "The customer gets everything back and a claim is opened against the partner. No one else is charged.",
+};
 
 export const PARCEL_QUEUE_LABELS: Record<ParcelQueue, string> = {
   TO_BOOK: "To book",

@@ -3,7 +3,7 @@
 import { cn, ProgressBar } from "@outfiqe/design-system";
 import { useTranslations } from "next-intl";
 
-import { formatLakhAmount } from "../../utils/outfitFormatting";
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
 
 type BudgetBarProps = {
   total: number;

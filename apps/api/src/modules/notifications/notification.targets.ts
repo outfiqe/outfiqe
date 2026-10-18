@@ -41,6 +41,7 @@ const ADMIN_ROUTES = {
   crmBilling: "/crm/billing",
   coupons: "/coupons",
   ordersList: "/orders",
+  logisticsAlerts: "/logistics/alerts",
 } as const;
 
 const web = (path: string): NotificationTarget => ({ surface: NotificationSurface.WEB, path });
@@ -182,6 +183,12 @@ export const resolveNotificationTarget = ({
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:
       return admin(ADMIN_ROUTES.coupons);
+    case NotificationType.LOGISTICS_STAFF_ALERT:
+      return admin(ADMIN_ROUTES.logisticsAlerts);
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
+      return web(WEB_ROUTES.manageOrders);
+    case NotificationType.ORDER_DELIVERY_LATE:
+      return entityId ? web(`${WEB_ROUTES.ordersList}/${entityId}`) : web(WEB_ROUTES.ordersList);
     case NotificationType.COUPON_REDEMPTION_FLAGGED:
       return entityId
         ? admin(`${ADMIN_ROUTES.ordersList}/${entityId}`)

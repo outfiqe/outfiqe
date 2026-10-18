@@ -13,6 +13,9 @@ import {
   parcelPageSchema,
   type ParcelQueue,
   type RecordParcelUpdateBody,
+  type ReturnCheckInBody,
+  type ReturnedParcel,
+  returnedParcelSchema,
 } from "./parcelsSchemas";
 
 const HUB_SHIPMENTS_PATH = "/logistics/hub/shipments";
@@ -32,6 +35,16 @@ export const parcelsApi = {
     const res = await apiClient.post(`${HUB_SHIPMENTS_PATH}/${shipmentId}/booking`, {
       partnerReference,
     });
+    return parcelBookingSchema.parse(res.data);
+  },
+
+  async checkInReturn(shipmentId: string, body: ReturnCheckInBody): Promise<ReturnedParcel> {
+    const res = await apiClient.post(`${HUB_SHIPMENTS_PATH}/${shipmentId}/return-check-in`, body);
+    return returnedParcelSchema.parse(res.data);
+  },
+
+  async retryBooking(shipmentId: string): Promise<ParcelBooking> {
+    const res = await apiClient.post(`${HUB_SHIPMENTS_PATH}/${shipmentId}/booking/retry`);
     return parcelBookingSchema.parse(res.data);
   },
 

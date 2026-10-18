@@ -235,6 +235,10 @@ export const COUPON_MANAGEMENT_PERMISSION_KEYS: readonly PlatformPermissionKey[]
   "platform:coupons:manage",
 ];
 
+export const LOGISTICS_MANAGEMENT_PERMISSION_KEYS: readonly PlatformPermissionKey[] = [
+  "platform:logistics:manage",
+];
+
 export const PLATFORM_PERMISSION_KEYS: readonly PlatformPermissionKey[] =
   PLATFORM_PERMISSION_CATALOG.map((permission) => permission.key);
 

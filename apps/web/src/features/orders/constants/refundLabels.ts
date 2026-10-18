@@ -12,6 +12,7 @@ export const REFUND_CAUSE_LABELS: Record<OrderRefundCause, string> = {
   [OrderRefundCause.RETURNED]: "Returned",
   [OrderRefundCause.CUSTOMER_REFUSED]: "Refused at delivery",
   [OrderRefundCause.STAFF_ADJUSTMENT]: "Refunded by Outfiqe",
+  [OrderRefundCause.PARTNER_FAILED]: "The delivery partner lost or damaged it",
 };
 
 export const REFUND_STATUS_LABELS: Record<OrderRefundStatus, string> = {

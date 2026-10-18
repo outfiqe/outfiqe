@@ -20,3 +20,10 @@ export const PAYMENT_METHODS = [
     enabled: true,
   },
 ] as const;
+
+export const COD_ELIGIBILITY_PHONE_DEBOUNCE_MS = 500;
+
+export const COD_UNAVAILABLE_REASON = {
+  PREPAID_COUPON: "Your coupon requires a prepaid payment method",
+  REFUSED_DELIVERIES: "Not available on this account after refused deliveries. Please pay online.",
+} as const;

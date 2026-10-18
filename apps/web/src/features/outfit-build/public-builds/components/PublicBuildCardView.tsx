@@ -4,9 +4,10 @@ import { CheriqIcon } from "@outfiqe/design-system";
 import { MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
+
 import { BuildCoverGrid } from "../../components/BuildCoverGrid";
 import type { PublicBuildCard } from "../../social/api/outfitSocialSchemas";
-import { formatLakhAmount } from "../../utils/outfitFormatting";
 
 const NO_CONTRIBUTORS = 0;
 
