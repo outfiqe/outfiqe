@@ -8,6 +8,10 @@ panel. Each app wires these into its own layout and supplies the app-local data 
 socket connection, route resolver); the widgets themselves own no routing or fetching beyond what's
 passed in.
 
+The package is marked `"sideEffects": false` (nothing in it runs on import), so a page only ships
+the widgets it uses. Keep it that way: the QR code (`qrcode`) and camera decoder (`jsqr`) are large,
+and without the flag they were bundled into every page that showed the notification bell.
+
 ## Structure
 
 - `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`), plus
