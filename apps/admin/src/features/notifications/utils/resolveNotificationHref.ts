@@ -7,6 +7,7 @@ export type AdminNotificationTarget =
   | { to: "/crm/tasks" }
   | { to: "/crm/support" }
   | { to: "/coupons" }
+  | { to: "/logistics/alerts" }
   | { to: "/orders/$orderId"; params: { orderId: string } };
 
 const supportTicketTarget = (ticketId: string | null): AdminNotificationTarget =>
