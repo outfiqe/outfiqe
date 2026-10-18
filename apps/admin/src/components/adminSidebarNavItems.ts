@@ -42,6 +42,7 @@ import {
   ShieldCheck,
   Shirt,
   ShoppingBag,
+  Siren,
   SlidersHorizontal,
   Star,
   Tags,
@@ -391,6 +392,12 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     icon: Warehouse,
     group: "commerce",
     items: [
+      {
+        id: "logistics-alerts",
+        href: "/logistics/alerts",
+        label: "Delivery alerts",
+        icon: Siren,
+      },
       {
         id: "logistics-hubs",
         href: "/logistics/hubs",

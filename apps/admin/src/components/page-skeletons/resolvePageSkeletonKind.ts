@@ -67,6 +67,7 @@ const LIST_PATHS = new Set([
   "/gamification/manual-actions",
   "/gamification/xp-levels",
   "/hero-slides",
+  "/logistics/alerts",
   "/logistics/bag-tags",
   "/logistics/cod",
   "/logistics/hubs",
