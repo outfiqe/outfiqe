@@ -12,6 +12,7 @@ The city picker and delivery-fee preview shared by the bag and checkout: which c
 - `hooks/useCitySearch.ts` — city search for the autocomplete.
 - `utils/resolveZonePreview.ts` — `resolveZonePreview(zones, city)`: the zone a typed city belongs to, or the default zone when it matches none; `normalizeCityName` trims and lower-cases before comparing.
 - `utils/groupCitiesByZone.ts` — groups search matches by zone for the dropdown.
+- `hooks/useDeliveryEstimate.ts` + `utils/formatDeliveryWindow.ts` — the expected delivery dates for a city (`GET /api/delivery-zones/estimate?city=`, debounced), shown at checkout as "Estimated delivery". The dates are calendar dates already worked out in the country's working calendar by the API; the browser only formats them.
 - `index.ts` — what `cart` and `checkout` import.
 
 ## Funnel

@@ -20,6 +20,7 @@ const buildOrder = (overrides: Partial<Record<string, unknown>> = {}) => ({
   deliveryFee: 0,
   codFee: 0,
   total: 2400,
+  refundedAmount: 0,
   buyerName: "Asha Rai",
   buyerEmail: "asha@example.com",
   needsManualRefund: false,

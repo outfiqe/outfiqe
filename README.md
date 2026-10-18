@@ -44,6 +44,10 @@ pnpm dev
   — no login form of its own, sign in via Web and it redirects you here if your account is
   `ADMIN`; see "Admin access" below
 - Always use `outfiqe.local`, not `localhost` — see "Local domain setup"
+- Turborepo only hands each task the env vars `turbo.json` lists. `globalPassThroughEnv` keeps
+  `LOCALAPPDATA` (and the optional `SWC_NATIVE_BINDING_CACHE` override) because SWC's Windows binary,
+  loaded by the `next-intl` plugin in `apps/web/next.config.ts`, needs it to find its cache folder —
+  without it `next dev` fails with `ERR_SWC_NATIVE_CACHE` and takes all of `pnpm dev` down
 
 ### Local domain setup
 

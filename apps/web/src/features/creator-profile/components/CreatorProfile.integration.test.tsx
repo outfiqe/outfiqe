@@ -180,6 +180,7 @@ const mockAuth = (
     isStaff,
     isCreator: false,
     isShopper: true,
+    isRider: false,
     hasCrmAccess: false,
     state: {
       user: userId ? buildUserSession(userId) : null,
@@ -744,6 +745,7 @@ describe("CreatorProfile edit flow — username change", () => {
       isStaff: false,
       isCreator: false,
       isShopper: true,
+      isRider: false,
       hasCrmAccess: false,
       state: {
         user: buildUserSession("creator-9"),

@@ -53,6 +53,7 @@ beforeEach(() => {
     isStaff: false,
     isCreator: false,
     isShopper: true,
+    isRider: false,
     hasCrmAccess: false,
     logout: vi.fn(),
     updateUser,

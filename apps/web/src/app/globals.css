@@ -109,3 +109,22 @@
     cursor: pointer;
   }
 }
+
+@media print {
+  body:has([data-print-sheet]) * {
+    visibility: hidden;
+  }
+
+  [data-print-sheet],
+  [data-print-sheet] * {
+    visibility: visible;
+  }
+
+  [data-print-sheet] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: none;
+  }
+}

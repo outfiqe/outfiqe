@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import {
+  FulfilmentMode,
   FulfilmentStatus,
   OrderFulfilmentSummary,
   PaymentStatus,
@@ -9,6 +10,11 @@ import type { DbClient } from "#types/db.types.js";
 
 import { orderFulfilmentGroupRepository } from "./fulfilment-groups/fulfilment-group.repository.js";
 import type { CreateOrderInput } from "./order.types.js";
+import { orderRefundRepository } from "./refunds/refund.repository.js";
+import { orderRefundDestinationRepository } from "./refunds/refund-destination.repository.js";
+import { orderUnavailableItemRepository } from "./unavailable-items/unavailable-item.repository.js";
+
+const ANY_HUB_GROUP = 1;
 
 const withOrderItemDetails = {
   product: { select: { name: true, imageUrl: true, brand: { select: { name: true } } } },
@@ -46,7 +52,7 @@ export const orderRepository = {
         transactions: { orderBy: { createdAt: "asc" } },
         fulfilmentGroups: {
           orderBy: { createdAt: "asc" },
-          include: { brand: { select: { name: true } } },
+          include: { brand: { select: { name: true } }, shipment: { select: { status: true } } },
         },
       },
     });
@@ -86,6 +92,7 @@ export const orderRepository = {
           orderBy: { createdAt: "asc" },
           include: {
             brand: { select: { name: true } },
+            shipment: { select: { status: true } },
             items: { select: { product: { select: { name: true } } } },
           },
         },
@@ -105,6 +112,11 @@ export const orderRepository = {
         paymentStatus: true,
         fulfilmentStatus: true,
         items: { select: { sizeId: true, qty: true } },
+        fulfilmentGroups: {
+          where: { fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS },
+          take: ANY_HUB_GROUP,
+          select: { id: true },
+        },
       },
     });
   },
@@ -191,4 +203,10 @@ export const orderRepository = {
   },
 
   ...orderFulfilmentGroupRepository,
+
+  ...orderRefundRepository,
+
+  ...orderRefundDestinationRepository,
+
+  ...orderUnavailableItemRepository,
 };

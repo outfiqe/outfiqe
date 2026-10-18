@@ -8,9 +8,9 @@ import { useAuth } from "@/features/auth";
 import { ReportContentModal } from "@/features/explore/posts/components/ReportContentModal";
 import { useReportContent } from "@/features/explore/posts/hooks/useReportContent";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { formatNepalDateTime } from "@/shared/lib/nepalFormatting";
 
 import { PersonAvatar } from "../../components/PersonAvatar";
-import { formatNepalDateTime } from "../../utils/outfitFormatting";
 import type { BuildComment } from "../api/outfitSocialSchemas";
 import {
   useAddBuildComment,

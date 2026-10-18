@@ -7,6 +7,8 @@ export const platformGuards = {
   catalogManage: requirePlatformRole("platform:catalog:manage"),
   ordersRead: requirePlatformRole("platform:orders:read", "platform:orders:manage"),
   ordersManage: requirePlatformRole("platform:orders:manage"),
+  logisticsRead: requirePlatformRole("platform:logistics:read", "platform:logistics:manage"),
+  logisticsManage: requirePlatformRole("platform:logistics:manage"),
   usersRead: requirePlatformRole("platform:users:read", "platform:users:manage"),
   usersManage: requirePlatformRole("platform:users:manage"),
   userSearch: requirePlatformRole(

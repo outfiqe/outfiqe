@@ -14,6 +14,7 @@ export const LEDGER_ROW_KIND = {
   BRAND_PAYOUT: "BRAND_PAYOUT",
   COMMISSION: "COMMISSION",
   OFFER_PAYOUT: "OFFER_PAYOUT",
+  RIDER_EARNING: "RIDER_EARNING",
 } as const;
 
 export const DEFAULT_WITHDRAW_POLICY: Record<WithdrawOwnerType, WithdrawPolicyDefaults> = {

@@ -35,9 +35,11 @@ import {
   registerAdminSchema,
   registerBrandSchema,
   registerCrmInviteSchema,
+  registerRiderSchema,
   registerSchema,
   resendVerificationSchema,
   resetPasswordSchema,
+  riderInviteQuerySchema,
   validateTokenQuerySchema,
   verifyEmailSchema,
 } from "./auth.schemas.js";
@@ -174,6 +176,17 @@ authRoutes.post(
   registerIpRateLimit,
   validate({ body: registerCrmInviteSchema }),
   authController.registerFromCrmInvite,
+);
+authRoutes.get(
+  "/invite/rider",
+  validate({ query: riderInviteQuerySchema }),
+  authController.getRiderInvite,
+);
+authRoutes.post(
+  "/register/rider",
+  registerIpRateLimit,
+  validate({ body: registerRiderSchema }),
+  authController.registerRider,
 );
 authRoutes.get(
   "/validate-token",

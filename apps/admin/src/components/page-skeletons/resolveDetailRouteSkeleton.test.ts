@@ -19,6 +19,8 @@ describe("resolveDetailRouteSkeletonKey", () => {
 
   it.each([
     "/admin/orders",
+    "/admin/orders/refunds",
+    "/admin/orders/unavailable-items",
     "/admin/support",
     "/admin/platform/metrics",
     "/admin/crm/customers/u1",

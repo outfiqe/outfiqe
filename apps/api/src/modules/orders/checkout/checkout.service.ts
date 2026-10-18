@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { PLATFORM_DEFAULT_COUNTRY_CODE } from "#constants/country.constants.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { PaymentMethod, PaymentStatus, PaymentTransactionStatus } from "#generated/prisma/enums.js";
@@ -8,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creator-link.repository.js";
+import { checkCashOnDeliveryEligibility } from "#modules/logistics/refusals/refusal.eligibility.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderRepository } from "../order.repository.js";
@@ -22,6 +24,7 @@ import {
   redeemCheckoutCoupon,
 } from "./checkout.commit.js";
 import { CHECKOUT_ENDPOINT } from "./checkout.constants.js";
+import { planCheckoutFulfilment } from "./checkout.fulfilment.js";
 import { assertCheckoutLinesInStock, loadCheckoutLines } from "./checkout.lines.js";
 import { priceCheckout } from "./checkout.pricing.js";
 import {
@@ -30,6 +33,20 @@ import {
 } from "./checkout.settlement.js";
 import { toAttributedOrderItems } from "./checkout.utils.js";
 
+const assertCashOnDeliveryAllowed = async (userId: string, phone: string): Promise<void> => {
+  const { isCashOnDeliveryAllowed } = await checkCashOnDeliveryEligibility({
+    userId,
+    phone,
+    countryCode: PLATFORM_DEFAULT_COUNTRY_CODE,
+  });
+  if (isCashOnDeliveryAllowed) return;
+  throw new AppError(
+    "COD_UNAVAILABLE_REFUSALS",
+    "Cash on delivery isn't available for this account after refused deliveries. Please pay online.",
+    HTTP_STATUS.UNPROCESSABLE_ENTITY,
+  );
+};
+
 const checkoutOnce = async (
   userId: string,
   userEmail: string,
@@ -37,6 +54,8 @@ const checkoutOnce = async (
 ): Promise<OrderView> => {
   const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow, couponCode } =
     body;
+
+  if (paymentMethod === PaymentMethod.COD) await assertCashOnDeliveryAllowed(userId, phone);
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
@@ -80,6 +99,14 @@ const checkoutOnce = async (
     orderPlacedAt,
   );
 
+  const fulfilmentPlan = await planCheckoutFulfilment({
+    brandIds: distinctBrandIds,
+    city,
+    phone,
+    orderPlacedAt,
+    requiresCashOnDelivery: isCashOnDelivery,
+  });
+
   const orderId = randomUUID();
 
   const { order, createdCommissions } = await prisma.$transaction(async (tx) => {
@@ -90,9 +117,14 @@ const checkoutOnce = async (
       userId,
       fullName,
       phone,
+      phoneE164: fulfilmentPlan.phoneE164,
       address,
       city,
       landmark,
+      countryCode: fulfilmentPlan.countryCode,
+      currency: fulfilmentPlan.currency,
+      promisedDeliveryFrom: fulfilmentPlan.promisedDeliveryFrom,
+      promisedDeliveryBy: fulfilmentPlan.promisedDeliveryBy,
       paymentMethod,
       paymentStatus,
       paymentTransactionStatus,
@@ -118,7 +150,7 @@ const checkoutOnce = async (
       orderId: createdOrder.id,
       orderItems: createdOrder.items,
       pricedLines,
-      distinctBrandIds,
+      fulfilmentGroupSpecs: fulfilmentPlan.fulfilmentGroupSpecs,
     });
 
     const commissionsForCreators = await recordItemPayoutsAndCommissions(tx, {

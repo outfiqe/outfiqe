@@ -80,6 +80,13 @@ export const featureFlagsService = {
     return isFlagOnFor(state, { userId, brandIds });
   },
 
+  async isEnabledForBrands(key: FeatureFlagKey, brandIds: readonly string[]): Promise<Set<string>> {
+    const state = await readFlagState(key);
+    return new Set(
+      brandIds.filter((brandId) => isFlagOnFor(state, { userId: null, brandIds: [brandId] })),
+    );
+  },
+
   async listEnabledKeysForUser(userId: string | null): Promise<FeatureFlagKey[]> {
     const flags = await Promise.all(
       FEATURE_FLAG_KEYS.map(async (key) => ({ key, state: await readFlagState(key) })),

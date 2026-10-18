@@ -42,6 +42,7 @@ const mockAuth = (updateUser = vi.fn()) => {
     isStaff: false,
     isCreator: false,
     isShopper: true,
+    isRider: false,
     hasCrmAccess: false,
     state: {
       user: buildUserSession(),

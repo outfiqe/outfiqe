@@ -3,6 +3,17 @@ export const DEFAULT_PLATFORM_AUDIT_PAGE_SIZE = 25;
 export const MAX_PLATFORM_AUDIT_PAGE_SIZE = 100;
 
 export const PLATFORM_AUDIT_ACTION = {
+  RIDER_INVITED: "rider.invited",
+  RIDER_IDENTITY_VERIFIED: "rider.identity-verified",
+  RIDER_STATUS_CHANGED: "rider.status-changed",
+  LOGISTICS_STATUS_CORRECTED: "logistics.status-corrected",
+  LOGISTICS_PARCEL_UPDATED: "logistics.parcel-updated",
+  LOGISTICS_PARCEL_RETURN_CHECKED_IN: "logistics.parcel-return-checked-in",
+  LOGISTICS_DELIVERY_REFUSALS_CLEARED: "logistics.delivery-refusals-cleared",
+  LOGISTICS_COD_REMITTANCE_RECORDED: "logistics.cod-remittance-recorded",
+  RIDER_PAY_RATE_CREATED: "rider.pay-rate-created",
+  RIDER_PAY_RATE_DEACTIVATED: "rider.pay-rate-deactivated",
+  RIDER_EARNING_VOIDED: "rider.earning-voided",
   IMPERSONATION_START: "impersonation.start",
   IMPERSONATION_END: "impersonation.end",
   FEATURE_OVERRIDE_SET: "feature.override.set",
@@ -42,6 +53,9 @@ export const PLATFORM_AUDIT_ACTION = {
   COMMISSION_TIER_UPDATED: "commission-tier.updated",
   COMMISSION_TIER_DELETED: "commission-tier.deleted",
   ORDER_RETURNED_TO_ORIGIN: "order.returned-to-origin",
+  ORDER_ITEMS_REFUNDED: "order.items-refunded",
+  ORDER_MANUAL_REFUND_PAID: "order.manual-refund-paid",
+  ORDER_REFUND_ACCOUNT_REVEALED: "order.refund-account-revealed",
   OUTFIT_OFFER_RELEASED_BY_ADMIN: "outfit-offer.released-by-admin",
   OUTFIT_OFFER_REFUNDED_BY_ADMIN: "outfit-offer.refunded-by-admin",
   OUTFIT_OFFER_MARKED_REFUNDED: "outfit-offer.marked-refunded",

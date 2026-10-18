@@ -11,7 +11,16 @@ The feature is split into topic folders, each with the usual layer folders insid
 - Feature root — the overview page, the profile view and the dashboard/overview API and server fetchers.
 - `products/` — the product list, the add/edit product modals, stock and discounts.
 - `shipments/` — orders to fulfil: the shipment list, a shipment's detail, marking shipped and asking to cancel.
+- `pickups/` — the brand's pickup locations (`/pickup-locations`): where Outfiqe riders collect orders, which one is the default, and whether a hub covers each one. It also holds the banner on the Orders page that asks a brand with no location to add one.
 - `tag-reviews/` — reviewing creators' product tags and the brand's tag policy.
+- `returns/` — `BrandReturnsPanel`, on the Orders page under the reliability panel: items Outfiqe
+  is bringing back (a parcel the customer didn't take, or items that failed the hub's quality
+  check), where each one is, and how many units are fine or damaged. Once the rider has handed
+  one over, **Confirm received** (`useConfirmBrandReturn` → `POST /logistics/brand/returns/:id/confirm`)
+  puts the fine units back into stock. Unconfirmed returns are confirmed automatically after 48
+  hours, and the panel says so. Backed by `useBrandReturns` → `returns/api/brandReturnApi.ts` →
+  `GET /logistics/brand/returns` (cursor-paged).
+- `reliability/` — `DeliveryReliabilityPanel`, shown at the top of the Orders page: how many delivery problems the brand had in the last 30 days (items it couldn't supply, items that failed the hub's quality check, rider visits with nothing ready), what that means (fine, warned at 3, reviewed by Outfiqe at 6) and each problem with its date and note. Backed by `useDeliveryReliability` → `reliability/api/reliabilityApi.ts` → `GET /logistics/brand/reliability` (cursor-paged). The panel hides itself if the request fails, because it is information, not something the page needs to work.
 - `wallet/` — the payout summary.
 
 Files:
@@ -37,6 +46,25 @@ Files:
 - Both product forms render their photo side through `@/shared/components/MediaFormShell` + `PhotoCropPane` + `@/shared/hooks/usePendingPhotos` — the same fixed-photo-pane / scrollable-fields / sticky-footer chrome and single-active-photo crop editor as `creator-dashboard`'s `PostModal`. See that feature's README and the rationale below for what's shared vs. product-specific.
 - `shipments/components/OrdersSection.tsx` — the `/manage-orders` page: a paginated list of this brand's **fulfilment groups** (one shipment per order), each row (`BrandShipmentRow`) linking to `/manage-orders/[groupId]`. Backed by `useBrandShipments` → `brandFulfilmentApi.list` → `GET /orders/brand/fulfilment-groups`.
 - `shipments/components/BrandShipmentDetail.tsx` + `MarkShipmentShippedModal.tsx` + `RequestShipmentCancellationModal.tsx` + `shipmentStatus.ts` — the `/manage-orders/[groupId]` shipment detail. Shows the buyer ship-to contact (name/phone/address), this brand's items with price breakdown, this brand's payout for the shipment, and the next fulfilment action: **Mark packed** / **Mark shipped** (carrier + tracking modal) / **Mark delivered** (`useAdvanceShipment` → `PATCH /orders/brand/fulfilment-groups/:groupId`), plus **Request cancellation** (`useRequestShipmentCancellation` → `POST …/request-cancellation`; the actual cancel + refund is an admin action). `shipmentStatus.ts` owns the status labels/tones and the `nextShipmentStatus` transition map. `shipments/api/brandFulfilmentApi.ts` / `brandFulfilmentSchemas.ts` and the `useBrandShipment(s)` / `useAdvanceShipment` / `useRequestShipmentCancellation` hooks mirror the other API/hook pairs.
+- `shipments/components/UnavailableItemsPanel.tsx` + `ReportUnavailableItemsModal.tsx` — "Items you can't supply" on the shipment detail. While the parcel is still with the brand (`canReportUnavailable`, from the API: placed/packed for brand-shipped groups, waiting/ready for pickup for Outfiqe pickups) the brand picks the missing units (never more than are still ordered, `qty - refundedQty`) and says why. The report goes to Outfiqe staff; approving it refunds the buyer for just those units. Earlier reports show with their review status and any staff note. Backed by `useUnavailableItemReports` / `useReportUnavailableItems` → `shipments/api/unavailableItemApi.ts` → `GET`/`POST /orders/brand/fulfilment-groups/:groupId/unavailable-items`. Labels live in `shipments/constants/unavailableItemLabels.ts`.
+- `pickups/components/HubPickupPanel.tsx` — shown on `/manage-orders/[groupId]` instead of the
+  ship actions and the customer card when Outfiqe delivers the order. It shows a different thing
+  for each stage:
+  - "Mark ready for pickup" (`useMarkReadyForPickup` →
+    `POST /api/logistics/brand/pickups/:groupId/ready`);
+  - once ready, the pickup code with its QR (`QrCode` from `@outfiqe/components`) and a link to
+    the printable slip;
+  - a plain progress message for each later stage.
+
+  `shipments/utils/shipmentStatus.ts` `describeShipmentStatus` shows the pickup stage ("Ready for
+  pickup", "At Outfiqe hub", …) on rows and the detail badge until the items are in a parcel, and
+  the usual shipment status after that.
+
+- `pickups/components/PickupSlipPrintPage.tsx` — `/print/pickup-slip/[groupId]` (route group
+  `app/(print)`, outside the dashboard shell): the order number, QR, code and what's in the bag,
+  with a Print button. The `@media print` rule in `app/globals.css` hides everything except the
+  element marked `data-print-sheet`, whatever the page around it renders.
+- `pickups/components/PickupLocationsSection.tsx` — the `/pickup-locations` page, with loading, empty and error states. `PickupLocationCard.tsx` shows one location, its "Outfiqe pickup" or "You ship" badge and its actions (set as default, edit, remove). `PickupLocationFormModal.tsx` adds or edits a location, reusing `CityAutocomplete` for the city. `MissingPickupLocationBanner.tsx` sits at the top of `OrdersSection`. The calls go `usePickupLocations` / `useSavePickupLocation` / `useMakeDefaultPickupLocation` / `useRemovePickupLocation` → `pickupLocationApi` → `/api/logistics/brand/pickup-locations`. `utils/pickupLocationForm.utils.ts` turns the form into the request: an optional map pin pasted as "latitude, longitude" (as Google Maps shows it), with empty optional fields sent as null.
 - `wallet/components/WalletSummaryTiles.tsx` — the settlement-ledger breakdown (total sales, pending,
   available, withdrawn, and "From builds": the brand's share of Build commission, which the API
   already folds into the other figures) shown at the top of `/wallet`, mirroring

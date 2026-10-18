@@ -211,17 +211,23 @@ export const paymentService = {
     return { status };
   },
 
-  async refund(
-    orderId: string,
-    paymentMethod: PaymentMethod,
-    payerPhone: string,
-  ): Promise<PaymentRefundOutcome> {
+  async refund({
+    orderId,
+    paymentMethod,
+    payerPhone,
+    amount,
+  }: {
+    orderId: string;
+    paymentMethod: PaymentMethod;
+    payerPhone: string;
+    amount: number;
+  }): Promise<PaymentRefundOutcome> {
     const provider = providers[paymentMethod];
     if (!provider?.refund) {
       return {
-        succeeded: true,
+        succeeded: false,
         automated: false,
-        rawResponse: { note: `${paymentMethod} refunds are handled manually outside Outfiqe.` },
+        rawResponse: { note: `${paymentMethod} refunds are paid by Outfiqe staff.` },
       };
     }
 
@@ -237,7 +243,7 @@ export const paymentService = {
       };
     }
 
-    const result = await provider.refund({ gatewayTransactionId, payerPhone });
+    const result = await provider.refund({ gatewayTransactionId, payerPhone, amount });
     return { ...result, automated: true };
   },
 };

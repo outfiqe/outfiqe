@@ -15,12 +15,16 @@ const isProdEnv = process.env.NEXT_PUBLIC_APP_ENV === "prod";
 
 const isSearchIndexable = process.env.SEO_INDEXABLE === "true";
 
+const PERMISSIONS_POLICY_HEADER = "Permissions-Policy";
+
+const SCANNER_PATH_SOURCES = ["/rider", "/rider/:path*", "/admin", "/admin/:path*"];
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   {
-    key: "Permissions-Policy",
+    key: PERMISSIONS_POLICY_HEADER,
     value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   },
   ...(isProdEnv
@@ -85,7 +89,18 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      ...SCANNER_PATH_SOURCES.map((source) => ({
+        source,
+        headers: [
+          {
+            key: PERMISSIONS_POLICY_HEADER,
+            value: "camera=(self), microphone=(), geolocation=(), browsing-topics=()",
+          },
+        ],
+      })),
+    ];
   },
 
   async rewrites() {

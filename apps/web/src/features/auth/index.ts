@@ -22,6 +22,7 @@ export { AddPhoneNumberBanner } from "./phone-number/components/AddPhoneNumberBa
 export { useAddPhoneNumber } from "./phone-number/hooks/useAddPhoneNumber";
 export { BrandRegisterForm } from "./registration/components/BrandRegisterForm";
 export { RegisterForm } from "./registration/components/RegisterForm";
+export { RiderRegisterForm } from "./registration/components/RiderRegisterForm";
 export { VerifyEmailScreen } from "./registration/components/VerifyEmailScreen";
 export { useBrandRegister } from "./registration/hooks/useBrandRegister";
 export { useRegister } from "./registration/hooks/useRegister";
