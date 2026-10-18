@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { logisticsAlertRoutes } from "./alerts/alert.routes.js";
 import { logisticsBagTagRoutes } from "./bag-tags/bag-tag.routes.js";
 import { logisticsCodRoutes } from "./cod/cod.routes.js";
 import { logisticsCustomerTrackingRoutes } from "./customer-tracking/customer-tracking.routes.js";
@@ -44,6 +45,7 @@ logisticsRoutes.use("/admin/rider-tasks", logisticsRiderTaskAdminRoutes);
 logisticsRoutes.use("/admin/partners/:partnerId/webhook-receipts", partnerWebhookReceiptRoutes);
 logisticsRoutes.use("/admin/partners", logisticsPartnerRoutes);
 logisticsRoutes.use("/admin/cod", logisticsCodRoutes);
+logisticsRoutes.use("/admin/alerts", logisticsAlertRoutes);
 logisticsRoutes.use("/hub", logisticsHubOperationRoutes);
 logisticsRoutes.use("/hub", logisticsHubShipmentRoutes);
 logisticsRoutes.use("/hub", logisticsReturnRoutes);

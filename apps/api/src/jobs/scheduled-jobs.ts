@@ -39,10 +39,12 @@ import {
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
 import {
   BRAND_RETURN_AUTO_CONFIRM_INTERVAL_MS,
+  LOGISTICS_ALERT_SWEEP_INTERVAL_MS,
   PARTNER_TRACKING_POLL_INTERVAL_MS,
   PARTNER_WEBHOOK_RECEIPT_RETENTION_INTERVAL_MS,
   RIDER_EARNING_RELEASE_INTERVAL_MS,
   runBrandReturnAutoConfirm,
+  runLogisticsAlertSweep,
   runPartnerTrackingPoll,
   runPartnerWebhookReceiptRetentionSweep,
   runRiderEarningRelease,
@@ -311,6 +313,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "logistics-rider-earning-release",
     run: runRiderEarningRelease,
     intervalMs: RIDER_EARNING_RELEASE_INTERVAL_MS,
+  },
+  {
+    name: "logistics-alerts",
+    run: runLogisticsAlertSweep,
+    intervalMs: LOGISTICS_ALERT_SWEEP_INTERVAL_MS,
   },
 ];
 

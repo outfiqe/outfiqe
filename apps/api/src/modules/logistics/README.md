@@ -83,6 +83,23 @@ The module is built in steps. This README lists what exists now.
   - Suspending or offboarding cancels the rider's open visits (their unscanned bags go back on the
     board) and deletes every refresh token, in one transaction.
   - Invites, ID checks and status changes are written to the platform audit log.
+- `alerts/` — time-limit and event alerts (PRD §14.2).
+  - `alert.rules.ts` — one rule per time limit, listed in `TIME_LIMIT_ALERT_RULES`: brand not ready
+    (then escalated), missed round, waiting at the hub, partner hasn't collected, no partner update,
+    COD remittance overdue, promise at risk and promise missed. Limits are in
+    `LOGISTICS_TIME_LIMITS` (`logistics.constants.ts`).
+  - `alert-candidates.repository.ts` — the database side of each rule: oldest first, in batches,
+    skipping subjects that already have an alert of that type.
+  - `alert-deadlines.utils.ts` — working days at the hub, the next partner collection, and dates in
+    the country's time zone.
+  - `alert.repository.ts` — `logisticsAlertRepository`: inserting alerts (duplicates skipped),
+    claiming notifications, closing alerts whose subject moved on, and the admin list.
+  - `alert.notifications.ts` — who hears about each alert.
+  - `alert.service.ts` — `runLogisticsAlertSweep` (the 10-minute `logistics-alerts` job), the list
+    and resolving with a note.
+  - Endpoints: `GET /admin/alerts?status=OPEN|RESOLVED&alertType=` (`logisticsRead`, with open
+    counts by type) and `POST /admin/alerts/:alertId/resolve` (`logisticsManage`, a note,
+    staff write-limited).
 - `bag-tags/` — sticker batches (`GET /`, `POST /`, `GET /:batchId`). A batch belongs to one open
   hub and holds 1–500 random 10-character codes (unique; collisions are re-drawn). A sticker is
   "used" once it is attached to a pickup, and can only ever be attached once.
@@ -580,5 +597,37 @@ The web order page listens for that notification and refreshes itself.
   - Riders withdraw on the person (`CREATOR`) side of the withdraw system. Its balance and
     mark-paid claim count rider earnings next to commission and Offer money.
   - A withdrawn earning can't be voided; staff void only on-hold or available ones.
-- Overdue cash and mismatched amounts show on the Partner cash page and in the logs. They don't
-  raise staff alerts yet; that comes with the time-limit alerts.
+- **Each alert fires once per stage of its subject.**
+  - `(alertType, subjectKey)` is unique and inserts skip duplicates, so the job can run as often
+    as it likes.
+  - The subject key carries the stage where one subject can need the same alert again: the
+    round for a missed round, the booking for a partner that didn't collect, and the parcel's
+    status and last event time for partner silence.
+- **Time-based alerts clear themselves** when their subject moves on: the bag is marked ready or
+  picked up, the parcel is packed or moves, the order is delivered, the cash is paid in.
+  - "No partner update" compares two columns (a new event after the alert was raised), so it
+    clears with one raw SQL update.
+  - Event alerts (an unknown partner status, a count or cash mismatch) wait for staff to resolve
+    them with a note.
+- **Event alerts are raised in the same transaction as the event.** The tracking service inserts
+  the alert when it records `UNKNOWN_PARTNER_STATUS` or `COUNT_MISMATCH`, and when a delivered
+  parcel's cash doesn't match. A rolled-back event never leaves an alert behind.
+- **Notifications are sent after the alert is saved, by the job, and at most once.**
+  - The job claims each new alert (`notifiedAt`) before sending, so two overlapping runs can't
+    both send it.
+  - If a send fails, it is logged and not retried. The alerts page is the record; notifications
+    are the nudge.
+  - Who hears about it:
+    - the brand (`LOGISTICS_BRAND_NOTICE`) for a bag not marked ready after 1 working day;
+    - staff with `platform:logistics:manage` (`LOGISTICS_STAFF_ALERT`) for everything else,
+      including COD and remittance alerts;
+    - the customer (`ORDER_DELIVERY_LATE`, an apology) when the promised date passes.
+- **Working days are the hub's.** The database narrows the candidates by calendar days, which is
+  never later than working days. The exact deadline is then worked out in the hub's time zone and
+  working week.
+- **Batches.** A rule looks at up to 200 subjects per run, oldest first. A parcel whose
+  "no partner update" alert was resolved by hand while it is still quiet stays a candidate (its
+  key already exists, so nothing new is raised). Many of those at once could slow other parcels'
+  alerts; resolving such alerts by hand is rare.
+- Brand-shipped orders keep the old daily stale-shipment email; it now leaves hub orders out,
+  because their alerts replace it.

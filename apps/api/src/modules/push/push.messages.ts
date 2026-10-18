@@ -1,6 +1,8 @@
 import {
   isExternalNotificationPath,
+  isLogisticsAlertType,
   isOrderTrackingStage,
+  LOGISTICS_ALERT_LABELS,
   ORDER_TRACKING_STAGE_MESSAGES,
 } from "@outfiqe/utils";
 
@@ -279,6 +281,21 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) =>
       `Add your Khalti, eSewa or bank details for your Rs. ${String(payload.metadata.amount ?? "")} refund`,
   },
+  [NotificationType.LOGISTICS_STAFF_ALERT]: {
+    title: "Delivery alert",
+    body: (payload) =>
+      isLogisticsAlertType(payload.metadata.logisticsAlertType)
+        ? LOGISTICS_ALERT_LABELS[payload.metadata.logisticsAlertType]
+        : "A delivery needs attention",
+  },
+  [NotificationType.LOGISTICS_BRAND_NOTICE]: {
+    title: "Bag waiting to be marked ready",
+    body: () => "An order is waiting for you to mark its bag ready for pickup",
+  },
+  [NotificationType.ORDER_DELIVERY_LATE]: {
+    title: "Sorry, your order is late",
+    body: () => "We're on it and will keep you posted",
+  },
   [NotificationType.ACCOUNT_APPROVED]: {
     title: "Welcome to Outfiqe",
     body: (payload) =>
@@ -307,7 +324,10 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.ORDER_STATUS_CHANGED:
     case NotificationType.ORDER_REFUND_ISSUED:
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
+    case NotificationType.ORDER_DELIVERY_LATE:
       return payload.entityId ? `/orders/${payload.entityId}` : "/orders";
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
+      return "/manage-orders";
     case NotificationType.PRODUCT_REVIEWED:
       return "/products";
     case NotificationType.REVIEW_REQUESTED:
