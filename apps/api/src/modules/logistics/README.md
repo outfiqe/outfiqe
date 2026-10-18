@@ -310,7 +310,9 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
     `COUNTRY_SETTINGS`). Checkout calls it before anything else for a COD order and answers
     `422 COD_UNAVAILABLE_REFUSALS`; it imports nothing from orders, so checkout can use it
     directly.
-  - Endpoints: `GET /cod-eligibility?phone=` (the buyer, for the checkout page),
+  - Endpoints: `GET /cod-eligibility?phone=` (the buyer, for the checkout page; it answers only
+    whether cash on delivery is allowed, never how many refusals a phone has, and is limited to 20
+    checks a minute, because any phone can be typed into checkout),
     `GET /admin/orders/:orderId/delivery-refusals` and `POST …/clear` (a reason of 5–500
     characters, written to the platform audit log). Clearing marks the refusals cleared rather
     than deleting them.
@@ -640,6 +642,20 @@ The web order page listens for that notification and refreshes itself.
   "no partner update" alert was resolved by hand while it is still quiet stays a candidate (its
   key already exists, so nothing new is raised). Many of those at once could slow other parcels'
   alerts; resolving such alerts by hand is rare.
+- **The job's queries have their own indexes** (`20261023100000_index_logistics_alert_scans`):
+  - orders by promised date;
+  - waiting bags by pickup status and age, and by hub arrival time;
+  - unscanned rider stops;
+  - alerts by order, bag or parcel and type.
+
+  The partial ones use only conditions the planner can prove from Prisma's parameters (`IS NULL`,
+  or a range on the indexed column), so they are used even with prepared statements.
+
+- **The status spreadsheet is applied one row at a time, in the request.** Each row is about 15
+  queries, so a 500-row sheet takes tens of seconds. Running rows in parallel would hold several
+  of the small production pool's connections (`DATABASE_POOL_MAX=3`) for the whole import and slow
+  every other request, so it stays sequential. If daily sheets grow past a few hundred rows, move
+  the import to a background job and let the page poll for the report.
 - Brand-shipped orders keep the old daily stale-shipment email; it now leaves hub orders out,
   because their alerts replace it.
 

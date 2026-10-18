@@ -4822,5 +4822,8 @@ model LogisticsAlert {
   @@index([resolvedAt, raisedAt])
   @@index([notifiedAt, raisedAt])
   @@index([alertType, resolvedAt])
+  @@index([orderId, alertType])
+  @@index([fulfilmentGroupId, alertType])
+  @@index([shipmentId, alertType])
   @@map("logistics_alerts")
 }
