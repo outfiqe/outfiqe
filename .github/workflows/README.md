@@ -9,11 +9,11 @@ is the release branch and the only thing that deploys to production.
 
 | File                  | Trigger                                                      | What it owns                                                                                                                                                                                                                                                       |
 | --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ci.yml`              | `pull_request` -> `main`, `dev`, excluding docs-only diffs   | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
-| `ci-docs.yml`         | `pull_request` -> `main`, `dev`, docs-only diffs             | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
-| `commit-messages.yml` | `pull_request` -> `main`, `dev`                              | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
+| `ci.yml`              | `pull_request` (any base), excluding docs-only diffs         | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
+| `ci-docs.yml`         | `pull_request` (any base), docs-only diffs                   | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
+| `commit-messages.yml` | `pull_request` (any base)                                    | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
 | `coverage.yml`        | `pull_request` -> `main`, excluding docs-only diffs          | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
-| `validate-branch.yml` | `pull_request` -> `main`, `dev`                              | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
+| `validate-branch.yml` | `pull_request` (any base)                                    | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
 | `deploy.yml`          | `push` -> `main` touching backend paths, `workflow_dispatch` | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
 | `keepalive.yml`       | `schedule`, `workflow_dispatch`                              | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
 
@@ -28,6 +28,14 @@ Feature work:
 2. `ci.yml` (or `ci-docs.yml` for a docs-only diff), `commit-messages.yml`, and
    `validate-branch.yml` run against the PR. `coverage.yml` does not (it is `main`-only).
 3. Merge to `dev`. Nothing runs on the push to `dev` -- the PR already proved the merge result.
+
+Stacked work (a large feature split into PRs that each target the branch below):
+
+1. Each PR in the stack runs the same `ci.yml`, `commit-messages.yml` and
+   `validate-branch.yml` as a PR into `dev`, against the branch it targets. Every step is
+   therefore proven on its own, not only the top of the stack.
+2. A fix that every step needs goes on the bottom branch and is merged up through the stack.
+   That way no PR depends on a fix that only lands in a later one.
 
 Release:
 
