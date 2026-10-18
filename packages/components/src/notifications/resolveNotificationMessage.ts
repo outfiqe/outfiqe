@@ -5,7 +5,11 @@ import {
   NotificationType,
   OrderRefundMethod,
 } from "@outfiqe/types";
-import { formatActorList, ORDER_TRACKING_STAGE_MESSAGES } from "@outfiqe/utils";
+import {
+  formatActorList,
+  LOGISTICS_ALERT_LABELS,
+  ORDER_TRACKING_STAGE_MESSAGES,
+} from "@outfiqe/utils";
 
 const actorList = (notification: Notification): string =>
   formatActorList(notification.metadata.recentActors ?? [], notification.actorCount);
@@ -165,6 +169,14 @@ export const resolveNotificationMessage = (notification: Notification): string =
         : `We've refunded Rs. ${metadata.amount ?? ""} on your order`;
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
       return `Tell us where to send your Rs. ${metadata.amount ?? ""} refund`;
+    case NotificationType.LOGISTICS_STAFF_ALERT:
+      return metadata.logisticsAlertType
+        ? LOGISTICS_ALERT_LABELS[metadata.logisticsAlertType]
+        : "A delivery needs attention";
+    case NotificationType.LOGISTICS_BRAND_NOTICE:
+      return "An order is waiting for you to mark its bag ready for pickup";
+    case NotificationType.ORDER_DELIVERY_LATE:
+      return "Sorry, your order is running late. We're on it and will keep you posted";
     case NotificationType.ACCOUNT_APPROVED:
       return metadata.approvedAccountKind === ApprovedAccountKind.BRAND
         ? `Welcome to Outfiqe! ${metadata.brandName ?? "Your brand"} is set up. Add your first products to start selling.`

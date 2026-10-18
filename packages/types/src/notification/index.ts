@@ -1,4 +1,4 @@
-import type { OrderTrackingStage } from "@outfiqe/utils";
+import type { LogisticsAlertType, OrderTrackingStage } from "@outfiqe/utils";
 
 export const NotificationType = {
   LOOK_LIKED: "LOOK_LIKED",
@@ -54,6 +54,9 @@ export const NotificationType = {
   ACCOUNT_APPROVED: "ACCOUNT_APPROVED",
   ORDER_REFUND_ISSUED: "ORDER_REFUND_ISSUED",
   ORDER_REFUND_DETAILS_NEEDED: "ORDER_REFUND_DETAILS_NEEDED",
+  LOGISTICS_STAFF_ALERT: "LOGISTICS_STAFF_ALERT",
+  LOGISTICS_BRAND_NOTICE: "LOGISTICS_BRAND_NOTICE",
+  ORDER_DELIVERY_LATE: "ORDER_DELIVERY_LATE",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -139,6 +142,9 @@ export type NotificationMetadata = {
   brandName?: string;
   status?: string;
   trackingStage?: OrderTrackingStage;
+  logisticsAlertType?: LogisticsAlertType;
+  logisticsAlertId?: string;
+  trackingCode?: string | null;
   productName?: string;
   productImageUrl?: string | null;
   outfitTitle?: string | null;
