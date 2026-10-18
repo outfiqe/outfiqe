@@ -1,31 +1,29 @@
 import { Button, Input, Label } from "@outfiqe/design-system";
+import { Camera, CameraOff } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 
-import { QR_SCANNER_STATUS, type QrScannerStatus } from "./qrScanner.types";
-import { useQrScanner } from "./useQrScanner";
+import { QrCameraView } from "./QrCameraView";
+import { QR_CAMERA_START_MODE, type QrCameraStartMode } from "./qrScanner.types";
 
 type QrScannerProps = {
   onCode: (code: string) => void;
   typedCodeLabel: string;
   isPaused?: boolean;
+  cameraStartMode?: QrCameraStartMode;
   className?: string;
 };
 
-const CAMERA_MESSAGES: Record<QrScannerStatus, string> = {
-  [QR_SCANNER_STATUS.STARTING]: "Starting the camera…",
-  [QR_SCANNER_STATUS.SCANNING]: "Point the camera at the code.",
-  [QR_SCANNER_STATUS.CAMERA_DENIED]:
-    "Camera access is blocked. Allow the camera in your browser settings, or type the code below.",
-  [QR_SCANNER_STATUS.CAMERA_UNAVAILABLE]:
-    "This phone's camera can't be used here. Type the code below instead.",
-};
-
-export const QrScanner = ({ onCode, typedCodeLabel, isPaused, className }: QrScannerProps) => {
-  const { videoRef, canvasRef, status } = useQrScanner({ onDetect: onCode, isPaused });
+export const QrScanner = ({
+  onCode,
+  typedCodeLabel,
+  isPaused,
+  cameraStartMode = QR_CAMERA_START_MODE.AUTOMATIC,
+  className,
+}: QrScannerProps) => {
+  const [isCameraOn, setIsCameraOn] = useState(cameraStartMode === QR_CAMERA_START_MODE.AUTOMATIC);
   const [typedCode, setTypedCode] = useState("");
   const typedCodeInputId = useId();
-  const isCameraOff =
-    status === QR_SCANNER_STATUS.CAMERA_DENIED || status === QR_SCANNER_STATUS.CAMERA_UNAVAILABLE;
+  const canTurnCameraOff = cameraStartMode === QR_CAMERA_START_MODE.ON_REQUEST;
 
   const submitTypedCode = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,19 +35,31 @@ export const QrScanner = ({ onCode, typedCodeLabel, isPaused, className }: QrSca
 
   return (
     <div className={className}>
-      {!isCameraOff && (
-        <video
-          ref={videoRef}
-          className="aspect-square w-full rounded-2xl bg-black object-cover"
-          muted
-          playsInline
-          aria-label="Camera view for scanning"
-        />
+      {isCameraOn ? (
+        <QrCameraView onCode={onCode} isPaused={isPaused} />
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => setIsCameraOn(true)}
+        >
+          <Camera aria-hidden className="size-4" />
+          Scan with camera
+        </Button>
       )}
-      <canvas ref={canvasRef} hidden />
-      <p className="mt-2 text-sm text-muted-foreground" role="status" aria-live="polite">
-        {CAMERA_MESSAGES[status]}
-      </p>
+      {isCameraOn && canTurnCameraOff && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-2"
+          onClick={() => setIsCameraOn(false)}
+        >
+          <CameraOff aria-hidden className="size-4" />
+          Turn off camera
+        </Button>
+      )}
 
       <form className="mt-4 flex items-end gap-2" onSubmit={submitTypedCode}>
         <div className="flex-1">

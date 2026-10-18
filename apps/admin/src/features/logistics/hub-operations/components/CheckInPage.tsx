@@ -1,4 +1,4 @@
-import { QrScanner } from "@outfiqe/components";
+import { QR_CAMERA_START_MODE, QrScanner } from "@outfiqe/components";
 import { Input, Label, Skeleton } from "@outfiqe/design-system";
 import { useId, useState } from "react";
 
@@ -90,6 +90,7 @@ export const CheckInPage = () => {
             onCode={checkInScannedCode}
             typedCodeLabel="Sticker or pickup code"
             isPaused={checkInPickup.isPending || !hasCount}
+            cameraStartMode={QR_CAMERA_START_MODE.ON_REQUEST}
             className="max-w-md"
           />
           <ScanLog entries={scanLog} emptyMessage="No bags checked in yet." />

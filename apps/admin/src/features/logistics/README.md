@@ -60,8 +60,11 @@ feature layout.
   - `CheckInPage` (`/logistics/check-in`) — staff type the units in a bag, then scan or type its
     sticker or pickup code (`QrScanner` from `@outfiqe/components`; a USB scanner types into its
     code box). Each scan gets its own `Idempotency-Key`. `ScanLog` lists this session's results,
-    with short counts and refusals called out. The camera stays on between bags and only pauses
-    until the next count is typed, so it doesn't restart for every bag.
+    with short counts and refusals called out. The camera is off when the page opens
+    (`cameraStartMode` `ON_REQUEST`), because hub laptops mostly use a USB scanner. **Scan with
+    camera** turns it on and **Turn off camera** stops it. Once on, it stays on between bags and
+    only pauses until the next count is typed, so it doesn't restart for every bag. The hand-over
+    page works the same way.
   - Every hub page (check-in, packing, hand-over, parcels, pickup board, riders, bag stickers)
     shows "couldn't load the hubs" with **Try again** when the hubs request fails, instead of
     "No open hubs".

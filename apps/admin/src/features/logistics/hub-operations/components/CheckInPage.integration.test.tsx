@@ -42,6 +42,8 @@ describe("CheckInPage", () => {
     renderWithRouter(<CheckInPage />, { path: "/logistics/check-in" });
 
     expect(await screen.findByText(/Enter how many units/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scan with camera" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Camera view for scanning")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Units in this bag"), "3");
     await typeCode(user, "Sticker or pickup code", "BT4410ABCD");
 
