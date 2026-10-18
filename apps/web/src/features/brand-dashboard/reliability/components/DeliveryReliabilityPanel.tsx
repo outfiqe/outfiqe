@@ -17,7 +17,11 @@ const LEVEL_TONES: Record<ReliabilityLevel, "positive" | "neutral" | "negative">
   REVIEW: "negative",
 };
 
-export const DeliveryReliabilityPanel = () => {
+type DeliveryReliabilityPanelProps = {
+  isOrderLogisticsOn: boolean;
+};
+
+export const DeliveryReliabilityPanel = ({ isOrderLogisticsOn }: DeliveryReliabilityPanelProps) => {
   const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useDeliveryReliability();
   const [firstPage] = data?.pages ?? [];
@@ -25,10 +29,13 @@ export const DeliveryReliabilityPanel = () => {
 
   if (isError) return null;
   if (isPending || !firstPage) {
-    return <Skeleton className="mt-6 h-20 w-full rounded-2xl" aria-label="Loading reliability" />;
+    return isOrderLogisticsOn ? (
+      <Skeleton className="mt-6 h-20 w-full rounded-2xl" aria-label="Loading reliability" />
+    ) : null;
   }
 
   const { incidentCount, windowDays, level, warningAt } = firstPage;
+  if (!isOrderLogisticsOn && incidentCount === NO_INCIDENTS) return null;
 
   return (
     <section

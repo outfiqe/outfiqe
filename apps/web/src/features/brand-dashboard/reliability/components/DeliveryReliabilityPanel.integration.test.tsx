@@ -1,6 +1,6 @@
 import { mswServer } from "@test/integration/msw/server";
 import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -31,7 +31,9 @@ const reliability = {
 describe("DeliveryReliabilityPanel", () => {
   it("shows the brand its recent problems and the warning", async () => {
     mswServer.use(http.get(RELIABILITY_URL, () => okJson(reliability)));
-    render(<DeliveryReliabilityPanel />, { wrapper: createQueryClientWrapper() });
+    render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
+      wrapper: createQueryClientWrapper(),
+    });
 
     expect(await screen.findByText("3 in the last 30 days")).toBeInTheDocument();
     expect(screen.getByText(/A few problems recently/)).toBeInTheDocument();
@@ -45,14 +47,42 @@ describe("DeliveryReliabilityPanel", () => {
         okJson({ ...reliability, incidentCount: 0, level: "GOOD", incidents: [] }),
       ),
     );
-    render(<DeliveryReliabilityPanel />, { wrapper: createQueryClientWrapper() });
+    render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
+      wrapper: createQueryClientWrapper(),
+    });
 
     expect(await screen.findByText("No problems in the last 30 days.")).toBeInTheDocument();
   });
 
+  it("stays hidden while Outfiqe delivery is off and there is nothing to show", async () => {
+    let requestCount = 0;
+    mswServer.use(
+      http.get(RELIABILITY_URL, () => {
+        requestCount += 1;
+        return okJson({ ...reliability, incidentCount: 0, level: "GOOD", incidents: [] });
+      }),
+    );
+    const { container } = render(<DeliveryReliabilityPanel isOrderLogisticsOn={false} />, {
+      wrapper: createQueryClientWrapper(),
+    });
+
+    await waitFor(() => expect(requestCount).toBe(1));
+    expect(screen.queryByLabelText("Loading reliability")).not.toBeInTheDocument();
+    expect(container.querySelector("section")).toBeNull();
+  });
+
+  it("still shows past problems after Outfiqe delivery is switched off", async () => {
+    mswServer.use(http.get(RELIABILITY_URL, () => okJson(reliability)));
+    render(<DeliveryReliabilityPanel isOrderLogisticsOn={false} />, {
+      wrapper: createQueryClientWrapper(),
+    });
+
+    expect(await screen.findByText("3 in the last 30 days")).toBeInTheDocument();
+  });
+
   it("stays out of the way when it can't load", async () => {
     mswServer.use(http.get(RELIABILITY_URL, () => HttpResponse.json({}, { status: 500 })));
-    const { container } = render(<DeliveryReliabilityPanel />, {
+    const { container } = render(<DeliveryReliabilityPanel isOrderLogisticsOn />, {
       wrapper: createQueryClientWrapper(),
     });
 

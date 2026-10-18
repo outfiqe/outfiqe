@@ -84,6 +84,17 @@ describe("useDashboardNav", () => {
     expect(result.current.navItems.map((item) => item.id)).toContain("offers");
   });
 
+  it("hides Pickup locations from brands while Outfiqe delivery is switched off", () => {
+    expect(navIdsFor(UserRole.BRAND_OWNER)).not.toContain("pickup-locations");
+  });
+
+  it("shows Pickup locations to brands once Outfiqe delivery is on for them", () => {
+    vi.mocked(useFeatureFlag).mockImplementation((key) => key === "order_logistics");
+
+    expect(navIdsFor(UserRole.BRAND_OWNER)).toContain("pickup-locations");
+    expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("pickup-locations");
+  });
+
   it("keeps Earnings and Withdraw away from shoppers who haven't earned anything", () => {
     const navIds = navIdsFor(UserRole.CUSTOMER);
 
