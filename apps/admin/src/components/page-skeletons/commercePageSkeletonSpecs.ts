@@ -245,6 +245,13 @@ export const commercePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = 
     blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
     sourceFiles: [`${FEATURES_DIR}/logistics/partners/components/PartnersPage.tsx`],
   },
+  "/logistics/rider-pay": {
+    title: "Rider pay",
+    description:
+      "What contractor riders earn per visit. Each earning is held for 7 days, then riders can withdraw it to their bank. Employees are paid salary outside Outfiqe.",
+    blocks: [{ kind: "cardRows", count: ROW_COUNT, hasTrailingBadge: true, actionLabels: [] }],
+    sourceFiles: [`${FEATURES_DIR}/logistics/rider-pay/components/RiderPayPage.tsx`],
+  },
   "/logistics/cod": {
     title: "Partner cash",
     description:

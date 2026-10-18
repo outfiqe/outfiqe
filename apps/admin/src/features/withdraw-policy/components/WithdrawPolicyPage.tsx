@@ -32,7 +32,7 @@ import { policyFormSchema, type PolicyFormValues } from "../schemas/policyForm.s
 
 const OWNER_TABS: OwnerTypeValue[] = ["CREATOR", "BUSINESS"];
 const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
-  CREATOR: "Muse",
+  CREATOR: "Muses and riders",
   BUSINESS: "Business",
 };
 const WINDOW_TYPES: WindowTypeValue[] = ["MONTHLY", "WEEKLY", "CUSTOM_DAYS"];

@@ -74,6 +74,7 @@ const LIST_PATHS = new Set([
   "/logistics/parcels",
   "/logistics/partners",
   "/logistics/reliability",
+  "/logistics/rider-pay",
   "/logistics/pickup-board",
   "/logistics/riders",
   "/orders",

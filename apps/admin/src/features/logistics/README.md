@@ -106,6 +106,12 @@ feature layout.
   and **Clear refusals** with a required reason (`TextPromptModal`), which the API writes to the
   audit log. The card hides itself for staff without logistics access (the request answers
   `403`).
+- `rider-pay/` — `RiderPayPage` (`/logistics/rider-pay`, "Rider pay"):
+  - `RiderPayRateSection` — the contractor pay in effect, flagged when it's still the launch
+    default, and every rate set with **Switch off** for active ones. **Change pay** opens
+    `RiderPayRateModal`: per visit, per extra bag, wasted visit and an optional start time.
+  - `RiderEarningsSection` — every rider's earnings, filtered by status, with **Void** and a
+    required reason (`TextPromptModal`) for on-hold or ready ones.
 - `cod/` — `CodPage` (`/logistics/cod`, "Partner cash"):
   - `CodPartnerSummaryList` — one card per partner holding cash: how much, how many parcels, the
     oldest delivery and how much is past the partner's limit.

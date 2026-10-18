@@ -446,6 +446,12 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
         icon: Handshake,
       },
       {
+        id: "logistics-rider-pay",
+        href: "/logistics/rider-pay",
+        label: "Rider pay",
+        icon: Wallet,
+      },
+      {
         id: "logistics-cod",
         href: "/logistics/cod",
         label: "Partner cash",
