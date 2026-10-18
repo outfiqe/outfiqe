@@ -11,6 +11,11 @@ component/hook/util, so they live here instead of being duplicated across test f
   jest-dom matchers for jsdom).
 - `integration/setup.ts` — additional `setupFiles` for the `integration` project only: starts the
   MSW server before the suite, resets its handlers after each test, closes it after the suite.
+  Before resetting (and before closing) it waits, for up to 2 seconds, until no mocked request is
+  still in flight, then one more macrotask. A request still running when the test file's jsdom
+  environment is torn down (a debounced search, an upload's progress events) would otherwise throw
+  `ProgressEvent is not defined` from MSW's XHR interceptor after the test had passed, and fail
+  the whole run.
 - `integration/msw/server.ts` — the shared `setupServer()` instance (`mswServer`) that integration
   tests register per-test request handlers against via `mswServer.use(...)`.
 - `integration/queryClientWrapper.tsx` — `createQueryClientWrapper()` builds a fresh
