@@ -1,4 +1,4 @@
-import { PLATFORM_NAV_KEYS } from "@outfiqe/utils";
+import { PLATFORM_NAV_KEYS, type PlatformNavKey } from "@outfiqe/utils";
 import { describe, expect, it } from "vitest";
 
 import type { AdminUser } from "@/features/auth/api/authSchemas";
@@ -13,7 +13,7 @@ const AUTHENTICATED_LAYOUT_FILE = "_authenticated.tsx";
 const PATHS_OUTSIDE_THE_PLATFORM = ["/", "/profile", "/platform"];
 
 const SUPPORT_SECTION = "support";
-const EVERY_SECTION_BUT_SUPPORT = PLATFORM_NAV_KEYS.filter(
+const EVERY_SECTION_BUT_SUPPORT: PlatformNavKey[] = PLATFORM_NAV_KEYS.filter(
   (sectionKey) => sectionKey !== SUPPORT_SECTION,
 );
 
