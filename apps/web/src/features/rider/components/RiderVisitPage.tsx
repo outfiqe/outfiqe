@@ -9,6 +9,7 @@ import { PENDING_SCAN_STATE } from "../constants/pendingScans";
 import { OPEN_RIDER_TASK_STATUSES, RIDER_TASK_STATUS_LABELS } from "../constants/riderTaskLabels";
 import { usePendingScans } from "../context/PendingScansContext";
 import { useRiderTask } from "../hooks/useRiderTask";
+import { describeRiderLoadError } from "../utils/riderLoadError.utils";
 import {
   buildMapsLink,
   countCollectedStops,
@@ -23,11 +24,12 @@ import { WastedVisitModal } from "./WastedVisitModal";
 
 const NOTHING_COLLECTED = 0;
 const SINGLE_SCAN = 1;
+const VISIT_NO_SIGNAL_MESSAGE = "We couldn't load this visit. Check your signal and try again.";
 
 type RiderVisitPageProps = { taskId: string };
 
 export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
-  const { data: task, isPending, isError } = useRiderTask(taskId);
+  const { data: task, isPending, isError, error } = useRiderTask(taskId);
   const { pendingScans } = usePendingScans();
   const [isWastedModalOpen, setIsWastedModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -37,7 +39,7 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
   ).length;
 
   if (isError) {
-    return <FormBanner>We couldn&apos;t load this visit. Go back and try again.</FormBanner>;
+    return <FormBanner>{describeRiderLoadError(error, VISIT_NO_SIGNAL_MESSAGE)}</FormBanner>;
   }
 
   if (isPending) {

@@ -19,10 +19,16 @@ wasted. Scans made without signal are kept on the phone and sent later.
 - `constants/` — query keys, visit status labels, the queue's storage key, retry interval and the
   error codes that mean "try again later" (`RETRYABLE_SCAN_ERROR_CODES`).
 - `hooks/` — `useRiderTasks`, `useRiderTask`, `useMarkVisitWasted`, `useFinishVisit`,
-  `useDropOffReturn` (`POST /api/logistics/rider/tasks/:id/return-drop-offs`).
+  `useDropOffReturn` (`POST /api/logistics/rider/tasks/:id/return-drop-offs`), and
+  `useSignOutWithScanCheck` (signs out, or opens the warning first while scans are still on the
+  phone; for anyone who isn't a rider the count is always 0, so it simply signs out).
+- `utils/riderLoadError.utils.ts` — `describeRiderLoadError`: the server's own reason when it
+  answered (for example "Your rider account isn't active yet"), the page's "check your signal"
+  line only when the request never got an answer.
 - `components/`:
-  - `RiderShell` — the slim mobile header with the rider's name and `RiderLogoutButton`.
-  - `RiderLogoutButton` — warns before signing out while scans are still waiting.
+  - `UnsentScansSignOutModal` — the "Scans not sent yet" warning. The shared sign-out buttons
+    (`DashboardSidebar`, `DashboardMobileNavBar`, `AccountMenu`, `MobileNav`) render it with
+    `useSignOutWithScanCheck`.
   - `RiderTasksPage` — today's open visits (`RiderTaskCard`), with loading, error and empty states.
   - `RiderVisitPage` — one visit: address, call and directions buttons, the returns to hand back
     (`ReturnStopsSection`), the bags to collect, the scan flow, and the "nothing to collect" /
@@ -41,8 +47,9 @@ wasted. Scans made without signal are kept on the phone and sent later.
 - `api/riderEarningsApi.ts`, `api/riderEarningsSchemas.ts`, `hooks/useInfiniteRiderEarnings.ts`
   and `constants/riderEarningLabels.ts` — `GET /api/logistics/rider/earnings`, cursor-paged.
 - Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/earnings/page.tsx`
-  (earnings), `app/(rider)/rider/visits/[taskId]/page.tsx` (one visit), `app/(rider)/rider/layout.tsx`, and `app/(rider)/requireRiderSession.ts` (signed-in
-  `RIDER` only; anyone else goes to their own home).
+  (earnings), `app/(rider)/rider/visits/[taskId]/page.tsx` (one visit), `app/(rider)/rider/layout.tsx` (the
+  shared `DashboardShell` inside `PendingScansProvider`), and `app/(rider)/requireRiderSession.ts`
+  (signed-in `RIDER` only; anyone else goes to their own home).
 
 ## Funnel
 
@@ -64,6 +71,17 @@ wasted. Scans made without signal are kept on the phone and sent later.
   `PendingScansList` for the rider to retry or remove.
 
 ## Non-obvious rationale
+
+- **Riders use the same dashboard layout as every other account.** The rider pages render inside
+  `DashboardShell`: the site header, the sidebar on desktop and the bottom bar on phones, with the
+  rider's own menu (Visits, Earnings, Security, Support) from `useDashboardNav`. An earlier
+  separate rider header looked like a different app. Because the shared header and menus can now
+  sign a rider out, every sign-out button goes through `useSignOutWithScanCheck`, so the "scans not
+  sent yet" warning can't be skipped. The header menus send a rider to `/rider` and hide shopper
+  links (Your stash, Become a muse).
+- **A load error says what actually went wrong.** The pages used to say "check your signal" for
+  every failure, including the server refusing a rider whose account isn't active yet. Now the
+  server's reason is shown whenever it answered, and the signal hint only when it didn't.
 
 - **The scan queue is separate from the PWA's offline action queue** (`features/pwa/offline`).
   That queue is shared by everyone on the device, drops actions that fail, and is cleared on

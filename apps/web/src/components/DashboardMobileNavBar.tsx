@@ -7,9 +7,11 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { Drawer as VaulDrawer } from "vaul";
 
-import { useAuth, useLogout } from "@/features/auth";
+import { useAuth } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
 import { useChatPanel } from "@/features/messaging";
+import { UnsentScansSignOutModal } from "@/features/rider/components/UnsentScansSignOutModal";
+import { useSignOutWithScanCheck } from "@/features/rider/hooks/useSignOutWithScanCheck";
 import { cn } from "@/shared/lib/cn";
 
 import { isCrossAppNavHref } from "./dashboardMobileNav";
@@ -102,7 +104,7 @@ const PinnedSlot = ({
 
 export const DashboardMobileNavBar = () => {
   const { state } = useAuth();
-  const logout = useLogout();
+  const signOutCheck = useSignOutWithScanCheck();
   const pathname = usePathname();
   const { isOpen: isChatPanelOpen } = useChatPanel();
   const { pinnedItems, overflowItems, allItems, savePins, resetPins, accountLabel } =
@@ -196,12 +198,15 @@ export const DashboardMobileNavBar = () => {
 
                 <button
                   type="button"
-                  onClick={() => logout.mutate()}
-                  disabled={logout.isPending}
+                  onClick={() => {
+                    closeMenu();
+                    signOutCheck.requestSignOut();
+                  }}
+                  disabled={signOutCheck.isSigningOut}
                   className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
                 >
                   <LogOut className="size-[18px] shrink-0" />
-                  {logout.isPending ? "Signing out…" : "Sign out"}
+                  {signOutCheck.isSigningOut ? "Signing out…" : "Sign out"}
                 </button>
               </div>
             </nav>
@@ -272,6 +277,7 @@ export const DashboardMobileNavBar = () => {
           onClose={() => setCustomizeOpen(false)}
         />
       )}
+      <UnsentScansSignOutModal signOutCheck={signOutCheck} />
     </div>
   );
 };
