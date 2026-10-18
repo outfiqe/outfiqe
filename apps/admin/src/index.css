@@ -107,19 +107,28 @@
 }
 
 @media print {
-  body:has([data-print-sheet]) * {
-    visibility: hidden;
+  body:has([data-print-sheet])
+    :not(:has([data-print-sheet])):not([data-print-sheet]):not([data-print-sheet] *) {
+    display: none !important;
   }
 
-  [data-print-sheet],
-  [data-print-sheet] * {
-    visibility: visible;
+  body:has([data-print-sheet]),
+  body:has([data-print-sheet]) :has([data-print-sheet]) {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    background: none !important;
   }
 
   [data-print-sheet] {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     border: none;
   }
