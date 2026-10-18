@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { RiderTaskStop } from "../api/riderSchemas";
 import {
   buildMapsLink,
   countCollectedStops,
@@ -26,7 +27,16 @@ describe("riderTask utils", () => {
   });
 
   it("counts collected bags", () => {
-    const stop = { id: "s", fulfilmentGroupId: "g", orderId: "o", itemCount: 1, bagTagCode: null };
+    const stop: RiderTaskStop = {
+      id: "s",
+      direction: "COLLECT",
+      brandReturn: null,
+      fulfilmentGroupId: "g",
+      orderId: "o",
+      itemCount: 1,
+      isCollected: false,
+      bagTagCode: null,
+    };
     expect(
       countCollectedStops({
         stops: [

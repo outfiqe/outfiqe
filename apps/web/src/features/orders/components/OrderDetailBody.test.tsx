@@ -56,6 +56,8 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   codFee: 0,
   total: 2760,
   refundedAmount: 0,
+  trackingStage: null,
+  promisedDelivery: null,
   items: [
     {
       id: "item-1",
@@ -139,6 +141,7 @@ describe("OrderDetailBody", () => {
           id: "ship-1",
           brandName: "Aurora Label",
           status: "SHIPPED",
+          fulfilmentMode: "BRAND_SHIPS",
           carrier: "Pathao",
           trackingNumber: "PA-123",
           shippedAt: "2026-09-03T00:00:00.000Z",
@@ -148,6 +151,7 @@ describe("OrderDetailBody", () => {
           id: "ship-2",
           brandName: "Beacon Studio",
           status: "PLACED",
+          fulfilmentMode: "BRAND_SHIPS",
           carrier: null,
           trackingNumber: null,
           shippedAt: null,

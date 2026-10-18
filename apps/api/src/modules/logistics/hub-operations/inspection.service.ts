@@ -1,6 +1,9 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
+  BrandIncidentKind,
+  BrandReturnSource,
   ItemInspectionStatus,
   OrderRefundCause,
   PickupStatus,
@@ -10,6 +13,8 @@ import {
 import { AppError } from "#middlewares/error-handler.js";
 import { orderService } from "#modules/orders/order.service.js";
 
+import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
+import { logisticsReturnRepository } from "../returns/return.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import { logisticsHubOperationRepository } from "./hub-operation.repository.js";
@@ -70,6 +75,40 @@ const assertInspectionCoversPickup = (
   }
 };
 
+const sendFailedUnitsBackToBrand = async (
+  tx: Prisma.TransactionClient,
+  params: {
+    pickup: PickupForInspection;
+    hubId: string;
+    failedLines: { orderItemId: string; qty: number }[];
+    note: string;
+  },
+) => {
+  const { pickup, hubId, failedLines, note } = params;
+  await logisticsReturnRepository.createBrandReturn(tx, {
+    brandId: pickup.brandId,
+    hubId,
+    fulfilmentGroupId: pickup.id,
+    shipmentId: null,
+    source: BrandReturnSource.FAILED_INSPECTION,
+    lines: failedLines.map(({ orderItemId, qty }) => ({
+      orderItemId,
+      resellableQty: NO_UNITS,
+      damagedQty: qty,
+    })),
+  });
+  await brandIncidentRepository.recordIncidents(tx, [
+    {
+      brandId: pickup.brandId,
+      kind: BrandIncidentKind.FAILED_INSPECTION,
+      sourceKey: `${INSPECTION_DEDUPE_PREFIX}:${pickup.id}`,
+      orderId: pickup.orderId,
+      note,
+      occurredAt: new Date(),
+    },
+  ]);
+};
+
 export const logisticsInspectionService = {
   async recordInspection(
     staffUserId: string,
@@ -99,6 +138,14 @@ export const logisticsInspectionService = {
 
     const outcome = await prisma.$transaction(async (tx) => {
       await logisticsHubOperationRepository.recordItemInspections(tx, lines);
+      if (failedLines.length > NO_UNITS && pickup.hubId) {
+        await sendFailedUnitsBackToBrand(tx, {
+          pickup,
+          hubId: pickup.hubId,
+          failedLines,
+          note: note ?? DEFAULT_FAILED_INSPECTION_REASON,
+        });
+      }
       return logisticsTrackingService.recordEventInTransaction(tx, {
         subject: { kind: TRACKING_SUBJECT_KIND.PICKUP, fulfilmentGroupId: groupId },
         code: TrackingEventCode.INSPECTION_RECORDED,

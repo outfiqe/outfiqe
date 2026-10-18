@@ -7,15 +7,24 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import type { ShipmentStatusValue } from "../../hub-operations/api/hubOperationsSchemas";
-import { PARCEL_STATUS_LABELS } from "../constants/parcelLabels";
+import { PARCEL_STATUS_LABELS, RETURN_OUTCOME_LABELS } from "../constants/parcelLabels";
 import { useParcel } from "../hooks/useParcel";
 import { describeParcelEventCode } from "../utils/parcelEvent.utils";
 import { RebookParcelModal } from "./RebookParcelModal";
 import { RecordParcelUpdateModal } from "./RecordParcelUpdateModal";
+import { ReturnCheckInModal } from "./ReturnCheckInModal";
 
 const AT_HUB_STATUS: ShipmentStatusValue = "PACKED";
 const NOTHING_TO_COLLECT = 0;
 const NOTE_EVENT_CODE = "NOTE";
+const STATUSES_THAT_CAN_COME_BACK: ReadonlySet<ShipmentStatusValue> = new Set([
+  "HANDED_TO_PARTNER",
+  "IN_TRANSIT",
+  "OUT_FOR_DELIVERY",
+  "DELIVERY_FAILED",
+  "RETURNING",
+  "RETURNED_TO_HUB",
+]);
 
 type ParcelDetailPageProps = { shipmentId: string };
 
@@ -25,6 +34,7 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
   const { data: parcel, isPending, isError } = useParcel(shipmentId);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isRebookModalOpen, setIsRebookModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
   if (isError) return <FormBanner>We couldn&apos;t load this parcel.</FormBanner>;
   if (isPending) {
@@ -37,6 +47,8 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
   }
 
   const isAtHub = parcel.status === AT_HUB_STATUS;
+  const canCheckInReturn =
+    parcel.returnCheckedInAt === null && STATUSES_THAT_CAN_COME_BACK.has(parcel.status);
 
   return (
     <div className="space-y-6">
@@ -60,6 +72,12 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
               : "prepaid"}{" "}
             · {parcel.weightGrams} g · {parcel.parcelCount} piece(s)
           </p>
+          {parcel.codCollectedAmount !== null && parcel.codCollectedAmount > NOTHING_TO_COLLECT && (
+            <p className="text-sm text-muted-foreground">
+              Partner collected Rs. {parcel.codCollectedAmount.toLocaleString()} ·{" "}
+              {parcel.codRemittanceId ? "paid in to Outfiqe" : "not paid in yet"}
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             {parcel.booking
               ? `${parcel.booking.partnerName} · ${parcel.booking.partnerReference ?? "not booked yet"}`
@@ -85,7 +103,21 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
           </Button>
         )}
         {canManage && <Button onClick={() => setIsUpdateModalOpen(true)}>Record an update</Button>}
+        {canManage && canCheckInReturn && (
+          <Button variant="outline" onClick={() => setIsReturnModalOpen(true)}>
+            Check in return
+          </Button>
+        )}
       </div>
+
+      {parcel.returnOutcome && (
+        <FormBanner tone="neutral">
+          Came back: {RETURN_OUTCOME_LABELS[parcel.returnOutcome]}.
+          {parcel.partnerClaimAmount !== null
+            ? ` Claim against the partner for Rs. ${parcel.partnerClaimAmount.toLocaleString()} (${parcel.partnerClaimStatus ?? "open"}).`
+            : ""}
+        </FormBanner>
+      )}
 
       <section
         aria-labelledby="parcel-contents-heading"
@@ -150,8 +182,12 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
       {isUpdateModalOpen && (
         <RecordParcelUpdateModal
           shipmentId={shipmentId}
+          codAmountToCollect={parcel.codAmountToCollect}
           onClose={() => setIsUpdateModalOpen(false)}
         />
+      )}
+      {isReturnModalOpen && (
+        <ReturnCheckInModal parcel={parcel} onClose={() => setIsReturnModalOpen(false)} />
       )}
       {isRebookModalOpen && (
         <RebookParcelModal

@@ -26,17 +26,29 @@ import { useRecordParcelUpdate } from "../hooks/useRecordParcelUpdate";
 
 const [DEFAULT_EVENT_CODE] = PARCEL_EVENT_CODES;
 const MAX_RAW_STATUS_LENGTH = 120;
+const DELIVERED_EVENT_CODE: ParcelEventCode = "DELIVERED";
+const NO_CASH = 0;
 
-type RecordParcelUpdateModalProps = { shipmentId: string; onClose: () => void };
+type RecordParcelUpdateModalProps = {
+  shipmentId: string;
+  codAmountToCollect: number;
+  onClose: () => void;
+};
 
-export const RecordParcelUpdateModal = ({ shipmentId, onClose }: RecordParcelUpdateModalProps) => {
+export const RecordParcelUpdateModal = ({
+  shipmentId,
+  codAmountToCollect,
+  onClose,
+}: RecordParcelUpdateModalProps) => {
   const recordUpdate = useRecordParcelUpdate(shipmentId);
   const [code, setCode] = useState<ParcelEventCode>(DEFAULT_EVENT_CODE);
   const [rawStatus, setRawStatus] = useState("");
   const [note, setNote] = useState("");
   const [isCorrection, setIsCorrection] = useState(false);
+  const [codCollectedAmount, setCodCollectedAmount] = useState(codAmountToCollect);
   const fieldIdPrefix = useId();
   const trimmedNote = note.trim();
+  const isDelivery = code === DELIVERED_EVENT_CODE;
 
   const submitUpdate = () => {
     const trimmedRawStatus = rawStatus.trim();
@@ -46,6 +58,7 @@ export const RecordParcelUpdateModal = ({ shipmentId, onClose }: RecordParcelUpd
         note: trimmedNote,
         isCorrection,
         ...(trimmedRawStatus ? { rawStatus: trimmedRawStatus } : {}),
+        ...(isDelivery ? { codCollectedAmount } : {}),
       },
       { onSuccess: onClose },
     );
@@ -91,6 +104,23 @@ export const RecordParcelUpdateModal = ({ shipmentId, onClose }: RecordParcelUpd
             ))}
           </Select>
         </div>
+        {isDelivery && (
+          <div>
+            <Label htmlFor={`${fieldIdPrefix}-cash`}>Cash the partner collected</Label>
+            <Input
+              id={`${fieldIdPrefix}-cash`}
+              type="number"
+              inputMode="numeric"
+              min={NO_CASH}
+              value={codCollectedAmount}
+              onChange={(event) => setCodCollectedAmount(Number(event.target.value))}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              The label asked for Rs. {codAmountToCollect.toLocaleString()}. A different amount is
+              flagged on the parcel and in Partner cash.
+            </p>
+          </div>
+        )}
         <div>
           <Label htmlFor={`${fieldIdPrefix}-raw`}>The partner&apos;s words (optional)</Label>
           <Input

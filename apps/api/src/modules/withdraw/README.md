@@ -51,12 +51,16 @@ and sees it move through their request history with a status badge. Admin review
   `bankAccountId` resolves to whichever of `bankAccountId`/`brandBankAccountId` is set (mirroring
   how `ownerType` already tells the caller which one), and `qrCodeImageUrl` is read straight off
   the joined `bankAccount`/`brandBankAccount` row.
-- **The `CREATOR` owner side is for people who earn commission, not every signed-in user.**
-  `resolveOwner` calls `requireCommissionEarner` (`#lib/creator-guard.utils.js`): an approved
-  creator, or a shopper who has commission rows because a build they helped make sold. Anyone
-  else gets `403` (`NOT_A_CREATOR`) on `GET /eligibility`, `POST /requests` and `GET /requests`.
-  The `BUSINESS` side still goes through `requireBrandId`. `GET /policy` is not gated — it
-  returns only the public fee/window schedule and takes no user context.
+- **The `CREATOR` owner side is for people who earn money on Outfiqe, not every signed-in user.**
+  - A contractor rider (`logistics/rider-pay`) is let in straight away, so a new rider sees a
+    zero balance rather than an error.
+  - Everyone else goes through `requireCommissionEarner` (`#lib/creator-guard.utils.js`): an
+    approved creator, or a shopper who has commission rows because a build they helped make
+    sold.
+  - Anyone else gets `403` (`NOT_A_CREATOR`) on `GET /eligibility`, `POST /requests` and
+    `GET /requests`.
+    The `BUSINESS` side still goes through `requireBrandId`. `GET /policy` is not gated — it
+    returns only the public fee/window schedule and takes no user context.
 - **A brand's balance includes its Build commission.** When someone on a build is a brand owner,
   that share is a `CreatorCommission` row with `recipientBrandId` (see `../commissions/README.md`).
   The brand's available balance is its `AVAILABLE` payouts plus its `AVAILABLE` build commission.
@@ -97,14 +101,16 @@ UNDER_REVIEW, APPROVED))`. A `PAID` request doesn't need subtracting separately 
 - **`mark-paid` is where the hard ledger claim happens** — one transaction selects the owner's
   available money rows oldest-first, accumulates until the running total is `>= amount`,
   atomically flips them, and records one `WithdrawRequestLedgerEntry` per claimed row.
-  `listAvailableLedgerRows` gathers the rows: for a person, their `AVAILABLE` commission plus their
-  released Offer money (`OutfitOffer.payoutStatus = AVAILABLE`, dated by `releasedAt`); for a
+  `listAvailableLedgerRows` gathers the rows: for a person, their `AVAILABLE` commission, their
+  released Offer money (`OutfitOffer.payoutStatus = AVAILABLE`, dated by `releasedAt`) and, for a
+  rider, their `AVAILABLE` visit earnings (`RiderEarning`, which move to `WITHDRAWN`); for a
   brand, its available payouts plus its build commission. `pickOldestRowsCoveringAmount` (in
   `withdraw.utils.ts`) picks the oldest across all of them until the amount is covered, then
   payouts move to `WITHDRAWN`, commission to `PAID` and offers to `payoutStatus = PAID`; if any
   update touched fewer rows than picked, the claim fails. The ledger entries record each row with
-  its own kind (`CREATOR_COMMISSION`, `BRAND_PAYOUT`, `OFFER_PAYOUT`). A partial unique index on
-  each of `creatorCommissionId`/`brandPayoutId` and a unique `outfitOfferId` (Postgres treats
+  its own kind (`CREATOR_COMMISSION`, `BRAND_PAYOUT`, `OFFER_PAYOUT`, `RIDER_EARNING`). A partial
+  unique index on each of `creatorCommissionId`/`brandPayoutId` and a unique `outfitOfferId` and
+  `riderEarningId` (Postgres treats
   NULLs as distinct, so this only
   constrains the non-null side) makes double-claiming a row impossible at the DB level even if the
   `WHERE status = AVAILABLE` guard somehow raced. If the claim can't find enough rows, the whole

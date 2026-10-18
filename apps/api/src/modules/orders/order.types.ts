@@ -9,6 +9,7 @@ import type {
   PaymentTransactionStatus,
   PickupStatus,
 } from "#generated/prisma/enums.js";
+import type { OrderTrackingStageSummary } from "#modules/logistics/tracking/tracking.types.js";
 
 export type OrderFulfilmentRollup = {
   fulfilmentStatus: FulfilmentStatus;
@@ -105,11 +106,14 @@ export type OrderShipmentView = {
   id: string;
   brandName: string;
   status: FulfilmentStatus;
+  fulfilmentMode: FulfilmentMode;
   carrier: string | null;
   trackingNumber: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
 };
+
+export type OrderDeliveryPromise = { from: string; by: string };
 
 export type OrderView = {
   id: string;
@@ -130,6 +134,8 @@ export type OrderView = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   refundedAmount: number;
+  trackingStage: OrderTrackingStageSummary | null;
+  promisedDelivery: OrderDeliveryPromise | null;
   items: OrderItemView[];
   shipments: OrderShipmentView[];
   transactions: PaymentTransactionView[];
@@ -137,7 +143,14 @@ export type OrderView = {
 
 export type OrderSummaryView = Omit<
   OrderView,
-  "items" | "shipments" | "transactions" | "phone" | "address" | "city" | "landmark"
+  | "items"
+  | "shipments"
+  | "transactions"
+  | "trackingStage"
+  | "phone"
+  | "address"
+  | "city"
+  | "landmark"
 > & {
   itemCount: number;
   firstItemImageUrl: string | null;

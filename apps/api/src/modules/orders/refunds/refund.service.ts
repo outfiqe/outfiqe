@@ -81,6 +81,21 @@ export const orderRefundService = {
     );
   },
 
+  async refundOrderItemsBySystem(
+    orderId: string,
+    { lines, cause, reason }: Omit<StaffRefundItemsBody, "restock">,
+  ): Promise<OrderRefundView> {
+    const appliedRefund = await prisma.$transaction((tx) =>
+      orderRefundEngine.claimAndApplyInTransaction(
+        tx,
+        { orderId, lineRequests: lines, cause, reason, requestedById: null },
+        { restockUnits: false, actorUserId: null },
+      ),
+    );
+    await orderRefundEngine.finishAfterCommit(appliedRefund);
+    return requireRefundView(appliedRefund.claim.refundId);
+  },
+
   async listRefundQueue(
     query: ListRefundQueueQuery,
   ): Promise<{ items: RefundQueueItemView[]; nextCursor: string | null }> {

@@ -18,6 +18,8 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 
 **User-facing**: pick a saved address (or fill a new one), pick a payment method, submit. COD lands straight on the order confirmation page; eSewa/Khalti redirect to the gateway first.
 
+**Cash on delivery can be unavailable** for two reasons, and `PaymentMethodField` shows the one that applies under the greyed-out option (`codUnavailableReason`, worded in `constants/checkout.constants.ts`): the applied coupon is prepaid-only, or the buyer refused 2 deliveries in the last year (by this account or the phone typed in the form). The refusal check is `useCodEligibility` → `checkoutApi.getCodEligibility` → `GET /logistics/cod-eligibility?phone=`, debounced while the phone is typed. If that check fails the option stays on; the API refuses a blocked COD checkout anyway (`COD_UNAVAILABLE_REFUSALS`).
+
 **Technical**: `CheckoutBody` reads either the persisted cart (`useCart`) or a Buy Now payload, builds a `Cart`-shaped object either way, and hands it — along with the fetched `DeliveryZone[]` (`useDeliveryZones`) — to `CheckoutForm`, which resolves the delivery fee live from the form's own `city` field and submits via `useCheckout` → `checkoutApi.submit` → `POST /orders/checkout` (see `apps/api/src/modules/orders/README.md`).
 
 ## Buy Now bypasses the cart entirely

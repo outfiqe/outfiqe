@@ -18,20 +18,30 @@ wasted. Scans made without signal are kept on the phone and sent later.
 - `utils/riderTask.utils.ts` — short order ids, collected counts, the map link, wording.
 - `constants/` — query keys, visit status labels, the queue's storage key, retry interval and the
   error codes that mean "try again later" (`RETRYABLE_SCAN_ERROR_CODES`).
-- `hooks/` — `useRiderTasks`, `useRiderTask`, `useMarkVisitWasted`, `useFinishVisit`.
+- `hooks/` — `useRiderTasks`, `useRiderTask`, `useMarkVisitWasted`, `useFinishVisit`,
+  `useDropOffReturn` (`POST /api/logistics/rider/tasks/:id/return-drop-offs`).
 - `components/`:
   - `RiderShell` — the slim mobile header with the rider's name and `RiderLogoutButton`.
   - `RiderLogoutButton` — warns before signing out while scans are still waiting.
   - `RiderTasksPage` — today's open visits (`RiderTaskCard`), with loading, error and empty states.
-  - `RiderVisitPage` — one visit: address, call and directions buttons, the bags, the scan flow,
-    and the "nothing to collect" / "leave without the other bags" actions.
+  - `RiderVisitPage` — one visit: address, call and directions buttons, the returns to hand back
+    (`ReturnStopsSection`), the bags to collect, the scan flow, and the "nothing to collect" /
+    "leave without the rest" actions. Each stop says whether it is a collection or a return
+    (`direction`); returns not handed over go back to the hub when the visit ends.
+  - `ReturnStopsSection` — each return's order, unit count and why it came back, with
+    **Handed to the brand** (no scan: the brand checks and confirms the items themselves).
   - `CollectScanFlow` — step 1 scans the pickup slip, step 2 the bag sticker, using the shared
     `QrScanner` from `@outfiqe/components` (camera, or typing the code).
   - `PendingScansList` — scans not sent yet, with "Try again" and "Remove" for refused ones.
   - `WastedVisitModal` — the reason for a wasted visit.
   - `RiderInviteUnavailable` — the sign-up page's message for a bad invite link.
-- Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/visits/[taskId]/page.tsx`
-  (one visit), `app/(rider)/rider/layout.tsx`, and `app/(rider)/requireRiderSession.ts` (signed-in
+  - `RiderEarningsPage` — totals (`RiderEarningsSummary`: ready to withdraw, on hold, paid), each
+    visit's earning (`RiderEarningRow`), and the shared `WithdrawSection` on the person side for
+    bank accounts and withdrawals.
+- `api/riderEarningsApi.ts`, `api/riderEarningsSchemas.ts`, `hooks/useInfiniteRiderEarnings.ts`
+  and `constants/riderEarningLabels.ts` — `GET /api/logistics/rider/earnings`, cursor-paged.
+- Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/earnings/page.tsx`
+  (earnings), `app/(rider)/rider/visits/[taskId]/page.tsx` (one visit), `app/(rider)/rider/layout.tsx`, and `app/(rider)/requireRiderSession.ts` (signed-in
   `RIDER` only; anyone else goes to their own home).
 
 ## Funnel
@@ -70,3 +80,13 @@ wasted. Scans made without signal are kept on the phone and sent later.
   `Permissions-Policy: camera=(self)` for those paths and `camera=()` everywhere else.
 - **The pickup code check on the phone is format-only.** The rider never sees which codes belong
   to the visit; the API decides, so a wrong bag is refused even offline-then-synced.
+- **A visit can't be ended while its scans are still on the phone.**
+  - The server only knows about scans that have arrived, so the visit page still counts an
+    offline-scanned bag as "Waiting".
+  - Finishing or wasting the visit at that point would close it, and the queued scans would then
+    be refused. So "Leave without the rest" and "Nothing to collect here" are replaced by a
+    "saved on this phone" message until those scans send.
+  - Scanning a pickup code that is already waiting on the phone is refused with a hint, so the
+    rider doesn't put a second sticker on the same bag.
+- **"Leave without the rest" asks first** (`LeaveVisitModal`), because it can't be undone: the
+  bags left behind go back on the pickup board.
