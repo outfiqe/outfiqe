@@ -1,3 +1,4 @@
+import { logisticsAlertService } from "./alerts/alert.service.js";
 import { logisticsBagTagService } from "./bag-tags/bag-tag.service.js";
 import { logisticsCodService } from "./cod/cod.service.js";
 import { logisticsCustomerTrackingService } from "./customer-tracking/customer-tracking.service.js";
@@ -48,4 +49,5 @@ export const logisticsService = {
   ...logisticsReliabilityService,
   ...logisticsCodService,
   ...logisticsRiderPayService,
+  ...logisticsAlertService,
 };

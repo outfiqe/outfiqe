@@ -14,6 +14,8 @@ import {
 import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import type { Hub } from "../../hubs/api/hubsSchemas";
 import { ridersApi } from "../api/ridersApi";
 import { RIDER_EMPLOYMENT_TYPE } from "../api/ridersSchemas";
@@ -34,6 +36,7 @@ export const InviteRiderModal = ({ hub, onClose }: InviteRiderModalProps) => {
   });
 
   const inviteRider = useApiMutation({
+    errorMessage: getErrorMessage,
     mutationFn: (values: InviteRiderFormValues) => ridersApi.invite({ ...values, hubId: hub.id }),
     invalidateKeys: [RIDER_INVITES_QUERY_KEY],
     successMessage: "Invite sent.",

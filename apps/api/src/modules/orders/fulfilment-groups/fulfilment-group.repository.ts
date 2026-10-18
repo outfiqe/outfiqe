@@ -117,7 +117,11 @@ export const orderFulfilmentGroupRepository = {
   ): Promise<{ brandId: string; brandName: string; brandEmail: string; shipmentCount: number }[]> {
     const grouped = await prisma.orderFulfilmentGroup.groupBy({
       by: ["brandId"],
-      where: { status: FulfilmentStatus.SHIPPED, shippedAt: { lte: shippedBefore } },
+      where: {
+        status: FulfilmentStatus.SHIPPED,
+        shippedAt: { lte: shippedBefore },
+        fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
+      },
       _count: { _all: true },
     });
     if (grouped.length === 0) return [];

@@ -60,7 +60,11 @@ feature layout.
   - `CheckInPage` (`/logistics/check-in`) — staff type the units in a bag, then scan or type its
     sticker or pickup code (`QrScanner` from `@outfiqe/components`; a USB scanner types into its
     code box). Each scan gets its own `Idempotency-Key`. `ScanLog` lists this session's results,
-    with short counts and refusals called out.
+    with short counts and refusals called out. The camera stays on between bags and only pauses
+    until the next count is typed, so it doesn't restart for every bag.
+  - Every hub page (check-in, packing, hand-over, parcels, pickup board, riders, bag stickers)
+    shows "couldn't load the hubs" with **Try again** when the hubs request fails, instead of
+    "No open hubs".
   - `PackingPage` (`/logistics/packing`) — orders with bags at the hub. `OrderToPackCard` shows
     each bag; `InspectionModal` records failed units (refunded by the API); `PackParcelModal` asks
     for weight and pieces, and for "pack only what's here" when bags are still coming. "Pack
@@ -106,6 +110,14 @@ feature layout.
   and **Clear refusals** with a required reason (`TextPromptModal`), which the API writes to the
   audit log. The card hides itself for staff without logistics access (the request answers
   `403`).
+- `alerts/` — `LogisticsAlertsPage` (`/logistics/alerts`, "Delivery alerts"), first in the
+  Logistics group:
+  - open or resolved alerts, filtered by type with each type's open count;
+  - each `LogisticsAlertRow` links to its parcel or order, and says how a resolved alert was
+    cleared (on its own, or by whom and why);
+  - **Resolve** asks for a note (`TextPromptModal`), for staff with manage access;
+  - names come from `LOGISTICS_ALERT_LABELS` in `@outfiqe/utils`, the same text the staff
+    notification and push use.
 - `rider-pay/` — `RiderPayPage` (`/logistics/rider-pay`, "Rider pay"):
   - `RiderPayRateSection` — the contractor pay in effect, flagged when it's still the launch
     default, and every rate set with **Switch off** for active ones. **Change pay** opens

@@ -16,7 +16,8 @@ const NO_LOCATIONS = 0;
 export const PickupBoardPage = () => {
   const { canUse } = usePlatformPermissions();
   const canManageRounds = canUse(PLATFORM_MANAGE_PERMISSION.LOGISTICS);
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const boardQuery = useInfinitePickupBoard(selectedHub?.id ?? null);
   const locations = boardQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const isLoading = isLoadingHubs || (selectedHub !== null && boardQuery.isPending);
@@ -30,7 +31,9 @@ export const PickupBoardPage = () => {
         </p>
       </div>
 
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
       )}

@@ -17,7 +17,6 @@ export type BuyNowCouponPreview = z.infer<typeof buyNowCouponPreviewSchema>;
 
 const codEligibilitySchema = z.object({
   isCashOnDeliveryAllowed: z.boolean(),
-  refusalCount: z.number(),
   refusalLimit: z.number(),
   windowDays: z.number(),
 });

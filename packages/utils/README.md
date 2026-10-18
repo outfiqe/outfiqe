@@ -39,6 +39,10 @@ to any one app.
 - `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
   each) and `POST_LAYOUT_LABEL` (the picker's display labels).
+- `logistics-alerts/` — `LogisticsAlertType`, `LOGISTICS_ALERT_TYPES`, `LOGISTICS_ALERT_LABELS`
+  (the plain-English name of each delivery alert, shared by the admin alerts page, the staff
+  notification and its push) and `isLogisticsAlertType`. It sits here for the same reason as
+  `order-tracking/` below.
 - `order-tracking/` — `OrderTrackingStage` (the one customer-facing stage of a hub-delivered
   order), `ORDER_TRACKING_STAGE_MESSAGES` (the words for each, used by in-app and push
   notifications) and `isOrderTrackingStage`. It lives here rather than in `@outfiqe/types` because
