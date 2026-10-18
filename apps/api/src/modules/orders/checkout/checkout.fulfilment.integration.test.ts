@@ -9,6 +9,7 @@ import { createAdminSession } from "#test/integration/auth-helpers.js";
 import {
   createCoveredPickupArea,
   createDefaultPickupLocation,
+  createDeliveryPartnerCovering,
   enableOrderLogisticsForBrands,
 } from "#test/integration/logistics-fixtures.js";
 import {
@@ -89,7 +90,8 @@ describe("checkout fulfilment plan", () => {
 
   it("sends a flagged brand with a covered pickup location through the hub", async () => {
     const { brand, product, size } = await prepareCheckout();
-    const { hub } = await createCoveredPickupArea([COVERED_CITY]);
+    const { hub, zone } = await createCoveredPickupArea([COVERED_CITY]);
+    await createDeliveryPartnerCovering({ hubId: hub.id, deliveryZoneIds: [zone.id] });
     const pickupLocation = await createDefaultPickupLocation(brand.id, COVERED_CITY);
     await enableOrderLogisticsForBrands([brand.id]);
 
@@ -103,6 +105,37 @@ describe("checkout fulfilment plan", () => {
       pickupLocationId: pickupLocation.id,
     });
     expect(isCrockfordCode(group?.pickupCode ?? "", PICKUP_CODE_LENGTH)).toBe(true);
+  });
+
+  it("keeps a flagged brand shipping its own orders when no delivery partner covers the customer", async () => {
+    const { brand, product, size } = await prepareCheckout();
+    await createCoveredPickupArea([COVERED_CITY]);
+    await createDefaultPickupLocation(brand.id, COVERED_CITY);
+    await enableOrderLogisticsForBrands([brand.id]);
+
+    const order = await checkOut(product.id, size.id, COVERED_CITY);
+
+    expect(order.fulfilmentGroups).toEqual([
+      expect.objectContaining({ fulfilmentMode: FulfilmentMode.BRAND_SHIPS, hubId: null }),
+    ]);
+  });
+
+  it("needs a partner that collects cash for a cash-on-delivery order", async () => {
+    const { brand, product, size } = await prepareCheckout();
+    const { hub, zone } = await createCoveredPickupArea([COVERED_CITY]);
+    await createDeliveryPartnerCovering({
+      hubId: hub.id,
+      deliveryZoneIds: [zone.id],
+      supportsCod: false,
+    });
+    await createDefaultPickupLocation(brand.id, COVERED_CITY);
+    await enableOrderLogisticsForBrands([brand.id]);
+
+    const order = await checkOut(product.id, size.id, COVERED_CITY);
+
+    expect(order.fulfilmentGroups).toEqual([
+      expect.objectContaining({ fulfilmentMode: FulfilmentMode.BRAND_SHIPS }),
+    ]);
   });
 
   it("snapshots the delivery promise from the delivery city's zone", async () => {

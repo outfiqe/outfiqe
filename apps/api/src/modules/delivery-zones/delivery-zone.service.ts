@@ -96,6 +96,13 @@ export const deliveryZoneService = {
 
   findZoneForCity,
 
+  async resolveZoneIdForCity(
+    city: string | null,
+    countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,
+  ): Promise<string> {
+    return (await resolveZoneForCity(city, countryCode)).id;
+  },
+
   async resolveFeeValuesForCity(
     city: string | null,
     countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,

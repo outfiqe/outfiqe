@@ -8,6 +8,7 @@ import type { ForgotPasswordInput } from "../password/schemas/forgotPassword.sch
 import type { ResetPasswordInput } from "../password/schemas/resetPassword.schema";
 import type { BrandRegisterInput } from "../registration/schemas/brandRegister.schema";
 import type { RegisterInput } from "../registration/schemas/register.schema";
+import type { RiderRegisterInput } from "../registration/schemas/riderRegister.schema";
 import type { TokenPurpose, UserSession } from "../types";
 import type { BrandInviteInfo } from "./userSchemas";
 import {
@@ -44,6 +45,12 @@ export const authApi = {
   async registerBrand(input: BrandRegisterInput): Promise<LoginResponse> {
     const res = await apiClient.post<BrandLoginApiResponse>("/auth/register/brand", input);
     const { accessToken, user } = brandLoginResponseSchema.parse(res.data);
+    return { accessToken, user: toUserSession(user) };
+  },
+
+  async registerRider(input: RiderRegisterInput): Promise<LoginResponse> {
+    const res = await apiClient.post<LoginApiResponse>("/auth/register/rider", input);
+    const { accessToken, user } = loginResponseSchema.parse(res.data);
     return { accessToken, user: toUserSession(user) };
   },
 

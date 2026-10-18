@@ -12,6 +12,8 @@ export const PRIVATE_PATH_PREFIXES = [
   "/orders",
   "/manage-orders",
   "/pickup-locations",
+  "/print",
+  "/rider",
   "/cart",
   "/checkout",
   "/wishlist",

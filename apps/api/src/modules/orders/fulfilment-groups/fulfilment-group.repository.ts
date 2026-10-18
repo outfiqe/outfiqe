@@ -1,9 +1,34 @@
 import { prisma } from "#db/prisma.js";
-import { FulfilmentStatus } from "#generated/prisma/enums.js";
+import {
+  FulfilmentMode,
+  FulfilmentStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { FulfilmentGroupSpec, OrderFulfilmentRollup } from "../order.types.js";
 import { deriveOrderFulfilment } from "../order.utils.js";
+
+const CLOSED_GROUP_STATUSES = [FulfilmentStatus.CANCELLED, FulfilmentStatus.RETURNED];
+
+const markHubCollectedCashPaid = async (client: DbClient, orderId: string): Promise<void> => {
+  await client.order.updateMany({
+    where: {
+      id: orderId,
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      fulfilmentGroups: {
+        some: { fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS },
+        none: {
+          fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
+          status: { notIn: CLOSED_GROUP_STATUSES },
+        },
+      },
+    },
+    data: { paymentStatus: PaymentStatus.PAID },
+  });
+};
 
 const setOrderFulfilmentRollup = async (
   client: DbClient,
@@ -23,6 +48,7 @@ const setOrderFulfilmentRollup = async (
       where: { id: orderId, deliveredAt: null },
       data: { deliveredAt: new Date() },
     });
+    await markHubCollectedCashPaid(client, orderId);
   }
 };
 
@@ -91,7 +117,11 @@ export const orderFulfilmentGroupRepository = {
   ): Promise<{ brandId: string; brandName: string; brandEmail: string; shipmentCount: number }[]> {
     const grouped = await prisma.orderFulfilmentGroup.groupBy({
       by: ["brandId"],
-      where: { status: FulfilmentStatus.SHIPPED, shippedAt: { lte: shippedBefore } },
+      where: {
+        status: FulfilmentStatus.SHIPPED,
+        shippedAt: { lte: shippedBefore },
+        fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
+      },
       _count: { _all: true },
     });
     if (grouped.length === 0) return [];
@@ -212,6 +242,7 @@ export const orderFulfilmentGroupRepository = {
       where: { id: groupId, brandId },
       select: {
         status: true,
+        fulfilmentMode: true,
         order: { select: { id: true, userId: true, fulfilmentStatus: true } },
       },
     });

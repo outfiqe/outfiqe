@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { FulfilmentMode } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -16,6 +17,7 @@ import type {
   BrandFulfilmentGroupSummaryView,
 } from "../order.types.js";
 import { deriveOrderFulfilment } from "../order.utils.js";
+import { orderItemChangeAccess } from "../refunds/item-change-access.js";
 import { orderFulfilmentGroupRepository } from "./fulfilment-group.repository.js";
 import {
   toBrandFulfilmentGroupDetailView,
@@ -48,7 +50,9 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!group) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
-    return toBrandFulfilmentGroupDetailView(group);
+    return toBrandFulfilmentGroupDetailView(group, {
+      allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
+    });
   },
 
   async advanceBrandFulfilmentGroup(
@@ -62,6 +66,13 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (existing.fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS) {
+      throw new AppError(
+        "DELIVERED_BY_OUTFIQE",
+        "Outfiqe delivers this order. Mark it ready for pickup instead.",
+        HTTP_STATUS.CONFLICT,
+      );
+    }
 
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const advanced = await orderFulfilmentGroupRepository.advanceFulfilmentGroup(
@@ -104,7 +115,9 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
-    return toBrandFulfilmentGroupDetailView(updatedGroup);
+    return toBrandFulfilmentGroupDetailView(updatedGroup, {
+      allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
+    });
   },
 
   async requestBrandFulfilmentGroupCancellation(

@@ -10,13 +10,13 @@ import { useAuth } from "@/features/auth";
 import { ReportContentModal } from "@/features/explore/posts/components/ReportContentModal";
 import { useReportContent } from "@/features/explore/posts/hooks/useReportContent";
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount, formatNepalDateTime } from "@/shared/lib/nepalFormatting";
 
 import { BuyBuildPanel } from "../../components/BuyBuildPanel";
 import { PersonAvatar } from "../../components/PersonAvatar";
 import type { PublicBuildDetail } from "../../social/api/outfitSocialSchemas";
 import { BuildComments } from "../../social/components/BuildComments";
 import { BuildReactionsBar } from "../../social/components/BuildReactionsBar";
-import { formatLakhAmount, formatNepalDateTime } from "../../utils/outfitFormatting";
 import { PublicBuildPhotos } from "./PublicBuildPhotos";
 
 const NO_CONTRIBUTORS = 0;

@@ -1,0 +1,10 @@
+{
+  "shipments": [
+    {
+      "reference": "PX-55821",
+      "merchantReference": "OFQ7K2M9QAB",
+      "labelUrl": null,
+      "trackingUrl": "https://partner.example/track/PX-55821"
+    }
+  ]
+}

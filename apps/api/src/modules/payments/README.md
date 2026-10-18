@@ -125,12 +125,23 @@ settles (from the lookup response). Concretely:
 off the lookup-returned `transaction_id`). `payerPhone` is `Order.phone` (already collected at
 checkout — no new data to gather).
 
-**Built in chunk 15**: `paymentService.refund(orderId, paymentMethod, payerPhone)` does exactly
-this extraction (via the new exported `extractKhaltiTransactionId`) and resolves the right
-provider, so callers (`orders`' admin cancel action) never need to know which providers support
-automated refunds at all — a provider with no `refund` method just gets treated as "record it
-manually," and a missing/malformed `gatewayTransactionId` fails safely (`succeeded: false`) instead
-of throwing.
+`paymentService.refund({ orderId, paymentMethod, payerPhone, amount })` does exactly this
+extraction (via the exported `extractKhaltiTransactionId`) and resolves the right provider, so
+callers (the order refund engine in `orders/refunds/`) never need to know which providers support
+automated refunds. A missing/malformed `gatewayTransactionId` fails safely (`succeeded: false`)
+instead of throwing.
+
+**Partial refunds.** `amount` is in rupees and is always passed. Khalti receives it as
+`amount * 100` (paisa) next to `mobile`, so a refund of some items returns only their share.
+`recordRefund` stores the refunded amount on the `REFUND` `PaymentTransaction` (`amount` column),
+so several partial refunds on one order each leave their own row.
+
+**A provider with no `refund` method now reports `succeeded: false`.** It used to report success,
+which meant an eSewa refund looked done while no money had moved. Our eSewa ePay v2 integration
+has no refund call, so every eSewa refund now goes to the manual refund queue: the customer is
+asked where to send it and staff pay it by hand (see `orders/README.md`, "Refunds"). If eSewa
+merchant support confirms a refund API for our account, add `refund` to `esewa.provider.ts` and
+these refunds become automatic with no other change.
 
 ### Unverified assumptions (no real Khalti sandbox account exists yet)
 
@@ -145,10 +156,11 @@ resolves). Two things remain unverified against a real transaction:
    of gap as eSewa's own browser-payment leg.
 2. **`refund`'s request body.** Khalti's docs describe different required fields for wallet vs. bank
    transactions (`mobile` required for bank, not required for wallet), and there's no way for us to
-   know which one a given transaction used. This implementation always sends `mobile` on a full
-   refund, on the assumption that Khalti's API ignores extra unrecognized fields on a wallet refund
-   rather than rejecting them — reasonable but genuinely untested. Verify with a real refund before
-   trusting this in production.
+   know which one a given transaction used. This implementation always sends `mobile` and the
+   `amount` in paisa, on the assumption that Khalti's API ignores extra unrecognized fields on a
+   wallet refund rather than rejecting them — reasonable but genuinely untested. Verify with a real
+   refund before trusting this in production, including a second partial refund on the same
+   payment.
 
 ### Also fixed while here
 

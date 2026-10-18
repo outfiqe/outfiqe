@@ -1,5 +1,6 @@
 import type { FulfilmentStatusValue, PaymentStatusValue } from "@/features/orders";
 
+import type { FulfilmentModeValue, PickupStatusValue } from "../../pickups/api/brandPickupSchemas";
 import type { OrderFulfilmentSummary } from "../api/brandFulfilmentSchemas";
 
 type BadgeTone = "neutral" | "progress" | "positive" | "negative";
@@ -37,6 +38,7 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatusValue, string> = {
   DUE: "Cash on delivery",
   FAILED: "Payment failed",
   REFUNDED: "Refunded",
+  PARTIALLY_REFUNDED: "Partly refunded",
 };
 
 const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
@@ -65,3 +67,51 @@ export const canRequestCancellation = (status: FulfilmentStatusValue): boolean =
   status === "PLACED" || status === "PACKED" || status === "SHIPPED";
 
 export const formatShortOrderId = (orderId: string): string => orderId.slice(0, 8).toUpperCase();
+
+const PICKUP_STATUS_LABEL: Partial<Record<PickupStatusValue, string>> = {
+  AWAITING_BRAND: "To pack",
+  READY_FOR_PICKUP: "Ready for pickup",
+  PICKED_UP: "Picked up",
+  AT_HUB: "At Outfiqe hub",
+  RETURN_AT_HUB: "Coming back",
+  RETURNING_TO_BRAND: "On its way back to you",
+  RETURNED_TO_BRAND: "Returned to you",
+  CANCELLED: "Cancelled",
+};
+
+const PICKUP_STATUS_TONE: Partial<Record<PickupStatusValue, BadgeTone>> = {
+  AWAITING_BRAND: "neutral",
+  READY_FOR_PICKUP: "progress",
+  PICKED_UP: "progress",
+  AT_HUB: "progress",
+  RETURN_AT_HUB: "negative",
+  RETURNING_TO_BRAND: "negative",
+  RETURNED_TO_BRAND: "negative",
+  CANCELLED: "negative",
+};
+
+type ShipmentStatusSource = {
+  status: FulfilmentStatusValue;
+  fulfilmentMode: FulfilmentModeValue;
+  pickupStatus: PickupStatusValue | null;
+};
+
+export const isDeliveredByOutfiqe = ({
+  fulfilmentMode,
+}: Pick<ShipmentStatusSource, "fulfilmentMode">) => fulfilmentMode === "OUTFIQE_LOGISTICS";
+
+export const describeShipmentStatus = ({
+  status,
+  fulfilmentMode,
+  pickupStatus,
+}: ShipmentStatusSource): { label: string; tone: BadgeTone } => {
+  const pickupLabel = pickupStatus ? PICKUP_STATUS_LABEL[pickupStatus] : undefined;
+  const pickupTone = pickupStatus ? PICKUP_STATUS_TONE[pickupStatus] : undefined;
+  const usesPickupStatus =
+    isDeliveredByOutfiqe({ fulfilmentMode }) &&
+    pickupLabel !== undefined &&
+    pickupTone !== undefined;
+  return usesPickupStatus
+    ? { label: pickupLabel, tone: pickupTone }
+    : { label: SHIPMENT_STATUS_LABEL[status], tone: SHIPMENT_STATUS_TONE[status] };
+};

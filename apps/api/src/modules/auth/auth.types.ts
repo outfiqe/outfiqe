@@ -54,6 +54,18 @@ export type RegisterAdminInput = {
   password: string;
 };
 
+export type RiderInviteInfo = {
+  email: string;
+  name: string;
+  hubName: string;
+};
+
+export type RegisterRiderInput = {
+  inviteToken: string;
+  phone: string;
+  password: string;
+};
+
 export type CrmInviteInfo = {
   email: string;
   organizationName: string;

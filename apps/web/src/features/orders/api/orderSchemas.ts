@@ -5,6 +5,7 @@ import type {
   PaymentTransactionStatus as PaymentTransactionStatusType,
   PaymentTransactionType as PaymentTransactionTypeType,
 } from "@outfiqe/types";
+import { OrderTrackingStage } from "@outfiqe/utils";
 import { z } from "zod";
 
 export const PaymentMethod = {
@@ -20,6 +21,7 @@ export const PaymentStatus = {
   DUE: "DUE",
   FAILED: "FAILED",
   REFUNDED: "REFUNDED",
+  PARTIALLY_REFUNDED: "PARTIALLY_REFUNDED",
 } as const satisfies Record<string, PaymentStatusType>;
 export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
@@ -60,10 +62,14 @@ const fulfilmentStatusSchema = z.enum(FulfilmentStatus);
 export const orderFulfilmentSummarySchema = z.enum(ORDER_FULFILMENT_SUMMARY);
 export type OrderFulfilmentSummaryValue = z.infer<typeof orderFulfilmentSummarySchema>;
 
+export const FULFILMENT_MODES = ["BRAND_SHIPS", "OUTFIQE_LOGISTICS"] as const;
+export const BRAND_SHIPS_MODE = "BRAND_SHIPS";
+
 export const orderShipmentSchema = z.object({
   id: z.string(),
   brandName: z.string(),
   status: fulfilmentStatusSchema,
+  fulfilmentMode: z.enum(FULFILMENT_MODES).default(BRAND_SHIPS_MODE),
   carrier: z.string().nullable(),
   trackingNumber: z.string().nullable(),
   shippedAt: z.string().nullable(),
@@ -81,8 +87,19 @@ export const orderItemSchema = z.object({
   qty: z.number(),
   unitPrice: z.number(),
   attributedCreatorName: z.string().nullable(),
+  refundedQty: z.number().default(0),
+  canCancel: z.boolean().default(false),
 });
 export type OrderItem = z.infer<typeof orderItemSchema>;
+
+export const orderTrackingStageSchema = z.enum(OrderTrackingStage);
+
+export const orderTrackingStageSummarySchema = z.object({
+  stage: orderTrackingStageSchema,
+  collectedBrandCount: z.number(),
+  totalBrandCount: z.number(),
+});
+export type OrderTrackingStageSummary = z.infer<typeof orderTrackingStageSummarySchema>;
 
 export const paymentTransactionSchema = z.object({
   id: z.string(),
@@ -110,6 +127,9 @@ export const orderSchema = z.object({
   deliveryFee: z.number(),
   codFee: z.number(),
   total: z.number(),
+  refundedAmount: z.number().default(0),
+  trackingStage: orderTrackingStageSummarySchema.nullable().default(null),
+  promisedDelivery: z.object({ from: z.string(), by: z.string() }).nullable().default(null),
   items: z.array(orderItemSchema),
   shipments: z.array(orderShipmentSchema).default([]),
   transactions: z.array(paymentTransactionSchema),
@@ -121,6 +141,7 @@ export const orderSummarySchema = orderSchema
     items: true,
     shipments: true,
     transactions: true,
+    trackingStage: true,
     phone: true,
     address: true,
     city: true,

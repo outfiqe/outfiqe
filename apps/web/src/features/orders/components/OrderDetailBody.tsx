@@ -3,16 +3,30 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { Ban, Clock } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 
-import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "../api/orderSchemas";
+import {
+  BRAND_SHIPS_MODE,
+  FulfilmentStatus,
+  PaymentMethod,
+  PaymentStatus,
+} from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
+import { useRefundDestination } from "../hooks/useRefundDestination";
+import { CancelItemsModal } from "./CancelItemsModal";
+import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
+import { OrderTrackingTimeline } from "./OrderTrackingTimeline";
 import { PendingPaymentPanel } from "./PendingPaymentPanel";
+import { RefundDetailsCard } from "./RefundDetailsCard";
 import { ShipmentTrackers } from "./ShipmentTrackers";
 import { StatusBadge } from "./StatusBadge";
 import { TransactionLedger } from "./TransactionLedger";
+
+const NOTHING_REFUNDED = 0;
+const NO_SHIPMENTS = 0;
 
 type OrderDetailBodyProps = {
   orderId: string;
@@ -20,6 +34,9 @@ type OrderDetailBodyProps = {
 
 export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
   const orderQuery = useOrder(orderId);
+  const hasRefunds = (orderQuery.data?.refundedAmount ?? NOTHING_REFUNDED) > NOTHING_REFUNDED;
+  const refundDestinationQuery = useRefundDestination(orderId, hasRefunds);
+  const [isCancelItemsOpen, setIsCancelItemsOpen] = useState(false);
 
   if (orderQuery.isLoading) {
     return (
@@ -52,8 +69,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     items,
     shipments,
     transactions,
+    trackingStage,
+    promisedDelivery,
   } = order;
   const hasMultipleShipments = shipments.length > 1;
+  const brandShippedShipments = shipments.filter(
+    ({ fulfilmentMode }) => fulfilmentMode === BRAND_SHIPS_MODE,
+  );
+  const cancellableItems = items.filter((orderItem) => orderItem.canCancel);
+  const refundDestination = refundDestinationQuery.data;
+  const showsRefundDetails =
+    refundDestination !== undefined &&
+    (refundDestination.canEdit || refundDestination.destination !== null);
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const awaitingPayment =
@@ -109,7 +136,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
 
       <div className="mt-6 rounded-2xl border border-border p-5">
         {!awaitingPayment &&
-          (hasMultipleShipments ? (
+          (trackingStage ? (
+            <div className="space-y-5">
+              <OrderTrackingTimeline
+                orderId={id}
+                trackingStage={trackingStage}
+                promisedDelivery={promisedDelivery}
+              />
+              {brandShippedShipments.length > NO_SHIPMENTS && (
+                <ShipmentTrackers shipments={brandShippedShipments} />
+              )}
+            </div>
+          ) : hasMultipleShipments ? (
             <ShipmentTrackers shipments={shipments} />
           ) : (
             <OrderTracker fulfilmentStatus={fulfilmentStatus} />
@@ -142,9 +180,31 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         {items.map((orderItem) => (
           <li key={orderItem.id}>
             {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
+            {orderItem.refundedQty > NOTHING_REFUNDED && ` (${orderItem.refundedQty} refunded)`}
           </li>
         ))}
       </ul>
+
+      {cancellableItems.length > NOTHING_REFUNDED && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="outline" onClick={() => setIsCancelItemsOpen(true)}>
+            Cancel items
+          </Button>
+        </div>
+      )}
+
+      {showsRefundDetails && (
+        <RefundDetailsCard orderId={id} refundDestination={refundDestination} />
+      )}
+      {hasRefunds && <OrderRefundsSection orderId={id} />}
+
+      {isCancelItemsOpen && (
+        <CancelItemsModal
+          orderId={id}
+          cancellableItems={cancellableItems}
+          onClose={() => setIsCancelItemsOpen(false)}
+        />
+      )}
 
       <div className="mt-6 flex justify-center gap-2.5">
         <Button asChild variant="outline">

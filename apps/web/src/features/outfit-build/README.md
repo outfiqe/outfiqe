@@ -20,7 +20,7 @@ root's own layer folders.
   started in it; it loads the build live), `components/BuildCoverGrid.tsx` (the picture area of a
   build card: the cover photos, or the first three items with "+N items"; used by
   `BuildSummaryCard` and `PublicBuildCardView`), `components/BuyBuildPanel.tsx`,
-  `components/PersonAvatar.tsx`, `utils/outfitFormatting.ts` (lakh format, Nepal time) and
+  `components/PersonAvatar.tsx` (lakh format and Nepal time come from `@/shared/lib/nepalFormatting`) and
   `testing/outfitFixtures.ts`.
 - `board/` — the live build board.
   - `hooks/useOutfit` — the build (`["outfit", id]`), either the live board or the published version.

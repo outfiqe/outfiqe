@@ -34,13 +34,15 @@ const DETAIL_FORM_PATHS = new Set([
 ]);
 
 const DETAIL_FORM_PATH_PATTERNS = [
-  /^\/orders\/[^/]+$/,
+  /^\/orders\/(?!refunds$|unavailable-items$)[^/]+$/,
   /^\/support\/[^/]+$/,
   /^\/crm\/customers\/[^/]+$/,
   /^\/crm\/partners\/[^/]+$/,
   /^\/crm\/billing\/return\/[^/]+$/,
   /^\/gamification\/badges\/[^/]+\/edit$/,
   /^\/outfit-builds\/[^/]+$/,
+  /^\/logistics\/parcels\/[^/]+$/,
+  /^\/logistics\/partners\/[^/]+$/,
 ];
 
 const LIST_PATHS = new Set([
@@ -65,8 +67,20 @@ const LIST_PATHS = new Set([
   "/gamification/manual-actions",
   "/gamification/xp-levels",
   "/hero-slides",
+  "/logistics/alerts",
+  "/logistics/bag-tags",
+  "/logistics/cod",
   "/logistics/hubs",
+  "/logistics/packing",
+  "/logistics/parcels",
+  "/logistics/partners",
+  "/logistics/reliability",
+  "/logistics/rider-pay",
+  "/logistics/pickup-board",
+  "/logistics/riders",
   "/orders",
+  "/orders/refunds",
+  "/orders/unavailable-items",
   "/organizations",
   "/outfit-builds",
   "/outfit-slot-types",
