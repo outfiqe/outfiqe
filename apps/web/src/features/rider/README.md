@@ -35,8 +35,13 @@ wasted. Scans made without signal are kept on the phone and sent later.
   - `PendingScansList` — scans not sent yet, with "Try again" and "Remove" for refused ones.
   - `WastedVisitModal` — the reason for a wasted visit.
   - `RiderInviteUnavailable` — the sign-up page's message for a bad invite link.
-- Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/visits/[taskId]/page.tsx`
-  (one visit), `app/(rider)/rider/layout.tsx`, and `app/(rider)/requireRiderSession.ts` (signed-in
+  - `RiderEarningsPage` — totals (`RiderEarningsSummary`: ready to withdraw, on hold, paid), each
+    visit's earning (`RiderEarningRow`), and the shared `WithdrawSection` on the person side for
+    bank accounts and withdrawals.
+- `api/riderEarningsApi.ts`, `api/riderEarningsSchemas.ts`, `hooks/useInfiniteRiderEarnings.ts`
+  and `constants/riderEarningLabels.ts` — `GET /api/logistics/rider/earnings`, cursor-paged.
+- Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/earnings/page.tsx`
+  (earnings), `app/(rider)/rider/visits/[taskId]/page.tsx` (one visit), `app/(rider)/rider/layout.tsx`, and `app/(rider)/requireRiderSession.ts` (signed-in
   `RIDER` only; anyone else goes to their own home).
 
 ## Funnel
