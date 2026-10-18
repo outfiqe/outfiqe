@@ -1267,6 +1267,7 @@ What each person sees and does, in order. Screen names and routes are in bracket
      (`GET /logistics/cod-eligibility`, which never returns the count).
 
    The server checks again at checkout (`COD_UNAVAILABLE_REFUSALS`).
+
 4. Places the order. Cash on delivery goes straight to the order page; Khalti and eSewa go to the
    payment page first. The promise is saved on the order and never changes.
 
@@ -1322,7 +1323,7 @@ What each person sees and does, in order. Screen names and routes are in bracket
 
 1. `/manage-orders` shows the pickup stage. A hub order's detail page has no customer name, phone
    or address, and no ship or deliver buttons; the API refuses them with `409
-   DELIVERED_BY_OUTFIQE`.
+DELIVERED_BY_OUTFIQE`.
 2. The brand packs and presses "Mark ready for pickup". The next round after the ready-by cut-off
    collects it.
 3. The pickup QR and code appear on screen. "Print pickup slip" (`/print/pickup-slip/[groupId]`)
@@ -1367,6 +1368,7 @@ What each person sees and does, in order. Screen names and routes are in bracket
    - a new sticker on the bag.
 
    Each scan answers with "Bag collected", "No signal. Scan saved", or the reason it was refused.
+
 5. **Offline.** Scans wait in the phone's IndexedDB, under a key per rider. They resend on
    `online`, every 30 seconds and when the app opens, with the original scan time and the same
    `Idempotency-Key`.
@@ -1379,6 +1381,7 @@ What each person sees and does, in order. Screen names and routes are in bracket
    - "Nothing to collect here", with a reason: a wasted visit that counts against the brand.
 
    None of these is offered while scans are still on the phone.
+
 7. At the hub, staff scan each sticker in. A short count raises `COUNT_MISMATCH`, naming the
    rider.
 
@@ -1405,6 +1408,7 @@ What each person sees and does, in order. Screen names and routes are in bracket
 
    An API partner also gets our webhook address pasted into their dashboard. The secrets are in
    the environment, never on screen.
+
 5. **Team.** A Team-page role with logistics read or manage. Manage holders receive alerts.
 6. **Riders.** Logistics → Riders: invite, check ID in person, activate. Suspension signs the
    rider out everywhere.
@@ -1492,13 +1496,13 @@ What each person sees and does, in order. Screen names and routes are in bracket
 
 ### 22.9 When things go wrong
 
-| Case | Steps |
-| --- | --- |
-| A brand is late | 2 of 3 bags are in → "pack only what's here" → parcel 1 goes out → the late bag goes as parcel 2 → the order is delivered only when both arrive. |
-| The customer refuses | The partner reports failed, then returning → return check-in: refused, items fine → prepaid: items refunded, fee kept; COD: refusal recorded → 2 in 12 months turns COD off → the items ride back on the brand's next round → the brand confirms (or 48 hours pass) → restock. The brand is never charged. |
-| A parcel is lost | The partner reports it, or staff record "Lost" after a no-update alert → units still in the parcel are refunded (the delivery fee too if nothing else was delivered) → a partner claim opens. |
-| A booking is refused | "Booking failed" with the reason, plus an alert → Try again or Change partner. The old booking is kept, and only one is live. |
-| The rider is offline | The scan is saved on the phone → the visit can't end yet → it sends later with the original time, and never twice. |
-| A refund lowers the cash due | The cash to collect drops → the label needs a reprint → the hand-over scan refuses the old label. |
-| A bag is short | Check-in counts fewer units → `COUNT_MISMATCH` names the rider and brand → settled from the scan history. |
-| "I didn't receive this" | Reported within 3 days → a dispute event and an alert → staff check with the partner, and follow the lost-parcel steps if needed. |
+| Case                         | Steps                                                                                                                                                                                                                                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A brand is late              | 2 of 3 bags are in → "pack only what's here" → parcel 1 goes out → the late bag goes as parcel 2 → the order is delivered only when both arrive.                                                                                                                                                           |
+| The customer refuses         | The partner reports failed, then returning → return check-in: refused, items fine → prepaid: items refunded, fee kept; COD: refusal recorded → 2 in 12 months turns COD off → the items ride back on the brand's next round → the brand confirms (or 48 hours pass) → restock. The brand is never charged. |
+| A parcel is lost             | The partner reports it, or staff record "Lost" after a no-update alert → units still in the parcel are refunded (the delivery fee too if nothing else was delivered) → a partner claim opens.                                                                                                              |
+| A booking is refused         | "Booking failed" with the reason, plus an alert → Try again or Change partner. The old booking is kept, and only one is live.                                                                                                                                                                              |
+| The rider is offline         | The scan is saved on the phone → the visit can't end yet → it sends later with the original time, and never twice.                                                                                                                                                                                         |
+| A refund lowers the cash due | The cash to collect drops → the label needs a reprint → the hand-over scan refuses the old label.                                                                                                                                                                                                          |
+| A bag is short               | Check-in counts fewer units → `COUNT_MISMATCH` names the rider and brand → settled from the scan history.                                                                                                                                                                                                  |
+| "I didn't receive this"      | Reported within 3 days → a dispute event and an alert → staff check with the partner, and follow the lost-parcel steps if needed.                                                                                                                                                                          |
