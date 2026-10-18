@@ -110,6 +110,16 @@ export const PLATFORM_PERMISSION_CATALOG = [
     group: "Orders",
   },
   {
+    key: "platform:logistics:read",
+    label: "View hubs, pickups, riders, parcels and delivery partners",
+    group: "Logistics",
+  },
+  {
+    key: "platform:logistics:manage",
+    label: "Run the hub, riders and delivery partners",
+    group: "Logistics",
+  },
+  {
     key: "platform:users:read",
     label: "View user accounts",
     group: "Users",
@@ -223,6 +233,10 @@ export const SUPPORT_AGENT_PERMISSION_KEYS: readonly PlatformPermissionKey[] = [
 
 export const COUPON_MANAGEMENT_PERMISSION_KEYS: readonly PlatformPermissionKey[] = [
   "platform:coupons:manage",
+];
+
+export const LOGISTICS_MANAGEMENT_PERMISSION_KEYS: readonly PlatformPermissionKey[] = [
+  "platform:logistics:manage",
 ];
 
 export const PLATFORM_PERMISSION_KEYS: readonly PlatformPermissionKey[] =

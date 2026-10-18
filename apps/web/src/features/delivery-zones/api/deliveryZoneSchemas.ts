@@ -27,3 +27,13 @@ export const deliveryZoneCitySearchResultSchema = z.object({
   cities: z.array(deliveryZoneCityMatchSchema),
 });
 export type DeliveryZoneCitySearchResult = z.infer<typeof deliveryZoneCitySearchResultSchema>;
+
+export const deliveryEstimateSchema = z.object({
+  earliestDate: z.string(),
+  latestDate: z.string(),
+});
+export type DeliveryEstimate = z.infer<typeof deliveryEstimateSchema>;
+
+export const deliveryEstimateResultSchema = z.object({
+  estimate: deliveryEstimateSchema.nullable(),
+});

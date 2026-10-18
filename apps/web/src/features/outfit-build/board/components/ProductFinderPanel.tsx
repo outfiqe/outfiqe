@@ -9,8 +9,8 @@ import { useState } from "react";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import type { PublicProductType } from "@/features/products/api/productTypesApi";
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
 
-import { formatLakhAmount } from "../../utils/outfitFormatting";
 import { useSlotProductSearch } from "../hooks/useSlotProductSearch";
 
 const SKELETON_CARD_COUNT = 3;

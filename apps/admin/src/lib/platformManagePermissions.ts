@@ -7,6 +7,7 @@ export const PLATFORM_MANAGE_PERMISSION = {
   CREATORS: "platform:creators:manage",
   GAMIFICATION: "platform:gamification:manage",
   IMPERSONATION_SESSIONS: "platform:impersonate:manage",
+  LOGISTICS: "platform:logistics:manage",
   ORDERS: "platform:orders:manage",
   ORGANIZATIONS: "platform:organizations:manage",
   SUPPORT_RESPOND: "platform:support:respond",

@@ -105,3 +105,32 @@
 .skeleton-pill::before {
   content: attr(data-label);
 }
+
+@media print {
+  body:has([data-print-sheet]) * {
+    visibility: hidden;
+  }
+
+  [data-print-sheet],
+  [data-print-sheet] * {
+    visibility: visible;
+  }
+
+  [data-print-sheet] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: none;
+  }
+
+  [data-parcel-label] {
+    page: parcel-label;
+    width: 100mm;
+  }
+}
+
+@page parcel-label {
+  size: 100mm 150mm;
+  margin: 0;
+}

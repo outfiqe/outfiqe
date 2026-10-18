@@ -48,3 +48,24 @@ describe("zoneFormSchema", () => {
     expect(messageFor({ name: "a".repeat(121) }, "name")).toBe("Use at most 120 characters.");
   });
 });
+
+describe("zoneFormSchema delivery days", () => {
+  it("accepts a zone with both delivery days or with neither", () => {
+    expect(
+      zoneFormSchema.safeParse({ ...VALID, minDeliveryDays: "1", maxDeliveryDays: "2" }).success,
+    ).toBe(true);
+    expect(zoneFormSchema.safeParse(VALID).success).toBe(true);
+  });
+
+  it("asks for both delivery days when only one is filled in", () => {
+    expect(messageFor({ minDeliveryDays: "1" }, "maxDeliveryDays")).toBe(
+      "Fill in both delivery days, or leave both empty.",
+    );
+  });
+
+  it("refuses a longest delivery shorter than the shortest", () => {
+    expect(messageFor({ minDeliveryDays: "3", maxDeliveryDays: "2" }, "maxDeliveryDays")).toBe(
+      "The longest can't be shorter than the shortest.",
+    );
+  });
+});

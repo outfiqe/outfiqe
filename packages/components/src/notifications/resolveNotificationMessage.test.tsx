@@ -250,3 +250,46 @@ describe("resolveNotificationMessage", () => {
     ).toBe("Your subscription was canceled because it wasn't renewed");
   });
 });
+
+describe("resolveNotificationMessage for order updates", () => {
+  it("describes the delivery stage when there is one, and the order status otherwise", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_STATUS_CHANGED",
+          metadata: { status: "SHIPPED", trackingStage: "OUT_FOR_DELIVERY" },
+        }),
+      ),
+    ).toBe("Your order is out for delivery");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "ORDER_STATUS_CHANGED", metadata: { status: "SHIPPED" } }),
+      ),
+    ).toBe("Your order was shipped");
+  });
+});
+
+describe("resolveNotificationMessage for delivery alerts", () => {
+  it("names the alert for staff, with a fallback", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "LOGISTICS_STAFF_ALERT",
+          metadata: { logisticsAlertType: "PARTNER_NOT_COLLECTED" },
+        }),
+      ),
+    ).toBe("The delivery partner hasn't collected a parcel");
+    expect(resolveNotificationMessage(buildNotification({ type: "LOGISTICS_STAFF_ALERT" }))).toBe(
+      "A delivery needs attention",
+    );
+  });
+
+  it("asks the brand to mark a bag ready and says sorry to a late customer", () => {
+    expect(resolveNotificationMessage(buildNotification({ type: "LOGISTICS_BRAND_NOTICE" }))).toBe(
+      "An order is waiting for you to mark its bag ready for pickup",
+    );
+    expect(resolveNotificationMessage(buildNotification({ type: "ORDER_DELIVERY_LATE" }))).toBe(
+      "Sorry, your order is running late. We're on it and will keep you posted",
+    );
+  });
+});

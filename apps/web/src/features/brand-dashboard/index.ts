@@ -10,6 +10,8 @@ export { getBrandProfileServer } from "./api/getBrandProfileServer";
 export { BrandOverview } from "./components/BrandOverview";
 export { BrandProfileView } from "./components/BrandProfileView";
 export { BrandProfileViewSkeleton } from "./components/BrandProfileViewSkeleton";
+export { PickupLocationsSection } from "./pickups/components/PickupLocationsSection";
+export { PickupSlipPrintPage } from "./pickups/components/PickupSlipPrintPage";
 export { ProductsSection } from "./products/components/ProductsSection";
 export {
   BrandShipmentDetail,

@@ -7,9 +7,9 @@ import { useState } from "react";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import type { PublicProductType } from "@/features/products/api/productTypesApi";
 import { AppImage } from "@/shared/components/AppImage";
+import { formatLakhAmount } from "@/shared/lib/nepalFormatting";
 
 import type { OutfitProduct, OutfitSlot } from "../../api/outfitSchemas";
-import { formatLakhAmount } from "../../utils/outfitFormatting";
 import {
   type ReplacementTarget,
   useReplacementSuggestions,

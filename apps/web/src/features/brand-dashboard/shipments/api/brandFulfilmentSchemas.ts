@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { FulfilmentStatus, PaymentStatus } from "@/features/orders";
 
+import { fulfilmentModeSchema, pickupStatusSchema } from "../../pickups/api/brandPickupSchemas";
+
 export const ORDER_FULFILMENT_SUMMARY = [
   "UNFULFILLED",
   "PARTIALLY_SHIPPED",
@@ -22,6 +24,8 @@ export const brandShipmentSummarySchema = z.object({
   orderId: z.string(),
   orderCreatedAt: z.string(),
   status: z.enum(FulfilmentStatus),
+  fulfilmentMode: fulfilmentModeSchema,
+  pickupStatus: pickupStatusSchema.nullable(),
   carrier: z.string().nullable(),
   trackingNumber: z.string().nullable(),
   shippedAt: z.string().nullable(),
@@ -50,6 +54,7 @@ const brandShipmentItemSchema = z.object({
   imageUrl: z.string().nullable(),
   sizeLabel: z.string(),
   qty: z.number(),
+  refundedQty: z.number(),
   unitPrice: z.number(),
   listUnitPrice: z.number(),
   brandDiscountAmount: z.number(),
@@ -78,6 +83,11 @@ export const brandShipmentDetailSchema = z.object({
   orderId: z.string(),
   orderCreatedAt: z.string(),
   status: z.enum(FulfilmentStatus),
+  fulfilmentMode: fulfilmentModeSchema,
+  pickupStatus: pickupStatusSchema.nullable(),
+  pickupCode: z.string().nullable(),
+  readyForPickupAt: z.string().nullable(),
+  pickedUpAt: z.string().nullable(),
   carrier: z.string().nullable(),
   trackingNumber: z.string().nullable(),
   packedAt: z.string().nullable(),
@@ -85,14 +95,17 @@ export const brandShipmentDetailSchema = z.object({
   deliveredAt: z.string().nullable(),
   cancellationRequestedAt: z.string().nullable(),
   cancellationReason: z.string().nullable(),
+  canReportUnavailable: z.boolean(),
   items: z.array(brandShipmentItemSchema),
-  shipTo: z.object({
-    fullName: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    city: z.string(),
-    landmark: z.string().nullable(),
-  }),
+  shipTo: z
+    .object({
+      fullName: z.string(),
+      phone: z.string(),
+      address: z.string(),
+      city: z.string(),
+      landmark: z.string().nullable(),
+    })
+    .nullable(),
   payout: brandShipmentPayoutSchema,
   shipToCity: z.string(),
   orderPaymentStatus: z.enum(PaymentStatus),

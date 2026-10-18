@@ -55,6 +55,16 @@ describe("resolveNotificationHref", () => {
     ).toEqual({ to: "/support/$ticketId", params: { ticketId: "ticket-3" } });
   });
 
+  it("routes delivery alerts to the alerts page and leaves shopper and brand notices alone", () => {
+    expect(resolveNotificationHref(buildNotification({ type: "LOGISTICS_STAFF_ALERT" }))).toEqual({
+      to: "/logistics/alerts",
+    });
+    expect(resolveNotificationHref(buildNotification({ type: "LOGISTICS_BRAND_NOTICE" }))).toBe(
+      null,
+    );
+    expect(resolveNotificationHref(buildNotification({ type: "ORDER_DELIVERY_LATE" }))).toBe(null);
+  });
+
   it("routes coupon alerts to the coupons page, and a flagged redemption to its order", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "COUPON_APPROVAL_REQUESTED" })),

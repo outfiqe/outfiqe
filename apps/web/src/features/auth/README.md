@@ -12,7 +12,11 @@ The feature is split into topic folders, each with the usual layer folders insid
 
 - Feature root — `authApi`, server auth helpers, the user schemas, `AuthContext`, `useCurrentUser`, `useLogout`, the shared form schema, types, the auth utils, `CaptchaChallenge` and `NotAShopperNotice`.
 - `login/` — the login form and hook.
-- `registration/` — shopper and brand sign-up and email verification.
+- `registration/` — shopper, brand and rider sign-up and email verification. Rider sign-up is
+  `RiderRegisterForm` + `useRiderRegister` + `riderRegister.schema.ts`, rendered by
+  `app/(auth)/register/rider/page.tsx` from the invite email's `?token=` (an unknown, used or
+  expired token shows `RiderInviteUnavailable` from `features/rider`). Success signs the rider in
+  and opens `/rider`.
 - `password/` — forgot, reset and change password.
 - `oauth/` — Google/Facebook sign-in buttons, the callback screen, linked accounts.
 - `suspension/` — the account-suspended screen and its socket listener.
@@ -47,7 +51,7 @@ Files:
   their own dashboard via `getDefaultRouteForUser`.
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`. Derives the role booleans consumers gate
-  on: `isBrandOwner` / `isStaff` (platform staff or tenant staff, from `isStaffUserRole`) / `isCreator` / `isShopper` (`role === CUSTOMER`). `isStaff` means "a staff account, not a shopper", so every consumer that blocks shopping, following or liking, or that sends someone to the admin app, covers both staff types; only checks that truly mean Outfiqe platform staff, like review moderation, compare against `UserRole.ADMIN` directly.
+  on: `isBrandOwner` / `isStaff` (platform staff or tenant staff, from `isStaffUserRole`) / `isCreator` / `isShopper` (`role === CUSTOMER`) / `isRider` (`role === RIDER`). `isStaff` means "a staff account, not a shopper", so every consumer that blocks shopping, following or liking, or that sends someone to the admin app, covers both staff types; only checks that truly mean Outfiqe platform staff, like review moderation, compare against `UserRole.ADMIN` directly.
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
   `createAuthQueryClientWrapper()` (a `renderHook`/`render` wrapper combining `AuthProvider` with
   the shared `createTestQueryClient()` from `apps/web/src/testing/integration/queryClientWrapper.tsx`),
@@ -72,7 +76,8 @@ Files:
 - `schemas/` — Zod validation schemas for each auth form.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
-- `utils/getDefaultRoute.ts` — picks the post-login landing route by role.
+- `utils/getDefaultRoute.ts` — picks the post-login landing route by role: staff → the admin app,
+  riders → `/rider` (`RIDER_HOME_PATH`), everyone else → `/overview`.
 - `utils/safeRedirect.ts` (+ colocated `safeRedirect.test.ts`) — `getSafeRedirect` validates a
   `?redirect=` query value before using it, so a login/register flow can't be used as an
   open-redirect vector; `isAdminAppTarget` reports whether a (already-safe) path points into the CRM

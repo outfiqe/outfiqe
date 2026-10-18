@@ -23,6 +23,7 @@ export type UseApiMutationOptions<
 > = UseMutationOptions<TData, TError, TVariables, TOnMutateResult> & {
   invalidateKeys?: InvalidateKeys<TData, TVariables>;
   successMessage?: SuccessMessage<TData, TVariables>;
+  errorMessage?: (error: TError) => string;
 };
 
 export const useApiMutation = <
@@ -34,10 +35,14 @@ export const useApiMutation = <
   options: UseApiMutationOptions<TData, TError, TVariables, TOnMutateResult>,
 ): UseMutationResult<TData, TError, TVariables, TOnMutateResult> => {
   const queryClient = useQueryClient();
-  const { invalidateKeys, successMessage, onSuccess, ...rest } = options;
+  const { invalidateKeys, successMessage, errorMessage, onSuccess, onError, ...rest } = options;
 
   return useMutation({
     ...rest,
+    onError: async (error, variables, onMutateResult, mutationFnContext) => {
+      if (errorMessage) toast.error(errorMessage(error));
+      await onError?.(error, variables, onMutateResult, mutationFnContext);
+    },
     onSuccess: async (data, variables, onMutateResult, mutationFnContext) => {
       const resolvedKeys =
         typeof invalidateKeys === "function" ? invalidateKeys(data, variables) : invalidateKeys;

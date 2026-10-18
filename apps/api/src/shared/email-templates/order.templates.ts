@@ -135,15 +135,43 @@ export const refundFailedTemplate = (
 ): { subject: string; html: string } => ({
   subject: `Action needed: refund order ${input.orderId}`,
   html: renderEmailLayout({
-    preheader: `The automatic refund for order ${input.orderId} failed.`,
+    preheader: `A refund on order ${input.orderId} needs paying by hand.`,
     bodyHtml: `
       ${emailStatusPill("Action needed", "destructive")}
-      ${emailHeading("Automatic refund failed")}
-      ${emailText("This order was cancelled, but the automatic gateway refund failed. Refund it by hand.")}
+      ${emailHeading("Refund needs paying by hand")}
+      ${emailText("This refund couldn't be paid back automatically. Pay it from the refund queue in the admin panel.")}
       ${emailMetaTable([
         { label: "Order ID", value: input.orderId },
         { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
       ])}
+    `,
+  }),
+});
+
+type RefundDetailsNeededInput = {
+  orderId: string;
+  amount: number;
+  orderUrl: string;
+  isReminder: boolean;
+};
+
+export const refundDetailsNeededTemplate = (
+  input: RefundDetailsNeededInput,
+): { subject: string; html: string } => ({
+  subject: input.isReminder
+    ? `Reminder: where should we send your Rs. ${input.amount.toLocaleString()} refund?`
+    : `Where should we send your Rs. ${input.amount.toLocaleString()} refund?`,
+  html: renderEmailLayout({
+    preheader: "Tell us where to send your refund.",
+    bodyHtml: `
+      ${emailEyebrow("Refund")}
+      ${emailHeading("Where should we send your refund?")}
+      ${emailLede("We owe you a refund we can't send back to your payment automatically. Tell us your Khalti, eSewa or bank details and we'll send it.")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Refund", value: `Rs. ${input.amount.toLocaleString()}` },
+      ])}
+      ${emailButtonHtml("Add refund details", input.orderUrl)}
     `,
   }),
 });
