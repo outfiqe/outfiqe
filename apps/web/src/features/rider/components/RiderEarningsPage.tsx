@@ -5,11 +5,14 @@ import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { OwnerType, WithdrawSection } from "@/features/withdraw";
 
 import { useInfiniteRiderEarnings } from "../hooks/useInfiniteRiderEarnings";
+import { describeRiderLoadError } from "../utils/riderLoadError.utils";
 import { RiderEarningRow } from "./RiderEarningRow";
 import { RiderEarningsSummary } from "./RiderEarningsSummary";
 
 const LOADING_ROW_COUNT = 3;
 const NO_EARNINGS = 0;
+const EARNINGS_NO_SIGNAL_MESSAGE =
+  "We couldn't load your earnings. Check your signal and try again.";
 
 export const RiderEarningsPage = () => {
   const earningsQuery = useInfiniteRiderEarnings();
@@ -36,7 +39,7 @@ export const RiderEarningsPage = () => {
         {earningsQuery.isError && (
           <div className="space-y-3">
             <FormBanner>
-              We couldn&apos;t load your earnings. Check your signal and try again.
+              {describeRiderLoadError(earningsQuery.error, EARNINGS_NO_SIGNAL_MESSAGE)}
             </FormBanner>
             <Button variant="outline" onClick={() => void earningsQuery.refetch()}>
               Try again

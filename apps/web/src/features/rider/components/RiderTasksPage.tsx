@@ -3,14 +3,16 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { useRiderTasks } from "../hooks/useRiderTasks";
+import { describeRiderLoadError } from "../utils/riderLoadError.utils";
 import { PendingScansList } from "./PendingScansList";
 import { RiderTaskCard } from "./RiderTaskCard";
 
 const LOADING_CARD_COUNT = 3;
 const NO_TASKS = 0;
+const VISITS_NO_SIGNAL_MESSAGE = "We couldn't load your visits. Check your signal and try again.";
 
 export const RiderTasksPage = () => {
-  const { data: tasks, isPending, isError, refetch } = useRiderTasks();
+  const { data: tasks, isPending, isError, error, refetch } = useRiderTasks();
 
   return (
     <>
@@ -19,9 +21,7 @@ export const RiderTasksPage = () => {
 
       {isError && (
         <div className="mt-4 space-y-3">
-          <FormBanner>
-            We couldn&apos;t load your visits. Check your signal and try again.
-          </FormBanner>
+          <FormBanner>{describeRiderLoadError(error, VISITS_NO_SIGNAL_MESSAGE)}</FormBanner>
           <Button variant="outline" onClick={() => void refetch()}>
             Try again
           </Button>
