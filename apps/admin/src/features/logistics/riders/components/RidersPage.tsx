@@ -18,7 +18,8 @@ const NO_RIDERS = 0;
 export const RidersPage = () => {
   const { canUse } = usePlatformPermissions();
   const canManageRiders = canUse(PLATFORM_MANAGE_PERMISSION.LOGISTICS);
-  const { openHubs, selectedHub, selectHub, isLoadingHubs } = useSelectedHub();
+  const { openHubs, selectedHub, selectHub, isLoadingHubs, hasHubsError, retryHubs } =
+    useSelectedHub();
   const ridersQuery = useInfiniteRiders(selectedHub?.id ?? null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const riders = ridersQuery.data?.pages.flatMap((page) => page.items) ?? [];
@@ -41,7 +42,9 @@ export const RidersPage = () => {
         )}
       </div>
 
-      {!isLoadingHubs && !selectedHub && <NoOpenHubsNotice />}
+      {!isLoadingHubs && !selectedHub && (
+        <NoOpenHubsNotice hasHubsError={hasHubsError} onRetry={retryHubs} />
+      )}
       {selectedHub && (
         <HubPicker openHubs={openHubs} selectedHubId={selectedHub.id} onSelectHub={selectHub} />
       )}

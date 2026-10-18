@@ -14,6 +14,7 @@ type UnavailableItemDecision =
 
 export const useDecideUnavailableItem = () =>
   useApiMutation<UnavailableItemRequest, ApiClientError, UnavailableItemDecision>({
+    errorMessage: getErrorMessage,
     successMessage: (_decided, decision) =>
       decision.isApproved ? "Approved. The customer is being refunded." : "Report rejected.",
     mutationFn: (decision) =>

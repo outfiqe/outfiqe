@@ -105,6 +105,7 @@ export default defineConfig({
         "src/features/rider/components/RiderEarningRow.tsx",
         "src/features/rider/hooks/useInfiniteRiderEarnings.ts",
         "src/features/rider/api/riderEarningsApi.ts",
+        "src/features/rider/components/LeaveVisitModal.tsx",
         "src/features/checkout/hooks/useCodEligibility.ts",
         "src/features/checkout/components/PaymentMethodField.tsx",
         "src/features/brand-dashboard/api/brandOverviewApi.ts",
