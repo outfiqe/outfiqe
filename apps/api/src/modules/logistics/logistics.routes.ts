@@ -19,6 +19,11 @@ import {
 } from "./reliability/reliability.routes.js";
 import { logisticsBrandReturnRoutes } from "./returns/brand-return.routes.js";
 import { logisticsReturnRoutes } from "./returns/return.routes.js";
+import {
+  logisticsRiderEarningAdminRoutes,
+  logisticsRiderEarningRoutes,
+  logisticsRiderPayRateRoutes,
+} from "./rider-pay/rider-pay.routes.js";
 import { logisticsRiderRoutes } from "./riders/rider.routes.js";
 import { logisticsRiderTaskRoutes } from "./rounds/rider-task.routes.js";
 import {
@@ -31,6 +36,8 @@ export const logisticsRoutes = Router();
 
 logisticsRoutes.use("/admin/hubs", logisticsHubRoutes);
 logisticsRoutes.use("/admin/riders", logisticsRiderRoutes);
+logisticsRoutes.use("/admin/rider-pay-rates", logisticsRiderPayRateRoutes);
+logisticsRoutes.use("/admin/rider-earnings", logisticsRiderEarningAdminRoutes);
 logisticsRoutes.use("/admin/bag-tag-batches", logisticsBagTagRoutes);
 logisticsRoutes.use("/admin/pickup-board", logisticsPickupBoardRoutes);
 logisticsRoutes.use("/admin/rider-tasks", logisticsRiderTaskAdminRoutes);
@@ -48,4 +55,5 @@ logisticsRoutes.use("/cod-eligibility", logisticsCodEligibilityRoutes);
 logisticsRoutes.use("/brand/pickup-locations", logisticsPickupLocationRoutes);
 logisticsRoutes.use("/brand/pickups", logisticsPickupRoutes);
 logisticsRoutes.use("/rider/tasks", logisticsRiderTaskRoutes);
+logisticsRoutes.use("/rider/earnings", logisticsRiderEarningRoutes);
 logisticsRoutes.use("/orders/:orderId", logisticsCustomerTrackingRoutes);

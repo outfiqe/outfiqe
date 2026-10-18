@@ -19,6 +19,7 @@ export type ClaimedLedgerRows = {
   creatorCommissionIds: string[];
   brandPayoutIds: string[];
   outfitOfferIds: string[];
+  riderEarningIds: string[];
 };
 
 export type WithdrawPolicyRecord = {

@@ -301,6 +301,24 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
     - `GET /remittances?partnerId=` and `GET /remittances/:remittanceId` (`logisticsRead`);
     - `POST /remittances` (`logisticsManage`, staff write-limited, written to the platform audit
       log).
+- `rider-pay/` — what contractor riders earn per visit.
+  - `rider-pay.service.ts` — `logisticsRiderPayService`:
+    - `recordVisitEarning(tx, taskId)` runs inside the transaction that completes or wastes a
+      visit (last scan, "finish", "wasted");
+    - `releaseDueRiderEarnings` is the hourly release job;
+    - pay rates, the rider's own earnings, and the admin list and void.
+  - `rider-pay.repository.ts` — `logisticsRiderPayRepository`. The withdraw module also uses it
+    for the rider side of the balance and the mark-paid claim.
+  - `rider-pay.utils.ts` — `calculateVisitEarning` and the views.
+  - Endpoints:
+    - `GET /admin/rider-pay-rates?countryCode=` (`logisticsRead`): the rate in effect and the
+      history;
+    - `POST /admin/rider-pay-rates` and `POST /admin/rider-pay-rates/:rateId/deactivate`
+      (`logisticsManage`, staff write-limited, audit-logged);
+    - `GET /admin/rider-earnings?riderId=&status=` (`logisticsRead`);
+    - `POST /admin/rider-earnings/:earningId/void` (`logisticsManage`, a reason, audit-logged);
+    - `GET /rider/earnings` (the signed-in rider: totals by status and their earnings, newest
+      first).
 - `reliability/` — brand reliability.
   - `brand-incident.repository.ts` — `recordIncidents(tx, incidents)`, called inside the
     transaction of whatever went wrong: an approved unavailable item (`orders/unavailable-items`),
@@ -545,5 +563,22 @@ The web order page listens for that notification and refreshes itself.
   - CHECK constraints hold the same sums in the database.
 - **The partner that holds a parcel's cash is its live (`BOOKED`) booking.** A rebooked parcel's
   cash belongs to the partner that delivered it.
+- **Rider pay is earned in the same transaction that ends the visit.**
+  - A finished visit pays `visitAmount + extraStopAmount × (stops − 1)`. Stops are the bags
+    collected and returns handed over on that visit.
+  - A wasted visit pays `wastedVisitAmount`; a cancelled visit pays nothing.
+  - `RiderEarning.riderTaskId` is unique and inserts skip duplicates, so a retried scan or
+    "finish" can't pay twice.
+  - Employees get no earning rows; their salary is outside Outfiqe.
+- **The rate is copied onto each earning.** A new rate (which can start now or later, never in
+  the past) changes only visits finished after it starts.
+- **No rate set falls back to the country default** (`COUNTRY_SETTINGS.contractorRiderPay`, the
+  launch Rs 70 / 15 / 35) and logs a warning. A missing setting never loses a rider's pay, and it
+  never blocks a scan.
+- **Earnings are held for the brand-payout holding period** (`RETURN_WINDOW_MS`), then move to
+  available.
+  - Riders withdraw on the person (`CREATOR`) side of the withdraw system. Its balance and
+    mark-paid claim count rider earnings next to commission and Offer money.
+  - A withdrawn earning can't be voided; staff void only on-hold or available ones.
 - Overdue cash and mismatched amounts show on the Partner cash page and in the logs. They don't
   raise staff alerts yet; that comes with the time-limit alerts.

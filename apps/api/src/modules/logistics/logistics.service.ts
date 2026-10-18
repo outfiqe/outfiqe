@@ -16,6 +16,7 @@ import { logisticsReliabilityService } from "./reliability/reliability.service.j
 import { logisticsBrandReturnService } from "./returns/brand-return.service.js";
 import { logisticsLostParcelService } from "./returns/lost-parcel.service.js";
 import { logisticsReturnCheckInService } from "./returns/return-check-in.service.js";
+import { logisticsRiderPayService } from "./rider-pay/rider-pay.service.js";
 import { logisticsRiderService } from "./riders/rider.service.js";
 import { logisticsRiderTaskService } from "./rounds/rider-task.service.js";
 import { logisticsRoundService } from "./rounds/rounds.service.js";
@@ -46,4 +47,5 @@ export const logisticsService = {
   ...logisticsRefusalService,
   ...logisticsReliabilityService,
   ...logisticsCodService,
+  ...logisticsRiderPayService,
 };

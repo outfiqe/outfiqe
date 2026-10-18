@@ -170,6 +170,8 @@ model User {
   clearedDeliveryRefusals                  CustomerDeliveryRefusal[]   @relation("DeliveryRefusalClearer")
   confirmedBrandReturns                    BrandReturn[]               @relation("BrandReturnConfirmer")
   recordedCodRemittances                   CodRemittance[]             @relation("CodRemittanceRecorder")
+  createdRiderPayRates                     RiderPayRate[]              @relation("RiderPayRateCreator")
+  voidedRiderEarnings                      RiderEarning[]              @relation("RiderEarningVoider")
   partnerStatusImports                     PartnerStatusImport[]       @relation("PartnerStatusImportUploader")
   decidedBrandUnavailables                 BrandUnavailableRequest[]   @relation("BrandUnavailableDecider")
 
@@ -3020,6 +3022,7 @@ enum LedgerEntryKind {
   CREATOR_COMMISSION
   BRAND_PAYOUT
   OFFER_PAYOUT
+  RIDER_EARNING
 }
 
 model WithdrawRequestLedgerEntry {
@@ -3033,6 +3036,8 @@ model WithdrawRequestLedgerEntry {
   brandPayout         BrandPayout?       @relation(fields: [brandPayoutId], references: [id])
   outfitOfferId       String?            @unique @map("outfit_offer_id") @db.Uuid
   outfitOffer         OutfitOffer?       @relation(fields: [outfitOfferId], references: [id], onDelete: SetNull)
+  riderEarningId      String?            @unique @map("rider_earning_id") @db.Uuid
+  riderEarning        RiderEarning?      @relation(fields: [riderEarningId], references: [id])
   createdAt           DateTime           @default(now()) @map("created_at")
 
   @@index([withdrawRequestId])
@@ -4357,6 +4362,7 @@ model Rider {
 
   tasks           RiderTask[]
   attachedBagTags BagTag[]
+  earnings        RiderEarning[]
 
   @@index([hubId, status])
   @@map("riders")
@@ -4380,7 +4386,8 @@ model RiderTask {
   completedAt      DateTime?           @map("completed_at")
   wastedReason     String?             @map("wasted_reason")
 
-  stops RiderTaskStop[]
+  stops   RiderTaskStop[]
+  earning RiderEarning?
 
   @@index([riderId, roundStartsAt])
   @@index([hubId, roundStartsAt])
@@ -4697,4 +4704,69 @@ model CodRemittanceLine {
 
   @@index([remittanceId])
   @@map("cod_remittance_lines")
+}
+
+enum RiderEarningKind {
+  VISIT
+  WASTED_VISIT
+}
+
+enum RiderEarningStatus {
+  PENDING
+  AVAILABLE
+  WITHDRAWN
+  VOIDED
+}
+
+model RiderPayRate {
+  id                String              @id @default(uuid()) @db.Uuid
+  countryCode       String              @map("country_code") @db.Char(2)
+  currency          String              @db.Char(3)
+  employmentType    RiderEmploymentType @map("employment_type")
+  visitAmount       Int                 @map("visit_amount")
+  extraStopAmount   Int                 @map("extra_stop_amount")
+  wastedVisitAmount Int                 @map("wasted_visit_amount")
+  effectiveFrom     DateTime            @map("effective_from")
+  isActive          Boolean             @default(true) @map("is_active")
+  createdById       String?             @map("created_by_id") @db.Uuid
+  createdBy         User?               @relation("RiderPayRateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  earnings RiderEarning[]
+
+  @@index([countryCode, employmentType, isActive, effectiveFrom])
+  @@map("rider_pay_rates")
+}
+
+model RiderEarning {
+  id                String             @id @default(uuid()) @db.Uuid
+  riderId           String             @map("rider_id") @db.Uuid
+  rider             Rider              @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  riderTaskId       String             @unique @map("rider_task_id") @db.Uuid
+  riderTask         RiderTask          @relation(fields: [riderTaskId], references: [id], onDelete: Restrict)
+  payRateId         String?            @map("pay_rate_id") @db.Uuid
+  payRate           RiderPayRate?      @relation(fields: [payRateId], references: [id], onDelete: SetNull)
+  kind              RiderEarningKind
+  currency          String             @db.Char(3)
+  stopCount         Int                @map("stop_count")
+  visitAmount       Int                @map("visit_amount")
+  extraStopAmount   Int                @map("extra_stop_amount")
+  wastedVisitAmount Int                @map("wasted_visit_amount")
+  amount            Int
+  status            RiderEarningStatus @default(PENDING)
+  earnedAt          DateTime           @map("earned_at")
+  releasesAt        DateTime           @map("releases_at")
+  availableAt       DateTime?          @map("available_at")
+  withdrawnAt       DateTime?          @map("withdrawn_at")
+  voidedAt          DateTime?          @map("voided_at")
+  voidedById        String?            @map("voided_by_id") @db.Uuid
+  voidedBy          User?              @relation("RiderEarningVoider", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason        String?            @map("void_reason")
+  createdAt         DateTime           @default(now()) @map("created_at")
+
+  ledgerEntry WithdrawRequestLedgerEntry?
+
+  @@index([riderId, status, earnedAt])
+  @@index([status, releasesAt])
+  @@map("rider_earnings")
 }
