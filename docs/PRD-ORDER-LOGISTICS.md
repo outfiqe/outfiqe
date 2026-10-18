@@ -15,7 +15,10 @@ Companion docs: `PRD-COMMERCE.md` (orders, checkout), `PRD-BRAND-PAYOUTS.md` (se
 `PRD-BANK-WITHDRAW.md` (withdrawals). Code that changes lives mainly in
 `apps/api/src/modules/orders` and a new `apps/api/src/modules/logistics`.
 
-Draft status — not yet built. Launch decisions are locked (section 2).
+Status: built, tested and switched off behind the `order_logistics` feature switch, ready for a
+team-only trial. Launch decisions are locked (section 2). Section 22 walks through every role's
+journey, step by step, as built. The going-live order is in `apps/api/src/modules/logistics/README.md`
+("Going live").
 
 ---
 
@@ -1231,3 +1234,271 @@ Ships with each build step, per `CLAUDE.md`:
 **As each delivery partner provides API access:** one adapter (booking, webhook or polling, and its
 status map) built against their sandbox and recorded payloads, then a switch of that partner's
 `adapterKey` from `MANUAL`.
+
+**Where it stands (18 October 2026):** every step above is built and tested, including a final
+quality pass on the full flow, and switched off. `logistics.journeys.integration.test.ts` runs seven
+complete journeys:
+
+- a three-brand combined parcel, with the cash and rider pay settled;
+- a late brand sent in a second parcel;
+- a mixed hub and brand-shipped order;
+- refusal, return and restock;
+- a lost parcel and its partner claim;
+- a failed inspection on a coupon order, with the cash to collect lowered;
+- a partner connected by a signed webhook.
+
+The status-spreadsheet route has its own full-flow test in `hub-operation.integration.test.ts`.
+
+## 22. Step-by-step funnels (as built)
+
+What each person sees and does, in order. Screen names and routes are in brackets.
+
+### 22.1 Customer
+
+**Buying**
+
+1. Opens checkout (`/checkout`), picks a saved address or types a new one, and picks a payment
+   method.
+2. As soon as the city is typed, the summary shows the delivery fee and an "Estimated delivery"
+   range in working days.
+3. Cash on delivery is greyed out, with the reason shown, when either:
+   - the coupon is prepaid-only, or
+   - this account or the phone typed refused 2 deliveries in the last 12 months
+     (`GET /logistics/cod-eligibility`, which never returns the count).
+
+   The server checks again at checkout (`COD_UNAVAILABLE_REFUSALS`).
+4. Places the order. Cash on delivery goes straight to the order page; Khalti and eSewa go to the
+   payment page first. The promise is saved on the order and never changes.
+
+**Following the order**
+
+1. Opens the order (`/orders/[id]`). It shows:
+   - the current stage and a progress bar;
+   - "collected from 1 of 2 brands";
+   - the promised date.
+2. The page refreshes by itself on `ORDER_STATUS_CHANGED`, `ORDER_REFUND_ISSUED`,
+   `ORDER_REFUND_DETAILS_NEEDED` and `ORDER_DELIVERY_LATE`. Notifications go out only for the
+   stages that matter.
+3. Each parcel shows our `OFQ` code and the partner's tracking link. "What happened" lists the
+   events, newest first, in Nepal time.
+4. The partner reports "Delivered". The customer, every brand in the parcel and our team see it at
+   once.
+5. For 3 days after delivery, "I didn't receive this" records `DELIVERY_DISPUTED` on the parcel
+   and raises a staff alert.
+
+**Cancelling items and getting money back**
+
+1. "Cancel items" is shown while a brand still has the items. The customer picks the units and
+   can add a reason.
+   - Dropping below a coupon's minimum spend asks them to cancel the whole order instead.
+   - One idempotency key per attempt, so a double tap never cancels twice.
+2. The money goes back by payment method:
+   - Khalti: refunded automatically.
+   - Cash on delivery: the amount to collect goes down.
+   - eSewa, or a Khalti refusal: step 3.
+3. "Where should we send your refund?" The customer gets an email and a notification, then
+   chooses a Khalti ID, an eSewa ID or a bank account, enters the holder name and ticks "This
+   account is mine". A reminder goes out every 3 days until they do.
+4. Staff mark it paid and the customer is told. The card then shows the details read-only, with
+   a bank account as its last 4 digits.
+5. The Refunds list shows each refund: amount, reason, method and the items it covered.
+
+### 22.2 Brand
+
+**Setup**
+
+1. A banner on the Orders page asks for a pickup location until one exists. The apply form
+   already asked for the city.
+2. On `/pickup-locations` the brand adds:
+   - the address and landmark;
+   - the contact person and phone;
+   - an optional map pin, pasted from Google Maps;
+   - opening hours;
+   - the city, picked from the shoppers' city list.
+3. Each location shows "Outfiqe pickup" (inside a hub's pickup areas) or "You ship". With several
+   locations, the brand picks a default.
+
+**Every order**
+
+1. `/manage-orders` shows the pickup stage. A hub order's detail page has no customer name, phone
+   or address, and no ship or deliver buttons; the API refuses them with `409
+   DELIVERED_BY_OUTFIQE`.
+2. The brand packs and presses "Mark ready for pickup". The next round after the ready-by cut-off
+   collects it.
+3. The pickup QR and code appear on screen. "Print pickup slip" (`/print/pickup-slip/[groupId]`)
+   is optional.
+4. The rider scans the code and tags the bag. The page then moves through "Collected by Outfiqe"
+   and "At Outfiqe hub" to the parcel's stages.
+5. Payouts mature from the partner's "Delivered".
+
+**When something isn't right**
+
+1. **Can't supply an item.** "Items you can't supply" works before collection: the brand picks
+   the units and a reason. Staff approve (the customer is refunded for those units, and it counts
+   as a reliability incident) or reject with a note.
+2. **Not marked ready.** After 1 working day the brand gets `LOGISTICS_BRAND_NOTICE`. After 2,
+   staff are alerted.
+3. **Items coming back.** The "Items coming back" panel shows each return, where it is, and how
+   many units are fine or damaged.
+   - After the rider's hand-over, "Confirm received" restocks the fine units.
+   - After 48 hours it is confirmed automatically.
+4. **Reliability.** The "Delivery reliability" panel shows the last 30 days' incidents. The brand
+   is warned at 3 and reviewed at 6. Customer refusals and partner faults never count.
+
+### 22.3 Rider
+
+**Joining**
+
+1. Staff invite the rider by email, as an employee or a contractor.
+2. The rider sets a password at `/register/rider`.
+3. A contractor's ID is checked in person at the hub; only the type and last 4 characters are
+   stored. Staff then activate the rider.
+
+**A visit**
+
+1. The rider signs in at `/rider` and sees today's visits: brand, round time, and bags to collect
+   and return.
+2. They open a visit (`/rider/visits/[id]`), which shows the address, landmark, Call and
+   Directions. Riders never see customer details.
+3. They hand back returns first: "Handed to the brand" on each. The brand confirms the items
+   itself.
+4. Each bag takes two scans, by camera or typed code:
+   - the brand's pickup code;
+   - a new sticker on the bag.
+
+   Each scan answers with "Bag collected", "No signal. Scan saved", or the reason it was refused.
+5. **Offline.** Scans wait in the phone's IndexedDB, under a key per rider. They resend on
+   `online`, every 30 seconds and when the app opens, with the original scan time and the same
+   `Idempotency-Key`.
+   - A bag already waiting on the phone can't be scanned again.
+   - A refused scan offers Try again or Remove.
+   - Signing out warns while scans are waiting.
+6. **Ending the visit.** There are three ways:
+   - every bag scanned: the visit finishes on its own;
+   - "Leave without the rest": asks for confirmation, and the remaining bags go back on the board;
+   - "Nothing to collect here", with a reason: a wasted visit that counts against the brand.
+
+   None of these is offered while scans are still on the phone.
+7. At the hub, staff scan each sticker in. A short count raises `COUNT_MISMATCH`, naming the
+   rider.
+
+**Pay (contractors)**
+
+1. `/rider/earnings` shows each visit's earning: Rs 70 per visit, plus Rs 15 per extra bag, or
+   Rs 35 for a wasted visit, at the rate in force.
+2. Earnings are "On hold" until the return window passes, then "Ready to withdraw".
+3. The rider withdraws to a bank account through the shared withdraw flow (the creator side,
+   `isContractorRider`).
+
+### 22.4 Hub setup (once, `platform:logistics:manage`)
+
+1. **Hubs.** Logistics → Hubs: address, phone, time zone, working days, hours, round times, the
+   ready-by cut-off and the partner collection time.
+2. **Pickup areas.** Tick the delivery zones the hub's riders cover.
+3. **Delivery zones.** Set the shortest and longest delivery days for each zone. These drive the
+   promise and the late alerts.
+4. **Delivery partners.** Logistics → Delivery partners:
+   - the name, connection type, parcel-number pattern, cash collection and paying-in days;
+   - our merchant account at the hub;
+   - the zones they cover, with a priority;
+   - their status names.
+
+   An API partner also gets our webhook address pasted into their dashboard. The secrets are in
+   the environment, never on screen.
+5. **Team.** A Team-page role with logistics read or manage. Manage holders receive alerts.
+6. **Riders.** Logistics → Riders: invite, check ID in person, activate. Suspension signs the
+   rider out everywhere.
+7. **Bag stickers.** Logistics → Bag stickers: a batch of 1–500 and a printable sheet. A reprint
+   skips used stickers.
+8. **Rider pay.** Logistics → Rider pay: keep the launch default or set a dated rate.
+9. **Switch on.** Feature switches → `order_logistics`: add test brands to the allow-list.
+
+### 22.5 A day at the hub
+
+1. **Pickup board.** Each brand location lists its ready bags and returns, all ticked. Staff
+   untick anything that shouldn't go, then assign a rider and a round (one-tap round times).
+   - A visit can be returns only.
+   - "Cancel visit" works until something is collected.
+2. **Check in bags.** Staff type the unit count, then scan the sticker or pickup code (camera, USB
+   scanner or typed). The camera stays on between bags. A short count is flagged.
+3. **Inspect and pack.** Staff record failed units per bag. They are refunded straight away
+   (`causedBy=BRAND`), counted as an incident, and sent back to the brand.
+4. **Pack parcel.** Unlocks once every bag here is inspected; staff enter the weight and pieces.
+   - "Pack only what's here" sends the rest in a later parcel.
+   - The parcel gets an `OFQ` code and the best partner by zone priority (only cash-collecting
+     partners for COD).
+5. **Book.** Parcels → To book:
+   - a manual partner: copy our code into their portal, then type their parcel number back
+     (checked against the pattern and for duplicates);
+   - an API partner: booked in the background;
+   - a failed booking: shows the reason, with Try again or Change partner.
+6. **Label.** The 100 × 150 mm label: code and QR, recipient, cash to collect, partner. "Label
+   needs printing" shows until it's printed.
+7. **Hand over.** Scan each label as the partner collects. The scan is refused for a parcel that
+   isn't booked, has no printed label, or whose label shows an old cash amount.
+8. **Updates.**
+   - An API partner's updates arrive on their own.
+   - A manual partner's daily sheet is uploaded on the partner page, with a row-by-row report.
+   - A status given by phone goes in through "Record an update", with a reason for corrections.
+9. **Returns.** Parcel → Check in return: the reason, plus fine and damaged units per item. The
+   refund follows 12.1, and the items join the brand's next round.
+
+### 22.6 Delivery partner (no Outfiqe login)
+
+1. Gets the booking, through their API or their portal, with our `OFQ` code as the reference.
+2. Collects at the hub's collection time. Our hand-over scan is the proof.
+3. Sends updates by webhook, by our polling, or by a daily sheet. Every update is saved first,
+   then applied.
+   - Duplicates count once.
+   - Out-of-order updates can't move a parcel backwards.
+   - Unsigned updates are never applied.
+   - An unknown status word raises an alert. Staff map it, then press "Send missed updates again".
+4. "Delivered", with the cash collected, delivers the order for the customer and every brand. A
+   cash mismatch raises `COD_COLLECTED_MISMATCH`.
+5. "Delivery failed" leads to another attempt, or "Returning" back to the hub.
+6. Pays in the collected cash, minus fees, within `codRemittanceDays`. A late payment raises
+   `COD_REMITTANCE_OVERDUE`.
+
+### 22.7 Refunds and finance
+
+1. **Refund items.** On the order page, staff pick units and a reason. The server prices the
+   refund, and a unit can never be refunded twice.
+2. **Can't supply** (`/orders/unavailable-items`): approve or reject brand requests.
+3. **Refunds to pay** (`/orders/refunds`): copy the wallet ID or account (a bank number is masked
+   until revealed, and every reveal is logged), send the money, then mark it paid with the
+   transfer reference.
+4. **Partner cash** (`/logistics/cod`):
+   - per partner: the cash held, the number of parcels, the oldest delivery and the amount
+     overdue;
+   - tick parcels and adjust fees;
+   - record the reference, date and bank amount. It is refused unless it equals the ticked cash
+     minus fees, and each parcel counts once.
+5. **Rider pay** (`/logistics/rider-pay`): change or switch off rates, list earnings, and void one
+   that is on hold or ready, with a reason. Withdrawals go through the existing withdraw review.
+6. **Refused deliveries**, on the order page: "Clear refusals" with a reason, audit-logged.
+
+### 22.8 Alerts
+
+1. The `logistics-alerts` job runs every 10 minutes and checks the 14.2 rules in hub working
+   days. Event alerts are raised inside the tracking transaction: count or cash mismatch, unknown
+   status, dispute.
+2. One alert exists per problem (unique `(alertType, subjectKey)`), and it notifies once:
+   - staff with logistics manage get `LOGISTICS_STAFF_ALERT` plus a push;
+   - for "brand not ready", the brand also gets `LOGISTICS_BRAND_NOTICE`;
+   - for "promise missed", the customer gets `ORDER_DELIVERY_LATE`.
+3. Logistics → Delivery alerts lists open or resolved alerts by type, with counts and links to the
+   parcel or order.
+4. An alert resolves itself when the order moves on, or staff resolve it with a note.
+
+### 22.9 When things go wrong
+
+| Case | Steps |
+| --- | --- |
+| A brand is late | 2 of 3 bags are in → "pack only what's here" → parcel 1 goes out → the late bag goes as parcel 2 → the order is delivered only when both arrive. |
+| The customer refuses | The partner reports failed, then returning → return check-in: refused, items fine → prepaid: items refunded, fee kept; COD: refusal recorded → 2 in 12 months turns COD off → the items ride back on the brand's next round → the brand confirms (or 48 hours pass) → restock. The brand is never charged. |
+| A parcel is lost | The partner reports it, or staff record "Lost" after a no-update alert → units still in the parcel are refunded (the delivery fee too if nothing else was delivered) → a partner claim opens. |
+| A booking is refused | "Booking failed" with the reason, plus an alert → Try again or Change partner. The old booking is kept, and only one is live. |
+| The rider is offline | The scan is saved on the phone → the visit can't end yet → it sends later with the original time, and never twice. |
+| A refund lowers the cash due | The cash to collect drops → the label needs a reprint → the hand-over scan refuses the old label. |
+| A bag is short | Check-in counts fewer units → `COUNT_MISMATCH` names the rider and brand → settled from the scan history. |
+| "I didn't receive this" | Reported within 3 days → a dispute event and an alert → staff check with the partner, and follow the lost-parcel steps if needed. |
