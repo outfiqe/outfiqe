@@ -12,6 +12,7 @@ type MarkRefundPaidInput = { refundId: string; transferReference: string };
 
 export const useMarkRefundPaid = () =>
   useApiMutation<OrderRefund, ApiClientError, MarkRefundPaidInput>({
+    errorMessage: getErrorMessage,
     successMessage: "Refund marked as paid. The customer has been told.",
     mutationFn: ({ refundId, transferReference }) =>
       refundsApi.markPaid(refundId, transferReference),

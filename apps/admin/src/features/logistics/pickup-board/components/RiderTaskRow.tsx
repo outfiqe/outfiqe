@@ -1,6 +1,8 @@
 import { Badge, Button } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import { pickupBoardApi } from "../api/pickupBoardApi";
 import { RIDER_TASK_STATUS, type RiderTaskSummary } from "../api/pickupBoardSchemas";
 import { PICKUP_BOARD_QUERY_KEY, RIDER_TASKS_QUERY_KEY } from "../constants/pickupBoardQueryKeys";
@@ -21,6 +23,7 @@ export const RiderTaskRow = ({ task, canManage }: RiderTaskRowProps) => {
     canManage && status === RIDER_TASK_STATUS.ASSIGNED && collectedCount === NOTHING_COLLECTED;
 
   const cancelTask = useApiMutation({
+    errorMessage: getErrorMessage,
     mutationFn: () => pickupBoardApi.cancelRiderTask(id),
     invalidateKeys: [PICKUP_BOARD_QUERY_KEY, RIDER_TASKS_QUERY_KEY],
     successMessage: "Visit cancelled. Its bags are back on the board.",
