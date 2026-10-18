@@ -2,7 +2,6 @@ name: CI docs fast-path
 
 on:
   pull_request:
-    branches: [main, dev]
     paths:
       - "**/*.md"
       - "docs/**"
