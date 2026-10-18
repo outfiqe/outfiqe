@@ -33,11 +33,17 @@ const describeLine = ({
     .filter(Boolean)
     .join(" · ");
 
-export const BrandReturnsPanel = () => {
+type BrandReturnsPanelProps = {
+  isOrderLogisticsOn: boolean;
+};
+
+export const BrandReturnsPanel = ({ isOrderLogisticsOn }: BrandReturnsPanelProps) => {
   const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useBrandReturns();
   const confirmReturn = useConfirmBrandReturn();
   const brandReturns = data?.pages.flatMap((page) => page.items) ?? [];
+
+  if (!isOrderLogisticsOn && brandReturns.length === NO_RETURNS) return null;
 
   return (
     <section

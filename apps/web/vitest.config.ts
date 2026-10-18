@@ -301,6 +301,7 @@ export default defineConfig({
         "src/features/orders/hooks/useCancelOrderItems.ts",
         "src/features/orders/hooks/useOrderRefunds.ts",
         "src/features/orders/hooks/useSaveRefundDestination.ts",
+        "src/features/brand-dashboard/shipments/components/OrdersSection.tsx",
         "src/features/brand-dashboard/shipments/components/UnavailableItemsPanel.tsx",
         "src/features/brand-dashboard/shipments/components/ReportUnavailableItemsModal.tsx",
         "src/features/brand-dashboard/shipments/hooks/useUnavailableItemReports.ts",

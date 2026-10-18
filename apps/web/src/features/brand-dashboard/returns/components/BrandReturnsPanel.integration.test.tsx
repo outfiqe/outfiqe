@@ -24,10 +24,10 @@ const droppedOffReturn = {
   lines: [{ productName: "Linen Shirt", sizeLabel: "M", resellableQty: 1, damagedQty: 1 }],
 };
 
-const renderPanel = () =>
+const renderPanel = (isOrderLogisticsOn = true) =>
   render(
     <>
-      <BrandReturnsPanel />
+      <BrandReturnsPanel isOrderLogisticsOn={isOrderLogisticsOn} />
       <Toaster />
     </>,
     { wrapper: createQueryClientWrapper() },
@@ -73,5 +73,29 @@ describe("BrandReturnsPanel", () => {
     renderPanel();
 
     expect(await screen.findByText("No returns right now.")).toBeInTheDocument();
+  });
+
+  it("stays hidden while Outfiqe delivery is off and nothing is coming back", async () => {
+    let requestCount = 0;
+    mswServer.use(
+      http.get(BRAND_RETURNS_URL, () => {
+        requestCount += 1;
+        return okJson({ items: [], nextCursor: null });
+      }),
+    );
+    renderPanel(false);
+
+    await waitFor(() => expect(requestCount).toBe(1));
+    expect(screen.queryByText("No returns right now.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Returns coming back to you")).not.toBeInTheDocument();
+  });
+
+  it("still shows returns from earlier orders after Outfiqe delivery is switched off", async () => {
+    mswServer.use(
+      http.get(BRAND_RETURNS_URL, () => okJson({ items: [droppedOffReturn], nextCursor: null })),
+    );
+    renderPanel(false);
+
+    expect(await screen.findByRole("button", { name: "Confirm received" })).toBeInTheDocument();
   });
 });

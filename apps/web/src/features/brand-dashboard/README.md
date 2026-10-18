@@ -87,6 +87,19 @@ Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empt
 
 ## Non-obvious rationale
 
+**Outfiqe delivery stays out of sight until the `order_logistics` switch is on for the brand.**
+Every part of the Orders page that belongs to Outfiqe delivery checks
+`useFeatureFlag("order_logistics")` first, and so does the "Pickup locations" sidebar item
+(`useDashboardNav`). That covers the missing pickup location banner, `DeliveryReliabilityPanel`
+and `BrandReturnsPanel`. Without the check, every brand saw an empty reliability score, "No
+returns right now" and a nudge to add a pickup location, all for a feature that isn't live for
+them. The `/pickup-locations` page still works if opened directly, like the other switched
+features; the API decides what actually happens.
+
+The two panels still show when the switch is off but they have something real in them. Turning
+the switch off only stops new orders from using the hub: orders already in it carry on, so a
+brand can still have a return to confirm, or problems from the last 30 days to read.
+
 **Switching Tag-reviews tabs used to feel slow because each click was a full page navigation.** The tab came from `useSearchParams()` and was changed with `router.replace("?status=…")`, but `/tag-reviews` is a Server Component page that re-checks the session on the server on every render. So a click waited on a server render first (the underline did not even move until it finished), and only then did the new query key start its own API request and show a skeleton: two serial waits with nothing on screen for the first one. The tab is now local state (instant highlight), the URL is kept in sync with `history.replaceState` so reload and shared links still land on the right tab, and the other two queues are prefetched, so a switch shows cached rows with no skeleton. A skeleton appears only for a tab with no cached data yet, and a small pulsing dot on the active tab marks a background refresh of stale cached data. Deliberate tradeoff: a soft navigation to `/tag-reviews?status=…` while the page is already mounted (for example from a notification) does not move the tab, because the tab is no longer derived from the URL after mount.
 
 **Three confirmed Products-page bugs, found and fixed in a QA/audit pass (2026-09-14).**

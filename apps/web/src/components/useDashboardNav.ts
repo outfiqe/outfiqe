@@ -125,6 +125,13 @@ const BRAND_NAV: SidebarNavItem[] = [
   SUPPORT_NAV_ITEM,
 ];
 
+const ORDER_LOGISTICS_ONLY_NAV_IDS = new Set(["pickup-locations"]);
+
+const brandNavItems = (isOrderLogisticsOn: boolean): SidebarNavItem[] =>
+  isOrderLogisticsOn
+    ? BRAND_NAV
+    : BRAND_NAV.filter(({ id }) => !ORDER_LOGISTICS_ONLY_NAV_IDS.has(id));
+
 const CRM_NAV_ITEM: SidebarNavItem = {
   id: "crm",
   href: "/admin/crm",
@@ -142,10 +149,13 @@ export const useDashboardNav = (): DashboardNav => {
   const { state, hasCrmAccess, isCreator } = useAuth();
   const isOnTenantHost = useTenantHost();
   const isOutfitBuildOn = useFeatureFlag("outfit_builder");
+  const isOrderLogisticsOn = useFeatureFlag("order_logistics");
   const { canEarn } = useCommissionEligibility();
 
   const isBrand = state.user?.role === UserRole.BRAND_OWNER;
-  const roleNavItems = isBrand ? BRAND_NAV : navItemsForShopper(isCreator, canEarn);
+  const roleNavItems = isBrand
+    ? brandNavItems(isOrderLogisticsOn)
+    : navItemsForShopper(isCreator, canEarn);
   const canUseOffers = isBrand || isCreator;
   const outfitBuildNavItems = canUseOffers ? [BUILDS_NAV_ITEM, OFFERS_NAV_ITEM] : [BUILDS_NAV_ITEM];
   const baseNavItems = isOutfitBuildOn
