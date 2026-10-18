@@ -103,6 +103,14 @@ feature layout.
     a priority), `PartnerStatusNamesSection` (their status words → ours) and
     `PartnerStatusImportSection` (upload a CSV; a row-by-row report comes back).
     `utils/readTextFile.ts` reads the file with `FileReader`.
+  - Picking a connected option shows `CONNECTED_PARTNER_HINTS` under it:
+    - only use it once a developer has built that partner's connection;
+    - their API address and keys go in server settings, linked by the hub account's secret name;
+    - our update address appears on the partner's page after saving.
+
+    The reference `HTTP_JSON` option is labelled "for testing", because real couriers each need
+    their own connection file.
+
   - For a connected partner (any connection but manual) the form also asks how they send parcel
     updates, and the detail page adds `PartnerConnectionSection` (the webhook address with a copy
     button, and per hub account which secrets are set — never the secrets) and

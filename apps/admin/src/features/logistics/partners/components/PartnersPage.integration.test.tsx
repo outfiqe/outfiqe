@@ -108,7 +108,12 @@ describe("PartnersPage", () => {
     expect(within(dialog).queryByLabelText("How they send parcel updates")).not.toBeInTheDocument();
     await user.type(within(dialog).getByLabelText("Name"), "Valley Courier");
     await user.type(within(dialog).getByLabelText("Short code"), "valley");
+    expect(within(dialog).queryByText(/go in the server settings/)).not.toBeInTheDocument();
     await user.selectOptions(within(dialog).getByLabelText("Connection"), "HTTP_JSON");
+    expect(within(dialog).getByText(/go in the server settings, never here/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/appears on the partner's page after you save/),
+    ).toBeInTheDocument();
     await user.selectOptions(
       within(dialog).getByLabelText("How they send parcel updates"),
       "SIGNATURE",

@@ -10,6 +10,7 @@ import {
 } from "../api/partnersSchemas";
 import {
   ADAPTER_LABELS,
+  CONNECTED_PARTNER_HINTS,
   DEFAULT_COD_REMITTANCE_DAYS,
   DEFAULT_PARTNER_COUNTRY_CODE,
   MANUAL_ADAPTER_KEY,
@@ -113,6 +114,13 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
               </option>
             ))}
           </Select>
+          {isConnectedPartner && (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              {CONNECTED_PARTNER_HINTS.map((hint) => (
+                <li key={hint}>{hint}</li>
+              ))}
+            </ul>
+          )}
         </div>
         {isConnectedPartner && (
           <div>
