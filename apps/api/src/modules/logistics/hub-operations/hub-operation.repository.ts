@@ -4,12 +4,18 @@ import {
   FulfilmentMode,
   ItemInspectionStatus,
   PartnerBookingStatus,
-  PickupStatus,
   ShipmentStatus,
 } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
+import {
+  ORDER_ITEM_NOT_INSPECTED_WHERE,
+  ORDER_ITEM_WITH_UNITS_LEFT_WHERE,
+  PICKUP_READY_TO_PACK_WHERE,
+} from "../logistics.query-helpers.js";
+
 const NO_FAILED_UNITS = 0;
+const ONE_ITEM_IS_ENOUGH = 1;
 
 const pickupForCheckIn = {
   id: true,
@@ -32,7 +38,18 @@ const orderForPacking = {
   paymentMethod: true,
   fulfilmentGroups: {
     where: { fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS },
-    select: { id: true, hubId: true, pickupStatus: true, shipmentId: true },
+    select: {
+      id: true,
+      hubId: true,
+      pickupStatus: true,
+      shipmentId: true,
+      items: {
+        where: ORDER_ITEM_WITH_UNITS_LEFT_WHERE,
+        select: { id: true },
+        take: ONE_ITEM_IS_ENOUGH,
+      },
+      _count: { select: { items: { where: ORDER_ITEM_NOT_INSPECTED_WHERE } } },
+    },
   },
   _count: { select: { shipments: true } },
 } satisfies Prisma.OrderSelect;
@@ -120,11 +137,7 @@ export const logisticsHubOperationRepository = {
     params: { fulfilmentGroupIds: readonly string[]; shipmentId: string },
   ): Promise<number> {
     const { count } = await client.orderFulfilmentGroup.updateMany({
-      where: {
-        id: { in: [...params.fulfilmentGroupIds] },
-        pickupStatus: PickupStatus.AT_HUB,
-        shipmentId: null,
-      },
+      where: { id: { in: [...params.fulfilmentGroupIds] }, ...PICKUP_READY_TO_PACK_WHERE },
       data: { shipmentId: params.shipmentId },
     });
     return count;

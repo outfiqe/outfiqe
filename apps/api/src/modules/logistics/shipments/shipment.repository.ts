@@ -1,8 +1,9 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import { PartnerBookingStatus, PickupStatus, ShipmentStatus } from "#generated/prisma/enums.js";
+import { PartnerBookingStatus, ShipmentStatus } from "#generated/prisma/enums.js";
 
 import { SHIPMENT_STATUSES_WITH_PARTNER } from "../logistics.constants.js";
+import { PICKUP_WAITING_TO_PACK_WHERE } from "../logistics.query-helpers.js";
 import { SHIPMENT_QUEUE, type ShipmentQueue } from "./shipment.schemas.js";
 
 const PAGE_LOOKAHEAD = 1;
@@ -174,9 +175,7 @@ export const logisticsShipmentRepository = {
   }): Promise<OrderToPackRecord[]> {
     return prisma.order.findMany({
       where: {
-        fulfilmentGroups: {
-          some: { hubId: params.hubId, pickupStatus: PickupStatus.AT_HUB, shipmentId: null },
-        },
+        fulfilmentGroups: { some: { hubId: params.hubId, ...PICKUP_WAITING_TO_PACK_WHERE } },
       },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: params.limit + PAGE_LOOKAHEAD,
