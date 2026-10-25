@@ -255,6 +255,97 @@ describe("inspecting and packing", () => {
     ).toBe(1);
   });
 
+  it("won't pack a bag until it has been inspected", async () => {
+    const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [
+        { unitPrice: 500, qty: 1 },
+        { unitPrice: 600, qty: 1 },
+      ],
+    });
+    const [inspectedPickup] = pickups;
+    await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await passEveryBag(staff.authHeader, inspectedPickup ? [inspectedPickup] : []);
+
+    const refused = await pack(staff.authHeader, order.id);
+    const refusedEvenWhenPackingWhatArrived = await pack(staff.authHeader, order.id, {
+      packsOnlyPickupsAtHub: true,
+    });
+
+    expect(refused.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(refused.body.code).toBe("PICKUPS_NOT_INSPECTED");
+    expect(refusedEvenWhenPackingWhatArrived.body.code).toBe("PICKUPS_NOT_INSPECTED");
+    const groups = await prisma.orderFulfilmentGroup.findMany({ where: { orderId: order.id } });
+    expect(groups.every(({ shipmentId }) => shipmentId === null)).toBe(true);
+    expect(await prisma.shipment.count({ where: { orderId: order.id } })).toBe(0);
+
+    await passEveryBag(staff.authHeader, pickups.slice(1));
+    const packed = await pack(staff.authHeader, order.id);
+
+    expect(packed.status).toBe(HTTP_STATUS.CREATED);
+    expect(packed.body.data.fulfilmentGroupIds).toHaveLength(2);
+  });
+
+  it("leaves a bag whose every unit failed inspection out of the parcel", async () => {
+    const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [
+        { unitPrice: 500, qty: 1 },
+        { unitPrice: 600, qty: 1 },
+      ],
+    });
+    const [emptiedPickup, keptPickup] = pickups;
+    const emptiedGroupId = requireFixtureId(emptiedPickup?.groupId);
+    const keptGroupId = requireFixtureId(keptPickup?.groupId);
+    await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await inspect(staff.authHeader, emptiedGroupId, [
+      { orderItemId: requireFixtureId(emptiedPickup?.itemId), failedQty: 1 },
+    ]);
+    await passEveryBag(staff.authHeader, keptPickup ? [keptPickup] : []);
+
+    const toPack = await request(testApp)
+      .get(`${HUB_PATH}/orders-to-pack?hubId=${hub.id}`)
+      .set("Authorization", staff.authHeader);
+    const packed = await pack(staff.authHeader, order.id);
+
+    expect(toPack.body.data.items).toEqual([
+      expect.objectContaining({
+        orderId: order.id,
+        pickupsAtHub: [expect.objectContaining({ fulfilmentGroupId: keptGroupId })],
+        otherPickups: [],
+      }),
+    ]);
+    expect(packed.status).toBe(HTTP_STATUS.CREATED);
+    expect(packed.body.data.fulfilmentGroupIds).toEqual([keptGroupId]);
+    expect(
+      await prisma.orderFulfilmentGroup.findUniqueOrThrow({ where: { id: emptiedGroupId } }),
+    ).toMatchObject({ pickupStatus: PickupStatus.AT_HUB, shipmentId: null });
+  });
+
+  it("has nothing to pack when the only bag at the hub failed inspection completely", async () => {
+    const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [{ unitPrice: 500, qty: 1 }],
+    });
+    const [pickup] = pickups;
+    await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await inspect(staff.authHeader, requireFixtureId(pickup?.groupId), [
+      { orderItemId: requireFixtureId(pickup?.itemId), failedQty: 1 },
+    ]);
+
+    const toPack = await request(testApp)
+      .get(`${HUB_PATH}/orders-to-pack?hubId=${hub.id}`)
+      .set("Authorization", staff.authHeader);
+    const packed = await pack(staff.authHeader, order.id);
+
+    expect(toPack.body.data.items).toEqual([]);
+    expect(packed.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(packed.body.code).toBe("NOTHING_TO_PACK");
+  });
+
   it("waits for every bag unless staff choose to pack only what has arrived", async () => {
     const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
       paymentMethod: PaymentMethod.KHALTI,
@@ -265,7 +356,9 @@ describe("inspecting and packing", () => {
       ],
     });
     const [firstPickup] = pickups;
-    await checkInEveryBag(staff.authHeader, hub.id, firstPickup ? [firstPickup] : []);
+    const arrivedPickups = firstPickup ? [firstPickup] : [];
+    await checkInEveryBag(staff.authHeader, hub.id, arrivedPickups);
+    await passEveryBag(staff.authHeader, arrivedPickups);
 
     const refused = await pack(staff.authHeader, order.id);
     const packedEarly = await pack(staff.authHeader, order.id, { packsOnlyPickupsAtHub: true });
@@ -289,6 +382,7 @@ describe("booking and handing over", () => {
       referencePattern: "PX-\\d{5}",
     });
     await checkInEveryBag(first.staff.authHeader, first.hub.id, first.pickups);
+    await passEveryBag(first.staff.authHeader, first.pickups);
     const { shipmentId } = (await pack(first.staff.authHeader, first.order.id)).body.data;
 
     const badPattern = await book(first.staff.authHeader, shipmentId, "55821");
@@ -348,6 +442,7 @@ describe("booking and handing over", () => {
       lines: [{ unitPrice: 500, qty: 1 }],
     });
     await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await passEveryBag(staff.authHeader, pickups);
     const { shipmentId, trackingCode } = (await pack(staff.authHeader, order.id)).body.data;
     await book(staff.authHeader, shipmentId, "PX-9");
 
@@ -379,6 +474,7 @@ describe("booking and handing over", () => {
     });
     const viewer = await createStaffForHub();
     await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await passEveryBag(staff.authHeader, pickups);
 
     const toPack = await request(testApp)
       .get(`${HUB_PATH}/orders-to-pack?hubId=${hub.id}`)

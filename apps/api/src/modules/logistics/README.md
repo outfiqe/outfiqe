@@ -186,8 +186,13 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     Failed units are refunded through `orderService.refundOrderItems` (cause
     `HUB_INSPECTION_FAILED`, one idempotency key per pickup) before the inspection is saved.
   - `packing.service.ts` — `POST /hub/orders/:orderId/parcels`: packs every bag of the order at the
-    hub into one parcel (`OFQ` + 8 characters). Refused while bags are still coming unless
-    `packsOnlyPickupsAtHub` is set. Creates a `REQUESTED` booking with the first eligible partner
+    hub into one parcel (`OFQ` + 8 characters). Refused with `409 PICKUPS_NOT_INSPECTED` while any
+    bag at the hub hasn't been inspected (`packsOnlyPickupsAtHub` doesn't skip this), and while
+    bags are still coming unless `packsOnlyPickupsAtHub` is set. A bag whose every unit failed
+    inspection is left out: its items go back to the brand, not to the customer. The same rules
+    are part of the guarded update that attaches bags to the parcel
+    (`PICKUP_READY_TO_PACK_WHERE` in `logistics.query-helpers.ts`), so a bag that changes while
+    staff pack can't slip in. Creates a `REQUESTED` booking with the first eligible partner
     (`parcel-partner.ts`: lowest priority number for the hub and the customer's zone, cash-capable
     for COD). For an API partner the booking is queued for `partner-bookings/` in the same
     transaction.
@@ -204,7 +209,11 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     `POST /hub/shipments/:shipmentId/label-printed`, and `POST /hub/handovers`
     (`Idempotency-Key`): refused unless the parcel is booked and its printed label shows the
     current cash to collect.
-- `shipments/` — the hub's parcel queues: `GET /hub/orders-to-pack`, `GET /hub/shipments?queue=`
+- `logistics.query-helpers.ts` — Prisma conditions packing and the packing list share: an item
+  with units left for the customer, an item not inspected yet, a bag waiting to be packed (at the
+  hub, not in a parcel, with units left) and a bag ready to pack (also fully inspected).
+- `shipments/` — the hub's parcel queues: `GET /hub/orders-to-pack` (orders with a bag waiting to
+  be packed; a bag emptied by inspection is in neither of its lists), `GET /hub/shipments?queue=`
   (`TO_BOOK`, `TO_HAND_OVER`, `WITH_PARTNER`, `FINISHED`), `GET /hub/shipments/:shipmentId`
   (contents, booking and the event timeline), and `POST /hub/shipments/:shipmentId/events` (a
   status a partner gave by phone; corrections can leave a final status and are audit-logged).
@@ -425,8 +434,9 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
   they cover (with a priority), and how their status words map to ours.
 - When a rider brings bags in, staff count the units and scan each bag's sticker. Then they inspect
   each bag; failed units are refunded to the customer straight away.
-- Once every bag of the order is in (or staff choose to pack only what's there), they pack one
-  parcel. It gets an `OFQ` code and is offered to the best partner for the customer's area.
+- Once every bag of the order is in (or staff choose to pack only what's there) and every bag at
+  the hub is inspected, they pack one parcel. A bag whose items all failed inspection stays out of
+  it and goes back to the brand. It gets an `OFQ` code and is offered to the best partner for the customer's area.
 - Staff book it in the partner's own portal, typing our code into their reference field, then type
   the partner's parcel number back into Outfiqe and print our label.
 - When the partner's rider collects, staff scan each label. Parcels that aren't booked, or whose

@@ -16,6 +16,7 @@ import {
 import { redis } from "#redis/redis.client.js";
 import { createRoleLimitedStaffSession } from "#test/integration/auth-helpers.js";
 import {
+  checkInAndPassEveryBag,
   createOrderOnItsWayToHub,
   createStaffForHub,
 } from "#test/integration/hub-operation-fixtures.js";
@@ -52,13 +53,7 @@ const shipParcelWithPartner = async () => {
     lines: [{ unitPrice: 500, qty: 1 }],
   });
   const { hub, staff, pickups, order } = setup;
-  for (const { bagTagCode, qty } of pickups) {
-    await request(testApp)
-      .post(`${HUB_PATH}/check-ins`)
-      .set("Authorization", staff.authHeader)
-      .set(IDEMPOTENCY_HEADER, randomUUID())
-      .send({ hubId: hub.id, code: bagTagCode, countedUnits: qty });
-  }
+  await checkInAndPassEveryBag({ hub, staff, pickups });
   const packed = await request(testApp)
     .post(`${HUB_PATH}/orders/${order.id}/parcels`)
     .set("Authorization", staff.authHeader)
