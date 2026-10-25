@@ -1,10 +1,8 @@
-import { randomUUID } from "node:crypto";
-
 import { subHours } from "date-fns/subHours";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   DeliveryPartnerConnection,
@@ -17,6 +15,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import {
+  checkInAndPassEveryBag,
   createOrderOnItsWayToHub,
   createStaffForHub,
 } from "#test/integration/hub-operation-fixtures.js";
@@ -70,14 +69,7 @@ describe("booking parcels with a connected partner", () => {
         webhookVerification: PartnerWebhookVerification.SIGNATURE,
       },
     });
-    for (const { bagTagCode, qty } of pickups) {
-      const checkIn = await request(testApp)
-        .post(`${HUB_PATH}/check-ins`)
-        .set("Authorization", staff.authHeader)
-        .set(IDEMPOTENCY_HEADER, `hub-${randomUUID()}`)
-        .send({ hubId: hub.id, code: bagTagCode, countedUnits: qty });
-      expect(checkIn.status).toBe(HTTP_STATUS.OK);
-    }
+    await checkInAndPassEveryBag({ hub, staff, pickups });
 
     const packed = await request(testApp)
       .post(`${HUB_PATH}/orders/${order.id}/parcels`)

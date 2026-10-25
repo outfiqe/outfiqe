@@ -16,6 +16,8 @@ import type {
 } from "./shipment.repository.js";
 import type { OrderToPackView, ShipmentDetailView, ShipmentSummaryView } from "./shipment.types.js";
 
+type OrderToPackPickup = OrderToPackRecord["fulfilmentGroups"][number];
+
 type BookingForSummary = {
   id: string;
   partnerId: string;
@@ -27,6 +29,12 @@ type BookingForSummary = {
   failureReason: string | null;
   partner: { name: string };
 };
+
+const isAtHubUnpacked = ({ pickupStatus, shipmentId }: OrderToPackPickup) =>
+  pickupStatus === PickupStatus.AT_HUB && shipmentId === null;
+
+const hasUnitsLeftForCustomer = ({ items }: OrderToPackPickup) =>
+  items.some(({ qty, refundedQty }) => refundedQty < qty);
 
 export const toParcelBookingSummary = (booking: BookingForSummary): ParcelBookingSummary => ({
   bookingId: booking.id,
@@ -94,9 +102,8 @@ export const toShipmentDetailView = (shipment: ShipmentDetailRecord): ShipmentDe
 export const toOrderToPackView = (order: OrderToPackRecord, hubId: string): OrderToPackView => {
   const hubPickups = order.fulfilmentGroups.filter((pickup) => pickup.hubId === hubId);
   const pickupsAtHub = hubPickups.filter(
-    ({ pickupStatus, shipmentId }) => pickupStatus === PickupStatus.AT_HUB && shipmentId === null,
+    (pickup) => isAtHubUnpacked(pickup) && hasUnitsLeftForCustomer(pickup),
   );
-  const atHubIds = new Set(pickupsAtHub.map(({ id }) => id));
   return {
     orderId: order.id,
     placedAt: order.createdAt.toISOString(),
@@ -125,7 +132,7 @@ export const toOrderToPackView = (order: OrderToPackRecord, hubId: string): Orde
       ),
     })),
     otherPickups: hubPickups
-      .filter(({ id }) => !atHubIds.has(id))
+      .filter((pickup) => !isAtHubUnpacked(pickup))
       .map(({ id, brand, pickupStatus }) => ({
         fulfilmentGroupId: id,
         brandName: brand.name,

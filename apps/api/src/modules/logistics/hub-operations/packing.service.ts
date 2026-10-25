@@ -34,14 +34,22 @@ const TRACKING_CODE_ATTEMPTS = 5;
 const NO_ATTEMPTS_LEFT = 0;
 const ATTEMPT_STEP = 1;
 const NO_PICKUPS = 0;
+const NO_ITEMS = 0;
 const NOTHING_TO_COLLECT = 0;
 const NO_EARLIER_BOOKINGS = 0;
 
 type TransactionClient = Prisma.TransactionClient;
 type PickupForPacking = OrderForPacking["fulfilmentGroups"][number];
 
-const isWaitingToPack = ({ pickupStatus, shipmentId }: PickupForPacking) =>
-  pickupStatus === PickupStatus.AT_HUB && shipmentId === null;
+const hasUnitsLeftForCustomer = ({ items: itemsWithUnitsLeft }: PickupForPacking) =>
+  itemsWithUnitsLeft.length > NO_ITEMS;
+
+const isWaitingToPack = (pickup: PickupForPacking) =>
+  pickup.pickupStatus === PickupStatus.AT_HUB &&
+  pickup.shipmentId === null &&
+  hasUnitsLeftForCustomer(pickup);
+
+const isAwaitingInspection = ({ _count }: PickupForPacking) => _count.items > NO_ITEMS;
 
 const isStillComing = ({ pickupStatus }: PickupForPacking) =>
   pickupStatus !== null && !PICKUP_STATUSES_NOT_COMING_TO_HUB.has(pickupStatus);
@@ -69,6 +77,14 @@ const selectPickupsToPack = (order: OrderForPacking, packsOnlyPickupsAtHub: bool
     throw new AppError(
       "NOTHING_TO_PACK",
       "None of this order's bags are waiting at the hub.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  const uninspectedCount = pickupsAtHub.filter(isAwaitingInspection).length;
+  if (uninspectedCount > NO_PICKUPS) {
+    throw new AppError(
+      "PICKUPS_NOT_INSPECTED",
+      `${uninspectedCount} bag(s) for this order haven't been inspected yet. Inspect every bag before packing.`,
       HTTP_STATUS.CONFLICT,
     );
   }
