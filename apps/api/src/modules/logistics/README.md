@@ -275,7 +275,10 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     happened (10–1000 characters). Only for a delivered parcel, within 3 days of delivery, once per
     parcel (`409 DELIVERY_ALREADY_REPORTED`; a fixed dedupe key per parcel makes a double tap one
     event), 5 an hour per buyer. It records `DELIVERY_DISPUTED` on the parcel with the buyer as the
-    actor and their words as the note, so staff see it on the parcel's timeline.
+    actor and their words as the note, so staff see it on the parcel's timeline. The same event
+    opens a `DELIVERY_DISPUTED` alert carrying their words, so the team is told (Delivery alerts,
+    and a notification to staff who manage logistics) instead of finding it only by opening the
+    parcel. It stays open until someone resolves it with a note.
 - `returns/` — parcels that come back, and parcels the partner loses.
   - `return-check-in.service.ts` — `POST /hub/shipments/:shipmentId/return-check-in`
     (`logisticsManage`, staff write-limited). Staff confirm why it came back and grade every unit
@@ -659,11 +662,11 @@ The web order page listens for that notification and refreshes itself.
   picked up, the parcel is packed or moves, the order is delivered, the cash is paid in.
   - "No partner update" compares two columns (a new event after the alert was raised), so it
     clears with one raw SQL update.
-  - Event alerts (an unknown partner status, a count or cash mismatch) wait for staff to resolve
-    them with a note.
+  - Event alerts (an unknown partner status, a count or cash mismatch, a customer saying their
+    parcel didn't arrive) wait for staff to resolve them with a note.
 - **Event alerts are raised in the same transaction as the event.** The tracking service inserts
-  the alert when it records `UNKNOWN_PARTNER_STATUS` or `COUNT_MISMATCH`, and when a delivered
-  parcel's cash doesn't match. A rolled-back event never leaves an alert behind.
+  the alert when it records `UNKNOWN_PARTNER_STATUS`, `COUNT_MISMATCH` or `DELIVERY_DISPUTED`,
+  and when a delivered parcel's cash doesn't match. A rolled-back event never leaves an alert behind.
 - **Notifications are sent after the alert is saved, by the job, and at most once.**
   - The job claims each new alert (`notifiedAt`) before sending, so two overlapping runs can't
     both send it.

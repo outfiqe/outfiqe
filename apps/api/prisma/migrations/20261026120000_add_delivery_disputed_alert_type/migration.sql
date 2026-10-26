@@ -1,0 +1,1 @@
+ALTER TYPE "LogisticsAlertType" ADD VALUE 'DELIVERY_DISPUTED';

@@ -43,6 +43,7 @@ const COD_COLLECTED_MISMATCH_DEDUPE_PREFIX = "cod-collected-mismatch";
 const ALERT_TYPE_BY_EVENT_CODE: Partial<Record<TrackingEventCode, LogisticsAlertType>> = {
   [TrackingEventCode.UNKNOWN_PARTNER_STATUS]: LogisticsAlertType.UNKNOWN_PARTNER_STATUS,
   [TrackingEventCode.COUNT_MISMATCH]: LogisticsAlertType.COUNT_MISMATCH,
+  [TrackingEventCode.DELIVERY_DISPUTED]: LogisticsAlertType.DELIVERY_DISPUTED,
 };
 
 type TransactionClient = Prisma.TransactionClient;
