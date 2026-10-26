@@ -14,9 +14,11 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
     icon: ShoppingBag,
     links: [
       { label: "Shop all", href: "/shop" },
+      { label: "Thrift", href: "/shop?thrift=true" },
       { label: "Collections", href: "/collections" },
       { label: "Brands", href: "/brands" },
       { label: "Explore looks", href: "/explore" },
+      { label: "Brand leaderboard", href: "/leaderboard" },
       { label: "Muse leaderboard", href: "/leaderboard/creators" },
     ],
   },
