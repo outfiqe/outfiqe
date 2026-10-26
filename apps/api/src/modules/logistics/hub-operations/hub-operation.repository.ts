@@ -57,12 +57,13 @@ const orderForPacking = {
 export type OrderForPacking = Prisma.OrderGetPayload<{ select: typeof orderForPacking }>;
 
 export const logisticsHubOperationRepository = {
-  async findPickupByBagTagCode(bagTagCode: string): Promise<PickupForCheckIn | null> {
-    const bagTag = await prisma.bagTag.findUnique({
+  async findBagTagForCheckIn(
+    bagTagCode: string,
+  ): Promise<{ fulfilmentGroup: PickupForCheckIn | null } | null> {
+    return prisma.bagTag.findUnique({
       where: { code: bagTagCode },
       select: { fulfilmentGroup: { select: pickupForCheckIn } },
     });
-    return bagTag?.fulfilmentGroup ?? null;
   },
 
   async findPickupByPickupCode(pickupCode: string): Promise<PickupForCheckIn | null> {

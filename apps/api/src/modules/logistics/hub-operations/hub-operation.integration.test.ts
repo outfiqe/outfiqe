@@ -24,7 +24,7 @@ import {
   createOrderOnItsWayToHub,
   createStaffForHub,
 } from "#test/integration/hub-operation-fixtures.js";
-import { createHub, requireFixtureId } from "#test/integration/logistics-fixtures.js";
+import { createBagTag, createHub, requireFixtureId } from "#test/integration/logistics-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
 const HUB_PATH = "/api/logistics/hub";
@@ -215,6 +215,24 @@ describe("checking bags in", () => {
     expect(wrongHub.body.code).toBe("PICKUP_FOR_ANOTHER_HUB");
     expect(unknownCode.status).toBe(HTTP_STATUS.NOT_FOUND);
     expect(notAllowed.status).toBe(HTTP_STATUS.FORBIDDEN);
+  });
+
+  it("says a sticker isn't on any bag yet instead of calling it unknown", async () => {
+    const { hub, staff } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [{ unitPrice: 500, qty: 1 }],
+    });
+    const unusedSticker = await createBagTag(hub.id, staff.userId);
+
+    const response = await checkIn(staff.authHeader, {
+      hubId: hub.id,
+      code: unusedSticker.code,
+      countedUnits: 1,
+    });
+
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(response.body.code).toBe("STICKER_NOT_ON_A_BAG");
   });
 });
 

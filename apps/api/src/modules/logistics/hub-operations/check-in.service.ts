@@ -27,11 +27,23 @@ const codeNotRecognisedError = () =>
     HTTP_STATUS.NOT_FOUND,
   );
 
+const stickerNotOnABagError = () =>
+  new AppError(
+    "STICKER_NOT_ON_A_BAG",
+    "This sticker isn't on any bag yet. Check you're scanning the sticker on the bag, or use its pickup code.",
+    HTTP_STATUS.NOT_FOUND,
+  );
+
+const findPickupByStickerCode = async (stickerCode: string): Promise<PickupForCheckIn | null> => {
+  const bagTag = await logisticsHubOperationRepository.findBagTagForCheckIn(stickerCode);
+  if (!bagTag) return null;
+  if (!bagTag.fulfilmentGroup) throw stickerNotOnABagError();
+  return bagTag.fulfilmentGroup;
+};
+
 const findPickupByScannedCode = async (scannedCode: string): Promise<PickupForCheckIn | null> => {
   const code = normalizeTypedCode(scannedCode);
-  if (code.length === BAG_TAG_CODE_LENGTH) {
-    return logisticsHubOperationRepository.findPickupByBagTagCode(code);
-  }
+  if (code.length === BAG_TAG_CODE_LENGTH) return findPickupByStickerCode(code);
   if (code.length === PICKUP_CODE_LENGTH) {
     return logisticsHubOperationRepository.findPickupByPickupCode(code);
   }
