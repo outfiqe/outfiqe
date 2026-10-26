@@ -8,9 +8,15 @@ type SizeSelectorProps = {
   sizes: ProductSize[];
   selected: string | null;
   onSelect: (sizeId: string) => void;
+  isDisabled?: boolean;
 };
 
-export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) => {
+export const SizeSelector = ({
+  sizes,
+  selected,
+  onSelect,
+  isDisabled = false,
+}: SizeSelectorProps) => {
   if (sizes.length === 0) return null;
 
   return (
@@ -21,7 +27,7 @@ export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) =
           <button
             key={size.id}
             type="button"
-            disabled={!size.inStock}
+            disabled={isDisabled || !size.inStock}
             aria-pressed={selected === size.id}
             onClick={() => onSelect(size.id)}
             className={cn(
@@ -31,9 +37,12 @@ export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) =
               size.inStock &&
                 selected === size.id &&
                 "border-2 border-foreground px-[15px] py-[7px] font-semibold text-foreground",
+              size.inStock && selected !== size.id && "border-border text-muted-foreground",
               size.inStock &&
                 selected !== size.id &&
-                "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                !isDisabled &&
+                "hover:border-foreground hover:text-foreground",
+              size.inStock && isDisabled && "cursor-not-allowed opacity-60",
             )}
           >
             {size.label}
