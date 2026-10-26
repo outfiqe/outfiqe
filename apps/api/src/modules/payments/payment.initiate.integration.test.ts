@@ -12,6 +12,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const esewaInitiate = vi.hoisted(() => vi.fn());
 const esewaVerify = vi.hoisted(() => vi.fn());
@@ -30,7 +31,7 @@ const createEsewaOrderAwaitingPayment = async () => {
       email: `payments-buyer-${suffix}@outfiqe.test`,
       name: "Payments Buyer",
       handle: `payments-buyer-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.CUSTOMER,
     },

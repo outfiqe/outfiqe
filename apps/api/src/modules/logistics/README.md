@@ -181,7 +181,9 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
 - `hub-operations/` — what hub staff do with bags and parcels (`logisticsManage` for writes).
   - `check-in.service.ts` — `POST /hub/check-ins` (`Idempotency-Key`): a bag sticker or pickup code
     plus the units counted. Moves the pickup to `AT_HUB`; a wrong count also records
-    `COUNT_MISMATCH`.
+    `COUNT_MISMATCH`. A sticker that exists but was never put on a bag answers
+    `404 STICKER_NOT_ON_A_BAG` (staff usually picked up the wrong sticker from the sheet), not the
+    "unknown code" error.
   - `inspection.service.ts` — `POST /hub/pickups/:groupId/inspection`: a result for every item.
     Failed units are refunded through `orderService.refundOrderItems` (cause
     `HUB_INSPECTION_FAILED`, one idempotency key per pickup) before the inspection is saved.

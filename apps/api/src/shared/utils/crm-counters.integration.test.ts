@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { applyCrmCounterDelta, recomputeCrmCounters, touchCrmActivity } from "#lib/crm-counters.js";
 import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const seedCountedTenant = async () => {
   const brand = await prisma.brand.create({
@@ -12,7 +13,7 @@ const seedCountedTenant = async () => {
       name: `Counter Brand ${randomUUID().slice(0, 6)}`,
       contactName: "Contact",
       email: `${randomUUID()}@brand.test`,
-      phone: `98${randomUUID().replace(/\D/g, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       instagram: `@${randomUUID().slice(0, 8)}`,
     },
   });
