@@ -66,7 +66,7 @@ const faqs = [
   {
     question: "What does it cost to sell on Outfiqe?",
     answer:
-      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece. For eSewa and Khalti payments, the payment provider's fee is also passed on. Cash on delivery has no provider fee.",
+      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece. That's the only deduction: we cover the eSewa and Khalti fees, and when a shopper uses an Outfiqe coupon, we pay for the discount, not you.",
   },
   {
     question: "Who handles delivery?",
