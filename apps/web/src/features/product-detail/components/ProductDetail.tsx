@@ -244,6 +244,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             sizes={product.sizes}
             selected={selectedSizeId}
             onSelect={setSelectedSizeId}
+            isDisabled={!canShop}
           />
           {isSizeFitOn && product.hasSizeChart && (
             <ProductFitSection
@@ -255,7 +256,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             />
           )}
 
-          <QuantitySelector quantity={quantity} onChange={setQuantity} isDisabled={isSoldOut} />
+          <QuantitySelector
+            quantity={quantity}
+            onChange={setQuantity}
+            isDisabled={isSoldOut || !canShop}
+          />
 
           <div className="mt-5 flex gap-2.5">
             {canShop && (
