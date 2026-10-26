@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Return & refund policy",
   description:
-    "When you can cancel, return or get a refund on an Outfiqe order. The timelines, the conditions, and how refunds are paid.",
+    "When you can cancel, return or get a refund on an Outfiqe order, and how the money comes back to you for cash on delivery, eSewa and Khalti.",
   path: "/legal/returns-policy",
   keywords: ["Outfiqe returns", "fashion refund policy Nepal", "cancel order Outfiqe"],
 });
@@ -23,77 +23,85 @@ const ReturnsPolicyPage = () => (
   >
     <LegalDocument
       title="Return & refund policy"
-      summary="This policy sets out your cancellation and return rights, and how Outfiqe handles refunds."
+      summary="This policy explains when you can cancel or return an order, and how Outfiqe refunds you."
       lastReviewed="[NEEDS INPUT: effective date]"
       status="draft"
     >
-      <h2>Cancelling before dispatch</h2>
+      <h2>Cancelling an order</h2>
       <p>
-        You can cancel an order yourself, free of charge, while it is still marked{" "}
-        <strong>placed</strong> or <strong>packed</strong>. Do this from Your orders. Once the order
-        is marked shipped, it can no longer be cancelled from your account. Contact us instead.
+        You can cancel your order free of charge before it ships. Open the order in Your orders. If
+        you see <strong>Cancel items</strong>, you can cancel some pieces or the whole order while
+        the brand still has them. If you don&apos;t see it, or your items have already left the
+        brand, please <Link href="/support">raise a support request</Link> and we&apos;ll help.
+      </p>
+
+      <h2>When we refund you automatically</h2>
+      <p>You don&apos;t need to ask for a refund when:</p>
+      <ul>
+        <li>you cancel pieces from your order;</li>
+        <li>a brand can&apos;t supply an item you ordered;</li>
+        <li>a piece fails our quality check at the hub;</li>
+        <li>
+          the delivery partner loses or damages your parcel. In this case, the delivery and handling
+          fees are refunded too.
+        </li>
+      </ul>
+      <p>
+        Your order page lists every refund, the reason for it, and how the money is coming back to
+        you.
       </p>
 
       <h2>Returns after delivery</h2>
       <p>
-        <strong>
-          [NEEDS INPUT: the return window (for example, X days from delivery), which items are
-          eligible, condition requirements (unworn, tags attached, original packaging), and any
-          non-returnable categories such as innerwear or final-sale items.]
-        </strong>
+        If an item arrives damaged, faulty, wrong or missing, please{" "}
+        <Link href="/support">raise a support request</Link> within <strong>7 days</strong> of
+        delivery, with your order number and photos. We&apos;ll arrange a replacement or a full
+        refund at no cost to you.
       </p>
       <ul>
         <li>
-          Wrong item, missing item, or an item that arrived damaged or faulty: contact us within{" "}
-          <strong>[NEEDS INPUT: number]</strong> days of delivery with photos. We&apos;ll arrange a
-          replacement or full refund at no cost to you.
-        </li>
-        <li>
           Change of mind:{" "}
-          <strong>[NEEDS INPUT: whether this is accepted, and who pays return delivery.]</strong>
-        </li>
-      </ul>
-
-      <h2>How to start a return</h2>
-      <ol>
-        <li>
-          Contact us from the <Link href="/contact">contact page</Link> with your order number and
-          the reason.
-        </li>
-        <li>We&apos;ll confirm whether the item is eligible and how to send it back.</li>
-        <li>Once we receive and check the item, we process your refund.</li>
-      </ol>
-
-      <h2>Refunds</h2>
-      <ul>
-        <li>
-          Wallet payments (eSewa, Khalti): refunded to the original wallet where the provider
-          supports it, otherwise handled directly.
-        </li>
-        <li>Cash on delivery: refunded by an agreed method, since no online payment was taken.</li>
-        <li>
-          Delivery fees are refunded when the return is due to our or the brand&apos;s error, and
-          otherwise{" "}
           <strong>
-            [NEEDS INPUT: state whether delivery fees are refundable on change-of-mind returns.]
+            [NEEDS INPUT: whether change-of-mind returns are accepted, the condition items must be
+            in (unworn, tags attached), any items that can&apos;t be returned, and who pays for
+            return delivery.]
           </strong>
         </li>
         <li>
+          Thrift pieces are secondhand. Their condition is described on the product page, and you
+          confirm it before buying.
+        </li>
+      </ul>
+
+      <h2>How refunds are paid</h2>
+      <ul>
+        <li>
+          <strong>Khalti:</strong> the money goes straight back to your Khalti account.
+        </li>
+        <li>
+          <strong>Cash on delivery:</strong> if you haven&apos;t paid yet, the refunded amount is
+          simply taken off what you pay the rider.
+        </li>
+        <li>
+          <strong>eSewa and other cases:</strong> we&apos;ll ask you to add a refund account (eSewa,
+          Khalti or bank) on your order page, by email and in your notifications. Once you add it,
+          our team sends the money and lets you know.
+        </li>
+        <li>
           Processing time:{" "}
-          <strong>[NEEDS INPUT: expected number of days once the return is approved.]</strong>
+          <strong>[NEEDS INPUT: expected number of days once a refund is approved.]</strong>
         </li>
       </ul>
 
       <h2>Items sold by brands</h2>
       <p>
-        Products are sold by independent brands. Outfiqe coordinates returns and refunds on your
-        behalf and is your point of contact. You do not need to deal with the brand directly.
+        Products are sold by independent brands, but Outfiqe handles cancellations, returns and
+        refunds for you. You don&apos;t need to contact the brand directly.
       </p>
 
-      <h2>Your statutory rights</h2>
+      <h2>Your legal rights</h2>
       <p>
-        This policy is in addition to any rights you have under applicable consumer-protection law
-        in Nepal, which are not affected.{" "}
+        This policy does not affect any rights you have under consumer protection law in Nepal.{" "}
         <strong>[NEEDS INPUT: confirm consumer-law references.]</strong>
       </p>
     </LegalDocument>

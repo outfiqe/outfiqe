@@ -33,7 +33,10 @@ Socket.IO.
   `/api/products/:productId/reviews` (`Router({ mergeParams: true })`, so `req.params.productId`
   from the parent path segment reaches this module's own routes) rather than nested inside
   `products/product.routes.ts` — reviews are substantial enough (own repository/service/schemas) to
-  be a real module, not a handful of routes bolted onto `product.controller.ts`.
+  be a real module, not a handful of routes bolted onto `product.controller.ts`. Writing a review
+  and casting/removing a helpful vote are `requireShopper` (`[requireAuth,
+requireRole(UserRole.CUSTOMER)]`); edit and delete stay `requireAuth`, with the owner/moderator
+  check in the service.
 
 ## Funnel
 
@@ -61,6 +64,13 @@ be created for a product the reviewer has a `DELIVERED` `OrderItem` for
 `product.repository.ts`'s own sales-stats query already trusts as "genuinely happened," not just
 `PAID`). Because every review is therefore implicitly a verified purchase, there's no separate
 `isVerifiedPurchase` boolean on the model — the badge is unconditional.
+
+**Reviews and helpful votes are for shoppers only.** Only `CUSTOMER` accounts can buy (the cart and
+order routes are `requireRole(UserRole.CUSTOMER)`), so brand owners, platform/tenant staff and riders
+get `403` on posting a review and on helpful votes — a brand could otherwise up-vote praise of its
+own products. The role check runs before the purchase check, so a non-shopper gets the plain
+`FORBIDDEN` rather than `PURCHASE_REQUIRED`. Admins can still delete reviews through the moderation
+path.
 
 **The rating summary is recomputed from scratch on every write, not tracked as a running average.**
 `productRepository.refreshRatingSummary` re-`groupBy`s the product's non-deleted reviews and

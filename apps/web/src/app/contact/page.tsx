@@ -15,17 +15,17 @@ export const metadata: Metadata = buildPageMetadata({
 const channels = [
   {
     heading: "Order help",
-    body: "Have a question about an order, delivery or a return? The help centre covers the common issues. If you still need a hand, raise a request and we'll reply by email.",
+    body: "Have a question about an order, a delivery or a refund? The help centre answers the most common ones. If you still need help, raise a support request. You'll get a reference number by email and can follow every reply from your account.",
     action: { href: "/support", label: "Raise a support request" },
   },
   {
     heading: "Sell on Outfiqe",
-    body: "Run a Nepali clothing brand? Apply to list. We review every application and get back to you.",
+    body: "Run a Nepali clothing brand? Apply to list it. We review every application and email you with the next steps.",
     action: { href: "/apply", label: "Apply to list your brand" },
   },
   {
     heading: "Become a muse",
-    body: "Want to earn from the outfits you drop? Create an account and apply from your dashboard.",
+    body: "Want to earn from the outfits you wear? Create an account and apply from your dashboard.",
     action: { href: "/for-creators", label: "Learn about the muse programme" },
   },
 ];
@@ -41,7 +41,7 @@ const ContactPage = () => (
     <MarketingHero
       eyebrow="Contact"
       title="Get in touch"
-      lede="Pick the channel that matches what you need. For most order questions, the help centre is the fastest route."
+      lede="Choose the option that fits what you need. For most order questions, the help centre is the quickest way to an answer."
     />
 
     <div className="mt-12 space-y-8">

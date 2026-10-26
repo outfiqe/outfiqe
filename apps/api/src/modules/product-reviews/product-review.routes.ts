@@ -1,8 +1,10 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import {
@@ -18,6 +20,8 @@ import {
   reviewIdParamSchema,
   writeProductReviewSchema,
 } from "./product-review.schemas.js";
+
+const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
 
 const writeReviewRateLimit = rateLimit({
   namespace: "product-review-write",
@@ -43,7 +47,7 @@ productReviewRoutes.get(
 );
 productReviewRoutes.post(
   "/",
-  requireAuth,
+  ...requireShopper,
   writeReviewRateLimit,
   validate({ params: productIdParamSchema, body: writeProductReviewSchema }),
   productReviewController.create,
@@ -63,14 +67,14 @@ productReviewRoutes.delete(
 
 productReviewRoutes.post(
   "/:reviewId/helpful",
-  requireAuth,
+  ...requireShopper,
   helpfulVoteRateLimit,
   validate({ params: reviewIdParamSchema }),
   productReviewController.markHelpful,
 );
 productReviewRoutes.delete(
   "/:reviewId/helpful",
-  requireAuth,
+  ...requireShopper,
   validate({ params: reviewIdParamSchema }),
   productReviewController.unmarkHelpful,
 );

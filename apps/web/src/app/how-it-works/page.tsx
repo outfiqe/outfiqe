@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe works",
   description:
-    "How to shop on Outfiqe. Browse muse looks, pick the exact pieces from Nepali brands, add to one cart, and pay cash on delivery or by wallet.",
+    "How to shop on Outfiqe. See pieces on real muses, add from any Nepali brand to one cart, pay by cash on delivery, eSewa or Khalti, and follow your parcel to your door.",
   path: "/how-it-works",
   keywords: [
     "how Outfiqe works",
@@ -27,15 +27,19 @@ export const metadata: Metadata = buildPageMetadata({
 const shopperSteps = [
   {
     title: "Find a look",
-    body: "Browse the feed of muse looks or search by brand, style or piece. Every look shows the exact products worn.",
+    body: "Browse muse looks, the shop, Thrift and the brand leaderboard, or search by brand, style or piece. Every look links to the exact products worn.",
   },
   {
     title: "Add to one cart",
-    body: "Pick your size and add items from any brand to a single cart. No separate checkouts, no DMs.",
+    body: "Pick your size and add pieces from any brand to a single cart. Enter your city to see the delivery fee before you check out.",
   },
   {
     title: "Pay your way",
-    body: "Check out with cash on delivery, eSewa or Khalti. We deliver across Nepal and you can track the order in your account.",
+    body: "Pay with cash on delivery, eSewa or Khalti. Your order page shows the payment, the expected delivery date and every step of the delivery.",
+  },
+  {
+    title: "Get one parcel",
+    body: "For most brands, our rider collects your pieces, we check them at our hub and pack your order into one parcel. A delivery partner then brings it to your door.",
   },
 ];
 
@@ -43,27 +47,32 @@ const faqs = [
   {
     question: "Do I need an account to shop?",
     answer:
-      "You can browse everything without an account. You'll need to sign up and verify your email to stash items, check out and track orders.",
+      "You can browse everything without an account. To check out, save pieces and follow your orders, sign up and verify your email.",
   },
   {
     question: "Can I buy from more than one brand in a single order?",
     answer:
-      "Yes. Outfiqe is a multi-brand marketplace. Add pieces from different Nepali brands to one cart and check out once.",
+      "Yes. Add pieces from different Nepali brands to one cart and check out once. Where the brands are collected by Outfiqe, everything arrives together in one parcel.",
   },
   {
     question: "How is delivery charged?",
     answer:
-      "Delivery is a flat fee based on your delivery area, shown at checkout before you pay. Orders above the free-delivery threshold for your zone ship free. Cash-on-delivery orders add a small handling fee.",
+      "Each delivery zone has its own delivery fee and a free-delivery threshold. Both show in your cart and at checkout before you pay. Cash on delivery adds a small handling fee for your zone.",
   },
   {
-    question: "Can I cancel or return an order?",
+    question: "Can I cancel?",
     answer:
-      "You can cancel an order yourself while it hasn't shipped yet. Once it's on the way, contact us. Return and refund handling is covered in our returns policy.",
+      "Yes, before your order ships. Open the order and use Cancel items to drop some or all of it. If that button isn't there, raise a support request and we'll cancel it for you.",
   },
   {
-    question: "What are the muse looks?",
+    question: "What is Thrift?",
     answer:
-      "Approved Outfiqe muses photograph and drop outfits using products from our brands, and tag the exact pieces. It is how you judge the fit and styling before you buy. Muses earn a commission when a look sells a product.",
+      "Thrift pieces are secondhand or one-of-a-kind items listed by brands. Each one shows a condition rating and a note, and we ask you to confirm you know it's secondhand before you buy.",
+  },
+  {
+    question: "What are muse looks?",
+    answer:
+      "Approved muses photograph outfits and tag the exact pieces they're wearing. A brand checks each tag before it goes live, so the product you tap is the one in the photo. Muses earn a commission when their look leads to a sale.",
   },
 ];
 
@@ -83,7 +92,7 @@ const HowItWorksPage = () => (
           with an outfit.
         </>
       }
-      lede="Outfiqe is built around looks, not listings. You see a piece worn by a real person first, then buy it, across every Nepali brand we carry."
+      lede="Outfiqe is built around looks, not listings. You see a piece on a real person first, buy it from the Nepali brand that made it, and follow it all the way to your door."
     />
 
     <MarketingSection heading="For shoppers">
@@ -95,10 +104,10 @@ const HowItWorksPage = () => (
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Muses</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Approved muses drop looks using products from our brands and tag the pieces. When
-            someone taps a tagged product or follows a muse&apos;s link and buys it within the
-            attribution window, the muse earns a commission. It&apos;s tracked automatically and
-            paid out to a verified bank account. See{" "}
+            Approved muses drop looks and tag the pieces they wear. When a shopper taps a tag or
+            opens a muse&apos;s link and buys within 7 days, the muse earns a commission. It shows
+            as pending, becomes available 7 days after delivery, and is withdrawn to a verified bank
+            account. See{" "}
             <Link
               href="/for-creators/how-commissions-work"
               className="font-medium text-foreground underline underline-offset-2"
@@ -111,9 +120,10 @@ const HowItWorksPage = () => (
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Brands</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Brands list their catalogue, set stock and pricing, and manage orders from a dashboard.
-            Listing is free. Outfiqe takes a small commission on completed sales, and a share of
-            that funds the muse who sourced the sale. More on the{" "}
+            Brands list their pieces, set sizes, stock and sale prices, and approve the muse tags on
+            their products. Our riders collect ready orders from the brand&apos;s pickup location,
+            and earnings are withdrawn to a verified bank account. Listing is free; Outfiqe takes a
+            commission on completed sales. More on the{" "}
             <Link
               href="/for-brands"
               className="font-medium text-foreground underline underline-offset-2"

@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Size guide",
   description:
-    "How sizing works on Outfiqe: sizes are set by each brand, every product lists the sizes it comes in, and muse looks show the fit on a real person so you can judge before you buy.",
+    "How sizing works on Outfiqe: each brand sets its own sizes, every product shows which sizes are in stock, and muse looks and verified reviews help you judge the fit before you buy.",
   path: "/size-guide",
   keywords: ["clothing size guide Nepal", "how to find your size online", "Outfiqe sizing"],
 });
@@ -23,45 +23,45 @@ const SizeGuidePage = () => (
     <MarketingHero
       eyebrow="Size guide"
       title="Finding your size"
-      lede="Every brand cuts its clothes a little differently. Here's how Outfiqe helps you get the fit right the first time."
+      lede="Every brand cuts its clothes a little differently. Here's how to get the fit right the first time."
     />
 
     <MarketingSection heading="Sizes come from the brand">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          Outfiqe doesn&apos;t impose one universal size chart. Each product lists the exact sizes
-          that brand offers for that piece, and shows which are in stock. If a size is sold out, you
-          can&apos;t add it, so there are no surprises at checkout.
+          There is no single size chart on Outfiqe. Each brand uses its own sizes, so an M from one
+          brand may fit differently from an M from another. Every product shows the sizes it comes
+          in and which ones are in stock. A sold-out size can&apos;t be added to your cart.
         </p>
         <p>
-          For traditional wear, tailoring and made-to-measure pieces, the product page tells you how
-          the sizing is intended to work.
+          Thrift pieces are usually one of a kind, so they come in a single size. Read the condition
+          note on the product page for any details about fit or wear.
         </p>
       </div>
     </MarketingSection>
 
-    <MarketingSection heading="Use the muse looks">
+    <MarketingSection heading="See it on a real person">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          The fastest way to judge fit is to look at the piece on a real person. Many muse looks
-          note the size worn and the muse&apos;s height, so you can compare against your own frame
-          instead of guessing from a flat photo.
+          The easiest way to judge fit is to see the piece being worn. Open a product and scroll to
+          the <strong>Seen on muses</strong> section to find looks featuring that exact piece. Many
+          tags show the size the muse is wearing and how tall they are, so you can compare with your
+          own height.
         </p>
         <p>
-          Open a product and check the <strong>Seen on muses</strong> section for looks featuring
-          that exact piece.
+          Reviews help too. Only people who received the product can review it, and many mention how
+          it fits.
         </p>
       </div>
     </MarketingSection>
 
     <MarketingSection heading="Still unsure?">
       <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-        If you&apos;re between sizes or a product page doesn&apos;t answer your question, reach us
-        from the{" "}
-        <Link href="/contact" className="font-medium text-foreground underline underline-offset-2">
-          contact page
+        If you&apos;re between sizes, or the product page doesn&apos;t answer your question,{" "}
+        <Link href="/support" className="font-medium text-foreground underline underline-offset-2">
+          raise a support request
         </Link>{" "}
-        before you order.
+        before you order and we&apos;ll help you choose.
       </p>
     </MarketingSection>
   </MarketingShell>
