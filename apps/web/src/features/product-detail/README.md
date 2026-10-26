@@ -8,6 +8,8 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
 
 - `components/ProductDetail.tsx` — the page. It holds the chosen size, quantity and photo, and runs Add to bag (`cart`'s `useAddToCart`), Buy now (saves a Buy Now payload with `checkout`'s `saveBuyNowPayload`, then opens `/checkout?buyNow=1`) and save (`wishlist`'s `useToggleWishlist`). A signed-out visitor is sent to sign in first.
 - `components/SizeSelector.tsx`, `components/QuantitySelector.tsx` — the size and quantity pickers.
+  Brand and staff accounts can't buy, so for them both are disabled: the sizes stay visible as
+  information, next to the "Shopping is available on customer accounts" note.
 - `components/ThriftPurchaseConfirmModal.tsx` — "You're buying a secondhand piece": asked once before the first Add to bag or Buy now on a thrift piece.
 - `components/SeenOnCreators.tsx` — the looks that tagged this product; opening one records the click (`useRecordSeenOnClick`).
 - `components/ShippingInfo.tsx`, `components/TrustLine.tsx` — delivery and trust notes.

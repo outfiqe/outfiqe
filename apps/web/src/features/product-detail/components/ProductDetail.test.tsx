@@ -284,6 +284,22 @@ describe("ProductDetail buy controls by account type", () => {
     expect(screen.getByRole("button", { name: "Stash" })).toBeInTheDocument();
   });
 
+  it("shows a brand owner the sizes but lets them pick neither a size nor a quantity", () => {
+    authState.isBrandOwner = true;
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.getByRole("button", { name: "M" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decrease quantity" })).toBeDisabled();
+  });
+
+  it("lets a shopper pick a size and change the quantity", () => {
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.getByRole("button", { name: "M" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeEnabled();
+  });
+
   it("hides the buy controls from an admin too, and disables saving", () => {
     authState.isStaff = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
@@ -291,6 +307,8 @@ describe("ProductDetail buy controls by account type", () => {
     expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Stash" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "M" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
   });
 
   it("keeps the buy controls for a shopper", () => {
