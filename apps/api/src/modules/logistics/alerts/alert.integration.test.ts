@@ -20,6 +20,7 @@ import {
   createAdminSessionWithPlatformPermissions,
   createRoleLimitedStaffSession,
 } from "#test/integration/auth-helpers.js";
+import { authHeaderFor } from "#test/integration/coupon-fixtures.js";
 import { createHubOrder, requireFixtureId } from "#test/integration/logistics-fixtures.js";
 import { createParcelWithApiPartner } from "#test/integration/partner-connection-fixtures.js";
 import { createOwnerSessionForBrand } from "#test/integration/refund-fixtures.js";
@@ -34,6 +35,7 @@ const DAYS_WITHOUT_PARTNER_UPDATE = 6;
 const DAYS_PAST_PROMISE = 3;
 const WEEKS_SINCE_SHIPPED = 3;
 const DAYS_PER_WEEK = 7;
+const NOT_RECEIVED_DETAILS = "The courier marked it delivered but nothing came to my door.";
 
 const findAlerts = (where: { fulfilmentGroupId?: string; shipmentId?: string; orderId?: string }) =>
   prisma.logisticsAlert.findMany({ where, orderBy: { alertType: "asc" } });
@@ -232,5 +234,31 @@ describe("event alerts and the alerts list", () => {
       isAutoResolved: false,
     });
     expect(resolvedAgain.status).toBe(HTTP_STATUS.CONFLICT);
+  });
+
+  it("tells staff when a customer says their parcel didn't arrive, and keeps it open until they resolve it", async () => {
+    const staff = await createAdminSessionWithPlatformPermissions("platform:logistics:manage");
+    const { order, shipment } = await createParcelWithApiPartner({
+      shipmentStatus: ShipmentStatus.DELIVERED,
+    });
+    await prisma.shipment.update({ where: { id: shipment.id }, data: { deliveredAt: new Date() } });
+
+    const report = await request(testApp)
+      .post(`/api/logistics/orders/${order.id}/delivery-disputes`)
+      .set("Authorization", authHeaderFor(order.userId))
+      .send({ shipmentId: shipment.id, details: NOT_RECEIVED_DETAILS });
+    await logisticsAlertService.runLogisticsAlertSweep();
+    await logisticsAlertService.runLogisticsAlertSweep();
+
+    expect(report.status).toBe(HTTP_STATUS.CREATED);
+    expect(await findAlerts({ shipmentId: shipment.id })).toEqual([
+      expect.objectContaining({
+        alertType: LogisticsAlertType.DELIVERY_DISPUTED,
+        orderId: order.id,
+        detail: NOT_RECEIVED_DETAILS,
+        resolvedAt: null,
+      }),
+    ]);
+    expect(await countNotifications(staff.userId, NotificationType.LOGISTICS_STAFF_ALERT)).toBe(1);
   });
 });

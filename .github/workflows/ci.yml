@@ -130,10 +130,14 @@ jobs:
           path: apps/web/playwright-report
           retention-days: 7
 
-  integration:
-    name: Integration tests
+  integration-api:
+    name: Integration tests (API ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     services:
       postgres:
         image: postgres:16-alpine
@@ -168,8 +172,68 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
-      - name: Run integration tests (no coverage)
-        run: pnpm exec turbo run test:integration --concurrency=1
+      - name: Generate the Prisma client
+        run: pnpm --filter @outfiqe/api db:generate
+      - name: Run this shard of the API integration tests (no coverage)
+        run: pnpm --filter @outfiqe/api exec vitest run --project integration --shard=${{ matrix.shard }}/4
+
+  integration-other:
+    name: Integration tests (web, admin, packages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --tmpfs /var/lib/postgresql/data:rw
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
+      REDIS_URL: redis://localhost:6379
+      INTEGRATION_WORKERS: "2"
+      DATABASE_POOL_MAX: "5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run every other package's integration tests (no coverage)
+        run: pnpm exec turbo run test:integration --concurrency=1 --filter='!@outfiqe/api'
+
+  integration:
+    name: Integration tests
+    if: always()
+    needs: [integration-api, integration-other]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail unless every integration shard succeeded
+        run: |
+          results="${{ join(needs.*.result, ',') }}"
+          echo "integration results: $results"
+          case ",$results," in
+            *,failure,* | *,cancelled,* | *,skipped,*)
+              echo "::error::an integration test shard did not succeed"
+              exit 1 ;;
+          esac
+          echo "all integration shards passed"
 
   api-boot:
     name: API starts

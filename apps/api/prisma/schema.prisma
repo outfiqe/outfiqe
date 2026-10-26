@@ -4793,6 +4793,7 @@ enum LogisticsAlertType {
   COUNT_MISMATCH
   COD_COLLECTED_MISMATCH
   COD_REMITTANCE_OVERDUE
+  DELIVERY_DISPUTED
 }
 
 model LogisticsAlert {
