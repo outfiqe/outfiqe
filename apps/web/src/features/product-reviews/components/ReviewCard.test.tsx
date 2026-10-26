@@ -28,6 +28,7 @@ const renderCard = (
       review={buildReview(overrides)}
       isOwn={false}
       canModerate={false}
+      canVoteHelpful
       onToggleHelpful={vi.fn()}
       isTogglingHelpful={false}
       onEdit={vi.fn()}
@@ -81,6 +82,19 @@ describe("ReviewCard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /helpful/i }));
     expect(onToggleHelpful).toHaveBeenCalledOnce();
+  });
+
+  it("shows the helpful count as plain text, with no vote button, for a viewer who can't buy", () => {
+    renderCard({}, { canVoteHelpful: false });
+
+    expect(screen.queryByRole("button", { name: /helpful/i })).not.toBeInTheDocument();
+    expect(screen.getByText("3 found this helpful")).toBeInTheDocument();
+  });
+
+  it("shows nothing helpful-related for a viewer who can't buy when the review has no votes", () => {
+    renderCard({ helpfulCount: 0 }, { canVoteHelpful: false });
+
+    expect(screen.queryByText(/helpful/i)).not.toBeInTheDocument();
   });
 
   it("renders photo thumbnails and an avatar image when the review has them", () => {

@@ -39,9 +39,10 @@ type ReviewsSectionProps = {
 export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSectionProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { state, isAuthenticated } = useAuth();
+  const { state, isAuthenticated, isAuthResolved, isShopper } = useAuth();
   const currentUser = state.user;
   const currentUserId = currentUser?.id;
+  const canWriteOrVote = isAuthResolved && (!isAuthenticated || isShopper);
 
   const [sort, setSort] = useState<ReviewSort>("newest");
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
@@ -50,7 +51,7 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   const openedFromDeepLink = searchParams.get(WRITE_REVIEW_PARAM) === "write";
-  const isFormOpen = formOpen || openedFromDeepLink;
+  const isFormOpen = canWriteOrVote && (formOpen || openedFromDeepLink);
 
   const closeForm = () => {
     setFormOpen(false);
@@ -123,7 +124,7 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
         <h2 className="font-display text-xl font-bold uppercase tracking-tight text-foreground">
           Reviews
         </h2>
-        {!myReview && (
+        {canWriteOrVote && !myReview && (
           <Button variant="outline" onClick={openWriteForm} disabled={!isAuthenticated}>
             Write a review
           </Button>
@@ -176,6 +177,7 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
               review={review}
               isOwn={author.id === currentUserId}
               canModerate={canModerate}
+              canVoteHelpful={canWriteOrVote}
               onToggleHelpful={() => toggleHelpful.mutate({ reviewId: id, hasVotedHelpful })}
               isTogglingHelpful={toggleHelpful.isPending}
               onEdit={() => {
