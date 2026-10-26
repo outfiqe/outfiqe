@@ -10,6 +10,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { uploadBankQrImage, uploadImageWithoutQr } from "#test/integration/bank-qr-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const PREVIEW_PATH = "/api/bank-qr-verification/preview";
 const PREVIEW_MAX_REQUESTS = 30;
@@ -30,7 +31,7 @@ const createUser = async () => {
       email: `bank-qr-tester-${suffix}@outfiqe.test`,
       name: "Bank QR Tester",
       handle: `bank-qr-tester-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.CUSTOMER,
     },

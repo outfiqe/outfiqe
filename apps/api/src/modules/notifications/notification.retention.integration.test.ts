@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { NotificationType, UserRole } from "#generated/prisma/enums.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { runNotificationRetentionSweep } from "./notification.retention.js";
 
@@ -16,7 +17,7 @@ const createRecipient = async () => {
       email: `retention-${suffix}@outfiqe.test`,
       name: `Retention Test ${suffix}`,
       handle: `retention-test-${suffix}`,
-      phone: `94${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.CUSTOMER,
     },

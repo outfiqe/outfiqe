@@ -9,6 +9,7 @@ import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { nepalBankService } from "./nepal-bank.service.js";
 
@@ -28,7 +29,7 @@ const createUser = async () => {
       email: `bank-tester-${suffix}@outfiqe.test`,
       name: "Bank Tester",
       handle: `bank-tester-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.CUSTOMER,
     },
