@@ -25,11 +25,15 @@ const CommunityGuidelinesPage = () => (
       lastReviewed="[NEEDS INPUT: effective date]"
       status="draft"
     >
-      <h2>Drop real, honest content</h2>
+      <h2>Post real, honest content</h2>
       <ul>
-        <li>Looks should show real products, worn or styled genuinely.</li>
-        <li>Reviews should reflect your actual experience with a product you received.</li>
-        <li>Don&apos;t misrepresent a paid or gifted relationship.</li>
+        <li>Looks should show real products, worn or styled honestly.</li>
+        <li>Only tag the exact product shown in your look.</li>
+        <li>
+          Reviews should describe your own experience. Only people who received a product can review
+          it.
+        </li>
+        <li>Be open about it when a product was paid for or gifted.</li>
       </ul>
 
       <h2>Respect people</h2>
@@ -56,15 +60,16 @@ const CommunityGuidelinesPage = () => (
 
       <h2>Chat</h2>
       <p>
-        Direct messages are for coordinating between shoppers, muses and brands. The same standards
-        apply. You can block another user, and turn chat off entirely, from your settings.
+        Messages are for conversations between shoppers, muses and brands, and the same standards
+        apply. You can block someone, or turn chat off completely, from your chat settings.
       </p>
 
       <h2>Enforcement</h2>
       <p>
         We may remove content, limit features, or suspend or close accounts that break these
-        guidelines. Serious or repeated breaches lead to a permanent ban. Report a problem from the
-        relevant product, look or conversation, or contact us.
+        guidelines. Serious or repeated breaches lead to a permanent ban. To report a look, a
+        comment or a wrong product tag, use the report option on it. For anything else, raise a
+        support request.
       </p>
     </LegalDocument>
   </MarketingShell>
