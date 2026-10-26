@@ -222,6 +222,57 @@ describe("PartnerDetailPage", () => {
     expect(screen.getByText(/we ask them/)).toBeInTheDocument();
   });
 
+  it("shows the delivery areas once after saving the first area for a partner with no status names", async () => {
+    const kathmanduValley = {
+      id: "zone-ktm",
+      name: "Kathmandu Valley",
+      countryCode: "NP",
+      minDeliveryDays: 1,
+      maxDeliveryDays: 2,
+      isDefault: false,
+      cities: ["Kathmandu", "Bhaktapur", "Lalitpur"],
+      updatedAt: "2026-10-01T00:00:00.000Z",
+      standardDeliveryFee: 100,
+      freeDeliveryThreshold: 5000,
+      codHandlingFee: 0,
+    };
+    const savedArea = {
+      hubId: "hub-1",
+      deliveryZoneId: kathmanduValley.id,
+      deliveryZoneName: kathmanduValley.name,
+      priority: 0,
+      isActive: true,
+    };
+    let currentPartner = buildPartner({ statusMappings: [] });
+    mswServer.use(
+      http.get(`${PARTNERS_URL}/partner-1`, () => okJson(currentPartner)),
+      http.get(HUBS_URL, () => okJson({ hubs: [buildHub()] })),
+      http.get(DELIVERY_ZONES_URL, () => okJson([kathmanduValley])),
+      http.put(`${PARTNERS_URL}/partner-1/zones`, () => {
+        currentPartner = buildPartner({ statusMappings: [], zones: [savedArea] });
+        return okJson(currentPartner);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(
+      <>
+        <PartnerDetailPage partnerId="partner-1" />
+        <Toaster />
+      </>,
+      { path: "/logistics/partners/partner-1" },
+    );
+
+    await user.click(await screen.findByRole("checkbox", { name: /Kathmandu Valley/ }));
+    await user.click(screen.getByRole("button", { name: "Save areas" }));
+
+    expect(await screen.findByText("Delivery areas saved.")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getAllByRole("heading", { name: "Where they deliver" })).toHaveLength(1),
+    );
+    expect(screen.getAllByRole("heading", { name: "Their status names" })).toHaveLength(1);
+    expect(screen.getByRole("checkbox", { name: /Kathmandu Valley/ })).toBeChecked();
+  });
+
   it("uploads a status sheet and lists what happened to each row", async () => {
     let importBody: unknown;
     mswServer.use(
