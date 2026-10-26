@@ -13,7 +13,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe muse commissions work",
   description:
-    "A plain explanation of Outfiqe muse commissions: how a sale is attributed to your look or link, the attribution window, when a commission is approved, and how withdrawals are paid.",
+    "A plain guide to Outfiqe muse commissions: which sales count as yours, the 7-day window, when your money is ready, and how withdrawals to your bank account work.",
   path: "/for-creators/how-commissions-work",
   keywords: [
     "how affiliate commissions work",
@@ -24,44 +24,47 @@ export const metadata: Metadata = buildPageMetadata({
 
 const lifecycle = [
   {
-    title: "Attributed",
-    body: "A shopper taps a product you tagged in a look, or follows your shareable link, then buys that product within the attribution window. A pending commission is created on that order.",
+    title: "Pending",
+    body: "A shopper taps a product you tagged, or opens your link, and buys it within 7 days. A pending commission appears in your Earnings straight away.",
   },
   {
-    title: "Approved",
-    body: "The order is delivered and clears the return window. Cancelled or refunded orders never reach this stage. Their commissions are voided.",
+    title: "Ready to withdraw",
+    body: "Once the order is delivered, there is a 7-day return window. When it ends, the commission becomes available. If the order is cancelled, refunded or returned first, the commission is removed.",
   },
   {
     title: "Paid",
-    body: "You request a withdrawal against your available balance to a verified bank account. Once an admin marks it paid, the commission is settled.",
+    body: "Request a withdrawal from your available balance to a verified bank account. Our team reviews it, sends the money and marks it paid.",
   },
 ];
 
 const faqs = [
   {
-    question: "What is the attribution window?",
+    question: "Which sales count as mine?",
     answer:
-      "If a shopper buys a product you sourced within 7 days of tapping your tag or link, the sale is credited to you. The most recent qualifying tap or link wins if there is more than one.",
+      "A sale is yours when the shopper taps a product tag on your look, or opens one of your share links, and then buys within 7 days. A tag only counts once the brand has approved it.",
   },
   {
-    question: "Do I earn if I buy through my own link?",
-    answer:
-      "No. A purchase where the buyer is the muse is never attributed. Self-referrals earn nothing.",
+    question: "What if more than one muse led the shopper there?",
+    answer: "The most recent tap or link wins. Only one muse earns on each piece sold.",
   },
   {
-    question: "What happens if the order is cancelled or refunded?",
-    answer:
-      "A commission that is still pending is voided if the order is cancelled before shipping or the payment fails. Approved and available commissions are handled case by case.",
+    question: "Do I earn when I buy through my own link?",
+    answer: "No. Buying through your own tag or link never earns a commission.",
   },
   {
-    question: "How and when do I get paid?",
+    question: "How much do I earn?",
     answer:
-      "Your available balance is the sum of your approved commissions. You submit a withdrawal request to a verified bank account, subject to the minimum amount and request window in the withdrawal policy. An admin reviews and marks it paid.",
+      "Each commission is a fixed amount based on the price of the piece sold. Your Earnings page shows the exact amount for every sale.",
   },
   {
-    question: "Are commissions the same for every product?",
+    question: "What happens if the order is cancelled or returned?",
     answer:
-      "Commission rates are set per the platform's commission structure and can vary. Your earnings dashboard shows the exact commission recorded for each attributed sale.",
+      "Any commission that hasn't been paid out yet is removed when the order is cancelled, refunded or returned.",
+  },
+  {
+    question: "How do I withdraw?",
+    answer:
+      "Add your bank account and upload your bank QR code. If the details match, your account is verified straight away; otherwise our team checks it. Then request a withdrawal from Withdraw. The minimum amount, how often you can withdraw and how long it takes are all shown there.",
   },
 ];
 
@@ -77,24 +80,23 @@ const HowCommissionsWorkPage = () => (
     <MarketingHero
       eyebrow="For muses"
       title="How commissions work"
-      lede="Everything you earn on Outfiqe is tracked automatically. This is exactly how a sale becomes a commission, and how that commission becomes money in your account."
+      lede="Everything you earn on Outfiqe is tracked for you. Here is how a sale becomes a commission, and how that commission reaches your bank account."
     />
 
-    <MarketingSection heading="The lifecycle of a commission">
+    <MarketingSection heading="From sale to payout">
       <StepList steps={lifecycle} />
     </MarketingSection>
 
     <MarketingSection heading="What counts as your sale">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          A sale is credited to you when a shopper takes an action that points at a product you
-          sourced. That is tapping a product you tagged in a look, or opening one of your shareable
-          product links. They then buy that product within <strong>7 days</strong>.
+          A sale is yours when a shopper taps a product you tagged in a look, or opens one of your
+          share links, and then buys within <strong>7 days</strong>.
         </p>
         <p>
-          If more than one muse&apos;s tap or link qualifies, the most recent one is credited. A
-          general profile link counts for whatever the shopper buys. A product-specific link only
-          counts for that product.
+          A link for one product only counts when the shopper buys that product. A general link
+          counts for anything they buy. If more than one muse qualifies, the most recent one earns
+          the commission.
         </p>
       </div>
     </MarketingSection>
@@ -105,14 +107,15 @@ const HowCommissionsWorkPage = () => (
 
     <MarketingSection heading="See it for yourself">
       <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-        Your{" "}
+        Once you&apos;re an approved muse, Earnings in your dashboard shows every sale you brought
+        in, what you earned and when it will be ready. New here? Start with{" "}
         <Link
           href="/for-creators"
           className="font-medium text-foreground underline underline-offset-2"
         >
-          muse dashboard
-        </Link>{" "}
-        shows every attributed sale, its commission and its payout status in real time.
+          becoming a muse
+        </Link>
+        .
       </p>
     </MarketingSection>
   </MarketingShell>

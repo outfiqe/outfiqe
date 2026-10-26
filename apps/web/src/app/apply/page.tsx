@@ -13,15 +13,15 @@ export const dynamic = "force-dynamic";
 const brandPerks = [
   {
     title: "Free to list",
-    body: "No fee for visibility, ever. Placement is earned by what people love, not what you pay.",
+    body: "No listing fee and no paying for visibility. We only earn a commission when you make a sale.",
   },
   {
-    title: "We do the setup",
-    body: "Send us photos and prices. We build your page and your first looks ourselves.",
+    title: "We collect your orders",
+    body: "Our riders pick up ready orders from your shop, and we deliver them across Nepal.",
   },
   {
-    title: "Muses included",
-    body: "Get your pieces in front of Nepali muses who drop real fits and tag your products.",
+    title: "Muses wear your pieces",
+    body: "Nepali muses post looks and tag your products, so shoppers see them on real people.",
   },
 ];
 
@@ -42,7 +42,7 @@ const ApplyPage = () => {
             clothes seen.
           </>
         }
-        lede="We're building the one place Nepali shoppers go for fashion. Listing is free — we only earn a small cut when you actually sell."
+        lede="We're building the one place Nepali shoppers go for fashion. Tell us about your brand below, and we'll email you once we've reviewed your application."
       >
         <Suspense fallback={null}>
           <ApplyExpiredBanner />

@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Sell on Outfiqe",
   description:
-    "List your Nepali clothing brand on Outfiqe. Free to list, a small commission only on completed sales, muse looks that show your pieces on real people, and one dashboard for stock and orders.",
+    "List your Nepali clothing brand on Outfiqe. Free to list, a commission only on completed sales, muse looks that show your pieces on real people, and pickup from your door.",
   path: "/for-brands",
   keywords: [
     "sell clothes online Nepal",
@@ -27,34 +27,38 @@ export const metadata: Metadata = buildPageMetadata({
 const steps = [
   {
     title: "Apply",
-    body: "Tell us about your brand. We review applications and approve labels that fit Outfiqe.",
+    body: "Tell us about your brand using the short form. Our team reviews every application, and once you're approved we email you a link to create your brand account.",
   },
   {
-    title: "We set you up",
-    body: "Send photos and prices. We build your brand page and your first muse looks with you.",
+    title: "Set up your shop",
+    body: "Add your brand profile, your size scales and the address we collect orders from. Then add your products with photos, sizes, stock and price. Each new product is checked by our team before it goes live.",
   },
   {
-    title: "Sell and get paid",
-    body: "Manage stock and orders from your dashboard. Your settlement balance is withdrawn to a verified bank account.",
+    title: "Hand over orders",
+    body: "When an order comes in, pack it with the pickup slip. Our rider collects it from your pickup location, so you never need the customer's address. In a few areas, you may send the order yourself instead.",
+  },
+  {
+    title: "Get paid",
+    body: "Your earnings from each sale become available 7 days after delivery. Withdraw them to your verified bank account from your wallet.",
   },
 ];
 
 const value = [
   {
     title: "Free to list",
-    body: "No listing fee, no fee for visibility. Placement is earned by what shoppers respond to, not what you pay.",
+    body: "No listing fee and no paying for visibility. Shoppers find your pieces through looks, search, the shop and the brand leaderboard.",
   },
   {
     title: "Commission only on sales",
-    body: "Outfiqe takes a small percentage of completed sales. A share of that funds the muse whose look sourced the sale.",
+    body: "Outfiqe only earns when you do. Our commission is taken from completed sales, and your wallet shows exactly what you earn on each one.",
   },
   {
-    title: "Muse looks included",
-    body: "Your pieces get styled and dropped by Nepali muses who tag them. That is real-world context a catalogue photo cannot give.",
+    title: "Real people wearing your pieces",
+    body: "Nepali muses post looks and tag your products. You approve each tag before it goes live, and can mark a muse as trusted to skip the check next time.",
   },
   {
     title: "One dashboard",
-    body: "Products, stock, pricing, orders and payouts in one place. Edit a live listing without waiting on a review.",
+    body: "Products, stock, sale prices, size charts, orders, returns and your wallet, all in one place. Changes to a live product show up straight away.",
   },
 ];
 
@@ -62,22 +66,32 @@ const faqs = [
   {
     question: "What does it cost to sell on Outfiqe?",
     answer:
-      "Listing is free. Outfiqe charges a commission on completed sales, calculated per the platform commission structure. Payment-gateway fees on wallet payments are passed through.",
+      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece. For eSewa and Khalti payments, the payment provider's fee is also passed on. Cash on delivery has no provider fee.",
   },
   {
     question: "Who handles delivery?",
     answer:
-      "Outfiqe coordinates fulfilment and delivery across Nepal. You prepare and hand over the order, and the platform manages buyer contact details.",
+      "In most areas, we do. Our rider collects ready orders from your pickup location, we check each piece at our hub, and a delivery partner takes the parcel to the customer. Your Orders page shows if any order needs to be sent by you instead.",
+  },
+  {
+    question: "What happens if an order comes back?",
+    answer:
+      "If a customer refuses a parcel, or a piece fails our quality check, our rider brings the items back to you. You confirm them in your dashboard and the stock goes back on sale.",
   },
   {
     question: "How and when am I paid?",
     answer:
-      "Each completed sale adds to your brand's settlement balance. Once it clears, you request a withdrawal to a verified brand bank account, subject to the withdrawal policy for businesses.",
+      "Each sale adds to your wallet. The amount becomes available 7 days after delivery, and you can then request a withdrawal to your verified brand bank account. The minimum amount and how often you can withdraw are shown in your wallet.",
+  },
+  {
+    question: "Can I sell secondhand pieces?",
+    answer:
+      "Yes. Mark a product as Thrift and add a condition rating and a short note about its condition. Thrift pieces get their own section in the shop.",
   },
   {
     question: "Can I edit my products after they're live?",
     answer:
-      "Yes. Restocking, editing and removing a live product are all self-serve from your dashboard. New products go through a short review before they publish.",
+      "Yes. You can edit, restock, set a sale price or remove a live product from your dashboard at any time. Only brand-new products wait for a quick review.",
   },
 ];
 
@@ -97,7 +111,7 @@ const ForBrandsPage = () => (
           clothes seen.
         </>
       }
-      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and get your pieces in front of shoppers and the muses who actually wear them."
+      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and we'll put your pieces in front of shoppers and the muses who wear them, then collect your orders from your door."
     />
 
     <MarketingSection heading="How it works">
@@ -114,7 +128,7 @@ const ForBrandsPage = () => (
 
     <MarketingCta
       title="Apply to list your brand"
-      body="Listing is free and takes a few minutes. We'll be in touch after reviewing your application."
+      body="Listing is free and the form takes a few minutes. We'll email you once we've reviewed your application."
       primary={{ href: "/apply", label: "Apply now" }}
       secondary={{ href: "/brands", label: "See brands on Outfiqe" }}
     />

@@ -13,7 +13,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "About Outfiqe",
   description:
-    "Outfiqe is a Nepali fashion marketplace. Local brands, shown in muse looks so you can see the fit before you buy. What we are building, and why.",
+    "Outfiqe is a Nepali fashion marketplace. Local brands and thrift pieces, shown on real muses, in one cart, delivered as one parcel. What we are building, and why.",
   path: "/about",
   keywords: ["about Outfiqe", "Nepali fashion marketplace", "Outfiqe company"],
 });
@@ -21,19 +21,19 @@ export const metadata: Metadata = buildPageMetadata({
 const principles = [
   {
     title: "Local brands first",
-    body: "Every brand on Outfiqe is a Nepali label. We help small studios reach shoppers they could never reach alone, and we only earn when they sell.",
+    body: "Every brand on Outfiqe is a Nepali label, alongside secondhand pieces in Thrift. We help small studios reach shoppers they couldn't reach alone, and we only earn when they sell.",
   },
   {
     title: "See the fit before you buy",
-    body: "A photo on a hanger tells you almost nothing about how a piece wears. Every product on Outfiqe comes with a muse look, so you can judge the fit and the drape first.",
+    body: "A photo on a hanger tells you very little. Muse looks show each piece on a real person, and reviews come only from people who actually received the item.",
   },
   {
-    title: "One cart, built for Nepal",
-    body: "Shop across brands in a single checkout. Pay cash on delivery or by wallet. It arrives at your door. No juggling five Instagram DMs.",
+    title: "One cart, one parcel",
+    body: "Shop across brands in one checkout. We collect from each brand, check every piece at our hub and send your order as one parcel you can follow step by step.",
   },
   {
     title: "Muses earn for taste",
-    body: "The people who style and drop the looks that sell a piece earn a commission on it. Discovery and income run on the same rail.",
+    body: "When someone buys a piece because of a muse's look, that muse earns a commission. We track it for them and pay it into their bank account.",
   },
 ];
 
@@ -53,20 +53,21 @@ const AboutPage = () => (
           shoppers go for fashion.
         </>
       }
-      lede="Outfiqe brings Nepal's clothing brands together in one storefront and pairs each one with muse looks. Shopping starts with an outfit you like, not a search box."
+      lede="Outfiqe brings Nepal's clothing brands together in one storefront and shows every piece on real muses. Shopping starts with an outfit you like, not a search box."
     />
 
     <MarketingSection heading="Why we started">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          Good clothes from Nepali brands were being sold one Instagram drop at a time. Shoppers had
-          no single place to browse them, no way to see how a piece actually fits before paying, and
-          no reliable checkout. Brands were stuck running customer service out of their DMs.
+          Good clothes from Nepali brands were sold one Instagram drop at a time. Shoppers had no
+          single place to browse them, no way to see how a piece fits before paying, and no reliable
+          checkout or delivery. Brands ran customer service and couriers out of their DMs.
         </p>
         <p>
-          Outfiqe fixes the storefront. Brands list their catalogue once. Muses drop the looks that
-          show those clothes on real people. Shoppers browse by taste, add across brands to one
-          cart, and check out with cash on delivery or a wallet.
+          Outfiqe fixes that end to end. Brands list once and hand ready orders to our riders. Muses
+          drop the looks that show those clothes on real people. Shoppers add across brands to one
+          cart, pay by cash on delivery, eSewa or Khalti, and track one parcel to their door, with
+          refunds handled for them if something goes wrong.
         </p>
       </div>
     </MarketingSection>
