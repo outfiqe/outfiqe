@@ -190,6 +190,12 @@ secrets so nothing credential-shaped is printed in workflow logs.
 Every name referenced in `ci.yml` must exist or the test jobs fail at env
 validation. Set them via the UI or `gh variable set` / `gh secret set`.
 
+The API's integration tests are split across four machines at once (`vitest --shard`), each
+with its own Postgres and Redis, because run one after another they took about 16 minutes. The
+other packages' integration tests run in a fifth job. A small job named **Integration tests**
+passes only when all five do, so the branch rules keep checking one name. The repo is public, so
+the extra machines cost nothing.
+
 ## Code Quality & Commits
 
 - `pnpm lint` / `pnpm format` — ESLint (flat config, shared across all packages) and Prettier.
