@@ -27,40 +27,54 @@ const CookiesPage = () => (
     >
       <h2>What cookies are</h2>
       <p>
-        Cookies and similar technologies (local storage, session identifiers) are small pieces of
-        data stored by your browser. We use them to keep you signed in, remember preferences, and
-        understand how the site is used.
+        Cookies, and similar storage in your browser, are small pieces of data saved on your device.
+        We use them to keep you signed in, keep your account secure, remember your choices, and make
+        the app work offline.
       </p>
 
       <h2>How we use them</h2>
       <h3>Strictly necessary</h3>
       <ul>
-        <li>Authentication: keeping you signed in and protecting your session.</li>
-        <li>Security: cross-site request protection and abuse prevention.</li>
-        <li>Cart and checkout state.</li>
+        <li>
+          Keeping you signed in: a secure sign-in cookie that can&apos;t be read by scripts on the
+          page, and a small cookie that tells the site you have a session.
+        </li>
+        <li>Security: a cookie that protects your account against cross-site requests.</li>
+        <li>Checkout: remembering a Buy now item while you check out.</li>
       </ul>
       <h3>Functional</h3>
       <ul>
-        <li>Remembering your theme and display preferences.</li>
+        <li>Remembering your language, theme and the style categories you picked.</li>
         <li>
-          A session identifier used to attribute a sale to the muse whose look or link you followed.
+          A random visitor ID, so that when you buy something after tapping a muse&apos;s look or
+          link, the sale is credited to that muse.
+        </li>
+        <li>
+          Small reminders, such as whether you dismissed the install or notification prompt, and
+          your saved measurements if you choose to keep them on this device.
+        </li>
+        <li>
+          Offline storage, so the installed app can open without a connection and send actions once
+          you&apos;re back online.
         </li>
       </ul>
-      <h3>Analytics and diagnostics</h3>
+      <h3>Diagnostics</h3>
       <ul>
-        <li>Aggregate usage measurement and error reporting to keep the site working.</li>
+        <li>
+          Error reporting through Sentry, so we can find and fix problems that break the site.
+        </li>
       </ul>
       <p>
         <strong>
-          [NEEDS INPUT: confirm the exact analytics/diagnostics providers and whether any
-          advertising cookies are used.]
+          [NEEDS INPUT: confirm whether any analytics or advertising cookies are added in future.]
         </strong>
       </p>
 
       <h2>Managing cookies</h2>
       <p>
-        You can clear or block cookies in your browser settings. Blocking strictly necessary cookies
-        will stop parts of Outfiqe from working, such as staying signed in or checking out.
+        You can clear or block cookies and site data in your browser settings. If you block the
+        strictly necessary ones, parts of Outfiqe will stop working, such as staying signed in or
+        checking out.
       </p>
 
       <h2>Changes</h2>

@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Seller terms",
   description:
-    "The terms for brands selling on Outfiqe: listing standards, commissions and fees, fulfilment obligations, settlements and payouts, and grounds for suspension.",
+    "The terms for brands selling on Outfiqe: listings, commission, order pickup and delivery, returns, payouts, and when we may suspend a brand.",
   path: "/legal/brand-terms",
 });
 
@@ -22,118 +22,127 @@ const BrandTermsPage = () => (
   >
     <LegalDocument
       title="Seller terms"
-      summary="These terms govern the relationship between Outfiqe and a brand selling on the platform, in addition to any signed agreement."
+      summary="These terms cover the relationship between Outfiqe and a brand selling on the platform, in addition to any signed agreement."
       lastReviewed="[NEEDS INPUT: effective date]"
       status="draft"
     >
-      <h2>1. Onboarding</h2>
+      <h2>1. Joining Outfiqe</h2>
       <p>
-        A brand is admitted after an application review. Outfiqe may decline or later remove a brand
-        for breach of these terms, poor fulfilment, or reputational risk. Each brand designates an
-        owner account and may add staff.{" "}
+        Brands apply through our application form, and our team reviews every application. Once
+        approved, you receive an email link to create your brand account. Outfiqe may decline a
+        brand, or remove one later, for breaking these terms, repeated order problems, or risk to
+        our reputation.{" "}
         <strong>
-          [NEEDS INPUT: whether a signed master agreement is required and its precedence.]
+          [NEEDS INPUT: whether a signed agreement is required, and which document takes priority.]
         </strong>
       </p>
 
       <h2>2. Listings</h2>
       <ul>
+        <li>You are responsible for accurate product details, photos, prices, sizes and stock.</li>
         <li>
-          You are responsible for the accuracy of product information, images, pricing, sizing and
-          stock.
+          Our team reviews each new product before it goes live. You can edit, restock, discount or
+          remove a live product yourself at any time.
         </li>
         <li>
-          New listings are reviewed before they publish. You may edit, restock or remove a live
-          listing yourself.
-        </li>
-        <li>
-          Products must be lawful to sell, genuine, and yours to sell. No counterfeits or infringing
+          Products must be genuine, legal to sell and yours to sell. No counterfeit or infringing
           goods.
         </li>
-        <li>You must maintain accurate stock so shoppers are not sold items you cannot fulfil.</li>
+        <li>If you list a secondhand piece as Thrift, you must describe its condition honestly.</li>
+        <li>Keep stock up to date so shoppers can&apos;t buy items you don&apos;t have.</li>
       </ul>
 
-      <h2>3. Commissions and fees</h2>
+      <h2>3. Commission and fees</h2>
       <ul>
         <li>
-          Listing is free. Outfiqe charges a commission on each completed sale, calculated using the
-          platform commission structure in effect at the time of the sale.
+          Listing is free. Outfiqe takes a commission on each completed sale, based on the price of
+          the piece and the commission rates in effect when the order is placed. A later change in
+          rates never affects a past sale.
         </li>
         <li>
-          Payment-gateway fees on wallet payments are passed through. Cash-on-delivery has no
-          gateway fee.
+          Outfiqe covers eSewa and Khalti payment fees. They are not deducted from your earnings.
         </li>
         <li>
-          A portion of Outfiqe&apos;s commission funds the muse who sourced an attributed sale.
-        </li>
-        <li>
-          The rate applied to each sale is recorded and does not change retroactively if the
-          structure is later updated.
+          Muse commissions are paid by Outfiqe and are not deducted from your earnings. Discounts
+          from Outfiqe coupons are also paid by Outfiqe. Sale prices you set yourself lower the
+          amount of the sale.
         </li>
         <li>
           <strong>
-            [NEEDS INPUT: publish the current commission tiers, any gateway-fee rates, and any
-            exemption terms.]
+            [NEEDS INPUT: publish the current commission rates and any exemption terms.]
           </strong>
         </li>
       </ul>
 
-      <h2>4. Orders and fulfilment</h2>
+      <h2>4. Orders, pickup and delivery</h2>
       <ul>
         <li>
-          You must prepare confirmed orders promptly and to the quality shown in your listing.
+          Prepare confirmed orders promptly, to the quality shown in your listing, and pack each one
+          with its pickup slip.
         </li>
         <li>
-          Outfiqe coordinates delivery. Buyer contact and address details are provided only as
-          needed for fulfilment.
+          In most areas, an Outfiqe rider collects ready orders from your pickup location. We check
+          each item at our hub and arrange delivery. For these orders, we don&apos;t share the
+          customer&apos;s contact or address details with you, because you don&apos;t need them.
         </li>
-        <li>Fulfilment-status changes and post-shipment cancellations are managed by Outfiqe.</li>
+        <li>
+          Where an order must be sent by you, your Orders page says so. You then ship it and update
+          its status, including tracking details.
+        </li>
+        <li>
+          If you can&apos;t supply an item, report it from the order straight away so the shopper is
+          refunded quickly.
+        </li>
+        <li>
+          We keep a record of pickup and quality problems, such as orders not ready for collection
+          or items failing our check, and show it in your dashboard.
+        </li>
       </ul>
 
       <h2>5. Cancellations, returns and refunds</h2>
       <p>
-        Outfiqe handles buyer-facing cancellations and returns under its{" "}
-        <Link href="/legal/returns-policy">return &amp; refund policy</Link>. Where a return is due
-        to a brand error (wrong, damaged or misdescribed item), the associated commission and any
-        refunded amounts are adjusted against your settlement.{" "}
-        <strong>[NEEDS INPUT: chargeback / clawback mechanics and dispute process.]</strong>
+        Outfiqe handles cancellations, returns and refunds with shoppers under its{" "}
+        <Link href="/legal/returns-policy">return &amp; refund policy</Link>. Items that fail our
+        quality check, or that a shopper refuses at delivery, are brought back to you by our rider.
+        You confirm them in your dashboard, and the stock goes back on sale. When an item is
+        refunded, your earnings for it are removed. If you have already withdrawn them, we may
+        recover the amount.{" "}
+        <strong>[NEEDS INPUT: how amounts are recovered, and the dispute process.]</strong>
       </p>
 
-      <h2>6. Settlements and payouts</h2>
+      <h2>6. Earnings and payouts</h2>
       <ul>
+        <li>Each completed sale adds its price, less Outfiqe&apos;s commission, to your wallet.</li>
+        <li>Earnings become available to withdraw 7 days after the order is delivered.</li>
         <li>
-          Each completed sale adds a payable amount (gross, less Outfiqe&apos;s commission and any
-          gateway fee) to your settlement balance.
-        </li>
-        <li>Balances become available for withdrawal once the associated orders clear.</li>
-        <li>
-          Withdrawals are made to a verified brand bank account, subject to the business withdrawal
-          policy, including its limits and any second-approval requirement for large amounts.
+          Withdrawals go to a verified brand bank account. The minimum and maximum amounts, how
+          often you can withdraw, and any extra approval for large amounts are shown in your wallet.
         </li>
         <li>
-          You are responsible for your own tax obligations, including any invoicing and VAT.{" "}
+          You are responsible for your own taxes, including invoicing and VAT.{" "}
           <strong>[NEEDS INPUT: tax and invoicing responsibilities.]</strong>
         </li>
       </ul>
 
-      <h2>7. Brand content and marks</h2>
+      <h2>7. Your brand, content and muse tags</h2>
       <p>
-        You grant Outfiqe a licence to use your name, logo, product images and descriptions to
-        operate and market the marketplace. Muses may feature your products in looks.
+        You allow Outfiqe to use your brand name, logo, product photos and descriptions to run and
+        promote the marketplace. Muses may feature your products in their looks. You review the tags
+        on your products and should approve or reject them promptly and fairly.
       </p>
 
-      <h2>8. Suspension and termination</h2>
+      <h2>8. Suspension and ending the relationship</h2>
       <p>
-        Outfiqe may suspend listings or withhold a settlement where there is suspected fraud, a
-        serious fulfilment failure, or a legal issue, pending resolution. Either party may end the
-        relationship on notice; amounts properly owed to you remain payable.
+        Outfiqe may pause your listings or hold a payout if we suspect fraud, after a serious order
+        problem, or because of a legal issue, until it is resolved. Either side may end the
+        relationship with notice. Money properly owed to you will still be paid.
       </p>
 
-      <h2>9. Liability and indemnity</h2>
+      <h2>9. Responsibility for your products</h2>
       <p>
-        You are responsible for your products and their compliance with law, and you indemnify
-        Outfiqe against claims arising from them.{" "}
-        <strong>[NEEDS INPUT: liability caps and insurance requirements.]</strong>
+        You are responsible for your products and for making sure they follow the law. You agree to
+        cover Outfiqe against claims that arise from them.{" "}
+        <strong>[NEEDS INPUT: liability limits and insurance requirements.]</strong>
       </p>
     </LegalDocument>
   </MarketingShell>
