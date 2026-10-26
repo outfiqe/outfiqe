@@ -24,6 +24,7 @@ import {
 import { grantLimitedPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crm-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
@@ -43,7 +44,7 @@ const createUser = async (overrides: Partial<{ name: string; role: UserRole }> =
       email: `bank-acct-tester-${suffix}@outfiqe.test`,
       name: overrides.name ?? "Sabin Shrestha",
       handle: `bank-acct-tester-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: overrides.role ?? UserRole.CUSTOMER,
     },

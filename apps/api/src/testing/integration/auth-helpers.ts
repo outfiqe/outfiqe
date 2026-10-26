@@ -10,6 +10,7 @@ import {
 } from "#modules/platform-access/platform-access.constants.js";
 
 import { ensurePlatformOrganizationExists, grantPlatformStaffMembership } from "./crm-fixtures.js";
+import { uniquePhone } from "./unique-values.js";
 
 export const createAdminSession = async (): Promise<{ userId: string; authHeader: string }> => {
   const suffix = randomUUID().slice(0, 8);
@@ -19,7 +20,7 @@ export const createAdminSession = async (): Promise<{ userId: string; authHeader
       email: `admin-${suffix}@outfiqe.test`,
       name: "Test Admin",
       handle: `test-admin-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.ADMIN,
     },
@@ -82,7 +83,7 @@ export const createRoleLimitedStaffSession = async (
       email: `limited-${suffix}@outfiqe.test`,
       name: "Limited Staff",
       handle: `limited-staff-${suffix}`,
-      phone: `98${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.ADMIN,
     },

@@ -83,8 +83,14 @@ feature layout.
     to show: "Booking with …" while a connected partner is booking it, the partner's reason and
     **Try again** (`useRetryParcelBooking`) when that booking failed, and `ManualBookingForm` for
     a manual partner or a failed booking.
-  - `ParcelDetailPage` (`/logistics/parcels/$shipmentId`) — contents, partner and the full event
-    timeline (`utils/parcelEvent.utils.ts` turns event codes into words), plus
+  - `ParcelNextStep` — a "Next:" line on the card and the detail page, from
+    `utils/parcelNextStep.utils.ts`: choose a partner → book it in their portal and type their
+    number → print the label → hand it over → upload the partner's status sheet (manual partners
+    only). Staff see what comes next before the server has to refuse a step done too early.
+  - `ParcelDetailPage` (`/logistics/parcels/$shipmentId`) — the next step and, while the parcel
+    waits for its booking, the same `ParcelBookingActions` as the card, so the partner's number
+    can be typed here too. Contents, partner and the full event timeline
+    (`utils/parcelEvent.utils.ts` turns event codes into words), plus
     `RecordParcelUpdateModal` for a status the partner gave by phone (or a logged correction).
     For a parcel that went out with a partner, **Check in return** opens `ReturnCheckInModal`:
     why it came back (refused or unreachable, wrong or damaged item, damaged by the partner, with
@@ -97,7 +103,10 @@ feature layout.
     `@page parcel-label` in `src/index.css` set the page size.
 - `partners/` — delivery partners, against `/api/logistics/admin/partners`.
   - `PartnersPage` (`/logistics/partners`) and `PartnerFormModal` (name, code, connection,
-    parcel-number pattern, cash days, tracking link, collects cash, active).
+    parcel-number pattern, cash days, tracking link, collects cash, active). A pattern with no part
+    that changes (`SANSAR-`) would refuse every real number, so the form says so under the field,
+    suggests `SANSAR-\d+` and keeps Save off until it's fixed. The API refuses it too, but its
+    validation errors only reach this screen as "Invalid request", so the form has to explain it.
   - `PartnerDetailPage` (`/logistics/partners/$partnerId`) — `PartnerAccountsSection` (our merchant
     account per hub in the partner's country), `PartnerAreasSection` (delivery zones per hub with
     a priority), `PartnerStatusNamesSection` (their status words → ours) and

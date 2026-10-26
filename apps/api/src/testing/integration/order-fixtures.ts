@@ -129,7 +129,7 @@ export const createBuyer = async () => {
       email: `buyer-${suffix}@outfiqe.test`,
       name: "Test Buyer",
       handle: `test-buyer-${suffix}`,
-      phone: `97${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: UserRole.CUSTOMER,
     },

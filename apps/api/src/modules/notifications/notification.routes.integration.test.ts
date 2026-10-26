@@ -17,6 +17,7 @@ import {
   seedTenantOrganization,
 } from "#test/integration/crm-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 const createUserSession = async (
   overrides: Partial<{ role: UserRole; isApprovedCreator: boolean }> = {},
@@ -28,7 +29,7 @@ const createUserSession = async (
       email: `notif-rest-${suffix}@outfiqe.test`,
       name: `Notif Rest ${suffix}`,
       handle: `notif-rest-${suffix}`,
-      phone: `95${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role,
       ...(overrides.isApprovedCreator

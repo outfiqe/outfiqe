@@ -11,6 +11,7 @@ import {
   NotificationType,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { uniquePhone } from "#test/integration/unique-values.js";
 
 import { ApprovedAccountKind } from "./notification.constants.js";
 import { notificationService } from "./notification.service.js";
@@ -22,7 +23,7 @@ const createUser = async (overrides: Partial<{ role: UserRole }> = {}) => {
       email: `notif-${suffix}@outfiqe.test`,
       name: `Notif Test ${suffix}`,
       handle: `notif-test-${suffix}`,
-      phone: `96${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
+      phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role: overrides.role ?? UserRole.CUSTOMER,
     },

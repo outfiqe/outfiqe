@@ -2,12 +2,42 @@ import { describe, expect, it } from "vitest";
 
 import {
   CROCKFORD_BASE32_ALPHABET,
+  describeFixedTextPatternProblem,
   formatParcelCode,
   isCrockfordCode,
+  isFixedTextPattern,
   normalizeParcelCode,
   normalizeTypedCode,
   PICKUP_CODE_LENGTH,
+  suggestReferencePattern,
 } from "./index";
+
+describe("isFixedTextPattern", () => {
+  it("flags a pattern with no part that can change", () => {
+    expect(isFixedTextPattern("SANSAR-")).toBe(true);
+    expect(isFixedTextPattern("PX")).toBe(true);
+  });
+
+  it("accepts a pattern with a part that changes", () => {
+    expect(isFixedTextPattern("SANSAR-\\d+")).toBe(false);
+    expect(isFixedTextPattern("PX-[0-9]{5}")).toBe(false);
+    expect(isFixedTextPattern("NCM.*")).toBe(false);
+  });
+});
+
+describe("suggestReferencePattern", () => {
+  it("suggests the fixed text followed by digits", () => {
+    expect(suggestReferencePattern("SANSAR-")).toBe("SANSAR-\\d+");
+  });
+});
+
+describe("describeFixedTextPatternProblem", () => {
+  it("names the pattern and suggests one built from it", () => {
+    expect(describeFixedTextPatternProblem("SANSAR-")).toBe(
+      '"SANSAR-" only matches that exact text, so every real parcel number would be refused. Add the part that changes, for example SANSAR-\\d+ for "SANSAR-" followed by digits.',
+    );
+  });
+});
 
 describe("normalizeTypedCode", () => {
   it("upper-cases and removes spaces and dashes", () => {

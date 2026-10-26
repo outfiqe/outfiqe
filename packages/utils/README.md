@@ -15,7 +15,9 @@ to any one app.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
 - `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
   `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,
-  `normalizeParcelCode`, `formatParcelCode`), shared by every app that handles the delivery codes
+  `normalizeParcelCode`, `formatParcelCode`), and the courier parcel-number pattern check
+  (`isFixedTextPattern`, `suggestReferencePattern`, `describeFixedTextPatternProblem`) the API and
+  the admin partner form both use, shared by every app that handles the delivery codes
   (pickup codes, bag tags, parcel codes). A parcel code is stored as `OFQ` + 8 characters and shown
   as `OFQ-XXXX-XXXX`; `normalizeParcelCode` accepts it typed with dashes, spaces, lower case or a
   zero for the O, and returns `null` for anything else:

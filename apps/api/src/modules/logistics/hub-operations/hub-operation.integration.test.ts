@@ -24,7 +24,7 @@ import {
   createOrderOnItsWayToHub,
   createStaffForHub,
 } from "#test/integration/hub-operation-fixtures.js";
-import { createHub, requireFixtureId } from "#test/integration/logistics-fixtures.js";
+import { createBagTag, createHub, requireFixtureId } from "#test/integration/logistics-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
 const HUB_PATH = "/api/logistics/hub";
@@ -216,6 +216,24 @@ describe("checking bags in", () => {
     expect(unknownCode.status).toBe(HTTP_STATUS.NOT_FOUND);
     expect(notAllowed.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
+
+  it("says a sticker isn't on any bag yet instead of calling it unknown", async () => {
+    const { hub, staff } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [{ unitPrice: 500, qty: 1 }],
+    });
+    const unusedSticker = await createBagTag(hub.id, staff.userId);
+
+    const response = await checkIn(staff.authHeader, {
+      hubId: hub.id,
+      code: unusedSticker.code,
+      countedUnits: 1,
+    });
+
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect(response.body.code).toBe("STICKER_NOT_ON_A_BAG");
+  });
 });
 
 describe("inspecting and packing", () => {
@@ -395,6 +413,26 @@ describe("booking and handing over", () => {
       partnerReference: "PX-55821",
     });
     expect(bookedAgain.status).toBe(HTTP_STATUS.CONFLICT);
+  });
+
+  it("won't hand over a booked parcel whose label was never printed", async () => {
+    const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 500, qty: 1 }],
+    });
+    await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await passEveryBag(staff.authHeader, pickups);
+    const { shipmentId, trackingCode } = (await pack(staff.authHeader, order.id)).body.data;
+    await book(staff.authHeader, shipmentId, "PX-77");
+
+    const notPrinted = await handOver(staff.authHeader, { hubId: hub.id, code: trackingCode });
+    await printLabel(staff.authHeader, shipmentId);
+    const handedOver = await handOver(staff.authHeader, { hubId: hub.id, code: trackingCode });
+
+    expect(notPrinted.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(notPrinted.body.code).toBe("LABEL_NOT_PRINTED");
+    expect(handedOver.body.data.status).toBe(ShipmentStatus.HANDED_TO_PARTNER);
   });
 
   it("won't hand over a parcel that isn't booked or whose label shows old cash", async () => {
