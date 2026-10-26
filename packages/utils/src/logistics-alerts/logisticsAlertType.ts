@@ -11,6 +11,7 @@ export const LogisticsAlertType = {
   COUNT_MISMATCH: "COUNT_MISMATCH",
   COD_COLLECTED_MISMATCH: "COD_COLLECTED_MISMATCH",
   COD_REMITTANCE_OVERDUE: "COD_REMITTANCE_OVERDUE",
+  DELIVERY_DISPUTED: "DELIVERY_DISPUTED",
 } as const;
 export type LogisticsAlertType = (typeof LogisticsAlertType)[keyof typeof LogisticsAlertType];
 
@@ -30,6 +31,7 @@ export const LOGISTICS_ALERT_LABELS: Readonly<Record<LogisticsAlertType, string>
   [LogisticsAlertType.COUNT_MISMATCH]: "A bag's unit count didn't match",
   [LogisticsAlertType.COD_COLLECTED_MISMATCH]: "Cash collected didn't match the label",
   [LogisticsAlertType.COD_REMITTANCE_OVERDUE]: "A partner is late paying in cash",
+  [LogisticsAlertType.DELIVERY_DISPUTED]: "A customer says their parcel didn't arrive",
 };
 
 export const isLogisticsAlertType = (value: unknown): value is LogisticsAlertType =>
