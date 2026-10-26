@@ -41,7 +41,10 @@ real-time — plain react-query fetch + invalidate, no socket.
 
 **User-facing:** any shopper viewing a product scrolls to (or deep-links into, see rationale) the
 Reviews section, sees the rating summary and can filter by star / change sort, and reads reviews
-with photos. A signed-in shopper who doesn't have a review yet sees "Write a review"; submitting a
+with photos. A brand owner, staff member or rider can't buy, so they see neither "Write a review"
+nor the helpful button — just a read-only "N found this helpful" line (`canWriteOrVote` in
+`ReviewsSection`, hidden until sign-in has been checked so the button never flashes for them; the
+API enforces the same rule). A signed-in shopper who doesn't have a review yet sees "Write a review"; submitting a
 review they're not eligible for (`packages/client`'s `ApiClientError` surfaces the API's
 `PURCHASE_REQUIRED` message via `getErrorMessage`) shows that reason as a toast rather than a
 silent failure.

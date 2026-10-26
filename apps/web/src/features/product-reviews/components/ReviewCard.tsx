@@ -16,6 +16,7 @@ type ReviewCardProps = {
   review: ProductReview;
   isOwn: boolean;
   canModerate: boolean;
+  canVoteHelpful: boolean;
   onToggleHelpful: () => void;
   isTogglingHelpful: boolean;
   onEdit: () => void;
@@ -26,6 +27,7 @@ export const ReviewCard = ({
   review,
   isOwn,
   canModerate,
+  canVoteHelpful,
   onToggleHelpful,
   isTogglingHelpful,
   onEdit,
@@ -84,19 +86,28 @@ export const ReviewCard = ({
           )}
 
           <div className="mt-3 flex items-center gap-4">
-            <button
-              type="button"
-              onClick={onToggleHelpful}
-              disabled={isOwn || isTogglingHelpful}
-              aria-pressed={hasVotedHelpful}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-                hasVotedHelpful && "text-primary-strong",
-              )}
-            >
-              <ThumbsUp className={cn("size-3.5", hasVotedHelpful && "fill-primary-strong")} />
-              Helpful{helpfulCount > 0 ? ` (${helpfulCount})` : ""}
-            </button>
+            {canVoteHelpful ? (
+              <button
+                type="button"
+                onClick={onToggleHelpful}
+                disabled={isOwn || isTogglingHelpful}
+                aria-pressed={hasVotedHelpful}
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                  hasVotedHelpful && "text-primary-strong",
+                )}
+              >
+                <ThumbsUp className={cn("size-3.5", hasVotedHelpful && "fill-primary-strong")} />
+                Helpful{helpfulCount > 0 ? ` (${helpfulCount})` : ""}
+              </button>
+            ) : (
+              helpfulCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <ThumbsUp className="size-3.5" />
+                  {helpfulCount} found this helpful
+                </span>
+              )
+            )}
 
             {isOwn && (
               <button

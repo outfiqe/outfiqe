@@ -161,6 +161,24 @@ describe("POST /api/products/:productId/reviews", () => {
     const updatedProduct = await prisma.product.findUniqueOrThrow({ where: { id: product.id } });
     expect(updatedProduct.reviewCount).toBe(1);
   });
+
+  it.each([UserRole.BRAND_OWNER, UserRole.ADMIN])(
+    "forbids a %s account, which can't buy, from writing a review",
+    async (nonShopperRole) => {
+      const { product, size } = await createProduct(`${nonShopperRole} Review Jacket`);
+      const nonShopper = await createUser("Non Shopper", `non-shopper-review-${nonShopperRole}`);
+      await createDeliveredOrderItem(nonShopper.id, product.id, size.id);
+
+      const response = await request(testApp)
+        .post(`/api/products/${product.id}/reviews`)
+        .set("Authorization", authHeaderFor(nonShopper.id, nonShopperRole))
+        .send({ rating: 5, body: "Reviewing my own catalogue." });
+
+      expect(response.status).toBe(403);
+      const updatedProduct = await prisma.product.findUniqueOrThrow({ where: { id: product.id } });
+      expect(updatedProduct.reviewCount).toBe(0);
+    },
+  );
 });
 
 const postReview = async (
@@ -305,6 +323,32 @@ describe("POST/DELETE /api/products/:productId/reviews/:reviewId/helpful", () =>
     expect(response.status).toBe(200);
     expect(response.body.data.helpfulCount).toBe(0);
   });
+
+  it.each([UserRole.BRAND_OWNER, UserRole.ADMIN])(
+    "forbids a %s account, which can't buy, from voting a review helpful",
+    async (nonShopperRole) => {
+      const { product, size } = await createProduct(`${nonShopperRole} Vote Jacket`);
+      const author = await createUser("Review Author", `review-author-${nonShopperRole}`);
+      await createDeliveredOrderItem(author.id, product.id, size.id);
+      const reviewId = await postReview(product.id, author.id);
+      const nonShopper = await createUser("Non Shopper", `non-shopper-${nonShopperRole}`);
+      const nonShopperAuthHeader = authHeaderFor(nonShopper.id, nonShopperRole);
+
+      const voteResponse = await request(testApp)
+        .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+        .set("Authorization", nonShopperAuthHeader);
+      const unvoteResponse = await request(testApp)
+        .delete(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+        .set("Authorization", nonShopperAuthHeader);
+
+      expect(voteResponse.status).toBe(403);
+      expect(unvoteResponse.status).toBe(403);
+      const { helpfulCount } = await prisma.productReview.findUniqueOrThrow({
+        where: { id: reviewId },
+      });
+      expect(helpfulCount).toBe(0);
+    },
+  );
 });
 
 describe("GET /api/products/:productId/reviews", () => {
