@@ -108,6 +108,13 @@ const handOverOnce = async (
     );
   }
   const label = await requireParcelLabel(shipment.id);
+  if (label.labelPrintedAt === null) {
+    throw new AppError(
+      "LABEL_NOT_PRINTED",
+      "Print this parcel's label and stick it on before handing it over.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
   if (!label.isLabelUpToDate) {
     throw new AppError(
       "LABEL_OUT_OF_DATE",

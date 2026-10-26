@@ -173,7 +173,10 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     `_WEBHOOK_SECRET` and `_WEBHOOK_SECRET_PREVIOUS` (for rotation). A value that is missing or too
     short counts as not set.
   - `partner-status.utils.ts` — status word and reference normalising, the rebook reference
-    (`OFQ…-2`), the dedupe key, and the parcel-number pattern check.
+    (`OFQ…-2`), the dedupe key, and the parcel-number pattern check. The pattern must match the
+    whole number, so `partner.schemas.ts` refuses a pattern with no part that changes (`SANSAR-`
+    would only ever accept "SANSAR-"), and a typed number that doesn't fit answers
+    `PARTNER_REFERENCE_INVALID` with the pattern it should look like.
   - `partner-status-import.*` — the CSV status sheet. `#lib/csv.utils.ts` parses it; the first row
     names the columns (the usual spellings are recognised); up to 500 rows; times without a zone
     are read in the time zone of the partner's hub. Every row is reported back as applied, saved
@@ -207,8 +210,9 @@ requiresCashOnDelivery })`, which checkout calls before its transaction to decid
     queued the same way as packing).
   - `handover.service.ts` — `GET /hub/shipments/:shipmentId/label`,
     `POST /hub/shipments/:shipmentId/label-printed`, and `POST /hub/handovers`
-    (`Idempotency-Key`): refused unless the parcel is booked and its printed label shows the
-    current cash to collect.
+    (`Idempotency-Key`): refused unless the parcel is booked (`PARCEL_NOT_BOOKED`), its label has
+    been printed (`LABEL_NOT_PRINTED`) and the printed label shows the current cash to collect
+    (`LABEL_OUT_OF_DATE`). Each refusal names the step to do first.
 - `logistics.query-helpers.ts` — Prisma conditions packing and the packing list share: an item
   with units left for the customer, an item not inspected yet, a bag waiting to be packed (at the
   hub, not in a parcel, with units left) and a bag ready to pack (also fully inspected).

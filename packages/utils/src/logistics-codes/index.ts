@@ -45,6 +45,16 @@ export const normalizeParcelCode = (typedCode: string): string | null => {
     : null;
 };
 
+const PATTERN_SPECIAL_CHARACTER = /[\\^$.*+?()[\]{}|]/;
+
+export const isFixedTextPattern = (referencePattern: string): boolean =>
+  !PATTERN_SPECIAL_CHARACTER.test(referencePattern);
+
+export const suggestReferencePattern = (fixedText: string): string => `${fixedText}\\d+`;
+
+export const describeFixedTextPatternProblem = (fixedText: string): string =>
+  `"${fixedText}" only matches that exact text, so every real parcel number would be refused. Add the part that changes, for example ${suggestReferencePattern(fixedText)} for "${fixedText}" followed by digits.`;
+
 export const formatParcelCode = (parcelCode: string): string => {
   const codeBody = parcelCode.slice(PARCEL_CODE_PREFIX.length);
   return [

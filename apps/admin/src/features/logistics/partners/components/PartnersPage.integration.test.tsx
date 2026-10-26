@@ -91,6 +91,36 @@ describe("PartnersPage", () => {
     );
   });
 
+  it("won't save a parcel number pattern that only matches its own text", async () => {
+    let createdBody: unknown;
+    mswServer.use(
+      http.get(PARTNERS_URL, () => okJson({ partners: [] })),
+      http.post(PARTNERS_URL, async ({ request }) => {
+        createdBody = await request.json();
+        return okJson(buildPartner(), 201);
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(<PartnersPage />, { path: "/logistics/partners" });
+
+    await user.click(await screen.findByRole("button", { name: "Add partner" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Name"), "Delivery Sansar");
+    await user.type(within(dialog).getByLabelText("Short code"), "sansar");
+    const patternInput = within(dialog).getByLabelText("Their parcel number pattern (optional)");
+    await user.type(patternInput, "SANSAR-");
+
+    expect(within(dialog).getByText(/only matches that exact text/)).toBeInTheDocument();
+    expect(patternInput).toHaveAttribute("aria-invalid", "true");
+    expect(within(dialog).getByRole("button", { name: "Save partner" })).toBeDisabled();
+
+    await user.type(patternInput, "\\d+");
+    expect(within(dialog).queryByText(/only matches that exact text/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Save partner" }));
+
+    await waitFor(() => expect(createdBody).toMatchObject({ referencePattern: "SANSAR-\\d+" }));
+  });
+
   it("asks how a connected partner sends updates", async () => {
     let createdBody: unknown;
     mswServer.use(

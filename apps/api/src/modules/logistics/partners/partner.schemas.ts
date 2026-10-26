@@ -1,3 +1,4 @@
+import { describeFixedTextPatternProblem, isFixedTextPattern } from "@outfiqe/utils";
 import { z } from "zod";
 
 import {
@@ -65,6 +66,13 @@ export const partnerBodySchema = z.object({
     .min(1)
     .max(MAX_REFERENCE_PATTERN_LENGTH)
     .refine((pattern) => compileReferencePattern(pattern) !== null, "That pattern isn't valid.")
+    .superRefine((pattern, context) => {
+      if (!isFixedTextPattern(pattern)) return;
+      context.addIssue({
+        code: "custom",
+        message: describeFixedTextPatternProblem(pattern),
+      });
+    })
     .nullable()
     .default(null),
   codRemittanceDays: z

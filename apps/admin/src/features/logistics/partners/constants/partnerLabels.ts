@@ -14,6 +14,9 @@ export const CONNECTED_PARTNER_HINTS = [
   "The address they send updates to appears on the partner's page after you save, with a copy button.",
 ];
 
+export const REFERENCE_PATTERN_HINT =
+  "Checks the numbers staff type in. Use \\d+ for the digits, for example SANSAR-\\d+ accepts SANSAR-1001. Leave it empty to accept any number.";
+
 export const NO_WEBHOOKS: WebhookVerification = "NONE";
 
 export const WEBHOOK_VERIFICATION_LABELS: Record<WebhookVerification, string> = {

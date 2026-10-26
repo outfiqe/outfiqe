@@ -3,19 +3,17 @@ import { Link } from "@tanstack/react-router";
 import { Copy } from "lucide-react";
 import { useState } from "react";
 
-import type {
-  ParcelBooking,
-  ShipmentStatusValue,
-} from "../../hub-operations/api/hubOperationsSchemas";
+import type { ShipmentStatusValue } from "../../hub-operations/api/hubOperationsSchemas";
 import type { ParcelSummary } from "../api/parcelsSchemas";
 import { PARCEL_STATUS_LABELS } from "../constants/parcelLabels";
+import { isParcelWaitingForBooking } from "../utils/parcelNextStep.utils";
 import { ParcelBookingActions } from "./ParcelBookingActions";
+import { ParcelNextStep } from "./ParcelNextStep";
 import { RebookParcelModal } from "./RebookParcelModal";
 
 const NOTHING_TO_COLLECT = 0;
 const AT_HUB_STATUS: ShipmentStatusValue = "PACKED";
 const DELIVERED_STATUS: ShipmentStatusValue = "DELIVERED";
-const BOOKED_STATUS: ParcelBooking["status"] = "BOOKED";
 
 type ParcelCardProps = { parcel: ParcelSummary; canManage: boolean };
 
@@ -33,7 +31,7 @@ export const ParcelCard = ({ parcel, canManage }: ParcelCardProps) => {
     booking,
   } = parcel;
   const isAtHub = status === AT_HUB_STATUS;
-  const isWaitingForBooking = isAtHub && booking !== null && booking.status !== BOOKED_STATUS;
+  const isWaitingForBooking = isParcelWaitingForBooking(parcel);
 
   const copyParcelCode = async () => {
     try {
@@ -86,6 +84,9 @@ export const ParcelCard = ({ parcel, canManage }: ParcelCardProps) => {
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+        <div className="w-full">
+          <ParcelNextStep parcel={parcel} />
+        </div>
         {canManage && isWaitingForBooking && booking && (
           <ParcelBookingActions shipmentId={shipmentId} booking={booking} />
         )}
