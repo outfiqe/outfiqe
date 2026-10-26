@@ -1,4 +1,5 @@
 import { Button, Checkbox, FormBanner, Input, Label, Modal, Select } from "@outfiqe/design-system";
+import { describeFixedTextPatternProblem, isFixedTextPattern } from "@outfiqe/utils";
 import { type FormEvent, useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -16,6 +17,7 @@ import {
   MANUAL_ADAPTER_KEY,
   MAX_COD_REMITTANCE_DAYS,
   NO_WEBHOOKS,
+  REFERENCE_PATTERN_HINT,
   WEBHOOK_VERIFICATION_LABELS,
 } from "../constants/partnerLabels";
 import { useSaveDeliveryPartner } from "../hooks/useSaveDeliveryPartner";
@@ -30,6 +32,12 @@ type PartnerFormModalProps = { partner: DeliveryPartner | null; onClose: () => v
 const toOptionalText = (value: string) => {
   const trimmedValue = value.trim();
   return trimmedValue === "" ? null : trimmedValue;
+};
+
+const describeReferencePatternProblem = (referencePattern: string): string | null => {
+  const pattern = toOptionalText(referencePattern);
+  if (pattern === null || !isFixedTextPattern(pattern)) return null;
+  return describeFixedTextPatternProblem(pattern);
 };
 
 export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) => {
@@ -51,9 +59,11 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
     partner?.trackingUrlTemplate ?? "",
   );
   const fieldIdPrefix = useId();
+  const referencePatternProblem = describeReferencePatternProblem(referencePattern);
 
   const submitPartner = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (referencePatternProblem) return;
     savePartner.mutate(
       {
         code: code.trim(),
@@ -146,8 +156,20 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
             id={`${fieldIdPrefix}-pattern`}
             value={referencePattern}
             placeholder="e.g. PX-\d{5}"
+            aria-invalid={referencePatternProblem !== null}
+            aria-describedby={`${fieldIdPrefix}-pattern-hint`}
             onChange={(event) => setReferencePattern(event.target.value)}
           />
+          <p
+            id={`${fieldIdPrefix}-pattern-hint`}
+            className={
+              referencePatternProblem
+                ? "mt-1 text-sm text-destructive"
+                : "mt-1 text-xs text-muted-foreground"
+            }
+          >
+            {referencePatternProblem ?? REFERENCE_PATTERN_HINT}
+          </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -186,7 +208,11 @@ export const PartnerFormModal = ({ partner, onClose }: PartnerFormModalProps) =>
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" isLoading={savePartner.isPending}>
+          <Button
+            type="submit"
+            isLoading={savePartner.isPending}
+            disabled={referencePatternProblem !== null}
+          >
             Save partner
           </Button>
         </div>

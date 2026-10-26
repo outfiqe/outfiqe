@@ -10,6 +10,9 @@ import type { ShipmentStatusValue } from "../../hub-operations/api/hubOperations
 import { PARCEL_STATUS_LABELS, RETURN_OUTCOME_LABELS } from "../constants/parcelLabels";
 import { useParcel } from "../hooks/useParcel";
 import { describeParcelEventCode } from "../utils/parcelEvent.utils";
+import { isParcelWaitingForBooking } from "../utils/parcelNextStep.utils";
+import { ParcelBookingActions } from "./ParcelBookingActions";
+import { ParcelNextStep } from "./ParcelNextStep";
 import { RebookParcelModal } from "./RebookParcelModal";
 import { RecordParcelUpdateModal } from "./RecordParcelUpdateModal";
 import { ReturnCheckInModal } from "./ReturnCheckInModal";
@@ -88,6 +91,11 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
           {PARCEL_STATUS_LABELS[parcel.status]}
         </Badge>
       </div>
+
+      <ParcelNextStep parcel={parcel} />
+      {canManage && isParcelWaitingForBooking(parcel) && parcel.booking && (
+        <ParcelBookingActions shipmentId={shipmentId} booking={parcel.booking} />
+      )}
 
       <div className="flex flex-wrap gap-2">
         {isAtHub && (

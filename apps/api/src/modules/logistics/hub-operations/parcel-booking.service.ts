@@ -95,7 +95,7 @@ export const logisticsParcelBookingService = {
     if (!isReferenceAllowedByPattern(booking.partner.referencePattern, reference)) {
       throw new AppError(
         "PARTNER_REFERENCE_INVALID",
-        `That doesn't look like a ${booking.partner.name} parcel number. Check it and try again.`,
+        `That doesn't look like a ${booking.partner.name} parcel number. Their numbers look like ${booking.partner.referencePattern}. Check it and try again.`,
         HTTP_STATUS.UNPROCESSABLE_ENTITY,
       );
     }

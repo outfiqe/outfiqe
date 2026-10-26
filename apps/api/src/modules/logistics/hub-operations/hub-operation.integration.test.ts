@@ -415,6 +415,26 @@ describe("booking and handing over", () => {
     expect(bookedAgain.status).toBe(HTTP_STATUS.CONFLICT);
   });
 
+  it("won't hand over a booked parcel whose label was never printed", async () => {
+    const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 500, qty: 1 }],
+    });
+    await checkInEveryBag(staff.authHeader, hub.id, pickups);
+    await passEveryBag(staff.authHeader, pickups);
+    const { shipmentId, trackingCode } = (await pack(staff.authHeader, order.id)).body.data;
+    await book(staff.authHeader, shipmentId, "PX-77");
+
+    const notPrinted = await handOver(staff.authHeader, { hubId: hub.id, code: trackingCode });
+    await printLabel(staff.authHeader, shipmentId);
+    const handedOver = await handOver(staff.authHeader, { hubId: hub.id, code: trackingCode });
+
+    expect(notPrinted.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(notPrinted.body.code).toBe("LABEL_NOT_PRINTED");
+    expect(handedOver.body.data.status).toBe(ShipmentStatus.HANDED_TO_PARTNER);
+  });
+
   it("won't hand over a parcel that isn't booked or whose label shows old cash", async () => {
     const { order, hub, staff, pickups } = await createOrderOnItsWayToHub({
       paymentMethod: PaymentMethod.COD,

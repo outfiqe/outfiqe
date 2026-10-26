@@ -124,6 +124,7 @@ describe("delivery partner setup", () => {
 
     const unknownAdapter = await createPartner(staff.authHeader, { adapterKey: "NOPE" });
     const brokenPattern = await createPartner(staff.authHeader, { referencePattern: "PX-(" });
+    const fixedTextPattern = await createPartner(staff.authHeader, { referencePattern: "SANSAR-" });
     await createPartner(staff.authHeader, { code });
     const takenCode = await createPartner(staff.authHeader, { code });
     const partnerId = (await createPartner(staff.authHeader)).body.data.id;
@@ -134,6 +135,8 @@ describe("delivery partner setup", () => {
 
     expect(unknownAdapter.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
     expect(brokenPattern.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(fixedTextPattern.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(JSON.stringify(fixedTextPattern.body)).toContain("SANSAR-\\\\d+");
     expect(takenCode.status).toBe(HTTP_STATUS.CONFLICT);
     expect(zonesWithoutAccount.body.code).toBe("PARTNER_HAS_NO_ACCOUNT_AT_HUB");
   });
