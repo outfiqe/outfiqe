@@ -71,9 +71,13 @@ export const PartnerDetailPage = ({ partnerId }: PartnerDetailPageProps) => {
 
       {isConnectedPartner && <PartnerConnectionSection partner={partner} />}
       <PartnerAccountsSection partner={partner} hubs={hubs ?? []} canManage={canManage} />
-      <PartnerAreasSection key={partner.zones.length} partner={partner} canManage={canManage} />
+      <PartnerAreasSection
+        key={`areas-${partner.zones.length}`}
+        partner={partner}
+        canManage={canManage}
+      />
       <PartnerStatusNamesSection
-        key={partner.statusMappings.length}
+        key={`status-names-${partner.statusMappings.length}`}
         partner={partner}
         canManage={canManage}
       />
