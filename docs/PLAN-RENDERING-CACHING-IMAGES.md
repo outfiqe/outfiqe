@@ -138,7 +138,8 @@ just the `src/proxy.ts` move restores the current no-CSP behaviour and keeps the
 
 ### Follow-ups noted along the way
 
-- Raise the 120s catalog revalidate window once tag invalidation is trusted in production, or
-  leave it as the backstop.
+- The catalog revalidate window is now 300s (was 120s). Tag invalidation is live in production,
+  and the cached logged-out homepage (`app/(home)/guest-home`) rebuilds no more often than its
+  shortest fetch window. See `app/(home)/README.md`.
 - Restore the "/login when already signed in → dashboard" redirect against the live proxy if
   wanted (it is currently absent).
