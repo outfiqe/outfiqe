@@ -6,6 +6,7 @@ import type { z } from "zod";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
+import { REFRESH_COOKIE_NAME } from "../constants/sessionCookies";
 import type { TokenPurpose, UserSession } from "../types";
 import {
   type BrandInviteInfo,
@@ -21,8 +22,6 @@ type ValidateTokenResponse = z.infer<typeof validateTokenResponseSchema>;
 type SessionResponse = z.infer<typeof sessionResponseSchema>;
 
 export { getDefaultRouteForUser } from "../utils/getDefaultRoute";
-
-const REFRESH_COOKIE_NAME = "refresh_token";
 
 export type ServerSession = { user: UserSession; accessToken: string };
 

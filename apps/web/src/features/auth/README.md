@@ -30,6 +30,9 @@ Files:
 - `api/serverAuth.ts` — server-only session/token helpers used by server components and route
   handlers (e.g. `apps/web/src/features/brand-profile`'s SSR fetch).
 - `api/userSchemas.ts` — Zod schemas for the session/user shape returned by the API.
+- `constants/sessionCookies.ts` — `REFRESH_COOKIE_NAME`, the session cookie `serverAuth.ts` reads
+  and `proxy.ts` checks (through `landing`'s `shouldServeGuestHome`) to tell a signed-in visit to
+  `/` from one that can get the cached homepage.
 - `oauth/api/oauthApi.ts` + `oauth/api/oauthSchemas.ts` — the OAuth account-management client: URL builders for
   the full-page-navigation `start`/`link/start` redirects (`buildOAuthStartUrl`/
   `buildOAuthLinkStartUrl` — never `fetch` calls, since those endpoints are browser navigations),

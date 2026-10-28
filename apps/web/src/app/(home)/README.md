@@ -13,7 +13,12 @@ section only, while every other section — and the header, footer and nav — k
 - `layout.tsx` — the page shell. Renders `SiteHeader`, `<main>`, the static `BrandCallout`,
   `SiteFooter` and `MobileTabBar`, and drops each slot into `<main>` in visual order. It does no
   data fetching, so the shell paints immediately and each slot streams in on its own.
-- `page.tsx` — the `children` slot. Holds only the page `metadata`; renders nothing.
+- `page.tsx` — the `children` slot. Holds only the page `metadata` (from `homePageMetadata.ts`);
+  renders nothing.
+- `guest-home/page.tsx` — the same homepage, prerendered for visitors with nothing to personalise
+  (`dynamic = "force-static"`, `revalidate = 300`). `proxy.ts` rewrites those visits to it; the URL
+  stays `/`. It uses the same `homePageMetadata`, so its canonical URL is `/`.
+- `homePageMetadata.ts` — the title, description and canonical path both pages share.
 - `default.tsx` — `children` fallback for soft-navigation states; renders nothing.
 - `@hero`, `@trending`, `@sale`, `@collections`, `@creatorLooks`, `@newArrivals` — one slot per
   section. Each has `page.tsx` (renders the section component from `@/features/landing` or
@@ -47,12 +52,42 @@ section fills in as its data resolves. If one section errors, that section shows
 "… didn't load / try again" card and the rest of the page is unaffected; pressing "try again"
 re-renders just that slot.
 
-Technical: `layout.tsx` renders the shell and the seven slot props → each `@slot/page.tsx` renders
+Technical: `proxy.ts` asks `shouldServeGuestHome` (`@/features/landing`) whether the request is a
+plain `GET`/`HEAD` of `/` with no query string, no `refresh_token` cookie and no taste cookie. If so
+it rewrites to `/guest-home`, served from Vercel's cache with the static CSP; otherwise `/` renders
+live with the nonce CSP. Either way, `layout.tsx` renders the shell and the seven slot props
+(`/guest-home` matches no slot sub-route, so every slot renders its `default.tsx`, which is the
+same section) → each `@slot/page.tsx` renders
 its `@/features/*` section (an async server component that fetches directly, except `@taste`
 which prefetches into React Query and hydrates its client components) → Next.js wraps each slot
 in its own Suspense (`loading.tsx`) and error boundary (`error.tsx`).
 
 ## Non-obvious rationale
+
+- **Why a cached copy for visitors with nothing to personalise:** the live homepage renders on
+  every request (it reads cookies and carries a per-request CSP nonce), so anything that loads it
+  without cookies — crawlers, link previews, uptime checks, first-time visitors — paid for a full
+  server render each time. One uptime check hitting `/` once a minute used up the Vercel plan's
+  whole monthly Active CPU allowance. Those visitors all see the same page, so `/guest-home` is
+  rendered at most once per 5 minutes and served from the CDN in between. Anyone with a session or
+  a taste pick, or a `?category=`/`?type=` deep link, still gets the live, personalised render.
+- **Why `force-static` is safe here:** under `force-static`, Next makes `cookies()` and
+  `searchParams` return empty, so the slots render the anonymous view (`getServerAccessToken`
+  finds no session, the taste slot finds no cookie) and nothing per-user can end up in the cached
+  copy. Uncached product-rail fetches are refetched on each 5-minute rebuild instead of turning
+  the page dynamic.
+- **Why the cached copy uses the static CSP:** a cached page can't carry a per-request nonce. It
+  gets the same `'self' 'unsafe-inline'` policy as the other prerendered pages (`/cart`,
+  `/search`, …). React escapes the creator-look text the page shows, and signed-in visitors still
+  get the strict nonce policy.
+- **Freshness:** `revalidate = 300` matches `SHARED_CONTENT_REVALIDATE_SECONDS`. The page's
+  rebuild window is the shortest window of any cached fetch on it, so that constant has to stay
+  at or above it. Admin edits to categories, product types, hero slides and collections still show
+  at once through `/internal/revalidate`. Product rails (prices, stock) can be up to 5 minutes
+  old for logged-out visitors; the product page, cart and checkout always read live.
+- **The language still follows the visitor:** translations are chosen in the browser
+  (`ClientTranslationsProvider` reads `NEXT_LOCALE`), so a cached copy shows each visitor their
+  own language and the language cookie doesn't need to force a live render.
 
 - **Why parallel routes rather than a shared `<Suspense>` per section (the previous shape):**
   a `<Suspense>` boundary isolates _loading_ but not _errors_ — a throw inside a suspended
