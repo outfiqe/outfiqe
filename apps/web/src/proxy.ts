@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { GUEST_HOME_PATH } from "@/features/landing/constants/guestHome";
+import { shouldServeGuestHome } from "@/features/landing/utils/guestHomeRequest";
 import { getPublicApiOrigin } from "@/shared/lib/apiOrigin";
 import { buildContentSecurityPolicy } from "@/shared/lib/contentSecurityPolicy";
 
@@ -48,6 +50,7 @@ const needsDynamicPolicy = (pathname: string): boolean =>
   );
 
 export const proxy = (request: NextRequest) => {
+  const servesGuestHome = shouldServeGuestHome(request);
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
   const isProduction = process.env.NODE_ENV === "production";
@@ -57,14 +60,18 @@ export const proxy = (request: NextRequest) => {
     isDev,
     isProduction,
     apiOrigin,
-    renderMode: needsDynamicPolicy(request.nextUrl.pathname) ? "dynamic" : "static",
+    renderMode:
+      !servesGuestHome && needsDynamicPolicy(request.nextUrl.pathname) ? "dynamic" : "static",
   });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+  const forwardedRequest = { request: { headers: requestHeaders } };
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = servesGuestHome
+    ? NextResponse.rewrite(new URL(GUEST_HOME_PATH, request.url), forwardedRequest)
+    : NextResponse.next(forwardedRequest);
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
   return response;
@@ -73,7 +80,7 @@ export const proxy = (request: NextRequest) => {
 export const config = {
   matcher: [
     {
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      source: "/((?!api|_next/static|_next/image|favicon.ico|healthz).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

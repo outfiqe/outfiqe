@@ -18,6 +18,10 @@ The sections of the public homepage (`/`): the hero carousel, the taste picker a
 - `context/CategorySelectionContext.tsx` — the picked taste categories, shared by `TasteCategories` and `CategoryResults`.
 - `utils/resolveTasteCategories.ts` — `resolveDisplayCategories` and `resolveActiveCategorySlug`, used on the server and in the browser so both pick the same categories.
 - `utils/scrollToTasteResults.ts` — scrolls the results into view after a pick.
+- `utils/guestHomeRequest.ts` — `shouldServeGuestHome`, the check `proxy.ts` uses to send a visit
+  to `/` with nothing to personalise (no session or taste cookie, no query string) to the cached
+  homepage. Why that copy exists is in `app/(home)/README.md`.
+- `constants/guestHome.ts` — `HOME_PATH` and `GUEST_HOME_PATH`, the path the proxy rewrites to.
 - `api/getHeroSlidesServer.ts`, `api/heroSlideSchemas.ts` — the hero slides fetch.
 - `index.ts` — what the home route's slots import.
 
