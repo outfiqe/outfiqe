@@ -123,7 +123,10 @@ export type AnalyticsEventProperties = {
     is_buy_now: boolean;
     has_coupon: boolean;
   };
-  [ANALYTICS_EVENTS.PAYMENT_FAIL]: { payment_method: AnalyticsPaymentMethod | null };
+  [ANALYTICS_EVENTS.PAYMENT_FAIL]: {
+    order_id: string;
+    payment_method: AnalyticsPaymentMethod | null;
+  };
   [ANALYTICS_EVENTS.SEARCH_QUERY_SUBMIT]: {
     search_scope: AnalyticsSearchScope;
     search_query: string;

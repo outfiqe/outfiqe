@@ -18,6 +18,7 @@ import {
 } from "@outfiqe/design-system";
 import { useForm } from "react-hook-form";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { useNepalBanks } from "@/features/nepal-banks";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -70,7 +71,7 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
   return (
     <Modal open onClose={onClose} title="Add bank account" ariaLabel="Add bank account">
       <Form {...form}>
-        <form onSubmit={onSubmit} noValidate>
+        <form onSubmit={onSubmit} noValidate className={PRIVATE_ANALYTICS_CLASS_NAME}>
           {addBankAccount.isError && (
             <FormBanner className="mb-4">{getErrorMessage(addBankAccount.error)}</FormBanner>
           )}

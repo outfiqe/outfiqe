@@ -3,6 +3,7 @@
 import { Badge, Button, Modal, toast } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { Address } from "../api/addressSchemas";
@@ -40,7 +41,7 @@ export const AddressCard = ({ address }: AddressCardProps) => {
   };
 
   return (
-    <div className="rounded-2xl border border-border p-4">
+    <div className={`${PRIVATE_ANALYTICS_CLASS_NAME} rounded-2xl border border-border p-4`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

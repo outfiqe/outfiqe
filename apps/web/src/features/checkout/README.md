@@ -8,6 +8,16 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 
 - `components/CheckoutBody.tsx` — the page's top-level gate: resolves auth, bounces `BRAND_OWNER`/`ADMIN` accounts to `<NotAShopperNotice>` (checkout is `CUSTOMER`-only — the server gate is in `apps/api/src/modules/orders`), loads the cart (or a Buy Now payload), and picks which state to render.
 - `components/CheckoutForm.tsx` / `CheckoutAddressFields.tsx` / `CheckoutSummary.tsx` / `PaymentMethodField.tsx` — the address + payment form (its name/phone/address/city/landmark fields are `CheckoutAddressFields`, shown for a new address or while editing a saved one) and its order-summary sidebar. `CheckoutForm` owns delivery-zone resolution: it watches the form's live `city` field and resolves it against `zones` (via `resolveZonePreview`) on every keystroke, so `CheckoutSummary` always renders the fee for the zone matching what's actually typed, not a stale value computed once at page load. `CheckoutSummary` takes an explicit `deliveryFee` prop for this reason (it never reads `cart.deliveryFee` for display) and an optional `couponSlot` node, rendered where the cart path's read-only applied-coupon line would go — Buy Now is the only current user of it (see below).
+- `hooks/useCheckoutAnalytics.ts` — the checkout's analytics events (see `features/analytics`).
+  - `checkout:checkout_start` fires once when the form opens.
+  - `checkout:payment_method_select` fires when the shopper picks a method. The automatic switch
+    away from COD when it isn't available doesn't count as a choice.
+  - `checkout:order_submit` fires when Place order is pressed, before the request. The server's
+    own `checkout:order_place` confirms the order exists, so the gap between the two shows orders
+    lost after the button press.
+
+  `CheckoutForm` calls the functions it returns.
+
 - `components/BuyNowCouponForm.tsx` — the coupon apply/remove UI for the Buy Now path, since it has no cart page to have applied one on beforehand.
 - `api/checkoutApi.ts` / `checkoutSchemas.ts` — `POST /orders/checkout` and its request/response shapes, plus `previewBuyNowCoupon` (`POST /coupons/preview-buy-now`).
 - `hooks/useCheckout.ts` — the submit mutation.

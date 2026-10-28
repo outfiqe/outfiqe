@@ -331,6 +331,9 @@ as usual.
 - **Accept all:** `opt_in_capturing()`, giving full analytics and, if session replay is on, a
   chance of a masked recording.
 - **Essential only:** cookieless, anonymous counts only. No person profile, no recording.
+- **Before any choice:** treated like "Essential only" (`cookieless_mode: "on_reject"`), so
+  visits are still counted but nobody is profiled or recorded.
 - Shown once and remembered. A "Cookie settings" link in the footer reopens it.
-- The text lives in the i18n messages (`en.json`, `ne.json`). A native speaker should check the
-  Nepali, and the lawyer's version replaces both later.
+- The text lives in `apps/web/src/features/analytics/constants/cookieConsent.constants.ts`, in
+  English like the rest of the footer and site chrome. The lawyer's version replaces it later.
+  A Nepali version can be added if the site's shell is ever translated.

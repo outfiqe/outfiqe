@@ -5,6 +5,7 @@ import { Ban, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { cn } from "@/shared/lib/cn";
 
 import {
@@ -164,7 +165,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         </div>
         <div className="flex justify-between py-1.5 text-sm text-muted-foreground">
           <span>Delivering to</span>
-          <span className="text-right">
+          <span className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "text-right")}>
             {address}, {city}
           </span>
         </div>
