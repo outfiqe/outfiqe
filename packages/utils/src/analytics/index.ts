@@ -79,20 +79,16 @@ export type AnalyticsEventProperties = {
     order_id: string;
     order_status: AnalyticsTrackedOrderStatus;
   };
-  [ANALYTICS_EVENTS.ORDER_REFUND_ISSUE]: {
-    order_id: string;
-    refund_amount_npr: number;
-    refund_outcome: string;
-  };
+  [ANALYTICS_EVENTS.ORDER_REFUND_ISSUE]: { order_id: string; refund_amount_npr: number };
   [ANALYTICS_EVENTS.COMMISSION_EARN]: { order_item_id: string; commission_amount_npr: number };
   [ANALYTICS_EVENTS.CREATOR_FOLLOW]: { creator_id: string };
   [ANALYTICS_EVENTS.BRAND_FOLLOW]: { brand_id: string };
   [ANALYTICS_EVENTS.CREATOR_LINK_CLICK]: {
     creator_id: string;
-    product_id: string;
+    product_id: string | null;
     link_type: AnalyticsCreatorLinkType;
   };
-  [ANALYTICS_EVENTS.SUPPORT_TICKET_CREATE]: { ticket_id: string };
+  [ANALYTICS_EVENTS.SUPPORT_TICKET_CREATE]: { ticket_id: string; ticket_category: string };
   [ANALYTICS_EVENTS.LOOK_DETAIL_VIEW]: { look_id: string; creator_id: string };
   [ANALYTICS_EVENTS.LOOK_PRODUCT_TAG_CLICK]: {
     look_id: string;

@@ -30,6 +30,7 @@ import { registerOutfitSocketHandlers } from "#modules/outfits/outfit.socket.js"
 import { registerOutfitStockHandlers } from "#modules/outfits/stock/stock.events.js";
 import { registerSuspensionNotificationEventConsumers } from "#modules/platform-suspensions/platform-suspensions.events.js";
 import { registerSuspensionSocketEventConsumer } from "#modules/platform-suspensions/platform-suspensions.socket.js";
+import { registerProductAnalyticsEventConsumers } from "#modules/product-analytics/product-analytics.events.js";
 import { registerPushEventConsumer } from "#modules/push/push.events.js";
 import { registerTagReportEventConsumers } from "#modules/tag-reports/tag-report.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
@@ -69,4 +70,5 @@ export const registerBackgroundConsumers = (): void => {
   registerOutfitStockHandlers();
   registerOutfitOfferNotificationHandlers();
   registerLogisticsOutboxHandlers();
+  registerProductAnalyticsEventConsumers();
 };

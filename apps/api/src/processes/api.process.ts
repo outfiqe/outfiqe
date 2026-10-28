@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
+import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import { REALTIME_OUTBOX_QUEUE_NAMES } from "#outbox/outbox.constants.js";
 import { closeOutboxQueues } from "#outbox/outbox.queues.js";
 import { startOutboxWorkers, stopOutboxWorkers } from "#outbox/outbox.workers.js";
@@ -37,6 +38,7 @@ export const startApiProcess = async (): Promise<void> => {
     { name: "domain-event-consumers", run: stopDomainEventConsumers },
     { name: "outbox-workers", run: stopOutboxWorkers },
     { name: "outbox-queues", run: closeOutboxQueues },
+    { name: "product-analytics", run: productAnalyticsService.flushPendingEvents },
     { name: "db", run: disconnectDb },
     { name: "redis", run: disconnectRedis },
   ]);

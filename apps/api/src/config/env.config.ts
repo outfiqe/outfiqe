@@ -71,6 +71,8 @@ const envSchema = z
     VAPID_PUBLIC_KEY: z.string().min(1).optional(),
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
     VAPID_SUBJECT: z.string().min(1).optional(),
+    POSTHOG_PROJECT_TOKEN: z.string().min(1).optional(),
+    POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
   })
   .refine(
     ({ ADMIN_URL, TENANT_BASE_DOMAIN }) =>

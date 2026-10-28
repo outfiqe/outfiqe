@@ -99,6 +99,7 @@ const resolveSignInIdentity = async (
     userId: newUser.id,
     email: newUser.email,
     role: newUser.role,
+    signupMethod: "oauth",
   });
 
   const tokens = await issueTokens(newUser);
