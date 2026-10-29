@@ -11,7 +11,8 @@ type CartSummaryProps = {
 };
 
 export const CartSummary = ({ cart }: CartSummaryProps) => {
-  const { subtotal, deliveryFee, platformDiscountTotal, total, city, appliedCoupon } = cart;
+  const { items, subtotal, deliveryFee, platformDiscountTotal, total, city, appliedCoupon } = cart;
+  const hasUnavailableItems = items.some((cartItem) => cartItem.soldOut);
 
   return (
     <div className="rounded-2xl border border-border p-5">
@@ -42,9 +43,20 @@ export const CartSummary = ({ cart }: CartSummaryProps) => {
         <span>Rs. {total.toLocaleString()}</span>
       </div>
 
-      <Button asChild className="mt-4 w-full">
-        <Link href="/checkout">Checkout</Link>
-      </Button>
+      {hasUnavailableItems ? (
+        <>
+          <Button disabled className="mt-4 w-full">
+            Checkout
+          </Button>
+          <p role="status" className="mt-2 text-center text-xs text-destructive">
+            Remove the unavailable items from your bag to check out.
+          </p>
+        </>
+      ) : (
+        <Button asChild className="mt-4 w-full">
+          <Link href="/checkout">Checkout</Link>
+        </Button>
+      )}
     </div>
   );
 };

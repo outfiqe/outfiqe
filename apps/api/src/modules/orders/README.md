@@ -140,6 +140,10 @@ already-placed checkout is never retroactively affected — proven directly
 
 Checkout generates the order id before its transaction starts, so the stock decrement it makes can be written to the inventory ledger against that order in the same transaction (`../products/README.md`, "Inventory ledger"). Payment settlement and cancellation record their stock changes against the same order id.
 
+## Cart lines are re-checked for sellability at checkout
+
+`loadCartLines` (`checkout/checkout.lines.ts`) refuses the whole checkout with `ITEMS_UNAVAILABLE` (409, listing the offending `sizeIds`) when any cart row points at a product that is no longer `APPROVED`, is soft-deleted, or has a size belonging to a different product. A cart row is only a reference, so a brand can unpublish or delete a product after a shopper bagged it; Buy Now already guarded this, the cart path did not. The stock check alone cannot catch it, since `getStockBySizeIds` ignores product state.
+
 ## Buy Now — a second, cart-bypassing line-item source
 
 `checkoutBodySchema.buyNow` (`{ productId, sizeId, qty }`) lets the web app check out a single item without ever writing to `Cart`/`CartItem`. `checkoutOnce` branches before building `lines`: with `buyNow`, it independently re-fetches the product (must be `APPROVED`) and confirms the size actually belongs to it — the client-sent `productId`/`sizeId` are never trusted for price, same rule the cart path already follows — instead of reading `cartRepository.listItems`. Everything downstream (stock validation, the `$transaction`, `decrementStockForItems`, attribution, commission, idempotency) is unchanged, since it already operated on a generic `lines` array; only the cart-empty check and the final `clearCart` are skipped when `buyNow` is set, since there's nothing to clear.

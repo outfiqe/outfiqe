@@ -31,6 +31,7 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
     qty,
     availableStock,
     soldOut,
+    unavailable,
     lowStock,
   } = item;
 
@@ -66,7 +67,9 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
 
         {soldOut ? (
           <p className="mt-2 text-xs font-medium text-destructive">
-            This size sold out while it was in your bag.
+            {unavailable
+              ? "This item is no longer available. Remove it to continue."
+              : "This size sold out while it was in your bag."}
           </p>
         ) : (
           <>
