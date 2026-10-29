@@ -39,3 +39,8 @@ export const decodeCursor = <T>(cursor?: string): T | undefined => {
     return undefined;
   }
 };
+
+export const isOpaqueCursor = (cursor: string): boolean => {
+  const decodedCursor = decodeCursor<unknown>(cursor);
+  return typeof decodedCursor === "object" && decodedCursor !== null;
+};

@@ -53,3 +53,15 @@ actually passes.
   active discount exists for the product, not from comparing `unitPrice` to `listUnitPrice`** — both
   end up equivalent in practice, but checking the discount lookup directly is what `orders`' checkout
   does too, so both paths can never disagree about which lines count as "already discounted."
+- **A size must belong to the product it is added under.** `addItem` rejects a mismatched
+  `productId`/`sizeId` pair with 404, and `addItems` (used by the outfits bulk add) silently skips
+  such lines, the same way it already skips sizes that no longer exist. The cart row stores both
+  ids independently, so nothing at the database level stops a mismatch: `orders` checkout prices a
+  cart line from the product but decrements stock on the size, so `loadCartLines` re-checks the
+  pairing and answers `ITEMS_UNAVAILABLE` for rows that predate this validation.
+- **A bagged product that was withdrawn is shown as sold out.** `isCartRowSellable`
+  (`cart.utils.ts`) is false for a product that is no longer `APPROVED`, is soft-deleted, or does
+  not own the row's size. `buildCartLines` then reports such a row with `availableStock: 0` and
+  `soldOut: true`, so the existing sold-out treatment applies: it is left out of the subtotal, the
+  item count and coupon eligibility, and the shopper sees the same state as any unavailable item.
+  `orders` checkout uses the same predicate to refuse the purchase.

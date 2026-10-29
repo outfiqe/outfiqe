@@ -297,3 +297,5 @@ listings, marked `isSoldOut`, for their own record-keeping.
 **Naming note:** this is unrelated to the platform's gamification `Badge`/`UserBadge` system
 (`../badges`). Don't call the Thrift indicator a "badge" in code or conversation — it's a plain
 product attribute, never an earned collectible.
+
+**`cursor` on `GET /products` is opaque but not unchecked.** `publicProductsCursorSchema` accepts either a UUID (the `id`-keyset branches) or text that `isOpaqueCursor` can decode to an object (the trending snapshot and search offset branches), capped at `PUBLIC_PRODUCTS_CURSOR_MAX_LENGTH`. Anything else is a 422 `VALIDATION_ERROR`. Before this, `decodeCursor` swallowed bad input and every branch quietly fell back to page one, so a stale or tampered cursor looked like a successful first page.

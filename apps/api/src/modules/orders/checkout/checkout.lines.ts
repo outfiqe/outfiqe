@@ -2,11 +2,18 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
+import { isCartRowSellable } from "#modules/cart/cart.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import type { CheckoutBody } from "../order.schemas.js";
 import { CART_EMPTY_STATUS, ITEMS_UNAVAILABLE_STATUS } from "./checkout.constants.js";
 import type { CheckoutLine } from "./checkout.types.js";
+
+const BUY_NOW_ITEMS_UNAVAILABLE_MESSAGE = "This item is no longer available.";
+const CART_ITEMS_UNAVAILABLE_MESSAGE = "Some items in your bag are no longer available.";
+
+const buildItemsUnavailableError = (message: string, sizeIds: string[]): AppError =>
+  new AppError("ITEMS_UNAVAILABLE", message, ITEMS_UNAVAILABLE_STATUS, { sizeIds });
 
 const loadBuyNowLine = async (
   buyNow: NonNullable<CheckoutBody["buyNow"]>,
@@ -37,6 +44,12 @@ const loadCartLines = async (cartId: string): Promise<CheckoutLine[]> => {
   if (cartRows.length === 0) {
     throw new AppError("CART_EMPTY", "Your bag is empty.", CART_EMPTY_STATUS);
   }
+  const unsellableSizeIds = cartRows
+    .filter((cartRow) => !isCartRowSellable(cartRow))
+    .map(({ sizeId }) => sizeId);
+  if (unsellableSizeIds.length > 0) {
+    throw buildItemsUnavailableError(CART_ITEMS_UNAVAILABLE_MESSAGE, unsellableSizeIds);
+  }
   return cartRows.map(({ productId, sizeId, qty, product }) => ({
     productId,
     sizeId,
@@ -58,13 +71,9 @@ export const assertCheckoutLinesInStock = async (
   const stockBySizeId = await productRepository.getStockBySizeIds(lines.map((line) => line.sizeId));
   const unavailable = lines.filter((line) => (stockBySizeId.get(line.sizeId) ?? 0) < line.qty);
   if (unavailable.length > 0) {
-    throw new AppError(
-      "ITEMS_UNAVAILABLE",
-      isBuyNow
-        ? "This item is no longer available."
-        : "Some items in your bag are no longer available.",
-      ITEMS_UNAVAILABLE_STATUS,
-      { sizeIds: unavailable.map((line) => line.sizeId) },
+    throw buildItemsUnavailableError(
+      isBuyNow ? BUY_NOW_ITEMS_UNAVAILABLE_MESSAGE : CART_ITEMS_UNAVAILABLE_MESSAGE,
+      unavailable.map((line) => line.sizeId),
     );
   }
 };

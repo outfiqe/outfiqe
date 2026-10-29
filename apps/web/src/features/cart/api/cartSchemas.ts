@@ -14,6 +14,7 @@ export const cartItemSchema = z.object({
   qty: z.number(),
   availableStock: z.number(),
   soldOut: z.boolean(),
+  unavailable: z.boolean(),
   lowStock: z.boolean(),
 });
 export type CartItem = z.infer<typeof cartItemSchema>;

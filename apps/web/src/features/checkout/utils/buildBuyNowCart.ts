@@ -26,6 +26,7 @@ export const buildBuyNowCart = (
         qty: payload.qty,
         availableStock: payload.qty,
         soldOut: false,
+        unavailable: false,
         lowStock: false,
       },
     ],

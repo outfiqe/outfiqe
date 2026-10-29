@@ -11,6 +11,7 @@ import { z } from "zod";
 
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { DiscountType, ProductStatus, ThriftCondition } from "#generated/prisma/enums.js";
+import { isOpaqueCursor } from "#lib/pagination.utils.js";
 import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
 
 const NAME_MIN = 2;
@@ -223,6 +224,8 @@ export const updateProductDiscountSchema = z
     message: "Provide either percentBasisPoints or fixedAmount, not both.",
   });
 
+const PUBLIC_PRODUCTS_CURSOR_MAX_LENGTH = 512;
+
 const booleanFilterSchema = z
   .enum(["true", "false"])
   .transform((value) => value === "true")
@@ -239,6 +242,15 @@ export const autocompleteQuerySchema = z.object({
   q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH),
 });
 
+const publicProductsCursorSchema = z
+  .string()
+  .min(1)
+  .max(PUBLIC_PRODUCTS_CURSOR_MAX_LENGTH)
+  .refine(
+    (cursor) => z.uuid().safeParse(cursor).success || isOpaqueCursor(cursor),
+    "Invalid cursor",
+  );
+
 export const listPublicProductsQuerySchema = z.object({
   category: categorySlugFieldSchema.optional(),
   type: productTypeSlugSchema.optional(),
@@ -248,7 +260,7 @@ export const listPublicProductsQuerySchema = z.object({
   maxPrice: z.coerce.number().int().min(FILTER_PRICE_MIN).max(PRICE_MAX).optional(),
   inStock: booleanFilterSchema,
   thrift: booleanFilterSchema,
-  cursor: z.string().min(1).optional(),
+  cursor: publicProductsCursorSchema.optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 

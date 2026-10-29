@@ -72,10 +72,12 @@ export const cartRepository = {
             price: true,
             imageUrl: true,
             brandId: true,
+            status: true,
+            deletedAt: true,
             brand: { select: { name: true } },
           },
         },
-        size: { select: { label: true } },
+        size: { select: { label: true, productId: true } },
       },
     });
   },
