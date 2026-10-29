@@ -79,4 +79,33 @@ describe("errorHandler", () => {
     expect(status).toBe(500);
     expect(body.code).toBe("INTERNAL_ERROR");
   });
+
+  it("answers a malformed JSON body with a 400 instead of a 500", async () => {
+    const app = express();
+    app.use(express.json());
+    app.post("/", (_req, res) => res.sendStatus(204));
+    app.use(errorHandler);
+
+    const { status, body } = await request(app)
+      .post("/")
+      .set("Content-Type", "application/json")
+      .send("{not json");
+
+    expect(status).toBe(400);
+    expect(body).toMatchObject({ code: "INVALID_JSON", success: false });
+  });
+
+  it("answers an oversized JSON body with a 413 instead of a 500", async () => {
+    const app = express();
+    app.use(express.json({ limit: "1kb" }));
+    app.post("/", (_req, res) => res.sendStatus(204));
+    app.use(errorHandler);
+
+    const { status, body } = await request(app)
+      .post("/")
+      .send({ padding: "x".repeat(5000) });
+
+    expect(status).toBe(413);
+    expect(body).toMatchObject({ code: "PAYLOAD_TOO_LARGE", success: false });
+  });
 });
