@@ -111,7 +111,7 @@ export const orderRepository = {
         paymentMethod: true,
         paymentStatus: true,
         fulfilmentStatus: true,
-        items: { select: { sizeId: true, qty: true } },
+        items: { select: { sizeId: true, qty: true, refundedQty: true } },
         fulfilmentGroups: {
           where: { fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS },
           take: ANY_HUB_GROUP,

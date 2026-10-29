@@ -32,6 +32,14 @@ const shareForUnits = (
 
 export const remainingUnits = ({ qty, refundedQty }: ItemUnits): number => qty - refundedQty;
 
+export const listUnrefundedStockLines = (
+  items: (ItemUnits & { sizeId: string })[],
+): { sizeId: string; qty: number }[] =>
+  items.flatMap((item) => {
+    const unrefundedQty = remainingUnits(item);
+    return unrefundedQty > NO_UNITS ? [{ sizeId: item.sizeId, qty: unrefundedQty }] : [];
+  });
+
 export const remainingNetAmount = (item: ItemAmounts & ItemUnits): number => {
   const netAmount = lineNetAmount(item);
   return netAmount - proportionalShare(netAmount, item.refundedQty, item.qty);

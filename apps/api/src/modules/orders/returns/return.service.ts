@@ -26,6 +26,7 @@ import {
 } from "../refunds/refund.constants.js";
 import { type AppliedRefund, orderRefundEngine } from "../refunds/refund.engine.js";
 import { REFUND_SETTLEMENT, type RefundSettlement } from "../refunds/refund.payment.js";
+import { listUnrefundedStockLines } from "../refunds/refund.pricing.js";
 import { orderRefundRepository } from "../refunds/refund.repository.js";
 
 const RETURNABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
@@ -105,7 +106,7 @@ export const orderReturnService = {
       if (!isMarked) return null;
 
       await orderFulfilmentGroupRepository.returnFulfilmentGroupsForOrder(tx, orderId, returnedAt);
-      await productService.restoreStockForItems(tx, order.items, {
+      await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
         kind: InventoryMovementKind.ORDER_RESTORE,
         sourceType: InventoryMovementSource.ORDER,
         sourceId: orderId,
