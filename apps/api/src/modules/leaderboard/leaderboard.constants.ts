@@ -1,3 +1,5 @@
+import { millisecondsInMinute } from "date-fns/constants";
+
 import {
   LEADERBOARD_CATEGORY,
   type LeaderboardCategory,
@@ -5,9 +7,9 @@ import {
 
 export const LEADERBOARD_TOP_N = 10;
 
-export const MOST_PURCHASED_RECOMPUTE_INTERVAL_MS = 15 * 60 * 1000;
-export const TRENDING_RECOMPUTE_INTERVAL_MS = 30 * 60 * 1000;
-export const FASTEST_GROWING_RECOMPUTE_INTERVAL_MS = 15 * 60 * 1000;
+export const MOST_PURCHASED_RECOMPUTE_INTERVAL_MS = 15 * millisecondsInMinute;
+export const TRENDING_RECOMPUTE_INTERVAL_MS = 30 * millisecondsInMinute;
+export const FASTEST_GROWING_RECOMPUTE_INTERVAL_MS = 15 * millisecondsInMinute;
 
 export const LEADERBOARD_KEY_RETENTION_SECONDS = 14 * 24 * 60 * 60;
 

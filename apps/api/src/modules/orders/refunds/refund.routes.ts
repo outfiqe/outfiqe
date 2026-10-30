@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -21,18 +22,17 @@ import {
 import { orderRefundDestinationController } from "./refund-destination.controller.js";
 import { refundDestinationBodySchema } from "./refund-destination.schemas.js";
 
-const ONE_MINUTE_MS = 60 * 1000;
 const STAFF_REFUND_WRITES_PER_MINUTE = 30;
 
 const staffRefundWriteRateLimit = rateLimit({
   namespace: "order-refund-staff-write",
-  windowMs: ONE_MINUTE_MS,
+  windowMs: millisecondsInMinute,
   max: STAFF_REFUND_WRITES_PER_MINUTE,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many refund changes in a short time. Please wait a moment and try again.",
 });
 
-const ONE_HOUR_MS = 60 * ONE_MINUTE_MS;
+const ONE_HOUR_MS = 60 * millisecondsInMinute;
 const CUSTOMER_REFUND_DETAIL_SAVES_PER_HOUR = 10;
 
 const customerRefundDetailsRateLimit = rateLimit({

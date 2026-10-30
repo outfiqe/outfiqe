@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import express, { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -13,13 +14,12 @@ import {
   replayWebhookReceiptsSchema,
 } from "./partner-webhook.schemas.js";
 
-const ONE_MINUTE_MS = 60 * 1000;
 const WEBHOOKS_PER_MINUTE_PER_SENDER = 300;
 const MAX_WEBHOOK_BODY_SIZE = "256kb";
 
 const partnerWebhookRateLimit = rateLimit({
   namespace: "logistics-partner-webhook",
-  windowMs: ONE_MINUTE_MS,
+  windowMs: millisecondsInMinute,
   max: WEBHOOKS_PER_MINUTE_PER_SENDER,
   keyGenerator: (req) => `${req.params.partnerCode ?? "unknown"}:${req.ip ?? "unknown"}`,
   message: "Too many updates in a short time.",
