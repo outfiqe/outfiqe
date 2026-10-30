@@ -80,6 +80,8 @@ const parseJsonBody = (rawBody: Buffer): unknown => {
   }
 };
 
+const UNSUPPORTED_VERIFICATION_IS_VALID = false;
+
 export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => {
   const { apiKey, baseUrl, webhookSecret, previousWebhookSecret } = readDeliveryPartnerCredentials(
     account.credentialsKey,
@@ -188,7 +190,7 @@ export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => 
           webhookSecrets,
         );
       }
-      return false;
+      return UNSUPPORTED_VERIFICATION_IS_VALID;
     },
 
     parseWebhook(rawBody: Buffer): PartnerTrackingEvent[] {

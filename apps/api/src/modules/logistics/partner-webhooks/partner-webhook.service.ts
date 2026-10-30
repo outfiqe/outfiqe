@@ -49,16 +49,21 @@ const partnerNotListeningError = () =>
 const adaptersFor = (partner: PartnerForWebhook) =>
   partner.accounts.map((account) => logisticsPartnerAdapters.forAccount(partner, account));
 
+const NOT_VERIFIED_BY_ADAPTER = false;
+
 const isGenuineWebhook = (
   partner: PartnerForWebhook,
   headers: Record<string, string>,
   rawBody: Buffer,
 ): boolean => {
-  if (partner.webhookVerification === PartnerWebhookVerification.NOTIFY_THEN_FETCH) return true;
   const { webhookVerification } = partner;
-  if (!TRUSTED_VERIFICATIONS.has(webhookVerification)) return false;
-  return adaptersFor(partner).some(
-    (adapter) => adapter.verifyWebhook?.(headers, rawBody, webhookVerification) ?? false,
+  return (
+    webhookVerification === PartnerWebhookVerification.NOTIFY_THEN_FETCH ||
+    (TRUSTED_VERIFICATIONS.has(webhookVerification) &&
+      adaptersFor(partner).some(
+        (adapter) =>
+          adapter.verifyWebhook?.(headers, rawBody, webhookVerification) ?? NOT_VERIFIED_BY_ADAPTER,
+      ))
   );
 };
 

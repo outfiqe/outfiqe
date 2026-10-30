@@ -25,12 +25,14 @@ const partnerWebhookRateLimit = rateLimit({
   message: "Too many updates in a short time.",
 });
 
+const ACCEPT_EVERY_CONTENT_TYPE = true;
+
 export const partnerWebhookRoutes = Router();
 
 partnerWebhookRoutes.post(
   "/:partnerCode",
   partnerWebhookRateLimit,
-  express.raw({ type: () => true, limit: MAX_WEBHOOK_BODY_SIZE }),
+  express.raw({ type: () => ACCEPT_EVERY_CONTENT_TYPE, limit: MAX_WEBHOOK_BODY_SIZE }),
   validate({ params: partnerWebhookParamSchema }),
   logisticsPartnerWebhookController.receive,
 );
