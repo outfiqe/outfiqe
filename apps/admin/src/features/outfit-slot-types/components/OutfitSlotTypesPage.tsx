@@ -1,6 +1,6 @@
 import { Badge, Button, cn, OutfitSlotIcon, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical, Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -9,6 +9,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { productTypesApi } from "@/features/product-types/api/productTypesApi";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { useOptimisticReorder } from "@/lib/useOptimisticReorder";
 
 import { outfitSlotTypesApi } from "../api/outfitSlotTypesApi";
 import type { OutfitSlotType } from "../api/outfitSlotTypesSchemas";
@@ -41,7 +42,6 @@ const describeBlocks = ({ blocksSlotTypes, blockedBySlotTypes }: OutfitSlotType)
 };
 
 export const OutfitSlotTypesPage = () => {
-  const queryClient = useQueryClient();
   const { canUse } = usePlatformPermissions();
   const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const [openForm, setOpenForm] = useState<OpenForm | null>(null);
@@ -67,29 +67,10 @@ export const OutfitSlotTypesPage = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reorder = useMutation({
-    mutationFn: (orderedIds: string[]) => outfitSlotTypesApi.reorder(orderedIds),
-    onMutate: async (orderedIds) => {
-      await queryClient.cancelQueries({ queryKey: OUTFIT_SLOT_TYPES_QUERY_KEY });
-      const previous = queryClient.getQueryData<OutfitSlotType[]>(OUTFIT_SLOT_TYPES_QUERY_KEY);
-      if (previous) {
-        const slotTypesById = new Map(previous.map((slotType) => [slotType.id, slotType]));
-        queryClient.setQueryData(
-          OUTFIT_SLOT_TYPES_QUERY_KEY,
-          orderedIds
-            .map((id) => slotTypesById.get(id))
-            .filter((slotType): slotType is OutfitSlotType => !!slotType),
-        );
-      }
-      return { previous };
-    },
-    onError: (mutationError, _orderedIds, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(OUTFIT_SLOT_TYPES_QUERY_KEY, context.previous);
-      }
-      toast.error(getErrorMessage(mutationError));
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: OUTFIT_SLOT_TYPES_QUERY_KEY }),
+  const reorder = useOptimisticReorder<OutfitSlotType>({
+    queryKey: OUTFIT_SLOT_TYPES_QUERY_KEY,
+    reorderIds: (orderedIds) => outfitSlotTypesApi.reorder(orderedIds),
+    onReorderError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({

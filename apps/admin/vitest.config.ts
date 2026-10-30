@@ -84,6 +84,8 @@ export default defineConfig({
         "src/components/page-skeletons/**",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",
+        "src/components/adminNavSections.ts",
+        "src/lib/useOptimisticReorder.ts",
         "src/components/adminLanding.ts",
         "src/lib/platformPermissions.ts",
         "src/components/AdminModuleSearch.tsx",

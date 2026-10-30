@@ -16,7 +16,7 @@ import {
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { PUBLISH_STATUS } from "@outfiqe/types";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { slugify } from "@/lib/slugify";
+import { useOptimisticReorder } from "@/lib/useOptimisticReorder";
 
 import { categoriesApi } from "../api/categoriesApi";
 import type { Category, CategoryStatusValue } from "../api/categoriesSchemas";
@@ -37,17 +38,18 @@ import {
   EMPTY_CATEGORY_FORM,
 } from "../schemas/categoryForm.schema";
 
+const CATEGORIES_QUERY_KEY = ["admin-categories"];
+
 const STATUS_TONE: Record<CategoryStatusValue, "neutral" | "positive"> = {
   DRAFT: "neutral",
   PUBLISHED: "positive",
 };
 
 export const CategoriesPage = () => {
-  const queryClient = useQueryClient();
   const { canUse } = usePlatformPermissions();
   const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const { data: categories, isLoading } = useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: CATEGORIES_QUERY_KEY,
     queryFn: categoriesApi.list,
   });
   const { data: popularity } = useQuery({
@@ -62,8 +64,6 @@ export const CategoriesPage = () => {
     mode: FORM_VALIDATION_MODE,
   });
   const [slugTouched, setSlugTouched] = useState(false);
-
-  const CATEGORIES_QUERY_KEY = ["admin-categories"];
 
   const create = useApiMutation({
     mutationFn: (values: CategoryFormValues) =>
@@ -104,26 +104,9 @@ export const CategoriesPage = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reorder = useMutation({
-    mutationFn: (orderedIds: string[]) => categoriesApi.reorder(orderedIds),
-    onMutate: async (orderedIds) => {
-      await queryClient.cancelQueries({ queryKey: ["admin-categories"] });
-      const previous = queryClient.getQueryData<Category[]>(["admin-categories"]);
-      if (previous) {
-        const byId = new Map(previous.map((category) => [category.id, category]));
-        queryClient.setQueryData(
-          ["admin-categories"],
-          orderedIds
-            .map((id) => byId.get(id))
-            .filter((category): category is Category => !!category),
-        );
-      }
-      return { previous };
-    },
-    onError: (_error, _orderedIds, context) => {
-      if (context?.previous) queryClient.setQueryData(["admin-categories"], context.previous);
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+  const reorder = useOptimisticReorder<Category>({
+    queryKey: CATEGORIES_QUERY_KEY,
+    reorderIds: (orderedIds) => categoriesApi.reorder(orderedIds),
   });
 
   const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
