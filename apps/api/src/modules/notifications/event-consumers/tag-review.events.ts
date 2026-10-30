@@ -6,7 +6,7 @@ import { NOTIFICATION_CONSUMER_GROUP, NOTIFICATION_GROUP_KEYS } from "../notific
 import { notificationRepository } from "../notification.repository.js";
 import { notificationService } from "../notification.service.js";
 
-export const registerTagReviewNotificationConsumers = (): void => {
+const subscribeToProductTagSubmitted = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAG_SUBMITTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -34,7 +34,9 @@ export const registerTagReviewNotificationConsumers = (): void => {
       }
     },
   });
+};
 
+const subscribeToProductTagApproved = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAG_APPROVED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -51,42 +53,35 @@ export const registerTagReviewNotificationConsumers = (): void => {
       });
     },
   });
+};
 
-  const registerTagRemovalNotification = (
-    event: typeof DomainEvents.PRODUCT_TAG_REJECTED | typeof DomainEvents.PRODUCT_TAG_REVOKED,
-    type: NotificationType,
-  ): void => {
-    subscribeToDomainEvent({
-      event,
-      groupName: NOTIFICATION_CONSUMER_GROUP,
-      handler: async ({ lookId, creatorId, reason, note }, { eventId }): Promise<void> => {
-        const look = await notificationRepository.findLookSnapshot(lookId);
+const subscribeToTagRemoval = (
+  event: typeof DomainEvents.PRODUCT_TAG_REJECTED | typeof DomainEvents.PRODUCT_TAG_REVOKED,
+  type: NotificationType,
+): void => {
+  subscribeToDomainEvent({
+    event,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ lookId, creatorId, reason, note }, { eventId }): Promise<void> => {
+      const look = await notificationRepository.findLookSnapshot(lookId);
 
-        await notificationService.notifyIndividual({
-          recipientId: creatorId,
-          type,
-          sourceEventId: eventId,
-          entityType: NotificationEntityType.LOOK,
-          entityId: lookId,
-          metadata: {
-            lookImageUrl: look?.imageUrl,
-            tagRejectionReason: reason,
-            tagRejectionNote: note,
-          },
-        });
-      },
-    });
-  };
+      await notificationService.notifyIndividual({
+        recipientId: creatorId,
+        type,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.LOOK,
+        entityId: lookId,
+        metadata: {
+          lookImageUrl: look?.imageUrl,
+          tagRejectionReason: reason,
+          tagRejectionNote: note,
+        },
+      });
+    },
+  });
+};
 
-  registerTagRemovalNotification(
-    DomainEvents.PRODUCT_TAG_REJECTED,
-    NotificationType.PRODUCT_TAG_REJECTED,
-  );
-  registerTagRemovalNotification(
-    DomainEvents.PRODUCT_TAG_REVOKED,
-    NotificationType.PRODUCT_TAG_REVOKED,
-  );
-
+const subscribeToTagReviewReminderDue = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.TAG_REVIEW_REMINDER_DUE,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -104,4 +99,12 @@ export const registerTagReviewNotificationConsumers = (): void => {
       }
     },
   });
+};
+
+export const registerTagReviewNotificationConsumers = (): void => {
+  subscribeToProductTagSubmitted();
+  subscribeToProductTagApproved();
+  subscribeToTagRemoval(DomainEvents.PRODUCT_TAG_REJECTED, NotificationType.PRODUCT_TAG_REJECTED);
+  subscribeToTagRemoval(DomainEvents.PRODUCT_TAG_REVOKED, NotificationType.PRODUCT_TAG_REVOKED);
+  subscribeToTagReviewReminderDue();
 };
