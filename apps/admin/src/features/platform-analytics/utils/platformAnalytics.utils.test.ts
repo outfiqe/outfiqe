@@ -32,6 +32,10 @@ describe("formatPaintTime", () => {
     expect(formatPaintTime(2284)).toBe("2.28 s");
   });
 
+  it("moves to seconds once rounding reaches a full second", () => {
+    expect(formatPaintTime(999.6)).toBe("1.00 s");
+  });
+
   it("says when nothing was measured", () => {
     expect(formatPaintTime(null)).toBe("Not measured");
   });

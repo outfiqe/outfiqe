@@ -8,7 +8,7 @@ const NO_PEOPLE = 0;
 const NOTHING_COUNTED = 0;
 const PRODUCT_PATH_PATTERN = /^\/product\/([^/]+)\/?$/;
 
-const measurementsRowSchema = z.array(z.number().nullable());
+const measurementsRowSchema = z.array(z.coerce.number().nullable());
 
 const countsRowSchema = z.array(z.coerce.number());
 

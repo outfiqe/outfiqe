@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cacheService } from "#redis/cache.service.js";
 
 import { findPosthogQueryConnection, runPosthogQuery } from "./insights.posthog-query.js";
+import { productAnalyticsInsightsRepository } from "./insights.repository.js";
 import { productAnalyticsInsightsService } from "./insights.service.js";
 
 const { PRODUCT_ID } = vi.hoisted(() => ({
@@ -237,6 +238,24 @@ describe("productAnalyticsInsightsService", () => {
       entryPages: [{ path: "/", productName: null, count: 6 }],
       exitPages: [{ path: "/login", productName: null, count: 1 }],
     });
+  });
+
+  it("still shows site traffic, with plain paths, when product names can't be loaded", async () => {
+    vi.mocked(productAnalyticsInsightsRepository.findProductNames).mockRejectedValueOnce(
+      new Error("database down"),
+    );
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([[6, 2]])
+      .mockResolvedValueOnce([[30, 0]])
+      .mockResolvedValueOnce([[`/product/${PRODUCT_ID}`, 6]])
+      .mockResolvedValue([]);
+
+    const { status, insight } = await productAnalyticsInsightsService.siteTraffic("30d");
+
+    expect(status).toBe("fresh");
+    expect(insight?.topPages).toEqual([
+      { path: `/product/${PRODUCT_ID}`, productName: null, count: 6 },
+    ]);
   });
 
   it("shows zero traffic, not a failure, for a range with no sessions", async () => {

@@ -43,9 +43,10 @@ export const formatSessionLength = (totalSeconds: number): string => {
 
 export const formatPaintTime = (milliseconds: number | null): string => {
   if (milliseconds === null) return NOT_MEASURED;
-  return milliseconds < MS_IN_A_SECOND
-    ? `${Math.round(milliseconds)} ms`
-    : `${(milliseconds / MS_IN_A_SECOND).toFixed(SECONDS_DECIMALS)} s`;
+  const wholeMilliseconds = Math.round(milliseconds);
+  return wholeMilliseconds < MS_IN_A_SECOND
+    ? `${wholeMilliseconds} ms`
+    : `${(wholeMilliseconds / MS_IN_A_SECOND).toFixed(SECONDS_DECIMALS)} s`;
 };
 
 export const formatLayoutShift = (layoutShift: number | null): string =>

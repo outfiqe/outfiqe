@@ -281,10 +281,15 @@ const buildZeroResultSearches: InsightBuilder<ZeroResultSearchesInsight> = async
 
 const findProductNameById = async (pages: LabelledCount[]): Promise<Map<string, string>> => {
   const productIds = pages.flatMap(({ label }) => toProductIdFromPath(label) ?? []);
-  const productNames = await productAnalyticsInsightsRepository.findProductNames([
-    ...new Set(productIds),
-  ]);
-  return new Map(productNames.map(({ id, name }) => [id, name]));
+  try {
+    const productNames = await productAnalyticsInsightsRepository.findProductNames([
+      ...new Set(productIds),
+    ]);
+    return new Map(productNames.map(({ id, name }) => [id, name]));
+  } catch (error) {
+    logger.warn(`Product names for analytics pages not loaded: ${describeError(error)}`);
+    return new Map();
+  }
 };
 
 const toRankedPages = (

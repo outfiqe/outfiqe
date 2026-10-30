@@ -74,6 +74,10 @@ describe("readFirstRowMeasurements", () => {
     expect(readFirstRowMeasurements([[19, 2284, null]])).toEqual([19, 2284, null]);
   });
 
+  it("reads numbers PostHog sends as strings", () => {
+    expect(readFirstRowMeasurements([["19", "2284.5"]])).toEqual([19, 2284.5]);
+  });
+
   it("is empty when PostHog returned no rows", () => {
     expect(readFirstRowMeasurements([])).toEqual([]);
   });
