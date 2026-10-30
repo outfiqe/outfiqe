@@ -15,12 +15,17 @@ const mocks = vi.hoisted(() => ({
     isError: false,
     error: null as unknown,
   },
+  authState: { isAuthenticated: true, isAuthResolved: true },
   redirectToPaymentGateway: vi.fn(),
   cancelOrder: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { redirectToPaymentGateway, cancelOrder, orderResult } = mocks;
+const { authState, redirectToPaymentGateway, cancelOrder, orderResult } = mocks;
 const initiateMutate = mocks.initiate.mutate;
+
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => mocks.authState,
+}));
 
 vi.mock("../hooks/useOrder", () => ({
   useOrder: () => mocks.orderResult,
@@ -89,6 +94,8 @@ const renderOrderDetail = () => {
 beforeEach(() => {
   orderResult.data = buildOrder();
   orderResult.isLoading = false;
+  authState.isAuthenticated = true;
+  authState.isAuthResolved = true;
 });
 
 afterEach(() => {
@@ -102,6 +109,27 @@ afterEach(() => {
 });
 
 describe("OrderDetailBody", () => {
+  it("waits for sign-in to resolve before deciding the order is missing", () => {
+    authState.isAuthResolved = false;
+    orderResult.data = undefined;
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/couldn't find that order/)).not.toBeInTheDocument();
+  });
+
+  it("asks a signed-out visitor to sign in and returns them to the order", () => {
+    authState.isAuthenticated = false;
+    orderResult.data = undefined;
+
+    renderOrderDetail();
+
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login?redirect=/orders/ORDER-1",
+    );
+  });
+
   it("shows a skeleton while the order is loading", () => {
     orderResult.data = undefined;
     orderResult.isLoading = true;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { cn } from "@/shared/lib/cn";
 
 import {
@@ -35,15 +36,27 @@ type OrderDetailBodyProps = {
 };
 
 export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
+  const { isAuthenticated, isAuthResolved } = useAuth();
   const orderQuery = useOrder(orderId);
   const hasRefunds = (orderQuery.data?.refundedAmount ?? NOTHING_REFUNDED) > NOTHING_REFUNDED;
   const refundDestinationQuery = useRefundDestination(orderId, hasRefunds);
   const [isCancelItemsOpen, setIsCancelItemsOpen] = useState(false);
 
-  if (orderQuery.isLoading) {
+  if (!isAuthResolved || orderQuery.isLoading) {
     return (
       <div className="mx-auto max-w-lg py-10">
         <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="py-14 text-center">
+        <p className="text-sm text-muted-foreground">Sign in to see this order.</p>
+        <Button asChild className="mt-5">
+          <Link href={`/login?redirect=/orders/${orderId}`}>Sign in</Link>
+        </Button>
       </div>
     );
   }

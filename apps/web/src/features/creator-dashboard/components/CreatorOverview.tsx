@@ -197,7 +197,7 @@ type CreatorOverviewProps = {
 };
 
 export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
-  const { data: overview, isPending, isError } = useCreatorOverview();
+  const { data: overview, isPending, isError } = useCreatorOverview(creatorStatus);
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
