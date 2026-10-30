@@ -1,5 +1,6 @@
 "use client";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { cn } from "@/shared/lib/cn";
 
 import type { Address } from "../api/addressSchemas";
@@ -27,7 +28,7 @@ export const SavedAddressPicker = ({
     <div
       role="radiogroup"
       aria-label="Choose a delivery address"
-      className="grid gap-2 sm:grid-cols-2"
+      className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "grid gap-2 sm:grid-cols-2")}
     >
       {addresses.map((address) => {
         const isSelected = selectedId === address.id;

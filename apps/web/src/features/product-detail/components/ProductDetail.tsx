@@ -1,12 +1,13 @@
 "use client";
 
 import { Button, CheriqIcon, toast, Tooltip } from "@outfiqe/design-system";
-import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
+import { ANALYTICS_EVENTS, THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { ChevronLeft, Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
@@ -42,6 +43,16 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const wishlistMutation = useToggleWishlist();
   const addToCartMutation = useAddToCart();
   const isSizeFitOn = useFeatureFlag("size_fit");
+  useTrackView(
+    ANALYTICS_EVENTS.PRODUCT_DETAIL_VIEW,
+    {
+      product_id: product.id,
+      brand_id: product.brand.id,
+      product_price_npr: product.effectivePrice,
+      is_thrift: product.isThrift,
+    },
+    product.id,
+  );
 
   const [isSaved, setIsSaved] = useState(product.isSaved);
   const [lastSeenIsSaved, setLastSeenIsSaved] = useState(product.isSaved);

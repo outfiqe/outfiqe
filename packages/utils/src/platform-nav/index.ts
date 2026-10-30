@@ -1,6 +1,7 @@
 export const PLATFORM_NAV_KEYS = [
   "brand-applications",
   "platform-metrics",
+  "platform-analytics",
   "platform-features",
   "platform-impersonation",
   "platform-nav-access",

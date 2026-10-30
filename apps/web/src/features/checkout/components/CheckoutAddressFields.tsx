@@ -10,6 +10,7 @@ import {
 } from "@outfiqe/design-system";
 import type { Control } from "react-hook-form";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { CityAutocomplete } from "@/features/delivery-zones";
 
 import type { CheckoutInput } from "../api/checkoutSchemas";
@@ -19,7 +20,7 @@ type CheckoutAddressFieldsProps = {
 };
 
 export const CheckoutAddressFields = ({ control }: CheckoutAddressFieldsProps) => (
-  <>
+  <div className={`${PRIVATE_ANALYTICS_CLASS_NAME} contents`}>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <FormField
         control={control}
@@ -97,5 +98,5 @@ export const CheckoutAddressFields = ({ control }: CheckoutAddressFieldsProps) =
         )}
       />
     </div>
-  </>
+  </div>
 );

@@ -6,16 +6,20 @@ import { PaymentCallbackScreen } from "@/features/payments";
 export const metadata: Metadata = { title: "Payment" };
 
 interface PaymentCallbackFailedPageProps {
-  params: Promise<{ orderId: string }>;
+  params: Promise<{ provider: string; orderId: string }>;
 }
 
 const PaymentCallbackFailedPage = async ({ params }: PaymentCallbackFailedPageProps) => {
-  const { orderId } = await params;
+  const { provider, orderId } = await params;
 
   return (
     <div className="mx-auto flex min-h-[70svh] max-w-md items-center justify-center px-6 py-16">
       <Suspense fallback={null}>
-        <PaymentCallbackScreen orderId={orderId} gatewayReportedFailure />
+        <PaymentCallbackScreen
+          orderId={orderId}
+          paymentProvider={provider}
+          gatewayReportedFailure
+        />
       </Suspense>
     </div>
   );

@@ -82,6 +82,7 @@ export default defineConfig({
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",
         "src/modules/brand-applications/**/*.ts",
+        "src/modules/product-analytics/**/*.ts",
         "src/modules/xp/xp.utils.ts",
         "src/modules/xp/xp.routes.ts",
         "src/modules/xp/xp.service.ts",

@@ -96,7 +96,12 @@ export const userService = {
     const passwordHash = await hashPassword(input.password);
     const user = await userRepository.create({ ...input, passwordHash });
 
-    await eventBus.publish(DomainEvents.USER_CREATED, { userId: user.id, email: user.email });
+    await eventBus.publish(DomainEvents.USER_CREATED, {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      signupMethod: "staff_created",
+    });
 
     return toPublicUser(user);
   },

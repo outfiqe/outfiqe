@@ -91,6 +91,7 @@ import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-
 import { platformRolesRoutes } from "./modules/platform-roles/platform-roles.routes.js";
 import { platformSettingsRoutes } from "./modules/platform-settings/platform-settings.routes.js";
 import { platformSuspensionsRoutes } from "./modules/platform-suspensions/platform-suspensions.routes.js";
+import { productAnalyticsRoutes } from "./modules/product-analytics/product-analytics.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
@@ -223,6 +224,7 @@ export const createApp = () => {
   app.use("/api/crm", crmAccessRoutes);
   app.use("/api/platform", platformAuditRoutes);
   app.use("/api/platform", platformMetricsRoutes);
+  app.use("/api/platform", productAnalyticsRoutes);
   app.use("/api/platform", platformFeaturesRoutes);
   app.use("/api/platform", platformSettingsRoutes);
   app.use("/api/platform", featureFlagsRoutes);

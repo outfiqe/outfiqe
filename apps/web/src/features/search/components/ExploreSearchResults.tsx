@@ -16,6 +16,7 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 import { MIN_QUERY_LENGTH } from "../constants/search.constants";
 import { useCreatorSearch, useLookSearch } from "../hooks/useExploreSearch";
+import { useTrackSearchResults } from "../hooks/useTrackSearchResults";
 
 export const ExploreSearchResults = () => {
   const searchParams = useSearchParams();
@@ -39,6 +40,16 @@ export const ExploreSearchResults = () => {
     isFetchingNextPage: isFetchingMorePosts,
     isLoading: isLoadingPosts,
   } = useLookSearch(query, isAuthResolved && hasQuery);
+
+  const creatorTotal = creatorPages?.pages[0]?.total;
+  const lookTotal = postPages?.pages[0]?.total;
+  useTrackSearchResults(
+    "explore",
+    query,
+    hasQuery && creatorTotal !== undefined && lookTotal !== undefined
+      ? creatorTotal + lookTotal
+      : null,
+  );
 
   const creatorSentinelRef = useLoadMoreOnVisible(
     () => fetchNextCreators(),

@@ -282,6 +282,14 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("post", `/api/platform/builds/${SOME_ID}/unlock`, "platform:builds:manage"),
     route("post", `/api/platform/builds/${SOME_ID}/archive`, "platform:builds:manage"),
   ],
+  productAnalytics: [
+    route("get", "/api/platform/analytics/overview", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/funnels/purchase", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/funnels/look-to-order", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/acquisition", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/retention", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/search/zero-results", "platform:analytics:read"),
+  ],
 };
 
 const CO_FOUNDER_ONLY_ROUTES: PlatformRoute[] = [

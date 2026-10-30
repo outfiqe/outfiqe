@@ -1,3 +1,5 @@
+import { ANALYTICS_RELAY_PATH } from "../../../analytics/constants/analytics.constants";
+
 export const IMAGE_CACHE_NAME = "look-and-product-images";
 
 export const IMAGE_PATH_PREFIX = "/uploads/";
@@ -19,3 +21,5 @@ export const IOS_MAX_CACHED_IMAGES = 24;
 export const IOS_MAX_CACHED_PAGES = 16;
 
 export const API_PATH_PREFIX = "/api/";
+
+export const ANALYTICS_RELAY_PATH_PREFIX = `${ANALYTICS_RELAY_PATH}/`;

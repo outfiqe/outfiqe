@@ -8,6 +8,8 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 
 `settleVerified` publishes it, but only in the successful branch (stock decremented cleanly, `markOrderPlaced` reached) — never when `needsManualRefund` gets set. Money moved either way in that failure case, but the sale is headed for a human refund decision, and this module has no XP-reversal mechanism, so it's safer to simply not award "purchase" XP there rather than award-then-need-to-claw-back. See `orders/README.md` for the COD half of this same event (COD publishes it from checkout instead, since there's no separate settlement step) and `xp/README.md` for what it triggers.
 
+It also publishes it, and sends the "payment received" email, only from the call that actually settled the attempt. Two verifications of one payment can overlap: the buyer refreshes the callback page, or the callback runs while the sweep is checking. Both see the attempt open and both hear `COMPLETE` from the gateway, but only one `settleTransaction` update matches. The other gets `SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE` and stops there. It used to fall through to the publish, so the purchase was announced twice: XP, notifications, achievements, and the product analytics `checkout:order_place` event all counted the order twice.
+
 ## The callback URLs are path-only, and the redirect is never trusted
 
 `success_url` / `failure_url` carry the order id **in the path**

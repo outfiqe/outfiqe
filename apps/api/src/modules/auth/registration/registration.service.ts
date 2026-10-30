@@ -98,6 +98,7 @@ export const authRegistrationService = {
       userId: id,
       email: userEmail,
       role,
+      signupMethod: "email",
     });
 
     auditLog("success", "User registered", {

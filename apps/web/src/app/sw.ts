@@ -15,6 +15,7 @@ import {
 } from "../features/pwa/offline/constants/backgroundRefresh";
 import { parsePushMessage } from "../features/pwa/push/constants/pushMessage";
 import {
+  ANALYTICS_RELAY_PATH_PREFIX,
   API_PATH_PREFIX,
   CACHED_IMAGE_LIFETIME_SECONDS,
   CACHED_PAGE_LIFETIME_SECONDS,
@@ -105,6 +106,12 @@ const apiResponsesNeverStored: RuntimeCaching = {
   handler: new NetworkOnly(),
 };
 
+const analyticsRelayNeverStored: RuntimeCaching = {
+  matcher: ({ url, sameOrigin }) =>
+    sameOrigin && url.pathname.startsWith(ANALYTICS_RELAY_PATH_PREFIX),
+  handler: new NetworkOnly(),
+};
+
 const uploadedImageCaching: RuntimeCaching = {
   matcher: ({ url }) =>
     url.pathname.startsWith(IMAGE_PATH_PREFIX) && imageHosts.includes(url.hostname),
@@ -128,6 +135,7 @@ const serwist = new Serwist({
   navigationPreload: false,
   runtimeCaching: [
     apiResponsesNeverStored,
+    analyticsRelayNeverStored,
     privatePageNeverStored,
     publicPageCaching,
     uploadedImageCaching,

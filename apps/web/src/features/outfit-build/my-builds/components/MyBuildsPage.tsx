@@ -9,11 +9,12 @@ import {
   TabsTrigger,
   toast,
 } from "@outfiqe/design-system";
-import { generateUuid } from "@outfiqe/utils";
+import { ANALYTICS_EVENTS, generateUuid } from "@outfiqe/utils";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { trackEvent } from "@/features/analytics/utils/analyticsClient";
 import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 import { ApiClientError } from "@/shared/lib/apiClient";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -103,6 +104,7 @@ export const MyBuildsPage = () => {
     setIsStarting(true);
     try {
       const board = await outfitApi.start({}, generateUuid());
+      trackEvent(ANALYTICS_EVENTS.OUTFIT_BUILD_CREATE, { build_id: board.id });
       router.push(buildPath(board.id));
     } catch (error) {
       toast.error(getErrorMessage(error));

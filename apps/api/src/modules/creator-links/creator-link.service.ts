@@ -4,6 +4,7 @@ import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import { creatorLinkRepository } from "./creator-link.repository.js";
@@ -110,6 +111,13 @@ export const creatorLinkService = {
 
     if (shouldRecordClick) {
       await creatorLinkRepository.recordClick({ linkId: link.id, userId, sessionId });
+      productAnalyticsService.captureCreatorLinkClick({
+        visitorUserId: userId,
+        visitorSessionId: sessionId,
+        creatorId: link.creatorId,
+        productId: link.productId,
+        linkType: link.type,
+      });
     }
 
     return { targetUrl: buildTargetUrl(link.productId, link.creator.handle) };

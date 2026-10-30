@@ -71,6 +71,14 @@ const envSchema = z
     VAPID_PUBLIC_KEY: z.string().min(1).optional(),
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
     VAPID_SUBJECT: z.string().min(1).optional(),
+    POSTHOG_PROJECT_TOKEN: z.string().min(1).optional(),
+    POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
+    POSTHOG_APP_HOST: z.url().default("https://us.posthog.com"),
+    POSTHOG_PROJECT_ID: z
+      .string()
+      .regex(/^\d+$/, "POSTHOG_PROJECT_ID must be the numeric PostHog project id")
+      .optional(),
+    POSTHOG_QUERY_API_KEY: z.string().min(1).optional(),
   })
   .refine(
     ({ ADMIN_URL, TENANT_BASE_DOMAIN }) =>

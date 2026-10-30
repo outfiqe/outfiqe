@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
+import { ANALYTICS_RELAY_PATH } from "@/features/analytics/constants/analytics.constants";
 import { REFRESH_COOKIE_NAME } from "@/features/auth/constants/sessionCookies";
 import { GUEST_HOME_PATH } from "@/features/landing/constants/guestHome";
 
-import { proxy } from "./proxy";
+import { config, proxy } from "./proxy";
 
 const SITE_ORIGIN = "https://outfiqe.com";
 const REWRITE_HEADER = "x-middleware-rewrite";
@@ -47,5 +48,15 @@ describe("proxy", () => {
     expect(dynamicPage.headers.get(CONTENT_SECURITY_POLICY_HEADER)).toContain(NONCE_SOURCE);
     expect(staticPage.headers.get(REWRITE_HEADER)).toBeNull();
     expect(staticPage.headers.get(CONTENT_SECURITY_POLICY_HEADER)).toContain(STATIC_SCRIPT_SOURCE);
+  });
+
+  it("never runs for the analytics relay or the health check, so they cost no function time", () => {
+    const matcherSource = config.matcher.at(0)?.source ?? "";
+    const runsProxyFor = (path: string) => new RegExp(`^${matcherSource}$`).test(path);
+
+    expect(runsProxyFor(`${ANALYTICS_RELAY_PATH}/e/`)).toBe(false);
+    expect(runsProxyFor(`${ANALYTICS_RELAY_PATH}/static/array.js`)).toBe(false);
+    expect(runsProxyFor("/healthz")).toBe(false);
+    expect(runsProxyFor("/shop")).toBe(true);
   });
 });
