@@ -93,6 +93,16 @@ const nextConfig: NextConfig = {
     remotePatterns: imageRemotePatterns(),
   },
 
+  async redirects() {
+    return [
+      {
+        source: "/collection/:path*",
+        destination: "/collections",
+        permanent: false,
+      },
+    ];
+  },
+
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
