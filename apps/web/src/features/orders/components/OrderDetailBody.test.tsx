@@ -207,6 +207,27 @@ describe("OrderDetailBody", () => {
     expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
   });
 
+  it("shows nothing to pay and no collected cash on a cancelled COD order", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "CANCELLED",
+      transactions: [
+        {
+          id: "transaction-1",
+          provider: "COD",
+          type: "PAYMENT",
+          status: "SUCCEEDED",
+          transactionRef: null,
+          createdAt: "2026-09-01T00:00:00.000Z",
+        },
+      ],
+    });
+    renderOrderDetail();
+
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("DUE")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment via COD/)).not.toBeInTheDocument();
+  });
+
   it("re-initiates payment for the order when Resume payment is clicked", async () => {
     const user = userEvent.setup();
     orderResult.data = buildOrder({ paymentMethod: "ESEWA", paymentStatus: "INITIATED" });

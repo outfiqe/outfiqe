@@ -1,0 +1,10 @@
+import { OrderRefundMethod } from "@outfiqe/types";
+
+import type { OrderRefund } from "../api/refundSchemas";
+
+export const NOTHING_TO_PAY_LABEL = "Nothing to pay";
+
+export const describeItemCancellation = ({ method, totalAmount }: OrderRefund): string =>
+  method === OrderRefundMethod.CASH_NOT_COLLECTED
+    ? "Cancelled. You won't pay for these items."
+    : `Cancelled. Rs. ${totalAmount.toLocaleString()} will be refunded.`;
