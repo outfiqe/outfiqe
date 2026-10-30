@@ -5,6 +5,11 @@ export const PLATFORM_PERMISSION_CATALOG = [
     group: "Platform",
   },
   {
+    key: "platform:analytics:read",
+    label: "View product analytics",
+    group: "Platform",
+  },
+  {
     key: "platform:features:manage",
     label: "Toggle tenant feature flags",
     group: "Platform",

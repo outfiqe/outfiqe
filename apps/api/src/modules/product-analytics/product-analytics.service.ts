@@ -2,6 +2,7 @@ import { ANALYTICS_EVENTS, type AnalyticsEventName } from "@outfiqe/utils";
 
 import type { CreatorLinkType } from "#generated/prisma/enums.js";
 
+import { productAnalyticsInsightsService } from "./insights/insights.service.js";
 import {
   ANALYTICS_CREATOR_LINK_TYPE,
   ANALYTICS_EVENT_SOURCE,
@@ -62,4 +63,6 @@ export const productAnalyticsService = {
   },
 
   flushPendingEvents: flushProductAnalytics,
+
+  ...productAnalyticsInsightsService,
 };

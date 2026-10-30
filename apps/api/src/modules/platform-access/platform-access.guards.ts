@@ -26,4 +26,5 @@ export const platformGuards = {
   withdrawRead: requirePlatformRole("platform:withdraw:read", "platform:withdraw:manage"),
   withdrawManage: requirePlatformRole("platform:withdraw:manage"),
   teamManage: requirePlatformRole("platform:team:manage"),
+  analyticsRead: requirePlatformRole("platform:analytics:read"),
 } as const;

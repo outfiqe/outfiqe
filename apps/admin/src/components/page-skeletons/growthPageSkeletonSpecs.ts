@@ -1,5 +1,6 @@
 import type { AdminPageSkeletonSpec } from "./adminPageSkeleton.types";
 import {
+  ANALYTICS_STAT_CARD_COUNT,
   FEATURES_DIR,
   GAMIFICATION_STAT_COUNT,
   GRID_CARD_COUNT,
@@ -7,6 +8,36 @@ import {
 } from "./pageSkeletonSpecs.constants";
 
 export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
+  "/platform/analytics": {
+    title: "Product analytics",
+    description:
+      "How shoppers find Outfiqe, where they drop out before buying, and whether they come back.",
+    blocks: [
+      { kind: "filterTabs", labels: ["Last 7 days", "Last 30 days", "Last 90 days"] },
+      {
+        kind: "section",
+        title: "Overview",
+        blocks: [{ kind: "statCards", count: ANALYTICS_STAT_CARD_COUNT, columns: "four" }],
+      },
+      {
+        kind: "chartCard",
+        title: "Purchase funnel",
+        description: "How many people reach each step from product page to placed order.",
+      },
+      {
+        kind: "chartCard",
+        title: "Muse looks to orders",
+        description: "Whether people who open muse looks go on to buy the pieces tagged in them.",
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/platform-analytics/components/PlatformAnalyticsPage.tsx`,
+      `${FEATURES_DIR}/platform-analytics/constants/platformAnalytics.constants.ts`,
+      `${FEATURES_DIR}/platform-analytics/components/AnalyticsOverviewSection.tsx`,
+      `${FEATURES_DIR}/platform-analytics/components/PurchaseFunnelSection.tsx`,
+      `${FEATURES_DIR}/platform-analytics/components/LookToOrderSection.tsx`,
+    ],
+  },
   "/gamification": {
     title: "Gamification",
     spacing: "loose",

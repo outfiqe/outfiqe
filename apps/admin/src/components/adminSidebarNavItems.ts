@@ -171,6 +171,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     group: "brand-tenants",
   },
   {
+    id: "platform-analytics",
+    href: "/platform/analytics",
+    label: "Product analytics",
+    icon: BarChart3,
+    group: "growth",
+  },
+  {
     id: "platform-features",
     href: "/platform/features",
     label: "Feature flags",

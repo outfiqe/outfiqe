@@ -51,6 +51,7 @@ export default defineConfig({
         "src/features/product-tour/**/*.{ts,tsx}",
         "src/features/organizations/**/*.{ts,tsx}",
         "src/features/platform-metrics/**/*.{ts,tsx}",
+        "src/features/platform-analytics/**/*.{ts,tsx}",
         "src/features/financial-rollup/**/*.{ts,tsx}",
         "src/features/platform-features/**/*.{ts,tsx}",
         "src/features/platform-impersonation/**/*.{ts,tsx}",
