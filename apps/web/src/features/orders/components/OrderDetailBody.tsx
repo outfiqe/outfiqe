@@ -16,6 +16,7 @@ import {
 } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
+import { NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -84,6 +85,8 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     (refundDestination.canEdit || refundDestination.destination !== null);
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
+  const isCashUncollected = paymentStatus === PaymentStatus.DUE;
+  const hasNothingToPay = orderCancelled && isCashUncollected;
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
@@ -161,7 +164,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           )}
         >
           <span>Payment</span>
-          <StatusBadge status={paymentStatus} />
+          {hasNothingToPay ? (
+            <span>{NOTHING_TO_PAY_LABEL}</span>
+          ) : (
+            <StatusBadge status={paymentStatus} />
+          )}
         </div>
         <div className="flex justify-between py-1.5 text-sm text-muted-foreground">
           <span>Delivering to</span>
@@ -174,14 +181,15 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <span>Rs. {total.toLocaleString()}</span>
         </div>
 
-        <TransactionLedger transactions={transactions} />
+        {!isCashUncollected && <TransactionLedger transactions={transactions} />}
       </div>
 
       <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">
         {items.map((orderItem) => (
           <li key={orderItem.id}>
             {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
-            {orderItem.refundedQty > NOTHING_REFUNDED && ` (${orderItem.refundedQty} refunded)`}
+            {orderItem.refundedQty > NOTHING_REFUNDED &&
+              ` (${orderItem.refundedQty} ${isCashUncollected ? "cancelled" : "refunded"})`}
           </li>
         ))}
       </ul>

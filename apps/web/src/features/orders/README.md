@@ -91,6 +91,10 @@ the page and list re-read. Refunds: `CancelItemsModal` → `useCancelOrderItems`
 `GET /orders/:id/refunds`; `RefundDetailsCard` → `useRefundDestination` / `useSaveRefundDestination`
 → `GET`/`PUT /orders/:id/refund-destination` (only fetched once the order has a refund).
 
+## A cancelled cash-on-delivery order has nothing to refund
+
+No money moved on an unpaid COD order, so `utils/cancellationWording.utils.ts` says the shopper won't pay rather than promising a refund, the order shows "Nothing to pay" instead of `DUE`, and the COD line stays out of the transactions list until cash is collected. The API records that line as `SUCCEEDED` at checkout, so its status can't be shown as a payment.
+
 ## An unpaid wallet order is not "placed"
 
 A wallet (eSewa/Khalti) order is created with `paymentStatus: INITIATED` and
