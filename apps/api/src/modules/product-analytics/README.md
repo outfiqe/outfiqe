@@ -76,6 +76,12 @@ funnels/look-to-order, acquisition, retention, search/zero-results}?range=7d|30d
   the Query Read scope): both are needed for reading.
 - `POSTHOG_APP_HOST`: default `https://us.posthog.com`.
 
+Leave a variable out rather than empty: `POSTHOG_PROJECT_TOKEN=` with no value fails the env
+check and the API won't start. Locally, leave `POSTHOG_PROJECT_TOKEN` out entirely. The free
+plan has one PostHog project, the production one, so a local token would mix dev clicks and
+test orders into real numbers. The project id and a read-only query key are safe locally: the
+admin page then reads production analytics without writing anything.
+
 ## Funnel
 
 **User-facing:** shoppers, creators and brands never see this module. Co-founders, and staff whose
