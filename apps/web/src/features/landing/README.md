@@ -6,6 +6,7 @@ The sections of the public homepage (`/`): the hero carousel, the taste picker a
 
 ## Structure
 
+- `components/HeroSlideTitle.tsx` — a slide title. Only the first slide is the page `h1`, so the homepage keeps a single top-level heading; the others are `h2`.
 - `components/Hero.tsx`, `components/HeroCarousel.tsx` — the hero slides set in the admin (`getHeroSlidesServer`); `Hero` renders nothing when there are no slides.
 - `components/TasteCategories.tsx` — the taste picker: the visitor's chosen categories, with `CustomizeTasteModal` to pick and reorder them.
 - `components/CustomizeTasteModal.tsx` — choose which categories show and drag them into order.
