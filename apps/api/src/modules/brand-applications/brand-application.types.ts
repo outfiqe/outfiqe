@@ -18,9 +18,22 @@ export type BrandApplicationRecord = CreateBrandApplicationInput & {
   createdAt: Date;
 };
 
+export type BrandApplicationSummary = BrandApplicationRecord & {
+  isAwaitingBrandSetup: boolean;
+};
+
 export type BrandApplicationPage = {
-  applications: BrandApplicationRecord[];
+  applications: BrandApplicationSummary[];
   nextCursor: string | null;
+};
+
+export type BrandInviteDeliveryResult = {
+  isInviteDelivered: boolean;
+};
+
+export type RotateBrandInviteInput = {
+  tokenHash: string;
+  expiresAt: Date;
 };
 
 export type ApproveBrandApplicationInput = {
