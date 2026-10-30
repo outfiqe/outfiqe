@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { ProductsLoadError } from "@/features/products/components/ProductsLoadError";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
@@ -49,7 +50,9 @@ export const ShopResults = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isError: hasProductsLoadFailed,
     isLoading,
+    refetch: retryLoadingProducts,
   } = useInfiniteProducts({
     category: category?.slug,
     type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
@@ -98,7 +101,7 @@ export const ShopResults = () => {
           {formatResultCount(firstPage.total, firstPage.brandCount)}
         </p>
       ) : (
-        <Skeleton className="h-4 w-40" />
+        !hasProductsLoadFailed && <Skeleton className="h-4 w-40" />
       )}
 
       <div className="mt-6 flex items-center gap-3">
@@ -116,6 +119,8 @@ export const ShopResults = () => {
 
       {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
+      ) : hasProductsLoadFailed && products.length === 0 ? (
+        <ProductsLoadError onRetry={() => void retryLoadingProducts()} />
       ) : products.length === 0 ? (
         <div className="mt-12 flex flex-col items-start gap-3">
           <p className="text-sm text-muted-foreground">
