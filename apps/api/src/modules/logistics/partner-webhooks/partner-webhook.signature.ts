@@ -1,17 +1,10 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
+
+import { isSameSecretValue } from "#lib/secret-compare.utils.js";
 
 const SIGNATURE_ALGORITHM = "sha256";
 const SIGNATURE_ENCODING = "hex";
 const MISSING_CREDENTIAL_IS_VALID = false;
-
-const isSameSecretValue = (expected: string, received: string): boolean => {
-  const expectedBuffer = Buffer.from(expected);
-  const receivedBuffer = Buffer.from(received);
-  return (
-    expectedBuffer.length === receivedBuffer.length &&
-    timingSafeEqual(expectedBuffer, receivedBuffer)
-  );
-};
 
 export const signPartnerWebhookBody = (rawBody: Buffer, secret: string): string =>
   createHmac(SIGNATURE_ALGORITHM, secret).update(rawBody).digest(SIGNATURE_ENCODING);

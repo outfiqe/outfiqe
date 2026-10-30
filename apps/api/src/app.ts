@@ -110,6 +110,7 @@ import { userRoutes } from "./modules/users/user.routes.js";
 import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
 import { withdrawRoutes } from "./modules/withdraw/withdraw.routes.js";
 import { xpRoutes } from "./modules/xp/xp.routes.js";
+import { resolveClientIp } from "./shared/middlewares/client-ip.js";
 import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
@@ -284,6 +285,7 @@ export const createApp = () => {
   const app = express();
 
   app.set("trust proxy", TRUSTED_PROXY_HOPS);
+  app.use(resolveClientIp);
 
   applySecurityMiddleware(app);
   app.use("/api/webhooks/delivery-partners", httpLogger, partnerWebhookRoutes);

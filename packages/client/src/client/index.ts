@@ -3,6 +3,7 @@ import type { AxiosError } from "axios";
 import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 
 import { ApiClientError } from "../errors";
+import { isSessionRejected } from "./sessionRefresh";
 
 type RequestOptions = AxiosRequestConfig & { skipAuthRetry?: boolean };
 type RetriableConfig = InternalAxiosRequestConfig & { skipAuthRetry?: boolean; _retried?: boolean };
@@ -101,9 +102,11 @@ export const createApiClient = ({
         try {
           await refreshAccessToken();
           return http(config);
-        } catch {
-          accessToken = null;
-          unauthorizedHandler?.();
+        } catch (refreshError) {
+          if (isSessionRejected(refreshError)) {
+            accessToken = null;
+            unauthorizedHandler?.();
+          }
         }
       }
 

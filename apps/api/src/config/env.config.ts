@@ -6,6 +6,7 @@ import { isOnReservedTenantSubdomain } from "#lib/admin-url.utils.js";
 import logger from "#lib/winston.utils.js";
 
 const JWT_SECRET_MIN_LENGTH = 32;
+const ORIGIN_SECRET_MIN_LENGTH = 32;
 
 const envSchema = z
   .object({
@@ -60,6 +61,7 @@ const envSchema = z
     CAPTCHA_ENABLED: z.stringbool(),
     TAG_REVIEW_ENABLED: z.stringbool().default(false),
     TURNSTILE_SECRET_KEY: z.string().min(1),
+    ORIGIN_SECRET: z.string().min(ORIGIN_SECRET_MIN_LENGTH).optional(),
     OAUTH_REDIRECT_BASE_URL: z.url(),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
