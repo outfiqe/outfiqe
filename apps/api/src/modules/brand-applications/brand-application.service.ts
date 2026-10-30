@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
@@ -22,7 +24,7 @@ import type {
   CreateBrandApplicationInput,
 } from "./brand-application.types.js";
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = 7 * millisecondsInDay;
 
 const requirePendingApplication = async (
   applicationId: string,

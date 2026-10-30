@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 export const MIN_SEARCH_QUERY_LENGTH = 2;
 export const MAX_SEARCH_QUERY_LENGTH = 100;
 export const SEARCH_RESULTS_PER_TYPE = 5;
@@ -23,5 +24,5 @@ export const CRM_SEARCH_ENTITY_PERMISSION: Record<
 
 export const CRM_SEARCH_READ_PERMISSION_KEYS = Object.values(CRM_SEARCH_ENTITY_PERMISSION);
 
-export const CRM_REPORTING_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const CRM_REPORTING_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 export const CRM_REPORTING_RATE_LIMIT_MAX_REQUESTS = 60;

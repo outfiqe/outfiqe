@@ -1,10 +1,11 @@
+import { millisecondsInHour, millisecondsInMinute } from "date-fns/constants";
 export const CHAT_CONTACT_SEARCH_RESULT_LIMIT = 20;
 
 export const CHAT_BLOCKS_DEFAULT_PAGE_SIZE = 20;
 export const CHAT_BLOCKS_MAX_PAGE_SIZE = 50;
 
 export const CHAT_SETTINGS_RATE_LIMIT_NAMESPACE = "chat-settings";
-export const CHAT_SETTINGS_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+export const CHAT_SETTINGS_RATE_LIMIT_WINDOW_MS = 5 * millisecondsInMinute;
 export const CHAT_SETTINGS_RATE_LIMIT_MAX_REQUESTS = 20;
 
 export const CHAT_SOCKET_CONSUMER_GROUP = "socket-broadcast";
@@ -18,7 +19,7 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const MESSAGE_MAX_ATTACHMENTS = 6;
 
 export const MESSAGE_SEND_RATE_LIMIT_NAMESPACE = "message-send";
-export const MESSAGE_SEND_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const MESSAGE_SEND_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 export const MESSAGE_SEND_RATE_LIMIT_MAX_REQUESTS = 30;
 
 export const GROUP_NAME_MAX_LENGTH = 60;
@@ -26,11 +27,11 @@ export const GROUP_PREVIEW_MEMBER_COUNT = 4;
 export const GROUP_MEMBER_CHANGE_MAX_USERS = 50;
 
 export const GROUP_CREATE_RATE_LIMIT_NAMESPACE = "chat-group-create";
-export const GROUP_CREATE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const GROUP_CREATE_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const GROUP_CREATE_RATE_LIMIT_MAX_REQUESTS = 10;
 
 export const GROUP_MANAGE_RATE_LIMIT_NAMESPACE = "chat-group-manage";
-export const GROUP_MANAGE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const GROUP_MANAGE_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const GROUP_MANAGE_RATE_LIMIT_MAX_REQUESTS = 60;
 
 export const CREATE_GROUP_IDEMPOTENCY_ENDPOINT = "chat:create-group";

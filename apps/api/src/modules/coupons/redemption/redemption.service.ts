@@ -1,3 +1,5 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { PaymentMethod, ProductStatus } from "#generated/prisma/enums.js";
@@ -24,8 +26,6 @@ import {
   resolveEligibleLines,
   valuateCoupon,
 } from "../coupon.utils.js";
-
-const MS_PER_HOUR = 60 * 60 * 1000;
 
 export const buildCouponLinesForPricedLines = async (
   pricedLines: {
@@ -94,7 +94,7 @@ const checkRedemptionVelocity = async (context: {
   phone: string;
   address: string;
 }): Promise<void> => {
-  const since = new Date(Date.now() - VELOCITY_WINDOW_HOURS * MS_PER_HOUR);
+  const since = new Date(Date.now() - VELOCITY_WINDOW_HOURS * millisecondsInHour);
   const recentCount = await couponRepository.countRecentRedemptionsForContact(
     context.phone,
     context.address,

@@ -1,4 +1,5 @@
-﻿import { Router } from "express";
+﻿import { millisecondsInDay } from "date-fns/constants";
+import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { validate, validated } from "#middlewares/validate.js";
@@ -13,7 +14,7 @@ import {
   rejectBrandApplicationSchema,
 } from "./brand-application.schemas.js";
 
-const WINDOW_MS = 24 * 60 * 60 * 1000;
+const WINDOW_MS = millisecondsInDay;
 const MAX_REQUESTS = 3;
 
 const brandApplicationRateLimit = rateLimit({

@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { millisecondsInDay } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { computeViewerEngagementAffinity } from "#lib/creator-engagement-affinity.utils.js";
@@ -57,7 +59,7 @@ const listRecentFollowedLookIds = async (
   limit: number,
 ): Promise<string[]> => {
   if (followedCreatorIds.length === 0) return [];
-  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - sinceDays * millisecondsInDay);
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT id FROM (
       SELECT id, created_at,

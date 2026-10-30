@@ -1,4 +1,5 @@
-﻿import { Router } from "express";
+﻿import { millisecondsInHour } from "date-fns/constants";
+import { Router } from "express";
 
 import {
   bankAccountBodySchema,
@@ -12,7 +13,7 @@ import { platformGuards } from "#modules/platform-access/platform-access.guards.
 
 import { brandBankAccountController } from "./brand-bank-account.controller.js";
 
-const CREATE_WINDOW_MS = 60 * 60 * 1000;
+const CREATE_WINDOW_MS = millisecondsInHour;
 const CREATE_MAX_REQUESTS = 10;
 
 const createBrandBankAccountRateLimit = rateLimit({
