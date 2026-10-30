@@ -32,7 +32,9 @@ const runRegistrationTransaction = <Result>(
   createAccount: (transaction: Prisma.TransactionClient) => Promise<Result>,
 ): Promise<Result> => runWithHandleCollisionRetry(() => prisma.$transaction(createAccount));
 
-const assertBrandInviteStillOpen = (expiresAt: Date, acceptedAt: Date | null): void => {
+type RegisteredUser = Parameters<typeof toAuthUser>[0];
+
+const assertInviteStillOpen = (expiresAt: Date, acceptedAt: Date | null): void => {
   if (expiresAt.getTime() <= Date.now()) {
     throw new AppError(
       "INVITE_EXPIRED",
@@ -50,16 +52,7 @@ const assertBrandInviteStillOpen = (expiresAt: Date, acceptedAt: Date | null): v
   }
 };
 
-const assertBrandOwnerIdentityFree = async (email: string, phone: string): Promise<void> => {
-  const existingByEmail = await userRepository.findByEmail(email);
-  if (existingByEmail) {
-    throw new AppError(
-      "USER_EXISTS",
-      "An account with this email already exists.",
-      HTTP_STATUS.CONFLICT,
-    );
-  }
-
+const assertPhoneFree = async (phone: string): Promise<void> => {
   const existingByPhone = await userRepository.findByPhone(phone);
   if (existingByPhone) {
     throw new AppError(
@@ -69,6 +62,25 @@ const assertBrandOwnerIdentityFree = async (email: string, phone: string): Promi
     );
   }
 };
+
+const assertEmailAndPhoneFree = async (email: string, phone: string): Promise<void> => {
+  const existingByEmail = await userRepository.findByEmail(email);
+  if (existingByEmail) {
+    throw new AppError(
+      "USER_EXISTS",
+      "An account with this email already exists.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  await assertPhoneFree(phone);
+};
+
+const toStaffSessionUser = async (user: RegisteredUser) => ({
+  ...toAuthUser(user),
+  ...(await resolvePlatformFields(user.id, user.role)),
+  hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
+});
 
 export const authInviteService = {
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
@@ -114,8 +126,8 @@ export const authInviteService = {
 
     const { expiresAt, acceptedAt, email: inviteEmail, brandId, id: inviteId, brand } = invite;
 
-    assertBrandInviteStillOpen(expiresAt, acceptedAt);
-    await assertBrandOwnerIdentityFree(inviteEmail, phone);
+    assertInviteStillOpen(expiresAt, acceptedAt);
+    await assertEmailAndPhoneFree(inviteEmail, phone);
 
     const passwordHash = await hashPassword(password);
     const user = await runRegistrationTransaction(async (tx) => {
@@ -214,39 +226,8 @@ export const authInviteService = {
 
     const { expiresAt, acceptedAt, email: inviteEmail, name: inviteName, id: inviteId } = invite;
 
-    if (expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const existingByEmail = await userRepository.findByEmail(inviteEmail);
-    if (existingByEmail) {
-      throw new AppError(
-        "USER_EXISTS",
-        "An account with this email already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    assertInviteStillOpen(expiresAt, acceptedAt);
+    await assertEmailAndPhoneFree(inviteEmail, phone);
 
     const passwordHash = await hashPassword(password);
     const user = await runRegistrationTransaction(async (tx) => {
@@ -285,14 +266,7 @@ export const authInviteService = {
 
     logger.info(`Admin registered: ${user.id}`);
 
-    return {
-      ...tokens,
-      user: {
-        ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id, user.role)),
-        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
-      },
-    };
+    return { ...tokens, user: await toStaffSessionUser(user) };
   },
 
   async getCrmInvite(inviteToken: string): Promise<CrmInviteInfo> {
@@ -313,14 +287,7 @@ export const authInviteService = {
       );
     }
 
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    await assertPhoneFree(phone);
 
     const passwordHash = await hashPassword(password);
     const { user, membership } = await runRegistrationTransaction(async (tx) => {
@@ -357,11 +324,7 @@ export const authInviteService = {
 
     return {
       ...tokens,
-      user: {
-        ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id, user.role)),
-        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
-      },
+      user: await toStaffSessionUser(user),
       crmMembership: { id: membership.id, organizationId: membership.organizationId },
     };
   },

@@ -47,8 +47,20 @@ const attachCircuitBreaker = (worker: Worker, queue: Queue) => {
   });
 };
 
+type DeadLetterStage = Parameters<typeof attachDeadLetterOnExhaustion>[3];
+type PipelineQueue = Parameters<typeof attachDeadLetterOnExhaustion>[1];
+
+const attachDeadLetterListener = (queue: PipelineQueue, stage: DeadLetterStage) =>
+  attachDeadLetterOnExhaustion(
+    imageQueueRedisConnection,
+    queue,
+    imageProcessingQueues.deadLetter,
+    stage,
+    pipelineLogger,
+  );
+
 export const startImageProcessingWorkers = async (): Promise<void> => {
-  const { ingest, resize, optimize, thumbnail, cleanup, deadLetter } = imageProcessingQueues;
+  const { ingest, resize, optimize, thumbnail, cleanup } = imageProcessingQueues;
 
   const ingestWorker = createIngestWorker({
     connection: imageQueueRedisConnection,
@@ -91,34 +103,10 @@ export const startImageProcessingWorkers = async (): Promise<void> => {
   attachCircuitBreaker(thumbnailWorker, thumbnail);
 
   deadLetterListeners = [
-    attachDeadLetterOnExhaustion(
-      imageQueueRedisConnection,
-      ingest,
-      deadLetter,
-      "ingest",
-      pipelineLogger,
-    ),
-    attachDeadLetterOnExhaustion(
-      imageQueueRedisConnection,
-      resize,
-      deadLetter,
-      "resize",
-      pipelineLogger,
-    ),
-    attachDeadLetterOnExhaustion(
-      imageQueueRedisConnection,
-      optimize,
-      deadLetter,
-      "optimize",
-      pipelineLogger,
-    ),
-    attachDeadLetterOnExhaustion(
-      imageQueueRedisConnection,
-      thumbnail,
-      deadLetter,
-      "thumbnail",
-      pipelineLogger,
-    ),
+    attachDeadLetterListener(ingest, "ingest"),
+    attachDeadLetterListener(resize, "resize"),
+    attachDeadLetterListener(optimize, "optimize"),
+    attachDeadLetterListener(thumbnail, "thumbnail"),
   ];
 
   await scheduleCleanupSweep(cleanup);

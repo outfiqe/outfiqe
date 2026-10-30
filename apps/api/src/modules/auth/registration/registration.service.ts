@@ -42,50 +42,60 @@ const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Pr
   });
 };
 
+const assertRegistrationAllowed = async ({
+  email,
+  phone,
+  password,
+  captchaToken,
+  remoteIp,
+}: RegisterInput): Promise<void> => {
+  if (!(await verifyCaptcha(captchaToken, remoteIp))) {
+    auditLog("failure", "Register blocked: captcha challenge failed", {
+      event: "register.captcha_failed",
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const existingByEmail = await userRepository.findByEmail(email);
+  if (existingByEmail) {
+    auditLog("failure", "Register failed: email already exists", {
+      event: "register.email_exists",
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "USER_EXISTS",
+      "An account with this email already exists.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  const existingByPhone = await userRepository.findByPhone(phone);
+  if (existingByPhone) {
+    auditLog("failure", "Register failed: phone already exists", {
+      event: "register.phone_exists",
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "PHONE_EXISTS",
+      "An account with this phone number already exists.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  if (await isPasswordBreached(password)) {
+    throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
+  }
+};
+
 export const authRegistrationService = {
   async register(input: RegisterInput): Promise<{ userId: string }> {
-    const { name, email, phone, password, captchaToken, remoteIp } = input;
+    const { name, email, phone, password, remoteIp } = input;
 
-    if (!(await verifyCaptcha(captchaToken, remoteIp))) {
-      auditLog("failure", "Register blocked: captcha challenge failed", {
-        event: "register.captcha_failed",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
-    }
-
-    const existingByEmail = await userRepository.findByEmail(email);
-    if (existingByEmail) {
-      auditLog("failure", "Register failed: email already exists", {
-        event: "register.email_exists",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "USER_EXISTS",
-        "An account with this email already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      auditLog("failure", "Register failed: phone already exists", {
-        event: "register.phone_exists",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    if (await isPasswordBreached(password)) {
-      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
-    }
+    await assertRegistrationAllowed(input);
 
     const passwordHash = await hashPassword(password);
     const user = await userRepository.create({ name, email, phone, password, passwordHash });

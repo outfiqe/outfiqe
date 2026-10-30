@@ -24,6 +24,17 @@ import {
   toBrandFulfilmentGroupSummaryView,
 } from "./fulfilment-group.utils.js";
 
+const recalculateOrderRollup = (orderId: string) =>
+  prisma.$transaction(async (tx) => {
+    const groupStatuses = await orderFulfilmentGroupRepository.listFulfilmentGroupStatuses(
+      tx,
+      orderId,
+    );
+    const rollup = deriveOrderFulfilment(groupStatuses);
+    await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, rollup);
+    return rollup.fulfilmentStatus;
+  });
+
 export const orderFulfilmentGroupService = {
   async listBrandFulfilmentGroups(
     userId: string,
@@ -91,16 +102,7 @@ export const orderFulfilmentGroupService = {
     }
 
     const rollupStatusBefore = existing.order.fulfilmentStatus;
-    let rollupStatusAfter = rollupStatusBefore;
-    await prisma.$transaction(async (tx) => {
-      const groupStatuses = await orderFulfilmentGroupRepository.listFulfilmentGroupStatuses(
-        tx,
-        advanced.orderId,
-      );
-      const rollup = deriveOrderFulfilment(groupStatuses);
-      rollupStatusAfter = rollup.fulfilmentStatus;
-      await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, advanced.orderId, rollup);
-    });
+    const rollupStatusAfter = await recalculateOrderRollup(advanced.orderId);
 
     if (rollupStatusAfter !== rollupStatusBefore) {
       await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {

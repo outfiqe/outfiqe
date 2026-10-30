@@ -25,6 +25,44 @@ const PASSWORD_RESET_TTL = "1h";
 
 const PASSWORD_RESET_URL = `${env.FRONTEND_URL}/reset-password`;
 
+const assertCurrentPasswordMatches = async (
+  { id: userId, email, passwordHash }: { id: string; email: string; passwordHash: string },
+  currentPassword: string,
+  remoteIp?: string,
+): Promise<void> => {
+  const isCurrentPasswordValid = await verifyPassword(currentPassword, passwordHash);
+  if (!isCurrentPasswordValid) {
+    auditLog("failure", "Password change failed: current password incorrect", {
+      event: "change_password.invalid_current_password",
+      userId,
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "INVALID_CURRENT_PASSWORD",
+      "Your current password is incorrect.",
+      HTTP_STATUS.UNAUTHORIZED,
+    );
+  }
+};
+
+const assertNewPasswordAllowed = async (
+  newPassword: string,
+  currentPassword: string,
+): Promise<void> => {
+  if (newPassword === currentPassword) {
+    throw new AppError(
+      "PASSWORD_UNCHANGED",
+      "Your new password must be different from your current password.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  if (await isPasswordBreached(newPassword)) {
+    throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
+  }
+};
+
 export const authPasswordService = {
   async forgotPassword(email: string): Promise<void> {
     const user = await userRepository.findByEmail(email);
@@ -106,32 +144,12 @@ export const authPasswordService = {
       );
     }
 
-    const isCurrentPasswordValid = await verifyPassword(currentPassword, user.passwordHash);
-    if (!isCurrentPasswordValid) {
-      auditLog("failure", "Password change failed: current password incorrect", {
-        event: "change_password.invalid_current_password",
-        userId,
-        email: user.email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "INVALID_CURRENT_PASSWORD",
-        "Your current password is incorrect.",
-        HTTP_STATUS.UNAUTHORIZED,
-      );
-    }
-
-    if (newPassword === currentPassword) {
-      throw new AppError(
-        "PASSWORD_UNCHANGED",
-        "Your new password must be different from your current password.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (await isPasswordBreached(newPassword)) {
-      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
-    }
+    await assertCurrentPasswordMatches(
+      { id: userId, email: user.email, passwordHash: user.passwordHash },
+      currentPassword,
+      remoteIp,
+    );
+    await assertNewPasswordAllowed(newPassword, currentPassword);
 
     const passwordHash = await hashPassword(newPassword);
     await userRepository.updatePasswordHash(userId, passwordHash);

@@ -137,6 +137,53 @@ const assertAccountCanSignIn = (user: LoginUser, email: string, remoteIp?: strin
   }
 };
 
+const requireUsableRefreshToken = async (
+  rawRefreshToken: string | undefined,
+  remoteIp?: string,
+) => {
+  if (!rawRefreshToken) {
+    throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
+  if (!stored) {
+    throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
+
+  if (revokedAt) {
+    await authRepository.deleteRefreshTokenFamily(familyId);
+    auditLog("failure", "Refresh token reuse detected; token family revoked", {
+      event: "refresh.reuse_detected",
+      userId,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "TOKEN_REUSE_DETECTED",
+      "This session may have been compromised. Please sign in again.",
+      HTTP_STATUS.UNAUTHORIZED,
+    );
+  }
+
+  if (isPast(expiresAt)) {
+    await authRepository.deleteRefreshTokenById(storedId);
+    throw new AppError(
+      "TOKEN_EXPIRED",
+      "Refresh token has expired. Please sign in again.",
+      HTTP_STATUS.UNAUTHORIZED,
+    );
+  }
+
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    await authRepository.deleteRefreshTokenById(storedId);
+    throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  return { storedId, userId, familyId, user };
+};
+
 export const authSessionService = {
   async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
     await verifyPurposeTokenOrThrow(token, purpose);
@@ -181,45 +228,10 @@ export const authSessionService = {
   },
 
   async refresh(rawRefreshToken: string | undefined, remoteIp?: string): Promise<IssuedTokens> {
-    if (!rawRefreshToken) {
-      throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
-    }
-
-    const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
-    if (!stored) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
-    }
-
-    const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
-
-    if (revokedAt) {
-      await authRepository.deleteRefreshTokenFamily(familyId);
-      auditLog("failure", "Refresh token reuse detected; token family revoked", {
-        event: "refresh.reuse_detected",
-        userId,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "TOKEN_REUSE_DETECTED",
-        "This session may have been compromised. Please sign in again.",
-        HTTP_STATUS.UNAUTHORIZED,
-      );
-    }
-
-    if (isPast(expiresAt)) {
-      await authRepository.deleteRefreshTokenById(storedId);
-      throw new AppError(
-        "TOKEN_EXPIRED",
-        "Refresh token has expired. Please sign in again.",
-        HTTP_STATUS.UNAUTHORIZED,
-      );
-    }
-
-    const user = await userRepository.findById(userId);
-    if (!user) {
-      await authRepository.deleteRefreshTokenById(storedId);
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
-    }
+    const { storedId, userId, familyId, user } = await requireUsableRefreshToken(
+      rawRefreshToken,
+      remoteIp,
+    );
 
     const rawNewRefreshToken = generateOpaqueToken();
     const newTokenHash = hashToken(rawNewRefreshToken);
