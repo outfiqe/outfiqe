@@ -20,5 +20,9 @@ export const brandApplicationSchema = z.object({
   reviewedAt: z.string().nullable(),
   reviewedById: z.string().nullable(),
   createdAt: z.string(),
+  isAwaitingBrandSetup: z.boolean(),
 });
 export type BrandApplication = z.infer<typeof brandApplicationSchema>;
+
+export const brandInviteDeliverySchema = z.object({ isInviteDelivered: z.boolean() });
+export type BrandInviteDelivery = z.infer<typeof brandInviteDeliverySchema>;

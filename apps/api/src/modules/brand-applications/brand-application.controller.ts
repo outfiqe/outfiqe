@@ -37,9 +37,18 @@ export const brandApplicationController = {
     const { id } = validated.params<BrandApplicationIdParam>(res);
     const principal = requireAuthPrincipal(res);
 
-    await brandApplicationService.approve(id, principal.userId);
+    const inviteDelivery = await brandApplicationService.approve(id, principal.userId);
 
-    sendSuccess(res, null, "Application approved. Invite sent.");
+    sendSuccess(res, inviteDelivery, "Application approved.");
+  },
+
+  async resendInvite(_req: Request, res: Response) {
+    const { id } = validated.params<BrandApplicationIdParam>(res);
+    const principal = requireAuthPrincipal(res);
+
+    const inviteDelivery = await brandApplicationService.resendInvite(id, principal.userId);
+
+    sendSuccess(res, inviteDelivery, "Invite resent.");
   },
 
   async reject(_req: Request, res: Response) {

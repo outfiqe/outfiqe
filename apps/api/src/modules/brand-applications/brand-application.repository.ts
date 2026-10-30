@@ -5,8 +5,15 @@ import { brandApplicationErrors } from "./brand-application.errors.js";
 import type {
   ApproveBrandApplicationInput,
   BrandApplicationRecord,
+  BrandApplicationSummary,
   CreateBrandApplicationInput,
+  RotateBrandInviteInput,
 } from "./brand-application.types.js";
+
+const NO_INVITES_ROTATED = 0;
+const NO_UNACCEPTED_INVITES = 0;
+const INVITE_ROTATED = true;
+const INVITE_NOT_ROTATED = false;
 
 const requireClaimedPendingRow = (claimedCount: number): void => {
   if (claimedCount === 0) {
@@ -22,13 +29,24 @@ export const brandApplicationRepository = {
   async list(
     status: BrandApplicationStatus | undefined,
     params: { cursor?: string; limit: number },
-  ): Promise<BrandApplicationRecord[]> {
-    return prisma.brandApplication.findMany({
+  ): Promise<BrandApplicationSummary[]> {
+    const applications = await prisma.brandApplication.findMany({
       where: status ? { status } : undefined,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: {
+        brand: {
+          select: { _count: { select: { invites: { where: { acceptedAt: null } } } } },
+        },
+      },
     });
+
+    return applications.map(({ brand, ...application }) => ({
+      ...application,
+      isAwaitingBrandSetup:
+        (brand?._count.invites ?? NO_UNACCEPTED_INVITES) > NO_UNACCEPTED_INVITES,
+    }));
   },
 
   async findById(id: string): Promise<BrandApplicationRecord | null> {
@@ -87,5 +105,16 @@ export const brandApplicationRepository = {
     });
 
     return { brandId: brand.id };
+  },
+
+  async rotateUnacceptedInvite(
+    applicationId: string,
+    { tokenHash, expiresAt }: RotateBrandInviteInput,
+  ): Promise<boolean> {
+    const { count } = await prisma.brandInvite.updateMany({
+      where: { acceptedAt: null, brand: { applicationId } },
+      data: { tokenHash, expiresAt },
+    });
+    return count === NO_INVITES_ROTATED ? INVITE_NOT_ROTATED : INVITE_ROTATED;
   },
 };

@@ -14,6 +14,8 @@ type SendEmailInput = {
 const SMTP_IMPLICIT_TLS_PORT = 465;
 const EMAIL_DELIVERY_TIMEOUT_MS = 12_000;
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
+const EMAIL_DELIVERED = true;
+const EMAIL_NOT_DELIVERED = false;
 
 const smtpPort = env.SMTP_PORT ?? SMTP_IMPLICIT_TLS_PORT;
 
@@ -69,10 +71,12 @@ const deliver = async (input: SendEmailInput): Promise<void> => {
   logToConsoleStub(input);
 };
 
-export const sendEmail = async (input: SendEmailInput): Promise<void> => {
+export const sendEmail = async (input: SendEmailInput): Promise<boolean> => {
   try {
     await deliver(input);
+    return EMAIL_DELIVERED;
   } catch (err) {
     logger.error(`Email send failed (to=${input.to}, subject="${input.subject}"): ${String(err)}`);
+    return EMAIL_NOT_DELIVERED;
   }
 };
