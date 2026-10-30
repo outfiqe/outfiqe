@@ -1,8 +1,9 @@
+import { millisecondsInSecond } from "date-fns/constants";
+
 import type { LevelProgress, LevelRecord } from "./xp.types.js";
 
 const TOP_LEVEL_INDEX = 0;
 const NEXT_LEVEL_STEP = 1;
-const MS_PER_SECOND = 1000;
 const NO_MULTIPLIER = 1;
 
 export const computeLevelProgress = (totalXp: number, levelsDesc: LevelRecord[]): LevelProgress => {
@@ -33,7 +34,8 @@ export const isWithinCooldown = (
 ): boolean => {
   const hasCooldownRunning = cooldownSeconds !== null && lastAwardedAt !== null;
   return (
-    hasCooldownRunning && now.getTime() - lastAwardedAt.getTime() < cooldownSeconds * MS_PER_SECOND
+    hasCooldownRunning &&
+    now.getTime() - lastAwardedAt.getTime() < cooldownSeconds * millisecondsInSecond
   );
 };
 

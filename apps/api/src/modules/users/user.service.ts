@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { buildCursorPage, type CursorPage } from "#lib/pagination.utils.js";
@@ -18,7 +20,6 @@ import { toPublicUser } from "./user.utils.js";
 
 const USER_SEARCH_LIMIT = 10;
 const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const assertHandleAvailable = async (handle: string, excludingUserId: string): Promise<void> => {
   const existing = await userRepository.findByHandle(handle);
@@ -43,7 +44,9 @@ const checkHandleAvailability = async (
 const assertHandleChangeAllowed = (handleChangedAt: Date | null): void => {
   if (!handleChangedAt) return;
 
-  const eligibleAt = new Date(handleChangedAt.getTime() + HANDLE_CHANGE_COOLDOWN_DAYS * MS_PER_DAY);
+  const eligibleAt = new Date(
+    handleChangedAt.getTime() + HANDLE_CHANGE_COOLDOWN_DAYS * millisecondsInDay,
+  );
   if (eligibleAt > new Date()) {
     throw new AppError(
       "HANDLE_CHANGE_COOLING_DOWN",

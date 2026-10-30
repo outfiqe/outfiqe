@@ -1,9 +1,9 @@
+import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
 
 import type { MetricBucket, ProductTrendMeta } from "./trending.types.js";
-
-const HOUR_MS = 60 * 60 * 1000;
 
 const upsertPurchaseUnitsBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO product_trend_metrics (id, product_id, bucket_start, purchase_units, updated_at)
@@ -59,7 +59,7 @@ const upsertTagClicksBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$ex
 `;
 
 const upsertProductMetricsForHour = (bucketStart: Date): Promise<unknown> => {
-  const bucketEnd = new Date(bucketStart.getTime() + HOUR_MS);
+  const bucketEnd = new Date(bucketStart.getTime() + millisecondsInHour);
   return Promise.all([
     upsertPurchaseUnitsBucket(bucketStart, bucketEnd),
     upsertCartAddsBucket(bucketStart, bucketEnd),
@@ -71,7 +71,7 @@ const upsertProductMetricsForHour = (bucketStart: Date): Promise<unknown> => {
 
 export const trendingRepository = {
   async upsertHourlyMetrics(bucketStart: Date): Promise<void> {
-    const previousBucketStart = new Date(bucketStart.getTime() - HOUR_MS);
+    const previousBucketStart = new Date(bucketStart.getTime() - millisecondsInHour);
     await Promise.all([
       upsertProductMetricsForHour(bucketStart),
       upsertProductMetricsForHour(previousBucketStart),
@@ -86,7 +86,7 @@ export const trendingRepository = {
   },
 
   async listRecentMetricBuckets(sinceDays: number): Promise<MetricBucket[]> {
-    const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - sinceDays * millisecondsInDay);
     return prisma.productTrendMetric.findMany({
       where: { bucketStart: { gte: since } },
       orderBy: [{ productId: "asc" }, { bucketStart: "asc" }],

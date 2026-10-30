@@ -1,4 +1,5 @@
 import { addMinutes } from "date-fns/addMinutes";
+import { millisecondsInSecond } from "date-fns/constants";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
@@ -32,7 +33,6 @@ import type {
 } from "./platform-impersonation.types.js";
 
 const SECONDS_PER_MINUTE = 60;
-const MS_PER_SECOND = 1000;
 const TENANT_LOG_LIMIT = 50;
 const IMPERSONATION_FEATURE_KEY = "impersonation.allowed";
 const REDIS_EXPIRE_IN_SECONDS = "EX";
@@ -317,7 +317,7 @@ export const platformImpersonationService = {
       impersonatorId: session.impersonatorId,
       sessionId: session.id,
       scope: session.scope,
-      ttlSeconds: Math.ceil(remainingMs / MS_PER_SECOND),
+      ttlSeconds: Math.ceil(remainingMs / millisecondsInSecond),
     });
 
     const code = generateOpaqueToken();

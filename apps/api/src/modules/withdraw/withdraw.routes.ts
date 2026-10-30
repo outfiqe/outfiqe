@@ -1,4 +1,5 @@
-﻿import { Router } from "express";
+﻿import { millisecondsInHour } from "date-fns/constants";
+import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
@@ -20,7 +21,7 @@ import {
   withdrawRequestIdParamSchema,
 } from "./withdraw.schemas.js";
 
-const CREATE_WINDOW_MS = 60 * 60 * 1000;
+const CREATE_WINDOW_MS = millisecondsInHour;
 const CREATE_MAX_REQUESTS = 5;
 
 const createWithdrawRequestRateLimit = rateLimit({

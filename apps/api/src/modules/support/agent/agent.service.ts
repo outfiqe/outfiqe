@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
@@ -163,7 +165,7 @@ export const supportAgentService = {
           reopenUrl: `${env.FRONTEND_URL}/support/reopen?token=${reopenToken}`,
         }),
         body: `We've marked ${ticket.reference} resolved. Reopen it within ${Math.round(
-          REOPEN_TOKEN_TTL_MS / (24 * 60 * 60 * 1000),
+          REOPEN_TOKEN_TTL_MS / millisecondsInDay,
         )} days if it didn't help.`,
       });
     }

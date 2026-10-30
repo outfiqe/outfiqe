@@ -1,4 +1,5 @@
 import { PRODUCT_SORT } from "@outfiqe/utils";
+import { millisecondsInSecond } from "date-fns/constants";
 import { LRUCache } from "lru-cache";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
@@ -42,11 +43,10 @@ import { productCatalogRepository } from "./catalog.repository.js";
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "product-autocomplete";
-const MS_PER_SECOND = 1000;
 
 const autocompleteMemoryCache = new LRUCache<string, ProductSuggestion[]>({
   max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * MS_PER_SECOND,
+  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * millisecondsInSecond,
 });
 
 const hydrateSavedFlags = async (

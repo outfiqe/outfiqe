@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
@@ -33,8 +35,6 @@ import type {
 } from "../withdraw.types.js";
 import { toWithdrawRequestView } from "../withdraw.utils.js";
 import { computeWithdrawWindow } from "../withdraw.window.utils.js";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const resolveOwner = async (
   userId: string,
@@ -138,7 +138,8 @@ const assertNotInRejectionCooldown = async (
   const mostRecentRejection = await withdrawRepository.findMostRecentRejection(owner, tx);
   if (mostRecentRejection?.reviewedAt && policy.cooldownAfterRejectionDays > 0) {
     const cooldownEndsAt = new Date(
-      mostRecentRejection.reviewedAt.getTime() + policy.cooldownAfterRejectionDays * MS_PER_DAY,
+      mostRecentRejection.reviewedAt.getTime() +
+        policy.cooldownAfterRejectionDays * millisecondsInDay,
     );
     if (cooldownEndsAt > new Date()) {
       throw new AppError(
@@ -230,7 +231,7 @@ export const withdrawRequestService = {
       mostRecentRejection?.reviewedAt && policy.cooldownAfterRejectionDays > 0
         ? new Date(
             mostRecentRejection.reviewedAt.getTime() +
-              policy.cooldownAfterRejectionDays * MS_PER_DAY,
+              policy.cooldownAfterRejectionDays * millisecondsInDay,
           )
         : null;
     const cooldownActive = !!cooldownEndsAt && cooldownEndsAt > new Date();

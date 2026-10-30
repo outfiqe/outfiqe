@@ -1,3 +1,4 @@
+import { millisecondsInSecond } from "date-fns/constants";
 import type { CookieOptions, Request, Response } from "express";
 
 import { IS_DEPLOYED } from "#config/app-env.js";
@@ -8,7 +9,6 @@ const REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 const HAS_SESSION_COOKIE_NAME = "has_session";
 export const CSRF_TOKEN_COOKIE_NAME = "csrf_token";
 const AUTH_COOKIE_PATH = "/";
-const MS_PER_SECOND = 1000;
 
 const baseCookieOptions: CookieOptions = {
   httpOnly: true,
@@ -22,7 +22,7 @@ const hasSessionCookieOptions: CookieOptions = { ...baseCookieOptions, httpOnly:
 const csrfTokenCookieOptions: CookieOptions = { ...baseCookieOptions, httpOnly: false };
 
 export const setRefreshCookie = (res: Response, token: string, ttlSeconds: number): void => {
-  const maxAge = ttlSeconds * MS_PER_SECOND;
+  const maxAge = ttlSeconds * millisecondsInSecond;
   res.cookie(REFRESH_TOKEN_COOKIE_NAME, token, { ...baseCookieOptions, maxAge });
   res.cookie(HAS_SESSION_COOKIE_NAME, "1", { ...hasSessionCookieOptions, maxAge });
   res.cookie(CSRF_TOKEN_COOKIE_NAME, generateOpaqueToken(), { ...csrfTokenCookieOptions, maxAge });

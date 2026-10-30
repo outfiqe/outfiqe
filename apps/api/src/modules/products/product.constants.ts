@@ -1,6 +1,7 @@
+import { millisecondsInDay } from "date-fns/constants";
 import { hoursToMilliseconds } from "date-fns/hoursToMilliseconds";
 
-export const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+export const NEW_ARRIVAL_WINDOW_MS = 7 * millisecondsInDay;
 
 export const INVENTORY_RECONCILIATION_INTERVAL_MS = hoursToMilliseconds(24);
 export const INVENTORY_MISMATCH_REPORT_LIMIT = 100;

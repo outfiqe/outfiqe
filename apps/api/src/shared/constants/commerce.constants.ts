@@ -1,4 +1,5 @@
-export const ATTRIBUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+import { millisecondsInDay } from "date-fns/constants";
+export const ATTRIBUTION_WINDOW_MS = 7 * millisecondsInDay;
 export const SESSION_ID_MAX = 128;
 
 export const ORDER_REFUND_OUTCOME = {
