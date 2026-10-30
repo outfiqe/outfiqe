@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
+
 import { crmApi } from "../api/crmApi";
 import { crmReportingApi } from "../reporting/api/reportingApi";
 import type { CrmSearchResults } from "../reporting/api/reportingSchemas";
@@ -122,7 +124,7 @@ export const CrmSearchBox = () => {
       {isSearching && (
         <AutocompleteContent className="mt-2 w-80">
           {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
+            Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
             ))}
 

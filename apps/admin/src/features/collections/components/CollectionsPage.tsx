@@ -14,6 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { PUBLISH_STATUS } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -23,7 +24,9 @@ import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { slugify } from "@/lib/slugify";
 
 import { collectionsApi } from "../api/collectionsApi";
@@ -70,7 +73,7 @@ export const CollectionsPage = () => {
   const form = useForm<CollectionFormValues>({
     resolver: zodResolver(collectionFormSchema),
     defaultValues: EMPTY_COLLECTION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [managingId, setManagingId] = useState<string | null>(null);
@@ -96,11 +99,15 @@ export const CollectionsPage = () => {
     mutationFn: (collection: Collection) =>
       collectionsApi.setStatus(
         collection.id,
-        collection.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
+        collection.status === PUBLISH_STATUS.PUBLISHED
+          ? PUBLISH_STATUS.DRAFT
+          : PUBLISH_STATUS.PUBLISHED,
       ),
     invalidateKeys: [COLLECTIONS_QUERY_KEY],
     successMessage: (updated) =>
-      updated.status === "PUBLISHED" ? "Collection published." : "Collection unpublished.",
+      updated.status === PUBLISH_STATUS.PUBLISHED
+        ? "Collection published."
+        : "Collection unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -219,7 +226,9 @@ export const CollectionsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <CollectionRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <CollectionRowSkeleton key={index} />
+          ))}
         {collections?.length === 0 && (
           <p className="text-sm text-muted-foreground">No collections yet.</p>
         )}
@@ -259,11 +268,11 @@ export const CollectionsPage = () => {
                       {managingId === id ? "Close" : "Manage products"}
                     </Button>
                     <Button
-                      variant={status === "PUBLISHED" ? "ghost" : "default"}
+                      variant={status === PUBLISH_STATUS.PUBLISHED ? "ghost" : "default"}
                       onClick={() => toggleStatus.mutate(collection)}
                       disabled={toggleStatus.isPending}
                     >
-                      {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                      {status === PUBLISH_STATUS.PUBLISHED ? "Unpublish" : "Publish"}
                     </Button>
                   </>
                 )}

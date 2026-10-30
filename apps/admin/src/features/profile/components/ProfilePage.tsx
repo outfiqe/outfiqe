@@ -18,6 +18,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { authApi } from "@/features/auth/api/authApi";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { profileFormSchema, type ProfileFormValues } from "../schemas/profileForms.schema";
 import { ChangePasswordCard } from "./ChangePasswordCard";
@@ -31,7 +32,7 @@ export const ProfilePage = () => {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: { name: user?.name ?? "", avatarUrl: user?.avatarUrl ?? null },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useMutation({

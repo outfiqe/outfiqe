@@ -14,7 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,8 +22,11 @@ import { useForm } from "react-hook-form";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { slugify } from "@/lib/slugify";
+import { useOptimisticReorder } from "@/lib/useOptimisticReorder";
 
 import { productTypesApi } from "../api/productTypesApi";
 import type { ProductType } from "../api/productTypesSchemas";
@@ -36,7 +39,6 @@ import {
 const QUERY_KEY = ["admin-product-types"];
 
 export const ProductTypesPage = () => {
-  const queryClient = useQueryClient();
   const { canUse } = usePlatformPermissions();
   const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const { data: productTypes, isLoading } = useQuery({
@@ -47,11 +49,9 @@ export const ProductTypesPage = () => {
   const form = useForm<ProductTypeFormValues>({
     resolver: zodResolver(productTypeFormSchema),
     defaultValues: EMPTY_PRODUCT_TYPE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [slugTouched, setSlugTouched] = useState(false);
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const create = useApiMutation({
     mutationFn: (values: ProductTypeFormValues) => productTypesApi.create(values),
@@ -81,26 +81,9 @@ export const ProductTypesPage = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reorder = useMutation({
-    mutationFn: (orderedIds: string[]) => productTypesApi.reorder(orderedIds),
-    onMutate: async (orderedIds) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEY });
-      const previous = queryClient.getQueryData<ProductType[]>(QUERY_KEY);
-      if (previous) {
-        const byId = new Map(previous.map((productType) => [productType.id, productType]));
-        queryClient.setQueryData(
-          QUERY_KEY,
-          orderedIds
-            .map((id) => byId.get(id))
-            .filter((productType): productType is ProductType => !!productType),
-        );
-      }
-      return { previous };
-    },
-    onError: (_error, _orderedIds, context) => {
-      if (context?.previous) queryClient.setQueryData(QUERY_KEY, context.previous);
-    },
-    onSettled: invalidate,
+  const reorder = useOptimisticReorder<ProductType>({
+    queryKey: QUERY_KEY,
+    reorderIds: (orderedIds) => productTypesApi.reorder(orderedIds),
   });
 
   const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
@@ -183,7 +166,7 @@ export const ProductTypesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <ReorderRowSkeleton key={index} actionLabel="Switch off" />
           ))}
         {productTypes?.length === 0 && (

@@ -1,6 +1,7 @@
 import { Button, Input, Modal, MultiSelect, Select, Textarea, toast } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { ISO_DATE_LENGTH } from "@/lib/dateInputs";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { announcementsApi } from "../api/announcementsApi";
@@ -53,7 +54,9 @@ export const ComposeAnnouncementModal = ({
     announcement?.targetSurface ?? NotificationSurface.WEB,
   );
   const [targetPath, setTargetPath] = useState(announcement?.targetPath ?? "");
-  const [expiresAt, setExpiresAt] = useState(announcement?.expiresAt?.slice(0, 10) ?? "");
+  const [expiresAt, setExpiresAt] = useState(
+    announcement?.expiresAt?.slice(0, ISO_DATE_LENGTH) ?? "",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resolvedAudienceCount, setResolvedAudienceCount] = useState<number | null>(
     announcement?.resolvedAudienceCount ?? null,

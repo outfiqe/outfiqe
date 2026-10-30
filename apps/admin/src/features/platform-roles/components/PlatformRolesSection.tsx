@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { platformRolesApi } from "../api/platformRolesApi";
 import type { PlatformPermission, PlatformRole } from "../api/platformRolesSchemas";
@@ -64,7 +65,7 @@ const PlatformRoleFormModal = ({
       name: editingRole?.name ?? "",
       permissionKeys: editingRole?.permissionKeys ?? [],
     },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const save = useApiMutation({

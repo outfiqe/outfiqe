@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
+
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 import type { PartnerSummary } from "../api/relationshipsSchemas";
 
@@ -83,7 +85,7 @@ export const PartnerSearchField = ({ id, value, onChange }: PartnerSearchFieldPr
       {isSearching && (
         <AutocompleteContent className="mt-2">
           {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
+            Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
             ))}
 

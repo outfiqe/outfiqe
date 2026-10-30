@@ -1,57 +1,46 @@
 import {
   Sidebar,
-  type SidebarNavItem,
-  type SidebarNavSection,
   SidebarSkeleton,
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { Badge, cn } from "@outfiqe/design-system";
-import { getAvatarColor, initialsFor } from "@outfiqe/utils";
+import { cn } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { crmApi } from "@/features/crm/api/crmApi";
-import { canOpenPlatformOverview } from "@/lib/platformPermissions";
+import { CRM_ORGANIZATION_STALE_TIME_MS } from "@/features/crm/constants/crmOrganizationQuery";
 
-import { AdminModuleSearch } from "./AdminModuleSearch";
+import { buildAdminNavSections } from "./adminNavSections";
 import {
-  groupPlatformNavItems,
   isAdminNavReady,
-  isCrmSubItemVisible,
   resolveAccountLabel,
   shouldRefetchCrmOrganizationOnFocus,
-  shouldShowCrmSection,
-  shouldShowPlatformSection,
 } from "./AdminSidebar.utils";
-import {
-  CRM_SUB_ITEMS,
-  PLATFORM_NAV_GROUP_ICONS,
-  PLATFORM_NAV_ITEMS,
-  PLATFORM_OVERVIEW_NAV_ITEM,
-  toNavItem,
-} from "./adminSidebarNavItems";
+import { AdminSidebarAccount } from "./AdminSidebarAccount";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
 const SIDEBAR_SKELETON_ROW_COUNT = 8;
+const SIDEBAR_ARIA_LABEL = "Admin";
+const SIDEBAR_COLLAPSE_STORAGE_KEY = "outfiqe:admin-sidebar-collapsed";
 
 export const AdminSidebar = () => {
   const { state } = useAuth();
   const navigation = useTanStackSidebarNavigation();
-  const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
+  const { collapsed, toggle } = useSidebarCollapse(SIDEBAR_COLLAPSE_STORAGE_KEY);
 
   const { data: crmOrganization, isFetched: hasCrmOrganizationAnswered } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: CRM_ORGANIZATION_STALE_TIME_MS,
     refetchOnWindowFocus: shouldRefetchCrmOrganizationOnFocus,
   });
 
   if (!isAdminNavReady(state.status !== "loading", hasCrmOrganizationAnswered)) {
     return (
       <SidebarSkeleton
-        ariaLabel="Admin"
+        ariaLabel={SIDEBAR_ARIA_LABEL}
         collapsed={collapsed}
         rowCount={SIDEBAR_SKELETON_ROW_COUNT}
         className={cn("shrink-0", sidebarWidthClass(collapsed))}
@@ -59,81 +48,30 @@ export const AdminSidebar = () => {
     );
   }
 
-  const visibleCrmItems = CRM_SUB_ITEMS.filter((crmItem) =>
-    isCrmSubItemVisible(crmItem, crmOrganization),
-  ).map(toNavItem);
-
   const user = state.status === "signed-in" ? state.user : null;
-  const isCoFounder = user?.isCoFounder ?? false;
+  const navSections = buildAdminNavSections(user, crmOrganization);
   const accountLabel = resolveAccountLabel({
     hasPlatformAccess: user?.hasPlatformAccess ?? false,
     crmRoleName: crmOrganization?.viewerRoleName,
   });
-  const platformNavItems: SidebarNavItem[] = [
-    ...(user && canOpenPlatformOverview(user) ? [PLATFORM_OVERVIEW_NAV_ITEM] : []),
-    ...groupPlatformNavItems(
-      PLATFORM_NAV_ITEMS,
-      { isCoFounder, hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [] },
-      PLATFORM_NAV_GROUP_ICONS,
-    ),
-  ];
-  const navSections: SidebarNavSection[] = [
-    ...(shouldShowCrmSection(crmOrganization)
-      ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
-      : []),
-    ...(shouldShowPlatformSection(user?.hasPlatformAccess ?? false, crmOrganization)
-      ? [{ id: "platform", label: "Platform", items: platformNavItems }]
-      : []),
-  ];
-
-  const header = user && (
-    <div className={cn("flex min-w-0 flex-1 flex-col gap-3", collapsed && "items-center")}>
-      <div className={cn("flex min-w-0 items-center gap-2.5", collapsed && "justify-center")}>
-        <div className="size-9 shrink-0 overflow-hidden rounded-full">
-          <div
-            className="flex size-full items-center justify-center bg-cover bg-center"
-            style={user.avatarUrl ? { backgroundImage: `url(${user.avatarUrl})` } : undefined}
-          >
-            {!user.avatarUrl && (
-              <span
-                aria-hidden
-                className="flex size-full items-center justify-center text-xs font-bold text-white"
-                style={{ backgroundColor: getAvatarColor(user.id) }}
-              >
-                {initialsFor(user.name)}
-              </span>
-            )}
-          </div>
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground" title={user.name}>
-              {user.name}
-            </p>
-            {isCoFounder ? (
-              <Badge tone="positive" showDot={false} className="mt-1 px-2 py-0.5 text-[10px]">
-                Co-founder
-              </Badge>
-            ) : (
-              <p className="truncate text-[11px] text-muted-foreground" title={accountLabel}>
-                {accountLabel}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-      {!collapsed && <AdminModuleSearch sections={navSections} />}
-    </div>
-  );
 
   return (
     <Sidebar
       sections={navSections}
       navigation={navigation}
-      ariaLabel="Admin"
+      ariaLabel={SIDEBAR_ARIA_LABEL}
       collapsed={collapsed}
       onToggleCollapse={toggle}
-      header={header}
+      header={
+        user && (
+          <AdminSidebarAccount
+            user={user}
+            accountLabel={accountLabel}
+            collapsed={collapsed}
+            navSections={navSections}
+          />
+        )
+      }
       className={`shrink-0 ${sidebarWidthClass(collapsed)}`}
     />
   );

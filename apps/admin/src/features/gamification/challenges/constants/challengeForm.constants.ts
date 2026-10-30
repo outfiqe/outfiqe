@@ -1,3 +1,5 @@
+import { MS_PER_DAY } from "@outfiqe/utils";
+
 import { EMPTY_CONDITION } from "../../conditions/constants/condition.constants";
 import { AUTO_ANIMATION_OPTION } from "../../constants/badgeOptions.constants";
 import { toDatetimeLocalValue } from "../../utils/datetime.utils";
@@ -5,7 +7,8 @@ import type { ChallengeFormState } from "../types/challengeForm.types";
 
 export const CHALLENGES_QUERY_KEY = ["admin-challenges"];
 
-const DEFAULT_CHALLENGE_LENGTH_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_CHALLENGE_LENGTH_DAYS = 7;
+const DEFAULT_CHALLENGE_LENGTH_MS = DEFAULT_CHALLENGE_LENGTH_DAYS * MS_PER_DAY;
 
 export const createEmptyChallengeForm = (): ChallengeFormState => ({
   name: "",

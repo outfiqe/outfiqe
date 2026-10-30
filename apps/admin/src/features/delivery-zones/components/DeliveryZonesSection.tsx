@@ -23,7 +23,9 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import {
   type DeliveryZoneInput,
@@ -134,7 +136,7 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
   const form = useForm<ZoneFormValues>({
     resolver: zodResolver(zoneFormSchema),
     defaultValues: formValuesForZone(zone),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -204,7 +206,7 @@ export const DeliveryZonesSection = () => {
   const form = useForm<ZoneFormValues>({
     resolver: zodResolver(zoneFormSchema),
     defaultValues: EMPTY_ZONE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeliveryZone | null>(null);
@@ -264,7 +266,10 @@ export const DeliveryZonesSection = () => {
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading && Array.from({ length: 3 }).map((_, index) => <ZoneRowSkeleton key={index} />)}
+        {isLoading &&
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <ZoneRowSkeleton key={index} />
+          ))}
 
         {isError && (
           <FormBanner className="flex items-center justify-between gap-3">

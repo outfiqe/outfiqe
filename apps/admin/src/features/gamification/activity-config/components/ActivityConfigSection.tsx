@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { gamificationApi } from "../../api/gamificationApi";
 import type { ActivityXpConfig } from "../../api/gamificationSchemas";
@@ -29,7 +30,9 @@ export const ActivityConfigSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} hasSubLine />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <ActionRowSkeleton key={index} hasSubLine />
+          ))}
 
         {configs?.map((config) => (
           <ActivityConfigCard

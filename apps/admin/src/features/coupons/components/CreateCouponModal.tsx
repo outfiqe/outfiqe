@@ -17,6 +17,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { couponsApi } from "../api/couponsApi";
 import type { CouponFormValues } from "../schemas/couponForm.schema";
@@ -57,7 +58,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponFormSchema),
     defaultValues: EMPTY_COUPON_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const { control, watch, register } = form;
   const couponType = watch("type");

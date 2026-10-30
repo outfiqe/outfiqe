@@ -15,6 +15,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import type { Hub } from "../../hubs/api/hubsSchemas";
 import { ridersApi } from "../api/ridersApi";
@@ -32,7 +33,7 @@ export const InviteRiderModal = ({ hub, onClose }: InviteRiderModalProps) => {
   const form = useForm<InviteRiderFormValues>({
     resolver: zodResolver(inviteRiderFormSchema),
     defaultValues: { name: "", email: "", employmentType: RIDER_EMPLOYMENT_TYPE.CONTRACTOR },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const inviteRider = useApiMutation({

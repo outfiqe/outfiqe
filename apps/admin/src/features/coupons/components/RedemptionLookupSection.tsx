@@ -2,6 +2,7 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { useInfiniteRedemptions } from "../hooks/useInfiniteRedemptions";
 
@@ -67,7 +68,7 @@ export const RedemptionLookupSection = () => {
       {filters !== null && (
         <div className="space-y-3">
           {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
+            Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <CardRowSkeleton key={index} textLineCount={1} />
             ))}
           {error && <p className="text-sm text-destructive">Couldn&apos;t search redemptions.</p>}

@@ -17,6 +17,7 @@ import { GripVertical } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmPipelineApi } from "../api/pipelineApi";
 import type { PipelineStage } from "../api/pipelineSchemas";
@@ -36,7 +37,7 @@ export const StageConfigModal = ({
   const form = useForm<StageFormValues>({
     resolver: zodResolver(stageFormSchema),
     defaultValues: { name: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const addStage = useApiMutation({

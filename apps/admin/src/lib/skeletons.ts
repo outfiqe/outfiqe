@@ -1,0 +1,1 @@
+export const DEFAULT_SKELETON_ROW_COUNT = 3;
