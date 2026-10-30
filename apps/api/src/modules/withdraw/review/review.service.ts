@@ -112,6 +112,41 @@ const claimLedgerRows = async (
   return isEveryRowClaimed ? claimedRows : null;
 };
 
+const confirmFirstPayoutCrossCheck = async (
+  tx: Prisma.TransactionClient,
+  requestRecord: WithdrawRequestRecord,
+  adminId: string,
+  { identityCrossCheckConfirmed }: ApproveWithdrawRequestBody,
+): Promise<void> => {
+  const bankAccountId = requestRecord.bankAccountId ?? requestRecord.brandBankAccountId;
+  if (!bankAccountId) {
+    throw new AppError("NOT_FOUND", "This request has no bank account.", HTTP_STATUS.NOT_FOUND);
+  }
+
+  const alreadyCrossChecked =
+    requestRecord.ownerType === "CREATOR"
+      ? (await tx.bankAccount.findUnique({ where: { id: bankAccountId } }))
+          ?.firstPayoutCrossCheckedAt
+      : (await tx.brandBankAccount.findUnique({ where: { id: bankAccountId } }))
+          ?.firstPayoutCrossCheckedAt;
+
+  if (!alreadyCrossChecked && !identityCrossCheckConfirmed) {
+    throw new AppError(
+      "IDENTITY_CROSS_CHECK_REQUIRED",
+      "Confirm the identity/bank-name cross-check before approving this account's first payout.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  if (!alreadyCrossChecked) {
+    if (requestRecord.ownerType === "CREATOR") {
+      await bankAccountRepository.stampFirstPayoutCrossCheck(bankAccountId, adminId, tx);
+    } else {
+      await brandBankAccountRepository.stampFirstPayoutCrossCheck(bankAccountId, adminId, tx);
+    }
+  }
+};
+
 export const withdrawReviewService = {
   async listAllAdmin(
     query: ListAdminWithdrawRequestsQuery,
@@ -148,39 +183,7 @@ export const withdrawReviewService = {
       const isFinalApproval =
         !requestRecord.requiresSecondSignOff || requestRecord.firstApprovedById !== null;
 
-      if (isFinalApproval) {
-        const bankAccountId = requestRecord.bankAccountId ?? requestRecord.brandBankAccountId;
-        if (!bankAccountId) {
-          throw new AppError(
-            "NOT_FOUND",
-            "This request has no bank account.",
-            HTTP_STATUS.NOT_FOUND,
-          );
-        }
-
-        const alreadyCrossChecked =
-          requestRecord.ownerType === "CREATOR"
-            ? (await tx.bankAccount.findUnique({ where: { id: bankAccountId } }))
-                ?.firstPayoutCrossCheckedAt
-            : (await tx.brandBankAccount.findUnique({ where: { id: bankAccountId } }))
-                ?.firstPayoutCrossCheckedAt;
-
-        if (!alreadyCrossChecked && !body.identityCrossCheckConfirmed) {
-          throw new AppError(
-            "IDENTITY_CROSS_CHECK_REQUIRED",
-            "Confirm the identity/bank-name cross-check before approving this account's first payout.",
-            HTTP_STATUS.BAD_REQUEST,
-          );
-        }
-
-        if (!alreadyCrossChecked) {
-          if (requestRecord.ownerType === "CREATOR") {
-            await bankAccountRepository.stampFirstPayoutCrossCheck(bankAccountId, adminId, tx);
-          } else {
-            await brandBankAccountRepository.stampFirstPayoutCrossCheck(bankAccountId, adminId, tx);
-          }
-        }
-      }
+      if (isFinalApproval) await confirmFirstPayoutCrossCheck(tx, requestRecord, adminId, body);
 
       const transitioned = requestRecord.requiresSecondSignOff
         ? requestRecord.firstApprovedById === null

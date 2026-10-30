@@ -47,6 +47,96 @@ const rehashPasswordInBackground = (userId: string, plaintextPassword: string): 
     });
 };
 
+const CREDENTIALS_DO_NOT_MATCH = false;
+
+type LoginUser = NonNullable<Awaited<ReturnType<typeof userRepository.findByEmail>>>;
+
+const invalidCredentialsError = () =>
+  new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, HTTP_STATUS.UNAUTHORIZED);
+
+const assertLoginNotThrottled = async (
+  email: string,
+  captchaToken?: string,
+  remoteIp?: string,
+): Promise<void> => {
+  if (await isLockedOut(email)) {
+    auditLog("failure", "Login blocked: account temporarily locked out", {
+      event: "login.locked_out",
+      email,
+      ip: remoteIp,
+    });
+    throw invalidCredentialsError();
+  }
+
+  const failedLoginCount = await getFailedLoginCount(email);
+  if (
+    failedLoginCount >= LOGIN_CAPTCHA_CHALLENGE_THRESHOLD &&
+    !(await verifyCaptcha(captchaToken, remoteIp))
+  ) {
+    auditLog("failure", "Login blocked: captcha challenge failed", {
+      event: "login.captcha_failed",
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
+  }
+};
+
+const requireMatchingCredentials = async (
+  email: string,
+  password: string,
+  remoteIp?: string,
+): Promise<LoginUser> => {
+  const user = await userRepository.findByEmail(email);
+  const isValid = user?.passwordHash
+    ? await verifyPassword(password, user.passwordHash)
+    : CREDENTIALS_DO_NOT_MATCH;
+
+  if (!user || !isValid) {
+    await recordFailedLogin(email);
+    auditLog("failure", "Login failed: invalid credentials", {
+      event: "login.invalid_credentials",
+      email,
+      ip: remoteIp,
+    });
+    throw invalidCredentialsError();
+  }
+  return user;
+};
+
+const assertAccountCanSignIn = (user: LoginUser, email: string, remoteIp?: string): void => {
+  const { id } = user;
+
+  if (!user.emailVerified) {
+    auditLog("failure", "Login blocked: email not verified", {
+      event: "login.email_not_verified",
+      userId: id,
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "EMAIL_NOT_VERIFIED",
+      "Please verify your email before signing in.",
+      HTTP_STATUS.FORBIDDEN,
+    );
+  }
+
+  if (user.accountStatus !== AccountStatus.ACTIVE) {
+    auditLog("failure", "Login blocked: account suspended or banned", {
+      event: "login.account_suspended",
+      userId: id,
+      email,
+      ip: remoteIp,
+    });
+    throw new AppError(
+      "ACCOUNT_SUSPENDED",
+      "This account has been suspended.",
+      HTTP_STATUS.FORBIDDEN,
+      { reason: user.suspensionReason, expiresAt: user.suspensionExpiresAt },
+    );
+  }
+};
+
 export const authSessionService = {
   async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
     await verifyPurposeTokenOrThrow(token, purpose);
@@ -58,48 +148,8 @@ export const authSessionService = {
     captchaToken?: string,
     remoteIp?: string,
   ): Promise<AuthSession> {
-    if (await isLockedOut(email)) {
-      auditLog("failure", "Login blocked: account temporarily locked out", {
-        event: "login.locked_out",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "INVALID_CREDENTIALS",
-        INVALID_CREDENTIALS_MESSAGE,
-        HTTP_STATUS.UNAUTHORIZED,
-      );
-    }
-
-    const failedLoginCount = await getFailedLoginCount(email);
-    if (
-      failedLoginCount >= LOGIN_CAPTCHA_CHALLENGE_THRESHOLD &&
-      !(await verifyCaptcha(captchaToken, remoteIp))
-    ) {
-      auditLog("failure", "Login blocked: captcha challenge failed", {
-        event: "login.captcha_failed",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, HTTP_STATUS.BAD_REQUEST);
-    }
-
-    const user = await userRepository.findByEmail(email);
-    const isValid = user?.passwordHash ? await verifyPassword(password, user.passwordHash) : false;
-
-    if (!user || !isValid) {
-      await recordFailedLogin(email);
-      auditLog("failure", "Login failed: invalid credentials", {
-        event: "login.invalid_credentials",
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "INVALID_CREDENTIALS",
-        INVALID_CREDENTIALS_MESSAGE,
-        HTTP_STATUS.UNAUTHORIZED,
-      );
-    }
+    await assertLoginNotThrottled(email, captchaToken, remoteIp);
+    const user = await requireMatchingCredentials(email, password, remoteIp);
 
     await resetFailedLogins(email);
 
@@ -109,34 +159,7 @@ export const authSessionService = {
       rehashPasswordInBackground(id, password);
     }
 
-    if (!user.emailVerified) {
-      auditLog("failure", "Login blocked: email not verified", {
-        event: "login.email_not_verified",
-        userId: id,
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "EMAIL_NOT_VERIFIED",
-        "Please verify your email before signing in.",
-        HTTP_STATUS.FORBIDDEN,
-      );
-    }
-
-    if (user.accountStatus !== AccountStatus.ACTIVE) {
-      auditLog("failure", "Login blocked: account suspended or banned", {
-        event: "login.account_suspended",
-        userId: id,
-        email,
-        ip: remoteIp,
-      });
-      throw new AppError(
-        "ACCOUNT_SUSPENDED",
-        "This account has been suspended.",
-        HTTP_STATUS.FORBIDDEN,
-        { reason: user.suspensionReason, expiresAt: user.suspensionExpiresAt },
-      );
-    }
+    assertAccountCanSignIn(user, email, remoteIp);
 
     const tokens = await issueTokens(user);
 
