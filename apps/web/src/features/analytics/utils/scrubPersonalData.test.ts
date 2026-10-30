@@ -43,6 +43,24 @@ describe("redactPersonalText with secrets in links", () => {
     expect(redacted).toContain(`token=${REDACTED_VALUE}`);
   });
 
+  it("hides the Google account-linking token and the email beside it", () => {
+    const redacted = redactPersonalText(
+      "https://outfiqe.com/auth/callback?status=link_required&linkToken=abc123&email=sita@example.com",
+    );
+
+    expect(redacted).not.toContain("abc123");
+    expect(redacted).not.toContain("sita@example.com");
+    expect(redacted).toContain("status=link_required");
+  });
+
+  it("hides any parameter named like a token, code, secret or password", () => {
+    const redacted = redactPersonalText(
+      "/x?access_token=aaa&inviteToken=bbb&exchangeCode=ccc&client_secret=ddd&newPassword=eee",
+    );
+
+    expect(redacted).not.toMatch(/aaa|bbb|ccc|ddd|eee/);
+  });
+
   it("hides gateway and sign-in values, keeping the other parameters", () => {
     expect(redactPersonalText("/payments/esewa/callback/1?data=eyJ0&category=dresses")).toBe(
       `/payments/esewa/callback/1?data=${REDACTED_VALUE}&category=dresses`,

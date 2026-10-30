@@ -21,8 +21,10 @@ from the shared catalog in `@outfiqe/utils` (`ANALYTICS_EVENTS`).
   the banner was reopened. Components read it through `useSyncExternalStore`.
 - `utils/scrubPersonalData.ts`:
   - `redactPersonalText` replaces anything that looks like an email address or a Nepali mobile
-    number, and the value of secret link parameters (`token`, `code`, `state`, `otp`, `data`,
-    `pidx`, `tidx`, `transaction_id`), even inside an encoded redirect link;
+    number, and the value of secret link parameters, even inside an encoded redirect link. Any
+    parameter named like a token, code, secret or password is covered (`linkToken`, `access_token`),
+    so a new one needs no change here, plus `state`, `otp`, `data`, `pidx`, `tidx` and
+    `transaction_id`;
   - `scrubPersonalData` runs it over every event before it leaves the browser (`before_send`).
     PostHog keeps the full link in `$current_url`, `$referrer` and person properties, and
     recordings go through the same path. So without this, a password reset, email verification,

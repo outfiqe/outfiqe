@@ -7,8 +7,10 @@ const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const NEPAL_PHONE_PATTERN = /(?<![\dA-Za-z])(?:\+?977[\s-]?)?9[678]\d{8}(?![\dA-Za-z])/g;
 
 const SECRET_URL_PARAMS = [
-  "token",
-  "code",
+  "[a-z_]*token",
+  "[a-z_]*code",
+  "[a-z_]*secret",
+  "[a-z_]*password",
   "state",
   "otp",
   "data",
