@@ -23,7 +23,7 @@ export const FunnelSteps = ({ steps, emptyMessage }: FunnelStepsProps) => {
   return (
     <ol className="space-y-3">
       {steps.map(({ event, persons }, stepIndex) => {
-        const previousPersons = steps[stepIndex - PREVIOUS_STEP_OFFSET]?.persons ?? null;
+        const previousPersons = steps[stepIndex - PREVIOUS_STEP_OFFSET]?.persons ?? NO_PEOPLE;
         const shareOfFirstStep = toStepShare(persons, firstStepPersons);
         return (
           <li key={event}>
@@ -31,7 +31,7 @@ export const FunnelSteps = ({ steps, emptyMessage }: FunnelStepsProps) => {
               <span className="text-foreground">{FUNNEL_STEP_LABEL[event] ?? event}</span>
               <span className="tabular-nums text-foreground">
                 {persons.toLocaleString()}
-                {previousPersons !== null && (
+                {previousPersons > NO_PEOPLE && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     {`${percent(toStepShare(persons, previousPersons))} of previous step`}
                   </span>
