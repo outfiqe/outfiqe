@@ -39,6 +39,7 @@ const cartItem = (overrides: Partial<CartItem>): CartItem => ({
   qty: 1,
   availableStock: 5,
   soldOut: false,
+  unavailable: false,
   lowStock: false,
   ...overrides,
 });
