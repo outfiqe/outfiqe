@@ -46,7 +46,7 @@ describe("sendEmail", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await sendEmail(message);
+    await expect(sendEmail(message)).resolves.toBe(true);
 
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.resend.com/emails",
@@ -78,7 +78,7 @@ describe("sendEmail", () => {
       ),
     );
 
-    await expect(sendEmail(message)).resolves.toBeUndefined();
+    await expect(sendEmail(message)).resolves.toBe(false);
     expect(loggerMock.error).toHaveBeenCalledWith(expect.stringContaining("Email send failed"));
   });
 
