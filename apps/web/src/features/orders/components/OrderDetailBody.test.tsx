@@ -259,6 +259,24 @@ describe("OrderDetailBody", () => {
     expect(screen.queryByText(/Payment via ESEWA/)).not.toBeInTheDocument();
   });
 
+  it("stops asking for cash once a COD order has been delivered and paid", () => {
+    orderResult.data = buildOrder({ fulfilmentStatus: "DELIVERED", paymentStatus: "PAID" });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Payment of Rs. 2,760 via COD.")).toBeInTheDocument();
+  });
+
+  it("stops asking for cash when a refused COD parcel comes back", () => {
+    orderResult.data = buildOrder({ fulfilmentStatus: "RETURNED", paymentStatus: "DUE" });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+  });
+
   it("shows nothing to pay and no collected cash on a cancelled COD order", () => {
     orderResult.data = buildOrder({
       fulfilmentStatus: "CANCELLED",

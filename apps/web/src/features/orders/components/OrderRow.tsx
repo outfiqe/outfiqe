@@ -4,8 +4,8 @@ import Link from "next/link";
 import { AppImage } from "@/shared/components/AppImage";
 
 import type { OrderSummary } from "../api/orderSchemas";
-import { FulfilmentStatus, PaymentStatus } from "../api/orderSchemas";
-import { hasNoMoneyTaken, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
+import { PaymentStatus } from "../api/orderSchemas";
+import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
 import { StatusBadge } from "./StatusBadge";
 
 const ORDER_THUMBNAIL_SIZE = "56px";
@@ -64,7 +64,7 @@ export const OrderRow = ({ order }: OrderRowProps) => {
         <StatusBadge
           status={paymentStatus}
           label={
-            fulfilmentStatus === FulfilmentStatus.CANCELLED && hasNoMoneyTaken(paymentStatus)
+            hasNothingLeftToPay(fulfilmentStatus, paymentStatus)
               ? NOTHING_TO_PAY_LABEL
               : paymentStatus === PaymentStatus.DUE
                 ? "COD due"
