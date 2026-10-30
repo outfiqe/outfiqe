@@ -50,7 +50,7 @@ the same one the web app uses. Why we measure each one is in `docs/PLAN-ANALYTIC
 **Reading (admin dashboards):**
 
 - `product-analytics.routes.ts`: `GET /api/platform/analytics/{overview, funnels/purchase,
-funnels/look-to-order, acquisition, retention, search/zero-results}?range=7d|30d|90d`, behind
+funnels/look-to-order, acquisition, retention, search/zero-results, traffic, speed}?range=7d|30d|90d`, behind
   `platformGuards.analyticsRead`.
 - `product-analytics.controller.ts`, `product-analytics.schemas.ts` (`range`, default `30d`).
 - `insights/insights.service.ts`: `productAnalyticsInsightsService`, one method per insight.
@@ -61,7 +61,7 @@ funnels/look-to-order, acquisition, retention, search/zero-results}?range=7d|30d
   - `findPosthogQueryConnection` is `null` unless both the project id and the read key are set;
   - `runPosthogQuery` makes a named `POST /api/projects/:id/query/` call, with at most two
     running at once.
-- `insights/insights.repository.ts`: `findCreatorNames`, which looks up the names of the most-viewed muses (at most 10 ids, invalid ids skipped) so the cached answer shows names, not ids.
+- `insights/insights.repository.ts`: `findCreatorNames`, which looks up the names of the most-viewed muses (at most 10 ids, invalid ids skipped) so the cached answer shows names, not ids. `findProductNames` does the same for product pages in the traffic lists, so they read "Linen kurta", not `/product/<id>`.
 - `insights/insights.utils.ts`: reads PostHog's result rows into numbers, labelled counts and
   ordered funnel steps.
 - `insights/insights.constants.ts`: the ranges, insight names, statuses, cache lifetimes, the
@@ -150,8 +150,11 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
     deploy anyway.
   - Any other role sees it only when a co-founder ticks it.
 - **Caching keeps us inside PostHog's limits** (3 concurrent queries, 240 a minute, 2,400 an
-  hour per project). The page asks for six insights, about 13 queries, so queries run at most
+  hour per project). The page asks for eight insights, about 19 queries, so queries run at most
   two at a time, and each answer is reused for 15 minutes.
+- **Site speed is the 75th percentile, the number Google's Core Web Vitals use**, taken over the
+  whole range. PostHog's own Web vitals tab shows only the last day of the range, so the two can
+  differ a lot while traffic is low.
 - **Failures never break the admin page.** A Redis read or write failure is logged and skipped.
   A PostHog failure falls back to the last good copy, shown as "stale", for up to a week.
   PostHog error details are logged, never returned.

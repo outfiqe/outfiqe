@@ -55,14 +55,41 @@ export const zeroResultSearchesInsightSchema = z.object({
   searches: z.array(z.object({ query: z.string(), searchCount: z.number() })),
 });
 
+const rankedPageSchema = z.object({
+  path: z.string(),
+  productName: z.string().nullable(),
+  count: z.number(),
+});
+
+export const siteTrafficInsightSchema = z.object({
+  pageViews: z.number(),
+  sessions: z.number(),
+  averageSessionSeconds: z.number(),
+  bounceRate: z.number(),
+  topPages: z.array(rankedPageSchema),
+  entryPages: z.array(rankedPageSchema),
+  exitPages: z.array(rankedPageSchema),
+});
+
+export const siteSpeedInsightSchema = z.object({
+  measurementCount: z.number(),
+  largestContentfulPaintMs: z.number().nullable(),
+  interactionToNextPaintMs: z.number().nullable(),
+  firstContentfulPaintMs: z.number().nullable(),
+  cumulativeLayoutShift: z.number().nullable(),
+});
+
 export const overviewResultSchema = insightResultSchema(overviewInsightSchema);
 export const purchaseFunnelResultSchema = insightResultSchema(purchaseFunnelInsightSchema);
 export const lookToOrderResultSchema = insightResultSchema(lookToOrderInsightSchema);
 export const acquisitionResultSchema = insightResultSchema(acquisitionInsightSchema);
 export const retentionResultSchema = insightResultSchema(retentionInsightSchema);
 export const zeroResultSearchesResultSchema = insightResultSchema(zeroResultSearchesInsightSchema);
+export const siteTrafficResultSchema = insightResultSchema(siteTrafficInsightSchema);
+export const siteSpeedResultSchema = insightResultSchema(siteSpeedInsightSchema);
 
 export type FunnelStep = z.infer<typeof funnelStepSchema>;
+export type RankedPage = z.infer<typeof rankedPageSchema>;
 export type OverviewResult = z.infer<typeof overviewResultSchema>;
 export type PurchaseFunnelResult = z.infer<typeof purchaseFunnelResultSchema>;
 export type LookToOrderResult = z.infer<typeof lookToOrderResultSchema>;

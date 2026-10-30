@@ -60,6 +60,25 @@ const INSIGHTS: Record<string, ReturnType<typeof fresh>> = {
     repeatPurchaseRate: 0.25,
   }),
   "search/zero-results": fresh({ searches: [{ query: "velvet saree", searchCount: 9 }] }),
+  traffic: fresh({
+    pageViews: 3400,
+    sessions: 950,
+    averageSessionSeconds: 221,
+    bounceRate: 0.32,
+    topPages: [
+      { path: "/", productName: null, count: 1800 },
+      { path: "/product/1", productName: "Linen kurta", count: 240 },
+    ],
+    entryPages: [{ path: "/explore", productName: null, count: 310 }],
+    exitPages: [],
+  }),
+  speed: fresh({
+    measurementCount: 190,
+    largestContentfulPaintMs: 5330,
+    interactionToNextPaintMs: 78,
+    firstContentfulPaintMs: 2000,
+    cumulativeLayoutShift: 0.08,
+  }),
 };
 
 const ROLLUP = {
@@ -127,6 +146,52 @@ describe("PlatformAnalyticsPage", () => {
       "href",
       POSTHOG_URL,
     );
+  });
+
+  it("shows site traffic, with product pages by name and an empty list explained", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    expect(await screen.findByText("3,400")).toBeInTheDocument();
+    expect(screen.getByText("3m 41s")).toBeInTheDocument();
+    expect(screen.getByText("32.0%")).toBeInTheDocument();
+    expect(screen.getByText("Linen kurta")).toBeInTheDocument();
+    expect(screen.getByText("/explore")).toBeInTheDocument();
+    expect(screen.getByText("No page views in this range yet.")).toBeInTheDocument();
+  });
+
+  it("rates site speed in words, so it doesn't rely on colour", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    expect(await screen.findByText("5.33 s")).toBeInTheDocument();
+    expect(screen.getByText("Poor")).toBeInTheDocument();
+    expect(screen.getByText("Needs work")).toBeInTheDocument();
+    expect(screen.getAllByText("Good")).toHaveLength(2);
+    expect(screen.getByText("Based on 190 measurements.")).toBeInTheDocument();
+  });
+
+  it("says so when no speed has been measured yet", async () => {
+    serveInsights((insightPath) =>
+      insightPath === "speed"
+        ? fresh({
+            measurementCount: 0,
+            largestContentfulPaintMs: null,
+            interactionToNextPaintMs: null,
+            firstContentfulPaintMs: null,
+            cumulativeLayoutShift: null,
+          })
+        : INSIGHTS[insightPath],
+    );
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    expect(await screen.findByText("No speed measurements in this range yet.")).toBeInTheDocument();
   });
 
   it("explains how to connect PostHog when the read-only key isn't set", async () => {

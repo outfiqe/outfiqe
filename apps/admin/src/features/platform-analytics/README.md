@@ -16,13 +16,18 @@ from the database (`financial-rollup`).
   (`fresh`, `stale`, `not_connected` or `unavailable`), `refreshedAt`, a `posthogUrl` and the
   insight itself.
 - `components/PlatformAnalyticsPage.tsx`: the page. It has the header, the range chips (kept in
-  the URL as `?range=` through `useSearchFilter`), the estimate note, and the six sections.
+  the URL as `?range=` through `useSearchFilter`), the estimate note, and the eight sections.
 - `components/AnalyticsInsightSection.tsx`: the card every section uses. It owns the loading
   skeleton, the "not connected", "unavailable" and "couldn't load" messages, the stale note, and
   the "Open in PostHog" link.
 - `components/AnalyticsOverviewSection.tsx`: visitors, sign-ups, buyers and the visitor-to-buyer
   rate. Under them, the exact last-30-day orders, GMV and muse-credited share from the financial
   rollup.
+- `components/SiteTrafficSection.tsx`: page views, sessions, average session and bounce rate,
+  with the top pages and where visits start and end. Product pages show the product's name,
+  with the path on hover.
+- `components/SiteSpeedSection.tsx`: the four web vitals, each rated Good, Needs work or Poor in
+  words on the card, against `SPEED_LIMITS` (Google's published limits).
 - `components/PurchaseFunnelSection.tsx`, `LookToOrderSection.tsx`: the step lists
   (`FunnelSteps`) with orders by payment method, orders credited to a muse, and the most-viewed
   muses.
@@ -38,7 +43,8 @@ from the database (`financial-rollup`).
 - `hooks/useExactOrderTotals.ts`: the 30-day financial rollup, with no retry.
 - `constants/platformAnalytics.constants.ts`: ranges and labels, step and payment-method labels,
   query keys, and every message on the page.
-- `utils/platformAnalytics.utils.ts`: step shares, source and payment-method labels, and sums.
+- `utils/platformAnalytics.utils.ts`: step shares, source, page and payment-method labels, sums,
+  session and speed formatting, and speed ratings.
 
 ## Funnel
 

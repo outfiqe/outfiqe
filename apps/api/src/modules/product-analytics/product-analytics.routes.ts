@@ -43,3 +43,13 @@ productAnalyticsRoutes.get(
   ...analyticsChain,
   productAnalyticsController.zeroResultSearches,
 );
+productAnalyticsRoutes.get(
+  "/analytics/traffic",
+  ...analyticsChain,
+  productAnalyticsController.siteTraffic,
+);
+productAnalyticsRoutes.get(
+  "/analytics/speed",
+  ...analyticsChain,
+  productAnalyticsController.siteSpeed,
+);

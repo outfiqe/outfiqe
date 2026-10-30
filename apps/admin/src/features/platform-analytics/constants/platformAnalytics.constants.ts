@@ -57,3 +57,18 @@ export const EXACT_TOTALS_UNAVAILABLE_MESSAGE =
 export const OPEN_IN_POSTHOG_LABEL = "Open in PostHog";
 
 export const DELETED_MUSE_LABEL = "A muse whose account no longer exists";
+
+export const SPEED_RATING_LABEL = {
+  GOOD: "Good",
+  NEEDS_WORK: "Needs work",
+  POOR: "Poor",
+} as const;
+
+export const SPEED_LIMITS = {
+  LARGEST_CONTENTFUL_PAINT_MS: { good: 2500, poor: 4000 },
+  INTERACTION_TO_NEXT_PAINT_MS: { good: 200, poor: 500 },
+  FIRST_CONTENTFUL_PAINT_MS: { good: 1800, poor: 3000 },
+  CUMULATIVE_LAYOUT_SHIFT: { good: 0.1, poor: 0.25 },
+} as const;
+
+export type SpeedLimits = { good: number; poor: number };

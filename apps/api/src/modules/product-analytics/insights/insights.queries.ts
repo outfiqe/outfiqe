@@ -11,6 +11,9 @@ import {
 
 export const PAGEVIEW_EVENT = "$pageview";
 
+const WEB_VITALS_EVENT = "$web_vitals";
+const WEB_VITALS_PERCENTILE = 0.75;
+
 const CURRENT_WEEK = 1;
 
 export const PURCHASE_FUNNEL_EVENTS = [
@@ -169,3 +172,58 @@ export const zeroResultSearchesQuery = (days: number): string => `
   GROUP BY search_query
   ORDER BY count() DESC
   LIMIT ${ZERO_RESULT_SEARCHES_LIMIT}`;
+
+const SESSION_ID = "properties.$session_id";
+
+const pageviewsInRange = (days: number): string => `
+  FROM events
+  WHERE ${withinLastDays(days)}
+    AND event = '${PAGEVIEW_EVENT}'
+    AND ${EXCLUDE_INTERNAL_PEOPLE}`;
+
+export const pageViewsAndSessionsQuery = (days: number): string => `
+  SELECT count(), uniq(${SESSION_ID})
+  ${pageviewsInRange(days)}`;
+
+export const sessionQualityQuery = (days: number): string => `
+  SELECT avg(duration), avg(bounced)
+  FROM (
+    SELECT
+      ${SESSION_ID} AS session_id,
+      any(session.$session_duration) AS duration,
+      any(if(session.$is_bounce, 1, 0)) AS bounced
+    ${pageviewsInRange(days)}
+    GROUP BY session_id
+  )`;
+
+export const topPagesQuery = (days: number): string => `
+  SELECT toString(properties.$pathname) AS path, count() AS views
+  ${pageviewsInRange(days)}
+  GROUP BY path
+  ORDER BY views DESC
+  LIMIT ${TOP_ROWS_LIMIT}`;
+
+const pagesBySessionQuery = (days: number, sessionPageField: string): string => `
+  SELECT toString(${sessionPageField}) AS path, uniq(${SESSION_ID}) AS sessions
+  ${pageviewsInRange(days)}
+  GROUP BY path
+  ORDER BY sessions DESC
+  LIMIT ${TOP_ROWS_LIMIT}`;
+
+export const entryPagesQuery = (days: number): string =>
+  pagesBySessionQuery(days, "session.$entry_pathname");
+
+export const exitPagesQuery = (days: number): string =>
+  pagesBySessionQuery(days, "session.$end_pathname");
+
+export const webVitalsQuery = (days: number): string => `
+  SELECT
+    count(),
+    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_LCP_value)),
+    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_INP_value)),
+    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_FCP_value)),
+    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_CLS_value))
+  FROM events
+  WHERE ${withinLastDays(days)}
+    AND event = '${WEB_VITALS_EVENT}'
+    AND ${EXCLUDE_INTERNAL_PEOPLE}`;

@@ -40,4 +40,12 @@ export const productAnalyticsController = {
       "Searches with no results.",
     );
   },
+
+  async siteTraffic(_req: Request, res: Response) {
+    sendSuccess(res, await productAnalyticsService.siteTraffic(readRange(res)), "Site traffic.");
+  },
+
+  async siteSpeed(_req: Request, res: Response) {
+    sendSuccess(res, await productAnalyticsService.siteSpeed(readRange(res)), "Site speed.");
+  },
 };

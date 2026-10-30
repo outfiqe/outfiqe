@@ -9,6 +9,8 @@ import {
   overviewResultSchema,
   purchaseFunnelResultSchema,
   retentionResultSchema,
+  siteSpeedResultSchema,
+  siteTrafficResultSchema,
   zeroResultSearchesResultSchema,
 } from "./platformAnalyticsSchemas";
 
@@ -34,4 +36,6 @@ export const platformAnalyticsApi = {
   getRetention: (range: AnalyticsRange) => getInsight("retention", range, retentionResultSchema),
   getZeroResultSearches: (range: AnalyticsRange) =>
     getInsight("search/zero-results", range, zeroResultSearchesResultSchema),
+  getSiteTraffic: (range: AnalyticsRange) => getInsight("traffic", range, siteTrafficResultSchema),
+  getSiteSpeed: (range: AnalyticsRange) => getInsight("speed", range, siteSpeedResultSchema),
 };
