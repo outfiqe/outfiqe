@@ -56,61 +56,48 @@ const notifyBillingContacts = async (
   );
 };
 
-export const runCrmSubscriptionRenewalSweep = async (): Promise<{
-  invoicesOpened: number;
-  markedPastDue: number;
-  canceled: number;
-}> => {
-  const dueBefore = addDays(new Date(), RENEWAL_LOOKAHEAD_DAYS);
-  const subscriptionsDue = await crmBillingRepository.findSubscriptionsDueForRenewal(dueBefore);
+type DueSubscription = Awaited<
+  ReturnType<typeof crmBillingRepository.findSubscriptionsDueForRenewal>
+>[number];
 
-  let invoicesOpened = 0;
-  let markedPastDue = 0;
+type RenewalCounts = { invoicesOpened: number; markedPastDue: number };
 
-  for (const subscription of subscriptionsDue) {
-    const plan = getPlanDefinition(subscription.plan);
-    if (!plan) {
-      logger.error(`CRM renewal skipped — unknown plan "${subscription.plan}"`);
-      continue;
-    }
+const openRenewalInvoice = async (
+  subscription: DueSubscription,
+  amount: number,
+  renewalCounts: RenewalCounts,
+): Promise<void> => {
+  const periodStart = subscription.currentPeriodEnd;
+  const periodEnd = addMonths(periodStart, BILLING_PERIOD_MONTHS);
 
-    const periodStart = subscription.currentPeriodEnd;
-    const periodEnd = addMonths(periodStart, BILLING_PERIOD_MONTHS);
-    const amount = calculateInvoiceAmount(plan.id, subscription.seats);
+  const invoice = await crmBillingRepository.createInvoice({
+    subscriptionId: subscription.id,
+    plan: subscription.plan,
+    seats: subscription.seats,
+    amount,
+    periodStart,
+    periodEnd,
+  });
+  renewalCounts.invoicesOpened += 1;
 
-    try {
-      const invoice = await crmBillingRepository.createInvoice({
-        subscriptionId: subscription.id,
-        plan: subscription.plan,
-        seats: subscription.seats,
-        amount,
-        periodStart,
-        periodEnd,
-      });
-      invoicesOpened += 1;
+  await notifyBillingContacts(subscription.organization, amount);
+  await eventBus.publish(DomainEvents.CRM_INVOICE_OPENED, {
+    organizationId: subscription.organization.id,
+    invoiceId: invoice.id,
+    amount,
+  });
 
-      await notifyBillingContacts(subscription.organization, amount);
-      await eventBus.publish(DomainEvents.CRM_INVOICE_OPENED, {
-        organizationId: subscription.organization.id,
-        invoiceId: invoice.id,
-        amount,
-      });
-
-      if (await crmBillingRepository.markSubscriptionPastDue(subscription.id)) {
-        markedPastDue += 1;
-        await eventBus.publish(DomainEvents.CRM_SUBSCRIPTION_LAPSED, {
-          organizationId: subscription.organization.id,
-          subscriptionId: subscription.id,
-          status: SubscriptionStatus.PAST_DUE,
-        });
-      }
-    } catch (error) {
-      logger.error(
-        `CRM renewal failed for subscription ${subscription.id}: ${describeError(error)}`,
-      );
-    }
+  if (await crmBillingRepository.markSubscriptionPastDue(subscription.id)) {
+    renewalCounts.markedPastDue += 1;
+    await eventBus.publish(DomainEvents.CRM_SUBSCRIPTION_LAPSED, {
+      organizationId: subscription.organization.id,
+      subscriptionId: subscription.id,
+      status: SubscriptionStatus.PAST_DUE,
+    });
   }
+};
 
+const cancelLapsedSubscriptions = async (): Promise<number> => {
   const canceledSubscriptions = await crmBillingRepository.cancelLapsedPastDueSubscriptions();
   for (const { id, organizationId } of canceledSubscriptions) {
     await eventBus.publish(DomainEvents.CRM_SUBSCRIPTION_LAPSED, {
@@ -119,8 +106,40 @@ export const runCrmSubscriptionRenewalSweep = async (): Promise<{
       status: SubscriptionStatus.CANCELED,
     });
   }
+  return canceledSubscriptions.length;
+};
 
-  return { invoicesOpened, markedPastDue, canceled: canceledSubscriptions.length };
+export const runCrmSubscriptionRenewalSweep = async (): Promise<{
+  invoicesOpened: number;
+  markedPastDue: number;
+  canceled: number;
+}> => {
+  const dueBefore = addDays(new Date(), RENEWAL_LOOKAHEAD_DAYS);
+  const subscriptionsDue = await crmBillingRepository.findSubscriptionsDueForRenewal(dueBefore);
+
+  const renewalCounts: RenewalCounts = { invoicesOpened: 0, markedPastDue: 0 };
+
+  for (const subscription of subscriptionsDue) {
+    const plan = getPlanDefinition(subscription.plan);
+    if (!plan) {
+      logger.error(`CRM renewal skipped — unknown plan "${subscription.plan}"`);
+      continue;
+    }
+
+    const amount = calculateInvoiceAmount(plan.id, subscription.seats);
+
+    try {
+      await openRenewalInvoice(subscription, amount, renewalCounts);
+    } catch (error) {
+      logger.error(
+        `CRM renewal failed for subscription ${subscription.id}: ${describeError(error)}`,
+      );
+    }
+  }
+
+  const canceled = await cancelLapsedSubscriptions();
+
+  return { ...renewalCounts, canceled };
 };
 
 export const runCrmBillingReconciliationSweep = async (): Promise<{

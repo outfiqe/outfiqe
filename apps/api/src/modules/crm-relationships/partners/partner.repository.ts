@@ -21,6 +21,17 @@ type PartnerListRow = {
   total_count: bigint;
 };
 
+const toPartnerSummary = (row: PartnerListRow): PartnerSummary => ({
+  creatorId: row.creator_id,
+  name: row.name,
+  handle: row.handle,
+  avatarUrl: row.avatar_url,
+  tagClickCount: row.tag_click_count,
+  attributedOrderCount: row.attributed_order_count,
+  attributedRevenue: row.attributed_revenue,
+  lastActivityAt: toIso(row.last_activity_at),
+});
+
 export const crmPartnerRepository = {
   async listPartners(
     brandId: string,
@@ -80,19 +91,7 @@ export const crmPartnerRepository = {
         LIMIT ${params.limit} OFFSET ${params.offset}
     `);
 
-    return {
-      items: rows.map((row) => ({
-        creatorId: row.creator_id,
-        name: row.name,
-        handle: row.handle,
-        avatarUrl: row.avatar_url,
-        tagClickCount: row.tag_click_count,
-        attributedOrderCount: row.attributed_order_count,
-        attributedRevenue: row.attributed_revenue,
-        lastActivityAt: toIso(row.last_activity_at),
-      })),
-      total: readTotalCount(rows),
-    };
+    return { items: rows.map(toPartnerSummary), total: readTotalCount(rows) };
   },
 
   async isBrandPartner(brandId: string, creatorId: string): Promise<boolean> {

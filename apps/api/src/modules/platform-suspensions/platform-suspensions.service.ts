@@ -88,13 +88,12 @@ export const platformSuspensionsService = {
     const expiresAt = durationHours ? new Date(Date.now() + durationHours * HOURS_TO_MS) : null;
 
     const changed = await prisma.$transaction(async (tx) => {
-      const ok = await platformSuspensionsRepository.suspendUser(
+      const wasSuspended = await platformSuspensionsRepository.suspendUser(
         { userId: targetUserId, suspendedBy: actorUserId, reason, expiresAt },
         tx,
       );
-      if (!ok) return false;
-      await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
-      return true;
+      if (wasSuspended) await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
+      return wasSuspended;
     });
 
     if (!changed) {
@@ -133,13 +132,12 @@ export const platformSuspensionsService = {
     assertTargetIsModerable(await userRepository.findById(targetUserId));
 
     const changed = await prisma.$transaction(async (tx) => {
-      const ok = await platformSuspensionsRepository.banUser(
+      const wasBanned = await platformSuspensionsRepository.banUser(
         { userId: targetUserId, suspendedBy: actorUserId, reason },
         tx,
       );
-      if (!ok) return false;
-      await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
-      return true;
+      if (wasBanned) await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
+      return wasBanned;
     });
 
     if (!changed) {

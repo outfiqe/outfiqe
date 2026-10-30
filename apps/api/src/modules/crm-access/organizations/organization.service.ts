@@ -1,4 +1,5 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
+import { MembershipStatus } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { isUniqueConstraintError, uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -18,6 +19,8 @@ import { crmOwnershipTransferService } from "../ownership-transfer/ownership-tra
 import { crmRoleRepository } from "../roles/role.repository.js";
 import { crmOrganizationRepository } from "./organization.repository.js";
 
+const LINKED_BRAND_UNIQUE_TARGET = "linked_brand_id";
+const REMOVE_CREATOR_ON_ACCEPT = true;
 const MAX_SUBDOMAIN_SUGGESTION_ATTEMPTS = 5;
 const FIRST_SUGGESTION_ATTEMPT = 0;
 
@@ -52,6 +55,48 @@ const withLinkedBrandName = async (
   return { ...organization, linkedBrandName: linkedBrand?.name ?? null };
 };
 
+const rethrowAsOrganizationCreateError = (err: unknown): never => {
+  if (uniqueConstraintTargetIncludes(err, LINKED_BRAND_UNIQUE_TARGET)) {
+    throw new AppError(
+      "BRAND_ALREADY_LINKED",
+      "This business is already linked to another organization.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  if (isUniqueConstraintError(err)) {
+    throw new AppError(
+      "SUBDOMAIN_TAKEN",
+      "This subdomain is already in use.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  throw err;
+};
+
+const handOffToTargetOwner = async (
+  organization: OrganizationRecord,
+  creatorMembershipId: string,
+  targetOwnerUserId: string,
+): Promise<void> => {
+  const roles = await crmRoleRepository.listRoles(organization.id);
+  const adminRole = roles.find((role) => role.name === BUILT_IN_ROLE_NAME.ADMIN);
+  if (!adminRole) throw new Error("built-in Admin role was not created");
+
+  const targetMembership = await crmAccessRepository.createMembership(
+    targetOwnerUserId,
+    organization.id,
+    adminRole.id,
+    MembershipStatus.ACTIVE,
+  );
+
+  await crmOwnershipTransferService.createOwnershipTransfer(
+    organization,
+    creatorMembershipId,
+    targetMembership.id,
+    REMOVE_CREATOR_ON_ACCEPT,
+  );
+};
+
 export const crmOrganizationService = {
   async createOrganization(input: CreateOrganizationInput): Promise<OrganizationListItem> {
     const { name, subdomain, creatingUserId, targetOwnerUserId, linkedBrandId } = input;
@@ -76,44 +121,14 @@ export const crmOrganizationService = {
       organization = created.organization;
       creatorMembershipId = created.membership.id;
     } catch (err) {
-      if (uniqueConstraintTargetIncludes(err, "linked_brand_id")) {
-        throw new AppError(
-          "BRAND_ALREADY_LINKED",
-          "This business is already linked to another organization.",
-          HTTP_STATUS.CONFLICT,
-        );
-      }
-      if (isUniqueConstraintError(err)) {
-        throw new AppError(
-          "SUBDOMAIN_TAKEN",
-          "This subdomain is already in use.",
-          HTTP_STATUS.CONFLICT,
-        );
-      }
-      throw err;
+      return rethrowAsOrganizationCreateError(err);
     }
 
     const isHandingOffToSomeoneElse =
       targetOwnerUserId !== undefined && targetOwnerUserId !== creatingUserId;
-    if (!isHandingOffToSomeoneElse) return withLinkedBrandName(organization);
-
-    const roles = await crmRoleRepository.listRoles(organization.id);
-    const adminRole = roles.find((role) => role.name === BUILT_IN_ROLE_NAME.ADMIN);
-    if (!adminRole) throw new Error("built-in Admin role was not created");
-
-    const targetMembership = await crmAccessRepository.createMembership(
-      targetOwnerUserId,
-      organization.id,
-      adminRole.id,
-      "ACTIVE",
-    );
-
-    await crmOwnershipTransferService.createOwnershipTransfer(
-      organization,
-      creatorMembershipId,
-      targetMembership.id,
-      true,
-    );
+    if (isHandingOffToSomeoneElse) {
+      await handOffToTargetOwner(organization, creatorMembershipId, targetOwnerUserId);
+    }
 
     return withLinkedBrandName(organization);
   },

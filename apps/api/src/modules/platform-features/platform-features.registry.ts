@@ -56,6 +56,8 @@ export const PLATFORM_FEATURE_REGISTRY: FeatureDefinition[] = [
   },
 ];
 
+const UNKNOWN_FEATURE_DEFAULT = false;
+
 const REGISTRY_BY_KEY = new Map(PLATFORM_FEATURE_REGISTRY.map((entry) => [entry.key, entry]));
 
 export const isPlatformFeatureKey = (key: string): key is PlatformFeatureKey =>
@@ -63,6 +65,6 @@ export const isPlatformFeatureKey = (key: string): key is PlatformFeatureKey =>
 
 export const planDefaultFor = (key: PlatformFeatureKey, plan: string): boolean => {
   const definition = REGISTRY_BY_KEY.get(key);
-  if (!definition) return false;
+  if (!definition) return UNKNOWN_FEATURE_DEFAULT;
   return definition.planDefaults[plan] ?? definition.registryDefault;
 };
