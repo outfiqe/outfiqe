@@ -43,6 +43,26 @@ export type ZeroResultSearchesInsight = {
   searches: { query: string; searchCount: number }[];
 };
 
+export type RankedPage = { path: string; productName: string | null; count: number };
+
+export type SiteTrafficInsight = {
+  pageViews: number;
+  sessions: number;
+  averageSessionSeconds: number;
+  bounceRate: number;
+  topPages: RankedPage[];
+  entryPages: RankedPage[];
+  exitPages: RankedPage[];
+};
+
+export type SiteSpeedInsight = {
+  measurementCount: number;
+  largestContentfulPaintMs: number | null;
+  interactionToNextPaintMs: number | null;
+  firstContentfulPaintMs: number | null;
+  cumulativeLayoutShift: number | null;
+};
+
 export type InsightResult<Insight> = {
   status: InsightStatus;
   refreshedAt: string | null;

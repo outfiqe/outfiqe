@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   readCountAt,
   readFirstRowCounts,
+  readFirstRowMeasurements,
   readLabelledCounts,
   toFunnelSteps,
+  toProductIdFromPath,
   toShare,
 } from "./insights.utils.js";
 
@@ -64,5 +66,34 @@ describe("toShare", () => {
 
   it("is zero, not NaN, when there is nothing to divide by", () => {
     expect(toShare(0, 0)).toBe(0);
+  });
+});
+
+describe("readFirstRowMeasurements", () => {
+  it("keeps a missing measurement as null, not zero", () => {
+    expect(readFirstRowMeasurements([[19, 2284, null]])).toEqual([19, 2284, null]);
+  });
+
+  it("reads numbers PostHog sends as strings", () => {
+    expect(readFirstRowMeasurements([["19", "2284.5"]])).toEqual([19, 2284.5]);
+  });
+
+  it("is empty when PostHog returned no rows", () => {
+    expect(readFirstRowMeasurements([])).toEqual([]);
+  });
+});
+
+describe("toProductIdFromPath", () => {
+  const productId = "4e36b676-1951-4f2f-903c-b9a51104b65c";
+
+  it("finds the product id in a product page path, with or without a trailing slash", () => {
+    expect(toProductIdFromPath(`/product/${productId}`)).toBe(productId);
+    expect(toProductIdFromPath(`/product/${productId}/`)).toBe(productId);
+  });
+
+  it("ignores other pages and ids that aren't real", () => {
+    expect(toProductIdFromPath("/")).toBeNull();
+    expect(toProductIdFromPath("/product/not-a-real-id")).toBeNull();
+    expect(toProductIdFromPath(`/product/${productId}/reviews`)).toBeNull();
   });
 });

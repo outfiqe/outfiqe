@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cacheService } from "#redis/cache.service.js";
 
 import { findPosthogQueryConnection, runPosthogQuery } from "./insights.posthog-query.js";
+import { productAnalyticsInsightsRepository } from "./insights.repository.js";
 import { productAnalyticsInsightsService } from "./insights.service.js";
+
+const { PRODUCT_ID } = vi.hoisted(() => ({
+  PRODUCT_ID: "4e36b676-1951-4f2f-903c-b9a51104b65c",
+}));
 
 vi.mock("#redis/cache.service.js", () => ({
   cacheService: { get: vi.fn(), set: vi.fn() },
@@ -17,6 +22,7 @@ vi.mock("./insights.posthog-query.js", () => ({
 vi.mock("./insights.repository.js", () => ({
   productAnalyticsInsightsRepository: {
     findCreatorNames: vi.fn(async () => [{ id: "creator-1", name: "Sita Rai", handle: "sita" }]),
+    findProductNames: vi.fn(async () => [{ id: PRODUCT_ID, name: "Linen kurta" }]),
   },
 }));
 
@@ -196,6 +202,106 @@ describe("productAnalyticsInsightsService", () => {
     const zeroResultSearches = await productAnalyticsInsightsService.zeroResultSearches("7d");
     expect(zeroResultSearches.insight).toEqual({
       searches: [{ query: "velvet saree", searchCount: 5 }],
+    });
+  });
+
+  it("builds site traffic, giving product pages their names", async () => {
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([[36, 8]])
+      .mockResolvedValueOnce([[154.5, 0.25]])
+      .mockResolvedValueOnce([
+        ["/", 18],
+        [`/product/${PRODUCT_ID}`, 6],
+        ["/product/not-a-real-id", 2],
+      ])
+      .mockResolvedValueOnce([["/", 6]])
+      .mockResolvedValueOnce([
+        [null, 3],
+        ["/login", 1],
+      ]);
+
+    const { status, insight, posthogUrl } =
+      await productAnalyticsInsightsService.siteTraffic("30d");
+
+    expect(status).toBe("fresh");
+    expect(posthogUrl).toBe("https://us.posthog.com/project/550784/web");
+    expect(insight).toEqual({
+      pageViews: 36,
+      sessions: 8,
+      averageSessionSeconds: 154.5,
+      bounceRate: 0.25,
+      topPages: [
+        { path: "/", productName: null, count: 18 },
+        { path: `/product/${PRODUCT_ID}`, productName: "Linen kurta", count: 6 },
+        { path: "/product/not-a-real-id", productName: null, count: 2 },
+      ],
+      entryPages: [{ path: "/", productName: null, count: 6 }],
+      exitPages: [{ path: "/login", productName: null, count: 1 }],
+    });
+  });
+
+  it("still shows site traffic, with plain paths, when product names can't be loaded", async () => {
+    vi.mocked(productAnalyticsInsightsRepository.findProductNames).mockRejectedValueOnce(
+      new Error("database down"),
+    );
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([[6, 2]])
+      .mockResolvedValueOnce([[30, 0]])
+      .mockResolvedValueOnce([[`/product/${PRODUCT_ID}`, 6]])
+      .mockResolvedValue([]);
+
+    const { status, insight } = await productAnalyticsInsightsService.siteTraffic("30d");
+
+    expect(status).toBe("fresh");
+    expect(insight?.topPages).toEqual([
+      { path: `/product/${PRODUCT_ID}`, productName: null, count: 6 },
+    ]);
+  });
+
+  it("shows zero traffic, not a failure, for a range with no sessions", async () => {
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([[0, 0]])
+      .mockResolvedValueOnce([[null, null]])
+      .mockResolvedValue([]);
+
+    const { status, insight } = await productAnalyticsInsightsService.siteTraffic("7d");
+
+    expect(status).toBe("fresh");
+    expect(insight).toMatchObject({
+      pageViews: 0,
+      averageSessionSeconds: 0,
+      bounceRate: 0,
+      topPages: [],
+    });
+  });
+
+  it("builds site speed from the 75th percentile of each measurement", async () => {
+    vi.mocked(runPosthogQuery).mockResolvedValueOnce([[19, 2284, 88, 1968, 0.0087]]);
+
+    const { insight, posthogUrl } = await productAnalyticsInsightsService.siteSpeed("30d");
+
+    expect(vi.mocked(runPosthogQuery).mock.calls[0]?.[2]).toContain("quantile(0.75)");
+    expect(posthogUrl).toBe("https://us.posthog.com/project/550784/web/web-vitals");
+    expect(insight).toEqual({
+      measurementCount: 19,
+      largestContentfulPaintMs: 2284,
+      interactionToNextPaintMs: 88,
+      firstContentfulPaintMs: 1968,
+      cumulativeLayoutShift: 0.0087,
+    });
+  });
+
+  it("keeps site speed empty, not zero, for a range with no measurements", async () => {
+    vi.mocked(runPosthogQuery).mockResolvedValueOnce([[0, null, null, null, null]]);
+
+    const { insight } = await productAnalyticsInsightsService.siteSpeed("7d");
+
+    expect(insight).toEqual({
+      measurementCount: 0,
+      largestContentfulPaintMs: null,
+      interactionToNextPaintMs: null,
+      firstContentfulPaintMs: null,
+      cumulativeLayoutShift: null,
     });
   });
 });

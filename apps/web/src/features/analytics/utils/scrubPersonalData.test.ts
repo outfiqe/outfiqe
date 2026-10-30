@@ -29,7 +29,82 @@ describe("redactPersonalText", () => {
   });
 });
 
+describe("redactPersonalText with secrets in links", () => {
+  it.each([
+    ["password reset", "https://outfiqe.com/reset-password?token=abc123"],
+    ["email verification", "https://outfiqe.com/verify-email?token=abc123"],
+    ["brand invite", "https://outfiqe.com/register/brand?token=abc123"],
+    ["rider invite", "https://outfiqe.com/register/rider?token=abc123"],
+    ["support reopen", "https://outfiqe.com/support/reopen?token=abc123"],
+  ])("hides the token in a %s link", (_linkName, link) => {
+    const redacted = redactPersonalText(link);
+
+    expect(redacted).not.toContain("abc123");
+    expect(redacted).toContain(`token=${REDACTED_VALUE}`);
+  });
+
+  it("hides the Google account-linking token and the email beside it", () => {
+    const redacted = redactPersonalText(
+      "https://outfiqe.com/auth/callback?status=link_required&linkToken=abc123&email=sita@example.com",
+    );
+
+    expect(redacted).not.toContain("abc123");
+    expect(redacted).not.toContain("sita@example.com");
+    expect(redacted).toContain("status=link_required");
+  });
+
+  it("hides any parameter named like a token, code, secret or password", () => {
+    const redacted = redactPersonalText(
+      "/x?access_token=aaa&inviteToken=bbb&exchangeCode=ccc&client_secret=ddd&newPassword=eee",
+    );
+
+    expect(redacted).not.toMatch(/aaa|bbb|ccc|ddd|eee/);
+  });
+
+  it("hides gateway and sign-in values, keeping the other parameters", () => {
+    expect(redactPersonalText("/payments/esewa/callback/1?data=eyJ0&category=dresses")).toBe(
+      `/payments/esewa/callback/1?data=${REDACTED_VALUE}&category=dresses`,
+    );
+    expect(redactPersonalText("/auth/callback?state=s3&code=c0de")).toBe(
+      `/auth/callback?state=${REDACTED_VALUE}&code=${REDACTED_VALUE}`,
+    );
+  });
+
+  it("hides a token inside an encoded redirect link", () => {
+    const redacted = redactPersonalText(
+      "/login?redirect=%2Freset-password%3Ftoken%3Dabc123%26from%3Demail",
+    );
+
+    expect(redacted).not.toContain("abc123");
+    expect(redacted).toContain("%26from%3Demail");
+  });
+
+  it("leaves ordinary links alone", () => {
+    const ordinaryLink = "https://outfiqe.com/search?q=token+ring&category=dresses&page=2";
+
+    expect(redactPersonalText(ordinaryLink)).toBe(ordinaryLink);
+  });
+});
+
 describe("scrubPersonalData", () => {
+  it("hides tokens in every place PostHog keeps a link, including recordings", () => {
+    const resetLink = "https://outfiqe.com/reset-password?token=abc123";
+
+    const scrubbed = scrubPersonalData(
+      captureResultWith({
+        event: "$snapshot",
+        properties: {
+          $current_url: resetLink,
+          $referrer: resetLink,
+          $snapshot_data: [{ type: 4, data: { href: resetLink } }],
+        },
+        $set_once: { $initial_person_info: { u: resetLink } },
+      }),
+    );
+
+    expect(JSON.stringify(scrubbed)).not.toContain("abc123");
+  });
+
   it("redacts personal data in nested properties and person properties", () => {
     const scrubbed = scrubPersonalData(
       captureResultWith({

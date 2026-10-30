@@ -14,6 +14,8 @@ import { AnalyticsOverviewSection } from "./AnalyticsOverviewSection";
 import { LookToOrderSection } from "./LookToOrderSection";
 import { PurchaseFunnelSection } from "./PurchaseFunnelSection";
 import { RetentionSection } from "./RetentionSection";
+import { SiteSpeedSection } from "./SiteSpeedSection";
+import { SiteTrafficSection } from "./SiteTrafficSection";
 import { ZeroResultSearchesSection } from "./ZeroResultSearchesSection";
 
 const RANGE_FILTER = oneOfFilter(ANALYTICS_RANGES, DEFAULT_ANALYTICS_RANGE);
@@ -43,10 +45,12 @@ export const PlatformAnalyticsPage = () => {
       <p className="text-xs text-muted-foreground">{ESTIMATE_NOTE}</p>
 
       <AnalyticsOverviewSection range={range} />
+      <SiteTrafficSection range={range} />
       <PurchaseFunnelSection range={range} />
       <LookToOrderSection range={range} />
       <AcquisitionSection range={range} />
       <RetentionSection range={range} />
+      <SiteSpeedSection range={range} />
       <ZeroResultSearchesSection range={range} />
     </div>
   );

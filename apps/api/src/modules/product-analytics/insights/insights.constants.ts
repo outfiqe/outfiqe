@@ -22,6 +22,8 @@ export const INSIGHT_NAMES = {
   ACQUISITION: "acquisition",
   RETENTION: "retention",
   ZERO_RESULT_SEARCHES: "zero-result-searches",
+  SITE_TRAFFIC: "site-traffic",
+  SITE_SPEED: "site-speed",
 } as const;
 export type InsightName = (typeof INSIGHT_NAMES)[keyof typeof INSIGHT_NAMES];
 
@@ -62,4 +64,6 @@ export const POSTHOG_PATH_BY_INSIGHT: Record<InsightName, string> = {
   [INSIGHT_NAMES.ACQUISITION]: "/web",
   [INSIGHT_NAMES.RETENTION]: "/insights",
   [INSIGHT_NAMES.ZERO_RESULT_SEARCHES]: "/activity/explore",
+  [INSIGHT_NAMES.SITE_TRAFFIC]: "/web",
+  [INSIGHT_NAMES.SITE_SPEED]: "/web/web-vitals",
 };
