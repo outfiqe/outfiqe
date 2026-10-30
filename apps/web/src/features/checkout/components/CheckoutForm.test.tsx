@@ -32,9 +32,10 @@ type SavedAddress = {
 };
 
 let savedAddresses: SavedAddress[] = [];
+let signedInPhone: string | null = null;
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ state: { user: { name: "Ram Shrestha" } } }),
+  useAuth: () => ({ state: { user: { name: "Ram Shrestha", phone: signedInPhone } } }),
 }));
 
 vi.mock("@/features/addresses", () => ({
@@ -177,6 +178,7 @@ beforeEach(() => {
   isOnline = true;
   isCashOnDeliveryAllowed = true;
   savedAddresses = [];
+  signedInPhone = null;
   checkoutMutateAsync.mockReset();
   initiatePaymentMutateAsync.mockReset();
   createAddressMutateAsync.mockReset();
@@ -192,6 +194,52 @@ describe("CheckoutForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: /place order/i }).closest("form")!);
 
     await vi.waitFor(() => expect(checkoutMutateAsync).toHaveBeenCalledTimes(1));
+  });
+
+  it("places one order when the shopper taps twice", async () => {
+    let finishOrder = (_order: { id: string; paymentMethod: string }) => {};
+    checkoutMutateAsync.mockReturnValue(
+      new Promise((resolve) => {
+        finishOrder = resolve;
+      }),
+    );
+    renderCheckoutForm();
+    await fillRequiredFields();
+    const checkoutForm = screen.getByRole("button", { name: /place order/i }).closest("form")!;
+
+    fireEvent.submit(checkoutForm);
+    await vi.waitFor(() => expect(checkoutMutateAsync).toHaveBeenCalledTimes(1));
+    fireEvent.submit(checkoutForm);
+    fireEvent.submit(checkoutForm);
+
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(checkoutMutateAsync).toHaveBeenCalledTimes(1);
+
+    finishOrder({ id: "order-1", paymentMethod: "COD" });
+  });
+
+  it("retries a failed checkout with the same idempotency key", async () => {
+    checkoutMutateAsync
+      .mockRejectedValueOnce(new Error("connection dropped"))
+      .mockResolvedValueOnce({ id: "order-1", paymentMethod: "COD" });
+    renderCheckoutForm();
+    await fillRequiredFields();
+    const checkoutForm = screen.getByRole("button", { name: /place order/i }).closest("form")!;
+
+    fireEvent.submit(checkoutForm);
+    await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
+    fireEvent.submit(checkoutForm);
+    await vi.waitFor(() => expect(checkoutMutateAsync).toHaveBeenCalledTimes(2));
+
+    const [firstAttempt, retry] = checkoutMutateAsync.mock.calls;
+    expect(retry?.[0].idempotencyKey).toBe(firstAttempt?.[0].idempotencyKey);
+  });
+
+  it("pre-fills the phone number from the shopper's account", () => {
+    signedInPhone = "9812345678";
+    renderCheckoutForm();
+
+    expect(screen.getByLabelText(/^phone$/i)).toHaveValue("9812345678");
   });
 
   it("refuses to submit an order while offline, without ever calling checkout", async () => {

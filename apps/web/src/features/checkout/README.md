@@ -54,6 +54,8 @@ still owns its own copy of the address (see `apps/api/src/modules/orders/README.
 
 ## Non-obvious rationale
 
+**One checkout attempt keeps one idempotency key.** `CheckoutForm` creates the key once, not per tap, and the API replays a finished request with the same key instead of running it again. A double tap, a retry after a lost response, or a retry after a failed payment start therefore reuse the same order. `isPlacingOrder` also ignores extra taps while a request is in flight, so a double tap doesn't surface the API's "already being processed" error.
+
 **Every client-generated id in this feature goes through `@outfiqe/utils`' `generateUuid`, never `crypto.randomUUID()` directly.** `randomUUID` requires a secure context, which isn't guaranteed for every way this app gets opened (a LAN IP over plain HTTP during on-device testing, for one) — calling it directly once threw a bare `TypeError` before the checkout request was even built, surfacing only as a generic "Something went wrong" toast with nothing in the server logs to explain it. `generateUuid` falls back to `crypto.getRandomValues` (no such restriction) to hand-build the id instead.
 
 **Checkout refuses to submit while offline, and the two mutations involved are set to
