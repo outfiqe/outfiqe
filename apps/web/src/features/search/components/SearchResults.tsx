@@ -6,6 +6,7 @@ import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { ProductsLoadError } from "@/features/products/components/ProductsLoadError";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { formatResultCount } from "@/shared/lib/formatCount";
@@ -24,7 +25,9 @@ export const SearchResults = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isError: hasProductsLoadFailed,
     isLoading: isFetchingProducts,
+    refetch: retryLoadingProducts,
   } = useInfiniteProducts({ q: query, enabled: isAuthResolved && hasQuery });
   const isLoading = isFetchingProducts || !isAuthResolved;
   const productTotal = productsPages?.pages[0]?.total;
@@ -62,6 +65,8 @@ export const SearchResults = () => {
 
       {isLoading ? (
         <ProductGridSkeleton className="mt-8" />
+      ) : hasProductsLoadFailed && products.length === 0 ? (
+        <ProductsLoadError onRetry={() => void retryLoadingProducts()} />
       ) : products.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">
           No pieces matched. Try a different search.

@@ -8,6 +8,7 @@ import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { ProductsLoadError } from "@/features/products/components/ProductsLoadError";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
@@ -49,7 +50,9 @@ export const CategoryResults = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isError: hasProductsLoadFailed,
     isLoading,
+    refetch: retryLoadingProducts,
   } = useInfiniteProducts({
     category: category?.slug,
     type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
@@ -131,6 +134,8 @@ export const CategoryResults = () => {
 
       {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
+      ) : hasProductsLoadFailed && products.length === 0 ? (
+        <ProductsLoadError onRetry={() => void retryLoadingProducts()} />
       ) : products.length === 0 ? (
         <div className="mt-12 flex flex-col items-start gap-3">
           {effectiveActiveType === ALL_TYPE_ID ? (
