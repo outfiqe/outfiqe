@@ -140,8 +140,11 @@ describe("PlatformAnalyticsPage", () => {
 
     renderPage();
 
-    const notConnectedMessages = await screen.findAllByText(/analytics isn't connected yet/i);
-    expect(notConnectedMessages).toHaveLength(Object.keys(INSIGHTS).length);
+    await waitFor(() =>
+      expect(screen.getAllByText(/analytics isn't connected yet/i)).toHaveLength(
+        Object.keys(INSIGHTS).length,
+      ),
+    );
     expect(screen.queryByRole("link", { name: /open in posthog/i })).not.toBeInTheDocument();
   });
 
