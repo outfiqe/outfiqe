@@ -23,6 +23,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "../api/commissionsApi";
 import type { CommissionScopeValue, CommissionTier } from "../api/commissionsSchemas";
@@ -188,7 +189,7 @@ export const CommissionTiersSection = ({ scope }: { scope: CommissionScopeValue 
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <ActionRowSkeleton key={index} actionCount={2} />
           ))}
         {tiers?.length === 0 && <p className="text-sm text-muted-foreground">No tiers yet.</p>}

@@ -11,6 +11,7 @@ import type { RevealedBankAccount } from "@/features/bank-accounts/api/bankAccou
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { withdrawRequestsApi } from "../api/withdrawRequestsApi";
@@ -134,7 +135,7 @@ export const WithdrawRequestsListSection = () => {
 
       <div className="mt-4 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               textLineCount={1}

@@ -25,6 +25,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { heroSlidesApi } from "../api/heroSlidesApi";
 import type { HeroSlide, HeroSlideStatusValue } from "../api/heroSlidesSchemas";
@@ -229,7 +230,9 @@ export const HeroSlidesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <HeroSlideRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <HeroSlideRowSkeleton key={index} />
+          ))}
         {heroSlides?.length === 0 && (
           <p className="text-sm text-muted-foreground">No hero slides yet.</p>
         )}

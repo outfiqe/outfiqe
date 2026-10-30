@@ -3,6 +3,7 @@ import { Badge, Button, Checkbox, FormBanner, Modal, Select } from "@outfiqe/des
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import type { MembershipStatusValue, MembershipSummary } from "../api/crmSchemas";
 import { type MemberActionsOptions, useMemberActions } from "../hooks/useMemberActions";
@@ -102,7 +103,7 @@ export const MembersSection = (memberActionsOptions: MemberActionsOptions) => {
 
       <div className="mt-3 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               textLineCount={1}

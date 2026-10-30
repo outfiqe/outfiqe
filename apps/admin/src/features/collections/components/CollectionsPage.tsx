@@ -26,6 +26,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { slugify } from "@/lib/slugify";
 
 import { collectionsApi } from "../api/collectionsApi";
@@ -225,7 +226,9 @@ export const CollectionsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <CollectionRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <CollectionRowSkeleton key={index} />
+          ))}
         {collections?.length === 0 && (
           <p className="text-sm text-muted-foreground">No collections yet.</p>
         )}

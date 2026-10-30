@@ -22,6 +22,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import {
   type CreateXpMultiplierInput,
@@ -223,7 +224,9 @@ export const MultipliersSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <ActionRowSkeleton key={index} />
+          ))}
         {multipliers?.length === 0 && (
           <p className="text-sm text-muted-foreground">No XP multipliers yet.</p>
         )}

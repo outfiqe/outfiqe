@@ -20,6 +20,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { organizationsApi } from "../api/organizationsApi";
 import {
@@ -166,7 +167,7 @@ export const OrganizationsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton key={index} hasBadge={false} textLineCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}

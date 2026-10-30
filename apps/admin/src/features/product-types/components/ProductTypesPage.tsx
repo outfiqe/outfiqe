@@ -24,6 +24,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { slugify } from "@/lib/slugify";
 import { useOptimisticReorder } from "@/lib/useOptimisticReorder";
 
@@ -165,7 +166,7 @@ export const ProductTypesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <ReorderRowSkeleton key={index} actionLabel="Switch off" />
           ))}
         {productTypes?.length === 0 && (

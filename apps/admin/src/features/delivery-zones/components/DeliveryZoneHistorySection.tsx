@@ -1,5 +1,7 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
+
 import { useDeliveryZoneHistory } from "../hooks/useDeliveryZoneHistory";
 
 const formatDateTime = (iso: string) =>
@@ -30,7 +32,9 @@ export const DeliveryZoneHistorySection = () => {
       <h2 className="font-display text-lg font-bold text-foreground">Change history</h2>
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <HistoryEntrySkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <HistoryEntrySkeleton key={index} />
+          ))}
 
         {isError && (
           <FormBanner className="flex items-center justify-between gap-3">

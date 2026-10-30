@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { crmApi } from "../api/crmApi";
 import type { OrganizationInviteStatusValue } from "../api/crmSchemas";
@@ -137,7 +138,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
       <h3 className="mt-6 font-display text-base font-bold text-foreground">Pending invites</h3>
       <div className="mt-3 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               hasSmallTitle
