@@ -87,14 +87,17 @@ export const CheckoutForm = ({
   const [isEditingSelectedAddress, setIsEditingSelectedAddress] = useState(false);
   const [shouldSaveNewAddress, setShouldSaveNewAddress] = useState(true);
   const hasInitializedFromSavedAddresses = useRef(false);
+  const [checkoutAttemptKey] = useState(generateUuid);
+  const isPlacingOrder = useRef(false);
 
   const emptyName = state.user?.name ?? "";
+  const emptyPhone = state.user?.phone ?? "";
 
   const form = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
     defaultValues: {
       fullName: emptyName,
-      phone: "",
+      phone: emptyPhone,
       address: "",
       city: cart.city ?? "",
       landmark: "",
@@ -150,7 +153,7 @@ export const CheckoutForm = ({
       form.reset({
         ...form.getValues(),
         fullName: emptyName,
-        phone: "",
+        phone: emptyPhone,
         address: "",
         city: cart.city ?? "",
         landmark: "",
@@ -186,17 +189,20 @@ export const CheckoutForm = ({
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (isPlacingOrder.current) return;
+
     if (!isOnline) {
       toast.error("Checkout needs a connection. Try again once you're back online.");
       return;
     }
 
+    isPlacingOrder.current = true;
     trackOrderSubmit(values.paymentMethod);
 
     try {
       const order = await checkout.mutateAsync({
         input: values,
-        idempotencyKey: generateUuid(),
+        idempotencyKey: checkoutAttemptKey,
         buyNow: buyNow
           ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
           : undefined,
@@ -220,6 +226,8 @@ export const CheckoutForm = ({
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
+    } finally {
+      isPlacingOrder.current = false;
     }
   }, revealAddressFieldsOnValidationError);
 
