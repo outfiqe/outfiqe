@@ -32,6 +32,23 @@ import type {
 const threadUrl = (ticketId: string): string =>
   `${env.FRONTEND_URL}/settings/support?ticket=${ticketId}`;
 
+const assertAssigneeIsSupportAgent = async (assigneeUserId: string): Promise<void> => {
+  const assignee = await userRepository.findById(assigneeUserId);
+  const assigneeAccess = assignee
+    ? await platformAccessService.resolveAccess(assigneeUserId)
+    : null;
+  const assigneeIsSupportAgent =
+    assignee?.role === UserRole.ADMIN &&
+    SUPPORT_AGENT_PERMISSION_KEYS.some((key) => assigneeAccess?.permissionKeys.includes(key));
+  if (!assigneeIsSupportAgent) {
+    throw new AppError(
+      "SUPPORT_ASSIGNEE_INVALID",
+      "That account can't be assigned support requests.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+};
+
 export const supportAgentService = {
   listForAdmin(query: AdminListQuery): Promise<SupportTicketPage> {
     return supportRepository.listForAdmin(
@@ -183,22 +200,7 @@ export const supportAgentService = {
       );
     }
 
-    if (assigneeUserId) {
-      const assignee = await userRepository.findById(assigneeUserId);
-      const assigneeAccess = assignee
-        ? await platformAccessService.resolveAccess(assigneeUserId)
-        : null;
-      const assigneeIsSupportAgent =
-        assignee?.role === UserRole.ADMIN &&
-        SUPPORT_AGENT_PERMISSION_KEYS.some((key) => assigneeAccess?.permissionKeys.includes(key));
-      if (!assigneeIsSupportAgent) {
-        throw new AppError(
-          "SUPPORT_ASSIGNEE_INVALID",
-          "That account can't be assigned support requests.",
-          HTTP_STATUS.BAD_REQUEST,
-        );
-      }
-    }
+    if (assigneeUserId) await assertAssigneeIsSupportAgent(assigneeUserId);
 
     const claimed = await supportRepository.assign(
       ticketId,

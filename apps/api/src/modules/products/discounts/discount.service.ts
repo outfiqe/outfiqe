@@ -16,6 +16,54 @@ import { productDiscountRepository } from "./discount.repository.js";
 const DISCOUNT_CEILING_PERCENT = MAX_BRAND_DISCOUNT_BASIS_POINTS / BASIS_POINTS_PER_PERCENT;
 const DISCOUNT_EXCEEDS_CEILING_MESSAGE = `A brand discount can't be worth more than ${DISCOUNT_CEILING_PERCENT}% of the product's price.`;
 
+type ActiveDiscountRecord = NonNullable<
+  Awaited<ReturnType<typeof productDiscountRepository.findActiveDiscount>>
+>;
+
+const resolveNextDiscountAmounts = (
+  input: UpdateProductDiscountBody,
+  existing: ActiveDiscountRecord,
+): ActiveBrandDiscount => {
+  const discountTypeChanged =
+    input.discountType !== undefined && input.discountType !== existing.discountType;
+  const discountType = input.discountType ?? existing.discountType;
+
+  const percentBasisPoints = discountTypeChanged
+    ? discountType === DiscountType.PERCENT
+      ? (input.percentBasisPoints ?? null)
+      : null
+    : (input.percentBasisPoints ?? existing.percentBasisPoints);
+
+  const fixedAmount = discountTypeChanged
+    ? discountType === DiscountType.FIXED
+      ? (input.fixedAmount ?? null)
+      : null
+    : (input.fixedAmount ?? existing.fixedAmount);
+
+  return { discountType, percentBasisPoints, fixedAmount };
+};
+
+const assertDiscountAmountPresent = ({
+  discountType,
+  percentBasisPoints,
+  fixedAmount,
+}: ActiveBrandDiscount): void => {
+  if (discountType === DiscountType.PERCENT && percentBasisPoints === null) {
+    throw new AppError(
+      "DISCOUNT_AMOUNT_REQUIRED",
+      "Switching to a percent discount needs percentBasisPoints.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+  if (discountType === DiscountType.FIXED && fixedAmount === null) {
+    throw new AppError(
+      "DISCOUNT_AMOUNT_REQUIRED",
+      "Switching to a fixed discount needs fixedAmount.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+};
+
 export const productDiscountService = {
   async setDiscount(
     userId: string,
@@ -67,36 +115,8 @@ export const productDiscountService = {
       );
     }
 
-    const discountTypeChanged =
-      input.discountType !== undefined && input.discountType !== existing.discountType;
-    const nextDiscountType = input.discountType ?? existing.discountType;
-
-    const nextPercentBasisPoints = discountTypeChanged
-      ? nextDiscountType === DiscountType.PERCENT
-        ? (input.percentBasisPoints ?? null)
-        : null
-      : (input.percentBasisPoints ?? existing.percentBasisPoints);
-
-    const nextFixedAmount = discountTypeChanged
-      ? nextDiscountType === DiscountType.FIXED
-        ? (input.fixedAmount ?? null)
-        : null
-      : (input.fixedAmount ?? existing.fixedAmount);
-
-    if (nextDiscountType === DiscountType.PERCENT && nextPercentBasisPoints === null) {
-      throw new AppError(
-        "DISCOUNT_AMOUNT_REQUIRED",
-        "Switching to a percent discount needs percentBasisPoints.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-    if (nextDiscountType === DiscountType.FIXED && nextFixedAmount === null) {
-      throw new AppError(
-        "DISCOUNT_AMOUNT_REQUIRED",
-        "Switching to a fixed discount needs fixedAmount.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
+    const nextDiscount = resolveNextDiscountAmounts(input, existing);
+    assertDiscountAmountPresent(nextDiscount);
 
     const nextStartsAt = input.startsAt ?? existing.startsAt;
     const nextEndsAt = input.endsAt !== undefined ? input.endsAt : existing.endsAt;
@@ -108,11 +128,6 @@ export const productDiscountService = {
       );
     }
 
-    const nextDiscount: ActiveBrandDiscount = {
-      discountType: nextDiscountType,
-      percentBasisPoints: nextPercentBasisPoints,
-      fixedAmount: nextFixedAmount,
-    };
     if (!isBrandDiscountWithinCeiling(product.price, nextDiscount)) {
       throw new AppError(
         "DISCOUNT_EXCEEDS_CEILING",
@@ -122,9 +137,7 @@ export const productDiscountService = {
     }
 
     const updated = await productDiscountRepository.updateDiscount(existing.id, {
-      discountType: nextDiscountType,
-      percentBasisPoints: nextPercentBasisPoints,
-      fixedAmount: nextFixedAmount,
+      ...nextDiscount,
       startsAt: nextStartsAt,
       endsAt: nextEndsAt,
     });

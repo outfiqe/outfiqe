@@ -79,6 +79,32 @@ const assertFitDataAllowed = (
   }
 };
 
+const resolveSizesForTypeChange = async (
+  brandId: string,
+  sizeStandardId: UpdateProductBody["sizeStandardId"],
+  sizes: UpdateProductBody["sizes"],
+): Promise<CreateProductSizeInput[]> => {
+  if (!sizes || sizes.length === 0) {
+    throw new AppError(
+      "SIZES_REQUIRED",
+      "Add at least one size for the new product type.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+  return resolveSizeInputs(brandId, sizeStandardId, sizes);
+};
+
+const rethrowAsProductUpdateError = (error: unknown): never => {
+  if (isForeignKeyConstraintError(error)) {
+    throw new AppError(
+      "SIZES_IN_USE",
+      "Can't change product type — some of its current sizes already have orders and can't be removed.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  throw error;
+};
+
 export const productService = {
   async create(
     userId: string,
@@ -166,17 +192,9 @@ export const productService = {
     const isTypeChange =
       targetProductType !== undefined && targetProductType.id !== product.productTypeId;
 
-    let sizeChanges: CreateProductSizeInput[] | undefined;
-    if (isTypeChange) {
-      if (!sizes || sizes.length === 0) {
-        throw new AppError(
-          "SIZES_REQUIRED",
-          "Add at least one size for the new product type.",
-          HTTP_STATUS.BAD_REQUEST,
-        );
-      }
-      sizeChanges = await resolveSizeInputs(brandId, sizeStandardId, sizes);
-    }
+    const sizeChanges = isTypeChange
+      ? await resolveSizesForTypeChange(brandId, sizeStandardId, sizes)
+      : undefined;
 
     const effectiveProductType =
       targetProductType ??
@@ -215,14 +233,7 @@ export const productService = {
       });
       return toBrandSummary(updatedProduct);
     } catch (error) {
-      if (isForeignKeyConstraintError(error)) {
-        throw new AppError(
-          "SIZES_IN_USE",
-          "Can't change product type — some of its current sizes already have orders and can't be removed.",
-          HTTP_STATUS.CONFLICT,
-        );
-      }
-      throw error;
+      return rethrowAsProductUpdateError(error);
     }
   },
 
