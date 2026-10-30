@@ -6,9 +6,10 @@ import { describeError } from "#redis/redis.utils.js";
 
 const SHA1_HEX_PREFIX_LENGTH = 5;
 const HIBP_RANGE_URL = "https://api.pwnedpasswords.com/range/";
+const TREATED_AS_NOT_BREACHED = false;
 
 export const isPasswordBreached = async (password: string): Promise<boolean> => {
-  if (!env.PASSWORD_BREACH_CHECK_ENABLED) return false;
+  if (!env.PASSWORD_BREACH_CHECK_ENABLED) return TREATED_AS_NOT_BREACHED;
 
   const sha1Hex = createHash("sha1").update(password).digest("hex").toUpperCase();
   const prefix = sha1Hex.slice(0, SHA1_HEX_PREFIX_LENGTH);
@@ -19,13 +20,13 @@ export const isPasswordBreached = async (password: string): Promise<boolean> => 
 
     if (!response.ok) {
       logger.warn(`Password breach check returned status ${response.status}; failing open`);
-      return false;
+      return TREATED_AS_NOT_BREACHED;
     }
 
     const body = await response.text();
     return body.split("\n").some((line) => line.split(":")[0]?.trim().toUpperCase() === suffix);
   } catch (err) {
     logger.warn(`Password breach check errored, failing open: ${describeError(err)}`);
-    return false;
+    return TREATED_AS_NOT_BREACHED;
   }
 };

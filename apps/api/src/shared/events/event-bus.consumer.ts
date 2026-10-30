@@ -47,152 +47,190 @@ type SubscribeOptions<E extends DomainEvent> = {
 
 type ConsumerHandle = { stop: () => void; loopDone: Promise<void> };
 
+type ConsumerContext<E extends DomainEvent> = SubscribeOptions<E> & {
+  streamKey: string;
+  consumerName: string;
+  streamClient: ReturnType<typeof redis.duplicate>;
+  isStopped: () => boolean;
+};
+
+const STREAM_BEGINNING_ID = "0";
+const UNDELIVERED_ENTRIES_ID = ">";
+const CONSUMER_GROUP_ALREADY_EXISTS_ERROR = "BUSYGROUP";
+const CONSUMER_GROUP_READY = true;
+const FIRST_DELIVERY_ATTEMPT = 1;
+const EXHAUSTED_DELIVERY_COUNT = MAX_DELIVERY_ATTEMPTS + 1;
+const STREAM_CLIENT_ENDED_STATUS = "end";
+
 const activeConsumers: ConsumerHandle[] = [];
+
+const deliverToDeadLetter = async <E extends DomainEvent>(
+  { event, groupName, streamKey, streamClient }: ConsumerContext<E>,
+  id: string,
+  rawPayload: string | undefined,
+): Promise<void> => {
+  await publishToDeadLetter(streamClient, streamKey, id, rawPayload ?? "");
+  await streamClient.xack(streamKey, groupName, id);
+  logger.error(`Domain event moved to dead-letter: ${event} id=${id}`);
+};
+
+const processEntry = async <E extends DomainEvent>(
+  context: ConsumerContext<E>,
+  { id, fields }: StreamEntry,
+  deliveryCount: number,
+): Promise<void> => {
+  const { event, groupName, handler, streamKey, streamClient } = context;
+
+  if (!fields) {
+    logger.warn(`Domain event entry trimmed before delivery: ${event} id=${id}`);
+    await streamClient.xack(streamKey, groupName, id);
+    return;
+  }
+
+  const rawPayload = extractPayloadField(fields);
+  if (!rawPayload || deliveryCount > MAX_DELIVERY_ATTEMPTS) {
+    await deliverToDeadLetter(context, id, rawPayload);
+    return;
+  }
+
+  try {
+    await handler(parseEventPayload<E>(rawPayload), { eventId: `${event}:${id}` });
+    await streamClient.xack(streamKey, groupName, id);
+  } catch (error) {
+    logger.error(
+      `Domain event handler failed: ${event} id=${id} attempt=${deliveryCount}: ${describeError(error)}`,
+    );
+  }
+};
+
+const claimStuckEntries = async <E extends DomainEvent>(
+  context: ConsumerContext<E>,
+): Promise<void> => {
+  const { groupName, streamKey, consumerName, streamClient } = context;
+  const claimResult = await streamClient.xautoclaim(
+    streamKey,
+    groupName,
+    consumerName,
+    CLAIM_IDLE_MS,
+    STREAM_BEGINNING_ID,
+    "COUNT",
+    CONSUMER_BATCH_SIZE,
+  );
+  const claimedEntries = toStreamEntries(Array.isArray(claimResult) ? claimResult[1] : undefined);
+  const firstEntry = claimedEntries[0];
+  const lastEntry = claimedEntries.at(-1);
+  if (!firstEntry || !lastEntry) return;
+
+  const pendingRaw = await streamClient.xpending(
+    streamKey,
+    groupName,
+    firstEntry.id,
+    lastEntry.id,
+    claimedEntries.length,
+  );
+  const deliveryCounts = new Map(
+    toPendingEntries(pendingRaw).map(({ id, deliveryCount }) => [id, deliveryCount]),
+  );
+
+  for (const entry of claimedEntries) {
+    await processEntry(context, entry, deliveryCounts.get(entry.id) ?? EXHAUSTED_DELIVERY_COUNT);
+  }
+};
+
+const readNewEntries = async <E extends DomainEvent>(
+  context: ConsumerContext<E>,
+): Promise<void> => {
+  const { groupName, streamKey, consumerName, streamClient } = context;
+  const result = await streamClient.xreadgroup(
+    "GROUP",
+    groupName,
+    consumerName,
+    "COUNT",
+    CONSUMER_BATCH_SIZE,
+    "BLOCK",
+    CONSUMER_BLOCK_MS,
+    "STREAMS",
+    streamKey,
+    UNDELIVERED_ENTRIES_ID,
+  );
+  const streamResult = result?.[0];
+  if (!streamResult) return;
+
+  const [, items] = streamResult;
+  for (const [id, fields] of items) {
+    await processEntry(context, { id, fields }, FIRST_DELIVERY_ATTEMPT);
+  }
+};
+
+const ensureConsumerGroup = async <E extends DomainEvent>({
+  event,
+  groupName,
+  streamKey,
+  streamClient,
+}: ConsumerContext<E>): Promise<boolean> => {
+  try {
+    await streamClient.xgroup("CREATE", streamKey, groupName, STREAM_BEGINNING_ID, "MKSTREAM");
+    return CONSUMER_GROUP_READY;
+  } catch (error) {
+    const groupAlreadyExists = describeError(error).includes(CONSUMER_GROUP_ALREADY_EXISTS_ERROR);
+    if (!groupAlreadyExists) {
+      logger.error(
+        `Failed to create consumer group ${groupName} for ${event}: ${describeError(error)}`,
+      );
+    }
+    return groupAlreadyExists;
+  }
+};
+
+const runConsumerLoop = async <E extends DomainEvent>(
+  context: ConsumerContext<E>,
+): Promise<void> => {
+  const { event, streamClient, isStopped } = context;
+  if (!(await ensureConsumerGroup(context))) return;
+
+  let consecutiveErrorCount = 0;
+
+  while (!isStopped()) {
+    try {
+      await claimStuckEntries(context);
+      await readNewEntries(context);
+      consecutiveErrorCount = 0;
+    } catch (error) {
+      if (isStopped()) break;
+      logger.error(`Domain event consumer loop error: ${event}: ${describeError(error)}`);
+      if (isMissingConsumerGroupError(error)) await ensureConsumerGroup(context);
+      await waitMs(computeBackoffDelayMs(consecutiveErrorCount));
+      consecutiveErrorCount += 1;
+    }
+  }
+
+  if (streamClient.status !== STREAM_CLIENT_ENDED_STATUS) await streamClient.quit();
+};
 
 export const subscribeToDomainEvent = <E extends DomainEvent>({
   event,
   groupName,
   handler,
 }: SubscribeOptions<E>): void => {
-  const streamKey = redisKeys.stream(event);
-  const consumerName = `${hostname()}:${process.pid}`;
   const streamClient = redis.duplicate();
   attachRedisLifecycleLogging(streamClient, `stream-consumer:${event}:${groupName}`);
 
   let stopped = false;
 
-  const deliverToDeadLetter = async (id: string, rawPayload: string | undefined): Promise<void> => {
-    await publishToDeadLetter(streamClient, streamKey, id, rawPayload ?? "");
-    await streamClient.xack(streamKey, groupName, id);
-    logger.error(`Domain event moved to dead-letter: ${event} id=${id}`);
-  };
-
-  const processEntry = async (
-    { id, fields }: StreamEntry,
-    deliveryCount: number,
-  ): Promise<void> => {
-    // Fields are null when the entry was already trimmed from the stream (MAXLEN) while still
-    // pending for this group — there's nothing left to retry or dead-letter, just clear the PEL.
-    if (!fields) {
-      logger.warn(`Domain event entry trimmed before delivery: ${event} id=${id}`);
-      await streamClient.xack(streamKey, groupName, id);
-      return;
-    }
-
-    const rawPayload = extractPayloadField(fields);
-    if (!rawPayload || deliveryCount > MAX_DELIVERY_ATTEMPTS) {
-      await deliverToDeadLetter(id, rawPayload);
-      return;
-    }
-
-    try {
-      await handler(parseEventPayload<E>(rawPayload), { eventId: `${event}:${id}` });
-      await streamClient.xack(streamKey, groupName, id);
-    } catch (error) {
-      logger.error(
-        `Domain event handler failed: ${event} id=${id} attempt=${deliveryCount}: ${describeError(error)}`,
-      );
-    }
-  };
-
-  const claimStuckEntries = async (): Promise<void> => {
-    const claimResult = await streamClient.xautoclaim(
-      streamKey,
-      groupName,
-      consumerName,
-      CLAIM_IDLE_MS,
-      "0",
-      "COUNT",
-      CONSUMER_BATCH_SIZE,
-    );
-    const claimedEntries = toStreamEntries(Array.isArray(claimResult) ? claimResult[1] : undefined);
-    const firstEntry = claimedEntries[0];
-    const lastEntry = claimedEntries.at(-1);
-    if (!firstEntry || !lastEntry) return;
-
-    const firstId = firstEntry.id;
-    const lastId = lastEntry.id;
-    const pendingRaw = await streamClient.xpending(
-      streamKey,
-      groupName,
-      firstId,
-      lastId,
-      claimedEntries.length,
-    );
-    const deliveryCounts = new Map(
-      toPendingEntries(pendingRaw).map(({ id, deliveryCount }) => [id, deliveryCount]),
-    );
-
-    for (const entry of claimedEntries) {
-      await processEntry(entry, deliveryCounts.get(entry.id) ?? MAX_DELIVERY_ATTEMPTS + 1);
-    }
-  };
-
-  const readNewEntries = async (): Promise<void> => {
-    const result = await streamClient.xreadgroup(
-      "GROUP",
-      groupName,
-      consumerName,
-      "COUNT",
-      CONSUMER_BATCH_SIZE,
-      "BLOCK",
-      CONSUMER_BLOCK_MS,
-      "STREAMS",
-      streamKey,
-      ">",
-    );
-    const streamResult = result?.[0];
-    if (!streamResult) return;
-
-    const [, items] = streamResult;
-    for (const [id, fields] of items) {
-      await processEntry({ id, fields }, 1);
-    }
-  };
-
-  const ensureConsumerGroup = async (): Promise<boolean> => {
-    try {
-      await streamClient.xgroup("CREATE", streamKey, groupName, "0", "MKSTREAM");
-      return true;
-    } catch (error) {
-      if (describeError(error).includes("BUSYGROUP")) return true;
-      logger.error(
-        `Failed to create consumer group ${groupName} for ${event}: ${describeError(error)}`,
-      );
-      return false;
-    }
-  };
-
-  const runLoop = async (): Promise<void> => {
-    if (!(await ensureConsumerGroup())) return;
-
-    let consecutiveErrorCount = 0;
-
-    while (!stopped) {
-      try {
-        await claimStuckEntries();
-        await readNewEntries();
-        consecutiveErrorCount = 0;
-      } catch (error) {
-        if (stopped) break;
-        logger.error(`Domain event consumer loop error: ${event}: ${describeError(error)}`);
-        if (isMissingConsumerGroupError(error)) await ensureConsumerGroup();
-        await waitMs(computeBackoffDelayMs(consecutiveErrorCount));
-        consecutiveErrorCount += 1;
-      }
-    }
-
-    if (streamClient.status !== "end") await streamClient.quit();
-  };
-
   activeConsumers.push({
     stop: () => {
       stopped = true;
-      // readNewEntries() blocks inside XREADGROUP for up to CONSUMER_BLOCK_MS; disconnecting
-      // rejects that in-flight call immediately instead of leaving shutdown waiting on it.
       streamClient.disconnect();
     },
-    loopDone: runLoop(),
+    loopDone: runConsumerLoop({
+      event,
+      groupName,
+      handler,
+      streamKey: redisKeys.stream(event),
+      consumerName: `${hostname()}:${process.pid}`,
+      streamClient,
+      isStopped: () => stopped,
+    }),
   });
 };
 

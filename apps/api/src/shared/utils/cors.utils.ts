@@ -1,9 +1,11 @@
+const MALFORMED_ORIGIN_ALLOWED = false;
+
 export const isTenantOrigin = (origin: string, baseDomain: string): boolean => {
   let hostname: string;
   try {
     ({ hostname } = new URL(origin));
   } catch {
-    return false;
+    return MALFORMED_ORIGIN_ALLOWED;
   }
 
   const host = hostname.toLowerCase();
