@@ -18,6 +18,7 @@ import {
   campaignsQuery,
   creatorLinkClicksQuery,
   LOOK_TO_ORDER_EVENTS,
+  lookViewersReachingEachStepQuery,
   ordersByPaymentMethodQuery,
   overviewQuery,
   peopleReachingEachStepQuery,
@@ -162,7 +163,7 @@ const buildLookToOrder: InsightBuilder<LookToOrderInsight> = async (connection, 
   const stepRows = await runPosthogQuery(
     connection,
     `${INSIGHT_NAMES.LOOK_TO_ORDER}:steps`,
-    peopleReachingEachStepQuery(days, LOOK_TO_ORDER_EVENTS),
+    lookViewersReachingEachStepQuery(days),
   );
   const attributedRows = await runPosthogQuery(
     connection,

@@ -149,6 +149,9 @@ describe("productAnalyticsInsightsService", () => {
         ["creator-gone", 4],
       ]);
     const lookToOrder = await productAnalyticsInsightsService.lookToOrder("30d");
+    const lookStepsQuery = vi.mocked(runPosthogQuery).mock.calls[0]?.[2] ?? "";
+    expect(lookStepsQuery).toContain("person_id IN (");
+    expect(lookStepsQuery).toContain("event = 'look:detail_view'");
     expect(lookToOrder.insight).toMatchObject({
       attributedOrders: 3,
       topCreatorsByLookViews: [

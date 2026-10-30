@@ -57,6 +57,20 @@ export const peopleReachingEachStepQuery = (
     AND ${EXCLUDE_INTERNAL_PEOPLE}
   GROUP BY event`;
 
+export const lookViewersReachingEachStepQuery = (days: number): string => `
+  SELECT event, uniq(person_id)
+  FROM events
+  WHERE ${withinLastDays(days)}
+    AND event IN (${quoteEventNames(LOOK_TO_ORDER_EVENTS)})
+    AND ${EXCLUDE_INTERNAL_PEOPLE}
+    AND person_id IN (
+      SELECT person_id
+      FROM events
+      WHERE ${withinLastDays(days)}
+        AND event = '${ANALYTICS_EVENTS.LOOK_DETAIL_VIEW}'
+    )
+  GROUP BY event`;
+
 export const ordersByPaymentMethodQuery = (days: number): string => `
   SELECT toString(properties.payment_method) AS payment_method, count()
   FROM events
