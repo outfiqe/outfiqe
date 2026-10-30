@@ -32,6 +32,44 @@ const runRegistrationTransaction = <Result>(
   createAccount: (transaction: Prisma.TransactionClient) => Promise<Result>,
 ): Promise<Result> => runWithHandleCollisionRetry(() => prisma.$transaction(createAccount));
 
+const assertBrandInviteStillOpen = (expiresAt: Date, acceptedAt: Date | null): void => {
+  if (expiresAt.getTime() <= Date.now()) {
+    throw new AppError(
+      "INVITE_EXPIRED",
+      "This invite link has expired. Please contact us for a new one.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  if (acceptedAt) {
+    throw new AppError(
+      "INVITE_USED",
+      "This invite link has already been used.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+};
+
+const assertBrandOwnerIdentityFree = async (email: string, phone: string): Promise<void> => {
+  const existingByEmail = await userRepository.findByEmail(email);
+  if (existingByEmail) {
+    throw new AppError(
+      "USER_EXISTS",
+      "An account with this email already exists.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  const existingByPhone = await userRepository.findByPhone(phone);
+  if (existingByPhone) {
+    throw new AppError(
+      "PHONE_EXISTS",
+      "An account with this phone number already exists.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+};
+
 export const authInviteService = {
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
@@ -76,39 +114,8 @@ export const authInviteService = {
 
     const { expiresAt, acceptedAt, email: inviteEmail, brandId, id: inviteId, brand } = invite;
 
-    if (expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const existingByEmail = await userRepository.findByEmail(inviteEmail);
-    if (existingByEmail) {
-      throw new AppError(
-        "USER_EXISTS",
-        "An account with this email already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    assertBrandInviteStillOpen(expiresAt, acceptedAt);
+    await assertBrandOwnerIdentityFree(inviteEmail, phone);
 
     const passwordHash = await hashPassword(password);
     const user = await runRegistrationTransaction(async (tx) => {
