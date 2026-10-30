@@ -26,6 +26,7 @@ import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { platformCommissionApi } from "../api/platformCommissionApi";
@@ -143,7 +144,7 @@ export const BrandExemptionsSection = () => {
   const form = useForm<ExemptionFormValues>({
     resolver: zodResolver(exemptionFormSchema),
     defaultValues: EMPTY_EXEMPTION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [pickedBrandName, setPickedBrandName] = useState("");
   const [revokeTarget, setRevokeTarget] = useState<BrandCommissionExemption | null>(null);

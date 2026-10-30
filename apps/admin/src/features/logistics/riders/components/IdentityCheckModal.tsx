@@ -15,6 +15,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { ridersApi } from "../api/ridersApi";
 import { IDENTITY_DOCUMENT_TYPE, type Rider } from "../api/ridersSchemas";
@@ -36,7 +37,7 @@ export const IdentityCheckModal = ({ rider, onClose }: IdentityCheckModalProps) 
   const form = useForm<IdentityCheckFormValues>({
     resolver: zodResolver(identityCheckFormSchema),
     defaultValues: { documentType: IDENTITY_DOCUMENT_TYPE.CITIZENSHIP, documentLast4: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const recordIdentityCheck = useApiMutation({

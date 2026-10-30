@@ -22,6 +22,7 @@ import { TextPromptModal } from "@/components/TextPromptModal";
 import { UserSearchField } from "@/components/UserSearchField";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { gamificationApi } from "../../api/gamificationApi";
@@ -48,7 +49,7 @@ const AwardBadgeForm = () => {
   const form = useForm<AwardBadgeFormValues>({
     resolver: zodResolver(awardBadgeFormSchema),
     defaultValues: EMPTY_AWARD_BADGE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const award = useApiMutation({
@@ -143,7 +144,7 @@ const AdjustXpForm = () => {
   const form = useForm<AdjustXpFormValues>({
     resolver: zodResolver(adjustXpFormSchema),
     defaultValues: EMPTY_ADJUST_XP_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const adjust = useApiMutation({

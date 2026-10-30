@@ -52,9 +52,9 @@ export const isPlatformNavItemVisible = (
   navItem: PlatformNavItem,
   viewer: PlatformNavViewer,
 ): boolean => {
-  if (navItem.coFounderOnly && !viewer.isCoFounder) return false;
-  if (viewer.isCoFounder) return true;
-  return !viewer.hiddenNavKeys.includes(navItem.id);
+  const { isCoFounder, hiddenNavKeys } = viewer;
+  const isReservedForCoFounders = navItem.coFounderOnly && !isCoFounder;
+  return !isReservedForCoFounders && (isCoFounder || !hiddenNavKeys.includes(navItem.id));
 };
 
 const pathBelongsToHref = (pathname: string, href: string): boolean =>
@@ -138,13 +138,18 @@ export const resolveAccountLabel = (viewer: {
   return viewer.crmRoleName ?? PLATFORM_STAFF_ACCOUNT_LABEL;
 };
 
+const CRM_ITEM_HIDDEN = false;
+const CRM_ITEM_VISIBLE = true;
+
 export const isCrmSubItemVisible = (
   crmItem: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,
 ): boolean => {
-  if (!crmOrganization) return false;
-  if (crmItem.requiresLinkedBrand && crmOrganization.linkedBrandId === null) return false;
-  if (crmItem.permissionKey === null) return true;
+  if (!crmOrganization) return CRM_ITEM_HIDDEN;
+  if (crmItem.requiresLinkedBrand && crmOrganization.linkedBrandId === null) {
+    return CRM_ITEM_HIDDEN;
+  }
+  if (crmItem.permissionKey === null) return CRM_ITEM_VISIBLE;
   return (
     crmOrganization.viewerIsSuperAdmin ||
     crmOrganization.viewerPermissionKeys.includes(crmItem.permissionKey)

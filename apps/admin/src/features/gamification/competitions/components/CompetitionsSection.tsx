@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { gamificationApi } from "../../api/gamificationApi";
@@ -37,7 +38,7 @@ export const CompetitionsSection = () => {
   const form = useForm<CompetitionFormValues>({
     resolver: zodResolver(competitionFormSchema),
     defaultValues: EMPTY_COMPETITION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({

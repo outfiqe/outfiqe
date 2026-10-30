@@ -1,4 +1,5 @@
 import { Badge, Button, FormBanner, Label, Select, Skeleton } from "@outfiqe/design-system";
+import { MS_PER_DAY } from "@outfiqe/utils";
 import { useId, useState } from "react";
 
 import type { WebhookReceipt } from "../api/partnersSchemas";
@@ -12,7 +13,6 @@ import { useReplayPartnerWebhookReceipts } from "../hooks/useReplayPartnerWebhoo
 
 const NO_RECEIPTS = 0;
 const NO_UNKNOWN_STATUSES = 0;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const describeReceipt = ({
   signatureValid,
@@ -31,7 +31,7 @@ const describeReceipt = ({
   return { tone: "positive" as const, label: `${appliedCount} of ${eventCount} applied` };
 };
 
-const sinceDaysAgo = (days: number) => new Date(Date.now() - days * DAY_IN_MS).toISOString();
+const sinceDaysAgo = (days: number) => new Date(Date.now() - days * MS_PER_DAY).toISOString();
 
 type PartnerWebhookReceiptsSectionProps = { partnerId: string; canManage: boolean };
 

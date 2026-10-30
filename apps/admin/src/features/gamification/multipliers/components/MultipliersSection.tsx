@@ -20,6 +20,7 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
@@ -131,7 +132,7 @@ const EditMultiplierModal = ({
   const form = useForm<MultiplierFormValues>({
     resolver: zodResolver(multiplierFormSchema),
     defaultValues: formForMultiplier(multiplierRow),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -181,7 +182,7 @@ export const MultipliersSection = () => {
   const form = useForm<MultiplierFormValues>({
     resolver: zodResolver(multiplierFormSchema),
     defaultValues: buildCurrentEmptyForm(),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({

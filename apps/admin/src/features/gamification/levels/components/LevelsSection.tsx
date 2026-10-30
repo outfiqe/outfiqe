@@ -20,6 +20,7 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
@@ -118,7 +119,7 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelFormSchema),
     defaultValues: formForLevel(level),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -172,7 +173,7 @@ export const LevelsSection = () => {
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelFormSchema),
     defaultValues: EMPTY_LEVEL_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({

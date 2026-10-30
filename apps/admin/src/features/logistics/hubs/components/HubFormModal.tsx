@@ -16,6 +16,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { hubsApi } from "../api/hubsApi";
 import type { Hub } from "../api/hubsSchemas";
@@ -48,7 +49,7 @@ export const HubFormModal = ({ hub, onClose }: HubFormModalProps) => {
   const form = useForm<HubFormValues>({
     resolver: zodResolver(hubFormSchema),
     defaultValues: hub ? toHubFormValues(hub) : EMPTY_HUB_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const saveHub = useApiMutation({

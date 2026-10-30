@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { crmApi } from "@/features/crm/api/crmApi";
+import { CRM_ORGANIZATION_STALE_TIME_MS } from "@/features/crm/constants/crmOrganizationQuery";
 import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 
 import { AdminModuleSearch } from "./AdminModuleSearch";
@@ -44,7 +45,7 @@ export const AdminSidebar = () => {
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: CRM_ORGANIZATION_STALE_TIME_MS,
     refetchOnWindowFocus: shouldRefetchCrmOrganizationOnFocus,
   });
 

@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { slugify } from "@/lib/slugify";
 
@@ -47,7 +48,7 @@ export const ProductTypesPage = () => {
   const form = useForm<ProductTypeFormValues>({
     resolver: zodResolver(productTypeFormSchema),
     defaultValues: EMPTY_PRODUCT_TYPE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [slugTouched, setSlugTouched] = useState(false);
 
