@@ -14,6 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
+import { PUBLISH_STATUS } from "@outfiqe/types";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
@@ -81,10 +82,17 @@ export const CategoriesPage = () => {
 
   const toggleStatus = useApiMutation({
     mutationFn: (category: Category) =>
-      categoriesApi.setStatus(category.id, category.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
+      categoriesApi.setStatus(
+        category.id,
+        category.status === PUBLISH_STATUS.PUBLISHED
+          ? PUBLISH_STATUS.DRAFT
+          : PUBLISH_STATUS.PUBLISHED,
+      ),
     invalidateKeys: [CATEGORIES_QUERY_KEY],
     successMessage: (category) =>
-      category.status === "PUBLISHED" ? "Category published." : "Category unpublished.",
+      category.status === PUBLISH_STATUS.PUBLISHED
+        ? "Category published."
+        : "Category unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -125,11 +133,11 @@ export const CategoriesPage = () => {
   });
 
   const publishedCount = (categories ?? []).filter(
-    (category) => category.status === "PUBLISHED",
+    (category) => category.status === PUBLISH_STATUS.PUBLISHED,
   ).length;
   const landingCutoffId =
     publishedCount > LANDING_TASTE_CATEGORY_COUNT
-      ? (categories ?? []).filter((category) => category.status === "PUBLISHED")[
+      ? (categories ?? []).filter((category) => category.status === PUBLISH_STATUS.PUBLISHED)[
           LANDING_TASTE_CATEGORY_COUNT - 1
         ]?.id
       : null;
@@ -291,11 +299,11 @@ export const CategoriesPage = () => {
 
                 {canManageCatalog && (
                   <Button
-                    variant={status === "PUBLISHED" ? "ghost" : "default"}
+                    variant={status === PUBLISH_STATUS.PUBLISHED ? "ghost" : "default"}
                     onClick={() => toggleStatus.mutate(category)}
                     disabled={toggleStatus.isPending}
                   >
-                    {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                    {status === PUBLISH_STATUS.PUBLISHED ? "Unpublish" : "Publish"}
                   </Button>
                 )}
               </div>

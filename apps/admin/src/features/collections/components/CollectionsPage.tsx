@@ -14,6 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { PUBLISH_STATUS } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -97,11 +98,15 @@ export const CollectionsPage = () => {
     mutationFn: (collection: Collection) =>
       collectionsApi.setStatus(
         collection.id,
-        collection.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
+        collection.status === PUBLISH_STATUS.PUBLISHED
+          ? PUBLISH_STATUS.DRAFT
+          : PUBLISH_STATUS.PUBLISHED,
       ),
     invalidateKeys: [COLLECTIONS_QUERY_KEY],
     successMessage: (updated) =>
-      updated.status === "PUBLISHED" ? "Collection published." : "Collection unpublished.",
+      updated.status === PUBLISH_STATUS.PUBLISHED
+        ? "Collection published."
+        : "Collection unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -260,11 +265,11 @@ export const CollectionsPage = () => {
                       {managingId === id ? "Close" : "Manage products"}
                     </Button>
                     <Button
-                      variant={status === "PUBLISHED" ? "ghost" : "default"}
+                      variant={status === PUBLISH_STATUS.PUBLISHED ? "ghost" : "default"}
                       onClick={() => toggleStatus.mutate(collection)}
                       disabled={toggleStatus.isPending}
                     >
-                      {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                      {status === PUBLISH_STATUS.PUBLISHED ? "Unpublish" : "Publish"}
                     </Button>
                   </>
                 )}

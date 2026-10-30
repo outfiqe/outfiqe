@@ -14,6 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { PUBLISH_STATUS } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
@@ -89,10 +90,15 @@ export const HeroSlidesPage = () => {
 
   const toggleStatus = useApiMutation({
     mutationFn: (slide: HeroSlide) =>
-      heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
+      heroSlidesApi.setStatus(
+        slide.id,
+        slide.status === PUBLISH_STATUS.PUBLISHED ? PUBLISH_STATUS.DRAFT : PUBLISH_STATUS.PUBLISHED,
+      ),
     invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     successMessage: (updated) =>
-      updated.status === "PUBLISHED" ? "Hero slide published." : "Hero slide unpublished.",
+      updated.status === PUBLISH_STATUS.PUBLISHED
+        ? "Hero slide published."
+        : "Hero slide unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -258,11 +264,11 @@ export const HeroSlidesPage = () => {
 
               {canManageCatalog && (
                 <Button
-                  variant={status === "PUBLISHED" ? "ghost" : "default"}
+                  variant={status === PUBLISH_STATUS.PUBLISHED ? "ghost" : "default"}
                   onClick={() => toggleStatus.mutate(slide)}
                   disabled={toggleStatus.isPending}
                 >
-                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                  {status === PUBLISH_STATUS.PUBLISHED ? "Unpublish" : "Publish"}
                 </Button>
               )}
             </div>
