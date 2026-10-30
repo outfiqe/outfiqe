@@ -1,5 +1,7 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { z } from "zod";
 
+import { trackEvent } from "@/features/analytics/utils/analyticsClient";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import { isIosBrowser } from "../../utils/standalone";
@@ -54,6 +56,7 @@ export const subscribeToPush = async (): Promise<boolean> => {
     }));
 
   await apiClient.post("/push/subscriptions", toRegisterableSubscription(subscription));
+  if (!existing) trackEvent(ANALYTICS_EVENTS.PUSH_ENABLE, {});
   return true;
 };
 

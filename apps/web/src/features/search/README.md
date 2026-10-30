@@ -13,6 +13,12 @@ Two search results pages, one per `ShopExploreToggle` mode: `/search` (products,
 - `api/exploreSearchApi.ts`, `exploreSearchSchemas.ts` — `GET /creators/search`/`GET /creators/autocomplete` and `GET /creator-looks/search`/`GET /creator-looks/autocomplete` clients (`creators`/`posts` for full results, `autocompleteCreators`/`autocompletePosts` for suggestions — named explicitly per resource since, unlike `productsApi`, this one file's methods aren't already namespaced by an enclosing per-resource module). Products has no equivalent local `api/` — search _and_ autocomplete both reuse `features/products/api/productsApi.ts` (`list` extended with `q`/`minPrice`/`maxPrice`/`inStock`, plus a new `autocomplete`) since both are just different views on the existing product listing; creators/posts don't have an existing browse-listing feature to extend the same way, so they get their own thin client here.
 - `hooks/useExploreSearch.ts` — `useCreatorSearch`/`useLookSearch`, both thin `useInfiniteCursorPage` wrappers over `exploreSearchApi`, backing the results page.
 - `hooks/useExploreAutocomplete.ts` — fires `autocompleteCreators`/`autocompletePosts` as two parallel `useQuery`s behind one debounced/`enabled` query string, backing `ExploreSearchBox`. The product-autocomplete hook (`useProductAutocomplete`) lives in `features/products/hooks/` instead, alongside `useInfiniteProducts`, for the same reuse-the-products-feature reason as the api client above.
+- `hooks/useTrackSearchResults.ts` — sends the `search:query_submit` analytics event (see `features/analytics`) once per query, after the results load. Both results pages call it before their early returns:
+  - `products` scope, with the product total;
+  - `explore` scope, with the creator and look totals added together.
+
+  The query is trimmed, lowercased and capped (`toAnalyticsSearchQuery`), and `is_zero_result` feeds the admin "searches with no results" list.
+
 - `search.constants.ts` — `MIN_QUERY_LENGTH`, `AUTOCOMPLETE_DEBOUNCE_MS`.
 
 ## Funnel

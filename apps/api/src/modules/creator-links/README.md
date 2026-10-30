@@ -32,6 +32,13 @@ any of this buyer's still-anonymous clicks to their `userId`. Bridging only happ
 not at login — attribution is only ever read at checkout, so there's nothing to gain from bridging
 earlier.
 
+## Product analytics
+
+Every counted click (not a repeat click on a used-up single-use link) is also sent to PostHog as
+`creator_link:link_click` through `productAnalyticsService.captureCreatorLinkClick`. It is sent as
+the signed-in visitor, or, for a signed-out visitor, under their session id with no person
+profile. See `modules/product-analytics`. Sending never blocks or fails the redirect.
+
 ## What isn't built yet (chunk 17)
 
 `shareUrl` on `CreatorLinkView` points at `{FRONTEND_URL}/r/:token}` — that route doesn't exist

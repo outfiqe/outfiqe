@@ -12,6 +12,7 @@ import { platformNavAccessApi } from "../api/platformNavAccessApi";
 const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "brand-applications": "Brand applications",
   "platform-metrics": "Tenant metrics",
+  "platform-analytics": "Product analytics",
   "platform-features": "Feature flags",
   "platform-impersonation": "Impersonation",
   "platform-nav-access": "Navigation access",

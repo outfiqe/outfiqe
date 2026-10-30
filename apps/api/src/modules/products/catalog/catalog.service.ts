@@ -3,6 +3,7 @@ import { LRUCache } from "lru-cache";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { isUuid } from "#lib/uuid.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { categoryService } from "#modules/categories/category.service.js";
@@ -32,7 +33,6 @@ import type {
 } from "../product.types.js";
 import {
   hasCompleteSizeChart,
-  isUuid,
   recommendInStockFitSize,
   toPublicProduct,
   toSuggestion,

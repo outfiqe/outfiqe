@@ -4,6 +4,7 @@ import { closeImageProcessingQueues } from "@outfiqe/image-pipeline";
 
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
+import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import {
   BACKGROUND_OUTBOX_QUEUE_NAMES,
   REALTIME_OUTBOX_QUEUE_NAMES,
@@ -56,6 +57,7 @@ export const startCombinedProcess = async (): Promise<void> => {
     { name: "outbox-queues", run: closeOutboxQueues },
     { name: "image-workers", run: stopImageProcessingWorkers },
     { name: "image-queues", run: () => closeImageProcessingQueues(imageProcessingQueues) },
+    { name: "product-analytics", run: productAnalyticsService.flushPendingEvents },
     { name: "db", run: disconnectDb },
     { name: "redis", run: disconnectRedis },
   ]);

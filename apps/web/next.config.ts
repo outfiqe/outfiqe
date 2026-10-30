@@ -33,6 +33,10 @@ const securityHeaders = [
   ...(isSearchIndexable ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
 ];
 
+const ANALYTICS_RELAY_PATH = "/a7x";
+const POSTHOG_INGEST_ORIGIN = "https://us.i.posthog.com";
+const POSTHOG_ASSETS_ORIGIN = "https://us-assets.i.posthog.com";
+
 const CLIENT_ROUTER_DYNAMIC_STALE_SECONDS = 30;
 const CLIENT_ROUTER_STATIC_STALE_SECONDS = 180;
 
@@ -71,6 +75,7 @@ const imageRemotePatterns = (): NonNullable<NextConfig["images"]>["remotePattern
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
+  skipTrailingSlashRedirect: true,
   allowedDevOrigins: ["outfiqe.local", "*.outfiqe.local"],
 
   experimental: {
@@ -105,6 +110,15 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
+      {
+        source: `${ANALYTICS_RELAY_PATH}/static/:path*`,
+        destination: `${POSTHOG_ASSETS_ORIGIN}/static/:path*`,
+      },
+      {
+        source: `${ANALYTICS_RELAY_PATH}/array/:path*`,
+        destination: `${POSTHOG_ASSETS_ORIGIN}/array/:path*`,
+      },
+      { source: `${ANALYTICS_RELAY_PATH}/:path*`, destination: `${POSTHOG_INGEST_ORIGIN}/:path*` },
       /* Keep the /api prefix on the way through — the Express app itself
          mounts routes at /api/auth/* and /api/users/* (see apps/api/src/app.ts),
          it does not strip the prefix. Dropping it here would 404 every call.

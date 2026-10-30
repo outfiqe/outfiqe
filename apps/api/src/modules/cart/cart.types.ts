@@ -12,6 +12,7 @@ export type CartItemView = {
   qty: number;
   availableStock: number;
   soldOut: boolean;
+  unavailable: boolean;
   lowStock: boolean;
 };
 

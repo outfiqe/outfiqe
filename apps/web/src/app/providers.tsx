@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { type ReactNode, useState } from "react";
 
+import { AnalyticsIdentity, CookieConsentBanner } from "@/features/analytics";
 import { AccountSuspensionSocketListener, AuthProvider } from "@/features/auth";
 import { GamificationSocketListener } from "@/features/creator-dashboard/progress/components/GamificationSocketListener";
 import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/messaging";
@@ -61,7 +62,9 @@ export const Providers = ({ children }: { children: ReactNode }) => {
           <Toaster />
           <GamificationSocketListener />
           <AccountSuspensionSocketListener />
+          <AnalyticsIdentity />
           <DeferredMount>
+            <CookieConsentBanner />
             <AppUpdatePrompt />
             <InstallPrompt />
             <PushNotificationPrompt />

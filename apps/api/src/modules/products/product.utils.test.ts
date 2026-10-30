@@ -16,7 +16,6 @@ import {
   isLowStock,
   isNew,
   isThriftSoldOut,
-  isUuid,
   recommendInStockFitSize,
   sumStock,
   toBrandSummary,
@@ -70,16 +69,6 @@ const buildProduct = (overrides: Partial<ProductFixture> = {}): ProductFixture =
   sizes: [{ id: "size-1", label: "M", stock: 10, fitRange: null }],
   images: [{ url: "jacket.png" }],
   ...overrides,
-});
-
-describe("isUuid", () => {
-  it("accepts a valid uuid", () => {
-    expect(isUuid("123e4567-e89b-12d3-a456-426614174000")).toBe(true);
-  });
-
-  it("rejects a non-uuid string", () => {
-    expect(isUuid("not-a-uuid")).toBe(false);
-  });
 });
 
 describe("isNew", () => {

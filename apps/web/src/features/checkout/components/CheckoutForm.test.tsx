@@ -154,10 +154,11 @@ const renderCheckoutForm = (zones: DeliveryZone[] = ZONES) => {
 };
 
 const fillRequiredFields = async () => {
-  await userEvent.type(screen.getByLabelText(/full name/i), "Ram Shrestha");
-  await userEvent.type(screen.getByLabelText(/^phone$/i), "9800000000");
-  await userEvent.type(screen.getByLabelText(/^address$/i), "Baneshwor, Kathmandu");
-  await userEvent.type(screen.getByLabelText("City"), "Kathmandu");
+  const shopper = userEvent.setup({ delay: null });
+  await shopper.type(screen.getByLabelText(/full name/i), "Ram Shrestha");
+  await shopper.type(screen.getByLabelText(/^phone$/i), "9800000000");
+  await shopper.type(screen.getByLabelText(/^address$/i), "Baneshwor, Kathmandu");
+  await shopper.type(screen.getByLabelText("City"), "Kathmandu");
 };
 
 const aSavedAddress = (overrides: Partial<SavedAddress> = {}): SavedAddress => ({

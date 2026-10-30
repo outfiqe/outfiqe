@@ -18,3 +18,4 @@ export const SESSION_TABLE_HEADERS = [
 export const KPI_CARD_COUNT = 6;
 export const OVERVIEW_TILE_COUNT = 4;
 export const GAMIFICATION_STAT_COUNT = 5;
+export const ANALYTICS_STAT_CARD_COUNT = 4;

@@ -32,6 +32,7 @@ import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { COD_UNAVAILABLE_REASON } from "../constants/checkout.constants";
 import { useCheckout } from "../hooks/useCheckout";
+import { useCheckoutAnalytics } from "../hooks/useCheckoutAnalytics";
 import { useCodEligibility } from "../hooks/useCodEligibility";
 import type { BuyNowPayload } from "../utils/buyNowStorage";
 import { clearBuyNowPayload } from "../utils/buyNowStorage";
@@ -69,6 +70,11 @@ export const CheckoutForm = ({
   const queryClient = useQueryClient();
   const { state } = useAuth();
   const checkout = useCheckout();
+  const { trackPaymentMethodSelect, trackOrderSubmit } = useCheckoutAnalytics({
+    cart,
+    isBuyNow: Boolean(buyNow),
+    hasCoupon: Boolean(cart.appliedCoupon ?? buyNowCoupon),
+  });
   const initiatePayment = useInitiatePayment();
   const createAddress = useCreateAddress();
   const isOnline = useIsOnline();
@@ -185,6 +191,8 @@ export const CheckoutForm = ({
       return;
     }
 
+    trackOrderSubmit(values.paymentMethod);
+
     try {
       const order = await checkout.mutateAsync({
         input: values,
@@ -263,7 +271,10 @@ export const CheckoutForm = ({
             </h2>
             <PaymentMethodField
               value={paymentMethod}
-              onChange={(value) => form.setValue("paymentMethod", value)}
+              onChange={(value) => {
+                form.setValue("paymentMethod", value);
+                trackPaymentMethodSelect(value);
+              }}
               codUnavailableReason={codUnavailableReason}
             />
             {paymentMethod === PaymentMethod.COD && (
