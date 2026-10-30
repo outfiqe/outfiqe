@@ -17,6 +17,7 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
 
 ## Structure
 
+- `crm-access.errors.ts` — `crmAccessErrors`, the errors this module raises from more than one place.
 - `crm-access.types.ts` — record/summary/input types for every entity this module owns.
 - `crm-access.constants.ts` — `PERMISSION_CATALOG` (the full permission key catalog, grouped),
   `SELECTABLE_ROLE_PERMISSION_KEYS` (the catalog minus `platform:access` and

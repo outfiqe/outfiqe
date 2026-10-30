@@ -11,6 +11,7 @@ import {
 import { withIdempotency } from "#lib/idempotency.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
@@ -22,8 +23,7 @@ import { logisticsParcelCash } from "./parcel-cash.js";
 
 const HANDOVER_IDEMPOTENCY_ENDPOINT = "logistics:hub-parcel-handover";
 
-const parcelNotFoundError = () =>
-  new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+const parcelNotFoundError = () => logisticsErrors.parcelNotFound();
 
 const requireParcelLabel = async (shipmentId: string): Promise<ParcelLabelView> => {
   await logisticsParcelCash.refreshParcelCash(shipmentId);

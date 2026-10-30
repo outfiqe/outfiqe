@@ -9,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { OWNERSHIP_TRANSFER_REQUEST_TTL_MS } from "../crm-access.constants.js";
+import { crmAccessErrors } from "../crm-access.errors.js";
 import { crmAccessRepository } from "../crm-access.repository.js";
 import type {
   MembershipRecord,
@@ -56,7 +57,7 @@ const requireTransferRecipient = async (
     toMembershipId,
   );
   if (!toMembership || toMembership.status !== MembershipStatus.ACTIVE) {
-    throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", HTTP_STATUS.NOT_FOUND);
+    throw crmAccessErrors.membershipNotFound();
   }
 
   const pendingTransfer = await crmOwnershipTransferRepository.findPendingOwnershipTransfer(
@@ -139,11 +140,7 @@ export const crmOwnershipTransferService = {
       requestId,
     );
     if (!request || !isOwnershipTransferPending(request) || isOwnershipTransferExpired(request)) {
-      throw new AppError(
-        "TRANSFER_INVALID",
-        "This ownership transfer is no longer available.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw crmAccessErrors.transferInvalid();
     }
 
     const toMembership = await crmAccessRepository.findMembershipById(
@@ -151,11 +148,7 @@ export const crmOwnershipTransferService = {
       request.toMembershipId,
     );
     if (!toMembership || toMembership.userId !== acceptingUserId) {
-      throw new AppError(
-        "TRANSFER_USER_MISMATCH",
-        "This ownership transfer wasn't addressed to you.",
-        HTTP_STATUS.FORBIDDEN,
-      );
+      throw crmAccessErrors.transferUserMismatch();
     }
     if (toMembership.status !== "ACTIVE") {
       throw new AppError(
@@ -190,11 +183,7 @@ export const crmOwnershipTransferService = {
       requestId,
     );
     if (!request || !isOwnershipTransferPending(request) || isOwnershipTransferExpired(request)) {
-      throw new AppError(
-        "TRANSFER_INVALID",
-        "This ownership transfer is no longer available.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw crmAccessErrors.transferInvalid();
     }
 
     const toMembership = await crmAccessRepository.findMembershipById(
@@ -202,11 +191,7 @@ export const crmOwnershipTransferService = {
       request.toMembershipId,
     );
     if (!toMembership || toMembership.userId !== decliningUserId) {
-      throw new AppError(
-        "TRANSFER_USER_MISMATCH",
-        "This ownership transfer wasn't addressed to you.",
-        HTTP_STATUS.FORBIDDEN,
-      );
+      throw crmAccessErrors.transferUserMismatch();
     }
 
     await crmOwnershipTransferRepository.declineOwnershipTransfer(organization.id, requestId);

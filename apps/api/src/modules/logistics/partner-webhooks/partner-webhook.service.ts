@@ -14,6 +14,7 @@ import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerAdapters } from "../logistics.partner-adapters.js";
 import { logisticsPartnerEvents } from "../logistics.partner-events.js";
 import type { PartnerTrackingEvent } from "../partners/adapters/partner-adapter.types.js";
@@ -178,7 +179,7 @@ export const logisticsPartnerWebhookService = {
   ): Promise<{ replayedCount: number }> {
     const partner = await logisticsPartnerWebhookRepository.findPartnerById(partnerId);
     if (!partner) {
-      throw new AppError("PARTNER_NOT_FOUND", "Delivery partner not found.", HTTP_STATUS.NOT_FOUND);
+      throw logisticsErrors.partnerNotFound();
     }
     const receiptIds = await logisticsPartnerWebhookRepository.listReceiptIdsToReplay({
       partnerId,

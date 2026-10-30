@@ -14,6 +14,7 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { logisticsBagTagRepository } from "../bag-tags/bag-tag.repository.js";
+import { logisticsErrors } from "../logistics.errors.js";
 import { requireActiveRider } from "../logistics.guards.js";
 import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
 import { logisticsRiderPayService } from "../rider-pay/rider-pay.service.js";
@@ -36,11 +37,9 @@ const NO_STOPS_SCANNED = 0;
 type TransactionClient = Prisma.TransactionClient;
 type RiderIdentity = { riderId: string; userId: string };
 
-const riderTaskNotFoundError = () =>
-  new AppError("RIDER_TASK_NOT_FOUND", "Visit not found.", HTTP_STATUS.NOT_FOUND);
+const riderTaskNotFoundError = () => logisticsErrors.riderTaskNotFound();
 
-const riderTaskClosedError = () =>
-  new AppError("RIDER_TASK_CLOSED", "This visit is already finished.", HTTP_STATUS.CONFLICT);
+const riderTaskClosedError = () => logisticsErrors.riderTaskClosed();
 
 const bagTagAlreadyUsedError = () =>
   new AppError(

@@ -23,4 +23,7 @@ export const creatorLookErrors = {
 
   imageRequired: () =>
     new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS),
+
+  commentNotFound: () =>
+    new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", HTTP_STATUS.NOT_FOUND),
 };

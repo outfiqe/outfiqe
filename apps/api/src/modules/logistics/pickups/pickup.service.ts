@@ -3,6 +3,7 @@ import { PickupStatus, TrackingEventCode, TrackingEventSource } from "#generated
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import { logisticsPickupRepository } from "./pickup.repository.js";
@@ -13,7 +14,7 @@ const READY_FOR_PICKUP_DEDUPE_PREFIX = "ready-for-pickup";
 const requireBrandHubPickup = async (fulfilmentGroupId: string, brandId: string) => {
   const pickup = await logisticsPickupRepository.findBrandHubPickup(fulfilmentGroupId, brandId);
   if (!pickup?.pickupStatus || !pickup.pickupCode) {
-    throw new AppError("PICKUP_NOT_FOUND", "Pickup not found.", HTTP_STATUS.NOT_FOUND);
+    throw logisticsErrors.pickupNotFound();
   }
   return { ...pickup, pickupStatus: pickup.pickupStatus, pickupCode: pickup.pickupCode };
 };

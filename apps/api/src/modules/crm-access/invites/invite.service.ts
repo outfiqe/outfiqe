@@ -16,6 +16,7 @@ import { describeError } from "#redis/redis.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { ORGANIZATION_INVITE_TTL_MS } from "../crm-access.constants.js";
+import { crmAccessErrors } from "../crm-access.errors.js";
 import { assertPermissionKeysWithinActorGrant } from "../crm-access.guards.js";
 import { crmAccessRepository } from "../crm-access.repository.js";
 import type {
@@ -231,7 +232,7 @@ export const crmInviteService = {
       invite.organizationId,
     );
     if (existingMembership) {
-      throw new AppError("MEMBER_EXISTS", "You already have CRM access.", HTTP_STATUS.CONFLICT);
+      throw crmAccessErrors.memberExists();
     }
 
     let membership: MembershipRecord;
@@ -239,7 +240,7 @@ export const crmInviteService = {
       membership = await crmInviteRepository.acceptInvite(invite, acceptingUserId);
     } catch (err) {
       if (isUniqueConstraintError(err)) {
-        throw new AppError("MEMBER_EXISTS", "You already have CRM access.", HTTP_STATUS.CONFLICT);
+        throw crmAccessErrors.memberExists();
       }
       throw err;
     }

@@ -12,6 +12,7 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsRiderRepository } from "../riders/rider.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
@@ -39,7 +40,7 @@ const pickupsNotAssignableError = () =>
 
 const requireAssignableRider = async (riderId: string) => {
   const rider = await logisticsRiderRepository.findRiderById(riderId);
-  if (!rider) throw new AppError("RIDER_NOT_FOUND", "Rider not found.", HTTP_STATUS.NOT_FOUND);
+  if (!rider) throw logisticsErrors.riderNotFound();
   if (rider.status !== RiderStatus.ACTIVE) {
     throw new AppError(
       "RIDER_NOT_ACTIVE",
@@ -70,7 +71,7 @@ const recordAssignmentEvents = async (
 
 const requireTaskSummary = async (client: DbClient, taskId: string) => {
   const task = await logisticsRoundRepository.findRiderTaskSummary(client, taskId);
-  if (!task) throw new AppError("RIDER_TASK_NOT_FOUND", "Visit not found.", HTTP_STATUS.NOT_FOUND);
+  if (!task) throw logisticsErrors.riderTaskNotFound();
   return task;
 };
 
@@ -109,11 +110,7 @@ export const logisticsRoundService = {
     const rider = await requireAssignableRider(riderId);
     const pickupLocation = await logisticsRoundRepository.findPickupLocationBrand(pickupLocationId);
     if (!pickupLocation) {
-      throw new AppError(
-        "PICKUP_LOCATION_NOT_FOUND",
-        "Pickup location not found.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw logisticsErrors.pickupLocationNotFound();
     }
 
     try {
@@ -187,11 +184,7 @@ export const logisticsRoundService = {
         toStatus: RiderTaskStatus.CANCELLED,
       });
       if (!hasMoved) {
-        throw new AppError(
-          "RIDER_TASK_CLOSED",
-          "This visit is already finished.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw logisticsErrors.riderTaskClosed();
       }
       await logisticsRoundRepository.releaseUnscannedStops(tx, taskId);
 

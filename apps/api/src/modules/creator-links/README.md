@@ -1,5 +1,9 @@
 # creator-links
 
+n## Errors
+
+`creator-link.errors.ts` holds the errors this module raises from more than one place.
+
 Backend for creator referral links — chunk 13 of the commerce build. Two link types on
 `CreatorLink`:
 

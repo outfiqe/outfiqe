@@ -11,6 +11,7 @@ import {
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerBookingService } from "../partner-bookings/partner-booking.service.js";
 import {
   isReferenceAllowedByPattern,
@@ -42,18 +43,13 @@ const isBeingBookedAutomatically = (booking: {
   booking.status === PartnerBookingStatus.REQUESTED &&
   booking.connection === DeliveryPartnerConnection.API;
 
-const parcelNotFoundError = () =>
-  new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+const parcelNotFoundError = () => logisticsErrors.parcelNotFound();
 
 const requirePackedParcel = async (shipmentId: string) => {
   const shipment = await logisticsHubOperationRepository.findShipmentForMoney(prisma, shipmentId);
   if (!shipment) throw parcelNotFoundError();
   if (shipment.status !== ShipmentStatus.PACKED) {
-    throw new AppError(
-      "PARCEL_ALREADY_LEFT",
-      "This parcel has already left the hub, so its booking can't be changed here.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw logisticsErrors.parcelAlreadyLeft();
   }
   return shipment;
 };
@@ -152,11 +148,7 @@ export const logisticsParcelBookingService = {
           bookedAt,
         });
         if (!isBooked) {
-          throw new AppError(
-            "BOOKING_CHANGED",
-            "This booking was changed by someone else. Refresh and try again.",
-            HTTP_STATUS.CONFLICT,
-          );
+          throw logisticsErrors.bookingChanged();
         }
         await logisticsTrackingService.recordEventInTransaction(tx, {
           subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId },

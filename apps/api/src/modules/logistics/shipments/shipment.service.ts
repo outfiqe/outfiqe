@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { TrackingEventSource } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import { logisticsShipmentRepository } from "./shipment.repository.js";
@@ -28,7 +27,7 @@ const ADMIN_PARCEL_EVENT_DEDUPE_PREFIX = "admin-parcel-event";
 const requireShipmentDetail = async (shipmentId: string): Promise<ShipmentDetailView> => {
   const shipment = await logisticsShipmentRepository.findShipmentDetail(shipmentId);
   if (!shipment) {
-    throw new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+    throw logisticsErrors.parcelNotFound();
   }
   return toShipmentDetailView(shipment);
 };

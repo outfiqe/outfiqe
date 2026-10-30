@@ -14,6 +14,7 @@ import { generateRandomCode } from "#lib/random-code.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { PICKUP_STATUSES_NOT_COMING_TO_HUB } from "../logistics.constants.js";
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerBookingService } from "../partner-bookings/partner-booking.service.js";
 import { merchantReferenceForBooking } from "../partners/partner-status.utils.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
@@ -249,7 +250,7 @@ export const logisticsPackingService = {
     body: PackParcelBody,
   ): Promise<PackedParcelView> {
     const order = await logisticsHubOperationRepository.findOrderForPacking(orderId);
-    if (!order) throw new AppError("ORDER_NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw logisticsErrors.orderNotFound();
     const { hubId, fulfilmentGroupIds } = selectPickupsToPack(order, body.packsOnlyPickupsAtHub);
 
     const firstShipmentId = await logisticsHubOperationRepository.findFirstShipmentIdForOrder(

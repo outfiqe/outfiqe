@@ -8,6 +8,7 @@ can only ever be opened against a creator who actually has a relationship with t
 
 ## Structure
 
+- `crm-pipeline.errors.ts` — `crmPipelineErrors`, the errors this module raises from more than one place.
 - `crm-pipeline.constants.ts` — `DEFAULT_PIPELINE_STAGES` (the Lead → Contacted → Negotiating →
   Won → Lost preset, reused by both the migration backfill, `crm-access`'s `createOrganization`,
   and `seed-crm.ts`), and the stage/deal count + page-size bounds.

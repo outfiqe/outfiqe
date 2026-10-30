@@ -13,6 +13,7 @@ Each country has one default zone, used for any city that isn't listed.
 
 ## Structure
 
+- `delivery-zone.errors.ts` — `deliveryZoneErrors`, the errors this module raises from more than one place.
 - `delivery-zone.routes.ts` — `/api/delivery-zones`.
   - Public:
     - `GET /` — every zone, served from the Redis response cache.
