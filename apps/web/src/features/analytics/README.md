@@ -21,8 +21,14 @@ from the shared catalog in `@outfiqe/utils` (`ANALYTICS_EVENTS`).
   the banner was reopened. Components read it through `useSyncExternalStore`.
 - `utils/scrubPersonalData.ts`:
   - `redactPersonalText` replaces anything that looks like an email address or a Nepali mobile
-    number;
+    number, and the value of secret link parameters, even inside an encoded redirect link. Any
+    parameter named like a token, code, secret or password is covered (`linkToken`, `access_token`),
+    so a new one needs no change here, plus `state`, `otp`, `data`, `pidx`, `tidx` and
+    `transaction_id`;
   - `scrubPersonalData` runs it over every event before it leaves the browser (`before_send`).
+    PostHog keeps the full link in `$current_url`, `$referrer` and person properties, and
+    recordings go through the same path. So without this, a password reset, email verification,
+    invite or support-reopen link would hand a live token to a third party.
 - `hooks/useAnalyticsConsent.ts`: the consent status for components.
 - `hooks/useTrackView.ts`: sends a "viewed" event once per item (product, checkout, payment
   failure), however often the component re-renders.
