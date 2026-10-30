@@ -3,7 +3,7 @@ import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import {
   DIRECT_TRAFFIC_SOURCE,
   OWN_SITE_DOMAIN_SUFFIX,
-  REPEAT_PURCHASE_MIN_ORDERS,
+  STAFF_CREATED_SIGNUP_METHOD,
   TOP_ROWS_LIMIT,
   WEEKLY_ACTIVE_WEEKS,
   ZERO_RESULT_SEARCHES_LIMIT,
@@ -40,12 +40,15 @@ const quoteEventNames = (eventNames: readonly string[]): string =>
 const withinLastDays = (days: number): string =>
   `timestamp >= now() - toIntervalDay(${Math.trunc(days)})`;
 
+const ORDER_ID = "toString(properties.order_id)";
+
 export const overviewQuery = (days: number): string => `
   SELECT
     uniqIf(person_id, event = '${PAGEVIEW_EVENT}'),
-    countIf(event = '${ANALYTICS_EVENTS.USER_CREATE}'),
+    uniqIf(distinct_id, event = '${ANALYTICS_EVENTS.USER_CREATE}'
+      AND toString(properties.signup_method) != '${STAFF_CREATED_SIGNUP_METHOD}'),
     uniqIf(person_id, event = '${ANALYTICS_EVENTS.ORDER_PLACE}'),
-    countIf(event = '${ANALYTICS_EVENTS.ORDER_PLACE}')
+    uniqIf(${ORDER_ID}, event = '${ANALYTICS_EVENTS.ORDER_PLACE}')
   FROM events
   WHERE ${withinLastDays(days)}
     AND event IN (${quoteEventNames([PAGEVIEW_EVENT, ANALYTICS_EVENTS.USER_CREATE, ANALYTICS_EVENTS.ORDER_PLACE])})
@@ -77,16 +80,16 @@ export const lookViewersReachingEachStepQuery = (days: number): string => `
   GROUP BY event`;
 
 export const ordersByPaymentMethodQuery = (days: number): string => `
-  SELECT toString(properties.payment_method) AS payment_method, count()
+  SELECT toString(properties.payment_method) AS payment_method, uniq(${ORDER_ID}) AS orders
   FROM events
   WHERE ${withinLastDays(days)}
     AND event = '${ANALYTICS_EVENTS.ORDER_PLACE}'
     AND ${EXCLUDE_INTERNAL_PEOPLE}
   GROUP BY payment_method
-  ORDER BY count() DESC`;
+  ORDER BY orders DESC`;
 
 export const attributedOrdersQuery = (days: number): string => `
-  SELECT count()
+  SELECT uniq(${ORDER_ID})
   FROM events
   WHERE ${withinLastDays(days)}
     AND event = '${ANALYTICS_EVENTS.ORDER_PLACE}'
@@ -143,15 +146,13 @@ export const weeklyActiveVisitorsQuery = (): string => `
   ORDER BY week_start`;
 
 export const repeatBuyersQuery = (days: number): string => `
-  SELECT count(), countIf(order_count >= ${REPEAT_PURCHASE_MIN_ORDERS})
-  FROM (
-    SELECT person_id, count() AS order_count
-    FROM events
-    WHERE ${withinLastDays(days)}
-      AND event = '${ANALYTICS_EVENTS.ORDER_PLACE}'
-      AND ${EXCLUDE_INTERNAL_PEOPLE}
-    GROUP BY person_id
-  )`;
+  SELECT
+    uniq(person_id),
+    uniqIf(person_id, toString(properties.is_first_order) = 'false')
+  FROM events
+  WHERE ${withinLastDays(days)}
+    AND event = '${ANALYTICS_EVENTS.ORDER_PLACE}'
+    AND ${EXCLUDE_INTERNAL_PEOPLE}`;
 
 export const zeroResultSearchesQuery = (days: number): string => `
   SELECT toString(properties.search_query) AS search_query, count()

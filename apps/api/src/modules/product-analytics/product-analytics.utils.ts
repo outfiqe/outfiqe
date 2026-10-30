@@ -6,6 +6,7 @@ import {
   type AnalyticsTrackedOrderStatus,
   toAnalyticsPaymentMethod,
 } from "@outfiqe/utils";
+import { toDate } from "date-fns/toDate";
 
 import type { FulfilmentStatus } from "#generated/prisma/enums.js";
 
@@ -16,6 +17,7 @@ import {
 import type { OrderAnalyticsSummary } from "./product-analytics.types.js";
 
 const NO_EARLIER_PLACED_ORDERS = 0;
+const STREAM_ENTRY_PUBLISHED_MS_PATTERN = /:(\d+)-\d+$/;
 const UUID_BYTE_LENGTH = 16;
 const UUID_VERSION_BYTE_INDEX = 6;
 const UUID_VARIANT_BYTE_INDEX = 8;
@@ -49,6 +51,11 @@ export const toStableEventUuid = (sourceEventId: string): string => {
     UUID_VARIANT_BYTE_INDEX,
   );
   return toHyphenatedUuid(uuidBytes.toString("hex"));
+};
+
+export const toEventPublishedAt = (sourceEventId: string): Date | null => {
+  const publishedAtMs = STREAM_ENTRY_PUBLISHED_MS_PATTERN.exec(sourceEventId)?.[1];
+  return publishedAtMs ? toDate(Number(publishedAtMs)) : null;
 };
 
 export const toTrackedOrderStatus = (

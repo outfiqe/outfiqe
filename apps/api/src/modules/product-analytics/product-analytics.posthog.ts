@@ -9,6 +9,7 @@ export type PosthogServerEvent = {
   event: string;
   properties: Record<string, unknown>;
   uuid?: string;
+  timestamp?: Date;
 };
 
 let posthogClient: PostHog | null = null;

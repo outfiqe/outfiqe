@@ -1,3 +1,4 @@
+import type { AnalyticsSignupMethod } from "@outfiqe/utils";
 import { hoursToMilliseconds } from "date-fns/hoursToMilliseconds";
 import { millisecondsToSeconds } from "date-fns/millisecondsToSeconds";
 import { minutesToSeconds } from "date-fns/minutesToSeconds";
@@ -48,7 +49,7 @@ export const ZERO_RESULT_SEARCHES_LIMIT = 20;
 
 export const WEEKLY_ACTIVE_WEEKS = 8;
 
-export const REPEAT_PURCHASE_MIN_ORDERS = 2;
+export const STAFF_CREATED_SIGNUP_METHOD: AnalyticsSignupMethod = "staff_created";
 
 export const DIRECT_TRAFFIC_SOURCE = "$direct";
 

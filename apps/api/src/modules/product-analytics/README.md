@@ -104,8 +104,13 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
   retries and dead-letter stream. So a PostHog outage, or a slow lookup here, never delays
   notifications or XP, and it can't fail an order. The consumers are registered in
   `registerBackgroundConsumers`, so the `api` role's request handling isn't involved.
-- **Exactly once in PostHog, even when the bus redelivers.** Each event's PostHog `uuid` comes
-  from the bus event id (`toStableEventUuid`), and PostHog drops a repeat with the same uuid.
+- **Exactly once in PostHog, even when the bus redelivers.** PostHog only treats two events as
+  the same when the uuid _and_ the timestamp match. So each event's `uuid` comes from the bus
+  event id (`toStableEventUuid`), and its `timestamp` is the publish time in that id's stream
+  entry (`toEventPublishedAt`), not the moment the worker happened to send it. A redelivery is
+  then an exact copy, and the event lands at the time the order or sign-up really happened even
+  when the worker was behind. PostHog merges copies in the background, so the order queries also
+  count distinct `order_id`s, not events.
   `product.purchased` itself fires once per order: at checkout for COD, and at payment
   confirmation for eSewa and Khalti.
 - **"First order" means the first order that went through.** Earlier online orders that were
@@ -138,5 +143,8 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
   a strict ordered funnel; the "Open in PostHog" link goes to PostHog's own funnel tools for
   that. The look-to-order funnel only counts people who opened a look, or tapped a tagged product
   straight from a feed card, in the same range (`lookViewersReachingEachStepQuery`). Without
-  that filter, its product, cart and order steps would count every shopper on the site. Staff and riders flagged `is_internal` are left out of every query. Orders and money on
+  that filter, its product, cart and order steps would count every shopper on the site. Staff and riders flagged `is_internal` are left out of every query.
+  Sign-ups leave out `staff_created` accounts (riders and team members added by staff).
+  Returning buyers are buyers in the range whose order had `is_first_order = false`, so a
+  customer who also bought before the range still counts, even in a 7-day view. Orders and money on
   the admin page come from the database (`financial-rollup`), which is exact.

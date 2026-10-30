@@ -28,7 +28,7 @@ from the database (`financial-rollup`).
   muses.
 - `components/AcquisitionSection.tsx`: top sources, UTM campaigns and muse link clicks.
 - `components/RetentionSection.tsx`: weekly visitors over 8 weeks (`TrendChart`) and the
-  repeat-purchase rate.
+  share of buyers in the range who had ordered before ("Returning buyers").
 - `components/ZeroResultSearchesSection.tsx`: the most common searches that found nothing.
 - `components/FunnelSteps.tsx`: one row per step, with a proportional bar and the share kept
   from the previous step.

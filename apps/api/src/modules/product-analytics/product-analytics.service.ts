@@ -10,7 +10,7 @@ import {
 } from "./product-analytics.constants.js";
 import { flushProductAnalytics, sendToPosthog } from "./product-analytics.posthog.js";
 import type { ServerAnalyticsEvent } from "./product-analytics.types.js";
-import { toStableEventUuid } from "./product-analytics.utils.js";
+import { toEventPublishedAt, toStableEventUuid } from "./product-analytics.utils.js";
 
 type CreatorLinkClick = {
   visitorUserId: string | undefined;
@@ -27,6 +27,7 @@ const captureServerEvent = <EventName extends AnalyticsEventName>({
   sourceEventId,
   hasPersonProfile = true,
 }: ServerAnalyticsEvent<EventName>): void => {
+  const publishedAt = sourceEventId ? toEventPublishedAt(sourceEventId) : null;
   sendToPosthog({
     distinctId,
     event,
@@ -36,6 +37,7 @@ const captureServerEvent = <EventName extends AnalyticsEventName>({
       ...(hasPersonProfile ? {} : { $process_person_profile: false }),
     },
     ...(sourceEventId ? { uuid: toStableEventUuid(sourceEventId) } : {}),
+    ...(publishedAt ? { timestamp: publishedAt } : {}),
   });
 };
 

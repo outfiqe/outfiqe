@@ -20,7 +20,7 @@ export const RetentionSection = ({ range }: { range: AnalyticsRange }) => {
   return (
     <AnalyticsInsightSection
       title="Coming back"
-      description="Weekly visitors over the last 8 weeks, and how many buyers ordered again."
+      description="Weekly visitors over the last 8 weeks, and how many buyers in this range had ordered before."
       insightQuery={retentionQuery}
     >
       {({ weeklyActiveVisitors, buyers, repeatBuyers, repeatPurchaseRate }) => (
@@ -38,9 +38,9 @@ export const RetentionSection = ({ range }: { range: AnalyticsRange }) => {
           <div className="grid gap-3">
             <StatCard label="Buyers in this range" value={buyers.toLocaleString()} />
             <StatCard
-              label="Ordered more than once"
+              label="Returning buyers"
               value={percent(repeatPurchaseRate)}
-              hint={`${repeatBuyers.toLocaleString()} repeat buyers`}
+              hint={`${repeatBuyers.toLocaleString()} had ordered before`}
             />
           </div>
         </div>

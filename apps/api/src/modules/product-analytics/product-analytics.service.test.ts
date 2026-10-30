@@ -30,6 +30,7 @@ describe("productAnalyticsService.captureServerEvent", () => {
       event: "account:email_verify",
       properties: { source: "api" },
       uuid: toStableEventUuid("user.email.verified:1-0"),
+      timestamp: new Date(1),
     });
   });
 

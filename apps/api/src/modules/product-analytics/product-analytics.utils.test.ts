@@ -4,6 +4,7 @@ import { FulfilmentStatus, PaymentMethod } from "#generated/prisma/enums.js";
 
 import type { OrderAnalyticsSummary } from "./product-analytics.types.js";
 import {
+  toEventPublishedAt,
   toOrderPlacedProperties,
   toStableEventUuid,
   toTrackedOrderStatus,
@@ -38,6 +39,24 @@ describe("toStableEventUuid", () => {
     expect(toStableEventUuid("product.purchased:1-0")).not.toBe(
       toStableEventUuid("product.purchased:2-0"),
     );
+  });
+});
+
+describe("toEventPublishedAt", () => {
+  it("reads when the bus event was published from its stream entry id", () => {
+    expect(toEventPublishedAt("product.purchased:1730000000000-3")).toEqual(
+      new Date(1730000000000),
+    );
+  });
+
+  it("gives the same time on a redelivery, so PostHog sees an exact duplicate", () => {
+    expect(toEventPublishedAt("order.status.changed:1730000000000-0")).toEqual(
+      toEventPublishedAt("order.status.changed:1730000000000-0"),
+    );
+  });
+
+  it("returns null for an id that isn't a stream entry", () => {
+    expect(toEventPublishedAt("not-a-stream-id")).toBeNull();
   });
 });
 

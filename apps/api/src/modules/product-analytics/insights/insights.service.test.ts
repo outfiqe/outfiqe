@@ -79,7 +79,10 @@ describe("productAnalyticsInsightsService", () => {
       orders: 10,
       visitToBuyerRate: 0.04,
     });
-    expect(vi.mocked(runPosthogQuery).mock.calls[0]?.[2]).toContain("toIntervalDay(7)");
+    const overviewSql = vi.mocked(runPosthogQuery).mock.calls[0]?.[2] ?? "";
+    expect(overviewSql).toContain("toIntervalDay(7)");
+    expect(overviewSql).toContain("toString(properties.signup_method) != 'staff_created'");
+    expect(overviewSql).toContain("uniqIf(toString(properties.order_id)");
     const cachedKeys = vi.mocked(cacheService.set).mock.calls.map(([key]) => key);
     expect(cachedKeys).toEqual([
       "product-analytics:insight:fresh:overview:7d",
@@ -175,6 +178,8 @@ describe("productAnalyticsInsightsService", () => {
       .mockResolvedValueOnce([["2026-10-19", 80]])
       .mockResolvedValueOnce([[10, 4]]);
     const retention = await productAnalyticsInsightsService.retention("90d");
+    const repeatBuyersSql = vi.mocked(runPosthogQuery).mock.lastCall?.[2] ?? "";
+    expect(repeatBuyersSql).toContain("toString(properties.is_first_order) = 'false'");
     expect(retention.insight).toEqual({
       weeklyActiveVisitors: [{ weekStart: "2026-10-19", visitors: 80 }],
       buyers: 10,
