@@ -91,6 +91,33 @@ const resolveSizesForTypeChange = async (
   return resolveSizeInputs(brandId, sizeStandardId, sizes);
 };
 
+const assertFitDataFitsProductType = async (
+  targetProductType: Awaited<ReturnType<typeof productTypeService.getActiveBySlug>> | undefined,
+  currentProductTypeId: string,
+  isStretchable: UpdateProductBody["isStretchable"],
+  sizeChanges: CreateProductSizeInput[] | undefined,
+): Promise<void> => {
+  const effectiveProductType =
+    targetProductType ??
+    (isStretchable === undefined
+      ? undefined
+      : await productTypeService.getById(currentProductTypeId));
+  if (effectiveProductType) {
+    assertFitDataAllowed(effectiveProductType.supportsFitRanges, isStretchable, sizeChanges ?? []);
+  }
+};
+
+const saveProductUpdate = (
+  productId: string,
+  productChanges: Parameters<typeof productRepository.update>[2],
+  hasSizeChanges: boolean,
+) =>
+  prisma.$transaction(async (tx) => {
+    const savedProduct = await productRepository.update(tx, productId, productChanges);
+    if (hasSizeChanges) await recordNewSizeStock(tx, savedProduct.id, savedProduct.sizes);
+    return savedProduct;
+  });
+
 const rethrowAsProductUpdateError = (error: unknown): never => {
   if (isForeignKeyConstraintError(error)) {
     throw new AppError(
@@ -193,24 +220,19 @@ export const productService = {
       ? await resolveSizesForTypeChange(brandId, sizeStandardId, sizes)
       : undefined;
 
-    const effectiveProductType =
-      targetProductType ??
-      (isStretchable === undefined
-        ? undefined
-        : await productTypeService.getById(product.productTypeId));
-    if (effectiveProductType) {
-      assertFitDataAllowed(
-        effectiveProductType.supportsFitRanges,
-        isStretchable,
-        sizeChanges ?? [],
-      );
-    }
+    await assertFitDataFitsProductType(
+      targetProductType,
+      product.productTypeId,
+      isStretchable,
+      sizeChanges,
+    );
     const stretchAfterTypeChange =
       isTypeChange && !targetProductType.supportsFitRanges ? null : isStretchable;
 
     try {
-      const updatedProduct = await prisma.$transaction(async (tx) => {
-        const savedProduct = await productRepository.update(tx, productId, {
+      const updatedProduct = await saveProductUpdate(
+        productId,
+        {
           name,
           price,
           productTypeId: targetProductType?.id,
@@ -224,10 +246,9 @@ export const productService = {
           isThrift,
           thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
           thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
-        });
-        if (sizeChanges) await recordNewSizeStock(tx, savedProduct.id, savedProduct.sizes);
-        return savedProduct;
-      });
+        },
+        sizeChanges !== undefined,
+      );
       return toBrandSummary(updatedProduct);
     } catch (error) {
       return rethrowAsProductUpdateError(error);

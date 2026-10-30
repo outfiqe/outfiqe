@@ -101,6 +101,46 @@ const recordHandoverNotScanned = async (
   });
 };
 
+const noteUpdateForCancelledBooking = async (
+  partnerId: string,
+  source: TrackingEventSource,
+  booking: BookingForMatching,
+  event: PartnerTrackingEvent,
+): Promise<PartnerEventResult> => {
+  const trackingEventId = await recordShipmentNote(
+    partnerId,
+    source,
+    booking,
+    event,
+    TrackingEventCode.NOTE,
+  );
+  return {
+    outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
+    trackingEventId,
+    message: "This booking was cancelled, so the update was saved but not applied.",
+  };
+};
+
+const noteUnknownPartnerStatus = async (
+  partnerId: string,
+  source: TrackingEventSource,
+  booking: BookingForMatching,
+  event: PartnerTrackingEvent,
+): Promise<PartnerEventResult> => {
+  const trackingEventId = await recordShipmentNote(
+    partnerId,
+    source,
+    booking,
+    event,
+    TrackingEventCode.UNKNOWN_PARTNER_STATUS,
+  );
+  return {
+    outcome: PartnerStatusImportRowOutcome.UNKNOWN_STATUS,
+    trackingEventId,
+    message: `"${event.rawStatus}" isn't in this partner's status names yet.`,
+  };
+};
+
 type RecordedTrackingOutcome = Awaited<ReturnType<typeof logisticsTrackingService.recordEvent>>;
 
 const toRecordedEventResult = ({
@@ -138,18 +178,7 @@ export const logisticsPartnerEvents = {
     if (!booking) return unmatchedResult("No parcel with this partner matches that reference.");
 
     if (booking.status === PartnerBookingStatus.CANCELLED) {
-      const trackingEventId = await recordShipmentNote(
-        partnerId,
-        source,
-        booking,
-        event,
-        TrackingEventCode.NOTE,
-      );
-      return {
-        outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
-        trackingEventId,
-        message: "This booking was cancelled, so the update was saved but not applied.",
-      };
+      return noteUpdateForCancelledBooking(partnerId, source, booking, event);
     }
 
     const mapping = await logisticsPartnerRepository.findStatusMapping(
@@ -157,20 +186,7 @@ export const logisticsPartnerEvents = {
       partnerId,
       normalizePartnerRawStatus(event.rawStatus),
     );
-    if (!mapping) {
-      const trackingEventId = await recordShipmentNote(
-        partnerId,
-        source,
-        booking,
-        event,
-        TrackingEventCode.UNKNOWN_PARTNER_STATUS,
-      );
-      return {
-        outcome: PartnerStatusImportRowOutcome.UNKNOWN_STATUS,
-        trackingEventId,
-        message: `"${event.rawStatus}" isn't in this partner's status names yet.`,
-      };
-    }
+    if (!mapping) return noteUnknownPartnerStatus(partnerId, source, booking, event);
 
     const outcome = await logisticsTrackingService.recordEvent({
       subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId: booking.shipmentId },
