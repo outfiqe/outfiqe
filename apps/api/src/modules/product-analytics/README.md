@@ -136,7 +136,7 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
   PostHog error details are logged, never returned.
 - **Numbers are close estimates.** Funnel steps count people who did each step in the range, not
   a strict ordered funnel; the "Open in PostHog" link goes to PostHog's own funnel tools for
-  that. The look-to-order funnel only counts people who opened a look in the same range
-  (`lookViewersReachingEachStepQuery`). Without that filter, its product, cart and order steps
-  would count every shopper on the site. Staff and riders flagged `is_internal` are left out of every query. Orders and money on
+  that. The look-to-order funnel only counts people who opened a look, or tapped a tagged product
+  straight from a feed card, in the same range (`lookViewersReachingEachStepQuery`). Without
+  that filter, its product, cart and order steps would count every shopper on the site. Staff and riders flagged `is_internal` are left out of every query. Orders and money on
   the admin page come from the database (`financial-rollup`), which is exact.

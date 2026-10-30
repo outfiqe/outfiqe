@@ -27,6 +27,11 @@ export const LOOK_TO_ORDER_EVENTS = [
   ANALYTICS_EVENTS.ORDER_PLACE,
 ] as const;
 
+const LOOK_ENGAGEMENT_EVENTS = [
+  ANALYTICS_EVENTS.LOOK_DETAIL_VIEW,
+  ANALYTICS_EVENTS.LOOK_PRODUCT_TAG_CLICK,
+] as const;
+
 const EXCLUDE_INTERNAL_PEOPLE = "coalesce(toString(person.properties.is_internal), '') != 'true'";
 
 const quoteEventNames = (eventNames: readonly string[]): string =>
@@ -67,7 +72,7 @@ export const lookViewersReachingEachStepQuery = (days: number): string => `
       SELECT person_id
       FROM events
       WHERE ${withinLastDays(days)}
-        AND event = '${ANALYTICS_EVENTS.LOOK_DETAIL_VIEW}'
+        AND event IN (${quoteEventNames(LOOK_ENGAGEMENT_EVENTS)})
     )
   GROUP BY event`;
 
