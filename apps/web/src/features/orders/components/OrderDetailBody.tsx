@@ -17,7 +17,7 @@ import {
 } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
-import { NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
+import { hasNoMoneyTaken, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -98,8 +98,8 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     (refundDestination.canEdit || refundDestination.destination !== null);
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
-  const isCashUncollected = paymentStatus === PaymentStatus.DUE;
-  const hasNothingToPay = orderCancelled && isCashUncollected;
+  const isMoneyUntaken = hasNoMoneyTaken(paymentStatus);
+  const hasNothingToPay = orderCancelled && isMoneyUntaken;
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
@@ -194,7 +194,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <span>Rs. {total.toLocaleString()}</span>
         </div>
 
-        {!isCashUncollected && <TransactionLedger transactions={transactions} />}
+        {!isMoneyUntaken && <TransactionLedger transactions={transactions} />}
       </div>
 
       <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">
@@ -202,7 +202,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <li key={orderItem.id}>
             {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
             {orderItem.refundedQty > NOTHING_REFUNDED &&
-              ` (${orderItem.refundedQty} ${isCashUncollected ? "cancelled" : "refunded"})`}
+              ` (${orderItem.refundedQty} ${isMoneyUntaken ? "cancelled" : "refunded"})`}
           </li>
         ))}
       </ul>
