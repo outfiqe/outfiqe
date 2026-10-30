@@ -8,6 +8,9 @@ import type {
   CreateBrandBankAccountRepositoryInput,
 } from "./brand-bank-account.types.js";
 
+const DEFAULT_NOT_CHANGED = false;
+const DEFAULT_CHANGED = true;
+
 const withBankName = { bank: { select: { name: true } } };
 
 const flattenBankName = <T extends { bank: { name: string } }>({
@@ -80,14 +83,14 @@ export const brandBankAccountRepository = {
         where: { id, brandId },
         select: { id: true },
       });
-      if (!owned) return false;
+      if (!owned) return DEFAULT_NOT_CHANGED;
 
       await tx.brandBankAccount.updateMany({
         where: { brandId, isDefault: true },
         data: { isDefault: false },
       });
       await tx.brandBankAccount.update({ where: { id }, data: { isDefault: true } });
-      return true;
+      return DEFAULT_CHANGED;
     });
   },
 
