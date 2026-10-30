@@ -1,3 +1,5 @@
+import type { FieldErrorMap } from "@/lib/zodFieldErrors";
+
 import type {
   BadgeAnimationValue,
   BadgeCategoryValue,
@@ -40,4 +42,11 @@ export type BadgeFormState = {
   conditions: ConditionFormState[];
   activeFrom: string;
   activeUntil: string;
+};
+
+export type BadgeDetailsFieldsProps = {
+  idPrefix: string;
+  form: BadgeFormState;
+  onChange: (form: BadgeFormState) => void;
+  errors: FieldErrorMap;
 };
