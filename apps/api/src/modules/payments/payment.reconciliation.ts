@@ -26,10 +26,20 @@ export const runPaymentReconciliationSweep = async (): Promise<{
     }
   }
 
-  const expiredOrders = await paymentRepository.findOrdersToExpire(expireAfter);
-  for (const order of expiredOrders) {
-    await paymentRepository.markOrderFailed(order.id);
+  const overdueOrders = await paymentRepository.findOrdersToExpire(expireAfter);
+  let expired = 0;
+  for (const order of overdueOrders) {
+    try {
+      const status = await reconcilePendingPayment(order);
+      if (status === PaymentVerifyStatus.COMPLETE) {
+        settled += 1;
+        continue;
+      }
+      if (await paymentRepository.expireUnpaidOrder(order.id)) expired += 1;
+    } catch (error) {
+      logger.error(`Final payment check failed for overdue order ${order.id}: ${String(error)}`);
+    }
   }
 
-  return { checked: pendingOrders.length, settled, expired: expiredOrders.length };
+  return { checked: pendingOrders.length + overdueOrders.length, settled, expired };
 };

@@ -30,6 +30,7 @@ import {
 } from "../refunds/refund.constants.js";
 import { type AppliedRefund, orderRefundEngine } from "../refunds/refund.engine.js";
 import { REFUND_SETTLEMENT } from "../refunds/refund.payment.js";
+import { listUnrefundedStockLines } from "../refunds/refund.pricing.js";
 import { orderRefundRepository } from "../refunds/refund.repository.js";
 
 const CANCELLABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
@@ -111,7 +112,7 @@ export const orderCancellationService = {
       }
 
       if (stockWasCommitted) {
-        await productService.restoreStockForItems(tx, order.items, {
+        await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
           kind: InventoryMovementKind.ORDER_RESTORE,
           sourceType: InventoryMovementSource.ORDER,
           sourceId: orderId,

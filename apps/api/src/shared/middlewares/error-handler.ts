@@ -39,11 +39,31 @@ const PRISMA_KNOWN_FAILURE_RESPONSES: Record<string, KnownFailureResponse> = {
   },
 };
 
+const BODY_PARSER_FAILURE_RESPONSES: Record<string, KnownFailureResponse> = {
+  "entity.parse.failed": {
+    code: "INVALID_JSON",
+    message: "The request body isn't valid JSON.",
+    status: HTTP_STATUS.BAD_REQUEST,
+  },
+  "entity.too.large": {
+    code: "PAYLOAD_TOO_LARGE",
+    message: "The request body is too large.",
+    status: HTTP_STATUS.PAYLOAD_TOO_LARGE,
+  },
+};
+
+const readBodyParserFailureType = (err: unknown): string | null =>
+  typeof err === "object" && err !== null && "type" in err && typeof err.type === "string"
+    ? err.type
+    : null;
+
 const resolveKnownFailure = (err: unknown): KnownFailureResponse | null => {
   if (err instanceof HandleCollisionError) return HANDLE_COLLISION_RESPONSE;
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     return PRISMA_KNOWN_FAILURE_RESPONSES[err.code] ?? null;
   }
+  const bodyParserFailureType = readBodyParserFailureType(err);
+  if (bodyParserFailureType) return BODY_PARSER_FAILURE_RESPONSES[bodyParserFailureType] ?? null;
   return null;
 };
 

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import {
+  buildCursorPage,
+  decodeCursor,
+  encodeCursor,
+  isOpaqueCursor,
+} from "#lib/pagination.utils.js";
 
 describe("buildCursorPage", () => {
   it("returns all rows with no next cursor when under the limit", () => {
@@ -53,5 +58,17 @@ describe("encodeCursor / decodeCursor", () => {
 
   it("returns undefined for a malformed cursor instead of throwing", () => {
     expect(decodeCursor("not-valid-base64url-json")).toBeUndefined();
+  });
+});
+
+describe("isOpaqueCursor", () => {
+  it("accepts a cursor produced by encodeCursor", () => {
+    expect(isOpaqueCursor(encodeCursor({ offset: 20 }))).toBe(true);
+  });
+
+  it("rejects text that does not decode to a cursor object", () => {
+    expect(isOpaqueCursor("garbage")).toBe(false);
+    expect(isOpaqueCursor(encodeCursor(42))).toBe(false);
+    expect(isOpaqueCursor(encodeCursor(null))).toBe(false);
   });
 });

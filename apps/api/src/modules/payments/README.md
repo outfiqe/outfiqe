@@ -175,3 +175,11 @@ Neither eSewa nor Khalti is actually reachable from the checkout UI yet — `PAY
 `/payments/:provider/callback` page exists in `apps/web` to land on after a redirect. This was true
 before this chunk too (eSewa's own chunk 8 was backend-only); flagging it explicitly now that a
 second provider is fully built server-side with nothing in the UI able to reach either of them.
+
+## A retried payment keeps its earlier attempts verifiable
+
+`initiate` on an order that already has an open attempt verifies it, and if the gateway still reports it pending, marks it `FAILED` with `rawResponse.supersededByRetry` and starts a fresh attempt (a new gateway reference each time). The buyer may still finish paying the old gateway page afterwards, so that marker is not final: `runVerify` checks the open attempt plus up to `VERIFIABLE_ATTEMPTS_LIMIT` superseded ones, and `settleTransaction` accepts an attempt that is `INITIATED` or superseded. Whichever completes first settles the order; the others are left alone. A gateway error while checking a superseded attempt is logged and skipped so it cannot block the open attempt. Attempts the gateway itself reported failed or cancelled never carry the marker and are not rechecked.
+
+## The sweep verifies once more before it expires an order
+
+`runPaymentReconciliationSweep` first re-verifies orders between `RECONCILE_CHECK_AFTER_MS` and `RECONCILE_EXPIRE_AFTER_MS` old. Orders older than the expiry window used to be marked `FAILED` without asking the gateway again, so a buyer who completed payment late was charged with no order. Now each overdue order goes through `reconcilePendingPayment` first: if any attempt completed it is settled, otherwise `expireUnpaidOrder` marks the order `FAILED` and its still-open attempts `FAILED` in one transaction. If the gateway call throws, the order is skipped and retried on the next sweep instead of being expired blind.

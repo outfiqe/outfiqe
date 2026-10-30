@@ -12,12 +12,15 @@ import {
   InventoryMovementSource,
   PaymentMethod,
   PaymentStatus,
+  PaymentTransactionStatus,
 } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
+import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
 import { paymentRepository } from "./payment.repository.js";
 import type {
   PaymentInitiateResult,
@@ -111,27 +114,55 @@ const settleVerified = async (
   await notifyBuyerPaymentSettled(order.id, order.total);
 };
 
-const runVerify = async (
-  order: NonNullable<Awaited<ReturnType<typeof paymentRepository.findOrderForPayment>>>,
-): Promise<PaymentVerifyStatusValue> => {
-  const transaction = await paymentRepository.findPendingTransaction(order.id);
-  if (!transaction) return PaymentVerifyStatus.FAILED;
+type PaymentOrder = NonNullable<Awaited<ReturnType<typeof paymentRepository.findOrderForPayment>>>;
+type VerifiableAttempt = Awaited<
+  ReturnType<typeof paymentRepository.findVerifiableTransactions>
+>[number];
 
-  const provider = requireProvider(order.paymentMethod);
-  const { status, rawResponse } = await provider.verify({
-    transactionUuid: transaction.id,
-    providerRef: transaction.transactionRef,
+const verifyAttemptWithGateway = (order: PaymentOrder, attempt: VerifiableAttempt) =>
+  requireProvider(order.paymentMethod).verify({
+    transactionUuid: attempt.id,
+    providerRef: attempt.transactionRef,
     totalAmount: order.total,
-    initiatedAt: transaction.createdAt,
+    initiatedAt: attempt.createdAt,
   });
 
-  if (status === PaymentVerifyStatus.COMPLETE) {
-    await settleVerified(order, transaction.id, rawResponse);
-  } else if (status === PaymentVerifyStatus.FAILED) {
-    await paymentRepository.failTransaction(transaction.id, rawResponse);
+const verifySupersededAttempt = async (order: PaymentOrder, attempt: VerifiableAttempt) => {
+  try {
+    return await verifyAttemptWithGateway(order, attempt);
+  } catch (error) {
+    logger.warn(
+      `Could not verify superseded payment attempt ${attempt.id} for order ${order.id}: ${String(error)}`,
+    );
+    return null;
+  }
+};
+
+const runVerify = async (order: PaymentOrder): Promise<PaymentVerifyStatusValue> => {
+  const attempts = await paymentRepository.findVerifiableTransactions(order.id);
+
+  let openAttemptStatus: PaymentVerifyStatusValue = PaymentVerifyStatus.FAILED;
+  for (const attempt of attempts) {
+    const isOpenAttempt = attempt.status === PaymentTransactionStatus.INITIATED;
+    const verification = isOpenAttempt
+      ? await verifyAttemptWithGateway(order, attempt)
+      : await verifySupersededAttempt(order, attempt);
+    if (!verification) continue;
+
+    const { status, rawResponse } = verification;
+    if (status === PaymentVerifyStatus.COMPLETE) {
+      await settleVerified(order, attempt.id, rawResponse);
+      return status;
+    }
+    if (!isOpenAttempt) continue;
+
+    if (status === PaymentVerifyStatus.FAILED) {
+      await paymentRepository.failTransaction(attempt.id, rawResponse);
+    }
+    openAttemptStatus = status;
   }
 
-  return status;
+  return openAttemptStatus;
 };
 
 export const paymentService = {
@@ -166,7 +197,9 @@ export const paymentService = {
           HTTP_STATUS.CONFLICT,
         );
       }
-      await paymentRepository.failTransaction(priorAttempt.id, { supersededByRetry: true });
+      await paymentRepository.failTransaction(priorAttempt.id, {
+        [SUPERSEDED_BY_RETRY_MARKER]: true,
+      });
     }
 
     const provider = requireProvider(order.paymentMethod);

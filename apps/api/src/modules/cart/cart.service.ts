@@ -13,8 +13,24 @@ import { productRepository } from "#modules/products/product.repository.js";
 import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
 import { cartRepository } from "./cart.repository.js";
 import type { AppliedCouponView, CartItemView, CartView } from "./cart.types.js";
+import { isCartRowSellable } from "./cart.utils.js";
 
 const NO_STOCK = 0;
+
+const findSizeIdsOwnedByTheirProducts = async (
+  lines: { productId: string; sizeId: string }[],
+): Promise<Set<string>> => {
+  const sizeIdsByProductId = new Map<string, string[]>();
+  for (const { productId, sizeId } of lines) {
+    sizeIdsByProductId.set(productId, [...(sizeIdsByProductId.get(productId) ?? []), sizeId]);
+  }
+  const ownedSizeIdGroups = await Promise.all(
+    [...sizeIdsByProductId].map(([productId, sizeIds]) =>
+      productRepository.findSizeIdsForProduct(productId, sizeIds),
+    ),
+  );
+  return new Set(ownedSizeIdGroups.flat());
+};
 
 const buildCartLines = async (
   cartId: string,
@@ -34,7 +50,8 @@ const buildCartLines = async (
   for (const row of rows) {
     const { id, productId, sizeId, qty, product, size } = row;
     const { name: productName, price: listUnitPrice, imageUrl, brand } = product;
-    const availableStock = stockBySizeId.get(sizeId) ?? 0;
+    const isSellable = isCartRowSellable(row);
+    const availableStock = isSellable ? (stockBySizeId.get(sizeId) ?? 0) : 0;
     const soldOut = availableStock === 0;
     const activeDiscount = activeDiscountsByProductId.get(productId);
     const unitPrice = resolveBrandFundedUnitPrice(
@@ -56,6 +73,7 @@ const buildCartLines = async (
       qty,
       availableStock,
       soldOut,
+      unavailable: !isSellable,
       lowStock: availableStock > 0 && availableStock <= CART_LOW_STOCK_THRESHOLD,
     });
 
@@ -141,6 +159,14 @@ export const cartService = {
   },
 
   async addItem(userId: string, productId: string, sizeId: string, qty: number): Promise<CartView> {
+    const ownedSizeIds = await productRepository.findSizeIdsForProduct(productId, [sizeId]);
+    if (ownedSizeIds.length === 0) {
+      throw new AppError(
+        "NOT_FOUND",
+        "This size isn't available for this product.",
+        HTTP_STATUS.NOT_FOUND,
+      );
+    }
     const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
     const [existing, stockBySizeId] = await Promise.all([
       cartRepository.findItemBySizeId(cartId, sizeId),
@@ -164,14 +190,16 @@ export const cartService = {
     lines: { productId: string; sizeId: string; qty: number }[],
   ): Promise<CartView> {
     const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
-    const sizeIds = lines.map(({ sizeId }) => sizeId);
+    const ownedSizeIds = await findSizeIdsOwnedByTheirProducts(lines);
+    const ownedLines = lines.filter(({ sizeId }) => ownedSizeIds.has(sizeId));
+    const sizeIds = ownedLines.map(({ sizeId }) => sizeId);
     const [existingItems, stockBySizeId] = await Promise.all([
       cartRepository.findItemsBySizeIds(cartId, sizeIds),
       productRepository.getStockBySizeIds(sizeIds),
     ]);
     const existingQtyBySizeId = new Map(existingItems.map(({ sizeId, qty }) => [sizeId, qty]));
 
-    for (const { productId, sizeId, qty } of lines) {
+    for (const { productId, sizeId, qty } of ownedLines) {
       const availableStock = stockBySizeId.get(sizeId) ?? NO_STOCK;
       const clampedQty = Math.min(
         (existingQtyBySizeId.get(sizeId) ?? NO_STOCK) + qty,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { priceRefund, REFUND_PRICING_PROBLEM } from "./refund.pricing.js";
+import { listUnrefundedStockLines, priceRefund, REFUND_PRICING_PROBLEM } from "./refund.pricing.js";
 import type { RefundableItem } from "./refund.types.js";
 
 const socks: RefundableItem = {
@@ -117,5 +117,25 @@ describe("priceRefund", () => {
     expect(priceRefund({ ...common, items: [socks], lineRequests: [] })).toEqual({
       problem: REFUND_PRICING_PROBLEM.NO_UNITS,
     });
+  });
+});
+
+describe("listUnrefundedStockLines", () => {
+  it("keeps only the units that have not already been refunded", () => {
+    const stockLines = listUnrefundedStockLines([
+      { sizeId: "size-socks", qty: 3, refundedQty: 1 },
+      { sizeId: "size-shirt", qty: 1, refundedQty: 0 },
+    ]);
+
+    expect(stockLines).toEqual([
+      { sizeId: "size-socks", qty: 2 },
+      { sizeId: "size-shirt", qty: 1 },
+    ]);
+  });
+
+  it("drops lines whose units were all refunded", () => {
+    const stockLines = listUnrefundedStockLines([{ sizeId: "size-shirt", qty: 1, refundedQty: 1 }]);
+
+    expect(stockLines).toEqual([]);
   });
 });

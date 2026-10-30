@@ -9,6 +9,31 @@ import {
 } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { SUPERSEDED_BY_RETRY_MARKER, VERIFIABLE_ATTEMPTS_LIMIT } from "./payment.constants.js";
+
+const SUPERSEDED_ATTEMPT_FILTER = {
+  status: PaymentTransactionStatus.FAILED,
+  rawResponse: { path: [SUPERSEDED_BY_RETRY_MARKER], equals: true },
+} satisfies Prisma.PaymentTransactionWhereInput;
+
+const NO_ORDERS_EXPIRED = 0;
+
+const ORDER_TO_VERIFY_SELECT = {
+  id: true,
+  userId: true,
+  paymentStatus: true,
+  fulfilmentStatus: true,
+  subtotal: true,
+  deliveryFee: true,
+  total: true,
+  paymentMethod: true,
+  items: { select: { sizeId: true, qty: true } },
+} satisfies Prisma.OrderSelect;
+
+const AWAITING_OUTCOME_FILTER = {
+  OR: [{ status: PaymentTransactionStatus.INITIATED }, SUPERSEDED_ATTEMPT_FILTER],
+} satisfies Prisma.PaymentTransactionWhereInput;
+
 export const paymentRepository = {
   async findOrderForPayment(orderId: string, userId: string) {
     return prisma.order.findFirst({
@@ -60,6 +85,14 @@ export const paymentRepository = {
     });
   },
 
+  async findVerifiableTransactions(orderId: string) {
+    return prisma.paymentTransaction.findMany({
+      where: { orderId, type: PaymentTransactionType.PAYMENT, ...AWAITING_OUTCOME_FILTER },
+      orderBy: { createdAt: "desc" },
+      take: VERIFIABLE_ATTEMPTS_LIMIT,
+    });
+  },
+
   async setTransactionRef(transactionId: string, transactionRef: string): Promise<void> {
     await prisma.paymentTransaction.updateMany({
       where: { id: transactionId, status: PaymentTransactionStatus.INITIATED },
@@ -73,7 +106,7 @@ export const paymentRepository = {
     rawResponse: unknown,
   ): Promise<boolean> {
     const result = await client.paymentTransaction.updateMany({
-      where: { id: transactionId, status: PaymentTransactionStatus.INITIATED },
+      where: { id: transactionId, ...AWAITING_OUTCOME_FILTER },
       data: {
         status: PaymentTransactionStatus.SUCCEEDED,
         rawResponse: rawResponse as Prisma.InputJsonValue,
@@ -121,10 +154,16 @@ export const paymentRepository = {
     });
   },
 
-  async markOrderFailed(orderId: string): Promise<void> {
-    await prisma.order.updateMany({
-      where: { id: orderId, paymentStatus: PaymentStatus.INITIATED },
-      data: { paymentStatus: PaymentStatus.FAILED, fulfilmentStatus: FulfilmentStatus.CANCELLED },
+  async expireUnpaidOrder(orderId: string): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, paymentStatus: PaymentStatus.INITIATED },
+        data: { paymentStatus: PaymentStatus.FAILED, fulfilmentStatus: FulfilmentStatus.CANCELLED },
+      });
+      if (count === NO_ORDERS_EXPIRED) return false;
+
+      await paymentRepository.failPendingTransactions(tx, orderId);
+      return true;
     });
   },
 
@@ -135,17 +174,7 @@ export const paymentRepository = {
         paymentMethod: { not: PaymentMethod.COD },
         createdAt: { lte: checkAfter, gte: expireAfter },
       },
-      select: {
-        id: true,
-        userId: true,
-        paymentStatus: true,
-        fulfilmentStatus: true,
-        subtotal: true,
-        deliveryFee: true,
-        total: true,
-        paymentMethod: true,
-        items: { select: { sizeId: true, qty: true } },
-      },
+      select: ORDER_TO_VERIFY_SELECT,
     });
   },
 
@@ -156,7 +185,7 @@ export const paymentRepository = {
         paymentMethod: { not: PaymentMethod.COD },
         createdAt: { lt: expireAfter },
       },
-      select: { id: true },
+      select: ORDER_TO_VERIFY_SELECT,
     });
   },
 
