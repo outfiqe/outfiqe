@@ -1,11 +1,5 @@
-import {
-  ChartCard,
-  Input,
-  Select,
-  Skeleton,
-  StatCard,
-  StatCardSkeleton,
-} from "@outfiqe/design-system";
+import { Input, Select, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import { ChartCard } from "@outfiqe/design-system/charts";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";

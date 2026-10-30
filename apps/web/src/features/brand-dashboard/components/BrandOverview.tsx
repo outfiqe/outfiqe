@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  Button,
-  ChartCard,
-  FormBanner,
-  Skeleton,
-  StatCard,
-  TrendChart,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton, StatCard } from "@outfiqe/design-system";
+import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { AlertTriangle, Clock, Package, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";

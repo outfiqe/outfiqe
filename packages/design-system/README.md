@@ -39,7 +39,8 @@ The shared UI primitive library both `apps/web` and `apps/admin` build on — Ra
 - `testing/setup.tsx` — vitest jsdom setup for this package's own component tests (`jest-dom` matchers, RTL `cleanup`, a `ResizeObserver` stub, and a `recharts` `ResponsiveContainer` mock that gives charts a fixed size so they render under jsdom). Wired by `vitest.config.ts` (a single `unit` project); run with `pnpm --filter @outfiqe/design-system test`.
 - `cheriq-icon.tsx` — `CheriqIcon`, the cherry pair (a large and a small cherry on curved stems, a leaf and a shine on each fruit) that marks a cheriq (Outfiqe's like) and a stash on products. It takes a lucide-style `className` for sizing (24×24 grid, 2px round strokes) plus an `isCheriqed` flag. Idle, it's a `currentColor` outline. Cheriqed, it becomes the solid version: stems, leaf and cherries all go `primary`, with the shine left white. The icon sets its own colours from `isCheriqed`, so callers pass the flag rather than their own `fill-*` classes.
 - `cn.ts` — the `clsx` + `tailwind-merge` class-name helper every component uses.
-- `index.ts` — re-exports everything above; both apps only ever import from `@outfiqe/design-system`, never a component's own file path.
+- `index.ts` — re-exports everything above except the charts; both apps import from `@outfiqe/design-system`, never a component's own file path.
+- `charts.ts` — `@outfiqe/design-system/charts`, the chart components and their `recharts` dependency. They stay out of `index.ts` because the web root layout imports that entry on the server, which puts every client component it exports into the bundle of every page.
 
 ## Funnel
 
