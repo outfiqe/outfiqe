@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmApi } from "../../api/crmApi";
 import { type ContactInput, crmContactsApi } from "../api/contactsApi";
@@ -90,7 +91,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: toFormValues(contact),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const { data: members } = useQuery({

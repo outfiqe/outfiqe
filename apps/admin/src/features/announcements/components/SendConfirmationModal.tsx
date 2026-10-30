@@ -1,4 +1,5 @@
 import { Button, FormBanner, Input, Modal, Select, toast } from "@outfiqe/design-system";
+import { MS_PER_MINUTE } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -20,7 +21,6 @@ type SendModeValue = (typeof SendMode)[keyof typeof SendMode];
 
 const ANNOUNCEMENT_SEND_NOW_MAX_RECIPIENTS = 500;
 const MIN_SCHEDULE_LEAD_MINUTES = 5;
-const MS_PER_MINUTE = 60 * 1000;
 
 const isLargeAudience = (announcement: Announcement): boolean =>
   announcement.audiences.includes(AnnouncementAudience.EVERYONE) ||

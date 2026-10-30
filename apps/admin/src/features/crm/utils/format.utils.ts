@@ -1,13 +1,10 @@
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@outfiqe/utils";
 export const formatRupees = (amount: number): string => `Rs. ${amount.toLocaleString()}`;
 
 export const formatDate = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleDateString() : "—";
 
 export const formatDateTime = (iso: string): string => new Date(iso).toLocaleString();
-
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_HOUR = 60 * 60;
-const SECONDS_PER_DAY = 24 * 60 * 60;
 
 export const formatDuration = (seconds: number | null): string => {
   if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "—";

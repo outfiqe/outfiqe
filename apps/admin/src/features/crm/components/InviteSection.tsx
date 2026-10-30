@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmApi } from "../api/crmApi";
 import type { OrganizationInviteStatusValue } from "../api/crmSchemas";
@@ -58,7 +59,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
   const form = useForm<CrmInviteFormValues>({
     resolver: zodResolver(crmInviteFormSchema),
     defaultValues: EMPTY_CRM_INVITE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const invite = useApiMutation({

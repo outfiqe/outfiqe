@@ -24,6 +24,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { slugify } from "@/lib/slugify";
 
@@ -57,7 +58,7 @@ export const CategoriesPage = () => {
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: EMPTY_CATEGORY_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [slugTouched, setSlugTouched] = useState(false);
 

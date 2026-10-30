@@ -23,6 +23,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
@@ -134,7 +135,7 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
   const form = useForm<ZoneFormValues>({
     resolver: zodResolver(zoneFormSchema),
     defaultValues: formValuesForZone(zone),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -204,7 +205,7 @@ export const DeliveryZonesSection = () => {
   const form = useForm<ZoneFormValues>({
     resolver: zodResolver(zoneFormSchema),
     defaultValues: EMPTY_ZONE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeliveryZone | null>(null);

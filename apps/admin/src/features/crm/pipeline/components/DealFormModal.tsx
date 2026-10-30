@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import {
   PartnerSearchField,
@@ -52,7 +53,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
       value: String(deal?.value ?? 0),
       partnerCreatorId: "",
     },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const save = useApiMutation({
