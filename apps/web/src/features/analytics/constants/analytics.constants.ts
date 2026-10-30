@@ -16,6 +16,10 @@ export const ANALYTICS_CONSENT_STATUS = {
 export type AnalyticsConsentStatus =
   (typeof ANALYTICS_CONSENT_STATUS)[keyof typeof ANALYTICS_CONSENT_STATUS];
 
+export const POSTHOG_USER_STATE_PROPERTY = "$user_state";
+
+export const POSTHOG_IDENTIFIED_USER_STATE = "identified";
+
 export const REDACTED_VALUE = "[redacted]";
 
 export const PRIVATE_ANALYTICS_CLASS_NAME = "ph-no-capture";

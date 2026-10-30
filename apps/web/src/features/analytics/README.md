@@ -32,7 +32,9 @@ from the shared catalog in `@outfiqe/utils` (`ANALYTICS_EVENTS`).
 - `components/AnalyticsIdentity.tsx`: mounted inside `AuthProvider`.
   - It identifies a signed-in visitor who accepted analytics by their user id, with `user_role`,
     `is_creator`, `is_brand_owner` and `is_internal` (staff and riders).
-  - It resets after sign-out.
+  - Whenever nobody is signed in it calls `resetViewer`. That only resets when PostHog still holds
+    an identified user, so it catches a sign-out here, in another tab, or an expired session,
+    without splitting an anonymous visitor's session.
 - `constants/analytics.constants.ts`: the relay path, PostHog hosts and defaults, consent
   statuses, and `PRIVATE_ANALYTICS_CLASS_NAME`.
 - `constants/cookieConsent.constants.ts`: the banner text.
@@ -100,9 +102,15 @@ count), and fires once the key is set.
   - `cookieless_mode: "on_reject"` means a visitor who hasn't chosen, or chose "Essential
     only", is counted with a privacy-preserving server-side hash: no cookies, no profile.
     Cookieless tracking is switched on in the PostHog project settings, as the SDK requires.
+  - `opt_out_capturing_by_default: true` is what makes "hasn't chosen yet" count cookieless.
+    Without it, `on_reject` sends nothing at all until the visitor clicks a button.
   - PostHog stores the choice itself, and `get_explicit_consent_status()` is read rather than
     keeping a second copy.
   - Identifying and session recording only happen after "Accept all".
+  - `posthog.reset()` also wipes the stored choice. So "Essential only" never calls it
+    (`opt_out_capturing` already drops the identity when it switches to cookieless), and
+    `resetViewer` resets first and then opts back in when the visitor had accepted. That's the
+    order PostHog documents.
 - **Session recordings hide personal details in two layers.**
   - Every input is masked (`maskAllInputs`), and every recorded text passes through
     `redactPersonalText` (`maskTextSelector: "*"` with `maskTextFn`).

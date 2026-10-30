@@ -10,7 +10,9 @@ import {
   ANALYTICS_RELAY_PATH,
   EVERY_ELEMENT_SELECTOR,
   POSTHOG_CONFIG_DEFAULTS,
+  POSTHOG_IDENTIFIED_USER_STATE,
   POSTHOG_UI_HOST,
+  POSTHOG_USER_STATE_PROPERTY,
 } from "../constants/analytics.constants";
 import { updateAnalyticsConsent } from "./analyticsConsentStore";
 import { redactPersonalText, scrubPersonalData } from "./scrubPersonalData";
@@ -26,6 +28,9 @@ let isAnalyticsStarted = false;
 
 const hasGrantedConsent = (): boolean =>
   posthog.get_explicit_consent_status() === ANALYTICS_CONSENT_STATUS.GRANTED;
+
+const isViewerIdentified = (): boolean =>
+  posthog.get_property(POSTHOG_USER_STATE_PROPERTY) === POSTHOG_IDENTIFIED_USER_STATE;
 
 const publishConsentStatus = (): void => {
   updateAnalyticsConsent({
@@ -50,6 +55,7 @@ export const initAnalytics = (
     person_profiles: "identified_only",
     capture_pageview: "history_change",
     cookieless_mode: "on_reject",
+    opt_out_capturing_by_default: true,
     capture_exceptions: false,
     disable_session_recording: true,
     session_recording: {
@@ -80,8 +86,12 @@ export const identifyViewer = (userId: string, viewer: AnalyticsViewerProperties
 };
 
 export const resetViewer = (): void => {
-  if (!isAnalyticsStarted) return;
+  if (!isAnalyticsStarted || !isViewerIdentified()) return;
+  const shouldKeepAcceptedConsent = hasGrantedConsent();
   posthog.reset();
+  if (!shouldKeepAcceptedConsent) return;
+  posthog.opt_in_capturing({ captureEventName: false });
+  posthog.startSessionRecording();
 };
 
 export const acceptAnalytics = (): void => {
@@ -93,9 +103,8 @@ export const acceptAnalytics = (): void => {
 
 export const rejectAnalytics = (): void => {
   if (!isAnalyticsStarted) return;
-  posthog.opt_out_capturing();
   posthog.stopSessionRecording();
-  posthog.reset();
+  posthog.opt_out_capturing();
   publishConsentStatus();
 };
 

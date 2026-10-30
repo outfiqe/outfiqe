@@ -89,15 +89,23 @@ describe("AnalyticsIdentity", () => {
     expect(identifyViewer).toHaveBeenCalledTimes(1);
   });
 
-  it("forgets the visitor after sign-out, and only after a sign-in", () => {
+  it("forgets the visitor after sign-out", () => {
     const { rerender } = render(<AnalyticsIdentity />);
+    expect(resetViewer).not.toHaveBeenCalled();
 
     signOut();
     rerender(<AnalyticsIdentity />);
-    expect(resetViewer).toHaveBeenCalledTimes(1);
 
-    rerender(<AnalyticsIdentity />);
     expect(resetViewer).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears an identity left from an earlier visit when the page loads signed out", () => {
+    signOut();
+
+    render(<AnalyticsIdentity />);
+
+    expect(resetViewer).toHaveBeenCalledTimes(1);
+    expect(identifyViewer).not.toHaveBeenCalled();
   });
 
   it("does nothing until the session check has finished", () => {

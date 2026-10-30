@@ -14,6 +14,7 @@ const posthogMock = vi.hoisted(() => ({
   startSessionRecording: vi.fn(),
   stopSessionRecording: vi.fn(),
   get_explicit_consent_status: vi.fn(() => "pending"),
+  get_property: vi.fn((): string | undefined => undefined),
 }));
 
 vi.mock("posthog-js", () => ({ default: posthogMock }));
@@ -46,6 +47,7 @@ beforeEach(() => {
   environment.isProd = true;
   vi.clearAllMocks();
   posthogMock.get_explicit_consent_status.mockReturnValue("pending");
+  posthogMock.get_property.mockReturnValue(undefined);
 });
 
 describe("initAnalytics", () => {
@@ -63,6 +65,7 @@ describe("initAnalytics", () => {
       person_profiles: "identified_only",
       capture_pageview: "history_change",
       cookieless_mode: "on_reject",
+      opt_out_capturing_by_default: true,
       capture_exceptions: false,
       disable_session_recording: true,
       session_recording: { maskAllInputs: true },
@@ -150,13 +153,44 @@ describe("identifyViewer and resetViewer", () => {
     expect(posthogMock.identify).toHaveBeenCalledWith("user-1", viewer);
   });
 
-  it("resets the identity on sign-out", async () => {
+  it("resets an identified visitor on sign-out and keeps the consent they gave", async () => {
     const { initAnalytics, resetViewer } = await loadAnalytics();
     initAnalytics(PROJECT_TOKEN);
+    posthogMock.get_property.mockReturnValue("identified");
+    posthogMock.get_explicit_consent_status.mockReturnValue("granted");
+
+    resetViewer();
+
+    expect(posthogMock.get_property).toHaveBeenCalledWith("$user_state");
+    expect(posthogMock.reset).toHaveBeenCalledTimes(1);
+    expect(posthogMock.opt_in_capturing).toHaveBeenCalledWith({ captureEventName: false });
+    expect(posthogMock.startSessionRecording).toHaveBeenCalledTimes(1);
+    const [resetOrder] = posthogMock.reset.mock.invocationCallOrder;
+    const [optInOrder] = posthogMock.opt_in_capturing.mock.invocationCallOrder;
+    expect(resetOrder).toBeLessThan(optInOrder ?? Number.NEGATIVE_INFINITY);
+  });
+
+  it("leaves a visitor who was never identified alone, so their session isn't split", async () => {
+    const { initAnalytics, resetViewer } = await loadAnalytics();
+    initAnalytics(PROJECT_TOKEN);
+    posthogMock.get_property.mockReturnValue("anonymous");
+
+    resetViewer();
+
+    expect(posthogMock.reset).not.toHaveBeenCalled();
+  });
+
+  it("doesn't opt back in after sign-out when consent was no longer given", async () => {
+    const { initAnalytics, resetViewer } = await loadAnalytics();
+    initAnalytics(PROJECT_TOKEN);
+    posthogMock.get_property.mockReturnValue("identified");
+    posthogMock.get_explicit_consent_status.mockReturnValue("denied");
 
     resetViewer();
 
     expect(posthogMock.reset).toHaveBeenCalledTimes(1);
+    expect(posthogMock.opt_in_capturing).not.toHaveBeenCalled();
+    expect(posthogMock.startSessionRecording).not.toHaveBeenCalled();
   });
 });
 
@@ -173,16 +207,16 @@ describe("consent choices", () => {
     expect(readAnalyticsConsent()).toEqual({ consentStatus: "granted", isSettingsOpen: false });
   });
 
-  it("choosing essential only opts out, stops recording and forgets the visitor", async () => {
+  it("choosing essential only stops recording and opts out, keeping the choice stored", async () => {
     const { initAnalytics, rejectAnalytics, readAnalyticsConsent } = await loadAnalytics();
     initAnalytics(PROJECT_TOKEN);
 
     posthogMock.get_explicit_consent_status.mockReturnValue("denied");
     rejectAnalytics();
 
-    expect(posthogMock.opt_out_capturing).toHaveBeenCalledTimes(1);
     expect(posthogMock.stopSessionRecording).toHaveBeenCalledTimes(1);
-    expect(posthogMock.reset).toHaveBeenCalledTimes(1);
+    expect(posthogMock.opt_out_capturing).toHaveBeenCalledTimes(1);
+    expect(posthogMock.reset).not.toHaveBeenCalled();
     expect(readAnalyticsConsent()).toEqual({ consentStatus: "denied", isSettingsOpen: false });
   });
 

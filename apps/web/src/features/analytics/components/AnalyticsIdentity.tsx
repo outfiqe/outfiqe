@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { useAuth } from "@/features/auth";
 
@@ -12,7 +12,6 @@ export const AnalyticsIdentity = () => {
   const { state, isAuthenticated, isAuthResolved, isStaff, isRider, isCreator, isBrandOwner } =
     useAuth();
   const { consentStatus } = useAnalyticsConsent();
-  const wasIdentified = useRef(false);
 
   const viewerId = isAuthenticated ? (state.user?.id ?? null) : null;
   const viewerRole = state.user?.role.toLowerCase() ?? null;
@@ -28,14 +27,10 @@ export const AnalyticsIdentity = () => {
         is_brand_owner: isBrandOwner,
         is_internal: isStaff || isRider,
       });
-      wasIdentified.current = true;
       return;
     }
 
-    if (!viewerId && wasIdentified.current) {
-      resetViewer();
-      wasIdentified.current = false;
-    }
+    if (!viewerId) resetViewer();
   }, [
     isAuthResolved,
     viewerId,
