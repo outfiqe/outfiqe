@@ -235,6 +235,30 @@ describe("OrderDetailBody", () => {
     expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
   });
 
+  it("shows nothing to pay and hides failed attempts on a cancelled unpaid wallet order", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "FAILED",
+      fulfilmentStatus: "CANCELLED",
+      transactions: [
+        {
+          id: "transaction-1",
+          provider: "ESEWA",
+          type: "PAYMENT",
+          status: "FAILED",
+          transactionRef: null,
+          createdAt: "2026-09-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("FAILED")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment via ESEWA/)).not.toBeInTheDocument();
+  });
+
   it("shows nothing to pay and no collected cash on a cancelled COD order", () => {
     orderResult.data = buildOrder({
       fulfilmentStatus: "CANCELLED",
