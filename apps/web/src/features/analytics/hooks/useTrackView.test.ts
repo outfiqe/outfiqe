@@ -39,6 +39,24 @@ describe("useTrackView", () => {
     });
   });
 
+  it("waits until the view is ready, then records it once", () => {
+    const notReadyYet: { viewKey: string | null } = { viewKey: null };
+    const { rerender } = renderHook(
+      ({ viewKey }: { viewKey: string | null }) =>
+        useTrackView(
+          ANALYTICS_EVENTS.LOOK_DETAIL_VIEW,
+          { look_id: "look-1", creator_id: "creator-1" },
+          viewKey,
+        ),
+      { initialProps: notReadyYet },
+    );
+    expect(trackEvent).not.toHaveBeenCalled();
+
+    rerender({ viewKey: "look-1" });
+    rerender({ viewKey: "look-1" });
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+  });
+
   it("records a new view when the item changes", () => {
     const { rerender } = renderLookView("look-1");
 

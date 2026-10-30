@@ -1,4 +1,11 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const trackEvent = vi.fn();
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
+}));
 
 import { VISIT_COUNT_STORAGE_KEY } from "../constants/installPrompt";
 import {
@@ -92,5 +99,13 @@ describe("installPromptStore", () => {
 
   it("records a visit as soon as the module loads", () => {
     expect(window.localStorage.getItem(VISIT_COUNT_STORAGE_KEY)).toBe("1");
+  });
+
+  it("records an install for analytics when the browser reports one", () => {
+    trackEvent.mockClear();
+
+    window.dispatchEvent(new Event("appinstalled"));
+
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.PWA_INSTALL, {});
   });
 });

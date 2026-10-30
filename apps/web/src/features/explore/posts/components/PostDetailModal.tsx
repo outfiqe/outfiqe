@@ -1,9 +1,10 @@
 "use client";
 
 import { Modal } from "@outfiqe/design-system";
-import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+import { ANALYTICS_EVENTS, POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { type CSSProperties, useEffect } from "react";
 
+import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { getMediaRowHeightPx } from "@/shared/components/MediaFormShell";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
@@ -73,6 +74,7 @@ export const PostDetailModal = ({
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const { mutate: submitReport, isPending: isReporting } = reportMutation;
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
+  useTrackView(ANALYTICS_EVENTS.LOOK_DETAIL_VIEW, { look_id: id, creator_id: creatorId }, id);
 
   useEffect(() => {
     setCommentsOpen(true);

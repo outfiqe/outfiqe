@@ -225,6 +225,8 @@ export default defineConfig({
         "src/features/cart/hooks/useAddToCart.ts",
         "src/features/cart/hooks/useRemoveCartItem.ts",
         "src/features/checkout/hooks/useCheckoutAnalytics.ts",
+        "src/features/search/hooks/useTrackSearchResults.ts",
+        "src/features/wishlist/hooks/useToggleWishlist.ts",
         "src/proxy.ts",
         "src/features/landing/utils/guestHomeRequest.ts",
         "src/shared/components/DeferredMount.tsx",

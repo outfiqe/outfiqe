@@ -11,6 +11,7 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { formatResultCount } from "@/shared/lib/formatCount";
 
 import { MIN_QUERY_LENGTH } from "../constants/search.constants";
+import { useTrackSearchResults } from "../hooks/useTrackSearchResults";
 
 export const SearchResults = () => {
   const searchParams = useSearchParams();
@@ -26,6 +27,12 @@ export const SearchResults = () => {
     isLoading: isFetchingProducts,
   } = useInfiniteProducts({ q: query, enabled: isAuthResolved && hasQuery });
   const isLoading = isFetchingProducts || !isAuthResolved;
+  const productTotal = productsPages?.pages[0]?.total;
+  useTrackSearchResults(
+    "products",
+    query,
+    hasQuery && !isLoading && productTotal !== undefined ? productTotal : null,
+  );
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),

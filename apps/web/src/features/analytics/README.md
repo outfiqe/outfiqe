@@ -70,7 +70,19 @@ Events sent from the browser today:
 | `cart:item_remove`                                                                   | `features/cart/hooks/useRemoveCartItem.ts`                                |
 | `checkout:checkout_start`, `checkout:payment_method_select`, `checkout:order_submit` | `features/checkout/hooks/useCheckoutAnalytics.ts`, used by `CheckoutForm` |
 | `checkout:payment_fail`                                                              | `features/payments/components/PaymentFailed.tsx`                          |
+| `look:detail_view`                                                                   | `features/explore/posts/components/PostDetailModal.tsx`                   |
+| `look:product_tag_click`                                                             | `features/explore/posts/components/PostTagPill.tsx`                       |
+| `search:query_submit`                                                                | `features/search/hooks/useTrackSearchResults.ts`, from both results pages |
+| `wishlist:item_add`                                                                  | `features/wishlist/hooks/useToggleWishlist.ts` (saves only)               |
+| `taste:category_select`                                                              | `features/categories/hooks/useTastePreferences.ts` (saves, not resets)    |
+| `outfit_build:build_create`                                                          | `features/outfit-build/my-builds/components/MyBuildsPage.tsx`             |
+| `outfit_build:build_publish`                                                         | `features/outfit-build/publishing/hooks/useBuildLook.ts`                  |
+| `app:pwa_install`                                                                    | `features/pwa/install/utils/installPromptStore.ts` (`appinstalled`)       |
+| `app:push_enable`                                                                    | `features/pwa/push/utils/pushClient.ts` (new subscriptions only)          |
 | `$pageview` / `$pageleave`                                                           | automatically, on every route change                                      |
+
+`useTrackView` takes `null` as its key while a view isn't ready (search waits for its result
+count), and fires once the key is set.
 
 ## Non-obvious rationale
 
