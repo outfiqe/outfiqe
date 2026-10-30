@@ -17,15 +17,21 @@ import {
   attributedOrdersQuery,
   campaignsQuery,
   creatorLinkClicksQuery,
+  entryPagesQuery,
+  exitPagesQuery,
   LOOK_TO_ORDER_EVENTS,
   lookViewersReachingEachStepQuery,
   ordersByPaymentMethodQuery,
   overviewQuery,
+  pageViewsAndSessionsQuery,
   peopleReachingEachStepQuery,
   PURCHASE_FUNNEL_EVENTS,
   repeatBuyersQuery,
+  sessionQualityQuery,
   topCreatorsByLookViewsQuery,
+  topPagesQuery,
   trafficSourcesQuery,
+  webVitalsQuery,
   weeklyActiveVisitorsQuery,
   zeroResultSearchesQuery,
 } from "./insights.queries.js";
@@ -38,20 +44,30 @@ import type {
   OverviewInsight,
   PosthogQueryConnection,
   PurchaseFunnelInsight,
+  RankedPage,
   RetentionInsight,
+  SiteSpeedInsight,
+  SiteTrafficInsight,
   ZeroResultSearchesInsight,
 } from "./insights.types.js";
 import {
+  type LabelledCount,
   readCountAt,
   readFirstRowCounts,
+  readFirstRowMeasurements,
   readLabelledCounts,
   toFunnelSteps,
+  toProductIdFromPath,
   toShare,
 } from "./insights.utils.js";
 
 const OVERVIEW_COLUMN = { VISITORS: 0, SIGNUPS: 1, BUYERS: 2, ORDERS: 3 } as const;
 const REPEAT_BUYERS_COLUMN = { BUYERS: 0, REPEAT_BUYERS: 1 } as const;
+const PAGE_VIEWS_COLUMN = { PAGE_VIEWS: 0, SESSIONS: 1 } as const;
+const SESSION_QUALITY_COLUMN = { AVERAGE_SECONDS: 0, BOUNCE_RATE: 1 } as const;
+const WEB_VITALS_COLUMN = { MEASUREMENTS: 0, LCP: 1, INP: 2, FCP: 3, CLS: 4 } as const;
 const FIRST_COLUMN = 0;
+const NO_MEASUREMENTS = 0;
 
 type InsightBuilder<Insight> = (
   connection: PosthogQueryConnection,
@@ -263,6 +279,87 @@ const buildZeroResultSearches: InsightBuilder<ZeroResultSearchesInsight> = async
   };
 };
 
+const findProductNameById = async (pages: LabelledCount[]): Promise<Map<string, string>> => {
+  const productIds = pages.flatMap(({ label }) => toProductIdFromPath(label) ?? []);
+  try {
+    const productNames = await productAnalyticsInsightsRepository.findProductNames([
+      ...new Set(productIds),
+    ]);
+    return new Map(productNames.map(({ id, name }) => [id, name]));
+  } catch (error) {
+    logger.warn(`Product names for analytics pages not loaded: ${describeError(error)}`);
+    return new Map();
+  }
+};
+
+const toRankedPages = (
+  pages: LabelledCount[],
+  productNameById: Map<string, string>,
+): RankedPage[] =>
+  pages.map(({ label, count }) => ({
+    path: label,
+    productName: productNameById.get(toProductIdFromPath(label) ?? "") ?? null,
+    count,
+  }));
+
+const buildSiteTraffic: InsightBuilder<SiteTrafficInsight> = async (connection, days) => {
+  const pageViewRows = await runPosthogQuery(
+    connection,
+    `${INSIGHT_NAMES.SITE_TRAFFIC}:page-views`,
+    pageViewsAndSessionsQuery(days),
+  );
+  const sessionRows = await runPosthogQuery(
+    connection,
+    `${INSIGHT_NAMES.SITE_TRAFFIC}:session-quality`,
+    sessionQualityQuery(days),
+  );
+  const topPageRows = await runPosthogQuery(
+    connection,
+    `${INSIGHT_NAMES.SITE_TRAFFIC}:top-pages`,
+    topPagesQuery(days),
+  );
+  const entryPageRows = await runPosthogQuery(
+    connection,
+    `${INSIGHT_NAMES.SITE_TRAFFIC}:entry-pages`,
+    entryPagesQuery(days),
+  );
+  const exitPageRows = await runPosthogQuery(
+    connection,
+    `${INSIGHT_NAMES.SITE_TRAFFIC}:exit-pages`,
+    exitPagesQuery(days),
+  );
+
+  const pageViewCounts = readFirstRowCounts(pageViewRows);
+  const sessionCounts = readFirstRowCounts(sessionRows);
+  const topPages = readLabelledCounts(topPageRows);
+  const entryPages = readLabelledCounts(entryPageRows);
+  const exitPages = readLabelledCounts(exitPageRows);
+  const productNameById = await findProductNameById([...topPages, ...entryPages, ...exitPages]);
+
+  return {
+    pageViews: readCountAt(pageViewCounts, PAGE_VIEWS_COLUMN.PAGE_VIEWS),
+    sessions: readCountAt(pageViewCounts, PAGE_VIEWS_COLUMN.SESSIONS),
+    averageSessionSeconds: readCountAt(sessionCounts, SESSION_QUALITY_COLUMN.AVERAGE_SECONDS),
+    bounceRate: readCountAt(sessionCounts, SESSION_QUALITY_COLUMN.BOUNCE_RATE),
+    topPages: toRankedPages(topPages, productNameById),
+    entryPages: toRankedPages(entryPages, productNameById),
+    exitPages: toRankedPages(exitPages, productNameById),
+  };
+};
+
+const buildSiteSpeed: InsightBuilder<SiteSpeedInsight> = async (connection, days) => {
+  const measurements = readFirstRowMeasurements(
+    await runPosthogQuery(connection, INSIGHT_NAMES.SITE_SPEED, webVitalsQuery(days)),
+  );
+  return {
+    measurementCount: measurements[WEB_VITALS_COLUMN.MEASUREMENTS] ?? NO_MEASUREMENTS,
+    largestContentfulPaintMs: measurements[WEB_VITALS_COLUMN.LCP] ?? null,
+    interactionToNextPaintMs: measurements[WEB_VITALS_COLUMN.INP] ?? null,
+    firstContentfulPaintMs: measurements[WEB_VITALS_COLUMN.FCP] ?? null,
+    cumulativeLayoutShift: measurements[WEB_VITALS_COLUMN.CLS] ?? null,
+  };
+};
+
 export const productAnalyticsInsightsService = {
   overview: (range: InsightRange) => loadInsight(INSIGHT_NAMES.OVERVIEW, range, buildOverview),
   purchaseFunnel: (range: InsightRange) =>
@@ -274,4 +371,7 @@ export const productAnalyticsInsightsService = {
   retention: (range: InsightRange) => loadInsight(INSIGHT_NAMES.RETENTION, range, buildRetention),
   zeroResultSearches: (range: InsightRange) =>
     loadInsight(INSIGHT_NAMES.ZERO_RESULT_SEARCHES, range, buildZeroResultSearches),
+  siteTraffic: (range: InsightRange) =>
+    loadInsight(INSIGHT_NAMES.SITE_TRAFFIC, range, buildSiteTraffic),
+  siteSpeed: (range: InsightRange) => loadInsight(INSIGHT_NAMES.SITE_SPEED, range, buildSiteSpeed),
 };

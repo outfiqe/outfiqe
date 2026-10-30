@@ -289,6 +289,8 @@ const ROUTE_GROUPS: Record<string, PlatformRoute[]> = {
     route("get", "/api/platform/analytics/acquisition", "platform:analytics:read"),
     route("get", "/api/platform/analytics/retention", "platform:analytics:read"),
     route("get", "/api/platform/analytics/search/zero-results", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/traffic", "platform:analytics:read"),
+    route("get", "/api/platform/analytics/speed", "platform:analytics:read"),
   ],
 };
 

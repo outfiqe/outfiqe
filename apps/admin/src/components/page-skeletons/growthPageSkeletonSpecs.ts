@@ -20,6 +20,11 @@ export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
         blocks: [{ kind: "statCards", count: ANALYTICS_STAT_CARD_COUNT, columns: "four" }],
       },
       {
+        kind: "section",
+        title: "Site traffic",
+        blocks: [{ kind: "statCards", count: ANALYTICS_STAT_CARD_COUNT, columns: "four" }],
+      },
+      {
         kind: "chartCard",
         title: "Purchase funnel",
         description: "How many people reach each step from product page to placed order.",
@@ -34,6 +39,7 @@ export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
       `${FEATURES_DIR}/platform-analytics/components/PlatformAnalyticsPage.tsx`,
       `${FEATURES_DIR}/platform-analytics/constants/platformAnalytics.constants.ts`,
       `${FEATURES_DIR}/platform-analytics/components/AnalyticsOverviewSection.tsx`,
+      `${FEATURES_DIR}/platform-analytics/components/SiteTrafficSection.tsx`,
       `${FEATURES_DIR}/platform-analytics/components/PurchaseFunnelSection.tsx`,
       `${FEATURES_DIR}/platform-analytics/components/LookToOrderSection.tsx`,
     ],
