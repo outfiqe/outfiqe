@@ -1,8 +1,8 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
-
-export const CRM_COUNTER_RECONCILE_INTERVAL_MS = 24 * ONE_HOUR_MS;
+export const CRM_COUNTER_RECONCILE_INTERVAL_MS = 24 * millisecondsInHour;
 
 export type CrmCounterField = "contactCount" | "dealCount" | "ticketCount" | "activityCount";
 

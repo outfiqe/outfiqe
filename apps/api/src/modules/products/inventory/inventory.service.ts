@@ -9,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 
+import { productErrors } from "../product.errors.js";
 import { requireOwnedProduct } from "../product.guards.js";
 import type { AdjustStockBody } from "../product.schemas.js";
 import type {
@@ -97,11 +98,7 @@ export const productInventoryService = {
     );
     const unknownSizeId = sizeIds.find((sizeId) => !ownedSizeIds.has(sizeId));
     if (unknownSizeId) {
-      throw new AppError(
-        "SIZE_NOT_FOUND",
-        "One or more sizes weren't found on this product.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw productErrors.sizeNotFound();
     }
 
     const sortedAdjustments = [...adjustments].sort((left, right) =>

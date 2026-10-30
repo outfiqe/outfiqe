@@ -13,9 +13,6 @@ import { APP_ENV } from "./lib/appEnv";
 import { BOOT_LOADER_MAX_VISIBLE_MS, hideBootLoader } from "./lib/bootLoader";
 import { routeTree } from "./routeTree.gen";
 
-// Without a staleTime, every route remount and window refocus refetches — the default
-// QueryClient() has staleTime 0, which was causing the delivery-zones page (and others) to
-// hit the API repeatedly on normal navigation.
 const ADMIN_QUERY_STALE_TIME_MS = 30 * 1000;
 const SENTRY_TRACES_SAMPLE_RATE = 0.2;
 const ROUTE_PENDING_DELAY_MS = 100;

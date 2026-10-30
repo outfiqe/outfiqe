@@ -20,20 +20,16 @@ type PriceCheckoutInput = {
   orderPlacedAt: Date;
 };
 
-export const priceCheckout = async ({
-  userId,
-  lines,
-  paymentMethod,
-  city,
-  couponCode,
-  orderPlacedAt,
-}: PriceCheckoutInput): Promise<CheckoutPricing> => {
+const NO_PLATFORM_DISCOUNT = 0;
+const NO_FEE = 0;
+
+const applyBrandDiscounts = async (lines: CheckoutLine[], orderPlacedAt: Date) => {
   const activeDiscountsByProductId = await productRepository.findActiveDiscountsByProductIds(
     [...new Set(lines.map((line) => line.productId))],
     orderPlacedAt,
   );
 
-  const pricedLinesWithoutCoupon = lines.map((line) => {
+  return lines.map((line) => {
     const activeDiscount = activeDiscountsByProductId.get(line.productId);
     const unitPrice = resolveBrandFundedUnitPrice(
       line.listUnitPrice,
@@ -43,9 +39,33 @@ export const priceCheckout = async ({
       ...line,
       unitPrice,
       brandDiscountAmount: line.listUnitPrice - unitPrice,
-      platformDiscountAmount: 0,
+      platformDiscountAmount: NO_PLATFORM_DISCOUNT,
     };
   });
+};
+
+const resolveCheckoutFees = async (
+  city: string,
+  subtotal: number,
+  paymentMethod: PaymentMethod,
+): Promise<{ deliveryFee: number; codFee: number }> => {
+  const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
+  return {
+    deliveryFee:
+      subtotal >= feeValues.freeDeliveryThreshold ? NO_FEE : feeValues.standardDeliveryFee,
+    codFee: paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : NO_FEE,
+  };
+};
+
+export const priceCheckout = async ({
+  userId,
+  lines,
+  paymentMethod,
+  city,
+  couponCode,
+  orderPlacedAt,
+}: PriceCheckoutInput): Promise<CheckoutPricing> => {
+  const pricedLinesWithoutCoupon = await applyBrandDiscounts(lines, orderPlacedAt);
 
   const couponResolution = couponCode
     ? await couponService.resolveForContext(couponCode, {
@@ -65,7 +85,7 @@ export const priceCheckout = async ({
 
   const pricedLines = pricedLinesWithoutCoupon.map((line, index) => ({
     ...line,
-    platformDiscountAmount: platformDiscountByLineId.get(String(index)) ?? 0,
+    platformDiscountAmount: platformDiscountByLineId.get(String(index)) ?? NO_PLATFORM_DISCOUNT,
   }));
 
   const subtotal = pricedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
@@ -73,11 +93,8 @@ export const priceCheckout = async ({
     (sum, line) => sum + line.brandDiscountAmount * line.qty,
     0,
   );
-  const platformDiscountTotal = couponResolution?.valuation.discountAmount ?? 0;
-  const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
-  const deliveryFee =
-    subtotal >= feeValues.freeDeliveryThreshold ? 0 : feeValues.standardDeliveryFee;
-  const codFee = paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : 0;
+  const platformDiscountTotal = couponResolution?.valuation.discountAmount ?? NO_PLATFORM_DISCOUNT;
+  const { deliveryFee, codFee } = await resolveCheckoutFees(city, subtotal, paymentMethod);
   const total = subtotal - platformDiscountTotal + deliveryFee + codFee;
 
   assertOrderMoneyInvariant({

@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -7,7 +8,7 @@ import { validate } from "#middlewares/validate.js";
 import { bankQrVerificationController } from "./bank-qr-verification.controller.js";
 import { bankQrPreviewBodySchema } from "./bank-qr-verification.schemas.js";
 
-const PREVIEW_WINDOW_MS = 60 * 60 * 1000;
+const PREVIEW_WINDOW_MS = millisecondsInHour;
 const PREVIEW_MAX_REQUESTS = 30;
 
 const previewBankQrRateLimit = rateLimit({

@@ -1,4 +1,5 @@
-export const COMMISSION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+import { millisecondsInHour } from "date-fns/constants";
+export const COMMISSION_SWEEP_INTERVAL_MS = millisecondsInHour;
 
 export const COMMISSION_RECIPIENT_KIND = {
   PERSON: "PERSON",

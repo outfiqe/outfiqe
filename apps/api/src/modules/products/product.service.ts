@@ -12,6 +12,7 @@ import { sizeStandardService } from "#modules/size-standards/size-standard.servi
 import { productCatalogService } from "./catalog/catalog.service.js";
 import { productDiscountService } from "./discounts/discount.service.js";
 import { productInventoryService, recordNewSizeStock } from "./inventory/inventory.service.js";
+import { productErrors } from "./product.errors.js";
 import { requireOwnedProduct } from "./product.guards.js";
 import { productRepository } from "./product.repository.js";
 import type {
@@ -71,12 +72,61 @@ const assertFitDataAllowed = (
     (isStretchable !== undefined && isStretchable !== null) ||
     sizes.some(({ fitRange }) => fitRange !== null);
   if (!supportsFitRanges && hasFitData) {
+    throw productErrors.fitRangesNotSupported();
+  }
+};
+
+const resolveSizesForTypeChange = async (
+  brandId: string,
+  sizeStandardId: UpdateProductBody["sizeStandardId"],
+  sizes: UpdateProductBody["sizes"],
+): Promise<CreateProductSizeInput[]> => {
+  if (!sizes || sizes.length === 0) {
     throw new AppError(
-      "FIT_RANGES_NOT_SUPPORTED",
-      "This kind of clothing doesn't take a size chart or a stretch setting.",
-      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      "SIZES_REQUIRED",
+      "Add at least one size for the new product type.",
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
+  return resolveSizeInputs(brandId, sizeStandardId, sizes);
+};
+
+const assertFitDataFitsProductType = async (
+  targetProductType: Awaited<ReturnType<typeof productTypeService.getActiveBySlug>> | undefined,
+  currentProductTypeId: string,
+  isStretchable: UpdateProductBody["isStretchable"],
+  sizeChanges: CreateProductSizeInput[] | undefined,
+): Promise<void> => {
+  const effectiveProductType =
+    targetProductType ??
+    (isStretchable === undefined
+      ? undefined
+      : await productTypeService.getById(currentProductTypeId));
+  if (effectiveProductType) {
+    assertFitDataAllowed(effectiveProductType.supportsFitRanges, isStretchable, sizeChanges ?? []);
+  }
+};
+
+const saveProductUpdate = (
+  productId: string,
+  productChanges: Parameters<typeof productRepository.update>[2],
+  hasSizeChanges: boolean,
+) =>
+  prisma.$transaction(async (tx) => {
+    const savedProduct = await productRepository.update(tx, productId, productChanges);
+    if (hasSizeChanges) await recordNewSizeStock(tx, savedProduct.id, savedProduct.sizes);
+    return savedProduct;
+  });
+
+const rethrowAsProductUpdateError = (error: unknown): never => {
+  if (isForeignKeyConstraintError(error)) {
+    throw new AppError(
+      "SIZES_IN_USE",
+      "Can't change product type — some of its current sizes already have orders and can't be removed.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  throw error;
 };
 
 export const productService = {
@@ -166,36 +216,23 @@ export const productService = {
     const isTypeChange =
       targetProductType !== undefined && targetProductType.id !== product.productTypeId;
 
-    let sizeChanges: CreateProductSizeInput[] | undefined;
-    if (isTypeChange) {
-      if (!sizes || sizes.length === 0) {
-        throw new AppError(
-          "SIZES_REQUIRED",
-          "Add at least one size for the new product type.",
-          HTTP_STATUS.BAD_REQUEST,
-        );
-      }
-      sizeChanges = await resolveSizeInputs(brandId, sizeStandardId, sizes);
-    }
+    const sizeChanges = isTypeChange
+      ? await resolveSizesForTypeChange(brandId, sizeStandardId, sizes)
+      : undefined;
 
-    const effectiveProductType =
-      targetProductType ??
-      (isStretchable === undefined
-        ? undefined
-        : await productTypeService.getById(product.productTypeId));
-    if (effectiveProductType) {
-      assertFitDataAllowed(
-        effectiveProductType.supportsFitRanges,
-        isStretchable,
-        sizeChanges ?? [],
-      );
-    }
+    await assertFitDataFitsProductType(
+      targetProductType,
+      product.productTypeId,
+      isStretchable,
+      sizeChanges,
+    );
     const stretchAfterTypeChange =
       isTypeChange && !targetProductType.supportsFitRanges ? null : isStretchable;
 
     try {
-      const updatedProduct = await prisma.$transaction(async (tx) => {
-        const savedProduct = await productRepository.update(tx, productId, {
+      const updatedProduct = await saveProductUpdate(
+        productId,
+        {
           name,
           price,
           productTypeId: targetProductType?.id,
@@ -209,20 +246,12 @@ export const productService = {
           isThrift,
           thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
           thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
-        });
-        if (sizeChanges) await recordNewSizeStock(tx, savedProduct.id, savedProduct.sizes);
-        return savedProduct;
-      });
+        },
+        sizeChanges !== undefined,
+      );
       return toBrandSummary(updatedProduct);
     } catch (error) {
-      if (isForeignKeyConstraintError(error)) {
-        throw new AppError(
-          "SIZES_IN_USE",
-          "Can't change product type — some of its current sizes already have orders and can't be removed.",
-          HTTP_STATUS.CONFLICT,
-        );
-      }
-      throw error;
+      return rethrowAsProductUpdateError(error);
     }
   },
 
@@ -241,11 +270,7 @@ export const productService = {
     const product = await requireOwnedProduct(productId, brandId);
     const productType = await productTypeService.getById(product.productTypeId);
     if (!productType.supportsFitRanges) {
-      throw new AppError(
-        "FIT_RANGES_NOT_SUPPORTED",
-        "This kind of clothing doesn't take a size chart or a stretch setting.",
-        HTTP_STATUS.UNPROCESSABLE_ENTITY,
-      );
+      throw productErrors.fitRangesNotSupported();
     }
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
@@ -256,11 +281,7 @@ export const productService = {
         sizeChartEntries,
       );
       if (updatedSizeCount !== sizeChartEntries.length) {
-        throw new AppError(
-          "SIZE_NOT_FOUND",
-          "One or more sizes weren't found on this product.",
-          HTTP_STATUS.NOT_FOUND,
-        );
+        throw productErrors.sizeNotFound();
       }
       return savedProduct;
     });

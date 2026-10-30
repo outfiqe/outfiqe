@@ -1,3 +1,5 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
@@ -22,7 +24,6 @@ import type {
   SuspendUserInput,
 } from "./platform-suspensions.types.js";
 
-const HOURS_TO_MS = 60 * 60 * 1000;
 const USER_NOT_FOUND_MESSAGE = "User not found.";
 const BRAND_NOT_FOUND_MESSAGE = "Brand not found.";
 const TARGET_TYPE_USER = "user";
@@ -85,16 +86,17 @@ export const platformSuspensionsService = {
     assertNotSelf(actorUserId, targetUserId);
     assertTargetIsModerable(await userRepository.findById(targetUserId));
 
-    const expiresAt = durationHours ? new Date(Date.now() + durationHours * HOURS_TO_MS) : null;
+    const expiresAt = durationHours
+      ? new Date(Date.now() + durationHours * millisecondsInHour)
+      : null;
 
     const changed = await prisma.$transaction(async (tx) => {
-      const ok = await platformSuspensionsRepository.suspendUser(
+      const wasSuspended = await platformSuspensionsRepository.suspendUser(
         { userId: targetUserId, suspendedBy: actorUserId, reason, expiresAt },
         tx,
       );
-      if (!ok) return false;
-      await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
-      return true;
+      if (wasSuspended) await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
+      return wasSuspended;
     });
 
     if (!changed) {
@@ -133,13 +135,12 @@ export const platformSuspensionsService = {
     assertTargetIsModerable(await userRepository.findById(targetUserId));
 
     const changed = await prisma.$transaction(async (tx) => {
-      const ok = await platformSuspensionsRepository.banUser(
+      const wasBanned = await platformSuspensionsRepository.banUser(
         { userId: targetUserId, suspendedBy: actorUserId, reason },
         tx,
       );
-      if (!ok) return false;
-      await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
-      return true;
+      if (wasBanned) await authRepository.deleteAllRefreshTokensForUser(targetUserId, tx);
+      return wasBanned;
     });
 
     if (!changed) {
@@ -231,7 +232,9 @@ export const platformSuspensionsService = {
     if (!existing)
       throw new AppError("BRAND_NOT_FOUND", BRAND_NOT_FOUND_MESSAGE, HTTP_STATUS.NOT_FOUND);
 
-    const expiresAt = durationHours ? new Date(Date.now() + durationHours * HOURS_TO_MS) : null;
+    const expiresAt = durationHours
+      ? new Date(Date.now() + durationHours * millisecondsInHour)
+      : null;
 
     const changed = await platformSuspensionsRepository.suspendBrand({
       brandId: targetBrandId,

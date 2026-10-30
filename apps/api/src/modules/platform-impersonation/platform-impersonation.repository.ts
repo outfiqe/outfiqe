@@ -12,6 +12,7 @@ import type {
 } from "./platform-impersonation.types.js";
 
 const IMPERSONATION_AUDIT_ACTION_PREFIX = "impersonation.";
+const NOT_PLATFORM_STAFF = false;
 
 const readMetadataString = (metadata: unknown, key: string): string | null => {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
@@ -117,7 +118,7 @@ export const platformImpersonationRepository = {
       where: { isPlatformOrg: true },
       select: { id: true },
     });
-    if (!platformOrg) return false;
+    if (!platformOrg) return NOT_PLATFORM_STAFF;
     const membership = await prisma.membership.findFirst({
       where: { userId, organizationId: platformOrg.id },
       select: { id: true },

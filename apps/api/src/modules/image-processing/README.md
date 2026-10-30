@@ -11,6 +11,7 @@ that lives in the shared package; this module only supplies the app-specific dep
 
 ## Structure
 
+- `image-processing.errors.ts` — `imageProcessingErrors`, the errors this module raises from more than one place.
 - `image-processing.routes.ts` / `.controller.ts` / `.service.ts` — `POST /api/image-processing`
   (Multer disk storage into the pipeline's temp dir, back-pressure check, rate limit, enqueue) and
   `GET /api/image-processing/:assetId` (status + signed variant URLs once complete).

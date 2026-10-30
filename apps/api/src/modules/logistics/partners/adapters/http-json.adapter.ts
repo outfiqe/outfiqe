@@ -80,12 +80,14 @@ const parseJsonBody = (rawBody: Buffer): unknown => {
   }
 };
 
-export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => {
-  const { apiKey, baseUrl, webhookSecret, previousWebhookSecret } = readDeliveryPartnerCredentials(
-    account.credentialsKey,
-  );
+const UNSUPPORTED_VERIFICATION_IS_VALID = false;
 
-  const callPartner = async (path: string, init: RequestInit = {}): Promise<unknown> => {
+const createPartnerCaller =
+  ({
+    apiKey,
+    baseUrl,
+  }: Pick<ReturnType<typeof readDeliveryPartnerCredentials>, "apiKey" | "baseUrl">) =>
+  async (path: string, init: RequestInit = {}): Promise<unknown> => {
     if (!apiKey || !baseUrl) {
       throw new PartnerRequestError("This partner's API key or address isn't set.", false);
     }
@@ -114,13 +116,19 @@ export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => 
     return replyBody;
   };
 
-  const parseReply = <Shape>(schema: z.ZodType<Shape>, reply: unknown): Shape => {
-    const parsed = schema.safeParse(reply);
-    if (!parsed.success) {
-      throw new PartnerRequestError("The partner's reply wasn't in the expected shape.", false);
-    }
-    return parsed.data;
-  };
+const parseReply = <Shape>(schema: z.ZodType<Shape>, reply: unknown): Shape => {
+  const parsed = schema.safeParse(reply);
+  if (!parsed.success) {
+    throw new PartnerRequestError("The partner's reply wasn't in the expected shape.", false);
+  }
+  return parsed.data;
+};
+
+export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => {
+  const { apiKey, baseUrl, webhookSecret, previousWebhookSecret } = readDeliveryPartnerCredentials(
+    account.credentialsKey,
+  );
+  const callPartner = createPartnerCaller({ apiKey, baseUrl });
 
   return {
     isManual: false,
@@ -188,7 +196,7 @@ export const createHttpJsonAdapter: CreateDeliveryPartnerAdapter = (account) => 
           webhookSecrets,
         );
       }
-      return false;
+      return UNSUPPORTED_VERIFICATION_IS_VALID;
     },
 
     parseWebhook(rawBody: Buffer): PartnerTrackingEvent[] {

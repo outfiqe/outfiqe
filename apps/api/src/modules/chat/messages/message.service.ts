@@ -5,6 +5,7 @@ import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
+import { chatErrors } from "../chat.errors.js";
 import { chatService } from "../chat.service.js";
 import { chatUnavailableError } from "../chat.utils.js";
 import { conversationRepository } from "../conversations/conversation.repository.js";
@@ -58,7 +59,7 @@ export const messageService = {
 
     const conversation = await conversationRepository.getById(conversationId);
     if (!conversation) {
-      throw new AppError("NOT_FOUND", "Conversation not found.", HTTP_STATUS.NOT_FOUND);
+      throw chatErrors.notFoundConversation();
     }
     await assertCanSendTo(callerId, conversationId, conversation.type);
 

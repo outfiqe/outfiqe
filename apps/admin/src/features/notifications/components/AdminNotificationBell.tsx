@@ -7,6 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useSyncExternalStore } from "react";
 
 import { crmApi } from "@/features/crm/api/crmApi";
+import { CRM_ORGANIZATION_STALE_TIME_MS } from "@/features/crm/constants/crmOrganizationQuery";
 import { notificationsApi } from "@/lib/notificationsApi";
 import { acquireSocketConnection, getSocket, releaseSocketConnection } from "@/lib/socketClient";
 import { isOnTenantHost } from "@/lib/tenantHost";
@@ -15,10 +16,10 @@ import { belongsToTenant, toSameOriginAdminHref } from "../utils/adminNotificati
 import { resolveNotificationHref } from "../utils/resolveNotificationHref";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
-const CRM_ORGANIZATION_STALE_TIME_MS = 5 * 60 * 1000;
+const NOT_AN_EXPIRED_ANNOUNCEMENT = false;
 
 const isExpiredAnnouncement = (notification: Notification): boolean => {
-  if (notification.type !== NotificationType.ANNOUNCEMENT) return false;
+  if (notification.type !== NotificationType.ANNOUNCEMENT) return NOT_AN_EXPIRED_ANNOUNCEMENT;
   const expiresAt = notification.metadata.announcementExpiresAt;
   return Boolean(expiresAt && new Date(expiresAt) <= new Date());
 };

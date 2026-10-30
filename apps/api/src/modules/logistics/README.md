@@ -12,6 +12,7 @@ flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
 ## Structure
 
+- `logistics.errors.ts` — `logisticsErrors`, the errors this module raises from more than one place.
 - `logistics.journeys.integration.test.ts` — the whole flow through the real endpoints, from a
   brand pressing "Ready for pickup" to the customer. It covers:
   - three brands in one cash parcel, delivered by spreadsheet, with the cash and rider pay

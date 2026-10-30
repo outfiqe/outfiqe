@@ -6,6 +6,7 @@ Identity and session management: email/password registration and email verificat
 
 ## Structure
 
+- `auth.errors.ts` — `authErrors`, the errors this module raises from more than one place.
 - `auth.service.ts` — `authService`, the only object the controller imports: every topic service below spread together.
 - `session/session.service.ts` — `authSessionService`: `login`, `refresh` (rotating, browser-facing) / `validateSession` (non-rotating, SSR-facing), `logout`, `getCurrentUser`, `validateToken` (generic invite/purpose-token existence check), and the background password-hash upgrade after a successful login.
 - `registration/registration.service.ts` — `authRegistrationService`: `register`, `verifyEmail`, `resendVerification`, and the verification email itself.

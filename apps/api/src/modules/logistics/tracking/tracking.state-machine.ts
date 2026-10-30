@@ -76,12 +76,13 @@ export const canApplyStatusMove = <Status extends string>({
   isCorrection,
   allowedNextStatuses,
 }: StatusMoveCheck<Status>): boolean => {
-  if (currentStatus === nextStatus) return false;
-  if (isCorrection) return true;
-
+  const isStatusChange = currentStatus !== nextStatus;
   const happenedBeforeCurrentStatus =
     currentStatusChangedAt !== null && isBefore(occurredAt, currentStatusChangedAt);
-  if (happenedBeforeCurrentStatus) return false;
 
-  return allowedNextStatuses[currentStatus].includes(nextStatus);
+  return (
+    isStatusChange &&
+    (isCorrection ||
+      (!happenedBeforeCurrentStatus && allowedNextStatuses[currentStatus].includes(nextStatus)))
+  );
 };

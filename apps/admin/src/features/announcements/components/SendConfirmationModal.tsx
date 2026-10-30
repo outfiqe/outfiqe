@@ -1,6 +1,8 @@
 import { Button, FormBanner, Input, Modal, Select, toast } from "@outfiqe/design-system";
+import { MS_PER_MINUTE } from "@outfiqe/utils";
 import { useState } from "react";
 
+import { DATETIME_LOCAL_LENGTH } from "@/lib/dateInputs";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { announcementsApi } from "../api/announcementsApi";
@@ -20,7 +22,6 @@ type SendModeValue = (typeof SendMode)[keyof typeof SendMode];
 
 const ANNOUNCEMENT_SEND_NOW_MAX_RECIPIENTS = 500;
 const MIN_SCHEDULE_LEAD_MINUTES = 5;
-const MS_PER_MINUTE = 60 * 1000;
 
 const isLargeAudience = (announcement: Announcement): boolean =>
   announcement.audiences.includes(AnnouncementAudience.EVERYONE) ||
@@ -30,7 +31,7 @@ const defaultScheduleValue = (): string => {
   const soon = new Date(Date.now() + MIN_SCHEDULE_LEAD_MINUTES * MS_PER_MINUTE);
   soon.setSeconds(0, 0);
   const localSoon = new Date(soon.getTime() - soon.getTimezoneOffset() * MS_PER_MINUTE);
-  return localSoon.toISOString().slice(0, 16);
+  return localSoon.toISOString().slice(0, DATETIME_LOCAL_LENGTH);
 };
 
 export const SendConfirmationModal = ({

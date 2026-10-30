@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { buildImpersonationHandoffUrl } from "@/lib/impersonationHandoff";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
@@ -61,7 +62,7 @@ export const PlatformImpersonationPage = () => {
   const form = useForm<ImpersonationFormValues>({
     resolver: zodResolver(impersonationFormSchema),
     defaultValues: EMPTY_IMPERSONATION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const organizationId = form.watch("organizationId");
   const [lastResult, setLastResult] = useState<StartImpersonationResult | null>(null);

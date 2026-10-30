@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -10,14 +11,13 @@ import { validate } from "#middlewares/validate.js";
 import { logisticsCustomerTrackingController } from "./customer-tracking.controller.js";
 import { customerOrderParamSchema, reportNotReceivedSchema } from "./customer-tracking.schemas.js";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
 const DISPUTES_PER_HOUR = 5;
 
 const requireShopper = [...requireActiveAuth, requireRole(UserRole.CUSTOMER)];
 
 const deliveryDisputeRateLimit = rateLimit({
   namespace: "logistics-delivery-dispute",
-  windowMs: ONE_HOUR_MS,
+  windowMs: millisecondsInHour,
   max: DISPUTES_PER_HOUR,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many reports in a short time. Please contact support.",

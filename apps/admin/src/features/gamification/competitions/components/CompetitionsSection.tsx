@@ -7,7 +7,9 @@ import { useForm } from "react-hook-form";
 
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { gamificationApi } from "../../api/gamificationApi";
 import type { CreatorCompetitionAdmin } from "../../api/gamificationSchemas";
@@ -37,7 +39,7 @@ export const CompetitionsSection = () => {
   const form = useForm<CompetitionFormValues>({
     resolver: zodResolver(competitionFormSchema),
     defaultValues: EMPTY_COMPETITION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({
@@ -78,7 +80,9 @@ export const CompetitionsSection = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <TitleActionCardSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <TitleActionCardSkeleton key={index} />
+          ))}
         {competitions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No competitions yet.</p>
         )}

@@ -17,6 +17,7 @@ import { productService } from "#modules/products/product.service.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
 import { NOTHING_ALREADY_PAID, ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
+import { orderErrors } from "../order.errors.js";
 import { orderRepository } from "../order.repository.js";
 import type { OrderReturnOutcome } from "../order.types.js";
 import { listRemainingUnits } from "../refunds/refund.claim.js";
@@ -71,6 +72,76 @@ const refundReturnedUnits = async (
   );
 };
 
+type OrderForReturn = NonNullable<Awaited<ReturnType<typeof orderRepository.findForAdminAction>>>;
+
+const assertOrderCanBeReturned = ({ fulfilmentGroups, fulfilmentStatus }: OrderForReturn): void => {
+  if (fulfilmentGroups.length > NO_HUB_GROUPS) {
+    throw new AppError(
+      "RETURN_CHECKED_IN_AT_HUB",
+      "This order was delivered through the Outfiqe hub. Check the parcel in at the hub when it comes back instead.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  if (!RETURNABLE_FULFILMENT_STATUSES.includes(fulfilmentStatus)) {
+    throw new AppError(
+      "INVALID_TRANSITION",
+      "Only orders that have shipped or been delivered can be marked as returned.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+};
+
+const settleReturnInTransaction = async (
+  tx: Prisma.TransactionClient,
+  {
+    order,
+    orderId,
+    adminUserId,
+    reason,
+    returnedAt,
+  }: {
+    order: OrderForReturn;
+    orderId: string;
+    adminUserId: string;
+    reason: string;
+    returnedAt: Date;
+  },
+) => {
+  const isMarked = await orderRepository.markReturned(tx, orderId, RETURNABLE_FULFILMENT_STATUSES, {
+    returnedAt,
+    returnReason: reason,
+  });
+  if (!isMarked) return null;
+
+  await orderFulfilmentGroupRepository.returnFulfilmentGroupsForOrder(tx, orderId, returnedAt);
+  await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
+    kind: InventoryMovementKind.ORDER_RESTORE,
+    sourceType: InventoryMovementSource.ORDER,
+    sourceId: orderId,
+  });
+
+  const [voidedCommissionCount, voidedPayoutCount] = await Promise.all([
+    commissionRepository.voidForOrder(tx, orderId, reason),
+    brandPayoutRepository.voidUnwithdrawnForOrder(tx, orderId, reason),
+  ]);
+  const [paidCommissionCount, withdrawnPayoutCount] = await Promise.all([
+    commissionRepository.countPaidForOrder(tx, orderId),
+    brandPayoutRepository.countWithdrawnForOrder(tx, orderId),
+  ]);
+  const appliedRefund = await refundReturnedUnits(tx, orderId, adminUserId, reason);
+
+  return {
+    appliedRefund,
+    counts: {
+      voidedCommissionCount,
+      voidedPayoutCount,
+      paidCommissionCount,
+      withdrawnPayoutCount,
+      needsClawback: paidCommissionCount + withdrawnPayoutCount > NOTHING_ALREADY_PAID,
+    },
+  };
+};
+
 export const orderReturnService = {
   async markReturned(
     orderId: string,
@@ -78,68 +149,17 @@ export const orderReturnService = {
     reason: string,
   ): Promise<OrderReturnOutcome> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
-    if (order.fulfilmentGroups.length > NO_HUB_GROUPS) {
-      throw new AppError(
-        "RETURN_CHECKED_IN_AT_HUB",
-        "This order was delivered through the Outfiqe hub. Check the parcel in at the hub when it comes back instead.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-    if (!RETURNABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        "Only orders that have shipped or been delivered can be marked as returned.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    if (!order) throw orderErrors.notFound();
+    assertOrderCanBeReturned(order);
 
     const returnedAt = new Date();
 
-    const settlementOutcome = await prisma.$transaction(async (tx) => {
-      const isMarked = await orderRepository.markReturned(
-        tx,
-        orderId,
-        RETURNABLE_FULFILMENT_STATUSES,
-        { returnedAt, returnReason: reason },
-      );
-      if (!isMarked) return null;
-
-      await orderFulfilmentGroupRepository.returnFulfilmentGroupsForOrder(tx, orderId, returnedAt);
-      await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
-        kind: InventoryMovementKind.ORDER_RESTORE,
-        sourceType: InventoryMovementSource.ORDER,
-        sourceId: orderId,
-      });
-
-      const [voidedCommissionCount, voidedPayoutCount] = await Promise.all([
-        commissionRepository.voidForOrder(tx, orderId, reason),
-        brandPayoutRepository.voidUnwithdrawnForOrder(tx, orderId, reason),
-      ]);
-      const [paidCommissionCount, withdrawnPayoutCount] = await Promise.all([
-        commissionRepository.countPaidForOrder(tx, orderId),
-        brandPayoutRepository.countWithdrawnForOrder(tx, orderId),
-      ]);
-      const appliedRefund = await refundReturnedUnits(tx, orderId, adminUserId, reason);
-
-      return {
-        appliedRefund,
-        counts: {
-          voidedCommissionCount,
-          voidedPayoutCount,
-          paidCommissionCount,
-          withdrawnPayoutCount,
-          needsClawback: paidCommissionCount + withdrawnPayoutCount > NOTHING_ALREADY_PAID,
-        },
-      };
-    });
+    const settlementOutcome = await prisma.$transaction((tx) =>
+      settleReturnInTransaction(tx, { order, orderId, adminUserId, reason, returnedAt }),
+    );
 
     if (!settlementOutcome) {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        "This order's status changed — refresh and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw orderErrors.invalidTransition();
     }
 
     const { appliedRefund, counts } = settlementOutcome;

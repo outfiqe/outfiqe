@@ -35,6 +35,7 @@ support reports, and review the organization's audit log — against the `/api/c
   explicit "nothing here for your role yet" message instead of a blank page. Once the organization
   has loaded it also shows a "Take the tour" link in the header and mounts
   `features/product-tour`'s `CrmDashboardTour` — see that feature's own README.
+- `hooks/useMemberActions.ts` — the member queries, role and status mutations, ownership transfer state and the rules for who can change what. `MembersSection` only renders what it returns.
 - `components/MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row, plus a
   "Transfer ownership" button on any `ACTIVE`, non-SUPERADMIN row (shown only when the viewer
   themselves is the SUPERADMIN and no transfer is already pending — takes `viewerIsSuperAdmin`/

@@ -19,6 +19,7 @@ export * from "./public-build-sort";
 export * from "./size-fit";
 export * from "./tenant";
 export * from "./thrift-condition";
+export * from "./time";
 export * from "./user-role";
 export * from "./uuid";
 export * from "./web-cache";

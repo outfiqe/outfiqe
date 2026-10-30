@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 const SIGNATURE_ALGORITHM = "sha256";
 const SIGNATURE_ENCODING = "hex";
+const MISSING_CREDENTIAL_IS_VALID = false;
 
 const isSameSecretValue = (expected: string, received: string): boolean => {
   const expectedBuffer = Buffer.from(expected);
@@ -20,7 +21,7 @@ export const isValidPartnerSignature = (
   receivedSignature: string | undefined,
   secrets: readonly (string | null)[],
 ): boolean => {
-  if (!receivedSignature) return false;
+  if (!receivedSignature) return MISSING_CREDENTIAL_IS_VALID;
   const normalizedSignature = receivedSignature.trim().toLowerCase();
   return secrets.some(
     (secret) =>
@@ -33,6 +34,6 @@ export const isValidPartnerToken = (
   receivedToken: string | undefined,
   secrets: readonly (string | null)[],
 ): boolean => {
-  if (!receivedToken) return false;
+  if (!receivedToken) return MISSING_CREDENTIAL_IS_VALID;
   return secrets.some((secret) => secret !== null && isSameSecretValue(secret, receivedToken));
 };

@@ -5,6 +5,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import type { PublicProduct } from "#modules/products/product.types.js";
 import { toPublicProduct } from "#modules/products/product.utils.js";
 
+import { collectionErrors } from "./collection.errors.js";
 import { collectionRepository } from "./collection.repository.js";
 import type {
   CreateCollectionBody,
@@ -39,7 +40,7 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
 
 const requireCollection = async (id: string): Promise<CollectionRecord> => {
   const collection = await collectionRepository.findById(id);
-  if (!collection) throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
+  if (!collection) throw collectionErrors.notFound();
   return collection;
 };
 
@@ -89,8 +90,7 @@ export const collectionService = {
 
   async getPublicBySlug(slug: string): Promise<PublicCollection> {
     const collection = await collectionRepository.findPublicBySlug(slug);
-    if (!collection)
-      throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
+    if (!collection) throw collectionErrors.notFound();
     return toPublicCollection(collection);
   },
 
@@ -99,8 +99,7 @@ export const collectionService = {
     query: ListCollectionProductsQuery,
   ): Promise<PublicCollectionProductPage> {
     const collection = await collectionRepository.findPublicBySlug(slug);
-    if (!collection)
-      throw new AppError("NOT_FOUND", "Collection not found.", HTTP_STATUS.NOT_FOUND);
+    if (!collection) throw collectionErrors.notFound();
 
     const [rows, total] = await Promise.all([
       collectionRepository.listPublicProducts({

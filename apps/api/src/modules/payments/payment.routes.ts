@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -7,7 +8,7 @@ import { validate } from "#middlewares/validate.js";
 import { paymentController } from "./payment.controller.js";
 import { paymentOrderIdParamSchema } from "./payment.schemas.js";
 
-const INITIATE_WINDOW_MS = 5 * 60 * 1000;
+const INITIATE_WINDOW_MS = 5 * millisecondsInMinute;
 const INITIATE_MAX_REQUESTS = 10;
 
 const initiateRateLimit = rateLimit({

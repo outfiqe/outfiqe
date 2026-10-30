@@ -1,4 +1,5 @@
-﻿import { Router } from "express";
+﻿import { millisecondsInMinute } from "date-fns/constants";
+import { Router } from "express";
 
 import { rateLimitHandleChangesOnly } from "#middlewares/handle-change-rate-limit.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -17,7 +18,7 @@ import {
   userIdParamSchema,
 } from "./user.schemas.js";
 
-const HANDLE_AVAILABILITY_WINDOW_MS = 60 * 1000;
+const HANDLE_AVAILABILITY_WINDOW_MS = millisecondsInMinute;
 const HANDLE_AVAILABILITY_MAX_REQUESTS = 60;
 
 const handleAvailabilityRateLimit = rateLimit({

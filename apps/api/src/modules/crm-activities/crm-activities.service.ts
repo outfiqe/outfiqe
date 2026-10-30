@@ -10,6 +10,7 @@ import { crmPipelineRepository } from "#modules/crm-pipeline/crm-pipeline.reposi
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
+import { crmActivitiesErrors } from "./crm-activities.errors.js";
 import { crmActivitiesRepository } from "./crm-activities.repository.js";
 import type {
   ActivityRecord,
@@ -195,7 +196,7 @@ export const crmActivitiesService = {
     actorUserId: string | null,
   ): Promise<TaskRecord> {
     const existing = await crmActivitiesRepository.findTask(organizationId, taskId);
-    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw crmActivitiesErrors.taskNotFound();
 
     let reassignedUserId: string | null = null;
     if (data.assigneeMembershipId && data.assigneeMembershipId !== existing.assigneeMembershipId) {
@@ -223,7 +224,7 @@ export const crmActivitiesService = {
 
   async deleteTask(organizationId: string, taskId: string): Promise<void> {
     const existing = await crmActivitiesRepository.findTask(organizationId, taskId);
-    if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw crmActivitiesErrors.taskNotFound();
     await crmActivitiesRepository.deleteTask(organizationId, taskId);
   },
 

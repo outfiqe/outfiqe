@@ -20,6 +20,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
@@ -46,7 +47,7 @@ const NewTaskModal = ({
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: { title: "", assigneeMembershipId: members[0]?.id ?? "", dueAt: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({

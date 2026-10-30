@@ -1,11 +1,10 @@
 import { PRODUCT_SORT } from "@outfiqe/utils";
+import { millisecondsInSecond } from "date-fns/constants";
 import { LRUCache } from "lru-cache";
 
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { isUuid } from "#lib/uuid.utils.js";
 import logger from "#lib/winston.utils.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
@@ -17,6 +16,7 @@ import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "../product.constants.js";
+import { productErrors } from "../product.errors.js";
 import type {
   AutocompleteQuery,
   ListBrandProductsQuery,
@@ -42,11 +42,10 @@ import { productCatalogRepository } from "./catalog.repository.js";
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "product-autocomplete";
-const MS_PER_SECOND = 1000;
 
 const autocompleteMemoryCache = new LRUCache<string, ProductSuggestion[]>({
   max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * MS_PER_SECOND,
+  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * millisecondsInSecond,
 });
 
 const hydrateSavedFlags = async (
@@ -60,6 +59,89 @@ const hydrateSavedFlags = async (
     products.map((product) => product.id),
   );
   return products.map((product) => ({ ...product, isSaved: savedProductIds.has(product.id) }));
+};
+
+type PublicProductFilters = Pick<
+  ListPublicProductsQuery,
+  "minPrice" | "maxPrice" | "inStock" | "thrift"
+> & { categoryId?: string; productTypeId?: string };
+
+type PublicProductRow = Parameters<typeof toPublicProduct>[0];
+
+const hasNoBrowseFilters = ({
+  categoryId,
+  productTypeId,
+  minPrice,
+  maxPrice,
+  inStock,
+  thrift,
+}: PublicProductFilters): boolean =>
+  !categoryId && !productTypeId && !minPrice && !maxPrice && !inStock && thrift === undefined;
+
+const toCountedProductPage = async (
+  rows: PublicProductRow[],
+  nextCursor: string | null,
+  { total, brandCount }: { total: number; brandCount: number },
+  viewerId?: string,
+): Promise<PublicProductPage> => {
+  const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+  return { products, nextCursor, total, brandCount };
+};
+
+const searchPublicProducts = async (
+  { categoryId, productTypeId, minPrice, maxPrice, inStock, thrift }: PublicProductFilters,
+  { query, cursor, limit }: { query: string; cursor?: string; limit: number },
+  viewerId?: string,
+): Promise<PublicProductPage> => {
+  const offset = decodeCursor<ProductSearchCursor>(cursor)?.offset ?? 0;
+  const { ids, total, brandCount } = await productCatalogRepository.searchProductIds({
+    query,
+    limit,
+    offset,
+    categoryId,
+    productTypeId,
+    minPrice,
+    maxPrice,
+    inStockOnly: inStock,
+    thrift,
+  });
+  const rows = await productCatalogRepository.listApprovedByIds(ids);
+  const nextOffset = offset + ids.length;
+  const nextCursor =
+    nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
+
+  return toCountedProductPage(rows, nextCursor, { total, brandCount }, viewerId);
+};
+
+const listTrendingBrowsePage = async (
+  cursor: string | undefined,
+  limit: number,
+  viewerId?: string,
+): Promise<PublicProductPage | null> => {
+  const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
+  const isColdStart = ids.length === 0 && !cursor;
+  if (isColdStart) return null;
+
+  const [rows, counts] = await Promise.all([
+    productCatalogRepository.listApprovedByIds(ids),
+    productCatalogRepository.countPublic({}),
+  ]);
+  return toCountedProductPage(rows, nextCursor, counts, viewerId);
+};
+
+const listSaleBrowsePage = async (
+  cursor: string | undefined,
+  limit: number,
+  viewerId?: string,
+): Promise<PublicProductPage | null> => {
+  const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
+  if (ids.length === 0 && !cursor) return null;
+
+  const [rows, counts] = await Promise.all([
+    productCatalogRepository.listApprovedByIds(ids),
+    productCatalogRepository.countPublic({ sort: PRODUCT_SORT.ON_SALE }),
+  ]);
+  return toCountedProductPage(rows, nextCursor, counts, viewerId);
 };
 
 export const productCatalogService = {
@@ -116,83 +198,18 @@ export const productCatalogService = {
     const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
 
-    if (q) {
-      const offset = decodeCursor<ProductSearchCursor>(cursor)?.offset ?? 0;
-      const { ids, total, brandCount } = await productCatalogRepository.searchProductIds({
-        query: q,
-        limit,
-        offset,
-        categoryId,
-        productTypeId,
-        minPrice,
-        maxPrice,
-        inStockOnly: inStock,
-        thrift,
-      });
-      const rows = await productCatalogRepository.listApprovedByIds(ids);
-      const nextOffset = offset + ids.length;
-      const nextCursor =
-        nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
+    const browseFilters = { categoryId, productTypeId, minPrice, maxPrice, inStock, thrift };
 
-      const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-      return { products, nextCursor, total, brandCount };
+    if (q) return searchPublicProducts(browseFilters, { query: q, cursor, limit }, viewerId);
+
+    if (sort === PRODUCT_SORT.TRENDING && hasNoBrowseFilters(browseFilters)) {
+      const trendingPage = await listTrendingBrowsePage(cursor, limit, viewerId);
+      if (trendingPage) return trendingPage;
     }
 
-    const isUnfilteredTrendingBrowse =
-      sort === PRODUCT_SORT.TRENDING &&
-      !categoryId &&
-      !productTypeId &&
-      !minPrice &&
-      !maxPrice &&
-      !inStock &&
-      thrift === undefined;
-
-    if (isUnfilteredTrendingBrowse) {
-      const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
-      const isColdStart = ids.length === 0 && !cursor;
-
-      if (!isColdStart) {
-        const [rows, counts] = await Promise.all([
-          productCatalogRepository.listApprovedByIds(ids),
-          productCatalogRepository.countPublic({}),
-        ]);
-
-        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-        return {
-          products,
-          nextCursor,
-          total: counts.total,
-          brandCount: counts.brandCount,
-        };
-      }
-    }
-
-    const isUnfilteredSaleBrowse =
-      sort === PRODUCT_SORT.ON_SALE &&
-      !categoryId &&
-      !productTypeId &&
-      !minPrice &&
-      !maxPrice &&
-      !inStock &&
-      thrift === undefined;
-
-    if (isUnfilteredSaleBrowse) {
-      const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
-
-      if (ids.length > 0 || cursor) {
-        const [rows, counts] = await Promise.all([
-          productCatalogRepository.listApprovedByIds(ids),
-          productCatalogRepository.countPublic({ sort: PRODUCT_SORT.ON_SALE }),
-        ]);
-
-        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
-        return {
-          products,
-          nextCursor,
-          total: counts.total,
-          brandCount: counts.brandCount,
-        };
-      }
+    if (sort === PRODUCT_SORT.ON_SALE && hasNoBrowseFilters(browseFilters)) {
+      const salePage = await listSaleBrowsePage(cursor, limit, viewerId);
+      if (salePage) return salePage;
     }
 
     const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
@@ -223,7 +240,7 @@ export const productCatalogService = {
 
   async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
     const product = await productCatalogRepository.findPublicById(id);
-    if (!product) throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
+    if (!product) throw productErrors.notFound();
 
     const { brandId, brand, sizes, images, wornByCount, productType, isStretchable } = product;
     const { supportsFitRanges } = productType;

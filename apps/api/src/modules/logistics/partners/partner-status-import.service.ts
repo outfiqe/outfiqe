@@ -3,6 +3,7 @@ import { PartnerStatusImportRowOutcome, TrackingEventSource } from "#generated/p
 import { CsvParseError, parseCsv } from "#lib/csv.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerEvents } from "../logistics.partner-events.js";
 import type { CreatePartnerStatusImportBody } from "./partner.schemas.js";
 import type { PartnerStatusImportView } from "./partner.types.js";
@@ -123,7 +124,7 @@ export const logisticsPartnerStatusImportService = {
   ): Promise<PartnerStatusImportView> {
     const partner = await logisticsPartnerStatusImportRepository.findPartnerForImport(partnerId);
     if (!partner) {
-      throw new AppError("PARTNER_NOT_FOUND", "Delivery partner not found.", HTTP_STATUS.NOT_FOUND);
+      throw logisticsErrors.partnerNotFound();
     }
     const { columns, dataRows } = splitHeader(readSheetRows(csv));
     const [firstActiveAccount] = partner.accounts;

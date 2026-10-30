@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { ReportRowSkeleton } from "@/components/ReportRowSkeleton";
 import { ApiClientError } from "@/lib/apiClient";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { tagReportsApi } from "../api/tagReportsApi";
@@ -89,7 +90,7 @@ export const TagReportsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <ReportRowSkeleton key={index} hasLeadingName />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load tag reports.</p>}

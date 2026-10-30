@@ -22,6 +22,7 @@ import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.co
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsRiderRepository } from "../riders/rider.repository.js";
 import { logisticsRiderPayRepository, type TaskToPay } from "./rider-pay.repository.js";
 import type {
@@ -99,11 +100,7 @@ const countStopsPaidFor = async (
 const requireRiderProfile = async (userId: string) => {
   const rider = await logisticsRiderRepository.findRiderByUserId(userId);
   if (!rider) {
-    throw new AppError(
-      "RIDER_NOT_FOUND",
-      "No rider profile for this account.",
-      HTTP_STATUS.FORBIDDEN,
-    );
+    throw logisticsErrors.noRiderProfile();
   }
   return rider;
 };

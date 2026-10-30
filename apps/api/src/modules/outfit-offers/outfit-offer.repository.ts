@@ -16,6 +16,8 @@ import type { DbClient } from "#types/db.types.js";
 
 import type { OfferRow } from "./outfit-offer.utils.js";
 
+const LOOK_NOT_LIVE = false;
+
 export const offerRowSelect = {
   id: true,
   outfitId: true,
@@ -330,7 +332,7 @@ export const outfitOfferRepository = {
   },
 
   async isLookLive(client: DbClient, lookId: string | null): Promise<boolean> {
-    if (!lookId) return false;
+    if (!lookId) return LOOK_NOT_LIVE;
     const look = await client.creatorLook.findFirst({
       where: { id: lookId, deletedAt: null },
       select: { id: true },

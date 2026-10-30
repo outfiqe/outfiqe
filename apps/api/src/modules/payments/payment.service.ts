@@ -21,6 +21,7 @@ import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
+import { paymentErrors } from "./payment.errors.js";
 import { paymentRepository } from "./payment.repository.js";
 import type {
   PaymentInitiateResult,
@@ -176,7 +177,7 @@ const runVerify = async (order: PaymentOrder): Promise<PaymentVerifyStatusValue>
 export const paymentService = {
   async initiate(userId: string, orderId: string): Promise<PaymentInitiateResult> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw paymentErrors.notFound();
     if (order.paymentMethod === PaymentMethod.COD) {
       throw new AppError(
         "INVALID_PAYMENT_METHOD",
@@ -188,22 +189,14 @@ export const paymentService = {
       throw new AppError("ORDER_CANCELLED", "This order was cancelled.", HTTP_STATUS.CONFLICT);
     }
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
-      throw new AppError(
-        "ALREADY_SETTLED",
-        "This order has already been paid.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw paymentErrors.alreadySettled();
     }
 
     const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
     if (priorAttempt?.transactionRef) {
       const priorAttemptStatus = await runVerify(order);
       if (priorAttemptStatus === PaymentVerifyStatus.COMPLETE) {
-        throw new AppError(
-          "ALREADY_SETTLED",
-          "This order has already been paid.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw paymentErrors.alreadySettled();
       }
       await paymentRepository.failTransaction(priorAttempt.id, {
         [SUPERSEDED_BY_RETRY_MARKER]: true,
@@ -237,7 +230,7 @@ export const paymentService = {
 
   async verify(userId: string, orderId: string): Promise<{ status: PaymentVerifyStatusValue }> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw paymentErrors.notFound();
 
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       return {

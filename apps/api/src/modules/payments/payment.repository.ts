@@ -11,6 +11,9 @@ import type { DbClient } from "#types/db.types.js";
 
 import { SUPERSEDED_BY_RETRY_MARKER, VERIFIABLE_ATTEMPTS_LIMIT } from "./payment.constants.js";
 
+const ORDER_NOT_EXPIRED = false;
+const ORDER_EXPIRED = true;
+
 const SUPERSEDED_ATTEMPT_FILTER = {
   status: PaymentTransactionStatus.FAILED,
   rawResponse: { path: [SUPERSEDED_BY_RETRY_MARKER], equals: true },
@@ -160,10 +163,10 @@ export const paymentRepository = {
         where: { id: orderId, paymentStatus: PaymentStatus.INITIATED },
         data: { paymentStatus: PaymentStatus.FAILED, fulfilmentStatus: FulfilmentStatus.CANCELLED },
       });
-      if (count === NO_ORDERS_EXPIRED) return false;
+      if (count === NO_ORDERS_EXPIRED) return ORDER_NOT_EXPIRED;
 
       await paymentRepository.failPendingTransactions(tx, orderId);
-      return true;
+      return ORDER_EXPIRED;
     });
   },
 

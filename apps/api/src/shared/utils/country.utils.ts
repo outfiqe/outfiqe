@@ -2,12 +2,15 @@ import { z } from "zod";
 
 import { SUPPORTED_COUNTRY_CODES } from "#constants/country.constants.js";
 
+const TIME_ZONE_ACCEPTED = true;
+const TIME_ZONE_REJECTED = false;
+
 export const isValidTimeZone = (timeZone: string): boolean => {
   try {
     new Intl.DateTimeFormat("en", { timeZone });
-    return true;
+    return TIME_ZONE_ACCEPTED;
   } catch {
-    return false;
+    return TIME_ZONE_REJECTED;
   }
 };
 

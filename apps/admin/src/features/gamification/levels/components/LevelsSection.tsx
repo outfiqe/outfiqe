@@ -20,7 +20,9 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import {
   type CreateLevelInput,
@@ -118,7 +120,7 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelFormSchema),
     defaultValues: formForLevel(level),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -172,7 +174,7 @@ export const LevelsSection = () => {
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelFormSchema),
     defaultValues: EMPTY_LEVEL_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({
@@ -211,7 +213,9 @@ export const LevelsSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <ActionRowSkeleton key={index} />
+          ))}
         {levels?.length === 0 && <p className="text-sm text-muted-foreground">No levels yet.</p>}
 
         {levels?.map((level) => (

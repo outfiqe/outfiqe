@@ -1,68 +1,41 @@
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { TagRejectionReason } from "#generated/prisma/enums.js";
 import { TagApprovalSource, TagReviewStatus } from "#generated/prisma/enums.js";
 import { canTransitionTagReview } from "#lib/tag-review.utils.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
 
+import { tagReviewErrors } from "./tag-review.errors.js";
 import { tagReviewRepository } from "./tag-review.repository.js";
 import type { ApproveTagBody, ListTagReviewsQuery, RejectTagBody } from "./tag-review.schemas.js";
-import type { ReviewableTag, TagReviewMetrics, TagReviewQueuePage } from "./tag-review.types.js";
+import type {
+  ReviewableTag,
+  TagReviewMetrics,
+  TagReviewQueuePage,
+  TransitionableTag,
+} from "./tag-review.types.js";
 
-const INVALID_TRANSITION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
+type TagRejection = { reason: TagRejectionReason; note: string | null };
 
 const requireReviewableTag = async (userId: string, tagId: string): Promise<ReviewableTag> => {
   const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
   const tag = await tagReviewRepository.findReviewableTag(tagId, brandIds);
-  if (!tag) {
-    throw new AppError(
-      "TAG_REVIEW_NOT_FOUND",
-      "This tag review no longer exists.",
-      HTTP_STATUS.NOT_FOUND,
-    );
-  }
+  if (!tag) throw tagReviewErrors.notFound();
   return tag;
 };
 
 const requireTransition = (from: TagReviewStatus, to: TagReviewStatus): void => {
-  if (!canTransitionTagReview(from, to)) {
-    throw new AppError(
-      "TAG_REVIEW_INVALID_TRANSITION",
-      "This tag is no longer in a state you can change.",
-      INVALID_TRANSITION_STATUS,
-    );
-  }
+  if (!canTransitionTagReview(from, to)) throw tagReviewErrors.invalidTransition();
 };
 
-type TransitionableTag = {
-  id: string;
-  lookId: string;
-  creatorId: string;
-  productId: string;
-  reviewStatus: TagReviewStatus;
+const requireAppliedTransition = (applied: boolean): void => {
+  if (!applied) throw tagReviewErrors.alreadyResolved();
 };
 
-export const applyTagRejection = async (
+const publishTagRejectionEffects = async (
   tag: TransitionableTag,
-  {
-    reason,
-    note,
-    reviewedById,
-  }: { reason: TagRejectionReason; note: string | null; reviewedById: string },
-): Promise<boolean> => {
-  const wasApproved = tag.reviewStatus === TagReviewStatus.APPROVED;
-
-  const applied = await tagReviewRepository.transitionTag(tag.id, tag.reviewStatus, {
-    reviewStatus: TagReviewStatus.REJECTED,
-    approvalSource: null,
-    reviewedById,
-    reviewedAt: new Date(),
-    rejectionReason: reason,
-    rejectionNote: note,
-  });
-  if (!applied) return false;
-
+  wasApproved: boolean,
+  { reason, note }: TagRejection,
+): Promise<void> => {
   if (wasApproved) {
     await productService.recountWornBy(tag.productId);
   }
@@ -78,7 +51,44 @@ export const applyTagRejection = async (
       note,
     },
   );
-  return true;
+};
+
+const publishTagApprovalEffects = async (
+  tag: TransitionableTag,
+  source: TagApprovalSource,
+): Promise<void> => {
+  await productService.recountWornBy(tag.productId);
+  await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
+    lookId: tag.lookId,
+    creatorId: tag.creatorId,
+    productId: tag.productId,
+  });
+  await eventBus.publish(DomainEvents.PRODUCT_TAG_APPROVED, {
+    tagId: tag.id,
+    lookId: tag.lookId,
+    creatorId: tag.creatorId,
+    productId: tag.productId,
+    auto: source !== TagApprovalSource.BRAND,
+  });
+};
+
+export const applyTagRejection = async (
+  tag: TransitionableTag,
+  { reason, note, reviewedById }: TagRejection & { reviewedById: string },
+): Promise<boolean> => {
+  const wasApproved = tag.reviewStatus === TagReviewStatus.APPROVED;
+
+  const applied = await tagReviewRepository.transitionTag(tag.id, tag.reviewStatus, {
+    reviewStatus: TagReviewStatus.REJECTED,
+    approvalSource: null,
+    reviewedById,
+    reviewedAt: new Date(),
+    rejectionReason: reason,
+    rejectionNote: note,
+  });
+
+  if (applied) await publishTagRejectionEffects(tag, wasApproved, { reason, note });
+  return applied;
 };
 
 export const applyTagApproval = async (
@@ -93,31 +103,9 @@ export const applyTagApproval = async (
     rejectionReason: null,
     rejectionNote: null,
   });
-  if (!applied) return false;
 
-  await productService.recountWornBy(tag.productId);
-  await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
-    lookId: tag.lookId,
-    creatorId: tag.creatorId,
-    productId: tag.productId,
-  });
-  await eventBus.publish(DomainEvents.PRODUCT_TAG_APPROVED, {
-    tagId: tag.id,
-    lookId: tag.lookId,
-    creatorId: tag.creatorId,
-    productId: tag.productId,
-    auto: source !== TagApprovalSource.BRAND,
-  });
-  return true;
-};
-
-const requireAppliedTransition = (applied: boolean): void => {
-  if (applied) return;
-  throw new AppError(
-    "TAG_REVIEW_ALREADY_RESOLVED",
-    "Someone already reviewed this tag — refresh to see its current status.",
-    HTTP_STATUS.CONFLICT,
-  );
+  if (applied) await publishTagApprovalEffects(tag, source);
+  return applied;
 };
 
 export const tagReviewService = {
@@ -165,12 +153,11 @@ export const tagReviewService = {
   async takeDownTagAsPlatform(
     tagId: string,
     reviewedById: string,
-    { reason, note }: { reason: TagRejectionReason; note: string | null },
+    { reason, note }: TagRejection,
   ): Promise<boolean> {
     const tag = await tagReviewRepository.findTagForTransition(tagId);
-    if (!tag || !canTransitionTagReview(tag.reviewStatus, TagReviewStatus.REJECTED)) {
-      return false;
-    }
-    return applyTagRejection(tag, { reason, note, reviewedById });
+    const canTakeDown =
+      tag !== null && canTransitionTagReview(tag.reviewStatus, TagReviewStatus.REJECTED);
+    return canTakeDown && applyTagRejection(tag, { reason, note, reviewedById });
   },
 };

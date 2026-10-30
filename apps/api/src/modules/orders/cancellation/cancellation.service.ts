@@ -21,6 +21,7 @@ import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
+import { orderErrors } from "../order.errors.js";
 import { orderRepository } from "../order.repository.js";
 import type { CancelOrderActor } from "../order.types.js";
 import { listRemainingUnits } from "../refunds/refund.claim.js";
@@ -74,12 +75,80 @@ const refundRemainingUnits = async (
   );
 };
 
+type OrderForCancellation = NonNullable<
+  Awaited<ReturnType<typeof orderRepository.findForAdminAction>>
+>;
+
+const settleCancellationInTransaction = async (
+  tx: Prisma.TransactionClient,
+  {
+    order,
+    orderId,
+    actor,
+    reason,
+    stockWasCommitted,
+  }: {
+    order: OrderForCancellation;
+    orderId: string;
+    actor: CancelOrderActor;
+    reason: string;
+    stockWasCommitted: boolean;
+  },
+) => {
+  const isMarked = await orderRepository.markCancelled(
+    tx,
+    orderId,
+    CANCELLABLE_FULFILMENT_STATUSES,
+  );
+  if (!isMarked) return null;
+
+  await orderFulfilmentGroupRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
+  await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, {
+    fulfilmentStatus: FulfilmentStatus.CANCELLED,
+    fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+  });
+
+  if (order.paymentStatus === PaymentStatus.INITIATED) {
+    await orderRepository.failUnsettledPayment(tx, orderId);
+    await paymentRepository.failPendingTransactions(tx, orderId);
+  }
+
+  if (stockWasCommitted) {
+    await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
+      kind: InventoryMovementKind.ORDER_RESTORE,
+      sourceType: InventoryMovementSource.ORDER,
+      sourceId: orderId,
+    });
+  }
+  await commissionRepository.voidForOrder(tx, orderId, reason);
+  await brandPayoutRepository.voidForOrder(tx, orderId, reason);
+
+  return { appliedRefund: await refundRemainingUnits(tx, orderId, actor, reason) };
+};
+
+const emailBuyerAboutCancellation = async (
+  { userId, total }: OrderForCancellation,
+  orderId: string,
+  wasRefunded: boolean,
+): Promise<void> => {
+  const buyer = await userRepository.findById(userId);
+  if (!buyer) return;
+
+  const { subject, html } = orderCancelledTemplate({ orderId, total, refunded: wasRefunded });
+  void sendEmail({
+    to: buyer.email,
+    subject,
+    body: `Order ${orderId} has been cancelled.`,
+    html,
+  });
+};
+
 export const orderCancellationService = {
   async cancel(orderId: string, actor: CancelOrderActor, reason: string): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
     if (actor.type === "BUYER" && order.userId !== actor.userId) {
-      throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+      throw orderErrors.notFound();
     }
     if (!CANCELLABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
@@ -92,64 +161,23 @@ export const orderCancellationService = {
     const stockWasCommitted =
       order.paymentMethod === PaymentMethod.COD || order.paymentStatus === PaymentStatus.PAID;
 
-    const cancellation = await prisma.$transaction(async (tx) => {
-      const isMarked = await orderRepository.markCancelled(
-        tx,
-        orderId,
-        CANCELLABLE_FULFILMENT_STATUSES,
-      );
-      if (!isMarked) return null;
-
-      await orderFulfilmentGroupRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
-      await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, {
-        fulfilmentStatus: FulfilmentStatus.CANCELLED,
-        fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
-      });
-
-      if (order.paymentStatus === PaymentStatus.INITIATED) {
-        await orderRepository.failUnsettledPayment(tx, orderId);
-        await paymentRepository.failPendingTransactions(tx, orderId);
-      }
-
-      if (stockWasCommitted) {
-        await productService.restoreStockForItems(tx, listUnrefundedStockLines(order.items), {
-          kind: InventoryMovementKind.ORDER_RESTORE,
-          sourceType: InventoryMovementSource.ORDER,
-          sourceId: orderId,
-        });
-      }
-      await commissionRepository.voidForOrder(tx, orderId, reason);
-      await brandPayoutRepository.voidForOrder(tx, orderId, reason);
-
-      return { appliedRefund: await refundRemainingUnits(tx, orderId, actor, reason) };
-    });
+    const cancellation = await prisma.$transaction((tx) =>
+      settleCancellationInTransaction(tx, { order, orderId, actor, reason, stockWasCommitted }),
+    );
 
     if (!cancellation) {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        "This order's status changed — refresh and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw orderErrors.invalidTransition();
     }
 
     const settlement = cancellation.appliedRefund
       ? await orderRefundEngine.finishAfterCommit(cancellation.appliedRefund)
       : null;
 
-    const buyer = await userRepository.findById(order.userId);
-    if (buyer) {
-      const { subject, html } = orderCancelledTemplate({
-        orderId,
-        total: order.total,
-        refunded: settlement === REFUND_SETTLEMENT.PAID_BY_GATEWAY,
-      });
-      void sendEmail({
-        to: buyer.email,
-        subject,
-        body: `Order ${orderId} has been cancelled.`,
-        html,
-      });
-    }
+    await emailBuyerAboutCancellation(
+      order,
+      orderId,
+      settlement === REFUND_SETTLEMENT.PAID_BY_GATEWAY,
+    );
 
     const actorDescription =
       actor.type === "ADMIN" ? `admin ${actor.adminUserId}` : `buyer ${actor.userId}`;

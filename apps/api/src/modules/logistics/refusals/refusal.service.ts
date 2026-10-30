@@ -1,10 +1,9 @@
 import { PLATFORM_DEFAULT_COUNTRY_CODE } from "#constants/country.constants.js";
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import {
   type CashOnDeliveryEligibility,
   checkCashOnDeliveryEligibility,
@@ -22,7 +21,7 @@ export type ShopperCodEligibility = Omit<CashOnDeliveryEligibility, "refusalCoun
 
 const requireOrderCustomer = async (orderId: string) => {
   const customer = await logisticsRefusalRepository.findOrderCustomer(orderId);
-  if (!customer) throw new AppError("ORDER_NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+  if (!customer) throw logisticsErrors.orderNotFound();
   return customer;
 };
 

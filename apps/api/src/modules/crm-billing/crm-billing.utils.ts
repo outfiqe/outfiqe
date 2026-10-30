@@ -27,20 +27,22 @@ export const clampSeatsToPlan = (planId: CrmPlanId, requestedSeats: number): num
 export const calculateInvoiceAmount = (planId: CrmPlanId, seats: number): number =>
   CRM_PLAN_CATALOG[planId].pricePerSeatPerMonth * seats;
 
+const subscriptionGrantsAdvancedAccess = ({
+  status,
+  currentPeriodEnd,
+}: Pick<SubscriptionRecord, "status" | "currentPeriodEnd">): boolean =>
+  ADVANCED_ACCESS_STATUSES.has(status) &&
+  (status === SubscriptionStatus.ACTIVE || isFuture(currentPeriodEnd));
+
 export const isAdvancedCrmEnabled = (
-  organization: AdvancedFeatureGateInput,
+  { isPlatformOrg, trialEndsAt }: AdvancedFeatureGateInput,
   subscription: Pick<SubscriptionRecord, "status" | "currentPeriodEnd"> | null,
 ): boolean => {
-  if (organization.isPlatformOrg) return true;
-
-  if (subscription && ADVANCED_ACCESS_STATUSES.has(subscription.status)) {
-    if (subscription.status === SubscriptionStatus.ACTIVE) return true;
-    return isFuture(subscription.currentPeriodEnd);
-  }
-
-  if (!subscription && organization.trialEndsAt) return isFuture(organization.trialEndsAt);
-
-  return false;
+  const isTrialRunning = trialEndsAt !== null && isFuture(trialEndsAt);
+  const hasPaidOrTrialAccess = subscription
+    ? subscriptionGrantsAdvancedAccess(subscription)
+    : isTrialRunning;
+  return isPlatformOrg || hasPaidOrTrialAccess;
 };
 
 export const toSubscriptionInvoiceRecord = (invoice: {

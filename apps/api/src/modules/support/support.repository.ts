@@ -1,3 +1,5 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import {
@@ -327,7 +329,7 @@ export const supportRepository = {
     ]);
 
     const oldestWaitingAgeHours = oldestWaiting
-      ? Math.round((Date.now() - oldestWaiting.createdAt.getTime()) / (60 * 60 * 1000))
+      ? Math.round((Date.now() - oldestWaiting.createdAt.getTime()) / millisecondsInHour)
       : null;
 
     return { open, unassigned, awaitingUs, oldestWaitingAgeHours };

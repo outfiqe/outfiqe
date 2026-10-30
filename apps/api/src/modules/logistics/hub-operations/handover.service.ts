@@ -11,6 +11,7 @@ import {
 import { withIdempotency } from "#lib/idempotency.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
@@ -22,8 +23,7 @@ import { logisticsParcelCash } from "./parcel-cash.js";
 
 const HANDOVER_IDEMPOTENCY_ENDPOINT = "logistics:hub-parcel-handover";
 
-const parcelNotFoundError = () =>
-  new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+const parcelNotFoundError = () => logisticsErrors.parcelNotFound();
 
 const requireParcelLabel = async (shipmentId: string): Promise<ParcelLabelView> => {
   await logisticsParcelCash.refreshParcelCash(shipmentId);
@@ -63,6 +63,36 @@ const requireParcelLabel = async (shipmentId: string): Promise<ParcelLabelView> 
   };
 };
 
+const requireBookedAndLabelledParcel = async (shipmentId: string) => {
+  const booking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
+    prisma,
+    shipmentId,
+  );
+  if (booking?.status !== PartnerBookingStatus.BOOKED) {
+    throw new AppError(
+      "PARCEL_NOT_BOOKED",
+      "Book this parcel with the partner and enter their parcel number before handing it over.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  const label = await requireParcelLabel(shipmentId);
+  if (label.labelPrintedAt === null) {
+    throw new AppError(
+      "LABEL_NOT_PRINTED",
+      "Print this parcel's label and stick it on before handing it over.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  if (!label.isLabelUpToDate) {
+    throw new AppError(
+      "LABEL_OUT_OF_DATE",
+      "The cash to collect has changed since the label was printed. Print a new label first.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  return booking;
+};
+
 const handOverOnce = async (
   staffUserId: string,
   { hubId, code }: HandOverParcelBody,
@@ -96,32 +126,7 @@ const handOverOnce = async (
     );
   }
 
-  const booking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
-    prisma,
-    shipment.id,
-  );
-  if (booking?.status !== PartnerBookingStatus.BOOKED) {
-    throw new AppError(
-      "PARCEL_NOT_BOOKED",
-      "Book this parcel with the partner and enter their parcel number before handing it over.",
-      HTTP_STATUS.CONFLICT,
-    );
-  }
-  const label = await requireParcelLabel(shipment.id);
-  if (label.labelPrintedAt === null) {
-    throw new AppError(
-      "LABEL_NOT_PRINTED",
-      "Print this parcel's label and stick it on before handing it over.",
-      HTTP_STATUS.CONFLICT,
-    );
-  }
-  if (!label.isLabelUpToDate) {
-    throw new AppError(
-      "LABEL_OUT_OF_DATE",
-      "The cash to collect has changed since the label was printed. Print a new label first.",
-      HTTP_STATUS.CONFLICT,
-    );
-  }
+  const booking = await requireBookedAndLabelledParcel(shipment.id);
 
   const outcome = await logisticsTrackingService.recordEvent({
     subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId: shipment.id },

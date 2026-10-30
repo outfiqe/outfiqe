@@ -1,4 +1,5 @@
-export const SALE_DISCOUNT_FRESHNESS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+import { millisecondsInDay, millisecondsInMinute } from "date-fns/constants";
+export const SALE_DISCOUNT_FRESHNESS_WINDOW_MS = 3 * millisecondsInDay;
 
 export const SALE_POPULARITY_WEIGHT_CAP = 8;
 export const SALE_FRESHNESS_WEIGHT_CAP = 1.5;
@@ -19,7 +20,7 @@ export const PURCHASE_HISTORY_LOOKUP_LIMIT = 300;
 
 export const SALE_RAIL_LIMIT = 5;
 
-export const SALE_SCORING_INTERVAL_MS = 30 * 60 * 1000;
+export const SALE_SCORING_INTERVAL_MS = 30 * millisecondsInMinute;
 export const SALE_CANDIDATE_POOL_SIZE = 50;
 export const SALE_DIVERSE_POOL_LIMIT = 30;
 export const SALE_MAX_PER_BRAND = 2;

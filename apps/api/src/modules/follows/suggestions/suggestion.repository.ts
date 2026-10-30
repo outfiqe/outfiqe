@@ -43,12 +43,21 @@ import { followGraphRepository } from "../graph/graph.repository.js";
 
 const SUGGESTED_LIMIT = 10;
 export const FOLLOWING_SCAN_CAP = 500;
+const NO_SIGNAL = 0;
+const SUGGESTION_SNAPSHOT_CACHE_NAMESPACE = "suggested-creators-snapshot";
 
 const ELIGIBLE_SUGGESTED_CREATOR_WHERE = {
   isCreator: true,
   creatorStatus: CreatorStatus.APPROVED,
   accountStatus: AccountStatus.ACTIVE,
 } as const;
+
+type CandidateSignalSources = {
+  mutualCountByCreatorId: Map<string, number>;
+  engagedCreatorIds: Set<string>;
+  hashtagMatchesByCreatorId: Map<string, number>;
+  momentumByCreatorId: Map<string, number>;
+};
 
 const listLegacySuggestedCreators = async (userId: string): Promise<UserRecord[]> => {
   const excludeIds = [
@@ -109,74 +118,65 @@ const readCreatorMomentumPool = async (poolSize: number): Promise<CreatorMomentu
   return [];
 };
 
-const buildRankedSuggestionIds = async (userId: string): Promise<string[]> => {
-  const now = new Date();
+const listLegacySuggestedCreatorIds = async (userId: string): Promise<string[]> => {
+  const legacyCreators = await listLegacySuggestedCreators(userId);
+  return legacyCreators.map((user) => user.id);
+};
 
-  const [followingIds, mutualCandidates, affinity, momentumPool] = await Promise.all([
-    followGraphRepository.listFollowingIds(userId, FollowTargetType.USER),
-    listMutualFollowCandidates(userId, MUTUAL_FOLLOW_CANDIDATE_LIMIT),
-    computeViewerEngagementAffinity(userId, SUGGESTION_ENGAGEMENT_LOOKBACK_DAYS),
-    readCreatorMomentumPool(SUGGESTION_CANDIDATE_POOL_SIZE),
-  ]);
-
-  const topTags = [...affinity.hashtagWeights.entries()]
-    .sort((a, b) => b[1] - a[1])
+const pickTopAffinityTags = (hashtagWeights: Map<string, number>): string[] =>
+  [...hashtagWeights.entries()]
+    .sort(([, leftWeight], [, rightWeight]) => rightWeight - leftWeight)
     .slice(0, HASHTAG_CANDIDATE_TOP_TAG_COUNT)
     .map(([tag]) => tag);
-  const hashtagCandidates = await listCreatorsByHashtagAffinity(
-    topTags,
-    HASHTAG_CANDIDATE_LOOKBACK_DAYS,
-    HASHTAG_CANDIDATE_LIMIT,
-  );
 
-  const excludedIds = new Set([...followingIds, userId]);
-  const mutualCountByCreatorId = new Map(
-    mutualCandidates.map((candidate) => [candidate.candidateId, candidate.mutualCount]),
-  );
-  const hashtagMatchesByCreatorId = new Map(
-    hashtagCandidates.map((candidate) => [candidate.creatorId, candidate.matchingPosts]),
-  );
-  const momentumByCreatorId = new Map(
-    momentumPool.map((entry) => [entry.creatorId, entry.momentum]),
-  );
-
+const collectCandidateIds = (
+  {
+    mutualCountByCreatorId,
+    engagedCreatorIds,
+    hashtagMatchesByCreatorId,
+    momentumByCreatorId,
+  }: CandidateSignalSources,
+  excludedIds: Set<string>,
+): Set<string> => {
   const candidateIds = new Set<string>([
     ...mutualCountByCreatorId.keys(),
-    ...affinity.engagedCreatorIds,
+    ...engagedCreatorIds,
     ...hashtagMatchesByCreatorId.keys(),
     ...momentumByCreatorId.keys(),
   ]);
   for (const id of excludedIds) candidateIds.delete(id);
+  return candidateIds;
+};
 
-  if (candidateIds.size === 0) {
-    const legacy = await listLegacySuggestedCreators(userId);
-    return legacy.map((user) => user.id);
-  }
+const scoreCandidates = (
+  candidateUsers: UserRecord[],
+  {
+    mutualCountByCreatorId,
+    engagedCreatorIds,
+    hashtagMatchesByCreatorId,
+    momentumByCreatorId,
+  }: CandidateSignalSources,
+  now: Date,
+): ScoredSuggestionCandidate[] =>
+  candidateUsers
+    .map((user) => {
+      const signals: CandidateSignals = {
+        mutualFollowCount: mutualCountByCreatorId.get(user.id) ?? NO_SIGNAL,
+        engagedNotFollowed: engagedCreatorIds.has(user.id),
+        hashtagMatchingPosts: hashtagMatchesByCreatorId.get(user.id) ?? NO_SIGNAL,
+        momentum: momentumByCreatorId.get(user.id) ?? NO_SIGNAL,
+        followerCount: user.followerCount,
+        creatorApprovedAt: user.creatorApprovedAt,
+      };
+      return { creatorId: user.id, signals, score: scoreSuggestionCandidate(signals, now) };
+    })
+    .sort(compareSuggestionCandidatesByScore);
 
-  const candidateUsers = await prisma.user.findMany({
-    where: {
-      id: { in: [...candidateIds] },
-      ...ELIGIBLE_SUGGESTED_CREATOR_WHERE,
-    },
-  });
-  if (candidateUsers.length === 0) {
-    const legacy = await listLegacySuggestedCreators(userId);
-    return legacy.map((user) => user.id);
-  }
-
-  const scoredCandidates: ScoredSuggestionCandidate[] = candidateUsers.map((user) => {
-    const signals: CandidateSignals = {
-      mutualFollowCount: mutualCountByCreatorId.get(user.id) ?? 0,
-      engagedNotFollowed: affinity.engagedCreatorIds.has(user.id),
-      hashtagMatchingPosts: hashtagMatchesByCreatorId.get(user.id) ?? 0,
-      momentum: momentumByCreatorId.get(user.id) ?? 0,
-      followerCount: user.followerCount,
-      creatorApprovedAt: user.creatorApprovedAt,
-    };
-    return { creatorId: user.id, signals, score: scoreSuggestionCandidate(signals, now) };
-  });
-  scoredCandidates.sort(compareSuggestionCandidatesByScore);
-
+const rankCandidateIds = (
+  scoredCandidates: ScoredSuggestionCandidate[],
+  userId: string,
+  now: Date,
+): string[] => {
   const rotated = applyWeightedRotation(
     scoredCandidates,
     SUGGESTION_ROTATION_TIE_BAND,
@@ -194,8 +194,49 @@ const buildRankedSuggestionIds = async (userId: string): Promise<string[]> => {
   return [...firstPage, ...rest].map((candidate) => candidate.creatorId);
 };
 
+const buildRankedSuggestionIds = async (userId: string): Promise<string[]> => {
+  const now = new Date();
+
+  const [followingIds, mutualCandidates, affinity, momentumPool] = await Promise.all([
+    followGraphRepository.listFollowingIds(userId, FollowTargetType.USER),
+    listMutualFollowCandidates(userId, MUTUAL_FOLLOW_CANDIDATE_LIMIT),
+    computeViewerEngagementAffinity(userId, SUGGESTION_ENGAGEMENT_LOOKBACK_DAYS),
+    readCreatorMomentumPool(SUGGESTION_CANDIDATE_POOL_SIZE),
+  ]);
+
+  const hashtagCandidates = await listCreatorsByHashtagAffinity(
+    pickTopAffinityTags(affinity.hashtagWeights),
+    HASHTAG_CANDIDATE_LOOKBACK_DAYS,
+    HASHTAG_CANDIDATE_LIMIT,
+  );
+
+  const signalSources: CandidateSignalSources = {
+    mutualCountByCreatorId: new Map(
+      mutualCandidates.map((candidate) => [candidate.candidateId, candidate.mutualCount]),
+    ),
+    engagedCreatorIds: affinity.engagedCreatorIds,
+    hashtagMatchesByCreatorId: new Map(
+      hashtagCandidates.map((candidate) => [candidate.creatorId, candidate.matchingPosts]),
+    ),
+    momentumByCreatorId: new Map(momentumPool.map((entry) => [entry.creatorId, entry.momentum])),
+  };
+
+  const candidateIds = collectCandidateIds(signalSources, new Set([...followingIds, userId]));
+  if (candidateIds.size === 0) return listLegacySuggestedCreatorIds(userId);
+
+  const candidateUsers = await prisma.user.findMany({
+    where: {
+      id: { in: [...candidateIds] },
+      ...ELIGIBLE_SUGGESTED_CREATOR_WHERE,
+    },
+  });
+  if (candidateUsers.length === 0) return listLegacySuggestedCreatorIds(userId);
+
+  return rankCandidateIds(scoreCandidates(candidateUsers, signalSources, now), userId, now);
+};
+
 const suggestionSnapshotKey = (sessionId: string) =>
-  redisKeys.cache("suggested-creators-snapshot", sessionId);
+  redisKeys.cache(SUGGESTION_SNAPSHOT_CACHE_NAMESPACE, sessionId);
 
 const getSuggestionSnapshot = async (sessionId: string): Promise<string[] | null> => {
   const key = suggestionSnapshotKey(sessionId);

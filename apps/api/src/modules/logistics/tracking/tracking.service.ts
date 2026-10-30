@@ -67,6 +67,13 @@ const loadSubjectOrderId = async (
   return loadedSubject?.orderId ?? throwSubjectNotFound();
 };
 
+const STATUS_NOT_MOVED = false;
+const STATUS_MOVED = true;
+
+type ShipmentSubject = NonNullable<
+  Awaited<ReturnType<typeof logisticsTrackingRepository.findShipmentSubject>>
+>;
+
 const toTrackingEventRow = (
   input: RecordTrackingEventInput,
 ): Prisma.TrackingEventUncheckedCreateInput => {
@@ -85,10 +92,10 @@ const tryMovePickupStatus = async (
   attemptsLeft: number,
 ): Promise<boolean> => {
   const nextStatus = pickupStatusForEventCode(input.code);
-  if (nextStatus === null || attemptsLeft === NO_ATTEMPTS_LEFT) return false;
+  if (nextStatus === null || attemptsLeft === NO_ATTEMPTS_LEFT) return STATUS_NOT_MOVED;
 
   const pickup = await logisticsTrackingRepository.findPickupSubject(tx, fulfilmentGroupId);
-  if (!pickup?.pickupStatus) return false;
+  if (!pickup?.pickupStatus) return STATUS_NOT_MOVED;
 
   const canMove = canApplyStatusMove({
     currentStatus: pickup.pickupStatus,
@@ -98,7 +105,7 @@ const tryMovePickupStatus = async (
     isCorrection: input.isCorrection ?? false,
     allowedNextStatuses: PICKUP_STATUS_NEXT,
   });
-  if (!canMove) return false;
+  if (!canMove) return STATUS_NOT_MOVED;
 
   const hasMoved = await logisticsTrackingRepository.movePickupStatus(tx, {
     fulfilmentGroupId,
@@ -180,6 +187,53 @@ const raiseEventAlert = async (
   ]);
 };
 
+const applyShipmentMoveEffects = async (
+  tx: TransactionClient,
+  {
+    shipmentId,
+    shipment,
+    nextStatus,
+    codCollectedAmount,
+    occurredAt,
+  }: {
+    shipmentId: string;
+    shipment: ShipmentSubject;
+    nextStatus: ShipmentStatus;
+    codCollectedAmount: number;
+    occurredAt: Date;
+  },
+): Promise<void> => {
+  const hasCollectedDifferentCash =
+    nextStatus === ShipmentStatus.DELIVERED && codCollectedAmount !== shipment.codAmountToCollect;
+  if (hasCollectedDifferentCash) {
+    await recordCollectedCashMismatch(tx, {
+      shipmentId,
+      orderId: shipment.orderId,
+      expectedAmount: shipment.codAmountToCollect,
+      collectedAmount: codCollectedAmount,
+      occurredAt,
+    });
+  }
+
+  await logisticsTrackingRepository.setCoarseStatusForParcelGroups(
+    tx,
+    shipmentId,
+    resolveCoarseGroupStatus({
+      pickupStatus: PickupStatus.IN_PARCEL,
+      shipmentStatus: nextStatus,
+      hasBeenInParcel: true,
+    }),
+    occurredAt,
+  );
+  if (nextStatus === ShipmentStatus.LOST) {
+    await enqueueOutboxEvent(tx, {
+      topic: OUTBOX_TOPIC.LOGISTICS_PARCEL_LOST,
+      aggregateId: shipmentId,
+      payload: { shipmentId },
+    });
+  }
+};
+
 const tryMoveShipmentStatus = async (
   tx: TransactionClient,
   shipmentId: string,
@@ -187,10 +241,10 @@ const tryMoveShipmentStatus = async (
   attemptsLeft: number,
 ): Promise<boolean> => {
   const nextStatus = shipmentStatusForEventCode(input.code);
-  if (nextStatus === null || attemptsLeft === NO_ATTEMPTS_LEFT) return false;
+  if (nextStatus === null || attemptsLeft === NO_ATTEMPTS_LEFT) return STATUS_NOT_MOVED;
 
   const shipment = await logisticsTrackingRepository.findShipmentSubject(tx, shipmentId);
-  if (!shipment) return false;
+  if (!shipment) return STATUS_NOT_MOVED;
 
   const canMove = canApplyStatusMove({
     currentStatus: shipment.status,
@@ -200,7 +254,7 @@ const tryMoveShipmentStatus = async (
     isCorrection: input.isCorrection ?? false,
     allowedNextStatuses: SHIPMENT_STATUS_NEXT,
   });
-  if (!canMove) return false;
+  if (!canMove) return STATUS_NOT_MOVED;
 
   const codCollectedAmount = input.codCollectedAmount ?? shipment.codAmountToCollect;
   const hasMoved = await logisticsTrackingRepository.moveShipmentStatus(tx, {
@@ -214,36 +268,14 @@ const tryMoveShipmentStatus = async (
     return tryMoveShipmentStatus(tx, shipmentId, input, attemptsLeft - NEXT_ATTEMPT_STEP);
   }
 
-  const hasCollectedDifferentCash =
-    nextStatus === ShipmentStatus.DELIVERED && codCollectedAmount !== shipment.codAmountToCollect;
-  if (hasCollectedDifferentCash) {
-    await recordCollectedCashMismatch(tx, {
-      shipmentId,
-      orderId: shipment.orderId,
-      expectedAmount: shipment.codAmountToCollect,
-      collectedAmount: codCollectedAmount,
-      occurredAt: input.occurredAt,
-    });
-  }
-
-  await logisticsTrackingRepository.setCoarseStatusForParcelGroups(
-    tx,
+  await applyShipmentMoveEffects(tx, {
     shipmentId,
-    resolveCoarseGroupStatus({
-      pickupStatus: PickupStatus.IN_PARCEL,
-      shipmentStatus: nextStatus,
-      hasBeenInParcel: true,
-    }),
-    input.occurredAt,
-  );
-  if (nextStatus === ShipmentStatus.LOST) {
-    await enqueueOutboxEvent(tx, {
-      topic: OUTBOX_TOPIC.LOGISTICS_PARCEL_LOST,
-      aggregateId: shipmentId,
-      payload: { shipmentId },
-    });
-  }
-  return true;
+    shipment,
+    nextStatus,
+    codCollectedAmount,
+    occurredAt: input.occurredAt,
+  });
+  return STATUS_MOVED;
 };
 
 const applyStatusChange = async (

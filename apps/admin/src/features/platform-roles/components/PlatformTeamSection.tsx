@@ -7,6 +7,7 @@ import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { platformRolesApi } from "../api/platformRolesApi";
 import type {
@@ -86,7 +87,7 @@ export const PlatformTeamSection = () => {
 
       <div className="mt-3 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               textLineCount={1}

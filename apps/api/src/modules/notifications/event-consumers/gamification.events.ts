@@ -5,7 +5,7 @@ import { NotificationEntityType, NotificationType } from "#generated/prisma/enum
 import { NOTIFICATION_CONSUMER_GROUP } from "../notification.constants.js";
 import { notificationService } from "../notification.service.js";
 
-export const registerGamificationNotificationConsumers = (): void => {
+const subscribeToAchievementUnlocked = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ACHIEVEMENT_UNLOCKED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -23,7 +23,9 @@ export const registerGamificationNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLevelUp = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LEVEL_UP,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -36,4 +38,9 @@ export const registerGamificationNotificationConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerGamificationNotificationConsumers = (): void => {
+  subscribeToAchievementUnlocked();
+  subscribeToLevelUp();
 };

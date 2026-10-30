@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -8,7 +9,7 @@ import { platformGuards } from "#modules/platform-access/platform-access.guards.
 import { tastePreferenceController } from "./taste-preference.controller.js";
 import { setTastePreferenceSchema } from "./taste-preference.schemas.js";
 
-const MUTATION_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MUTATION_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 const MUTATION_RATE_LIMIT_MAX_REQUESTS = 30;
 
 const mutationRateLimit = rateLimit({

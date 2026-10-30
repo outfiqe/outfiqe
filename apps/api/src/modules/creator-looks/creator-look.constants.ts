@@ -1,11 +1,13 @@
+import { millisecondsInDay, millisecondsInHour, millisecondsInMinute } from "date-fns/constants";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 
-export const HOUR_MS = 60 * 60 * 1000;
+export const HOUR_MS = millisecondsInHour;
 
 export const VALIDATION_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
-export const TRENDING_AGGREGATION_INTERVAL_MS = 15 * 60 * 1000;
-export const TRENDING_SCORING_INTERVAL_MS = 30 * 60 * 1000;
+export const TRENDING_AGGREGATION_INTERVAL_MS = 15 * millisecondsInMinute;
+export const TRENDING_SCORING_INTERVAL_MS = 30 * millisecondsInMinute;
 
 export const TREND_METRIC_RETENTION_DAYS = 14;
 export const TREND_BASELINE_WINDOW_DAYS = 14;
@@ -30,7 +32,7 @@ export const TREND_DECAY_HALF_LIFE_HOURS = 20;
 export const TREND_SMOOTHING = 2;
 export const TREND_MOMENTUM_CAP = 8;
 
-export const TREND_FRESHNESS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+export const TREND_FRESHNESS_WINDOW_MS = 3 * millisecondsInDay;
 export const TREND_FRESHNESS_MULTIPLIER = 1.15;
 
 export const TRENDING_HYBRID_MIN_SCORED_POOL_SIZE = 20;
@@ -52,8 +54,8 @@ export const FOR_YOU_FOLLOWED_SLOT_INTERVAL = 5;
 export const FOR_YOU_ANONYMOUS_TRENDING_BOOST = 0.3;
 export const FOR_YOU_LEGACY_POSITION_DECAY = 0.97;
 
-export const TAG_TREND_AGGREGATION_INTERVAL_MS = 15 * 60 * 1000;
-export const TAG_TREND_SCORING_INTERVAL_MS = 30 * 60 * 1000;
+export const TAG_TREND_AGGREGATION_INTERVAL_MS = 15 * millisecondsInMinute;
+export const TAG_TREND_SCORING_INTERVAL_MS = 30 * millisecondsInMinute;
 
 export const TAG_TREND_METRIC_RETENTION_DAYS = 14;
 export const TAG_TREND_BASELINE_WINDOW_DAYS = 14;
@@ -77,10 +79,10 @@ export const TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS = 30_000;
 
 export const AUTOCOMPLETE_LIMIT = 4;
 
-export const VIEW_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const VIEW_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 export const VIEW_RATE_LIMIT_MAX_REQUESTS = 60;
 
-export const COMMENT_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const COMMENT_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 export const COMMENT_RATE_LIMIT_MAX_REQUESTS = 20;
 
 export const COMMENT_REPLY_PREVIEW_COUNT = 2;

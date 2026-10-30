@@ -16,7 +16,7 @@ const isApprovedCreator = async (userId: string): Promise<boolean> => {
   return Boolean(user?.isCreator) && user?.creatorStatus === CreatorStatus.APPROVED;
 };
 
-export const registerSocialNotificationConsumers = (): void => {
+const subscribeToLookLiked = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_LIKED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -45,7 +45,9 @@ export const registerSocialNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookUnliked = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_UNLIKED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -59,7 +61,9 @@ export const registerSocialNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookCommented = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_COMMENTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -88,7 +92,9 @@ export const registerSocialNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookCommentReplied = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_COMMENT_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -120,7 +126,9 @@ export const registerSocialNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToUserFollowed = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.USER_FOLLOWED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -143,7 +151,9 @@ export const registerSocialNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToBrandFollowed = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_FOLLOWED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -170,4 +180,13 @@ export const registerSocialNotificationConsumers = (): void => {
       }
     },
   });
+};
+
+export const registerSocialNotificationConsumers = (): void => {
+  subscribeToLookLiked();
+  subscribeToLookUnliked();
+  subscribeToLookCommented();
+  subscribeToLookCommentReplied();
+  subscribeToUserFollowed();
+  subscribeToBrandFollowed();
 };

@@ -1,3 +1,5 @@
+import { millisecondsInHour, millisecondsInMinute } from "date-fns/constants";
+
 import type { CrmPlanDefinition, CrmPlanId } from "./crm-billing.types.js";
 
 export const CRM_PLAN_IDS = ["starter", "growth"] as const;
@@ -13,19 +15,19 @@ export const RENEWAL_LOOKAHEAD_DAYS = 3;
 
 export const PAST_DUE_GRACE_DAYS = 7;
 
-export const RENEWAL_SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+export const RENEWAL_SWEEP_INTERVAL_MS = 6 * millisecondsInHour;
 
-export const INVOICE_RECONCILE_INTERVAL_MS = 5 * 60 * 1000;
+export const INVOICE_RECONCILE_INTERVAL_MS = 5 * millisecondsInMinute;
 
-export const INVOICE_RECONCILE_AFTER_MS = 5 * 60 * 1000;
+export const INVOICE_RECONCILE_AFTER_MS = 5 * millisecondsInMinute;
 
-export const INVOICE_EXPIRE_AFTER_MS = 60 * 60 * 1000;
+export const INVOICE_EXPIRE_AFTER_MS = millisecondsInHour;
 
 export const DEFAULT_INVOICE_PAGE_SIZE = 20;
 
 export const MAX_INVOICE_PAGE_SIZE = 50;
 
-export const CRM_BILLING_CHECKOUT_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const CRM_BILLING_CHECKOUT_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 
 export const CRM_BILLING_CHECKOUT_RATE_LIMIT_MAX_REQUESTS = 20;
 

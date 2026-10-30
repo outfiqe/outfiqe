@@ -2,6 +2,7 @@ import type {
   ApprovedAccountKind as SharedApprovedAccountKind,
   NotificationFeedScope as SharedNotificationFeedScope,
 } from "@outfiqe/types";
+import { millisecondsInDay } from "date-fns/constants";
 
 import { NotificationType } from "#generated/prisma/enums.js";
 import {
@@ -75,7 +76,7 @@ export const CRITICAL_RETENTION_NOTIFICATION_TYPES: ReadonlySet<NotificationType
 
 export const STANDARD_READ_RETENTION_DAYS = 90;
 export const CRITICAL_READ_RETENTION_DAYS = 180;
-export const NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+export const NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS = millisecondsInDay;
 
 export const NOTIFICATION_GROUP_KEYS = {
   lookLiked: (lookId: string): string => `look-liked:${lookId}`,

@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -13,7 +14,7 @@ import {
   updateAddressSchema,
 } from "./address.schemas.js";
 
-const WRITE_WINDOW_MS = 60 * 60 * 1000;
+const WRITE_WINDOW_MS = millisecondsInHour;
 const WRITE_MAX_REQUESTS = 30;
 
 const writeRateLimit = rateLimit({

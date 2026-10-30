@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { adminInviteTemplate } from "#email-templates/account.templates.js";
@@ -13,7 +15,7 @@ import { adminInviteRepository } from "./admin-invite.repository.js";
 import type { AdminInviteListResult } from "./admin-invite.types.js";
 import { toSummary } from "./admin-invite.utils.js";
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = 7 * millisecondsInDay;
 
 export const adminInviteService = {
   async invite(email: string, name: string, roleId: string, invitedById: string): Promise<void> {

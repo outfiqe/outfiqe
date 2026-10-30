@@ -13,7 +13,7 @@ const isApprovedCreator = async (userId: string): Promise<boolean> => {
   return Boolean(user?.isCreator) && user?.creatorStatus === CreatorStatus.APPROVED;
 };
 
-export const registerXpEventConsumers = (): void => {
+const subscribeToLookCreated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_CREATED,
     groupName: XP_CONSUMER_GROUP,
@@ -26,7 +26,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookLiked = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_LIKED,
     groupName: XP_CONSUMER_GROUP,
@@ -42,7 +44,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookSaved = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_SAVED,
     groupName: XP_CONSUMER_GROUP,
@@ -55,7 +59,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToLookCommented = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_COMMENTED,
     groupName: XP_CONSUMER_GROUP,
@@ -78,7 +84,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToUserFollowed = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.USER_FOLLOWED,
     groupName: XP_CONSUMER_GROUP,
@@ -93,7 +101,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToProductPurchased = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_PURCHASED,
     groupName: XP_CONSUMER_GROUP,
@@ -106,7 +116,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToSaleGenerated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SALE_GENERATED,
     groupName: XP_CONSUMER_GROUP,
@@ -120,7 +132,9 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToProductTagged = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAGGED,
     groupName: XP_CONSUMER_GROUP,
@@ -134,4 +148,15 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerXpEventConsumers = (): void => {
+  subscribeToLookCreated();
+  subscribeToLookLiked();
+  subscribeToLookSaved();
+  subscribeToLookCommented();
+  subscribeToUserFollowed();
+  subscribeToProductPurchased();
+  subscribeToSaleGenerated();
+  subscribeToProductTagged();
 };

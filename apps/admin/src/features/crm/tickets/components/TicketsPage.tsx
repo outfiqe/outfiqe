@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "../../api/crmApi";
@@ -51,7 +52,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
   const form = useForm<TicketFormValues>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: { type: "COMPLAINT", title: "", description: "", customerUserId: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({

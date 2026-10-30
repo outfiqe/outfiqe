@@ -14,6 +14,7 @@ import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.co
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
 import { ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
+import { orderErrors } from "../order.errors.js";
 import { orderItemChangeAccess } from "../refunds/item-change-access.js";
 import { isGroupStillWithBrand } from "../refunds/line-cancellation.utils.js";
 import { orderRefundEngine } from "../refunds/refund.engine.js";
@@ -26,8 +27,7 @@ import type {
 import type { UnavailableItemRequestView } from "./unavailable-item.types.js";
 import { toUnavailableItemRequestView } from "./unavailable-item.utils.js";
 
-const groupNotFoundError = () =>
-  new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+const groupNotFoundError = () => orderErrors.notFound();
 
 const requestNotFoundError = () =>
   new AppError("UNAVAILABLE_REQUEST_NOT_FOUND", "Request not found.", HTTP_STATUS.NOT_FOUND);

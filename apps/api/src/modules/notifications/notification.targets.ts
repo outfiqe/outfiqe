@@ -16,6 +16,9 @@ type ResolveNotificationTargetInput = {
   recipientIsStaff?: boolean;
 };
 
+const CRM_TASK_ITEM_KIND = "task";
+const STAFF_RECIPIENT = true;
+
 const WEB_ROUTES = {
   dashboardOverview: "/overview",
   dashboardProfile: "/profile",
@@ -47,8 +50,14 @@ const ADMIN_ROUTES = {
 const web = (path: string): NotificationTarget => ({ surface: NotificationSurface.WEB, path });
 const admin = (path: string): NotificationTarget => ({ surface: NotificationSurface.ADMIN, path });
 
+const webEntityTarget = (listPath: string, entityId: string | null): NotificationTarget =>
+  entityId ? web(`${listPath}/${entityId}`) : web(listPath);
+
 const lookPermalink = (creatorHandle: string, lookId: string): string =>
   `/creator/${creatorHandle}?look=${lookId}`;
+
+const productReviewFormPath = (productId: string): string =>
+  `/product/${productId}?review=write#reviews`;
 
 const followerProfileTarget = (follower: NotificationMetadata["actor"]): NotificationTarget => {
   if (follower?.isCreator && follower.handle) return web(`/creator/${follower.handle}`);
@@ -104,7 +113,7 @@ const organizationAdminTarget = (
 const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarget =>
   organizationAdminTarget(
     metadata,
-    metadata.crmItemKind === "task" ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport,
+    metadata.crmItemKind === CRM_TASK_ITEM_KIND ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport,
   );
 
 const supportTicketTarget = (
@@ -147,11 +156,11 @@ export const resolveNotificationTarget = ({
     case NotificationType.ORDER_STATUS_CHANGED:
     case NotificationType.ORDER_REFUND_ISSUED:
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
-      return entityId ? web(`${WEB_ROUTES.ordersList}/${entityId}`) : web(WEB_ROUTES.ordersList);
+      return webEntityTarget(WEB_ROUTES.ordersList, entityId);
     case NotificationType.PRODUCT_REVIEWED:
       return web(WEB_ROUTES.brandProducts);
     case NotificationType.REVIEW_REQUESTED:
-      return entityId ? web(`/product/${entityId}?review=write#reviews`) : null;
+      return entityId ? web(productReviewFormPath(entityId)) : null;
     case NotificationType.WITHDRAW_REQUEST_APPROVED:
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
@@ -159,15 +168,13 @@ export const resolveNotificationTarget = ({
     case NotificationType.ACCOUNT_APPROVED:
       return web(WEB_ROUTES.dashboardOverview);
     case NotificationType.NEW_MESSAGE:
-      return entityId
-        ? web(`${WEB_ROUTES.messagesList}/${entityId}`)
-        : web(WEB_ROUTES.messagesList);
+      return webEntityTarget(WEB_ROUTES.messagesList, entityId);
     case NotificationType.SUPPORT_TICKET_REPLY:
     case NotificationType.SUPPORT_TICKET_RESOLVED:
       return supportTicketTarget(entityId, recipientIsStaff);
     case NotificationType.SUPPORT_TICKET_CREATED:
     case NotificationType.SUPPORT_TICKET_ASSIGNED:
-      return supportTicketTarget(entityId, true);
+      return supportTicketTarget(entityId, STAFF_RECIPIENT);
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return admin(ADMIN_ROUTES.brandApplications);
     case NotificationType.CRM_ITEM_ASSIGNED:
@@ -188,7 +195,7 @@ export const resolveNotificationTarget = ({
     case NotificationType.LOGISTICS_BRAND_NOTICE:
       return web(WEB_ROUTES.manageOrders);
     case NotificationType.ORDER_DELIVERY_LATE:
-      return entityId ? web(`${WEB_ROUTES.ordersList}/${entityId}`) : web(WEB_ROUTES.ordersList);
+      return webEntityTarget(WEB_ROUTES.ordersList, entityId);
     case NotificationType.COUPON_REDEMPTION_FLAGGED:
       return entityId
         ? admin(`${ADMIN_ROUTES.ordersList}/${entityId}`)
@@ -203,7 +210,7 @@ export const resolveNotificationTarget = ({
     case NotificationType.OUTFIT_MADE_PUBLIC:
     case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
     case NotificationType.OUTFIT_NEW_VERSION_AVAILABLE:
-      return entityId ? web(`${WEB_ROUTES.buildsList}/${entityId}`) : web(WEB_ROUTES.buildsList);
+      return webEntityTarget(WEB_ROUTES.buildsList, entityId);
     case NotificationType.OUTFIT_OFFER_RECEIVED:
     case NotificationType.OUTFIT_OFFER_ACCEPTED:
     case NotificationType.OUTFIT_OFFER_DECLINED:

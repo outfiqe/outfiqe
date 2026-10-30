@@ -8,6 +8,7 @@ activities with the subject's live order/payment history at read time.
 
 ## Structure
 
+- `crm-activities.errors.ts` — `crmActivitiesErrors`, the errors this module raises from more than one place.
 - `crm-activities.constants.ts` — the `partner | customer | deal` subject-type tuple and the
   timeline/task page-size bounds.
 - `crm-activities.types.ts` — `ActivityRecord`, `TaskRecord`, the `TimelineEntry` union

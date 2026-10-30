@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -16,7 +17,7 @@ import {
   updateCartItemBodySchema,
 } from "./cart.schemas.js";
 
-const COUPON_APPLY_WINDOW_MS = 5 * 60 * 1000;
+const COUPON_APPLY_WINDOW_MS = 5 * millisecondsInMinute;
 const COUPON_APPLY_MAX_ATTEMPTS = 10;
 
 const cartCouponApplyRateLimit = rateLimit({
