@@ -9,6 +9,7 @@ rest and only ever decrypted through one narrow, audited admin path.
 
 ## Structure
 
+- `bank-account.errors.ts` — `bankAccountErrors`, the errors this module raises from more than one place.
 - `bank-account.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin` needs `platform:withdraw:read` or
   `platform:withdraw:manage` (it only shows masked account numbers), while
   `PATCH /:id/verify` and `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`,

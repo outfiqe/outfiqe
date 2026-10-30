@@ -21,6 +21,9 @@ import {
 import { orderRefundRepository } from "./refund.repository.js";
 import { toStoredGatewayResponse } from "./refund.utils.js";
 
+const REFUND_NOT_SETTLED = false;
+const REFUND_SETTLED = true;
+
 const NO_OPEN_MANUAL_REFUNDS = 0;
 
 export const REFUND_SETTLEMENT = {
@@ -139,7 +142,7 @@ const payThroughGateway = async (refund: RefundToSettle): Promise<RefundSettleme
         method: OrderRefundMethod.GATEWAY,
         gatewayResponse,
       });
-      if (!isSettledNow) return false;
+      if (!isSettledNow) return REFUND_NOT_SETTLED;
       await paymentRepository.recordRefund(tx, {
         orderId: refund.orderId,
         provider: order.paymentMethod,
@@ -147,7 +150,7 @@ const payThroughGateway = async (refund: RefundToSettle): Promise<RefundSettleme
         rawResponse: gatewayOutcome.rawResponse,
       });
       await syncOrderPaymentStatus(tx, refund.orderId, order.total);
-      return true;
+      return REFUND_SETTLED;
     });
     if (isSettled) {
       await announceRefundUpdate(refund, ORDER_REFUND_OUTCOME.ISSUED, OrderRefundMethod.GATEWAY);
@@ -211,11 +214,11 @@ export const markManualRefundPaid = async ({
     }
     return refund;
   });
-  if (!paidRefund) return false;
+  if (!paidRefund) return REFUND_NOT_SETTLED;
   await announceRefundUpdate(
     paidRefund,
     ORDER_REFUND_OUTCOME.ISSUED,
     OrderRefundMethod.MANUAL_TRANSFER,
   );
-  return true;
+  return REFUND_SETTLED;
 };

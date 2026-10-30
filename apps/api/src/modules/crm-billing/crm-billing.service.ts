@@ -14,6 +14,7 @@ import { khaltiProvider } from "#modules/payments/providers/khalti.provider.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { BILLING_PERIOD_MONTHS, CRM_PLAN_CATALOG } from "./crm-billing.constants.js";
+import { crmBillingErrors } from "./crm-billing.errors.js";
 import { crmBillingRepository } from "./crm-billing.repository.js";
 import type {
   AdvancedFeatureGateInput,
@@ -217,7 +218,7 @@ export const crmBillingService = {
       invoiceId,
     );
     if (!invoice) {
-      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", HTTP_STATUS.NOT_FOUND);
+      throw crmBillingErrors.invoiceNotFound();
     }
     if (invoice.status !== "OPEN") {
       throw new AppError(
@@ -239,7 +240,7 @@ export const crmBillingService = {
       invoiceId,
     );
     if (!invoice) {
-      throw new AppError("INVOICE_NOT_FOUND", "Invoice not found.", HTTP_STATUS.NOT_FOUND);
+      throw crmBillingErrors.invoiceNotFound();
     }
 
     if (invoice.status === "PAID") return { status: PaymentVerifyStatus.COMPLETE };

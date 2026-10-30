@@ -44,6 +44,107 @@ const editDetailInclude = {
   },
 } as const;
 
+type ExistingLookTag = {
+  productId: string;
+  sizeWorn: string | null;
+  reviewStatus: TagReviewStatus;
+  reRequestCount: number;
+};
+
+type IncomingLookTag = UpdateCreatorLookInput["taggedProducts"][number];
+
+const toLookImageRows = (imageUrls: string[], imageAssetIds?: (string | null)[]) =>
+  imageUrls.map((url, sortOrder) => ({
+    url,
+    sortOrder,
+    imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+  }));
+
+const buildTagReRequestReset = (now: Date): Prisma.CreatorLookProductUncheckedUpdateInput => ({
+  reviewStatus: TagReviewStatus.PENDING,
+  approvalSource: null,
+  reviewedAt: null,
+  reviewedById: null,
+  rejectionReason: null,
+  rejectionNote: null,
+  reRequestCount: { increment: 1 },
+  submittedAt: now,
+});
+
+const updateExistingTag = async (
+  tx: Prisma.TransactionClient,
+  lookId: string,
+  tag: IncomingLookTag,
+  current: ExistingLookTag,
+  now: Date,
+): Promise<{ wasReRequested: boolean }> => {
+  const sizeChanged = current.sizeWorn !== tag.sizeWorn;
+  const shouldReRequest =
+    current.reviewStatus === TagReviewStatus.REJECTED &&
+    current.reRequestCount < MAX_TAG_RE_REQUESTS;
+
+  if (sizeChanged || shouldReRequest) {
+    await tx.creatorLookProduct.update({
+      where: { creatorLookId_productId: { creatorLookId: lookId, productId: tag.productId } },
+      data: {
+        ...(sizeChanged ? { sizeWorn: tag.sizeWorn } : {}),
+        ...(shouldReRequest ? buildTagReRequestReset(now) : {}),
+      },
+    });
+  }
+  return { wasReRequested: shouldReRequest };
+};
+
+const syncTaggedProducts = async (
+  tx: Prisma.TransactionClient,
+  {
+    lookId,
+    taggedProducts,
+    newTagStatuses,
+    existingByProductId,
+    now,
+  }: {
+    lookId: string;
+    taggedProducts: IncomingLookTag[];
+    newTagStatuses: UpdateCreatorLookInput["newTagStatuses"];
+    existingByProductId: Map<string, ExistingLookTag>;
+    now: Date;
+  },
+): Promise<{ newlyApprovedProductIds: string[]; submittedProductIds: string[] }> => {
+  const newlyApprovedProductIds: string[] = [];
+  const submittedProductIds: string[] = [];
+
+  for (const tag of taggedProducts) {
+    const current = existingByProductId.get(tag.productId);
+
+    if (current) {
+      const { wasReRequested } = await updateExistingTag(tx, lookId, tag, current, now);
+      if (wasReRequested) submittedProductIds.push(tag.productId);
+      continue;
+    }
+
+    const resolved = newTagStatuses.get(tag.productId);
+    if (!resolved) continue;
+    await tx.creatorLookProduct.create({
+      data: {
+        creatorLookId: lookId,
+        productId: tag.productId,
+        sizeWorn: tag.sizeWorn,
+        reviewStatus: resolved.reviewStatus,
+        approvalSource: resolved.approvalSource,
+        submittedAt: now,
+      },
+    });
+    if (resolved.reviewStatus === TagReviewStatus.APPROVED) {
+      newlyApprovedProductIds.push(tag.productId);
+    } else {
+      submittedProductIds.push(tag.productId);
+    }
+  }
+
+  return { newlyApprovedProductIds, submittedProductIds };
+};
+
 export const creatorLookRepository = {
   async findSummaryById(lookId: string): Promise<CreatorLookSummary | null> {
     const look = await prisma.creatorLook.findFirst({
@@ -72,13 +173,7 @@ export const creatorLookRepository = {
           imageUrl: imageUrls[0],
           layout,
           caption,
-          images: {
-            create: imageUrls.map((url, sortOrder) => ({
-              url,
-              sortOrder,
-              imageAssetId: imageAssetIds?.[sortOrder] ?? null,
-            })),
-          },
+          images: { create: toLookImageRows(imageUrls, imageAssetIds) },
           taggedProducts: {
             create: taggedProducts.map(({ productId, sizeWorn, reviewStatus, approvalSource }) => ({
               productId,
@@ -129,7 +224,6 @@ export const creatorLookRepository = {
         where: { creatorLookId: lookId },
         select: { productId: true, sizeWorn: true, reviewStatus: true, reRequestCount: true },
       });
-      const existingByProductId = new Map(existingTags.map((tag) => [tag.productId, tag]));
       const incomingProductIds = new Set(taggedProducts.map((tag) => tag.productId));
 
       const removedProductIds = existingTags
@@ -141,59 +235,13 @@ export const creatorLookRepository = {
         });
       }
 
-      const newlyApprovedProductIds: string[] = [];
-      const submittedProductIds: string[] = [];
-
-      for (const tag of taggedProducts) {
-        const current = existingByProductId.get(tag.productId);
-
-        if (!current) {
-          const resolved = newTagStatuses.get(tag.productId);
-          if (!resolved) continue;
-          await tx.creatorLookProduct.create({
-            data: {
-              creatorLookId: lookId,
-              productId: tag.productId,
-              sizeWorn: tag.sizeWorn,
-              reviewStatus: resolved.reviewStatus,
-              approvalSource: resolved.approvalSource,
-              submittedAt: now,
-            },
-          });
-          if (resolved.reviewStatus === TagReviewStatus.APPROVED) {
-            newlyApprovedProductIds.push(tag.productId);
-          } else {
-            submittedProductIds.push(tag.productId);
-          }
-          continue;
-        }
-
-        const sizeChanged = current.sizeWorn !== tag.sizeWorn;
-        const shouldReRequest =
-          current.reviewStatus === TagReviewStatus.REJECTED &&
-          current.reRequestCount < MAX_TAG_RE_REQUESTS;
-
-        if (!sizeChanged && !shouldReRequest) continue;
-
-        const data: Prisma.CreatorLookProductUncheckedUpdateInput = {};
-        if (sizeChanged) data.sizeWorn = tag.sizeWorn;
-        if (shouldReRequest) {
-          data.reviewStatus = TagReviewStatus.PENDING;
-          data.approvalSource = null;
-          data.reviewedAt = null;
-          data.reviewedById = null;
-          data.rejectionReason = null;
-          data.rejectionNote = null;
-          data.reRequestCount = { increment: 1 };
-          data.submittedAt = now;
-          submittedProductIds.push(tag.productId);
-        }
-
-        await tx.creatorLookProduct.update({
-          where: { creatorLookId_productId: { creatorLookId: lookId, productId: tag.productId } },
-          data,
-        });
-      }
+      const { newlyApprovedProductIds, submittedProductIds } = await syncTaggedProducts(tx, {
+        lookId,
+        taggedProducts,
+        newTagStatuses,
+        existingByProductId: new Map(existingTags.map((tag) => [tag.productId, tag])),
+        now,
+      });
 
       await tx.creatorLookHashtag.deleteMany({ where: { creatorLookId: lookId } });
       await tx.creatorLookImage.deleteMany({ where: { creatorLookId: lookId } });
@@ -203,13 +251,7 @@ export const creatorLookRepository = {
         data: {
           imageUrl: imageUrls[0],
           caption,
-          images: {
-            create: imageUrls.map((url, sortOrder) => ({
-              url,
-              sortOrder,
-              imageAssetId: imageAssetIds?.[sortOrder] ?? null,
-            })),
-          },
+          images: { create: toLookImageRows(imageUrls, imageAssetIds) },
         },
         include: taggedProductsInclude,
       });

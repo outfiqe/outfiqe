@@ -1,3 +1,5 @@
+import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
+
 import { FollowTargetType } from "#generated/prisma/enums.js";
 import type { BrandRecord } from "#modules/brands/brand.types.js";
 import type { UserRecord } from "#modules/users/user.types.js";
@@ -52,7 +54,7 @@ export const toBrandFollowTarget = (brand: BrandRecord): FollowTarget => ({
   followerCount: brand.followerCount,
 });
 
-const NEW_CREATOR_FRESHNESS_WINDOW_MS = NEW_CREATOR_FRESHNESS_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+const NEW_CREATOR_FRESHNESS_WINDOW_MS = NEW_CREATOR_FRESHNESS_WINDOW_DAYS * millisecondsInDay;
 
 export const isWithinNewCreatorFreshnessWindow = (
   creatorApprovedAt: Date | null,
@@ -140,7 +142,7 @@ export const compareSuggestionCandidatesByScore = (
   b: ScoredSuggestionCandidate,
 ): number => b.score - a.score || a.creatorId.localeCompare(b.creatorId);
 
-const ROTATION_SEED_HOUR_MS = 60 * 60 * 1000;
+const ROTATION_SEED_HOUR_MS = millisecondsInHour;
 
 const hashStringToInt = (value: string): number => {
   let hash = 0;

@@ -1,3 +1,5 @@
+import { millisecondsInMinute } from "date-fns/constants";
+
 import { CreatorLeaderboardCategory } from "#generated/prisma/enums.js";
 
 export const ACHIEVEMENT_METRIC = {
@@ -33,7 +35,7 @@ export const RANK_METRIC_CATEGORY: Partial<Record<AchievementMetric, CreatorLead
 export const UNRANKED_METRIC_VALUE = Number.MAX_SAFE_INTEGER;
 export const TOP_RANK_POSITION_OFFSET = 1;
 
-export const DYNAMIC_BADGE_RECHECK_INTERVAL_MS = 15 * 60 * 1000;
+export const DYNAMIC_BADGE_RECHECK_INTERVAL_MS = 15 * millisecondsInMinute;
 
 export const CONDITION_OPERATOR = {
   GTE: "gte",

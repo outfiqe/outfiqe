@@ -5,7 +5,7 @@ import { NotificationEntityType, NotificationType } from "#generated/prisma/enum
 import { NOTIFICATION_CONSUMER_GROUP } from "../notification.constants.js";
 import { notificationService } from "../notification.service.js";
 
-export const registerSupportNotificationConsumers = (): void => {
+const subscribeToSupportTicketCreated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_CREATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -19,7 +19,9 @@ export const registerSupportNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToSupportTicketAssigned = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_ASSIGNED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -39,7 +41,9 @@ export const registerSupportNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToSupportTicketStaffReplied = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_STAFF_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -56,7 +60,9 @@ export const registerSupportNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToSupportTicketCustomerReplied = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_CUSTOMER_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -75,7 +81,9 @@ export const registerSupportNotificationConsumers = (): void => {
         : notificationService.notifyPlatformStaff(staffReplyNotification));
     },
   });
+};
 
+const subscribeToSupportTicketResolved = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_RESOLVED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -92,4 +100,12 @@ export const registerSupportNotificationConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerSupportNotificationConsumers = (): void => {
+  subscribeToSupportTicketCreated();
+  subscribeToSupportTicketAssigned();
+  subscribeToSupportTicketStaffReplied();
+  subscribeToSupportTicketCustomerReplied();
+  subscribeToSupportTicketResolved();
 };

@@ -1,5 +1,9 @@
 # Payments — eSewa & Khalti
 
+n## Errors
+
+`payment.errors.ts` holds the errors this module raises from more than one place.
+
 ## Stock decrement happens at verify, not at checkout
 
 Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order is created (see `orders/README.md`) — only `settleVerified` does, inside the same atomic pattern as everywhere else: guard the settlement with a conditional `updateMany WHERE status = 'INITIATED'`, then decrement stock, all in one transaction. If the decrement fails (sold out in the gap between initiate and verify), the order is marked `paymentStatus: PAID, fulfilmentStatus: CANCELLED, needsManualRefund: true` — the payment can't be undone from our side, so it's flagged for a human to refund by hand rather than silently failing.

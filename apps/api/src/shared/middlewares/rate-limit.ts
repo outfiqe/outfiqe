@@ -1,3 +1,4 @@
+import { millisecondsInSecond } from "date-fns/constants";
 import type { NextFunction, Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
@@ -17,7 +18,6 @@ type RateLimitOptions = {
 };
 
 const DEFAULT_MESSAGE = "Too many requests. Please try again later.";
-const MS_PER_SECOND = 1000;
 
 export const rateLimit = ({
   namespace,
@@ -37,7 +37,10 @@ export const rateLimit = ({
 
       if (count > max) {
         const ttlMs = await redis.pttl(key);
-        res.setHeader("Retry-After", Math.ceil((ttlMs > 0 ? ttlMs : windowMs) / MS_PER_SECOND));
+        res.setHeader(
+          "Retry-After",
+          Math.ceil((ttlMs > 0 ? ttlMs : windowMs) / millisecondsInSecond),
+        );
 
         return next(
           new AppError("RATE_LIMITED", message ?? DEFAULT_MESSAGE, HTTP_STATUS.TOO_MANY_REQUESTS),

@@ -1,6 +1,7 @@
+import { millisecondsInMinute } from "date-fns/constants";
 export const MAX_PUSH_SUBSCRIPTIONS_PER_USER = 20;
 
-export const PUSH_WRITE_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const PUSH_WRITE_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 
 export const PUSH_WRITE_RATE_LIMIT_MAX_REQUESTS = 30;
 

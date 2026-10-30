@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { millisecondsInDay } from "date-fns/constants";
+
 import { decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -182,7 +184,7 @@ export const trendingService = {
     const bucketStart = truncateToHour(new Date());
     await trendingRepository.upsertHourlyMetrics(bucketStart);
 
-    const retentionCutoff = new Date(Date.now() - METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const retentionCutoff = new Date(Date.now() - METRIC_RETENTION_DAYS * millisecondsInDay);
     const deletedBuckets = await trendingRepository.deleteMetricsOlderThan(retentionCutoff);
 
     return { bucketStart, deletedBuckets };

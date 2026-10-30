@@ -7,6 +7,7 @@ import { generateRandomCode } from "#lib/random-code.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsRiderRepository } from "../riders/rider.repository.js";
 import { logisticsBagTagRepository } from "./bag-tag.repository.js";
 import type { CreateBagTagBatchBody, ListBagTagBatchesQuery } from "./bag-tag.schemas.js";
@@ -67,7 +68,7 @@ export const logisticsBagTagService = {
     createdById: string,
   ): Promise<BagTagBatchSheet> {
     if (!(await logisticsRiderRepository.findActiveHub(hubId))) {
-      throw new AppError("HUB_NOT_FOUND", "That hub isn't open.", HTTP_STATUS.NOT_FOUND);
+      throw logisticsErrors.hubNotOpen();
     }
 
     const batchId = await prisma.$transaction(async (tx) => {

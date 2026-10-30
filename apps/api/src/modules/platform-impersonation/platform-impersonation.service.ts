@@ -1,7 +1,9 @@
 import { addMinutes } from "date-fns/addMinutes";
+import { millisecondsInSecond } from "date-fns/constants";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import type { UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -18,6 +20,7 @@ import {
   IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS,
   IMPERSONATION_MAX_TTL_MINUTES,
 } from "./platform-impersonation.constants.js";
+import { platformImpersonationErrors } from "./platform-impersonation.errors.js";
 import { platformImpersonationRepository } from "./platform-impersonation.repository.js";
 import { mintImpersonationToken } from "./platform-impersonation.token.js";
 import type {
@@ -31,8 +34,9 @@ import type {
 } from "./platform-impersonation.types.js";
 
 const SECONDS_PER_MINUTE = 60;
-const MS_PER_SECOND = 1000;
 const TENANT_LOG_LIMIT = 50;
+const IMPERSONATION_FEATURE_KEY = "impersonation.allowed";
+const REDIS_EXPIRE_IN_SECONDS = "EX";
 
 const ttlMinutes = (requested?: number): number => {
   if (!requested) return IMPERSONATION_DEFAULT_TTL_MINUTES;
@@ -62,62 +66,97 @@ const notifyTarget = async (
   }
 };
 
+const requireImpersonationTargetRole = async ({
+  organizationId,
+  targetUserId,
+  impersonatorId,
+}: StartImpersonationInput): Promise<UserRole> => {
+  const allowed = await platformFeaturesService.isEnabled(
+    organizationId,
+    IMPERSONATION_FEATURE_KEY,
+  );
+  if (!allowed) {
+    throw new AppError(
+      "IMPERSONATION_DISABLED",
+      "Impersonation is disabled for this organization.",
+      HTTP_STATUS.FORBIDDEN,
+    );
+  }
+
+  const membership = await platformImpersonationRepository.findActiveMembership(
+    targetUserId,
+    organizationId,
+  );
+  if (!membership) {
+    throw new AppError(
+      "TARGET_NOT_A_MEMBER",
+      "The target isn't an active member of this organization.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  const targetRole = await platformImpersonationRepository.findUserRole(targetUserId);
+  if (!targetRole) {
+    throw platformImpersonationErrors.targetNotAMember();
+  }
+
+  if (await platformImpersonationRepository.isPlatformStaff(targetUserId)) {
+    throw new AppError(
+      "TARGET_IS_PLATFORM_STAFF",
+      "You can't impersonate another platform staff account.",
+      HTTP_STATUS.FORBIDDEN,
+    );
+  }
+
+  const existing = await platformImpersonationRepository.findActiveForImpersonator(
+    impersonatorId,
+    organizationId,
+  );
+  if (existing) {
+    throw new AppError(
+      "SESSION_ALREADY_ACTIVE",
+      "You already have an active impersonation session for this organization.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  return targetRole;
+};
+
+const requireOpenableSession = async (
+  sessionId: string,
+  requesterId: string,
+  canManageAny: boolean,
+) => {
+  const session = await platformImpersonationRepository.findById(sessionId);
+  if (!session) {
+    throw platformImpersonationErrors.sessionNotFound();
+  }
+  if (!canManageAny && session.impersonatorId !== requesterId) {
+    throw new AppError(
+      "NOT_YOUR_SESSION",
+      "You can only open your own impersonation sessions.",
+      HTTP_STATUS.FORBIDDEN,
+    );
+  }
+
+  const remainingMs = session.expiresAt.getTime() - Date.now();
+  if (session.revokedAt !== null || remainingMs <= 0) {
+    throw new AppError(
+      "IMPERSONATION_ENDED",
+      "This impersonation session is no longer active.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  return { session, remainingMs };
+};
+
 export const platformImpersonationService = {
   async start(
     input: StartImpersonationInput & { ttlMinutes?: number },
   ): Promise<StartImpersonationResult> {
-    const allowed = await platformFeaturesService.isEnabled(
-      input.organizationId,
-      "impersonation.allowed",
-    );
-    if (!allowed) {
-      throw new AppError(
-        "IMPERSONATION_DISABLED",
-        "Impersonation is disabled for this organization.",
-        HTTP_STATUS.FORBIDDEN,
-      );
-    }
-
-    const membership = await platformImpersonationRepository.findActiveMembership(
-      input.targetUserId,
-      input.organizationId,
-    );
-    if (!membership) {
-      throw new AppError(
-        "TARGET_NOT_A_MEMBER",
-        "The target isn't an active member of this organization.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const targetRole = await platformImpersonationRepository.findUserRole(input.targetUserId);
-    if (!targetRole) {
-      throw new AppError(
-        "TARGET_NOT_A_MEMBER",
-        "The target account no longer exists.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (await platformImpersonationRepository.isPlatformStaff(input.targetUserId)) {
-      throw new AppError(
-        "TARGET_IS_PLATFORM_STAFF",
-        "You can't impersonate another platform staff account.",
-        HTTP_STATUS.FORBIDDEN,
-      );
-    }
-
-    const existing = await platformImpersonationRepository.findActiveForImpersonator(
-      input.impersonatorId,
-      input.organizationId,
-    );
-    if (existing) {
-      throw new AppError(
-        "SESSION_ALREADY_ACTIVE",
-        "You already have an active impersonation session for this organization.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    const targetRole = await requireImpersonationTargetRole(input);
 
     const minutes = ttlMinutes(input.ttlMinutes);
     const expiresAt = addMinutes(new Date(), minutes);
@@ -188,11 +227,7 @@ export const platformImpersonationService = {
   async revoke(sessionId: string, revokedById: string, canManageAny: boolean): Promise<void> {
     const session = await platformImpersonationRepository.findById(sessionId);
     if (!session) {
-      throw new AppError(
-        "SESSION_NOT_FOUND",
-        "Impersonation session not found.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw platformImpersonationErrors.sessionNotFound();
     }
     if (!canManageAny && session.impersonatorId !== revokedById) {
       throw new AppError(
@@ -239,30 +274,11 @@ export const platformImpersonationService = {
     requesterId: string,
     canManageAny: boolean,
   ): Promise<OpenImpersonationSessionResult> {
-    const session = await platformImpersonationRepository.findById(sessionId);
-    if (!session) {
-      throw new AppError(
-        "SESSION_NOT_FOUND",
-        "Impersonation session not found.",
-        HTTP_STATUS.NOT_FOUND,
-      );
-    }
-    if (!canManageAny && session.impersonatorId !== requesterId) {
-      throw new AppError(
-        "NOT_YOUR_SESSION",
-        "You can only open your own impersonation sessions.",
-        HTTP_STATUS.FORBIDDEN,
-      );
-    }
-
-    const remainingMs = session.expiresAt.getTime() - Date.now();
-    if (session.revokedAt !== null || remainingMs <= 0) {
-      throw new AppError(
-        "IMPERSONATION_ENDED",
-        "This impersonation session is no longer active.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    const { session, remainingMs } = await requireOpenableSession(
+      sessionId,
+      requesterId,
+      canManageAny,
+    );
 
     const tenantSubdomain = await platformImpersonationRepository.findOrganizationSubdomain(
       session.organizationId,
@@ -277,11 +293,7 @@ export const platformImpersonationService = {
 
     const targetRole = await platformImpersonationRepository.findUserRole(session.targetUserId);
     if (!targetRole) {
-      throw new AppError(
-        "TARGET_NOT_A_MEMBER",
-        "The target account no longer exists.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw platformImpersonationErrors.targetNotAMember();
     }
 
     const token = mintImpersonationToken({
@@ -290,14 +302,14 @@ export const platformImpersonationService = {
       impersonatorId: session.impersonatorId,
       sessionId: session.id,
       scope: session.scope,
-      ttlSeconds: Math.ceil(remainingMs / MS_PER_SECOND),
+      ttlSeconds: Math.ceil(remainingMs / millisecondsInSecond),
     });
 
     const code = generateOpaqueToken();
     await redis.set(
       redisKeys.impersonationExchangeCode(code),
       token,
-      "EX",
+      REDIS_EXPIRE_IN_SECONDS,
       IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS,
     );
 

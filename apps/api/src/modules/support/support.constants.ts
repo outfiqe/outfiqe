@@ -1,3 +1,5 @@
+import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
+
 import { SupportStatus } from "#generated/prisma/enums.js";
 
 export const REFERENCE_PREFIX = "OFQ";
@@ -31,12 +33,12 @@ export const AWAITING_STAFF_STATUSES: SupportStatus[] = [SupportStatus.NEW, Supp
 export const DEFAULT_SUPPORT_PAGE_SIZE = 25;
 export const MAX_SUPPORT_PAGE_SIZE = 100;
 
-export const REOPEN_TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000;
-export const RESOLVED_TICKET_AUTO_CLOSE_MS = 14 * 24 * 60 * 60 * 1000;
+export const REOPEN_TOKEN_TTL_MS = 14 * millisecondsInDay;
+export const RESOLVED_TICKET_AUTO_CLOSE_MS = 14 * millisecondsInDay;
 
-export const SUPPORT_TICKET_CREATE_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const SUPPORT_TICKET_CREATE_WINDOW_MS = millisecondsInDay;
 export const MAX_SUPPORT_TICKETS_PER_WINDOW = 5;
-export const SUPPORT_REPLY_WINDOW_MS = 60 * 60 * 1000;
+export const SUPPORT_REPLY_WINDOW_MS = millisecondsInHour;
 export const MAX_SUPPORT_REPLIES_PER_WINDOW = 30;
 
 export const SUBJECT_MAX_LENGTH = 140;
@@ -44,7 +46,7 @@ export const MESSAGE_MIN_LENGTH = 20;
 export const MESSAGE_MAX_LENGTH = 8000;
 export const MAX_ATTACHMENTS_PER_MESSAGE = 5;
 
-export const SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS = 60 * 60 * 1000;
+export const SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS = millisecondsInHour;
 
 export const SUPPORT_PERMISSION = {
   READ: "platform:support:read",

@@ -14,6 +14,8 @@ import { productAnalyticsRepository } from "./product-analytics.repository.js";
 import { productAnalyticsService } from "./product-analytics.service.js";
 import { toOrderPlacedProperties, toTrackedOrderStatus } from "./product-analytics.utils.js";
 
+const RECORD_WHEN_ARRIVAL_CHECK_FAILS = true;
+
 const { captureServerEvent } = productAnalyticsService;
 
 const isFirstOrderStatusArrival = async (
@@ -31,7 +33,7 @@ const isFirstOrderStatusArrival = async (
     logger.warn(
       `Order ${orderId} ${orderStatus} arrival check failed, recording it anyway: ${describeError(error)}`,
     );
-    return true;
+    return RECORD_WHEN_ARRIVAL_CHECK_FAILS;
   }
 };
 

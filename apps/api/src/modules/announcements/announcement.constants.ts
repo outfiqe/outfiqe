@@ -1,6 +1,7 @@
+import { millisecondsInMinute } from "date-fns/constants";
 export const ANNOUNCEMENT_SEND_NOW_MAX_RECIPIENTS = 500;
 export const ANNOUNCEMENT_FANOUT_PAGE_SIZE = 500;
-export const ANNOUNCEMENT_SCHEDULE_SWEEP_INTERVAL_MS = 60 * 1000;
+export const ANNOUNCEMENT_SCHEDULE_SWEEP_INTERVAL_MS = millisecondsInMinute;
 
 export const ANNOUNCEMENT_TITLE_MAX_LENGTH = 120;
 export const ANNOUNCEMENT_BODY_MAX_LENGTH = 2000;

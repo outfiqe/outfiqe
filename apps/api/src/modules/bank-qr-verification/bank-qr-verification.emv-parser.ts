@@ -78,10 +78,12 @@ export const computeCrc16Ccitt = (text: string): string => {
   return crc.toString(HEX_RADIX).toUpperCase().padStart(EMV_CRC_VALUE_LENGTH, "0");
 };
 
+const INVALID_CHECKSUM = false;
+
 const hasValidChecksum = (text: string, dataObjects: EmvDataObject[]): boolean => {
   const lastDataObject = dataObjects.at(LAST_DATA_OBJECT_INDEX);
   if (lastDataObject?.tag !== EMV_CRC_TAG || lastDataObject.value.length !== EMV_CRC_VALUE_LENGTH) {
-    return false;
+    return INVALID_CHECKSUM;
   }
 
   const checksummedText = text.slice(START_OF_TEXT, text.length - EMV_CRC_VALUE_LENGTH);

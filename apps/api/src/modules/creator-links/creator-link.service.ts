@@ -7,6 +7,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
+import { creatorLinkErrors } from "./creator-link.errors.js";
 import { creatorLinkRepository } from "./creator-link.repository.js";
 import type { CreatorLinkView } from "./creator-link.types.js";
 import { buildTargetUrl, toCreatorLinkView } from "./creator-link.utils.js";
@@ -80,11 +81,7 @@ export const creatorLinkService = {
     await requireApprovedCreator(creatorId, "Only approved muses can manage links.");
     const link = await creatorLinkRepository.findOwned(linkId, creatorId);
     if (!link) {
-      throw new AppError(
-        "LINK_NOT_FOUND",
-        "This link is no longer available.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLinkErrors.linkNotFound();
     }
 
     await creatorLinkRepository.revoke(link.id);
@@ -97,11 +94,7 @@ export const creatorLinkService = {
   ): Promise<{ targetUrl: string }> {
     const link = await creatorLinkRepository.findByToken(token);
     if (!link || link.status === CreatorLinkStatus.REVOKED) {
-      throw new AppError(
-        "LINK_NOT_FOUND",
-        "This link is no longer available.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLinkErrors.linkNotFound();
     }
 
     const shouldRecordClick =

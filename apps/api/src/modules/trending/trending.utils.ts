@@ -30,6 +30,19 @@ import type {
   ProductTrendMeta,
 } from "./trending.types.js";
 
+const NO_FRESHNESS_BOOST = 1;
+
+type ScoreProductParams = {
+  productId: string;
+  brandId: string;
+  buckets: MetricBucket[];
+  productCreatedAt: Date;
+  productType: string;
+  categoryBaselines: Map<string, number>;
+  globalBaseline: number;
+  now: Date;
+};
+
 export { ageHoursOf, applyWeightedRotation, truncateToHour };
 
 export const applyDiversity = <T extends { brandId: string }>(
@@ -149,27 +162,27 @@ export const pickBaseline = (
   return { source: "global", value: globalBaseline };
 };
 
-export const scoreProduct = (params: {
-  productId: string;
-  brandId: string;
-  buckets: MetricBucket[];
-  productCreatedAt: Date;
-  productType: string;
-  categoryBaselines: Map<string, number>;
-  globalBaseline: number;
-  now: Date;
-}): ProductScoreBreakdown => {
-  const {
-    productId,
-    brandId,
-    buckets,
-    productCreatedAt,
-    productType,
-    categoryBaselines,
-    globalBaseline,
-    now,
-  } = params;
+const computeMomentum = (
+  decayedActivity: number,
+  previousWindowActivity: number,
+  baselineValue: number,
+): { velocity: number; baselineLift: number; momentum: number } => {
+  const velocity = decayedActivity / (previousWindowActivity + SMOOTHING);
+  const baselineLift = decayedActivity / (baselineValue + SMOOTHING);
+  const momentum = Math.min(Math.sqrt(velocity * baselineLift), MOMENTUM_CAP);
+  return { velocity, baselineLift, momentum };
+};
 
+export const scoreProduct = ({
+  productId,
+  brandId,
+  buckets,
+  productCreatedAt,
+  productType,
+  categoryBaselines,
+  globalBaseline,
+  now,
+}: ScoreProductParams): ProductScoreBreakdown => {
   const decayedActivity = sumDecayedActivityInWindow(
     buckets,
     now,
@@ -192,12 +205,14 @@ export const scoreProduct = (params: {
   const ownBaseline = computeOwnBaseline(buckets, now, BASELINE_WINDOW_DAYS);
   const baseline = pickBaseline(productType, ownBaseline, categoryBaselines, globalBaseline);
 
-  const velocity = decayedActivity / (previousWindowActivity + SMOOTHING);
-  const baselineLift = decayedActivity / (baseline.value + SMOOTHING);
-  const momentum = Math.min(Math.sqrt(velocity * baselineLift), MOMENTUM_CAP);
+  const { velocity, baselineLift, momentum } = computeMomentum(
+    decayedActivity,
+    previousWindowActivity,
+    baseline.value,
+  );
   const freshnessMultiplier = isWithinFreshnessWindow(productCreatedAt, now)
     ? FRESHNESS_MULTIPLIER
-    : 1;
+    : NO_FRESHNESS_BOOST;
   const score = decayedActivity * momentum * freshnessMultiplier;
 
   return {

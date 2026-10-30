@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -7,7 +8,7 @@ import { validate } from "#middlewares/validate.js";
 import { couponController } from "./coupon.controller.js";
 import { previewBuyNowCouponSchema } from "./coupon.schemas.js";
 
-const PREVIEW_WINDOW_MS = 5 * 60 * 1000;
+const PREVIEW_WINDOW_MS = 5 * millisecondsInMinute;
 const PREVIEW_MAX_ATTEMPTS = 10;
 
 const previewBuyNowRateLimit = rateLimit({

@@ -1,6 +1,7 @@
+import { millisecondsInMinute } from "date-fns/constants";
 export const CREATOR_LEADERBOARD_TOP_N = 10;
 
-export const CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS = 15 * 60 * 1000;
+export const CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS = 15 * millisecondsInMinute;
 
 export const CREATOR_LEADERBOARD_KEY_RETENTION_SECONDS = 14 * 24 * 60 * 60;
 

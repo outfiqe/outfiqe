@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { PaymentMethod, PlatformFeeType } from "#generated/prisma/enums.js";
 
+const NEXT_TIER_STEP = 1;
+
 const RATE_PERCENT_MAX = 100;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
@@ -34,16 +36,14 @@ export const createPlatformCommissionRuleSchema = z
       const sortedTiers = [...body.tiers].sort((a, b) => a.minPrice - b.minPrice);
       const firstTier = sortedTiers[0];
       const lastTier = sortedTiers[sortedTiers.length - 1];
-      if (!firstTier || !lastTier) return false;
-      if (firstTier.minPrice !== TIER_LADDER_FLOOR_PRICE) return false;
-      if (lastTier.maxPrice !== null) return false;
+      const startsAtFloorPrice = firstTier?.minPrice === TIER_LADDER_FLOOR_PRICE;
+      const endsWithoutMaxPrice = lastTier?.maxPrice === null;
+      const hasNoGapsBetweenTiers = sortedTiers.every((tier, index) => {
+        const nextTier = sortedTiers[index + NEXT_TIER_STEP];
+        return !nextTier || tier.maxPrice === nextTier.minPrice;
+      });
 
-      for (let index = 0; index < sortedTiers.length - 1; index += 1) {
-        const currentTier = sortedTiers[index];
-        const nextTier = sortedTiers[index + 1];
-        if (currentTier?.maxPrice !== nextTier?.minPrice) return false;
-      }
-      return true;
+      return startsAtFloorPrice && endsWithoutMaxPrice && hasNoGapsBetweenTiers;
     },
     {
       message:

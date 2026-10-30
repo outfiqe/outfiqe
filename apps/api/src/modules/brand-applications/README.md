@@ -8,6 +8,7 @@ time-limited invite the brand uses to set up their account.
 
 ## Structure
 
+- `brand-application.errors.ts` — `brandApplicationErrors`, the errors this module raises from more than one place.
 - `brand-application.routes.ts` — `POST /` (public, rate-limited), `GET /` (admin, cursor-paginated,
   filterable by status), `POST /:id/approve`, `POST /:id/reject` (both admin-only).
 - `brand-application.controller.ts` — reads validated request data, calls the service, sends the

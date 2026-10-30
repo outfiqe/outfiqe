@@ -7,6 +7,7 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { addWorkingDaysAsCalendarDate } from "#lib/working-days.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { deliveryZoneErrors } from "./delivery-zone.errors.js";
 import { deliveryZoneRepository } from "./delivery-zone.repository.js";
 import type {
   CreateDeliveryZoneBody,
@@ -28,8 +29,7 @@ const NO_ZONES = 0;
 
 const requireZone = async (id: string): Promise<DeliveryZoneRecord> => {
   const zone = await deliveryZoneRepository.findById(id);
-  if (!zone)
-    throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", HTTP_STATUS.NOT_FOUND);
+  if (!zone) throw deliveryZoneErrors.zoneNotFound();
   return zone;
 };
 
@@ -181,7 +181,7 @@ export const deliveryZoneService = {
 
       const zone = await deliveryZoneRepository.findById(zoneId, tx);
       if (!zone) {
-        throw new AppError("ZONE_NOT_FOUND", "Delivery zone not found.", HTTP_STATUS.NOT_FOUND);
+        throw deliveryZoneErrors.zoneNotFound();
       }
 
       await deliveryZoneRepository.recordHistory(tx, {

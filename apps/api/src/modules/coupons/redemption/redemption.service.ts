@@ -1,3 +1,5 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { PaymentMethod, ProductStatus } from "#generated/prisma/enums.js";
@@ -24,8 +26,6 @@ import {
   resolveEligibleLines,
   valuateCoupon,
 } from "../coupon.utils.js";
-
-const MS_PER_HOUR = 60 * 60 * 1000;
 
 export const buildCouponLinesForPricedLines = async (
   pricedLines: {
@@ -94,7 +94,7 @@ const checkRedemptionVelocity = async (context: {
   phone: string;
   address: string;
 }): Promise<void> => {
-  const since = new Date(Date.now() - VELOCITY_WINDOW_HOURS * MS_PER_HOUR);
+  const since = new Date(Date.now() - VELOCITY_WINDOW_HOURS * millisecondsInHour);
   const recentCount = await couponRepository.countRecentRedemptionsForContact(
     context.phone,
     context.address,
@@ -116,6 +116,47 @@ const checkRedemptionVelocity = async (context: {
   });
 };
 
+const assertCouponUsableInContext = async (
+  coupon: CouponWithEligibility,
+  context: CouponContext,
+): Promise<void> => {
+  if (!isCouponWithinWindow(coupon, context.at)) {
+    throw new AppError(
+      "COUPON_NOT_ACTIVE",
+      REFUSAL_MESSAGES.COUPON_NOT_ACTIVE,
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+  if (coupon.prepaidOnly && context.paymentMethod === PaymentMethod.COD) {
+    throw new AppError(
+      "COUPON_REQUIRES_PREPAID",
+      REFUSAL_MESSAGES.COUPON_REQUIRES_PREPAID,
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+  if (coupon.firstOrderOnly) {
+    const priorOrderCount = await couponRepository.countOrdersForUser(context.userId);
+    if (priorOrderCount > 0) {
+      throw new AppError(
+        "COUPON_FIRST_ORDER_ONLY",
+        REFUSAL_MESSAGES.COUPON_FIRST_ORDER_ONLY,
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+  }
+  const existingRedemption = await couponRepository.findActiveRedemptionForUser(
+    coupon.id,
+    context.userId,
+  );
+  if (existingRedemption) {
+    throw new AppError(
+      "COUPON_ALREADY_USED",
+      REFUSAL_MESSAGES.COUPON_ALREADY_USED,
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+};
+
 export const couponRedemptionService = {
   async resolveForContext(
     code: string,
@@ -129,41 +170,7 @@ export const couponRedemptionService = {
         HTTP_STATUS.NOT_FOUND,
       );
     }
-    if (!isCouponWithinWindow(coupon, context.at)) {
-      throw new AppError(
-        "COUPON_NOT_ACTIVE",
-        REFUSAL_MESSAGES.COUPON_NOT_ACTIVE,
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-    if (coupon.prepaidOnly && context.paymentMethod === PaymentMethod.COD) {
-      throw new AppError(
-        "COUPON_REQUIRES_PREPAID",
-        REFUSAL_MESSAGES.COUPON_REQUIRES_PREPAID,
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-    if (coupon.firstOrderOnly) {
-      const priorOrderCount = await couponRepository.countOrdersForUser(context.userId);
-      if (priorOrderCount > 0) {
-        throw new AppError(
-          "COUPON_FIRST_ORDER_ONLY",
-          REFUSAL_MESSAGES.COUPON_FIRST_ORDER_ONLY,
-          HTTP_STATUS.BAD_REQUEST,
-        );
-      }
-    }
-    const existingRedemption = await couponRepository.findActiveRedemptionForUser(
-      coupon.id,
-      context.userId,
-    );
-    if (existingRedemption) {
-      throw new AppError(
-        "COUPON_ALREADY_USED",
-        REFUSAL_MESSAGES.COUPON_ALREADY_USED,
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    await assertCouponUsableInContext(coupon, context);
 
     const orderSubtotal = context.lines.reduce((sum, line) => sum + line.eligibleAmount, 0);
     if (orderSubtotal < coupon.minSubtotal) {

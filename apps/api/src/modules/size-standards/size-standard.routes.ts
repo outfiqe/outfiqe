@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -14,7 +15,7 @@ import {
   updateSizeStandardSchema,
 } from "./size-standard.schemas.js";
 
-const MUTATION_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MUTATION_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 const MUTATION_RATE_LIMIT_MAX_REQUESTS = 30;
 
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];

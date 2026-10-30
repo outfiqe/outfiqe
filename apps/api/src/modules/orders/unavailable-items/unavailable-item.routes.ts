@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -17,12 +18,11 @@ import {
   unavailableRequestIdParamSchema,
 } from "./unavailable-item.schemas.js";
 
-const ONE_MINUTE_MS = 60 * 1000;
 const UNAVAILABLE_ITEM_WRITES_PER_MINUTE = 20;
 
 const unavailableItemWriteRateLimit = rateLimit({
   namespace: "order-unavailable-items-write",
-  windowMs: ONE_MINUTE_MS,
+  windowMs: millisecondsInMinute,
   max: UNAVAILABLE_ITEM_WRITES_PER_MINUTE,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many changes in a short time. Please wait a moment and try again.",

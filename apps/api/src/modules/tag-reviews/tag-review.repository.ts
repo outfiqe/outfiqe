@@ -5,7 +5,12 @@ import { BrandTagReviewPolicy, TagReviewStatus } from "#generated/prisma/enums.j
 
 import { tagReviewMetricsRepository } from "./metrics/metrics.repository.js";
 import { tagReviewQueueRepository } from "./queue/queue.repository.js";
-import type { BrandReviewBacklog, ReviewableTag, SlaEligibleTag } from "./tag-review.types.js";
+import type {
+  BrandReviewBacklog,
+  ReviewableTag,
+  SlaEligibleTag,
+  TransitionableTag,
+} from "./tag-review.types.js";
 
 export type TagTransitionData = {
   reviewStatus: TagReviewStatus;
@@ -45,20 +50,14 @@ export const tagReviewRepository = {
     fromStatus: TagReviewStatus,
     data: TagTransitionData,
   ): Promise<boolean> {
-    const result = await prisma.creatorLookProduct.updateMany({
+    const { count: updatedRowCount } = await prisma.creatorLookProduct.updateMany({
       where: { id: tagId, reviewStatus: fromStatus },
       data,
     });
-    return result.count > 0;
+    return updatedRowCount > 0;
   },
 
-  async findTagForTransition(tagId: string): Promise<{
-    id: string;
-    lookId: string;
-    creatorId: string;
-    productId: string;
-    reviewStatus: TagReviewStatus;
-  } | null> {
+  async findTagForTransition(tagId: string): Promise<TransitionableTag | null> {
     const row = await prisma.creatorLookProduct.findUnique({
       where: { id: tagId },
       select: {

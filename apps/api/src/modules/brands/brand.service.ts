@@ -5,6 +5,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 
+import { brandErrors } from "./brand.errors.js";
 import { brandRepository } from "./brand.repository.js";
 import type { ListBrandsQuery, UpdateBrandProfileBody } from "./brand.schemas.js";
 import type { BrandProfile, PublicBrandPage, PublicBrandProfile } from "./brand.types.js";
@@ -29,11 +30,7 @@ export const brandService = {
     const profile = await brandRepository.findByMemberUserId(userId);
 
     if (!profile) {
-      throw new AppError(
-        "BRAND_NOT_FOUND",
-        "No brand is linked to this account.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw brandErrors.brandNotFound();
     }
 
     await brandService.assertActive(profile.brand.id);
@@ -45,11 +42,7 @@ export const brandService = {
     const profile = await brandRepository.findByMemberUserId(userId);
 
     if (!profile) {
-      throw new AppError(
-        "BRAND_NOT_FOUND",
-        "No brand is linked to this account.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw brandErrors.brandNotFound();
     }
 
     await brandService.assertActive(profile.brand.id);

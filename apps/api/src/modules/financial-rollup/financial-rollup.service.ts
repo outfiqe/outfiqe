@@ -1,3 +1,4 @@
+import { millisecondsInDay } from "date-fns/constants";
 import { startOfMonth } from "date-fns/startOfMonth";
 
 import { PaymentTransactionType } from "#generated/prisma/enums.js";
@@ -28,7 +29,7 @@ import {
   toLedgerCsv,
 } from "./financial-rollup.utils.js";
 
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * millisecondsInDay;
 
 const resolveRangeStart = (range: FinancialRollupRange, now: Date): Date | null => {
   if (range === "all") return null;

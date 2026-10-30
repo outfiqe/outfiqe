@@ -105,7 +105,6 @@ export const productAnalyticsRepository = {
       ORDER_STATUS_ARRIVAL_TTL_SECONDS,
       "NX",
     );
-    if (claimed) return true;
-    return (await redis.get(arrivalKey)) === sourceEventId;
+    return Boolean(claimed) || (await redis.get(arrivalKey)) === sourceEventId;
   },
 };

@@ -25,6 +25,9 @@ export type OfferLifecycleSweepResult = {
   refundsRetried: number;
 };
 
+const OFFER_JOB_SKIPPED = false;
+const OFFER_JOB_DONE = true;
+
 const NO_OFFERS = 0;
 const ONE_OFFER = 1;
 
@@ -44,14 +47,14 @@ const loadOffer = (offerId: string) => outfitOfferRepository.findById(prisma, of
 
 const checkUnpaidOffer = async (offerId: string): Promise<boolean> => {
   const offer = await loadOffer(offerId);
-  if (!offer || offer.status !== OutfitOfferStatus.PAYMENT_PENDING) return false;
+  if (!offer || offer.status !== OutfitOfferStatus.PAYMENT_PENDING) return OFFER_JOB_SKIPPED;
   await verifyPendingPayment(offer);
-  return true;
+  return OFFER_JOB_DONE;
 };
 
 const expireUnpaidOffer = async (offerId: string): Promise<boolean> => {
   const offer = await loadOffer(offerId);
-  if (!offer || offer.status !== OutfitOfferStatus.PAYMENT_PENDING) return false;
+  if (!offer || offer.status !== OutfitOfferStatus.PAYMENT_PENDING) return OFFER_JOB_SKIPPED;
   await verifyPendingPayment(offer);
   return outfitOfferRepository.moveStatus(prisma, offerId, [OutfitOfferStatus.PAYMENT_PENDING], {
     status: OutfitOfferStatus.PAYMENT_FAILED,
@@ -64,7 +67,7 @@ const expireMissedDeadline =
   (fromStatus: OutfitOfferStatus, closedReason: string) =>
   async (offerId: string): Promise<boolean> => {
     const offer = await loadOffer(offerId);
-    if (!offer) return false;
+    if (!offer) return OFFER_JOB_SKIPPED;
     const isExpired = await prisma.$transaction(async (tx) => {
       const isMoved = await closeWithRefund(
         tx,
@@ -89,7 +92,7 @@ const expireMissedDeadline =
 
 const closeForRemovedLook = async (offerId: string): Promise<boolean> => {
   const offer = await loadOffer(offerId);
-  if (!offer) return false;
+  if (!offer) return OFFER_JOB_SKIPPED;
   const isClosed = await closeWithRefund(
     prisma,
     offer,
@@ -103,7 +106,7 @@ const closeForRemovedLook = async (offerId: string): Promise<boolean> => {
 
 const releaseIfLookStillUp = async (offerId: string): Promise<boolean> => {
   const offer = await loadOffer(offerId);
-  if (!offer || offer.status !== OutfitOfferStatus.POSTED) return false;
+  if (!offer || offer.status !== OutfitOfferStatus.POSTED) return OFFER_JOB_SKIPPED;
   const isLookLive = await outfitOfferRepository.isLookLive(prisma, offer.lookId);
   if (!isLookLive) return closeForRemovedLook(offerId);
   return releaseToCreator(offer, [OutfitOfferStatus.POSTED]);
@@ -111,7 +114,7 @@ const releaseIfLookStillUp = async (offerId: string): Promise<boolean> => {
 
 const retryRefund = async (offerId: string): Promise<boolean> => {
   await refundOffer(offerId);
-  return true;
+  return OFFER_JOB_DONE;
 };
 
 export const runOutfitOfferLifecycleSweep = async (): Promise<OfferLifecycleSweepResult> => {

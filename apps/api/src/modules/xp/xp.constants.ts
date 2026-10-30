@@ -1,4 +1,5 @@
-export const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+import { millisecondsInDay } from "date-fns/constants";
+export const ONE_DAY_MS = millisecondsInDay;
 
 export const XP_SOURCE = {
   CREATOR_LOOKS: "creator-looks",

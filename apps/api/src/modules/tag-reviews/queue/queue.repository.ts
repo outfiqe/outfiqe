@@ -1,11 +1,18 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { FulfilmentStatus, PaymentStatus, TagReviewStatus } from "#generated/prisma/enums.js";
-import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import {
+  buildCursorPage,
+  decodeCursor,
+  encodeCursor,
+  NEXT_PAGE_PROBE_ROWS,
+} from "#lib/pagination.utils.js";
 
-import type { TagReviewQueuePage } from "../tag-review.types.js";
+import type { TagReviewQueueItem, TagReviewQueuePage } from "../tag-review.types.js";
 
 type QueueCursor = { s: string; i: string };
+
+type QueueSignals = { isVerifiedBuyer: boolean; isTrustedCreator: boolean };
 
 type QueueSignalRow = {
   id: string;
@@ -13,12 +20,25 @@ type QueueSignalRow = {
   product: { id: string; brandId: string };
 };
 
+const NO_QUEUE_SIGNALS: QueueSignals = { isVerifiedBuyer: false, isTrustedCreator: false };
+
+const queueInclude = {
+  creatorLook: {
+    select: {
+      id: true,
+      imageUrl: true,
+      creator: { select: { id: true, name: true, handle: true } },
+    },
+  },
+  product: { select: { id: true, name: true, imageUrl: true, brandId: true } },
+} as const;
+
+type QueueRow = Prisma.CreatorLookProductGetPayload<{ include: typeof queueInclude }>;
+
 const pairKey = (left: string, right: string): string => `${left}:${right}`;
 
-const resolveQueueSignals = async (
-  rows: QueueSignalRow[],
-): Promise<Map<string, { isVerifiedBuyer: boolean; isTrustedCreator: boolean }>> => {
-  const signalsByTagId = new Map<string, { isVerifiedBuyer: boolean; isTrustedCreator: boolean }>();
+const resolveQueueSignals = async (rows: QueueSignalRow[]): Promise<Map<string, QueueSignals>> => {
+  const signalsByTagId = new Map<string, QueueSignals>();
   if (rows.length === 0) return signalsByTagId;
 
   const creatorIds = [...new Set(rows.map((row) => row.creatorLook.creator.id))];
@@ -58,16 +78,36 @@ const resolveQueueSignals = async (
   return signalsByTagId;
 };
 
-const queueInclude = {
-  creatorLook: {
-    select: {
-      id: true,
-      imageUrl: true,
-      creator: { select: { id: true, name: true, handle: true } },
-    },
-  },
-  product: { select: { id: true, name: true, imageUrl: true, brandId: true } },
-} as const;
+const buildQueueCursorWhere = (cursor?: string): Prisma.CreatorLookProductWhereInput => {
+  const decodedCursor = decodeCursor<QueueCursor>(cursor);
+  if (!decodedCursor) return {};
+
+  const { s: cursorSubmittedAt, i: cursorTagId } = decodedCursor;
+  return {
+    OR: [
+      { submittedAt: { lt: new Date(cursorSubmittedAt) } },
+      { AND: [{ submittedAt: new Date(cursorSubmittedAt) }, { id: { lt: cursorTagId } }] },
+    ],
+  };
+};
+
+const toQueueItem = (row: QueueRow, signals: QueueSignals): TagReviewQueueItem => ({
+  id: row.id,
+  lookId: row.creatorLook.id,
+  lookImageUrl: row.creatorLook.imageUrl,
+  submittedAt: row.submittedAt,
+  reviewedAt: row.reviewedAt,
+  reviewStatus: row.reviewStatus,
+  approvalSource: row.approvalSource,
+  rejectionReason: row.rejectionReason,
+  rejectionNote: row.rejectionNote,
+  reRequestCount: row.reRequestCount,
+  sizeWorn: row.sizeWorn,
+  isVerifiedBuyer: signals.isVerifiedBuyer,
+  isTrustedCreator: signals.isTrustedCreator,
+  creator: row.creatorLook.creator,
+  product: row.product,
+});
 
 export const tagReviewQueueRepository = {
   async listQueue(
@@ -76,25 +116,15 @@ export const tagReviewQueueRepository = {
   ): Promise<TagReviewQueuePage> {
     if (brandIds.length === 0) return { items: [], nextCursor: null };
 
-    const decoded = decodeCursor<QueueCursor>(cursor);
-    const cursorWhere: Prisma.CreatorLookProductWhereInput = decoded
-      ? {
-          OR: [
-            { submittedAt: { lt: new Date(decoded.s) } },
-            { AND: [{ submittedAt: new Date(decoded.s) }, { id: { lt: decoded.i } }] },
-          ],
-        }
-      : {};
-
     const rows = await prisma.creatorLookProduct.findMany({
       where: {
         reviewStatus: status,
         product: { brandId: { in: brandIds } },
         creatorLook: { deletedAt: null },
-        ...cursorWhere,
+        ...buildQueueCursorWhere(cursor),
       },
       orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
+      take: limit + NEXT_PAGE_PROBE_ROWS,
       include: queueInclude,
     });
 
@@ -105,26 +135,9 @@ export const tagReviewQueueRepository = {
     const signalsByTagId = await resolveQueueSignals(pageRows);
 
     return {
-      items: pageRows.map((row) => {
-        const signals = signalsByTagId.get(row.id);
-        return {
-          id: row.id,
-          lookId: row.creatorLook.id,
-          lookImageUrl: row.creatorLook.imageUrl,
-          submittedAt: row.submittedAt,
-          reviewedAt: row.reviewedAt,
-          reviewStatus: row.reviewStatus,
-          approvalSource: row.approvalSource,
-          rejectionReason: row.rejectionReason,
-          rejectionNote: row.rejectionNote,
-          reRequestCount: row.reRequestCount,
-          sizeWorn: row.sizeWorn,
-          isVerifiedBuyer: signals?.isVerifiedBuyer ?? false,
-          isTrustedCreator: signals?.isTrustedCreator ?? false,
-          creator: row.creatorLook.creator,
-          product: row.product,
-        };
-      }),
+      items: pageRows.map((row) =>
+        toQueueItem(row, signalsByTagId.get(row.id) ?? NO_QUEUE_SIGNALS),
+      ),
       nextCursor,
     };
   },

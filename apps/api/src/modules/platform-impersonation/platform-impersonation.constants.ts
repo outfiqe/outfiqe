@@ -1,3 +1,4 @@
+import { millisecondsInHour, millisecondsInMinute } from "date-fns/constants";
 export const IMPERSONATION_DEFAULT_TTL_MINUTES = 30;
 
 export const IMPERSONATION_MAX_TTL_MINUTES = 60;
@@ -8,11 +9,11 @@ export type ImpersonationScope = (typeof IMPERSONATION_SCOPES)[number];
 
 export const IMPERSONATION_ACTOR_VIA = "impersonation";
 
-export const IMPERSONATION_REAP_INTERVAL_MS = 60 * 60 * 1000;
+export const IMPERSONATION_REAP_INTERVAL_MS = millisecondsInHour;
 
 export const IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS = 60;
 
-const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const FIFTEEN_MINUTES_MS = 15 * millisecondsInMinute;
 
 export const IMPERSONATION_REDEEM_RATE_LIMIT_WINDOW_MS = FIFTEEN_MINUTES_MS;
 

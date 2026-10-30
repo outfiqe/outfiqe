@@ -48,9 +48,10 @@ const isEligible = (
   buyerId: string,
   orderPlacedAt: Date,
 ): boolean => {
-  if (!isWithinWindow(candidate.clickedAt, orderPlacedAt)) return false;
-  if (candidate.source === CommissionSource.OUTFIT_BUILD) return true;
-  return candidate.creatorId !== buyerId;
+  return (
+    isWithinWindow(candidate.clickedAt, orderPlacedAt) &&
+    (candidate.source === CommissionSource.OUTFIT_BUILD || candidate.creatorId !== buyerId)
+  );
 };
 
 const fetchTagClickCandidates = async (

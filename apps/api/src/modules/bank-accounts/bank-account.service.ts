@@ -17,6 +17,7 @@ import { toBankAccountQrCheckFields } from "#modules/bank-qr-verification/bank-q
 import { nepalBankService } from "#modules/nepal-banks/nepal-bank.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { bankAccountErrors } from "./bank-account.errors.js";
 import { bankAccountRepository } from "./bank-account.repository.js";
 import type {
   AdminBankAccountView,
@@ -72,19 +73,19 @@ export const bankAccountService = {
   async setDefault(userId: string, id: string): Promise<void> {
     const updated = await bankAccountRepository.setDefault(userId, id);
     if (!updated) {
-      throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
+      throw bankAccountErrors.notFound();
     }
   },
 
   async verify(id: string, adminId: string): Promise<void> {
     const account = await bankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
+    if (!account) throw bankAccountErrors.notFound();
     await bankAccountRepository.verify(id, adminId);
   },
 
   async reveal(id: string, adminId: string): Promise<RevealedBankAccount> {
     const account = await bankAccountRepository.findById(id);
-    if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", HTTP_STATUS.NOT_FOUND);
+    if (!account) throw bankAccountErrors.notFound();
 
     await bankAccountRepository.createAccessLog(id, adminId);
     return { accountNumber: decryptAccountNumber(account.accountNumberCiphertext) };

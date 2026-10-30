@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
@@ -7,7 +8,7 @@ import { validate } from "#middlewares/validate.js";
 import { tourController } from "./tour.controller.js";
 import { recordTourOutcomeSchema, tourKeyParamSchema } from "./tour.schemas.js";
 
-const MUTATION_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MUTATION_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 const MUTATION_RATE_LIMIT_MAX_REQUESTS = 30;
 
 const mutationRateLimit = rateLimit({

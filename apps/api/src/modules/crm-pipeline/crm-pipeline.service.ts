@@ -6,6 +6,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 
 import { MAX_PIPELINE_STAGES, MIN_PIPELINE_STAGES } from "./crm-pipeline.constants.js";
+import { crmPipelineErrors } from "./crm-pipeline.errors.js";
 import { crmPipelineRepository } from "./crm-pipeline.repository.js";
 import type {
   DealWithRelations,
@@ -79,11 +80,7 @@ export const crmPipelineService = {
       return await crmPipelineRepository.createStage({ organizationId, ...input }, sortOrder);
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new AppError(
-          "STAGE_NAME_TAKEN",
-          "A stage with that name already exists.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw crmPipelineErrors.stageNameTaken();
       }
       throw error;
     }
@@ -103,11 +100,7 @@ export const crmPipelineService = {
       return await crmPipelineRepository.updateStage(organizationId, stageId, data);
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new AppError(
-          "STAGE_NAME_TAKEN",
-          "A stage with that name already exists.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw crmPipelineErrors.stageNameTaken();
       }
       throw error;
     }

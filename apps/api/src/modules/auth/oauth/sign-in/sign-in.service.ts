@@ -29,50 +29,93 @@ import type {
 import { sanitizeOAuthRedirectPath } from "../oauth.utils.js";
 
 const OAUTH_LINK_PENDING_TTL_MS = OAUTH_STATE_TTL_MS;
+const REDIS_EXPIRE_IN_MILLISECONDS = "PX";
+const OAUTH_SIGNUP_METHOD = "oauth";
+
+const signInExistingIdentity = async (
+  userId: string,
+  redirectAfter: string,
+): Promise<OAuthIdentityResolution> => {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new AppError(
+      "OAUTH_EXCHANGE_FAILED",
+      "Could not sign you in. Please try again.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  const tokens = await issueTokens(user);
+  return { status: OAuthCallbackStatus.SIGNED_IN, tokens, redirectAfter };
+};
+
+const requestAccountLink = async (
+  provider: OAuthProviderParam,
+  profile: OAuthProfile,
+  existingUserId: string,
+): Promise<OAuthIdentityResolution> => {
+  const linkToken = generateOpaqueToken();
+  const pendingRecord: OAuthLinkPendingRecord = {
+    userId: existingUserId,
+    provider,
+    providerUserId: profile.providerUserId,
+    emailAtLinkTime: profile.email,
+  };
+  await redis.set(
+    redisKeys.oauthLinkPending(linkToken),
+    JSON.stringify(pendingRecord),
+    REDIS_EXPIRE_IN_MILLISECONDS,
+    OAUTH_LINK_PENDING_TTL_MS,
+  );
+
+  return { status: OAuthCallbackStatus.LINK_REQUIRED, linkToken, email: profile.email };
+};
+
+const createOAuthAccount = async (
+  provider: OAuthProviderParam,
+  profile: OAuthProfile,
+  redirectAfter: string,
+): Promise<OAuthIdentityResolution> => {
+  const newUser = await userRepository.createOAuthOnlyUser({
+    name: profile.name,
+    email: profile.email,
+    avatarUrl: profile.avatarUrl,
+  });
+
+  await oauthRepository.createOAuthIdentity({
+    userId: newUser.id,
+    provider: PROVIDER_PARAM_TO_ENUM[provider],
+    providerUserId: profile.providerUserId,
+    emailAtLinkTime: profile.email,
+  });
+
+  await eventBus.publish(DomainEvents.USER_CREATED, {
+    userId: newUser.id,
+    email: newUser.email,
+    role: newUser.role,
+    signupMethod: OAUTH_SIGNUP_METHOD,
+  });
+
+  const tokens = await issueTokens(newUser);
+  return { status: OAuthCallbackStatus.SIGNED_IN, tokens, redirectAfter };
+};
 
 const resolveSignInIdentity = async (
   provider: OAuthProviderParam,
   profile: OAuthProfile,
   redirectAfter: string,
 ): Promise<OAuthIdentityResolution> => {
-  const providerEnum = PROVIDER_PARAM_TO_ENUM[provider];
   const existingIdentity = await oauthRepository.findByProviderIdentity(
-    providerEnum,
+    PROVIDER_PARAM_TO_ENUM[provider],
     profile.providerUserId,
   );
 
   if (existingIdentity && !existingIdentity.revokedAt) {
-    const user = await userRepository.findById(existingIdentity.userId);
-    if (!user) {
-      throw new AppError(
-        "OAUTH_EXCHANGE_FAILED",
-        "Could not sign you in. Please try again.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const tokens = await issueTokens(user);
-    return { status: OAuthCallbackStatus.SIGNED_IN, tokens, redirectAfter };
+    return signInExistingIdentity(existingIdentity.userId, redirectAfter);
   }
 
   const existingUserByEmail = await userRepository.findByEmail(profile.email);
-  if (existingUserByEmail) {
-    const linkToken = generateOpaqueToken();
-    const pendingRecord: OAuthLinkPendingRecord = {
-      userId: existingUserByEmail.id,
-      provider,
-      providerUserId: profile.providerUserId,
-      emailAtLinkTime: profile.email,
-    };
-    await redis.set(
-      redisKeys.oauthLinkPending(linkToken),
-      JSON.stringify(pendingRecord),
-      "PX",
-      OAUTH_LINK_PENDING_TTL_MS,
-    );
-
-    return { status: OAuthCallbackStatus.LINK_REQUIRED, linkToken, email: profile.email };
-  }
+  if (existingUserByEmail) return requestAccountLink(provider, profile, existingUserByEmail.id);
 
   if (existingIdentity?.revokedAt) {
     throw new AppError(
@@ -82,28 +125,7 @@ const resolveSignInIdentity = async (
     );
   }
 
-  const newUser = await userRepository.createOAuthOnlyUser({
-    name: profile.name,
-    email: profile.email,
-    avatarUrl: profile.avatarUrl,
-  });
-
-  await oauthRepository.createOAuthIdentity({
-    userId: newUser.id,
-    provider: providerEnum,
-    providerUserId: profile.providerUserId,
-    emailAtLinkTime: profile.email,
-  });
-
-  await eventBus.publish(DomainEvents.USER_CREATED, {
-    userId: newUser.id,
-    email: newUser.email,
-    role: newUser.role,
-    signupMethod: "oauth",
-  });
-
-  const tokens = await issueTokens(newUser);
-  return { status: OAuthCallbackStatus.SIGNED_IN, tokens, redirectAfter };
+  return createOAuthAccount(provider, profile, redirectAfter);
 };
 
 export const oauthSignInService = {

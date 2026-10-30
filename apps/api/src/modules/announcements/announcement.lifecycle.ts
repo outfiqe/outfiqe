@@ -10,10 +10,8 @@ const onDispatchError = (id: string, error: unknown): string =>
 
 const dispatchDueAnnouncement = async (id: string): Promise<boolean> => {
   const claimed = await announcementRepository.claimForSending(id, AnnouncementStatus.SCHEDULED);
-  if (!claimed) return false;
-
-  await announcementService.runFanOut(id);
-  return true;
+  if (claimed) await announcementService.runFanOut(id);
+  return claimed;
 };
 
 export const runAnnouncementScheduledDispatch = async (): Promise<number> => {

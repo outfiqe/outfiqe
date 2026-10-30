@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
@@ -33,8 +35,6 @@ import type {
 } from "../withdraw.types.js";
 import { toWithdrawRequestView } from "../withdraw.utils.js";
 import { computeWithdrawWindow } from "../withdraw.window.utils.js";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const resolveOwner = async (
   userId: string,
@@ -103,6 +103,113 @@ const getOwnerDisplayName = async (owner: OwnerContext): Promise<string> => {
   return brand?.name ?? "Unknown brand";
 };
 
+type WithdrawOwner = Awaited<ReturnType<typeof resolveOwner>>;
+type WithdrawPolicy = Awaited<ReturnType<typeof withdrawRepository.getOrCreateActivePolicy>>;
+
+const assertWindowOpenWithAttemptsLeft = async (
+  tx: Prisma.TransactionClient,
+  owner: WithdrawOwner,
+  policy: WithdrawPolicy,
+): Promise<void> => {
+  const window = computeWithdrawWindow(policy);
+  if (!window.isOpen) {
+    throw new AppError(
+      "WINDOW_CLOSED",
+      "The withdrawal window isn't open right now.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  const attemptsUsed = await withdrawRepository.countRequestsSince(owner, window.windowStart, tx);
+  if (attemptsUsed >= policy.maxAttemptsPerWindow) {
+    throw new AppError(
+      "ATTEMPTS_EXHAUSTED",
+      "You've reached the withdrawal limit for this window.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+};
+
+const assertNotInRejectionCooldown = async (
+  tx: Prisma.TransactionClient,
+  owner: WithdrawOwner,
+  policy: WithdrawPolicy,
+): Promise<void> => {
+  const mostRecentRejection = await withdrawRepository.findMostRecentRejection(owner, tx);
+  if (mostRecentRejection?.reviewedAt && policy.cooldownAfterRejectionDays > 0) {
+    const cooldownEndsAt = new Date(
+      mostRecentRejection.reviewedAt.getTime() +
+        policy.cooldownAfterRejectionDays * millisecondsInDay,
+    );
+    if (cooldownEndsAt > new Date()) {
+      throw new AppError(
+        "COOLDOWN_ACTIVE",
+        "You're still in the cooldown period after a recent rejection.",
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+  }
+};
+
+const assertAmountWithinPolicy = (
+  { amount, ownerType }: CreateWithdrawRequestBody,
+  policy: WithdrawPolicy,
+): { isOverSoftCeiling: boolean } => {
+  if (amount < policy.minAmount) {
+    throw new AppError(
+      "AMOUNT_TOO_LOW",
+      `The minimum withdrawal amount is Rs. ${policy.minAmount}.`,
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+
+  const isOverSoftCeiling = amount > policy.maxAmount;
+  if (isOverSoftCeiling && ownerType === "CREATOR") {
+    throw new AppError(
+      "AMOUNT_TOO_HIGH",
+      `The maximum withdrawal amount is Rs. ${policy.maxAmount}.`,
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+  return { isOverSoftCeiling };
+};
+
+const assertAmountCoveredByBalance = async (
+  tx: Prisma.TransactionClient,
+  owner: WithdrawOwner,
+  amount: number,
+  ledgerAvailable: number,
+): Promise<void> => {
+  const reserved = await withdrawRepository.sumReservedAmount(owner, tx);
+  const availableBalance = ledgerAvailable - reserved;
+  if (amount > availableBalance) {
+    throw new AppError(
+      "INSUFFICIENT_BALANCE",
+      "This amount exceeds your available balance.",
+      HTTP_STATUS.BAD_REQUEST,
+    );
+  }
+};
+
+const emailOpsAboutWithdrawRequest = async (
+  owner: WithdrawOwner,
+  { ownerType, amount }: CreateWithdrawRequestBody,
+): Promise<void> => {
+  const ownerName = await getOwnerDisplayName(owner);
+  const { subject, html } = withdrawRequestReceivedInternalTemplate({
+    ownerName,
+    ownerType,
+    amount,
+    reviewUrl: `${env.ADMIN_URL}/withdraw-requests`,
+  });
+  void sendEmail({
+    to: env.OPS_NOTIFICATION_EMAIL,
+    subject,
+    body: `${ownerName} requested a withdrawal of Rs. ${amount}.`,
+    html,
+  });
+};
+
 export const withdrawRequestService = {
   async getEligibility(
     userId: string,
@@ -124,7 +231,7 @@ export const withdrawRequestService = {
       mostRecentRejection?.reviewedAt && policy.cooldownAfterRejectionDays > 0
         ? new Date(
             mostRecentRejection.reviewedAt.getTime() +
-              policy.cooldownAfterRejectionDays * MS_PER_DAY,
+              policy.cooldownAfterRejectionDays * millisecondsInDay,
           )
         : null;
     const cooldownActive = !!cooldownEndsAt && cooldownEndsAt > new Date();
@@ -164,69 +271,10 @@ export const withdrawRequestService = {
       const request = await prisma.$transaction(
         async (tx) => {
           const policy = await withdrawRepository.getOrCreateActivePolicy(body.ownerType, tx);
-          const window = computeWithdrawWindow(policy);
-          if (!window.isOpen) {
-            throw new AppError(
-              "WINDOW_CLOSED",
-              "The withdrawal window isn't open right now.",
-              HTTP_STATUS.BAD_REQUEST,
-            );
-          }
-
-          const attemptsUsed = await withdrawRepository.countRequestsSince(
-            owner,
-            window.windowStart,
-            tx,
-          );
-          if (attemptsUsed >= policy.maxAttemptsPerWindow) {
-            throw new AppError(
-              "ATTEMPTS_EXHAUSTED",
-              "You've reached the withdrawal limit for this window.",
-              HTTP_STATUS.BAD_REQUEST,
-            );
-          }
-
-          const mostRecentRejection = await withdrawRepository.findMostRecentRejection(owner, tx);
-          if (mostRecentRejection?.reviewedAt && policy.cooldownAfterRejectionDays > 0) {
-            const cooldownEndsAt = new Date(
-              mostRecentRejection.reviewedAt.getTime() +
-                policy.cooldownAfterRejectionDays * MS_PER_DAY,
-            );
-            if (cooldownEndsAt > new Date()) {
-              throw new AppError(
-                "COOLDOWN_ACTIVE",
-                "You're still in the cooldown period after a recent rejection.",
-                HTTP_STATUS.BAD_REQUEST,
-              );
-            }
-          }
-
-          if (body.amount < policy.minAmount) {
-            throw new AppError(
-              "AMOUNT_TOO_LOW",
-              `The minimum withdrawal amount is Rs. ${policy.minAmount}.`,
-              HTTP_STATUS.BAD_REQUEST,
-            );
-          }
-
-          const isOverSoftCeiling = body.amount > policy.maxAmount;
-          if (isOverSoftCeiling && body.ownerType === "CREATOR") {
-            throw new AppError(
-              "AMOUNT_TOO_HIGH",
-              `The maximum withdrawal amount is Rs. ${policy.maxAmount}.`,
-              HTTP_STATUS.BAD_REQUEST,
-            );
-          }
-
-          const reserved = await withdrawRepository.sumReservedAmount(owner, tx);
-          const availableBalance = ledgerAvailable - reserved;
-          if (body.amount > availableBalance) {
-            throw new AppError(
-              "INSUFFICIENT_BALANCE",
-              "This amount exceeds your available balance.",
-              HTTP_STATUS.BAD_REQUEST,
-            );
-          }
+          await assertWindowOpenWithAttemptsLeft(tx, owner, policy);
+          await assertNotInRejectionCooldown(tx, owner, policy);
+          const { isOverSoftCeiling } = assertAmountWithinPolicy(body, policy);
+          await assertAmountCoveredByBalance(tx, owner, body.amount, ledgerAvailable);
 
           const requiresSecondSignOff = isOverSoftCeiling && body.ownerType === "BUSINESS";
 
@@ -245,19 +293,7 @@ export const withdrawRequestService = {
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
 
-      const ownerName = await getOwnerDisplayName(owner);
-      const { subject, html } = withdrawRequestReceivedInternalTemplate({
-        ownerName,
-        ownerType: body.ownerType,
-        amount: body.amount,
-        reviewUrl: `${env.ADMIN_URL}/withdraw-requests`,
-      });
-      void sendEmail({
-        to: env.OPS_NOTIFICATION_EMAIL,
-        subject,
-        body: `${ownerName} requested a withdrawal of Rs. ${body.amount}.`,
-        html,
-      });
+      await emailOpsAboutWithdrawRequest(owner, body);
 
       return toWithdrawRequestView(request);
     } catch (error) {

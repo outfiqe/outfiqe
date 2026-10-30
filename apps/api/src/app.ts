@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import type { Express, Response } from "express";
 import express from "express";
 import helmet from "helmet";
 
@@ -114,12 +115,18 @@ import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+const TRUSTED_PROXY_HOPS = 1;
+const LOCAL_STORAGE_DRIVER = "local";
+const CROSS_ORIGIN_RESOURCE_POLICY_HEADER = "Cross-Origin-Resource-Policy";
+const CROSS_ORIGIN_RESOURCE_POLICY = "cross-origin";
+const CORS_REJECTED_MESSAGE = "Not allowed by CORS";
 
-export const createApp = () => {
-  const app = express();
+const staticAssetOptions = {
+  setHeaders: (res: Response) =>
+    res.setHeader(CROSS_ORIGIN_RESOURCE_POLICY_HEADER, CROSS_ORIGIN_RESOURCE_POLICY),
+};
 
-  app.set("trust proxy", 1);
-
+const applySecurityMiddleware = (app: Express): void => {
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -140,36 +147,24 @@ export const createApp = () => {
     cors({
       origin: (origin, callback) => {
         const isAllowed = isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN);
-        callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
+        callback(isAllowed ? null : new Error(CORS_REJECTED_MESSAGE), isAllowed);
       },
       credentials: true,
     }),
   );
-  app.use("/api/webhooks/delivery-partners", httpLogger, partnerWebhookRoutes);
-  app.use(express.json());
-  app.use(cookieParser());
-  app.use(httpLogger);
+};
 
-  if (env.STORAGE_DRIVER === "local") {
-    app.use(
-      "/uploads",
-      express.static(resolvedUploadsDir, {
-        setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
-      }),
-    );
+const mountStaticAssets = (app: Express): void => {
+  if (env.STORAGE_DRIVER === LOCAL_STORAGE_DRIVER) {
+    app.use("/uploads", express.static(resolvedUploadsDir, staticAssetOptions));
   }
   app.use(
     "/image-processing-assets",
-    express.static(resolvedImageStorageRootDir, {
-      setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
-    }),
+    express.static(resolvedImageStorageRootDir, staticAssetOptions),
   );
-  app.use(
-    QUEUE_DASHBOARD_BASE_PATH,
-    ...requireCoFounder,
-    createQueueDashboardRouter([...Object.values(imageProcessingQueues), ...listOutboxQueues()]),
-  );
+};
 
+const mountHealthChecks = (app: Express): void => {
   app.get("/health", (_req, res) => {
     sendSuccess(res, { status: "ok" }, "Service is healthy");
   });
@@ -185,7 +180,9 @@ export const createApp = () => {
         .json({ success: false, message: "Service is not ready", data: null });
     }
   });
+};
 
+const mountCoreRoutes = (app: Express): void => {
   app.use("/api/users", userRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/auth/oauth", oauthRoutes);
@@ -212,6 +209,9 @@ export const createApp = () => {
   app.use("/api/payments", paymentRoutes);
   app.use("/api/commissions", commissionRoutes);
   app.use("/api/collections", collectionRoutes);
+};
+
+const mountCrmRoutes = (app: Express): void => {
   app.use("/api/crm/billing", crmBillingRoutes);
   app.use("/api/crm", impersonationRequestAudit);
   app.use("/api/crm", crmRelationshipsRoutes);
@@ -222,6 +222,9 @@ export const createApp = () => {
   app.use("/api/crm", crmReportingRoutes);
   app.use("/api/crm", crmAuditRoutes);
   app.use("/api/crm", crmAccessRoutes);
+};
+
+const mountPlatformRoutes = (app: Express): void => {
   app.use("/api/platform", platformAuditRoutes);
   app.use("/api/platform", platformMetricsRoutes);
   app.use("/api/platform", productAnalyticsRoutes);
@@ -234,6 +237,9 @@ export const createApp = () => {
   app.use("/api/platform", platformNavAccessRoutes);
   app.use("/api/platform", platformRolesRoutes);
   app.use("/api/platform", platformSuspensionsRoutes);
+};
+
+const mountCommunityAndFinanceRoutes = (app: Express): void => {
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
   app.use("/api/follows", followRoutes);
@@ -272,6 +278,31 @@ export const createApp = () => {
   app.use("/api/tag-reports", tagReportRoutes);
   app.use("/api/content-reports", contentReportRoutes);
   app.use("/api/push", pushRoutes);
+};
+
+export const createApp = () => {
+  const app = express();
+
+  app.set("trust proxy", TRUSTED_PROXY_HOPS);
+
+  applySecurityMiddleware(app);
+  app.use("/api/webhooks/delivery-partners", httpLogger, partnerWebhookRoutes);
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use(httpLogger);
+
+  mountStaticAssets(app);
+  app.use(
+    QUEUE_DASHBOARD_BASE_PATH,
+    ...requireCoFounder,
+    createQueueDashboardRouter([...Object.values(imageProcessingQueues), ...listOutboxQueues()]),
+  );
+
+  mountHealthChecks(app);
+  mountCoreRoutes(app);
+  mountCrmRoutes(app);
+  mountPlatformRoutes(app);
+  mountCommunityAndFinanceRoutes(app);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

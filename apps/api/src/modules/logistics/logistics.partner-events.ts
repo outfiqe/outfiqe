@@ -101,6 +101,73 @@ const recordHandoverNotScanned = async (
   });
 };
 
+const noteUpdateForCancelledBooking = async (
+  partnerId: string,
+  source: TrackingEventSource,
+  booking: BookingForMatching,
+  event: PartnerTrackingEvent,
+): Promise<PartnerEventResult> => {
+  const trackingEventId = await recordShipmentNote(
+    partnerId,
+    source,
+    booking,
+    event,
+    TrackingEventCode.NOTE,
+  );
+  return {
+    outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
+    trackingEventId,
+    message: "This booking was cancelled, so the update was saved but not applied.",
+  };
+};
+
+const noteUnknownPartnerStatus = async (
+  partnerId: string,
+  source: TrackingEventSource,
+  booking: BookingForMatching,
+  event: PartnerTrackingEvent,
+): Promise<PartnerEventResult> => {
+  const trackingEventId = await recordShipmentNote(
+    partnerId,
+    source,
+    booking,
+    event,
+    TrackingEventCode.UNKNOWN_PARTNER_STATUS,
+  );
+  return {
+    outcome: PartnerStatusImportRowOutcome.UNKNOWN_STATUS,
+    trackingEventId,
+    message: `"${event.rawStatus}" isn't in this partner's status names yet.`,
+  };
+};
+
+type RecordedTrackingOutcome = Awaited<ReturnType<typeof logisticsTrackingService.recordEvent>>;
+
+const toRecordedEventResult = ({
+  eventId,
+  wasDuplicate,
+  appliedToStatus,
+}: RecordedTrackingOutcome): PartnerEventResult => {
+  if (wasDuplicate) {
+    return {
+      outcome: PartnerStatusImportRowOutcome.DUPLICATE,
+      trackingEventId: eventId,
+      message: "This update was already recorded.",
+    };
+  }
+  return appliedToStatus
+    ? {
+        outcome: PartnerStatusImportRowOutcome.APPLIED,
+        trackingEventId: eventId,
+        message: null,
+      }
+    : {
+        outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
+        trackingEventId: eventId,
+        message: "Saved, but it doesn't move the parcel forward from where it is now.",
+      };
+};
+
 export const logisticsPartnerEvents = {
   async applyPartnerTrackingEvent(
     partnerId: string,
@@ -111,18 +178,7 @@ export const logisticsPartnerEvents = {
     if (!booking) return unmatchedResult("No parcel with this partner matches that reference.");
 
     if (booking.status === PartnerBookingStatus.CANCELLED) {
-      const trackingEventId = await recordShipmentNote(
-        partnerId,
-        source,
-        booking,
-        event,
-        TrackingEventCode.NOTE,
-      );
-      return {
-        outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
-        trackingEventId,
-        message: "This booking was cancelled, so the update was saved but not applied.",
-      };
+      return noteUpdateForCancelledBooking(partnerId, source, booking, event);
     }
 
     const mapping = await logisticsPartnerRepository.findStatusMapping(
@@ -130,20 +186,7 @@ export const logisticsPartnerEvents = {
       partnerId,
       normalizePartnerRawStatus(event.rawStatus),
     );
-    if (!mapping) {
-      const trackingEventId = await recordShipmentNote(
-        partnerId,
-        source,
-        booking,
-        event,
-        TrackingEventCode.UNKNOWN_PARTNER_STATUS,
-      );
-      return {
-        outcome: PartnerStatusImportRowOutcome.UNKNOWN_STATUS,
-        trackingEventId,
-        message: `"${event.rawStatus}" isn't in this partner's status names yet.`,
-      };
-    }
+    if (!mapping) return noteUnknownPartnerStatus(partnerId, source, booking, event);
 
     const outcome = await logisticsTrackingService.recordEvent({
       subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId: booking.shipmentId },
@@ -170,23 +213,6 @@ export const logisticsPartnerEvents = {
       await recordHandoverNotScanned(partnerId, source, booking, event.occurredAt);
     }
 
-    if (outcome.wasDuplicate) {
-      return {
-        outcome: PartnerStatusImportRowOutcome.DUPLICATE,
-        trackingEventId: outcome.eventId,
-        message: "This update was already recorded.",
-      };
-    }
-    return outcome.appliedToStatus
-      ? {
-          outcome: PartnerStatusImportRowOutcome.APPLIED,
-          trackingEventId: outcome.eventId,
-          message: null,
-        }
-      : {
-          outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
-          trackingEventId: outcome.eventId,
-          message: "Saved, but it doesn't move the parcel forward from where it is now.",
-        };
+    return toRecordedEventResult(outcome);
   },
 };

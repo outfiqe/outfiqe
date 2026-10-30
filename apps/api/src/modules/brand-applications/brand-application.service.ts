@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
@@ -14,6 +16,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { brandApplicationErrors } from "./brand-application.errors.js";
 import { brandApplicationRepository } from "./brand-application.repository.js";
 import type { ListBrandApplicationsQuery } from "./brand-application.schemas.js";
 import type {
@@ -22,7 +25,7 @@ import type {
   CreateBrandApplicationInput,
 } from "./brand-application.types.js";
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = 7 * millisecondsInDay;
 
 const requirePendingApplication = async (
   applicationId: string,
@@ -33,11 +36,7 @@ const requirePendingApplication = async (
   }
 
   if (application.status !== BrandApplicationStatus.PENDING) {
-    throw new AppError(
-      "ALREADY_REVIEWED",
-      "This application has already been reviewed.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw brandApplicationErrors.alreadyReviewed();
   }
 
   return application;

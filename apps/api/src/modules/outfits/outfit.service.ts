@@ -33,6 +33,9 @@ import { parseSnapshotItems, toSummaryView, toViewerRole } from "./outfit.utils.
 import { loadCoversForBuilds } from "./photos/photo.service.js";
 import { outfitShareRepository } from "./visibility/visibility.repository.js";
 
+const CANNOT_SEE_VERSION = false;
+const CAN_SEE_VERSION = true;
+
 const FIRST_VERSION = 0;
 
 const LOOKAHEAD_ROW = 1;
@@ -91,9 +94,9 @@ const canSeePublishedVersion = async (
   outfit: NonNullable<Awaited<ReturnType<typeof outfitRepository.findAccess>>>,
   viewerId: string,
 ): Promise<boolean> => {
-  if (outfit.removedAt !== null) return false;
-  if (outfit.visibility === OutfitVisibility.PUBLIC) return true;
-  if (outfit.visibility !== OutfitVisibility.SHARED) return false;
+  if (outfit.removedAt !== null) return CANNOT_SEE_VERSION;
+  if (outfit.visibility === OutfitVisibility.PUBLIC) return CAN_SEE_VERSION;
+  if (outfit.visibility !== OutfitVisibility.SHARED) return CANNOT_SEE_VERSION;
   return outfitShareRepository.hasShare(prisma, outfit.id, viewerId);
 };
 

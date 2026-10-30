@@ -10,6 +10,7 @@ import { orderCheckoutService } from "./checkout/checkout.service.js";
 import { orderFulfilmentGroupRepository } from "./fulfilment-groups/fulfilment-group.repository.js";
 import { orderFulfilmentGroupService } from "./fulfilment-groups/fulfilment-group.service.js";
 import { FULFILMENT_ADVANCE_FROM } from "./order.constants.js";
+import { orderErrors } from "./order.errors.js";
 import { orderRepository } from "./order.repository.js";
 import type {
   AdvanceFulfilmentBody,
@@ -36,7 +37,7 @@ import { orderUnavailableItemService } from "./unavailable-items/unavailable-ite
 export const orderService = {
   async getOrder(userId: string, orderId: string): Promise<OrderView> {
     const order = await orderRepository.findByIdForUser(userId, orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
     const brandIdsAllowingItemChanges = await orderItemChangeAccess.listBrandIdsAllowingItemChanges(
       order.fulfilmentGroups.map(({ brandId }) => brandId),
     );
@@ -62,13 +63,13 @@ export const orderService = {
 
   async getOrderAdmin(orderId: string): Promise<OrderAdminView> {
     const order = await orderRepository.findByIdAdmin(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
     return toOrderAdminView(order);
   },
 
   async advanceFulfilment(orderId: string, { status }: AdvanceFulfilmentBody): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
 
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const deliveredAt = status === FulfilmentStatus.DELIVERED ? new Date() : undefined;

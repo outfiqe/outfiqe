@@ -6,6 +6,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { CHAT_CONTACT_SEARCH_RESULT_LIMIT } from "./chat.constants.js";
+import { chatErrors } from "./chat.errors.js";
 import { chatRepository } from "./chat.repository.js";
 import {
   type ChatAvailability,
@@ -19,7 +20,7 @@ import { toBlockedChatContact } from "./chat.utils.js";
 const requireBlockableTarget = async (targetId: string) => {
   const target = await userRepository.findById(targetId);
   if (!target) {
-    throw new AppError("NOT_FOUND", "User not found.", HTTP_STATUS.NOT_FOUND);
+    throw chatErrors.notFound();
   }
   if (target.role === UserRole.ADMIN) {
     throw new AppError(

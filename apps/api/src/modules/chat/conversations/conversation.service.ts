@@ -4,6 +4,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
+import { chatErrors } from "../chat.errors.js";
 import { chatService } from "../chat.service.js";
 import { chatUnavailableError } from "../chat.utils.js";
 import { conversationRepository } from "./conversation.repository.js";
@@ -63,7 +64,7 @@ export const conversationService = {
 
     const target = await userRepository.findById(targetUserId);
     if (!target) {
-      throw new AppError("NOT_FOUND", "User not found.", HTTP_STATUS.NOT_FOUND);
+      throw chatErrors.notFound();
     }
 
     const availability = await chatService.resolveChatAvailability(callerId, targetUserId);
@@ -80,7 +81,7 @@ export const conversationService = {
     await requireParticipant(conversationId, callerId);
     const conversation = await conversationRepository.getById(conversationId);
     if (!conversation) {
-      throw new AppError("NOT_FOUND", "Conversation not found.", HTTP_STATUS.NOT_FOUND);
+      throw chatErrors.notFoundConversation();
     }
 
     const otherParticipantId = otherParticipantIdOf(conversation, callerId);
