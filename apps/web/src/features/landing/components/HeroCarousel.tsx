@@ -16,6 +16,9 @@ import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { PublicHeroSlide } from "../api/heroSlideSchemas";
+import { HeroSlideTitle } from "./HeroSlideTitle";
+
+const FIRST_SLIDE_INDEX = 0;
 
 type HeroCarouselProps = {
   slides: PublicHeroSlide[];
@@ -74,9 +77,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-xs">
                     {slide.tag}
                   </span>
-                  <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
-                    {slide.title}
-                  </h1>
+                  <HeroSlideTitle title={slide.title} isPageHeading={i === FIRST_SLIDE_INDEX} />
                   <p className="mt-2 max-w-md text-xs text-white/80 sm:mt-4 sm:text-base">
                     {slide.description}
                   </p>
