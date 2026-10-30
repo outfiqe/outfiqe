@@ -19,6 +19,7 @@ import {
   PASSWORD_BREACHED_MESSAGE,
   PURPOSE_ERROR_COPY,
 } from "../auth.constants.js";
+import { authErrors } from "../auth.errors.js";
 import { redeemPurposeTokenOrThrow, verifyPurposeTokenOrThrow } from "../auth.tokens.js";
 import type { RegisterInput } from "../auth.types.js";
 
@@ -65,11 +66,7 @@ const assertRegistrationAllowed = async ({
       email,
       ip: remoteIp,
     });
-    throw new AppError(
-      "USER_EXISTS",
-      "An account with this email already exists.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw authErrors.userExists();
   }
 
   const existingByPhone = await userRepository.findByPhone(phone);
@@ -79,11 +76,7 @@ const assertRegistrationAllowed = async ({
       email,
       ip: remoteIp,
     });
-    throw new AppError(
-      "PHONE_EXISTS",
-      "An account with this phone number already exists.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw authErrors.phoneExists();
   }
 
   if (await isPasswordBreached(password)) {

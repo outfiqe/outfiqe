@@ -9,6 +9,7 @@ keyed by `brandId`, not a reuse of the creator-scoped `BankAccount.userId` table
 
 ## Structure
 
+- `brand-bank-account.errors.ts` — `brandBankAccountErrors`, the errors this module raises from more than one place.
 - `brand-bank-account.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (any member of the
   caller's brand); `GET /admin`, `PATCH /:id/verify`, `GET /:id/reveal` (admin-only). `GET /admin`
   is the cursor-paginated queue the admin `bank-accounts` feature reads, filterable by

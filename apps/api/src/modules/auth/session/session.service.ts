@@ -25,6 +25,7 @@ import {
   MS_PER_SECOND,
   USER_NOT_FOUND_MESSAGE,
 } from "../auth.constants.js";
+import { authErrors } from "../auth.errors.js";
 import {
   getFailedLoginCount,
   isLockedOut,
@@ -142,12 +143,12 @@ const requireUsableRefreshToken = async (
   remoteIp?: string,
 ) => {
   if (!rawRefreshToken) {
-    throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
+    throw authErrors.missingToken();
   }
 
   const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
   if (!stored) {
-    throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+    throw authErrors.invalidToken();
   }
 
   const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
@@ -168,17 +169,13 @@ const requireUsableRefreshToken = async (
 
   if (isPast(expiresAt)) {
     await authRepository.deleteRefreshTokenById(storedId);
-    throw new AppError(
-      "TOKEN_EXPIRED",
-      "Refresh token has expired. Please sign in again.",
-      HTTP_STATUS.UNAUTHORIZED,
-    );
+    throw authErrors.tokenExpired();
   }
 
   const user = await userRepository.findById(userId);
   if (!user) {
     await authRepository.deleteRefreshTokenById(storedId);
-    throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+    throw authErrors.invalidToken();
   }
 
   return { storedId, userId, familyId, user };
@@ -264,25 +261,21 @@ export const authSessionService = {
     rawRefreshToken: string | undefined,
   ): Promise<{ accessToken: string; user: AuthUser | BrandAuthUser }> {
     if (!rawRefreshToken) {
-      throw new AppError("MISSING_TOKEN", "No refresh token provided.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.missingToken();
     }
 
     const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
     if (!stored || stored.revokedAt) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.invalidToken();
     }
 
     if (isPast(stored.expiresAt)) {
-      throw new AppError(
-        "TOKEN_EXPIRED",
-        "Refresh token has expired. Please sign in again.",
-        HTTP_STATUS.UNAUTHORIZED,
-      );
+      throw authErrors.tokenExpired();
     }
 
     const userExists = await userRepository.findById(stored.userId);
     if (!userExists) {
-      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.invalidToken();
     }
 
     const user = await authSessionService.getCurrentUser(stored.userId);

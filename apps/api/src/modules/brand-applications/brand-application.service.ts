@@ -16,6 +16,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { brandApplicationErrors } from "./brand-application.errors.js";
 import { brandApplicationRepository } from "./brand-application.repository.js";
 import type { ListBrandApplicationsQuery } from "./brand-application.schemas.js";
 import type {
@@ -35,11 +36,7 @@ const requirePendingApplication = async (
   }
 
   if (application.status !== BrandApplicationStatus.PENDING) {
-    throw new AppError(
-      "ALREADY_REVIEWED",
-      "This application has already been reviewed.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw brandApplicationErrors.alreadyReviewed();
   }
 
   return application;
