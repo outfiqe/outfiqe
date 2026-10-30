@@ -1,4 +1,5 @@
-import { FormBanner, TrendChart } from "@outfiqe/design-system";
+import { FormBanner } from "@outfiqe/design-system";
+import { TrendChart } from "@outfiqe/design-system/charts";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 

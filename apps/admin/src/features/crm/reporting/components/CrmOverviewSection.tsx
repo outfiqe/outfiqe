@@ -1,11 +1,5 @@
-import {
-  BarSeries,
-  ChartCard,
-  FormBanner,
-  StatCard,
-  StatCardSkeleton,
-  TrendChart,
-} from "@outfiqe/design-system";
+import { FormBanner, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import { BarSeries, ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";

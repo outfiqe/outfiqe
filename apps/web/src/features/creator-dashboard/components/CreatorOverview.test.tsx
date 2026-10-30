@@ -1,4 +1,4 @@
-import type * as DesignSystem from "@outfiqe/design-system";
+import type * as DesignSystemCharts from "@outfiqe/design-system/charts";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,8 +19,8 @@ vi.mock("../hooks/useCreatorOverview", () => ({
   useCreatorOverview: vi.fn(),
 }));
 
-vi.mock("@outfiqe/design-system", async (importOriginal) => {
-  const actual = await importOriginal<typeof DesignSystem>();
+vi.mock("@outfiqe/design-system/charts", async (importOriginal) => {
+  const actual = await importOriginal<typeof DesignSystemCharts>();
   return { ...actual, TrendChart: () => <div data-testid="trend-chart" /> };
 });
 
