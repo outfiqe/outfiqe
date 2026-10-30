@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -15,15 +16,17 @@ import {
   tagReviewIdParamSchema,
 } from "./tag-review.schemas.js";
 
-const REVIEW_WINDOW_MS = 60 * 60 * 1000;
+const REVIEW_RATE_LIMIT_NAMESPACE = "tag-review-write";
+const REVIEW_WINDOW_MS = millisecondsInHour;
 const REVIEW_MAX_REQUESTS = 300;
+const REVIEW_RATE_LIMIT_MESSAGE = "Too many tag reviews at once. Please slow down.";
 
 const reviewRateLimit = rateLimit({
-  namespace: "tag-review-write",
+  namespace: REVIEW_RATE_LIMIT_NAMESPACE,
   windowMs: REVIEW_WINDOW_MS,
   max: REVIEW_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
-  message: "Too many tag reviews at once. Please slow down.",
+  message: REVIEW_RATE_LIMIT_MESSAGE,
 });
 
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
