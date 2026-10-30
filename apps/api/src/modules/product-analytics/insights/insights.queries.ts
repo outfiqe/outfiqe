@@ -11,6 +11,8 @@ import {
 
 export const PAGEVIEW_EVENT = "$pageview";
 
+const CURRENT_WEEK = 1;
+
 export const PURCHASE_FUNNEL_EVENTS = [
   ANALYTICS_EVENTS.PRODUCT_DETAIL_VIEW,
   ANALYTICS_EVENTS.CART_ITEM_ADD,
@@ -33,6 +35,9 @@ const LOOK_ENGAGEMENT_EVENTS = [
 ] as const;
 
 const EXCLUDE_INTERNAL_PEOPLE = "coalesce(toString(person.properties.is_internal), '') != 'true'";
+
+const EXCLUDE_NON_SHOPPERS = `${EXCLUDE_INTERNAL_PEOPLE}
+    AND coalesce(toString(person.properties.is_brand_owner), '') != 'true'`;
 
 const quoteEventNames = (eventNames: readonly string[]): string =>
   eventNames.map((eventName) => `'${eventName}'`).join(", ");
@@ -62,7 +67,7 @@ export const peopleReachingEachStepQuery = (
   FROM events
   WHERE ${withinLastDays(days)}
     AND event IN (${quoteEventNames(stepEvents)})
-    AND ${EXCLUDE_INTERNAL_PEOPLE}
+    AND ${EXCLUDE_NON_SHOPPERS}
   GROUP BY event`;
 
 export const lookViewersReachingEachStepQuery = (days: number): string => `
@@ -70,7 +75,7 @@ export const lookViewersReachingEachStepQuery = (days: number): string => `
   FROM events
   WHERE ${withinLastDays(days)}
     AND event IN (${quoteEventNames(LOOK_TO_ORDER_EVENTS)})
-    AND ${EXCLUDE_INTERNAL_PEOPLE}
+    AND ${EXCLUDE_NON_SHOPPERS}
     AND person_id IN (
       SELECT person_id
       FROM events
@@ -139,7 +144,7 @@ export const creatorLinkClicksQuery = (days: number): string => `
 export const weeklyActiveVisitorsQuery = (): string => `
   SELECT toString(toStartOfWeek(timestamp)) AS week_start, uniq(person_id)
   FROM events
-  WHERE timestamp >= now() - toIntervalWeek(${WEEKLY_ACTIVE_WEEKS})
+  WHERE timestamp >= toStartOfWeek(now()) - toIntervalWeek(${WEEKLY_ACTIVE_WEEKS - CURRENT_WEEK})
     AND event = '${PAGEVIEW_EVENT}'
     AND ${EXCLUDE_INTERNAL_PEOPLE}
   GROUP BY week_start

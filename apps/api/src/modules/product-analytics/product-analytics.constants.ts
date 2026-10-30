@@ -1,6 +1,10 @@
 import type { AnalyticsCreatorLinkType, AnalyticsTrackedOrderStatus } from "@outfiqe/utils";
+import { hoursToSeconds } from "date-fns/hoursToSeconds";
 
 import { CreatorLinkType, FulfilmentStatus } from "#generated/prisma/enums.js";
+
+const HOURS_IN_A_DAY = 24;
+const ORDER_STATUS_MEMORY_DAYS = 365;
 
 export const PRODUCT_ANALYTICS_CONSUMER_GROUP = "product-analytics";
 
@@ -15,6 +19,12 @@ export const TRACKED_ORDER_STATUS_BY_FULFILMENT: Partial<
   [FulfilmentStatus.CANCELLED]: "cancelled",
   [FulfilmentStatus.RETURNED]: "returned",
 };
+
+export const ORDER_STATUS_ARRIVAL_TTL_SECONDS = hoursToSeconds(
+  HOURS_IN_A_DAY * ORDER_STATUS_MEMORY_DAYS,
+);
+
+export const ORDER_STATUS_ARRIVAL_CACHE_NAMESPACE = "product-analytics-order-status";
 
 export const ANALYTICS_CREATOR_LINK_TYPE: Record<CreatorLinkType, AnalyticsCreatorLinkType> = {
   [CreatorLinkType.INTERNAL_SINGLE_USE]: "internal_single_use",

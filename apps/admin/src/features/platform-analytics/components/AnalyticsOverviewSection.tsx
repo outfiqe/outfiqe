@@ -44,9 +44,9 @@ const ExactOrderTotals = () => {
         hint="Exact, from the database"
       />
       <StatCard
-        label="Orders from muse looks"
+        label="Items credited to muses"
         value={percent(rollup.attribution.attributedShare)}
-        hint="Share of order items a muse is credited for"
+        hint="Share of ordered items, last 30 days"
       />
     </div>
   );

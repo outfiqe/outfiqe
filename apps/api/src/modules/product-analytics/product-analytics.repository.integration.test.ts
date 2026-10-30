@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { subDays } from "date-fns/subDays";
 import { describe, expect, it } from "vitest";
 
@@ -117,5 +119,24 @@ describe("productAnalyticsRepository lookups", () => {
     await expect(productAnalyticsRepository.countLookProductTags(MISSING_RECORD_ID)).resolves.toBe(
       0,
     );
+  });
+});
+
+describe("productAnalyticsRepository.claimOrderStatusArrival", () => {
+  it("lets the first event for an order's status through, and its redelivery, but not a repeat", async () => {
+    const orderId = randomUUID();
+
+    await expect(
+      productAnalyticsRepository.claimOrderStatusArrival(orderId, "delivered", "first-event"),
+    ).resolves.toBe(true);
+    await expect(
+      productAnalyticsRepository.claimOrderStatusArrival(orderId, "delivered", "first-event"),
+    ).resolves.toBe(true);
+    await expect(
+      productAnalyticsRepository.claimOrderStatusArrival(orderId, "delivered", "later-event"),
+    ).resolves.toBe(false);
+    await expect(
+      productAnalyticsRepository.claimOrderStatusArrival(orderId, "returned", "later-event"),
+    ).resolves.toBe(true);
   });
 });

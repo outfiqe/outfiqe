@@ -1,6 +1,14 @@
-import { prismaRead } from "#db/prisma.js";
-import { PaymentMethod, PaymentStatus, type UserRole } from "#generated/prisma/enums.js";
+import type { AnalyticsTrackedOrderStatus } from "@outfiqe/utils";
 
+import { prisma } from "#db/prisma.js";
+import { PaymentMethod, PaymentStatus, type UserRole } from "#generated/prisma/enums.js";
+import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
+
+import {
+  ORDER_STATUS_ARRIVAL_CACHE_NAMESPACE,
+  ORDER_STATUS_ARRIVAL_TTL_SECONDS,
+} from "./product-analytics.constants.js";
 import type { OrderAnalyticsSummary } from "./product-analytics.types.js";
 
 const NO_ITEM_QUANTITY = 0;
@@ -13,7 +21,7 @@ const SETTLED_ONLINE_PAYMENT_STATUSES = [
 ];
 
 const countEarlierPlacedOrders = (userId: string, placedBefore: Date) =>
-  prismaRead.order.count({
+  prisma.order.count({
     where: {
       userId,
       createdAt: { lt: placedBefore },
@@ -26,7 +34,7 @@ const countEarlierPlacedOrders = (userId: string, placedBefore: Date) =>
 
 export const productAnalyticsRepository = {
   async findOrderAnalyticsSummary(orderId: string): Promise<OrderAnalyticsSummary | null> {
-    const order = await prismaRead.order.findUnique({
+    const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: {
         userId: true,
@@ -40,11 +48,11 @@ export const productAnalyticsRepository = {
 
     const [itemQuantity, brandCount, attributedItemCount, earlierPlacedOrderCount] =
       await Promise.all([
-        prismaRead.orderItem.aggregate({ where: { orderId }, _sum: { qty: true } }),
-        prismaRead.brand.count({
+        prisma.orderItem.aggregate({ where: { orderId }, _sum: { qty: true } }),
+        prisma.brand.count({
           where: { products: { some: { orderItems: { some: { orderId } } } } },
         }),
-        prismaRead.orderItem.count({ where: { orderId, attributedCreatorId: { not: null } } }),
+        prisma.orderItem.count({ where: { orderId, attributedCreatorId: { not: null } } }),
         countEarlierPlacedOrders(order.userId, order.createdAt),
       ]);
 
@@ -62,7 +70,7 @@ export const productAnalyticsRepository = {
   },
 
   async findUserRole(userId: string): Promise<UserRole | null> {
-    const user = await prismaRead.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
     });
@@ -70,14 +78,34 @@ export const productAnalyticsRepository = {
   },
 
   countLookProductTags(lookId: string): Promise<number> {
-    return prismaRead.creatorLookProduct.count({ where: { creatorLookId: lookId } });
+    return prisma.creatorLookProduct.count({ where: { creatorLookId: lookId } });
   },
 
   async findSupportTicketRequesterId(ticketId: string): Promise<string | null> {
-    const ticket = await prismaRead.supportTicket.findUnique({
+    const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
       select: { requesterUserId: true },
     });
     return ticket?.requesterUserId ?? null;
+  },
+
+  async claimOrderStatusArrival(
+    orderId: string,
+    orderStatus: AnalyticsTrackedOrderStatus,
+    sourceEventId: string,
+  ): Promise<boolean> {
+    const arrivalKey = redisKeys.cache(
+      ORDER_STATUS_ARRIVAL_CACHE_NAMESPACE,
+      `${orderId}:${orderStatus}`,
+    );
+    const claimed = await redis.set(
+      arrivalKey,
+      sourceEventId,
+      "EX",
+      ORDER_STATUS_ARRIVAL_TTL_SECONDS,
+      "NX",
+    );
+    if (claimed) return true;
+    return (await redis.get(arrivalKey)) === sourceEventId;
   },
 };

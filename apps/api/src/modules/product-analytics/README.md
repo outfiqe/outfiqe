@@ -104,6 +104,16 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
   retries and dead-letter stream. So a PostHog outage, or a slow lookup here, never delays
   notifications or XP, and it can't fail an order. The consumers are registered in
   `registerBackgroundConsumers`, so the `api` role's request handling isn't involved.
+- **Event-time lookups read the primary database, not `prismaRead`.** The order, role, tag and
+  ticket a handler looks up were usually written moments earlier. On a lagging read replica
+  the order would come back missing and its `checkout:order_place` would be dropped without
+  an error.
+- **An order's delivered, cancelled or returned status is recorded once.**
+  `order.status.changed` is announced again on every later tracking stage with the order's
+  current status. So a return trip after delivery says "delivered" again, and partial returns
+  say "returned" more than once. `claimOrderStatusArrival` keeps the first bus event id per order
+  and status in Redis for a year. That event, and its redeliveries, are recorded; any later
+  repeat is skipped. If Redis can't be reached, the status is recorded anyway.
 - **Exactly once in PostHog, even when the bus redelivers.** PostHog only treats two events as
   the same when the uuid _and_ the timestamp match. So each event's `uuid` comes from the bus
   event id (`toStableEventUuid`), and its `timestamp` is the publish time in that id's stream
@@ -144,6 +154,9 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
   that. The look-to-order funnel only counts people who opened a look, or tapped a tagged product
   straight from a feed card, in the same range (`lookViewersReachingEachStepQuery`). Without
   that filter, its product, cart and order steps would count every shopper on the site. Staff and riders flagged `is_internal` are left out of every query.
+  Both funnels also leave out brand owners, who can't shop (`ProductDetail`'s `canShop`) but
+  open their own product pages a lot. The weekly visitors chart starts on a week boundary, so
+  its oldest bar is a full week rather than a few days.
   Sign-ups leave out `staff_created` accounts (riders and team members added by staff).
   Returning buyers are buyers in the range whose order had `is_first_order = false`, so a
   customer who also bought before the range still counts, even in a 7-day view. Orders and money on

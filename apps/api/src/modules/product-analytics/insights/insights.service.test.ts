@@ -129,6 +129,9 @@ describe("productAnalyticsInsightsService", () => {
       ]);
 
     const { insight } = await productAnalyticsInsightsService.purchaseFunnel("30d");
+    const funnelStepsSql = vi.mocked(runPosthogQuery).mock.calls[0]?.[2] ?? "";
+    expect(funnelStepsSql).toContain("person.properties.is_internal");
+    expect(funnelStepsSql).toContain("person.properties.is_brand_owner");
 
     expect(insight?.steps.map(({ event, persons }) => [event, persons])).toEqual([
       ["product:detail_view", 120],
@@ -178,6 +181,8 @@ describe("productAnalyticsInsightsService", () => {
       .mockResolvedValueOnce([["2026-10-19", 80]])
       .mockResolvedValueOnce([[10, 4]]);
     const retention = await productAnalyticsInsightsService.retention("90d");
+    const weeklyVisitorsSql = vi.mocked(runPosthogQuery).mock.calls.at(-2)?.[2] ?? "";
+    expect(weeklyVisitorsSql).toContain("toStartOfWeek(now()) - toIntervalWeek(7)");
     const repeatBuyersSql = vi.mocked(runPosthogQuery).mock.lastCall?.[2] ?? "";
     expect(repeatBuyersSql).toContain("toString(properties.is_first_order) = 'false'");
     expect(retention.insight).toEqual({

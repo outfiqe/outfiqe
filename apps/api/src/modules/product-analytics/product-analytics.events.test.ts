@@ -23,6 +23,7 @@ vi.mock("./product-analytics.repository.js", () => ({
     findUserRole: vi.fn(),
     countLookProductTags: vi.fn(),
     findSupportTicketRequesterId: vi.fn(),
+    claimOrderStatusArrival: vi.fn(),
   },
 }));
 
@@ -42,6 +43,7 @@ const repository = vi.mocked(productAnalyticsRepository);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  repository.claimOrderStatusArrival.mockResolvedValue(true);
   registerProductAnalyticsEventConsumers();
 });
 
@@ -148,6 +150,35 @@ describe("product analytics consumers", () => {
         event: ANALYTICS_EVENTS.ORDER_STATUS_CHANGE,
         properties: { order_id: "order-1", order_status: "delivered" },
       }),
+    );
+    expect(repository.claimOrderStatusArrival).toHaveBeenCalledWith(
+      "order-1",
+      "delivered",
+      "event-5",
+    );
+  });
+
+  it("records a status once, even when tracking announces it again on a later stage", async () => {
+    repository.claimOrderStatusArrival.mockResolvedValue(false);
+
+    await handlerFor(DomainEvents.ORDER_STATUS_CHANGED)(
+      { orderId: "order-1", userId: "user-1", status: FulfilmentStatus.DELIVERED },
+      { eventId: "event-6" },
+    );
+
+    expect(captureServerEvent).not.toHaveBeenCalled();
+  });
+
+  it("still records the status when the once-only check can't reach Redis", async () => {
+    repository.claimOrderStatusArrival.mockRejectedValue(new Error("redis down"));
+
+    await handlerFor(DomainEvents.ORDER_STATUS_CHANGED)(
+      { orderId: "order-1", userId: "user-1", status: FulfilmentStatus.CANCELLED },
+      { eventId: "event-7" },
+    );
+
+    expect(captureServerEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ properties: { order_id: "order-1", order_status: "cancelled" } }),
     );
   });
 

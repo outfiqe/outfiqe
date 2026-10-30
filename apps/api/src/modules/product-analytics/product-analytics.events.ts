@@ -1,8 +1,10 @@
-import { ANALYTICS_EVENTS } from "@outfiqe/utils";
+import { ANALYTICS_EVENTS, type AnalyticsTrackedOrderStatus } from "@outfiqe/utils";
 
 import { ORDER_REFUND_OUTCOME } from "#constants/commerce.constants.js";
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
+import logger from "#lib/winston.utils.js";
+import { describeError } from "#redis/redis.utils.js";
 
 import {
   ANONYMOUS_DISTINCT_ID_PREFIX,
@@ -13,6 +15,25 @@ import { productAnalyticsService } from "./product-analytics.service.js";
 import { toOrderPlacedProperties, toTrackedOrderStatus } from "./product-analytics.utils.js";
 
 const { captureServerEvent } = productAnalyticsService;
+
+const isFirstOrderStatusArrival = async (
+  orderId: string,
+  orderStatus: AnalyticsTrackedOrderStatus,
+  sourceEventId: string,
+): Promise<boolean> => {
+  try {
+    return await productAnalyticsRepository.claimOrderStatusArrival(
+      orderId,
+      orderStatus,
+      sourceEventId,
+    );
+  } catch (error) {
+    logger.warn(
+      `Order ${orderId} ${orderStatus} arrival check failed, recording it anyway: ${describeError(error)}`,
+    );
+    return true;
+  }
+};
 
 const registerAccountAnalyticsConsumers = (): void => {
   subscribeToDomainEvent({
@@ -95,6 +116,7 @@ const registerCommerceAnalyticsConsumers = (): void => {
     handler: async ({ orderId, userId, status }, { eventId }) => {
       const orderStatus = toTrackedOrderStatus(status);
       if (!orderStatus) return;
+      if (!(await isFirstOrderStatusArrival(orderId, orderStatus, eventId))) return;
       captureServerEvent({
         distinctId: userId,
         event: ANALYTICS_EVENTS.ORDER_STATUS_CHANGE,
