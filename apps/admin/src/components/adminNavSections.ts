@@ -1,9 +1,9 @@
 import type { SidebarNavItem, SidebarNavSection } from "@outfiqe/components";
 
 import type { AdminUser } from "@/features/auth/api/authSchemas";
+import type { Organization } from "@/features/crm/api/crmSchemas";
 import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 
-import type { CrmOrganizationContext } from "./AdminSidebar.utils";
 import {
   groupPlatformNavItems,
   isCrmSubItemVisible,
@@ -29,7 +29,7 @@ const listPlatformNavItems = (user: AdminUser | null): SidebarNavItem[] => [
 
 export const buildAdminNavSections = (
   user: AdminUser | null,
-  crmOrganization: CrmOrganizationContext | undefined,
+  crmOrganization: Organization | undefined,
 ): SidebarNavSection[] => {
   const visibleCrmItems = CRM_SUB_ITEMS.filter((crmItem) =>
     isCrmSubItemVisible(crmItem, crmOrganization),

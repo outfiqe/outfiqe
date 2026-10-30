@@ -113,7 +113,7 @@ export const groupPlatformNavItems = (
   }, []);
 };
 
-export type CrmOrganizationContext = {
+type CrmOrganizationContext = {
   viewerIsSuperAdmin: boolean;
   viewerPermissionKeys: string[];
   linkedBrandId: string | null;
