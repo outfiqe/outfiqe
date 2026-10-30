@@ -2,11 +2,9 @@ import { PRODUCT_SORT } from "@outfiqe/utils";
 import { millisecondsInSecond } from "date-fns/constants";
 import { LRUCache } from "lru-cache";
 
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { isUuid } from "#lib/uuid.utils.js";
 import logger from "#lib/winston.utils.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
@@ -18,6 +16,7 @@ import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "../product.constants.js";
+import { productErrors } from "../product.errors.js";
 import type {
   AutocompleteQuery,
   ListBrandProductsQuery,
@@ -241,7 +240,7 @@ export const productCatalogService = {
 
   async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
     const product = await productCatalogRepository.findPublicById(id);
-    if (!product) throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
+    if (!product) throw productErrors.notFound();
 
     const { brandId, brand, sizes, images, wornByCount, productType, isStretchable } = product;
     const { supportsFitRanges } = productType;

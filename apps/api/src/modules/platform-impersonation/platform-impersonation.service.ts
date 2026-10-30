@@ -20,6 +20,7 @@ import {
   IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS,
   IMPERSONATION_MAX_TTL_MINUTES,
 } from "./platform-impersonation.constants.js";
+import { platformImpersonationErrors } from "./platform-impersonation.errors.js";
 import { platformImpersonationRepository } from "./platform-impersonation.repository.js";
 import { mintImpersonationToken } from "./platform-impersonation.token.js";
 import type {
@@ -96,11 +97,7 @@ const requireImpersonationTargetRole = async ({
 
   const targetRole = await platformImpersonationRepository.findUserRole(targetUserId);
   if (!targetRole) {
-    throw new AppError(
-      "TARGET_NOT_A_MEMBER",
-      "The target account no longer exists.",
-      HTTP_STATUS.BAD_REQUEST,
-    );
+    throw platformImpersonationErrors.targetNotAMember();
   }
 
   if (await platformImpersonationRepository.isPlatformStaff(targetUserId)) {
@@ -133,11 +130,7 @@ const requireOpenableSession = async (
 ) => {
   const session = await platformImpersonationRepository.findById(sessionId);
   if (!session) {
-    throw new AppError(
-      "SESSION_NOT_FOUND",
-      "Impersonation session not found.",
-      HTTP_STATUS.NOT_FOUND,
-    );
+    throw platformImpersonationErrors.sessionNotFound();
   }
   if (!canManageAny && session.impersonatorId !== requesterId) {
     throw new AppError(
@@ -234,11 +227,7 @@ export const platformImpersonationService = {
   async revoke(sessionId: string, revokedById: string, canManageAny: boolean): Promise<void> {
     const session = await platformImpersonationRepository.findById(sessionId);
     if (!session) {
-      throw new AppError(
-        "SESSION_NOT_FOUND",
-        "Impersonation session not found.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw platformImpersonationErrors.sessionNotFound();
     }
     if (!canManageAny && session.impersonatorId !== revokedById) {
       throw new AppError(
@@ -304,11 +293,7 @@ export const platformImpersonationService = {
 
     const targetRole = await platformImpersonationRepository.findUserRole(session.targetUserId);
     if (!targetRole) {
-      throw new AppError(
-        "TARGET_NOT_A_MEMBER",
-        "The target account no longer exists.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw platformImpersonationErrors.targetNotAMember();
     }
 
     const token = mintImpersonationToken({

@@ -17,6 +17,7 @@ import { productService } from "#modules/products/product.service.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
 import { NOTHING_ALREADY_PAID, ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
+import { orderErrors } from "../order.errors.js";
 import { orderRepository } from "../order.repository.js";
 import type { OrderReturnOutcome } from "../order.types.js";
 import { listRemainingUnits } from "../refunds/refund.claim.js";
@@ -148,7 +149,7 @@ export const orderReturnService = {
     reason: string,
   ): Promise<OrderReturnOutcome> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
     assertOrderCanBeReturned(order);
 
     const returnedAt = new Date();
@@ -158,11 +159,7 @@ export const orderReturnService = {
     );
 
     if (!settlementOutcome) {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        "This order's status changed — refresh and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw orderErrors.invalidTransition();
     }
 
     const { appliedRefund, counts } = settlementOutcome;

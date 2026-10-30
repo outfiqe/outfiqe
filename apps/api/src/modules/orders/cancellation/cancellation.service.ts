@@ -21,6 +21,7 @@ import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
+import { orderErrors } from "../order.errors.js";
 import { orderRepository } from "../order.repository.js";
 import type { CancelOrderActor } from "../order.types.js";
 import { listRemainingUnits } from "../refunds/refund.claim.js";
@@ -145,9 +146,9 @@ const emailBuyerAboutCancellation = async (
 export const orderCancellationService = {
   async cancel(orderId: string, actor: CancelOrderActor, reason: string): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw orderErrors.notFound();
     if (actor.type === "BUYER" && order.userId !== actor.userId) {
-      throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+      throw orderErrors.notFound();
     }
     if (!CANCELLABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
@@ -165,11 +166,7 @@ export const orderCancellationService = {
     );
 
     if (!cancellation) {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        "This order's status changed — refresh and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw orderErrors.invalidTransition();
     }
 
     const settlement = cancellation.appliedRefund

@@ -12,6 +12,7 @@ import type {
 import { canDeleteRole, toMembershipSummary } from "#modules/crm-access/crm-access.utils.js";
 import { PLATFORM_PERMISSION_KEYS } from "#modules/platform-access/platform-access.constants.js";
 
+import { platformRolesErrors } from "./platform-roles.errors.js";
 import type {
   CreatePlatformRoleInput,
   PlatformPermissionRecord,
@@ -39,11 +40,7 @@ const asPlatformRoleNameConflict = (err: unknown): unknown =>
 const requirePlatformOrganizationId = async (): Promise<string> => {
   const platformOrganization = await crmAccessRepository.findPlatformOrganization();
   if (!platformOrganization) {
-    throw new AppError(
-      "PLATFORM_ORGANIZATION_NOT_FOUND",
-      "The platform organization is not configured.",
-      HTTP_STATUS.NOT_FOUND,
-    );
+    throw platformRolesErrors.platformOrganizationNotFound();
   }
   return platformOrganization.id;
 };
@@ -94,7 +91,7 @@ export const platformRolesService = {
     const organizationId = await requirePlatformOrganizationId();
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
+      throw platformRolesErrors.roleNotFound();
     }
     if (role.isBuiltIn) {
       throw new AppError(
@@ -118,7 +115,7 @@ export const platformRolesService = {
     const organizationId = await requirePlatformOrganizationId();
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
+      throw platformRolesErrors.roleNotFound();
     }
     if (role.isBuiltIn) {
       throw new AppError(
@@ -133,22 +130,14 @@ export const platformRolesService = {
       adminInviteRepository.countPendingByRoleId(roleId),
     ]);
     if (!canDeleteRole(role, memberCount) || pendingInviteCount > 0) {
-      throw new AppError(
-        "ROLE_IN_USE",
-        "Reassign every member and pending invite off this role before deleting it.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw platformRolesErrors.roleInUse();
     }
 
     try {
       await crmAccessRepository.deleteRole(organizationId, roleId);
     } catch (err) {
       if (isForeignKeyConstraintError(err)) {
-        throw new AppError(
-          "ROLE_IN_USE",
-          "Reassign every member and pending invite off this role before deleting it.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw platformRolesErrors.roleInUse();
       }
       throw err;
     }
@@ -170,11 +159,7 @@ export const platformRolesService = {
   ): Promise<MembershipRecord> {
     const platformOrganization = await crmAccessRepository.findPlatformOrganization();
     if (!platformOrganization) {
-      throw new AppError(
-        "PLATFORM_ORGANIZATION_NOT_FOUND",
-        "The platform organization is not configured.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw platformRolesErrors.platformOrganizationNotFound();
     }
     return crmAccessService.updateMembership(
       platformOrganization,

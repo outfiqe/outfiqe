@@ -12,6 +12,7 @@ import { sizeStandardService } from "#modules/size-standards/size-standard.servi
 import { productCatalogService } from "./catalog/catalog.service.js";
 import { productDiscountService } from "./discounts/discount.service.js";
 import { productInventoryService, recordNewSizeStock } from "./inventory/inventory.service.js";
+import { productErrors } from "./product.errors.js";
 import { requireOwnedProduct } from "./product.guards.js";
 import { productRepository } from "./product.repository.js";
 import type {
@@ -71,11 +72,7 @@ const assertFitDataAllowed = (
     (isStretchable !== undefined && isStretchable !== null) ||
     sizes.some(({ fitRange }) => fitRange !== null);
   if (!supportsFitRanges && hasFitData) {
-    throw new AppError(
-      "FIT_RANGES_NOT_SUPPORTED",
-      "This kind of clothing doesn't take a size chart or a stretch setting.",
-      HTTP_STATUS.UNPROCESSABLE_ENTITY,
-    );
+    throw productErrors.fitRangesNotSupported();
   }
 };
 
@@ -252,11 +249,7 @@ export const productService = {
     const product = await requireOwnedProduct(productId, brandId);
     const productType = await productTypeService.getById(product.productTypeId);
     if (!productType.supportsFitRanges) {
-      throw new AppError(
-        "FIT_RANGES_NOT_SUPPORTED",
-        "This kind of clothing doesn't take a size chart or a stretch setting.",
-        HTTP_STATUS.UNPROCESSABLE_ENTITY,
-      );
+      throw productErrors.fitRangesNotSupported();
     }
 
     const updatedProduct = await prisma.$transaction(async (tx) => {
@@ -267,11 +260,7 @@ export const productService = {
         sizeChartEntries,
       );
       if (updatedSizeCount !== sizeChartEntries.length) {
-        throw new AppError(
-          "SIZE_NOT_FOUND",
-          "One or more sizes weren't found on this product.",
-          HTTP_STATUS.NOT_FOUND,
-        );
+        throw productErrors.sizeNotFound();
       }
       return savedProduct;
     });

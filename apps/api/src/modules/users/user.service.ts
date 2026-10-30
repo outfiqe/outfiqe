@@ -8,6 +8,7 @@ import { uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 
+import { userErrors } from "./user.errors.js";
 import { userRepository } from "./user.repository.js";
 import type {
   CreateUserInput,
@@ -24,7 +25,7 @@ const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
 const assertHandleAvailable = async (handle: string, excludingUserId: string): Promise<void> => {
   const existing = await userRepository.findByHandle(handle);
   if (existing && existing.id !== excludingUserId) {
-    throw new AppError("HANDLE_TAKEN", "That username is already taken.", HTTP_STATUS.CONFLICT);
+    throw userErrors.handleTaken();
   }
 };
 
@@ -71,14 +72,10 @@ const writeProfile = async (userId: string, input: UpdateUserProfileInput): Prom
     return await userRepository.updateProfile(userId, input);
   } catch (error) {
     if (uniqueConstraintTargetIncludes(error, "handle")) {
-      throw new AppError("HANDLE_TAKEN", "That username is already taken.", HTTP_STATUS.CONFLICT);
+      throw userErrors.handleTaken();
     }
     if (uniqueConstraintTargetIncludes(error, "phone")) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw userErrors.phoneExists();
     }
     throw error;
   }
@@ -133,11 +130,7 @@ export const userService = {
     if (input.phone) {
       const existingByPhone = await userRepository.findByPhone(input.phone);
       if (existingByPhone && existingByPhone.id !== id) {
-        throw new AppError(
-          "PHONE_EXISTS",
-          "An account with this phone number already exists.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw userErrors.phoneExists();
       }
     }
 

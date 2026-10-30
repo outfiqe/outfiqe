@@ -8,6 +8,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { FULFILMENT_ADVANCE_FROM } from "../order.constants.js";
+import { orderErrors } from "../order.errors.js";
 import type {
   AdvanceBrandFulfilmentGroupBody,
   ListBrandFulfilmentGroupsQuery,
@@ -60,7 +61,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!group) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!group) throw orderErrors.notFound();
     return toBrandFulfilmentGroupDetailView(group, {
       allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
     });
@@ -76,7 +77,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw orderErrors.notFound();
     if (existing.fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS) {
       throw new AppError(
         "DELIVERED_BY_OUTFIQE",
@@ -116,7 +117,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!updatedGroup) throw orderErrors.notFound();
     return toBrandFulfilmentGroupDetailView(updatedGroup, {
       allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
     });
@@ -132,7 +133,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw orderErrors.notFound();
 
     const flagged = await orderFulfilmentGroupRepository.flagFulfilmentGroupCancellationRequest(
       groupId,

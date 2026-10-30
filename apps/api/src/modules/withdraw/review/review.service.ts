@@ -13,6 +13,7 @@ import { logisticsRiderPayRepository } from "#modules/logistics/rider-pay/rider-
 import { outfitOfferRepository } from "#modules/outfit-offers/outfit-offer.repository.js";
 
 import { LEDGER_ROW_KIND } from "../withdraw.constants.js";
+import { withdrawErrors } from "../withdraw.errors.js";
 import { withdrawRepository } from "../withdraw.repository.js";
 import type {
   ApproveWithdrawRequestBody,
@@ -165,7 +166,7 @@ export const withdrawReviewService = {
     const { isFinalApproval, requestRecord } = await prisma.$transaction(async (tx) => {
       const requestRecord = await withdrawRepository.findById(requestId, tx);
       if (!requestRecord) {
-        throw new AppError("NOT_FOUND", "Withdraw request not found.", HTTP_STATUS.NOT_FOUND);
+        throw withdrawErrors.notFound();
       }
 
       if (
@@ -236,7 +237,7 @@ export const withdrawReviewService = {
     const requestRecord = await prisma.$transaction(async (tx) => {
       const requestRecord = await withdrawRepository.findById(requestId, tx);
       if (!requestRecord) {
-        throw new AppError("NOT_FOUND", "Withdraw request not found.", HTTP_STATUS.NOT_FOUND);
+        throw withdrawErrors.notFound();
       }
       if (requestRecord.status !== WithdrawRequestStatus.APPROVED) {
         throw new AppError(

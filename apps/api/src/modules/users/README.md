@@ -6,6 +6,7 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 
 ## Structure
 
+- `user.errors.ts` — `userErrors`, the errors this module raises from more than one place.
 - `user.controller.ts`, `user.routes.ts` — `POST /`, `GET /`, `GET /:id` (all admin-only, `requireAuth` + `requirePlatformAccess`), `PATCH /me` (`requireActiveAuth`, self-service profile update — `name`/`handle`/`phone`/`avatarUrl`/`avatarImageAssetId`), `GET /search?q=` (admin-only, name/handle typeahead — see rationale below), `GET /handle-availability?handle=` (`requireAuth`, rate-limited — live username-availability check, see rationale below).
 - `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`handle`/`phone`/`avatarUrl`/`avatarImageAssetId`, all optional — a partial patch, not a full replace), `userIdParamSchema`, `searchUsersQuerySchema`, `handleAvailabilityQuerySchema` (wraps the shared `handleField` from `../../shared/utils/handle.schemas.ts`).
 - `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`search`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`, `updateLastSeenAt`/`findLastSeenAtByIds` (written by `../chat`'s presence tracking on socket disconnect — see `../chat/README.md`, not by this module itself).

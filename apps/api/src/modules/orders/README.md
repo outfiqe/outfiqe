@@ -6,6 +6,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
 
 ## Structure
 
+- `order.errors.ts` — `orderErrors`, the errors this module raises from more than one place.
 - `order.routes.ts`, `order.controller.ts` — the HTTP layer for shopper, admin and brand endpoints.
 - `order.service.ts` — `orderService`, the only object the controller and other modules import. It holds the shopper/admin reads (`getOrder`, `listOrders`, `listAllAdmin`, `getOrderAdmin`) and `advanceFulfilment`, and spreads in every topic service below.
 - `order.repository.ts` — `orderRepository`: order reads and writes, payment-state changes (`markCancelled`, `markReturned`, `markRefunded`, `failUnsettledPayment`, `markNeedsManualRefund`), and `listSettledPurchasedProductIds`. Spreads in `orderFulfilmentGroupRepository`.

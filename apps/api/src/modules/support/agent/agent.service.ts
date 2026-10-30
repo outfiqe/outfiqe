@@ -22,6 +22,7 @@ import { platformAccessService } from "#modules/platform-access/platform-access.
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { REOPEN_TOKEN_TTL_MS } from "../support.constants.js";
+import { supportErrors } from "../support.errors.js";
 import { moveStatusBestEffort, requireLegalTransition, ticketNotFound } from "../support.guards.js";
 import { supportRepository } from "../support.repository.js";
 import type { AdminChangeStatusBody, AdminListQuery, AdminReplyBody } from "../support.schemas.js";
@@ -128,11 +129,7 @@ export const supportAgentService = {
     const ticket = await this.getForAdmin(ticketId);
 
     if (ticket.status !== input.expectedStatus) {
-      throw new AppError(
-        "SUPPORT_STATUS_CHANGED",
-        "This request's status changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportStatusChanged();
     }
     if (input.status === ticket.status) return ticket;
 
@@ -140,11 +137,7 @@ export const supportAgentService = {
 
     const moved = await supportRepository.transitionStatus(ticketId, ticket.status, input.status);
     if (!moved) {
-      throw new AppError(
-        "SUPPORT_STATUS_CHANGED",
-        "This request's status changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportStatusChanged();
     }
 
     if (input.status === SupportStatus.RESOLVED) {
@@ -187,11 +180,7 @@ export const supportAgentService = {
     const ticket = await this.getForAdmin(ticketId);
 
     if (ticket.assigneeUserId !== expectedAssigneeUserId) {
-      throw new AppError(
-        "SUPPORT_ASSIGNEE_CHANGED",
-        "This request's assignee changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportAssigneeChanged();
     }
 
     if (assigneeUserId && assigneeUserId !== actorUserId && !canManageOthers) {
@@ -210,11 +199,7 @@ export const supportAgentService = {
       assigneeUserId,
     );
     if (!claimed) {
-      throw new AppError(
-        "SUPPORT_ASSIGNEE_CHANGED",
-        "This request's assignee changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportAssigneeChanged();
     }
 
     if (assigneeUserId && ticket.status === SupportStatus.NEW) {
@@ -241,20 +226,12 @@ export const supportAgentService = {
     const ticket = await this.getForAdmin(ticketId);
 
     if (ticket.priority !== expectedPriority) {
-      throw new AppError(
-        "SUPPORT_PRIORITY_CHANGED",
-        "This request's priority changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportPriorityChanged();
     }
 
     const claimed = await supportRepository.setPriority(ticketId, expectedPriority, priority);
     if (!claimed) {
-      throw new AppError(
-        "SUPPORT_PRIORITY_CHANGED",
-        "This request's priority changed under you — reload and try again.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw supportErrors.supportPriorityChanged();
     }
 
     return this.getForAdmin(ticketId);

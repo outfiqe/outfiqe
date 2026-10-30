@@ -32,6 +32,7 @@ GETs, and touches `lastSeenAt` at most once a minute per session. The
 
 ## Structure
 
+- `platform-impersonation.errors.ts` — `platformImpersonationErrors`, the errors this module raises from more than one place.
 - `platform-impersonation.constants.ts` — TTL (30 min default, 60 min cap), the `read`/`write`
   scope list, the `"impersonation"` actor-`via` marker, the hand-off exchange code's TTL (60s),
   and the redeem endpoint's IP rate limit.

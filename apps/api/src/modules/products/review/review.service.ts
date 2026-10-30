@@ -10,6 +10,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 
+import { productErrors } from "../product.errors.js";
 import { productRepository } from "../product.repository.js";
 import type { ListReviewProductsQuery } from "../product.schemas.js";
 import type { ProductRecord, ProductReviewPage } from "../product.types.js";
@@ -17,7 +18,7 @@ import type { ProductRecord, ProductReviewPage } from "../product.types.js";
 const requirePendingProduct = async (productId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
   if (!product || product.deletedAt) {
-    throw new AppError("NOT_FOUND", "Product not found.", HTTP_STATUS.NOT_FOUND);
+    throw productErrors.notFound();
   }
   if (product.status !== ProductStatus.PENDING) {
     throw new AppError(
