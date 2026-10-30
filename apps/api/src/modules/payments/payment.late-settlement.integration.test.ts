@@ -4,6 +4,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
   PaymentMethod,
   PaymentStatus,
@@ -28,6 +29,7 @@ const authHeaderFor = (userId: string): string =>
   `Bearer ${generateTokenpair({ sub: userId, role: UserRole.CUSTOMER }).accessToken}`;
 
 const HOURS_AFTER_EXPIRY_MS = 60 * 60 * 1000;
+const OVERLAPPING_VERIFICATIONS = 2;
 
 const createEsewaOrderAwaitingPayment = async (createdAt?: Date) => {
   const suffix = randomUUID().slice(0, 8);
@@ -141,6 +143,42 @@ describe("payment recognition after the buyer pays late", () => {
 
     const reloaded = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(reloaded.paymentStatus).toBe(PaymentStatus.PAID);
+  });
+
+  it("announces the purchase once when two verifications settle the same payment at once", async () => {
+    const { buyer, order } = await createEsewaOrderAwaitingPayment();
+    const publishSpy = vi.spyOn(eventBus, "publish");
+    let verificationsStarted = 0;
+    let releaseVerifications = (): void => undefined;
+    const allVerificationsStarted = new Promise<void>((resolve) => {
+      releaseVerifications = resolve;
+    });
+    esewaVerify.mockImplementation(async () => {
+      verificationsStarted += 1;
+      if (verificationsStarted === OVERLAPPING_VERIFICATIONS) releaseVerifications();
+      await allVerificationsStarted;
+      return { status: "COMPLETE", rawResponse: { status: "COMPLETE" } };
+    });
+    const verifyPayment = () =>
+      request(testApp)
+        .post(`/api/payments/${order.id}/verify`)
+        .set("Authorization", authHeaderFor(buyer.id));
+
+    const verifications = await Promise.all([verifyPayment(), verifyPayment()]);
+
+    expect(verifications.map(({ body }) => body.data.status)).toEqual(["COMPLETE", "COMPLETE"]);
+    const purchaseAnnouncements = publishSpy.mock.calls.filter(
+      ([event, payload]) =>
+        event === DomainEvents.PRODUCT_PURCHASED &&
+        typeof payload === "object" &&
+        payload !== null &&
+        "orderId" in payload &&
+        payload.orderId === order.id,
+    );
+    expect(purchaseAnnouncements).toHaveLength(1);
+    const reloaded = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(reloaded.paymentStatus).toBe(PaymentStatus.PAID);
+    publishSpy.mockRestore();
   });
 
   it("verifies with the gateway before expiring an order past the reconciliation window", async () => {

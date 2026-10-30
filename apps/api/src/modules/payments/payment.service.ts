@@ -32,6 +32,12 @@ import { PaymentVerifyStatus } from "./payment.types.js";
 import { esewaProvider } from "./providers/esewa.provider.js";
 import { extractKhaltiTransactionId, khaltiProvider } from "./providers/khalti.provider.js";
 
+const SETTLEMENT_OUTCOME = {
+  SETTLED_ELSEWHERE: "settled_elsewhere",
+  NEEDS_MANUAL_REFUND: "needs_manual_refund",
+  PLACED: "placed",
+} as const;
+
 const providers: Partial<Record<PaymentMethod, PaymentProvider>> = {
   [PaymentMethod.ESEWA]: esewaProvider,
   [PaymentMethod.KHALTI]: khaltiProvider,
@@ -80,9 +86,9 @@ const settleVerified = async (
   transactionId: string,
   rawResponse: unknown,
 ): Promise<void> => {
-  const needsManualRefund = await prisma.$transaction(async (tx) => {
+  const settlementOutcome = await prisma.$transaction(async (tx) => {
     const settled = await paymentRepository.settleTransaction(tx, transactionId, rawResponse);
-    if (!settled) return false;
+    if (!settled) return SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE;
 
     const insufficientSizeIds = await productService.decrementStockForItems(
       tx,
@@ -96,14 +102,16 @@ const settleVerified = async (
 
     if (insufficientSizeIds.length > 0) {
       await paymentRepository.markOrderNeedsManualRefund(tx, order.id);
-      return true;
+      return SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND;
     }
 
     await paymentRepository.markOrderPlaced(tx, order.id);
-    return false;
+    return SETTLEMENT_OUTCOME.PLACED;
   });
 
-  if (needsManualRefund) {
+  if (settlementOutcome === SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE) return;
+
+  if (settlementOutcome === SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND) {
     alertOpsForManualRefund(order.id, order.total);
   } else {
     await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, {
