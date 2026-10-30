@@ -17,7 +17,11 @@ import {
 } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
-import { hasNoMoneyTaken, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
+import {
+  hasNoMoneyTaken,
+  hasNothingLeftToPay,
+  NOTHING_TO_PAY_LABEL,
+} from "../utils/cancellationWording.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -99,7 +103,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const isMoneyUntaken = hasNoMoneyTaken(paymentStatus);
-  const hasNothingToPay = orderCancelled && isMoneyUntaken;
+  const hasNothingToPay = hasNothingLeftToPay(fulfilmentStatus, paymentStatus);
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
@@ -134,11 +138,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Order {id}
         </h1>
-        {!orderCancelled && (
+        {!orderCancelled && !hasNothingToPay && (
           <p className="mt-4 text-sm text-muted-foreground">
             {awaitingPayment
               ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
-              : paymentMethod === PaymentMethod.COD
+              : isMoneyUntaken
                 ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
                 : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
           </p>

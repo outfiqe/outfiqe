@@ -78,7 +78,7 @@ const assertOrderCanBeReturned = ({ fulfilmentGroups, fulfilmentStatus }: OrderF
   if (fulfilmentGroups.length > NO_HUB_GROUPS) {
     throw new AppError(
       "RETURN_CHECKED_IN_AT_HUB",
-      "This order was delivered through the Outfiqe hub. Check the parcel in at the hub when it comes back instead.",
+      "This order went through the Outfiqe hub. If the parcel is on its way back, check it in at the hub. If it was already delivered, refund the items instead.",
       HTTP_STATUS.CONFLICT,
     );
   }
