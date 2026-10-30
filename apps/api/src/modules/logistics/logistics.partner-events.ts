@@ -101,6 +101,33 @@ const recordHandoverNotScanned = async (
   });
 };
 
+type RecordedTrackingOutcome = Awaited<ReturnType<typeof logisticsTrackingService.recordEvent>>;
+
+const toRecordedEventResult = ({
+  eventId,
+  wasDuplicate,
+  appliedToStatus,
+}: RecordedTrackingOutcome): PartnerEventResult => {
+  if (wasDuplicate) {
+    return {
+      outcome: PartnerStatusImportRowOutcome.DUPLICATE,
+      trackingEventId: eventId,
+      message: "This update was already recorded.",
+    };
+  }
+  return appliedToStatus
+    ? {
+        outcome: PartnerStatusImportRowOutcome.APPLIED,
+        trackingEventId: eventId,
+        message: null,
+      }
+    : {
+        outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
+        trackingEventId: eventId,
+        message: "Saved, but it doesn't move the parcel forward from where it is now.",
+      };
+};
+
 export const logisticsPartnerEvents = {
   async applyPartnerTrackingEvent(
     partnerId: string,
@@ -170,23 +197,6 @@ export const logisticsPartnerEvents = {
       await recordHandoverNotScanned(partnerId, source, booking, event.occurredAt);
     }
 
-    if (outcome.wasDuplicate) {
-      return {
-        outcome: PartnerStatusImportRowOutcome.DUPLICATE,
-        trackingEventId: outcome.eventId,
-        message: "This update was already recorded.",
-      };
-    }
-    return outcome.appliedToStatus
-      ? {
-          outcome: PartnerStatusImportRowOutcome.APPLIED,
-          trackingEventId: outcome.eventId,
-          message: null,
-        }
-      : {
-          outcome: PartnerStatusImportRowOutcome.NOT_APPLIED,
-          trackingEventId: outcome.eventId,
-          message: "Saved, but it doesn't move the parcel forward from where it is now.",
-        };
+    return toRecordedEventResult(outcome);
   },
 };

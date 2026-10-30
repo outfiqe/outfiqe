@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
   DeliveryPartnerConnection,
   PartnerBookingStatus,
@@ -66,6 +67,64 @@ const requireLiveBookingSummary = async (shipmentId: string) => {
   return toParcelBookingSummary(booking);
 };
 
+type LiveBooking = NonNullable<
+  Awaited<ReturnType<typeof logisticsShipmentBookingRepository.findLiveBookingForShipment>>
+>;
+
+const requireManuallyBookableBooking = async (shipmentId: string): Promise<LiveBooking> => {
+  const booking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
+    prisma,
+    shipmentId,
+  );
+  if (!booking || !BOOKABLE_STATUSES.has(booking.status)) {
+    throw new AppError(
+      "PARCEL_NOT_WAITING_FOR_BOOKING",
+      "This parcel isn't waiting for a booking. Choose a partner first.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  if (isBeingBookedAutomatically(booking)) {
+    throw new AppError(
+      "BOOKING_IN_PROGRESS",
+      `We're booking this parcel with ${booking.partner.name} now. Wait for it to finish or fail.`,
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  return booking;
+};
+
+const cancelLiveBookingForRebook = async (
+  tx: Prisma.TransactionClient,
+  {
+    staffUserId,
+    shipmentId,
+    reason,
+    occurredAt,
+  }: { staffUserId: string; shipmentId: string; reason: string; occurredAt: Date },
+): Promise<void> => {
+  const liveBooking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
+    tx,
+    shipmentId,
+  );
+  if (!liveBooking) return;
+
+  await logisticsShipmentBookingRepository.cancelLiveBooking(tx, {
+    bookingId: liveBooking.id,
+    cancelReason: reason,
+    cancelledAt: occurredAt,
+  });
+  await logisticsTrackingService.recordEventInTransaction(tx, {
+    subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId },
+    code: TrackingEventCode.NOTE,
+    source: TrackingEventSource.HUB,
+    actorUserId: staffUserId,
+    partnerId: liveBooking.partnerId,
+    dedupeKey: `${HUB_EVENT_DEDUPE_PREFIX.BOOKING_CANCELLED}:${liveBooking.id}`,
+    occurredAt,
+    note: `${BOOKING_CANCELLED_NOTE_PREFIX} with ${liveBooking.partner.name}: ${reason}`,
+  });
+};
+
 export const logisticsParcelBookingService = {
   async recordManualBooking(
     staffUserId: string,
@@ -73,24 +132,7 @@ export const logisticsParcelBookingService = {
     { partnerReference }: RecordManualBookingBody,
   ): Promise<ParcelBookingSummary> {
     await requirePackedParcel(shipmentId);
-    const booking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
-      prisma,
-      shipmentId,
-    );
-    if (!booking || !BOOKABLE_STATUSES.has(booking.status)) {
-      throw new AppError(
-        "PARCEL_NOT_WAITING_FOR_BOOKING",
-        "This parcel isn't waiting for a booking. Choose a partner first.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-    if (isBeingBookedAutomatically(booking)) {
-      throw new AppError(
-        "BOOKING_IN_PROGRESS",
-        `We're booking this parcel with ${booking.partner.name} now. Wait for it to finish or fail.`,
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    const booking = await requireManuallyBookableBooking(shipmentId);
     const reference = normalizePartnerReference(partnerReference);
     if (!isReferenceAllowedByPattern(booking.partner.referencePattern, reference)) {
       throw new AppError(
@@ -162,27 +204,7 @@ export const logisticsParcelBookingService = {
 
     const occurredAt = new Date();
     await prisma.$transaction(async (tx) => {
-      const liveBooking = await logisticsShipmentBookingRepository.findLiveBookingForShipment(
-        tx,
-        shipmentId,
-      );
-      if (liveBooking) {
-        await logisticsShipmentBookingRepository.cancelLiveBooking(tx, {
-          bookingId: liveBooking.id,
-          cancelReason: reason,
-          cancelledAt: occurredAt,
-        });
-        await logisticsTrackingService.recordEventInTransaction(tx, {
-          subject: { kind: TRACKING_SUBJECT_KIND.SHIPMENT, shipmentId },
-          code: TrackingEventCode.NOTE,
-          source: TrackingEventSource.HUB,
-          actorUserId: staffUserId,
-          partnerId: liveBooking.partnerId,
-          dedupeKey: `${HUB_EVENT_DEDUPE_PREFIX.BOOKING_CANCELLED}:${liveBooking.id}`,
-          occurredAt,
-          note: `${BOOKING_CANCELLED_NOTE_PREFIX} with ${liveBooking.partner.name}: ${reason}`,
-        });
-      }
+      await cancelLiveBookingForRebook(tx, { staffUserId, shipmentId, reason, occurredAt });
       const earlierBookingsWithPartner =
         await logisticsShipmentBookingRepository.countBookingsWithPartner(
           tx,

@@ -160,6 +160,32 @@ const recordOutcomeConsequences = async (
   }
 };
 
+type ParcelAwaitingReturn = Awaited<ReturnType<typeof requireParcelAwaitingReturn>>;
+
+const refundReturnedParcel = async ({
+  staffUserId,
+  shipmentId,
+  parcel,
+  refundCause,
+  reason,
+}: {
+  staffUserId: string;
+  shipmentId: string;
+  parcel: ParcelAwaitingReturn;
+  refundCause: ReturnType<typeof resolveReturnOutcome>["refundCause"];
+  reason: string;
+}) => {
+  const refundLines = toRefundLines(parcel);
+  if (refundLines.length <= NO_UNITS) return null;
+
+  return orderService.refundOrderItems(
+    staffUserId,
+    parcel.orderId,
+    { lines: refundLines, cause: refundCause, reason, restock: false },
+    `${RETURN_REFUND_KEY_PREFIX}:${shipmentId}`,
+  );
+};
+
 export const logisticsReturnCheckInService = {
   async checkInReturnedParcel(
     staffUserId: string,
@@ -180,21 +206,13 @@ export const logisticsReturnCheckInService = {
       ? calculateGoodsStillInParcel(parcelItems)
       : null;
 
-    const refundLines = toRefundLines(parcel);
-    const refund =
-      refundLines.length > NO_UNITS
-        ? await orderService.refundOrderItems(
-            staffUserId,
-            parcel.orderId,
-            {
-              lines: refundLines,
-              cause: rules.refundCause,
-              reason: note ?? RETURN_REFUND_REASONS[outcome],
-              restock: false,
-            },
-            `${RETURN_REFUND_KEY_PREFIX}:${shipmentId}`,
-          )
-        : null;
+    const refund = await refundReturnedParcel({
+      staffUserId,
+      shipmentId,
+      parcel,
+      refundCause: rules.refundCause,
+      reason: note ?? RETURN_REFUND_REASONS[outcome],
+    });
 
     const checkedInAt = new Date();
     const { brandReturnIds, pickupOutcomes } = await prisma.$transaction(async (tx) => {
