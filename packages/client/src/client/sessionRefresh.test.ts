@@ -65,6 +65,12 @@ describe("a failed session refresh", () => {
     },
   );
 
+  it("keeps the shopper signed in after a failure that is not a request error", async () => {
+    vi.spyOn(axios, "post").mockRejectedValue(new TypeError("Failed to read the response"));
+
+    expect(await requestWithExpiredToken()).not.toHaveBeenCalled();
+  });
+
   it("keeps the shopper signed in when the connection drops", async () => {
     vi.spyOn(axios, "post").mockRejectedValue(new AxiosError("Network Error"));
 
