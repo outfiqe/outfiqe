@@ -16,9 +16,9 @@ vi.mock("@/features/creator-dashboard/earnings/hooks/useCommissionEligibility", 
   useCommissionEligibility: vi.fn(),
 }));
 
-const mockAuth = (role: UserRole, isCreator = false) => {
+const mockAuth = (role: UserRole, isCreator = false, brandId?: string) => {
   vi.mocked(useAuth).mockReturnValue({
-    state: { user: { role } },
+    state: { user: { role, brandId } },
     hasCrmAccess: false,
     isCreator,
   } as ReturnType<typeof useAuth>);
@@ -93,6 +93,44 @@ describe("useDashboardNav", () => {
 
     expect(navIdsFor(UserRole.BRAND_OWNER)).toContain("pickup-locations");
     expect(navIdsFor(UserRole.CUSTOMER)).not.toContain("pickup-locations");
+  });
+
+  it("gives staff their own menu, with no shopper pages", () => {
+    mockAuth(UserRole.ADMIN);
+
+    const { result } = renderHook(() => useDashboardNav());
+
+    expect(result.current.accountLabel).toBe("Staff account");
+    expect(result.current.navItems.map((item) => item.id)).toEqual([
+      "admin-panel",
+      "chat-settings",
+      "security",
+    ]);
+  });
+
+  it("shows My Builds right after the Admin panel link for staff once Outfit Build is on", () => {
+    vi.mocked(useFeatureFlag).mockReturnValue(true);
+
+    const [firstNavId, secondNavId] = navIdsFor(UserRole.ADMIN);
+
+    expect(firstNavId).toBe("admin-panel");
+    expect(secondNavId).toBe("builds");
+  });
+
+  it("keeps the muse menu for staff who are also creators", () => {
+    mockAuth(UserRole.ADMIN, true);
+
+    const { result } = renderHook(() => useDashboardNav());
+
+    expect(result.current.accountLabel).toBe("Muse account");
+  });
+
+  it("does not give the staff menu to staff who belong to a brand", () => {
+    mockAuth(UserRole.ADMIN, false, "brand-1");
+
+    const { result } = renderHook(() => useDashboardNav());
+
+    expect(result.current.accountLabel).not.toBe("Staff account");
   });
 
   it("gives riders their own menu: visits, earnings, security and support", () => {

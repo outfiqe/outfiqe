@@ -1,8 +1,25 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-import { FEED_LAYOUT, type FeedLayout } from "../../constants/explore.constants";
+import { cn } from "@/shared/lib/cn";
 
-export const PostCardSkeleton = () => {
+import {
+  FEED_LAYOUT,
+  type FeedLayout,
+  LIST_FEED_COLUMN_CLASS_NAME,
+  LIST_POST_MEDIA_CLASS_NAME,
+} from "../../constants/explore.constants";
+
+const DEFAULT_MEDIA_ASPECT = 4 / 5;
+
+type PostCardSkeletonProps = {
+  mediaAspect?: number;
+  mediaClassName?: string;
+};
+
+export const PostCardSkeleton = ({
+  mediaAspect = DEFAULT_MEDIA_ASPECT,
+  mediaClassName,
+}: PostCardSkeletonProps) => {
   return (
     <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border">
       <div className="flex items-center gap-2 px-3 py-2.5">
@@ -13,7 +30,10 @@ export const PostCardSkeleton = () => {
         </div>
       </div>
 
-      <Skeleton className="aspect-4/5 w-full rounded-none" />
+      <Skeleton
+        className={cn("w-full rounded-none", mediaClassName)}
+        style={{ aspectRatio: String(mediaAspect) }}
+      />
 
       <div className="px-3 py-2.5">
         <div className="space-y-2">
@@ -33,6 +53,10 @@ export const PostCardSkeleton = () => {
     </div>
   );
 };
+
+export const ListPostCardSkeleton = ({ mediaAspect }: { mediaAspect?: number }) => (
+  <PostCardSkeleton mediaAspect={mediaAspect} mediaClassName={LIST_POST_MEDIA_CLASS_NAME} />
+);
 
 const PostGridCardSkeleton = () => {
   return (
@@ -55,9 +79,9 @@ export const ExploreFeedSkeleton = ({
 }: ExploreFeedSkeletonProps) => {
   if (layout === FEED_LAYOUT.LIST) {
     return (
-      <div role="status" aria-label="Loading feed" className="mx-auto flex max-w-xl flex-col">
+      <div role="status" aria-label="Loading feed" className={LIST_FEED_COLUMN_CLASS_NAME}>
         {Array.from({ length: 4 }).map((_, index) => (
-          <PostCardSkeleton key={index} />
+          <ListPostCardSkeleton key={index} />
         ))}
       </div>
     );

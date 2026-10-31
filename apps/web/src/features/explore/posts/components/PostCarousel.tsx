@@ -50,6 +50,8 @@ type PostCarouselProps = {
   aspectRatio?: string;
   sizes?: string;
   className?: string;
+  imageFrameClassName?: string;
+  showsWholeImage?: boolean;
   onImageClick?: () => void;
   onDoubleTapLike?: () => void;
 };
@@ -60,6 +62,8 @@ export const PostCarousel = ({
   aspectRatio,
   sizes = DEFAULT_POST_CAROUSEL_SIZES,
   className,
+  imageFrameClassName,
+  showsWholeImage = false,
   onImageClick,
   onDoubleTapLike,
 }: PostCarouselProps) => {
@@ -118,14 +122,14 @@ export const PostCarousel = ({
   if (images.length === 0) {
     return (
       <div
-        className={cn("overflow-hidden", className)}
+        className={cn("overflow-hidden", imageFrameClassName, className)}
         style={{ ...(aspectRatio ? { aspectRatio } : {}), backgroundColor: fallbackColor }}
       />
     );
   }
 
   return (
-    <div onClick={handleTap} className={cn("relative", onImageClick && "cursor-pointer")}>
+    <div onClick={handleTap} className={cn("relative w-full", onImageClick && "cursor-pointer")}>
       <Carousel
         setApi={setApi}
         opts={{ watchDrag: hasMultiple }}
@@ -138,8 +142,18 @@ export const PostCarousel = ({
         <CarouselContent className="ml-0">
           {images.map((url, i) => (
             <CarouselItem key={`${url}-${i}`} className="pl-0">
-              <div className="relative size-full" style={aspectRatio ? { aspectRatio } : undefined}>
-                <AppImage src={url} alt="" fill sizes={sizes} eager={i === 0} />
+              <div
+                className={cn("relative size-full bg-muted", imageFrameClassName)}
+                style={aspectRatio ? { aspectRatio } : undefined}
+              >
+                <AppImage
+                  src={url}
+                  alt=""
+                  fill
+                  sizes={sizes}
+                  eager={i === 0}
+                  className={showsWholeImage ? "object-contain" : undefined}
+                />
               </div>
             </CarouselItem>
           ))}

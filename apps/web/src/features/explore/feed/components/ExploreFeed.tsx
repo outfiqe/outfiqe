@@ -1,9 +1,10 @@
 "use client";
 
 import { Button, FormBanner } from "@outfiqe/design-system";
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -23,11 +24,12 @@ import {
   type ExploreQueryParamKey,
   FEED_LAYOUT,
   type FeedLayout,
+  LIST_FEED_COLUMN_CLASS_NAME,
   STAFF_LOCKED_EXPLORE_TABS,
   STAFF_LOCKED_TAB_TOOLTIP,
 } from "../../constants/explore.constants";
 import { useExploreAuthGate } from "../../hooks/useExploreAuthGate";
-import { ExploreFeedSkeleton } from "../../posts/components/PostCardSkeleton";
+import { ExploreFeedSkeleton, ListPostCardSkeleton } from "../../posts/components/PostCardSkeleton";
 import { PostGridCard } from "../../posts/components/PostGridCard";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
@@ -43,9 +45,9 @@ const AddPostButton = dynamic(
     ssr: false,
   },
 );
-const PostCard = dynamic(() => import("../../posts/components/PostCard").then((m) => m.PostCard), {
-  loading: () => <ExploreFeedSkeleton layout={FEED_LAYOUT.LIST} />,
-});
+const PostCard = lazy(() =>
+  import("../../posts/components/PostCard").then((m) => ({ default: m.PostCard })),
+);
 const PostDetailModal = dynamic(
   () => import("../../posts/components/PostDetailModal").then((m) => m.PostDetailModal),
   {
@@ -284,7 +286,7 @@ export const ExploreFeed = () => {
               )}
             </>
           ) : (
-            <div className="mx-auto flex max-w-xl flex-col">
+            <div className={LIST_FEED_COLUMN_CLASS_NAME}>
               {posts.map((post, index) => (
                 <Fragment key={post.id}>
                   {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
@@ -292,7 +294,17 @@ export const ExploreFeed = () => {
                       Recent & popular
                     </p>
                   )}
-                  <PostCard post={post} trendingRank={trendingRankByPostId.get(post.id)} />
+                  <Suspense
+                    fallback={
+                      <ListPostCardSkeleton mediaAspect={POST_LAYOUT_ASPECT[post.layout]} />
+                    }
+                  >
+                    <PostCard
+                      post={post}
+                      trendingRank={trendingRankByPostId.get(post.id)}
+                      onOpenComments={() => setDetailPostId(post.id)}
+                    />
+                  </Suspense>
                 </Fragment>
               ))}
             </div>

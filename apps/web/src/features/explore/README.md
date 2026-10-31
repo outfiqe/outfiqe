@@ -263,3 +263,11 @@ covers both the error message and the retry.
 **The Following tab has its own empty state.** When `following` returns no posts, `ExploreFeed` tells the viewer to follow creators from the "Creators to follow" rail instead of showing the generic "Nothing here yet" line, because the API no longer substitutes trending posts (see `creator-looks/README.md`).
 
 **An admin on a locked tab is redirected to `?tab=trending`.** `ExploreFeed` already showed Trending in place of For You and Following for admin accounts, but left the URL alone, so the address bar and the tab disagreed. Once auth has resolved as admin, a `router.replace` rewrites the tab param and keeps the layout param.
+
+## List view fits the screen
+
+A list post should show its whole photo without scrolling, like Instagram. `LIST_FEED_COLUMN_CLASS_NAME` narrows the column on short screens so a 4:5 photo fits, and `LIST_POST_MEDIA_CLASS_NAME` caps the photo height for taller shapes. `10.5rem` in both is the site header plus the post header. Photos use `showsWholeImage`, so a photo that does not match its frame gets bars instead of being cropped.
+
+Each post in the list loads inside its own `Suspense` with `ListPostCardSkeleton`, sized to that post's shape. A `next/dynamic` loading state cannot read the post, and an earlier version rendered the full four-card skeleton for every post, which made the list jump when the cards arrived.
+
+The comment button opens `PostDetailModal` in every card view. The modal sizes its photo pane from the post's shape and pins the chime box to the bottom of the panel.
