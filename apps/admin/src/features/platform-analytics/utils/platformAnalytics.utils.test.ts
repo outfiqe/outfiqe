@@ -29,6 +29,8 @@ describe("toPageLabel", () => {
     expect(toPageLabel({ ...page, path: "/" })).toBe("Homepage");
     expect(toPageLabel({ ...page, path: "/explore" })).toBe("Explore");
     expect(toPageLabel({ ...page, path: "/creator/asha" })).toBe("@asha");
+    expect(toPageLabel({ ...page, path: "/manage-orders" })).toBe("Brand orders");
+    expect(toPageLabel({ ...page, path: "/builds/a9f2e662" })).toBe("An outfit build");
   });
 
   it("falls back to the path", () => {
@@ -70,7 +72,13 @@ describe("findBiggestDrop", () => {
 describe("describeFunnelStep", () => {
   it("says how many people stopped in plain words", () => {
     expect(describeFunnelStep(3, 8)).toBe("5 of 8 people stopped here.");
+    expect(describeFunnelStep(1, 2)).toBe("1 of 2 people stopped here.");
+    expect(describeFunnelStep(0, 1)).toBe("1 of 1 person stopped here.");
     expect(describeFunnelStep(8, 8)).toBe("Nobody left at this step.");
+  });
+
+  it("explains a step with more people than the one above", () => {
+    expect(describeFunnelStep(3, 0)).toBe("Some people reached this step without the one above.");
   });
 });
 

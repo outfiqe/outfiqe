@@ -20,6 +20,7 @@ const LAYOUT_SHIFT_DECIMALS = 2;
 const NOT_MEASURED = "Not measured";
 const TOO_FEW_READINGS = "Too few readings to judge";
 const SINGLE_READING = 1;
+const SINGLE_PERSON = 1;
 const PREVIOUS_STEP_OFFSET = 1;
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
@@ -49,7 +50,20 @@ const FIXED_PAGE_LABEL: Record<string, string> = {
   "/orders": "Your orders",
   "/login": "Log in",
   "/register": "Sign up",
+  "/overview": "Dashboard overview",
+  "/manage-orders": "Brand orders",
+  "/products": "Brand products",
+  "/tag-reviews": "Brand tag reviews",
+  "/builds": "Outfit builds",
+  "/profile": "Profile",
 };
+
+const DETAIL_PAGE_LABELS: { pattern: RegExp; label: string }[] = [
+  { pattern: /^\/builds\/[^/]+/, label: "An outfit build" },
+  { pattern: /^\/manage-orders\/[^/]+/, label: "A brand order" },
+  { pattern: /^\/orders\/[^/]+/, label: "A shopper order" },
+  { pattern: /^\/support\/[^/]+/, label: "A support request" },
+];
 
 const CREATOR_PATH_PATTERN = /^\/creator\/([^/]+)/;
 
@@ -57,8 +71,12 @@ type NamedPage = Pick<RankedPage, "path" | "productName" | "brandName">;
 
 export const toPageLabel = ({ path, productName, brandName }: NamedPage): string => {
   const museHandle = CREATOR_PATH_PATTERN.exec(path)?.[1];
+  const detailPage = DETAIL_PAGE_LABELS.find(({ pattern }) => pattern.test(path));
   return (
-    productName ?? brandName ?? FIXED_PAGE_LABEL[path] ?? (museHandle ? `@${museHandle}` : path)
+    productName ??
+    brandName ??
+    FIXED_PAGE_LABEL[path] ??
+    (museHandle ? `@${museHandle}` : (detailPage?.label ?? path))
   );
 };
 
@@ -82,11 +100,14 @@ export const findBiggestDrop = (steps: FunnelStep[]): BiggestDrop | null => {
   return biggestDrop;
 };
 
+export const toPeopleLabel = (people: number): string =>
+  `${people.toLocaleString()} ${people === SINGLE_PERSON ? "person" : "people"}`;
+
 export const describeFunnelStep = (persons: number, previousPersons: number): string => {
-  const lostPeople = Math.max(previousPersons - persons, NOTHING_TO_COMPARE);
-  return lostPeople === NOTHING_TO_COMPARE
-    ? "Nobody left at this step."
-    : `${lostPeople.toLocaleString()} of ${previousPersons.toLocaleString()} people stopped here.`;
+  if (persons > previousPersons) return "Some people reached this step without the one above.";
+  const lostPeople = previousPersons - persons;
+  if (lostPeople === NOTHING_TO_COMPARE) return "Nobody left at this step.";
+  return `${lostPeople.toLocaleString()} of ${toPeopleLabel(previousPersons)} stopped here.`;
 };
 
 export const toSpeedRatingDelta = (
