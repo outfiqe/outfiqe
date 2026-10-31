@@ -30,7 +30,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "tag-reports": "Tag reports",
   "content-reports": "Content reports",
   "content-browser": "Browse drops",
-  trending: "Trending debug",
+  trending: "Trending",
   creators: "Muses",
   commissions: "Commissions",
   "platform-commission": "Platform commission",

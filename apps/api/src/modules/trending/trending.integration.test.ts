@@ -13,6 +13,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
+import { METRIC_RETENTION_DAYS } from "#modules/trending/trending.constants.js";
 import { trendingRepository } from "#modules/trending/trending.repository.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import type { TrendingSnapshotCursor } from "#modules/trending/trending.types.js";
@@ -70,6 +71,15 @@ const createApprovedProduct = async (
 
 const saveProduct = async (userId: string, productId: string, createdAt: Date) =>
   prisma.savedProduct.create({ data: { userId, productId, createdAt } });
+
+describe("trend debug daily activity", () => {
+  it("returns a zero-filled 14 days of shopper actions", async () => {
+    const days = await trendingRepository.listDailyActivity(randomUUID());
+
+    expect(days).toHaveLength(METRIC_RETENTION_DAYS);
+    expect(days.every(({ totalActions }) => totalActions === 0)).toBe(true);
+  });
+});
 
 describe("trendingRepository.upsertHourlyMetrics boundary finalization", () => {
   it("finalizes an hour's bucket with activity that arrives after aggregation has already moved on to the next hour", async () => {

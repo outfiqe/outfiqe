@@ -43,5 +43,8 @@ export const trendDebugSnapshotSchema = z.object({
   score: z.number(),
   rank: z.number().nullable(),
   scoredAt: z.string(),
+  dailyActivity: z.array(
+    z.object({ date: z.string(), purchaseUnits: z.number(), totalActions: z.number() }),
+  ),
 });
 export type TrendDebugSnapshot = z.infer<typeof trendDebugSnapshotSchema>;
