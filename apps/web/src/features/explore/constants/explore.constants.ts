@@ -1,6 +1,11 @@
 import { Home, LayoutGrid, Rows3, Shirt, TrendingUp, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
+export const LIST_FEED_COLUMN_CLASS_NAME =
+  "mx-auto flex w-full max-w-[max(20rem,min(36rem,calc((100dvh-10.5rem)*0.8)))] flex-col";
+
+export const LIST_POST_MEDIA_CLASS_NAME = "max-h-[calc(100dvh-10.5rem)]";
+
 export const EXPLORE_QUERY_PARAM = {
   TAB: "tab",
   LAYOUT: "layout",

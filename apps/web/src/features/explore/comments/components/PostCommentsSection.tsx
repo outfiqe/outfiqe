@@ -21,6 +21,7 @@ type PostCommentsSectionProps = {
   onDraftChange: (value: string) => void;
   onSubmit: () => void;
   className?: string;
+  composerClassName?: string;
 };
 
 export type CommentAvatarProps = {
@@ -52,6 +53,7 @@ export const PostCommentsSection = ({
   onDraftChange,
   onSubmit,
   className,
+  composerClassName,
 }: PostCommentsSectionProps) => {
   const { state, isStaff } = useAuth();
   const currentUser = state.user;
@@ -84,7 +86,7 @@ export const PostCommentsSection = ({
             event.preventDefault();
             onSubmit();
           }}
-          className="mt-5 flex items-center gap-3"
+          className={cn("mt-5 flex items-center gap-3", composerClassName)}
         >
           {currentUser && (
             <CommentAvatar

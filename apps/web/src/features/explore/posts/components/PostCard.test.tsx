@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -95,7 +95,7 @@ afterEach(() => {
 
 describe("PostCard caption spacing", () => {
   it("adds a divider above the actions row when there is a caption", () => {
-    render(<PostCard post={aPost({ caption: "Streetwear fit" })} />);
+    render(<PostCard post={aPost({ caption: "Streetwear fit" })} onOpenComments={vi.fn()} />);
 
     const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
@@ -105,7 +105,7 @@ describe("PostCard caption spacing", () => {
   });
 
   it("omits the extra divider and spacing when there is no caption or tagged products", () => {
-    render(<PostCard post={aPost({ caption: null })} />);
+    render(<PostCard post={aPost({ caption: null })} onOpenComments={vi.fn()} />);
 
     const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
@@ -118,22 +118,31 @@ describe("PostCard caption spacing", () => {
 describe("PostCard follow button", () => {
   it("disables the follow button while a follow toggle is already in flight", () => {
     followMutationState.isPending = true;
-    render(<PostCard post={aPost()} />);
+    render(<PostCard post={aPost()} onOpenComments={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: "Follow" })).toBeDisabled();
   });
 
   it("stays enabled once no follow toggle is in flight", () => {
-    render(<PostCard post={aPost()} />);
+    render(<PostCard post={aPost()} onOpenComments={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: "Follow" })).toBeEnabled();
   });
 });
 
 describe("PostCard for a platform admin viewer", () => {
+  it("opens the post when the comment button is pressed", () => {
+    const openComments = vi.fn();
+    render(<PostCard post={aPost({ commentCount: 3 })} onOpenComments={openComments} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /3/ }));
+
+    expect(openComments).toHaveBeenCalledOnce();
+  });
+
   it("hides follow and report, disables like, and hides the comment trigger", () => {
     authState.isStaff = true;
-    render(<PostCard post={aPost({ likeCount: 5, commentCount: 3 })} />);
+    render(<PostCard post={aPost({ likeCount: 5, commentCount: 3 })} onOpenComments={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Drop options" })).not.toBeInTheDocument();
