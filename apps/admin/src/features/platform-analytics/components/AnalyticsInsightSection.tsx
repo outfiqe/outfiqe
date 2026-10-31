@@ -65,7 +65,7 @@ export const AnalyticsInsightSection = <Insight,>({
         {children(insightResult.insight)}
         {insightResult.status === "fresh" && insightResult.refreshedAt && (
           <p className="mt-3 text-xs text-muted-foreground">
-            {`Updated ${formatDateTime(insightResult.refreshedAt)}`}
+            {`${INSIGHT_MESSAGE.UPDATED} ${formatDateTime(insightResult.refreshedAt)}`}
           </p>
         )}
       </>

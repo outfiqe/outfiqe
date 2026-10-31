@@ -248,6 +248,16 @@ describe("PlatformAnalyticsPage", () => {
     );
   });
 
+  it("says when each section was last updated", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    await screen.findByText("5.33 s");
+    expect(screen.getAllByText(/^Updated /).length).toBeGreaterThan(1);
+  });
+
   it("offers a way to jump to each section", async () => {
     serveInsights();
     mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
