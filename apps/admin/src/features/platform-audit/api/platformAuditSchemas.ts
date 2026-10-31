@@ -14,6 +14,12 @@ export const platformAuditEntrySchema = z.object({
   createdAt: z.string(),
 });
 
+export const platformAuditFilterOptionsSchema = z.object({
+  actions: z.array(z.string()),
+  targetTypes: z.array(z.string()),
+  actors: z.array(z.object({ id: z.string(), name: z.string() })),
+});
+
 export const platformAuditPageSchema = z.object({
   entries: z.array(platformAuditEntrySchema),
   nextCursor: z.string().nullable(),
@@ -21,4 +27,10 @@ export const platformAuditPageSchema = z.object({
 
 export type PlatformAuditEntry = z.infer<typeof platformAuditEntrySchema>;
 export type PlatformAuditPage = z.infer<typeof platformAuditPageSchema>;
-export type PlatformAuditFilter = { action?: string; targetType?: string; targetId?: string };
+export type PlatformAuditFilterOptions = z.infer<typeof platformAuditFilterOptionsSchema>;
+export type PlatformAuditFilter = {
+  action?: string;
+  targetType?: string;
+  targetId?: string;
+  actorUserId?: string;
+};
