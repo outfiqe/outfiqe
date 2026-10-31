@@ -7,6 +7,11 @@ import { Tooltip } from "./tooltip";
 
 const STAT_CARD_CLASS = "flex flex-col rounded-xl border border-border bg-card p-4";
 
+export const CLICKABLE_STAT_CARD_CLASS_NAME =
+  "relative transition-colors hover:border-foreground/30";
+export const STAT_CARD_LINK_CLASS_NAME =
+  "mt-2 flex cursor-pointer items-center justify-between gap-2 text-xs text-muted-foreground after:absolute after:inset-0 after:rounded-xl after:ring-ring focus-visible:outline-none focus-visible:after:ring-2";
+
 const DELTA_TONE_CLASS = {
   positive: "text-success",
   negative: "text-destructive",

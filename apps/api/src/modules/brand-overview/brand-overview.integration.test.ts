@@ -192,6 +192,59 @@ describe("GET /api/brands/me/overview", () => {
     expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
+  it("uses the picked period, and refuses one it doesn't offer", async () => {
+    const { member, brand } = await createBrandWithMember();
+    const product = await createProductWithSizes(brand.id, [5]);
+    const [size] = product.sizes;
+    if (!size) throw new Error("size not created");
+    await placeOrderForProduct(
+      product.id,
+      size.id,
+      2,
+      500,
+      PaymentStatus.PAID,
+      FulfilmentStatus.DELIVERED,
+      subDays(new Date(), 10),
+    );
+
+    const lastWeek = await request(testApp)
+      .get("/api/brands/me/overview?days=7")
+      .set("Authorization", authHeaderFor(member.id));
+    const lastQuarter = await request(testApp)
+      .get("/api/brands/me/overview?days=90")
+      .set("Authorization", authHeaderFor(member.id));
+    const refused = await request(testApp)
+      .get("/api/brands/me/overview?days=8")
+      .set("Authorization", authHeaderFor(member.id));
+
+    expect(lastWeek.body.data.trend).toHaveLength(7);
+    expect(lastWeek.body.data.kpis).toMatchObject({ periodDays: 7, periodRevenue: 0 });
+    expect(lastWeek.body.data.topProducts).toEqual([]);
+    expect(lastQuarter.body.data.kpis).toMatchObject({
+      periodDays: 90,
+      periodRevenue: 1000,
+      periodOrderCount: 1,
+    });
+    expect(lastQuarter.body.data.topProducts).toEqual([
+      expect.objectContaining({ id: product.id, unitsSold: 2, revenue: 1000 }),
+    ]);
+    expect(refused.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+  });
+
+  it("lists what is running low, lowest first, and leaves out sold-out items", async () => {
+    const { member, brand } = await createBrandWithMember();
+    const fewLeft = await createProductWithSizes(brand.id, [3]);
+    const oneLeft = await createProductWithSizes(brand.id, [1]);
+    await createProductWithSizes(brand.id, [0]);
+
+    const response = await getOverview(authHeaderFor(member.id));
+
+    expect(response.body.data.lowStockProducts.map(({ id }: { id: string }) => id)).toEqual([
+      oneLeft.id,
+      fewLeft.id,
+    ]);
+  });
+
   it("returns a full zero-filled trend for a brand with no products or orders", async () => {
     const { member } = await createBrandWithMember();
 
@@ -201,8 +254,8 @@ describe("GET /api/brands/me/overview", () => {
     const { kpis, trend, recentOrders } = response.body.data;
     expect(kpis).toMatchObject({
       lifetimeRevenue: 0,
-      last30DaysRevenue: 0,
-      previous30DaysRevenue: 0,
+      periodRevenue: 0,
+      previousPeriodRevenue: 0,
       availablePayout: 0,
       pendingPayout: 0,
       productCount: 0,
@@ -264,7 +317,7 @@ describe("GET /api/brands/me/overview", () => {
     const { kpis, trend, recentOrders } = response.body.data;
 
     expect(kpis.lifetimeRevenue).toBe((2 + 1 + 9) * 1000);
-    expect(kpis.last30DaysRevenue).toBe((2 + 1) * 1000);
+    expect(kpis.periodRevenue).toBe((2 + 1) * 1000);
     expect(kpis.productCount).toBe(2);
     expect(kpis.lowStockCount).toBe(1);
     expect(kpis.unfulfilledItemCount).toBe(2);
@@ -349,7 +402,7 @@ describe("GET /api/brands/me/overview", () => {
     const response = await getOverview(authHeaderFor(member.id));
 
     const { kpis } = response.body.data;
-    expect(kpis.last30DaysRevenue).toBe(2000);
+    expect(kpis.periodRevenue).toBe(2000);
     expect(kpis.lifetimeRevenue).toBe(2000);
   });
 
@@ -384,7 +437,7 @@ describe("GET /api/brands/me/overview", () => {
     const response = await getOverview(authHeaderFor(member.id));
 
     const { kpis, recentOrders } = response.body.data;
-    expect(kpis.last30DaysRevenue).toBe(2000);
+    expect(kpis.periodRevenue).toBe(2000);
     expect(kpis.productCount).toBe(1);
     expect(kpis.lowStockCount).toBe(0);
     expect(kpis.pendingPayout).toBe(0);
@@ -485,8 +538,8 @@ describe("GET /api/brands/me/overview", () => {
     const response = await getOverview(authHeaderFor(member.id));
 
     const { kpis } = response.body.data;
-    expect(kpis.last30DaysRevenue).toBe(2000);
-    expect(kpis.previous30DaysRevenue).toBe(3000);
+    expect(kpis.periodRevenue).toBe(2000);
+    expect(kpis.previousPeriodRevenue).toBe(3000);
     expect(kpis.lifetimeRevenue).toBe(6000);
   });
 });

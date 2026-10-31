@@ -1,5 +1,5 @@
 import type * as DesignSystemCharts from "@outfiqe/design-system/charts";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -59,8 +59,9 @@ const buildOverview = (overrides: Partial<CreatorOverviewData> = {}): CreatorOve
     totalEarnings: 1200,
     pendingEarnings: 500,
     availableEarnings: 700,
-    last30DaysEarnings: 800,
-    previous30DaysEarnings: 500,
+    periodDays: 30,
+    periodEarnings: 800,
+    previousPeriodEarnings: 500,
     lookCount: 4,
     followerCount: 12,
     totalLikes: 30,
@@ -71,6 +72,19 @@ const buildOverview = (overrides: Partial<CreatorOverviewData> = {}): CreatorOve
     cumulativeEarnings: index === 29 ? 800 : 0,
     looks: 0,
   })),
+  handle: "asha",
+  nextAvailableAt: "2026-11-05T00:00:00.000Z",
+  topLooks: [
+    {
+      id: "look-1",
+      imageUrl: "https://cdn.outfiqe.test/look.jpg",
+      caption: "Festival fit",
+      likeCount: 12,
+      salesCount: 1,
+      earnings: 300,
+    },
+  ],
+  earningsBySource: [{ source: "TAG_CLICK", earnings: 300, salesCount: 2 }],
   recentCommissions: [buildCommission("c1"), buildCommission("c2")],
   ...overrides,
 });
@@ -86,6 +100,45 @@ const mockOverview = (value: Partial<ReturnType<typeof useCreatorOverview>>) => 
 
 beforeEach(() => {
   mockOverview({ data: buildOverview(), isPending: false });
+});
+
+describe("CreatorOverview details", () => {
+  it("opens the matching page from each card, and shows what earned", () => {
+    mockOverview({ data: buildOverview() });
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(screen.getByRole("link", { name: "Withdraw" })).toHaveAttribute("href", "/withdraw");
+    expect(screen.getByRole("link", { name: "See profile" })).toHaveAttribute(
+      "href",
+      "/creator/asha",
+    );
+    expect(screen.getByRole("link", { name: /Festival fit/ })).toHaveAttribute(
+      "href",
+      "/creator/asha?look=look-1",
+    );
+    expect(screen.getByText("1 sale · 12 cheriqs")).toBeInTheDocument();
+    expect(screen.getByText("Tags on your looks")).toBeInTheDocument();
+    expect(screen.getByText(/More becomes available on/)).toBeInTheDocument();
+  });
+
+  it("asks for the picked period", () => {
+    mockOverview({ data: buildOverview() });
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Last 90 days" }));
+
+    expect(useCreatorOverview).toHaveBeenLastCalledWith(CreatorStatus.APPROVED, 90);
+  });
+
+  it("says so when there is nothing to show yet", () => {
+    mockOverview({
+      data: buildOverview({ topLooks: [], earningsBySource: [], nextAvailableAt: null }),
+    });
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(screen.getByText("Drop a look to see it here.")).toBeInTheDocument();
+    expect(screen.getByText("No sales in this period.")).toBeInTheDocument();
+  });
 });
 
 describe("CreatorOverview", () => {
