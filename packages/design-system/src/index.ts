@@ -12,6 +12,7 @@ export * from "./cheriq-icon";
 export * from "./cn";
 export * from "./crop-image";
 export * from "./crop-surface";
+export * from "./date-input";
 export * from "./drawer";
 export * from "./filter-chip";
 export * from "./filter-menu";

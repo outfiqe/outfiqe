@@ -5,6 +5,7 @@ import {
   AutocompleteInput,
   AutocompleteItem,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -217,7 +218,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,7 +231,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

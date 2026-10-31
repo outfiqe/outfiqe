@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Modal, Select, toast } from "@outfiqe/design-system";
+import { Button, DateInput, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
 import { MS_PER_MINUTE } from "@outfiqe/utils";
 import { useState } from "react";
 
@@ -118,9 +118,9 @@ export const SendConfirmationModal = ({
             >
               Send at
             </label>
-            <Input
+            <DateInput
+              includesTime
               id="announcement-scheduled-at"
-              type="datetime-local"
               value={scheduledAt}
               onChange={(event) => setScheduledAt(event.target.value)}
             />

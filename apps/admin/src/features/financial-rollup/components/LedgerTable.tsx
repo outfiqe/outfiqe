@@ -1,4 +1,11 @@
-import { Button, FormBanner, Select, Table, type TableColumn } from "@outfiqe/design-system";
+import {
+  Button,
+  DateInput,
+  FormBanner,
+  Select,
+  Table,
+  type TableColumn,
+} from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 import type { BrandPayoutStatus, PaymentMethod } from "@outfiqe/types";
 
@@ -133,19 +140,17 @@ export const LedgerTable = () => {
             </option>
           ))}
         </Select>
-        <input
-          type="date"
+        <DateInput
           aria-label="From date"
           value={dateFrom}
           onChange={(event) => setDateFrom(event.target.value)}
-          className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-foreground"
+          className="h-9 w-auto"
         />
-        <input
-          type="date"
+        <DateInput
           aria-label="To date"
           value={dateTo}
           onChange={(event) => setDateTo(event.target.value)}
-          className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-foreground"
+          className="h-9 w-auto"
         />
       </div>
 

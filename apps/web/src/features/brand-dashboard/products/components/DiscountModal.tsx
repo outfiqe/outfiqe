@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, Select, toast } from "@outfiqe/design-system";
+import { Button, DateInput, Modal, Select, toast } from "@outfiqe/design-system";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -214,12 +214,10 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
           <label className="mb-1.5 block text-sm font-medium text-foreground" htmlFor="ends-at">
             Ends on (optional)
           </label>
-          <input
+          <DateInput
             id="ends-at"
-            type="date"
             value={endsAt}
             onChange={(event) => setEndsAt(event.target.value)}
-            className="h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground"
           />
           <p className="mt-1 text-xs text-muted-foreground">
             Leave blank to run until you remove it.

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -93,7 +94,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -106,7 +107,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

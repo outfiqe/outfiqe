@@ -1,4 +1,13 @@
-import { Button, Input, Modal, MultiSelect, Select, Textarea, toast } from "@outfiqe/design-system";
+import {
+  Button,
+  DateInput,
+  Input,
+  Modal,
+  MultiSelect,
+  Select,
+  Textarea,
+  toast,
+} from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { ISO_DATE_LENGTH } from "@/lib/dateInputs";
@@ -244,9 +253,8 @@ export const ComposeAnnouncementModal = ({
           >
             Expires on (optional)
           </label>
-          <Input
+          <DateInput
             id="announcement-expires-at"
-            type="date"
             value={expiresAt}
             onChange={(event) => setExpiresAt(event.target.value)}
           />
