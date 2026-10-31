@@ -1,10 +1,9 @@
 "use client";
 
 import { Button, FormBanner } from "@outfiqe/design-system";
-import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Fragment, lazy, Suspense, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -29,8 +28,10 @@ import {
   STAFF_LOCKED_TAB_TOOLTIP,
 } from "../../constants/explore.constants";
 import { useExploreAuthGate } from "../../hooks/useExploreAuthGate";
-import { ExploreFeedSkeleton, ListPostCardSkeleton } from "../../posts/components/PostCardSkeleton";
+import { PostCard } from "../../posts/components/PostCard";
+import { ExploreFeedSkeleton } from "../../posts/components/PostCardSkeleton";
 import { PostGridCard } from "../../posts/components/PostGridCard";
+import { readFeedLayout } from "../../utils/readFeedLayout";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
@@ -44,9 +45,6 @@ const AddPostButton = dynamic(
   {
     ssr: false,
   },
-);
-const PostCard = lazy(() =>
-  import("../../posts/components/PostCard").then((m) => ({ default: m.PostCard })),
 );
 const PostDetailModal = dynamic(
   () => import("../../posts/components/PostDetailModal").then((m) => m.PostDetailModal),
@@ -79,10 +77,7 @@ export const ExploreFeed = () => {
   const lockedTabTooltip = isStaffViewer ? STAFF_LOCKED_TAB_TOOLTIP : undefined;
   const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
   const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
-  const committedLayout: FeedLayout =
-    searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
-      ? FEED_LAYOUT.LIST
-      : FEED_LAYOUT.GRID;
+  const committedLayout = readFeedLayout(searchParams);
 
   const isRequestedTabLockedForAdmin =
     isAuthResolved && isStaff && lockedTabs.includes(requestedTab);
@@ -294,17 +289,11 @@ export const ExploreFeed = () => {
                       Recent & popular
                     </p>
                   )}
-                  <Suspense
-                    fallback={
-                      <ListPostCardSkeleton mediaAspect={POST_LAYOUT_ASPECT[post.layout]} />
-                    }
-                  >
-                    <PostCard
-                      post={post}
-                      trendingRank={trendingRankByPostId.get(post.id)}
-                      onOpenComments={() => setDetailPostId(post.id)}
-                    />
-                  </Suspense>
+                  <PostCard
+                    post={post}
+                    trendingRank={trendingRankByPostId.get(post.id)}
+                    onOpenComments={() => setDetailPostId(post.id)}
+                  />
                 </Fragment>
               ))}
             </div>

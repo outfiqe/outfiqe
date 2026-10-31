@@ -268,6 +268,10 @@ covers both the error message and the retry.
 
 A list post should show its whole photo without scrolling, like Instagram. `LIST_FEED_COLUMN_CLASS_NAME` narrows the column on short screens so a 4:5 photo fits, and `LIST_POST_MEDIA_CLASS_NAME` caps the photo height for taller shapes. `10.5rem` in both is the site header plus the post header. Photos use `showsWholeImage`, so a photo that does not match its frame gets bars instead of being cropped.
 
-Each post in the list loads inside its own `Suspense` with `ListPostCardSkeleton`, sized to that post's shape. A `next/dynamic` loading state cannot read the post, and an earlier version rendered the full four-card skeleton for every post, which made the list jump when the cards arrived.
+`PostCard` is a normal import in `ExploreFeed`, not lazy-loaded. Posts arrive from the server already drawn, and when the card code loaded separately the page briefly swapped a finished post for a placeholder and back.
 
 The comment button opens `PostDetailModal` in every card view. The modal sizes its photo pane from the post's shape and pins the chime box to the bottom of the panel.
+
+## There is no loading.tsx here
+
+Next.js prepares `loading.tsx` before it knows the URL's query, so it could never tell `layout=list` from grid, and a refresh in list view flashed the grid skeleton. `app/explore/page.tsx` reads `layout` itself and passes it to `ExploreFeedLoading` as its own `Suspense` fallback, around the part that waits for data.
