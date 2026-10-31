@@ -103,6 +103,7 @@ const settleCancellationInTransaction = async (
   if (!isMarked) return null;
 
   await orderFulfilmentGroupRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
+  await orderFulfilmentGroupRepository.cancelUncollectedPickupsForOrder(tx, orderId, new Date());
   await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, {
     fulfilmentStatus: FulfilmentStatus.CANCELLED,
     fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
@@ -110,7 +111,6 @@ const settleCancellationInTransaction = async (
 
   if (order.paymentStatus === PaymentStatus.INITIATED) {
     await orderRepository.failUnsettledPayment(tx, orderId);
-    await orderFulfilmentGroupRepository.cancelUncollectedPickupsForOrder(tx, orderId, new Date());
     await paymentRepository.failPendingTransactions(tx, orderId);
   }
 
