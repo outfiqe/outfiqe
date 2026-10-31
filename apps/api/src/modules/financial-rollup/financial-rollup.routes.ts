@@ -23,6 +23,14 @@ financialRollupRoutes.get(
 );
 
 financialRollupRoutes.get(
+  "/money-breakdown",
+  ...platformGuards.financeRead,
+  requirePlatformNavItem("financial-rollup"),
+  validate({ query: financialRollupQuerySchema }),
+  financialRollupController.moneyBreakdown,
+);
+
+financialRollupRoutes.get(
   "/ledger",
   ...platformGuards.financeRead,
   requirePlatformNavItem("financial-rollup"),

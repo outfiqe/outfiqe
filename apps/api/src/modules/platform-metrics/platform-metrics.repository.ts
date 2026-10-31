@@ -4,10 +4,19 @@ import { subDays } from "date-fns/subDays";
 import { TENANT_ORGANIZATION_SCOPE } from "#constants/organization.constants.js";
 import { prisma, prismaRead } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
+import {
+  BrandApplicationStatus,
+  FulfilmentStatus,
+  OrderRefundStatus,
+  ProductStatus,
+  SupportStatus,
+  WithdrawRequestStatus,
+} from "#generated/prisma/enums.js";
 
 import { ACTIVE_MEMBER_WINDOW_DAYS } from "./platform-metrics.constants.js";
 import type {
   PlatformActivityTrendPoint,
+  PlatformAttentionCounts,
   PlatformOverview,
   TenantMetricListFilters,
   TenantMetricListPage,
@@ -89,6 +98,41 @@ export const platformMetricsRepository = {
       select: tenantRowSelect,
     });
     return row ? toTenantMetricRow(row) : null;
+  },
+
+  async attentionCounts(): Promise<PlatformAttentionCounts> {
+    const [
+      ordersToPack,
+      productsToReview,
+      brandApplications,
+      refundsWaiting,
+      withdrawalRequests,
+      supportRequests,
+    ] = await Promise.all([
+      prismaRead.order.count({ where: { fulfilmentStatus: FulfilmentStatus.PLACED } }),
+      prismaRead.product.count({ where: { status: ProductStatus.PENDING } }),
+      prismaRead.brandApplication.count({ where: { status: BrandApplicationStatus.PENDING } }),
+      prismaRead.orderRefund.count({
+        where: { status: { in: [OrderRefundStatus.PENDING, OrderRefundStatus.NEEDS_MANUAL] } },
+      }),
+      prismaRead.withdrawRequest.count({
+        where: {
+          status: { in: [WithdrawRequestStatus.PENDING, WithdrawRequestStatus.UNDER_REVIEW] },
+        },
+      }),
+      prismaRead.supportTicket.count({
+        where: { status: { in: [SupportStatus.NEW, SupportStatus.OPEN] } },
+      }),
+    ]);
+
+    return {
+      ordersToPack,
+      productsToReview,
+      brandApplications,
+      refundsWaiting,
+      withdrawalRequests,
+      supportRequests,
+    };
   },
 
   async overview(): Promise<PlatformOverview> {

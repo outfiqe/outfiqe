@@ -99,6 +99,24 @@ describe("platform metrics", () => {
     );
   });
 
+  it("counts the work waiting for staff", async () => {
+    const { auth } = await seedPlatformAdmin();
+
+    const res = await request(testApp)
+      .get("/api/platform/metrics/attention")
+      .set("Authorization", auth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({
+      brandApplications: expect.any(Number),
+      ordersToPack: expect.any(Number),
+      productsToReview: expect.any(Number),
+      refundsWaiting: expect.any(Number),
+      supportRequests: expect.any(Number),
+      withdrawalRequests: expect.any(Number),
+    });
+  });
+
   it("lists one aggregate row per tenant with a plan filter", async () => {
     const { auth } = await seedPlatformAdmin();
     const starter = await seedTenantWithCounters("starter", {

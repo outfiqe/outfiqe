@@ -583,6 +583,63 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
   });
 });
 
+describe("GET /api/admin/financial-rollup/money-breakdown", () => {
+  it("requires admin", async () => {
+    const buyer = await createUser();
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup/money-breakdown")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
+  });
+
+  it("traces every rupee of a paid order, and ignores unpaid orders", async () => {
+    const { authHeader } = await createAdminSession();
+    const { orderId } = await createLedgerItem({
+      brandPayoutStatus: BrandPayoutStatus.AVAILABLE,
+      createdAt: new Date(),
+    });
+    await prisma.paymentTransaction.create({
+      data: {
+        orderId,
+        provider: PaymentMethod.COD,
+        type: PaymentTransactionType.PAYMENT,
+        status: PaymentTransactionStatus.SUCCEEDED,
+      },
+    });
+    await createLedgerItem({
+      brandPayoutStatus: BrandPayoutStatus.VOIDED,
+      createdAt: new Date(),
+    });
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup/money-breakdown?range=all")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    expect(response.body.data).toMatchObject({
+      range: "all",
+      collected: 1000,
+      held: 1000,
+      brandsOwed: 950,
+      platformKeeps: 50,
+      cancelledNotRefunded: 0,
+      unexplained: 0,
+    });
+  });
+
+  it("is all zeros when nothing has been paid", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup/money-breakdown")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    expect(response.body.data).toMatchObject({ collected: 0, held: 0, unexplained: 0 });
+  });
+});
+
 describe("GET /api/admin/financial-rollup/ledger details", () => {
   const listLedger = async (query: string) => {
     const { authHeader } = await createAdminSession();

@@ -54,6 +54,24 @@ export const financialRollupSchema = z.object({
 });
 export type FinancialRollup = z.infer<typeof financialRollupSchema>;
 
+export const moneyBreakdownSchema = z.object({
+  range: rollupRangeSchema,
+  collected: z.number(),
+  refunded: z.number(),
+  held: z.number(),
+  brandsOwed: z.number(),
+  brandsPaid: z.number(),
+  musesOwed: z.number(),
+  musesPaid: z.number(),
+  gatewayFees: z.number(),
+  platformKeeps: z.number(),
+  orderFees: z.number(),
+  cancelledNotRefunded: z.number(),
+  couponSpend: z.number(),
+  unexplained: z.number(),
+});
+export type MoneyBreakdown = z.infer<typeof moneyBreakdownSchema>;
+
 export const ledgerRowSchema = z.object({
   orderId: z.string(),
   orderItemId: z.string(),

@@ -20,9 +20,11 @@ import type {
   FinancialRollupRange,
   FinancialRollupView,
   LedgerPage,
+  MoneyBreakdownView,
 } from "./financial-rollup.types.js";
 import {
   buildAttributionView,
+  buildMoneyBreakdown,
   buildPaymentMethodBreakdown,
   decodeLedgerCursor,
   encodeLedgerCursor,
@@ -118,6 +120,13 @@ export const financialRollupService = {
       ),
       attribution: buildAttributionView(attributionCounts),
     };
+  },
+
+  async getMoneyBreakdown({ range }: FinancialRollupQuery): Promise<MoneyBreakdownView> {
+    const paidOrderMoney = await financialRollupRepository.sumPaidOrderMoney(
+      resolveRangeStart(range, new Date()),
+    );
+    return buildMoneyBreakdown(range, paidOrderMoney);
   },
 
   async getLedger(query: FinancialLedgerQuery): Promise<LedgerPage> {

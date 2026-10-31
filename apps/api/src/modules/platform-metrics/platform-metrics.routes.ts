@@ -13,6 +13,12 @@ const metricsChain = requirePlatformRole("platform:metrics:read");
 platformMetricsRoutes.get("/metrics/overview", ...metricsChain, platformMetricsController.overview);
 
 platformMetricsRoutes.get(
+  "/metrics/attention",
+  ...metricsChain,
+  platformMetricsController.attention,
+);
+
+platformMetricsRoutes.get(
   "/metrics/activity-trend",
   ...metricsChain,
   platformMetricsController.activityTrend,

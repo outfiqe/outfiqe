@@ -10,6 +10,8 @@ import {
   ledgerItemSchema,
   type LedgerPage,
   ledgerPageSchema,
+  type MoneyBreakdown,
+  moneyBreakdownSchema,
   type RollupRange,
 } from "./financialRollupSchemas";
 
@@ -41,6 +43,13 @@ export const financialRollupApi = {
   async get(range: RollupRange): Promise<FinancialRollup> {
     const res = await apiClient.get<FinancialRollup>(`/admin/financial-rollup?range=${range}`);
     return financialRollupSchema.parse(res.data);
+  },
+
+  async getMoneyBreakdown(range: RollupRange): Promise<MoneyBreakdown> {
+    const res = await apiClient.get<MoneyBreakdown>(
+      `/admin/financial-rollup/money-breakdown?range=${range}`,
+    );
+    return moneyBreakdownSchema.parse(res.data);
   },
 
   async getLedger(filters: LedgerFilters, cursor?: string): Promise<LedgerPage> {

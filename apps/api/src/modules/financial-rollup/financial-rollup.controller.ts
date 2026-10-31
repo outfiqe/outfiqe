@@ -23,6 +23,12 @@ export const financialRollupController = {
     sendSuccess(res, rollup, "Financial rollup.");
   },
 
+  async moneyBreakdown(_req: Request, res: Response) {
+    const query = validated.query<FinancialRollupQuery>(res);
+    const moneyBreakdown = await financialRollupService.getMoneyBreakdown(query);
+    sendSuccess(res, moneyBreakdown, "Money breakdown.");
+  },
+
   async ledger(_req: Request, res: Response) {
     const query = validated.query<FinancialLedgerQuery>(res);
     const page = await financialRollupService.getLedger(query);

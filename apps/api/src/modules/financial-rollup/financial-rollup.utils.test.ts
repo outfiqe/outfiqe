@@ -5,12 +5,52 @@ import { PaymentMethod } from "#generated/prisma/enums.js";
 import type { LedgerRow } from "./financial-rollup.types.js";
 import {
   buildAttributionView,
+  buildMoneyBreakdown,
   buildPaymentMethodBreakdown,
   decodeLedgerCursor,
   encodeLedgerCursor,
   sumStatusBuckets,
   toLedgerCsv,
 } from "./financial-rollup.utils.js";
+
+describe("buildMoneyBreakdown", () => {
+  const paidOrderMoney = {
+    collected: 2_150,
+    refunded: 0,
+    orderFees: 200,
+    couponSpend: 50,
+    brandsOwed: 900,
+    brandsPaid: 500,
+    platformFees: 100,
+    gatewayFees: 20,
+    cancelledItems: 500,
+    musesOwed: 30,
+    musesPaid: 10,
+  };
+
+  it("accounts for every rupee when the money adds up", () => {
+    const moneyBreakdown = buildMoneyBreakdown("30d", paidOrderMoney);
+
+    expect(moneyBreakdown.held).toBe(2_150);
+    expect(moneyBreakdown.platformKeeps).toBe(40);
+    expect(moneyBreakdown.cancelledNotRefunded).toBe(500);
+    expect(moneyBreakdown.unexplained).toBe(0);
+  });
+
+  it("stops counting cancelled money once it has been refunded", () => {
+    const moneyBreakdown = buildMoneyBreakdown("30d", { ...paidOrderMoney, refunded: 500 });
+
+    expect(moneyBreakdown.held).toBe(1_650);
+    expect(moneyBreakdown.cancelledNotRefunded).toBe(0);
+    expect(moneyBreakdown.unexplained).toBe(0);
+  });
+
+  it("shows what can't be traced", () => {
+    const { unexplained } = buildMoneyBreakdown("30d", { ...paidOrderMoney, collected: 2_250 });
+
+    expect(unexplained).toBe(100);
+  });
+});
 
 describe("sumStatusBuckets", () => {
   it("adds up only the requested statuses and treats a missing bucket as zero", () => {

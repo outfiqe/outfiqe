@@ -15,7 +15,8 @@ own; this module is pure read-only aggregation over their tables, owns none of i
 
 - `financial-rollup.routes.ts` — `GET /` (admin-only, `?range=cycle|30d|all`), `GET /ledger`
   (paginated, filterable, with whole-filter totals), `GET /ledger/export` (same filters, unpaginated
-  CSV, capped), `GET /ledger/:orderItemId` (the full story of one sold item).
+  CSV, capped), `GET /ledger/:orderItemId` (the full story of one sold item), `GET /money-breakdown`
+  (where the money from paid orders went).
 - `financial-rollup.controller.ts` — reads the validated query, calls the service; `exportLedger`
   additionally logs the export event and sets the CSV response headers.
 - `financial-rollup.service.ts` — resolves `range` to a `since` cutoff date (or `null` for `all`),
@@ -48,6 +49,13 @@ of JSON" rather than a separate code path.
 
 ## Non-obvious rationale
 
+- **`GET /money-breakdown` follows one group of orders, not several totals.** It takes the orders paid
+  in the period and follows those orders' payouts, commissions and refunds, so each part can be
+  added up to what was collected. Comparing period totals instead would mix orders paid in one
+  period with payouts created in another. An order's total is its items, plus delivery and COD fees,
+  minus platform coupons, and each item's value is the brand's net plus the platform fee. Gateway
+  fees and muse commissions come out of the platform fee, so `platformKeeps` can go negative.
+  `unexplained` is whatever is left, for example an item that never got a payout record.
 - **One ledger row per item, even with several commissions.** `creator_commissions` has no unique
   order item, so a plain join could list an item twice and double its totals. The ledger reads
   commissions through a `LATERAL` sum that ignores voided rows unless every row is voided, and
