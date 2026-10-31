@@ -1,8 +1,9 @@
 import { Button, FilterChip, FormBanner } from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
+
+import { BackLink } from "@/components/BackLink";
 
 import { financialRollupApi } from "../api/financialRollupApi";
 import { ROLLUP_RANGE_LABEL, ROLLUP_RANGE_ORDER } from "../constants/financialRollup.constants";
@@ -33,13 +34,7 @@ export const FinancialLedgerPage = () => {
   return (
     <div className="space-y-5">
       <div>
-        <Link
-          to="/financial-rollup"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          Financial rollup
-        </Link>
+        <BackLink to="/financial-rollup">Financial rollup</BackLink>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Order ledger</h1>

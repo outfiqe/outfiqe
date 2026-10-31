@@ -1,5 +1,6 @@
 "use client";
 
+import { BACK_LINK_CLASS_NAME, BackLinkLabel } from "@outfiqe/design-system";
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { formatDateTime } from "@outfiqe/utils";
 import { useState } from "react";
@@ -33,12 +34,8 @@ export const SupportThread = ({ ticketId, onBack }: { ticketId: string; onBack: 
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        &larr; Your requests
+      <button type="button" onClick={onBack} className={BACK_LINK_CLASS_NAME}>
+        <BackLinkLabel>Your requests</BackLinkLabel>
       </button>
 
       <p className="mt-3 font-mono text-xs text-muted-foreground">{ticket.reference}</p>

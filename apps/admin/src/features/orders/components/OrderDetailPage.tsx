@@ -1,10 +1,9 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { formatDateTime } from "@outfiqe/utils";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { DeliveryRefusalsCard } from "@/features/logistics/refusals/components/DeliveryRefusalsCard";
@@ -105,13 +104,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
 
   return (
     <div>
-      <Link
-        to="/orders"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Orders
-      </Link>
+      <BackLink to="/orders">All orders</BackLink>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>

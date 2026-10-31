@@ -67,7 +67,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← Back to customers")).toBeInTheDocument();
+    expect(screen.getByText("All customers")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Recent orders" })).toBeInTheDocument();
   });
 
@@ -76,7 +76,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← Back to partners")).toBeInTheDocument();
+    expect(screen.getByText("All partners")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Per product" })).toBeInTheDocument();
   });
 
@@ -103,7 +103,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("Orders")).toBeInTheDocument();
+    expect(screen.getByText("All orders")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Buyer" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Totals" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Items" })).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← All tenants")).toBeInTheDocument();
+    expect(screen.getByText("All tenants")).toBeInTheDocument();
     expect(screen.getByText("Activity trend")).toBeInTheDocument();
   });
 
