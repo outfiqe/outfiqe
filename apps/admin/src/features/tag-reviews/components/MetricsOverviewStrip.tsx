@@ -1,6 +1,7 @@
 import { FormBanner, StatCard } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+
+import { CLICKABLE_STAT_CARD_CLASS_NAME, StatCardFooterLink } from "@/components/MetricParts";
 
 import type { TagReviewMetrics } from "../api/tagReviewsSchemas";
 import { METRIC_TAG_VIEW, type MetricTagView } from "../constants/metricTagViews.constants";
@@ -14,17 +15,11 @@ import {
 } from "../utils/tagReviewMetrics.utils";
 import { MetricTagsLink } from "./MetricsCardParts";
 
-const CLICKABLE_CARD_CLASS_NAME = "relative transition-colors hover:border-foreground/30";
-const CARD_FOOTER_LINK_CLASS_NAME =
-  "mt-2 flex cursor-pointer items-center justify-between gap-2 text-xs text-muted-foreground after:absolute after:inset-0 after:rounded-xl after:ring-ring focus-visible:outline-none focus-visible:after:ring-2";
 const INSIGHT_ACTION_CLASS_NAME = "ml-1 font-semibold underline underline-offset-2";
 const NO_SAMPLES = 0;
 
 const CardFooterLink = ({ view, period }: { view: MetricTagView; period: string }) => (
-  <MetricTagsLink search={{ view }} className={CARD_FOOTER_LINK_CLASS_NAME}>
-    <span>{period}</span>
-    <ChevronRight className="size-4 shrink-0" aria-hidden />
-  </MetricTagsLink>
+  <StatCardFooterLink to="/tag-reviews/tags" search={{ view }} period={period} />
 );
 
 export const InsightBanner = ({ metrics }: { metrics: TagReviewMetrics }) => {
@@ -73,7 +68,7 @@ export const OverviewStrip = ({ metrics }: { metrics: TagReviewMetrics }) => {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Live tags"
-        className={CLICKABLE_CARD_CLASS_NAME}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={tagsLive.value === null ? "—" : tagsLive.value.toLocaleString()}
         delta={buildTrendDelta(tagsLive, "higherIsBetter")}
         hint="Product tags shoppers can use right now. Tags on deleted looks don't count."
@@ -81,14 +76,14 @@ export const OverviewStrip = ({ metrics }: { metrics: TagReviewMetrics }) => {
       />
       <StatCard
         label="Waiting for a brand"
-        className={CLICKABLE_CARD_CLASS_NAME}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={waitingCount.toLocaleString()}
         hint="Tags a brand hasn't answered yet. Shoppers can't use them until the brand says yes."
         footer={<CardFooterLink view={METRIC_TAG_VIEW.WAITING} period="Right now" />}
       />
       <StatCard
         label="Checked by a brand"
-        className={CLICKABLE_CARD_CLASS_NAME}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={
           hasFewApprovals
             ? `${approvedManually} of ${approvedTotal}`
@@ -105,7 +100,7 @@ export const OverviewStrip = ({ metrics }: { metrics: TagReviewMetrics }) => {
       />
       <StatCard
         label="Typical time to go live"
-        className={CLICKABLE_CARD_CLASS_NAME}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatDuration(medianTimeToLiveHours.value)}
         delta={
           hasEnoughToJudge(looksLiveLast7d)
