@@ -1,13 +1,12 @@
 import { Skeleton } from "@outfiqe/design-system";
-import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/lib/apiClient";
 
 import { trendingApi } from "../api/trendingApi";
 import type { TrendDebugSubject } from "../api/trendingSchemas";
-import { BASELINE_SOURCE_LABEL, formatNumber } from "../utils/trending.utils";
-import { ActivityStat, ActivityStatSkeleton, StatCard, StatCardSkeleton } from "./TrendStatCards";
+import { ActivityStatSkeleton, StatCardSkeleton } from "./TrendStatCards";
+import { TrendStory } from "./TrendStory";
 
 const SCORE_STAT_SKELETON_COUNT = 3;
 const ACTIVITY_STAT_SKELETON_COUNT = 5;
@@ -40,7 +39,7 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
 
         <div>
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Why it scored this way
+            Why it is here
           </h3>
           <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-4 text-sm">
             <Skeleton className="h-5 w-full" />
@@ -65,80 +64,7 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
     );
   }
 
-  const trendSnapshot = snapshot.data;
-  if (!trendSnapshot) return null;
+  if (!snapshot.data) return null;
 
-  return (
-    <div className="mt-6 space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard label="Trending score" value={formatNumber(trendSnapshot.score)} />
-        <StatCard
-          label="Rank"
-          value={trendSnapshot.rank ? `#${trendSnapshot.rank}` : "Not trending"}
-          hint={
-            trendSnapshot.rank
-              ? "Position among today's trending candidates"
-              : "No score above zero"
-          }
-        />
-        <StatCard
-          label="Freshness boost"
-          value={
-            trendSnapshot.freshnessMultiplier > 1
-              ? `×${formatNumber(trendSnapshot.freshnessMultiplier)}`
-              : "None"
-          }
-          hint={
-            trendSnapshot.freshnessMultiplier > 1 ? "Product is 3 days old or newer" : undefined
-          }
-        />
-      </div>
-
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Activity in the last 6 hours
-        </h3>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          <ActivityStat label="Purchases" value={trendSnapshot.recentActivity.purchaseUnits} />
-          <ActivityStat label="Cart adds" value={trendSnapshot.recentActivity.cartAdds} />
-          <ActivityStat label="Stashes" value={trendSnapshot.recentActivity.saves} />
-          <ActivityStat label="Muse tags" value={trendSnapshot.recentActivity.creatorTags} />
-          <ActivityStat label="Tag clicks" value={trendSnapshot.recentActivity.tagClicks} />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Why it scored this way
-        </h3>
-        <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-4 text-sm text-foreground">
-          <p>
-            Activity right now:{" "}
-            <span className="font-semibold">{formatNumber(trendSnapshot.decayedActivity)}</span>.
-            Previous 6 hours:{" "}
-            <span className="font-semibold">
-              {formatNumber(trendSnapshot.previousWindowActivity)}
-            </span>
-            . That&apos;s a velocity of{" "}
-            <span className="font-semibold">{formatNumber(trendSnapshot.velocity)}×</span>.
-          </p>
-          <p>
-            Baseline ({BASELINE_SOURCE_LABEL[trendSnapshot.baseline.source]}):{" "}
-            <span className="font-semibold">{formatNumber(trendSnapshot.baseline.value)}</span>.
-            That&apos;s a lift of{" "}
-            <span className="font-semibold">{formatNumber(trendSnapshot.baselineLift)}×</span> above
-            normal.
-          </p>
-          <p>
-            Velocity and baseline lift combine into a momentum of{" "}
-            <span className="font-semibold">{formatNumber(trendSnapshot.momentum)}×</span>. This is
-            capped so one spike can&apos;t take over the rankings.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Scored at {formatDateTime(trendSnapshot.scoredAt)}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  return <TrendStory trendSnapshot={snapshot.data} productId={product.id} />;
 };

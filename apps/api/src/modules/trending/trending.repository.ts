@@ -1,9 +1,13 @@
 import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
 
 import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
 import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
 
-import type { MetricBucket, ProductTrendMeta } from "./trending.types.js";
+import { METRIC_RETENTION_DAYS } from "./trending.constants.js";
+import type { MetricBucket, ProductTrendMeta, TrendDailyActivity } from "./trending.types.js";
+
+const TODAY_COUNTED_IN_WINDOW = 1;
 
 const upsertPurchaseUnitsBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO product_trend_metrics (id, product_id, bucket_start, purchase_units, updated_at)
@@ -83,6 +87,35 @@ export const trendingRepository = {
       where: { bucketStart: { lt: cutoff } },
     });
     return count;
+  },
+
+  listDailyActivity(productId: string): Promise<TrendDailyActivity[]> {
+    return prisma.$queryRaw<TrendDailyActivity[]>(Prisma.sql`
+      WITH days AS (
+        SELECT generate_series(
+          date_trunc('day', now() AT TIME ZONE 'UTC')
+            - make_interval(days => ${METRIC_RETENTION_DAYS - TODAY_COUNTED_IN_WINDOW}),
+          date_trunc('day', now() AT TIME ZONE 'UTC'),
+          interval '1 day'
+        ) AS day
+      ),
+      daily AS (
+        SELECT
+          date_trunc('day', bucket_start) AS day,
+          SUM(purchase_units)::int AS purchase_units,
+          SUM(purchase_units + cart_adds + saves + creator_tags + tag_clicks)::int AS total_actions
+        FROM product_trend_metrics
+        WHERE product_id = ${productId}::uuid
+        GROUP BY 1
+      )
+      SELECT
+        to_char(days.day, 'YYYY-MM-DD') AS date,
+        COALESCE(daily.purchase_units, 0)::int AS "purchaseUnits",
+        COALESCE(daily.total_actions, 0)::int AS "totalActions"
+      FROM days
+      LEFT JOIN daily ON daily.day = days.day
+      ORDER BY days.day
+    `);
   },
 
   async listRecentMetricBuckets(sinceDays: number): Promise<MetricBucket[]> {
