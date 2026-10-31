@@ -94,8 +94,8 @@ describe("RoutePendingSkeleton", () => {
     render(<RoutePendingSkeleton />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Quick access" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Settlement reconciliation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Needs action" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Where the money went" })).toBeInTheDocument();
   });
 
   it("shows the back link and the real card titles of an order while it loads", () => {
