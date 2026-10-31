@@ -4,6 +4,10 @@ n## Errors
 
 `payment.errors.ts` holds the errors this module raises from more than one place.
 
+## Khalti sits behind a switch
+
+`assertGatewayAvailable` in `payment.availability.ts` refuses Khalti unless the `khalti_payments` feature switch is on for that person. Checkout, starting or resuming an order payment, build offers and CRM plans all call it, so hiding the button is not the only protection. It is off by default because Outfiqe has no Khalti partnership yet. Checking, reconciling and refunding a payment already made with Khalti do not go through it, so turning the switch off never strands money.
+
 ## Stock decrement happens at verify, not at checkout
 
 Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order is created (see `orders/README.md`) — only `settleVerified` does, inside the same atomic pattern as everywhere else: guard the settlement with a conditional `updateMany WHERE status = 'INITIATED'`, then decrement stock, all in one transaction. If the decrement fails (sold out in the gap between initiate and verify), the order is marked `paymentStatus: PAID, fulfilmentStatus: CANCELLED, needsManualRefund: true` — the payment can't be undone from our side, so it's flagged for a human to refund by hand rather than silently failing.

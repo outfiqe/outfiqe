@@ -244,7 +244,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground">
               <Checkbox {...register("prepaidOnly")} />
-              Requires prepaid checkout (eSewa or Khalti)
+              Requires online payment
             </label>
             {!isPrepaidOnly && (
               <p className="pl-6 text-xs text-muted-foreground">

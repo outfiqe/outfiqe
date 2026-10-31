@@ -20,6 +20,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { assertGatewayAvailable } from "./payment.availability.js";
 import { SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
 import { paymentErrors } from "./payment.errors.js";
 import { paymentRepository } from "./payment.repository.js";
@@ -191,6 +192,7 @@ export const paymentService = {
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       throw paymentErrors.alreadySettled();
     }
+    await assertGatewayAvailable(order.paymentMethod, userId);
 
     const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
     if (priorAttempt?.transactionRef) {

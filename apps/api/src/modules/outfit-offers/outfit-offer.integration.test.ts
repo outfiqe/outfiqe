@@ -23,6 +23,7 @@ import {
   createRoleLimitedStaffSession,
 } from "#test/integration/auth-helpers.js";
 import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crm-fixtures.js";
+import { turnKhaltiOff, turnKhaltiOn } from "#test/integration/khalti-fixtures.js";
 import {
   createOutfitProduct,
   createOutfitUser,
@@ -63,6 +64,7 @@ beforeEach(async () => {
   await redis.flushdb();
   platformSettingsService.invalidate();
   await turnOutfitBuilderOn();
+  await turnKhaltiOn();
   await seedOutfitSlotTypes();
   vi.clearAllMocks();
   khaltiInitiate.mockImplementation(async () => ({
@@ -202,6 +204,27 @@ describe("sending an offer", () => {
       .get("/api/outfit-offers/received")
       .set("Authorization", creator.auth);
     expect(received.body.data.items.map(({ id }: { id: string }) => id)).toEqual([offerId]);
+  });
+
+  it("refuses a Khalti offer while its switch is off and still takes eSewa", async () => {
+    await turnKhaltiOff();
+    const { brandOwner } = await createBrandOwner();
+    const creator = await createApprovedCreator("Sita");
+    const { outfitId } = await lockedBuildWith(brandOwner, [creator]);
+    const offerBody = { creatorId: creator.id, amount: OFFER_AMOUNT };
+
+    const khaltiOffer = await sendOffer(brandOwner, outfitId, {
+      ...offerBody,
+      paymentMethod: "KHALTI",
+    });
+    const esewaOffer = await sendOffer(brandOwner, outfitId, {
+      ...offerBody,
+      paymentMethod: "ESEWA",
+    });
+
+    expect(khaltiOffer.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    expect(khaltiOffer.body.code).toBe("KHALTI_UNAVAILABLE");
+    expect(esewaOffer.status).toBe(HTTP_STATUS.CREATED);
   });
 
   it("only lets a brand on a locked build offer to an approved creator on it, within the limits, once at a time", async () => {

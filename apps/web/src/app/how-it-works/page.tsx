@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe works",
   description:
-    "How to shop on Outfiqe. See pieces on real muses, add from any Nepali brand to one cart, pay by cash on delivery, eSewa or Khalti, and follow your parcel to your door.",
+    "How to shop on Outfiqe. See pieces on real muses, add from any Nepali brand to one cart, pay by cash on delivery or eSewa, and follow your parcel to your door.",
   path: "/how-it-works",
   keywords: [
     "how Outfiqe works",
@@ -35,7 +35,7 @@ const shopperSteps = [
   },
   {
     title: "Pay your way",
-    body: "Pay with cash on delivery, eSewa or Khalti. Your order page shows the payment, the expected delivery date and every step of the delivery.",
+    body: "Pay with cash on delivery or eSewa. Your order page shows the payment, the expected delivery date and every step of the delivery.",
   },
   {
     title: "Get one parcel",
