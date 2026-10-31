@@ -15,6 +15,14 @@ export const DAYS_IN_INSIGHT_RANGE: Record<InsightRange, number> = {
   "90d": 90,
 };
 
+export const SPEED_DEVICES = ["all", "mobile", "desktop"] as const;
+export type SpeedDevice = (typeof SPEED_DEVICES)[number];
+
+export const SPEED_PAGES = ["all", "home", "products", "explore"] as const;
+export type SpeedPage = (typeof SPEED_PAGES)[number];
+
+export type SpeedFilters = { device: SpeedDevice; page: SpeedPage };
+
 export const INSIGHT_NAMES = {
   OVERVIEW: "overview",
   PURCHASE_FUNNEL: "purchase-funnel",
@@ -23,7 +31,7 @@ export const INSIGHT_NAMES = {
   RETENTION: "retention",
   ZERO_RESULT_SEARCHES: "zero-result-searches",
   SITE_TRAFFIC: "site-traffic",
-  SITE_SPEED: "site-speed",
+  SITE_SPEED: "site-speed-detail",
 } as const;
 export type InsightName = (typeof INSIGHT_NAMES)[keyof typeof INSIGHT_NAMES];
 

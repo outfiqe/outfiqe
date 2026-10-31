@@ -11,6 +11,7 @@ import {
 } from "../constants/platformAnalytics.constants";
 import { AcquisitionSection } from "./AcquisitionSection";
 import { AnalyticsOverviewSection } from "./AnalyticsOverviewSection";
+import { AnalyticsSectionNav } from "./AnalyticsSectionNav";
 import { LookToOrderSection } from "./LookToOrderSection";
 import { PurchaseFunnelSection } from "./PurchaseFunnelSection";
 import { RetentionSection } from "./RetentionSection";
@@ -43,6 +44,8 @@ export const PlatformAnalyticsPage = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">{ESTIMATE_NOTE}</p>
+
+      <AnalyticsSectionNav />
 
       <AnalyticsOverviewSection range={range} />
       <SiteTrafficSection range={range} />

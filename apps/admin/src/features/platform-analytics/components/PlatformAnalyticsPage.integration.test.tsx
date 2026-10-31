@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -66,18 +66,27 @@ const INSIGHTS: Record<string, ReturnType<typeof fresh>> = {
     averageSessionSeconds: 221,
     bounceRate: 0.32,
     topPages: [
-      { path: "/", productName: null, count: 1800 },
-      { path: "/product/1", productName: "Linen kurta", count: 240 },
+      { path: "/", productName: null, brandName: null, count: 1800 },
+      { path: "/product/1", productName: "Linen kurta", brandName: null, count: 240 },
     ],
-    entryPages: [{ path: "/explore", productName: null, count: 310 }],
+    entryPages: [{ path: "/explore", productName: null, brandName: null, count: 310 }],
     exitPages: [],
   }),
   speed: fresh({
     measurementCount: 190,
-    largestContentfulPaintMs: 5330,
-    interactionToNextPaintMs: 78,
-    firstContentfulPaintMs: 2000,
-    cumulativeLayoutShift: 0.08,
+    largestContentfulPaint: { sampleCount: 190, p75: 5330, p90: 10660, p95: 15990, p99: 21320 },
+    interactionToNextPaint: { sampleCount: 190, p75: 78, p90: 156, p95: 234, p99: 312 },
+    firstContentfulPaint: { sampleCount: 190, p75: 2000, p90: 4000, p95: 6000, p99: 8000 },
+    cumulativeLayoutShift: { sampleCount: 190, p75: 0.08, p90: 0.16, p95: 0.24, p99: 0.32 },
+    slowestPages: [
+      {
+        path: "/brand/1",
+        productName: null,
+        brandName: "Everlane",
+        typicalLoadMs: 4690,
+        sampleCount: 12,
+      },
+    ],
   }),
 };
 
@@ -99,6 +108,8 @@ const ROLLUP = {
   },
   attribution: { totalItems: 80, attributedItems: 20, attributedShare: 0.25 },
 };
+
+const EMPTY_READING = { sampleCount: 0, p75: null, p90: null, p95: null, p99: null };
 
 const ok = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
@@ -160,7 +171,10 @@ describe("PlatformAnalyticsPage", () => {
     expect(screen.getByText("3m 41s")).toBeInTheDocument();
     expect(screen.getByText("32.0%")).toBeInTheDocument();
     expect(screen.getByText("Linen kurta")).toBeInTheDocument();
-    expect(screen.getByText("/explore")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore" }).getAttribute("href")).toMatch(
+      /\/explore$/,
+    );
+    expect(screen.getByRole("link", { name: "Homepage" })).toBeInTheDocument();
     expect(screen.getByText("No page views in this range yet.")).toBeInTheDocument();
   });
 
@@ -174,7 +188,77 @@ describe("PlatformAnalyticsPage", () => {
     expect(screen.getByText("Poor")).toBeInTheDocument();
     expect(screen.getByText("Needs work")).toBeInTheDocument();
     expect(screen.getAllByText("Good")).toHaveLength(2);
-    expect(screen.getByText("Based on 190 measurements.")).toBeInTheDocument();
+    expect(screen.getAllByText("Based on 190 readings")).toHaveLength(4);
+  });
+
+  it("shows slower visits when another percentile is picked", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await screen.findByText("5.33 s");
+    await user.click(screen.getByRole("button", { name: "Worst visits (P99)" }));
+
+    expect(await screen.findByText("21.32 s")).toBeInTheDocument();
+    expect(screen.getByText(/99 in 100 visits/)).toBeInTheDocument();
+  });
+
+  it("asks for the picked device and page", async () => {
+    const requestedSpeedUrls: URL[] = [];
+    serveInsights();
+    mswServer.use(
+      http.get(ROLLUP_URL, () => ok(ROLLUP)),
+      http.get(`${ANALYTICS_BASE}/speed`, ({ request }) => {
+        requestedSpeedUrls.push(new URL(request.url));
+        return ok(INSIGHTS.speed);
+      }),
+    );
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await screen.findByText("5.33 s");
+    await user.click(screen.getByRole("button", { name: "Phones" }));
+    await user.click(screen.getByRole("button", { name: "Homepage" }));
+
+    await waitFor(() => {
+      const lastRequest = requestedSpeedUrls.at(-1);
+      expect(lastRequest?.searchParams.get("device")).toBe("mobile");
+      expect(lastRequest?.searchParams.get("page")).toBe("home");
+    });
+  });
+
+  it("links the slowest pages, muses, searches and order totals", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    const slowPage = await screen.findByRole("link", { name: "Everlane" });
+    expect(slowPage.getAttribute("href")).toMatch(/\/brand\/1$/);
+    expect(await screen.findByRole("link", { name: /velvet saree/ })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/search?q=velvet%20saree"),
+    );
+    expect(await screen.findByRole("link", { name: "See orders" })).toHaveAttribute(
+      "href",
+      "/orders",
+    );
+  });
+
+  it("offers a way to jump to each section", async () => {
+    serveInsights();
+    mswServer.use(http.get(ROLLUP_URL, () => ok(ROLLUP)));
+
+    renderPage();
+
+    const jumpLinks = await screen.findByRole("navigation", { name: "Jump to a section" });
+    expect(within(jumpLinks).getByRole("link", { name: "Site speed" })).toHaveAttribute(
+      "href",
+      "#analytics-speed",
+    );
   });
 
   it("says so when no speed has been measured yet", async () => {
@@ -182,10 +266,11 @@ describe("PlatformAnalyticsPage", () => {
       insightPath === "speed"
         ? fresh({
             measurementCount: 0,
-            largestContentfulPaintMs: null,
-            interactionToNextPaintMs: null,
-            firstContentfulPaintMs: null,
-            cumulativeLayoutShift: null,
+            largestContentfulPaint: EMPTY_READING,
+            interactionToNextPaint: EMPTY_READING,
+            firstContentfulPaint: EMPTY_READING,
+            cumulativeLayoutShift: EMPTY_READING,
+            slowestPages: [],
           })
         : INSIGHTS[insightPath],
     );
@@ -193,7 +278,7 @@ describe("PlatformAnalyticsPage", () => {
 
     renderPage();
 
-    expect(await screen.findByText("No speed measurements in this range yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/No speed readings for this choice yet/)).toBeInTheDocument();
   });
 
   it("explains how to connect PostHog when the read-only key isn't set", async () => {

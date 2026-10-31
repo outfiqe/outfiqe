@@ -11,6 +11,7 @@ import {
   type InsightRange,
   LAST_GOOD_INSIGHT_TTL_SECONDS,
   POSTHOG_PATH_BY_INSIGHT,
+  type SpeedFilters,
 } from "./insights.constants.js";
 import { findPosthogQueryConnection, runPosthogQuery } from "./insights.posthog-query.js";
 import {
@@ -28,6 +29,7 @@ import {
   PURCHASE_FUNNEL_EVENTS,
   repeatBuyersQuery,
   sessionQualityQuery,
+  slowestPagesQuery,
   topCreatorsByLookViewsQuery,
   topPagesQuery,
   trafficSourcesQuery,
@@ -56,18 +58,24 @@ import {
   readFirstRowCounts,
   readFirstRowMeasurements,
   readLabelledCounts,
+  readSlowPageRows,
+  toBrandIdFromPath,
   toFunnelSteps,
   toProductIdFromPath,
   toShare,
+  toSpeedReading,
 } from "./insights.utils.js";
 
 const OVERVIEW_COLUMN = { VISITORS: 0, SIGNUPS: 1, BUYERS: 2, ORDERS: 3 } as const;
 const REPEAT_BUYERS_COLUMN = { BUYERS: 0, REPEAT_BUYERS: 1 } as const;
 const PAGE_VIEWS_COLUMN = { PAGE_VIEWS: 0, SESSIONS: 1 } as const;
 const SESSION_QUALITY_COLUMN = { AVERAGE_SECONDS: 0, BOUNCE_RATE: 1 } as const;
-const WEB_VITALS_COLUMN = { MEASUREMENTS: 0, LCP: 1, INP: 2, FCP: 3, CLS: 4 } as const;
+const WEB_VITALS_COLUMN = { MEASUREMENTS: 0, LCP: 1, INP: 6, FCP: 11, CLS: 16 } as const;
 const FIRST_COLUMN = 0;
 const NO_MEASUREMENTS = 0;
+const NO_CACHE_VARIANT = "";
+
+const DEFAULT_SPEED_FILTERS: SpeedFilters = { device: "all", page: "all" };
 
 type InsightBuilder<Insight> = (
   connection: PosthogQueryConnection,
@@ -78,7 +86,8 @@ const insightCacheKey = (
   cacheKind: "fresh" | "last-good",
   name: InsightName,
   range: InsightRange,
-) => `product-analytics:insight:${cacheKind}:${name}:${range}`;
+  variant: string,
+) => `product-analytics:insight:${cacheKind}:${name}:${range}${variant}`;
 
 const readCachedInsight = async <Insight>(key: string): Promise<CachedInsight<Insight> | null> => {
   try {
@@ -108,6 +117,7 @@ const loadInsight = async <Insight>(
   name: InsightName,
   range: InsightRange,
   buildInsight: InsightBuilder<Insight>,
+  variant = NO_CACHE_VARIANT,
 ): Promise<InsightResult<Insight>> => {
   const connection = findPosthogQueryConnection();
   if (!connection) {
@@ -120,8 +130,8 @@ const loadInsight = async <Insight>(
   }
 
   const posthogUrl = toPosthogUrl(connection, name);
-  const freshKey = insightCacheKey("fresh", name, range);
-  const lastGoodKey = insightCacheKey("last-good", name, range);
+  const freshKey = insightCacheKey("fresh", name, range, variant);
+  const lastGoodKey = insightCacheKey("last-good", name, range, variant);
 
   const freshInsight = await readCachedInsight<Insight>(freshKey);
   if (freshInsight) return { status: INSIGHT_STATUS.FRESH, posthogUrl, ...freshInsight };
@@ -279,26 +289,40 @@ const buildZeroResultSearches: InsightBuilder<ZeroResultSearchesInsight> = async
   };
 };
 
-const findProductNameById = async (pages: LabelledCount[]): Promise<Map<string, string>> => {
-  const productIds = pages.flatMap(({ label }) => toProductIdFromPath(label) ?? []);
+type PageNames = {
+  productNameById: Map<string, string>;
+  brandNameById: Map<string, string>;
+};
+
+const NO_PAGE_NAMES: PageNames = { productNameById: new Map(), brandNameById: new Map() };
+
+const findPageNames = async (paths: string[]): Promise<PageNames> => {
+  const productIds = paths.flatMap((path) => toProductIdFromPath(path) ?? []);
+  const brandIds = paths.flatMap((path) => toBrandIdFromPath(path) ?? []);
   try {
-    const productNames = await productAnalyticsInsightsRepository.findProductNames([
-      ...new Set(productIds),
+    const [productNames, brandNames] = await Promise.all([
+      productAnalyticsInsightsRepository.findProductNames([...new Set(productIds)]),
+      productAnalyticsInsightsRepository.findBrandNames([...new Set(brandIds)]),
     ]);
-    return new Map(productNames.map(({ id, name }) => [id, name]));
+    return {
+      productNameById: new Map(productNames.map(({ id, name }) => [id, name])),
+      brandNameById: new Map(brandNames.map(({ id, name }) => [id, name])),
+    };
   } catch (error) {
-    logger.warn(`Product names for analytics pages not loaded: ${describeError(error)}`);
-    return new Map();
+    logger.warn(`Names for analytics pages not loaded: ${describeError(error)}`);
+    return NO_PAGE_NAMES;
   }
 };
 
-const toRankedPages = (
-  pages: LabelledCount[],
-  productNameById: Map<string, string>,
-): RankedPage[] =>
+const toPageNames = (path: string, { productNameById, brandNameById }: PageNames) => ({
+  productName: productNameById.get(toProductIdFromPath(path) ?? "") ?? null,
+  brandName: brandNameById.get(toBrandIdFromPath(path) ?? "") ?? null,
+});
+
+const toRankedPages = (pages: LabelledCount[], pageNames: PageNames): RankedPage[] =>
   pages.map(({ label, count }) => ({
     path: label,
-    productName: productNameById.get(toProductIdFromPath(label) ?? "") ?? null,
+    ...toPageNames(label, pageNames),
     count,
   }));
 
@@ -334,31 +358,48 @@ const buildSiteTraffic: InsightBuilder<SiteTrafficInsight> = async (connection, 
   const topPages = readLabelledCounts(topPageRows);
   const entryPages = readLabelledCounts(entryPageRows);
   const exitPages = readLabelledCounts(exitPageRows);
-  const productNameById = await findProductNameById([...topPages, ...entryPages, ...exitPages]);
+  const pageNames = await findPageNames(
+    [...topPages, ...entryPages, ...exitPages].map(({ label }) => label),
+  );
 
   return {
     pageViews: readCountAt(pageViewCounts, PAGE_VIEWS_COLUMN.PAGE_VIEWS),
     sessions: readCountAt(pageViewCounts, PAGE_VIEWS_COLUMN.SESSIONS),
     averageSessionSeconds: readCountAt(sessionCounts, SESSION_QUALITY_COLUMN.AVERAGE_SECONDS),
     bounceRate: readCountAt(sessionCounts, SESSION_QUALITY_COLUMN.BOUNCE_RATE),
-    topPages: toRankedPages(topPages, productNameById),
-    entryPages: toRankedPages(entryPages, productNameById),
-    exitPages: toRankedPages(exitPages, productNameById),
+    topPages: toRankedPages(topPages, pageNames),
+    entryPages: toRankedPages(entryPages, pageNames),
+    exitPages: toRankedPages(exitPages, pageNames),
   };
 };
 
-const buildSiteSpeed: InsightBuilder<SiteSpeedInsight> = async (connection, days) => {
-  const measurements = readFirstRowMeasurements(
-    await runPosthogQuery(connection, INSIGHT_NAMES.SITE_SPEED, webVitalsQuery(days)),
-  );
-  return {
-    measurementCount: measurements[WEB_VITALS_COLUMN.MEASUREMENTS] ?? NO_MEASUREMENTS,
-    largestContentfulPaintMs: measurements[WEB_VITALS_COLUMN.LCP] ?? null,
-    interactionToNextPaintMs: measurements[WEB_VITALS_COLUMN.INP] ?? null,
-    firstContentfulPaintMs: measurements[WEB_VITALS_COLUMN.FCP] ?? null,
-    cumulativeLayoutShift: measurements[WEB_VITALS_COLUMN.CLS] ?? null,
+const buildSiteSpeed =
+  (filters: SpeedFilters): InsightBuilder<SiteSpeedInsight> =>
+  async (connection, days) => {
+    const measurements = readFirstRowMeasurements(
+      await runPosthogQuery(connection, INSIGHT_NAMES.SITE_SPEED, webVitalsQuery(days, filters)),
+    );
+    const slowPageRows = readSlowPageRows(
+      await runPosthogQuery(
+        connection,
+        `${INSIGHT_NAMES.SITE_SPEED}:slowest-pages`,
+        slowestPagesQuery(days, filters),
+      ),
+    );
+    const pageNames = await findPageNames(slowPageRows.map(({ path }) => path));
+
+    return {
+      measurementCount: measurements[WEB_VITALS_COLUMN.MEASUREMENTS] ?? NO_MEASUREMENTS,
+      largestContentfulPaint: toSpeedReading(measurements, WEB_VITALS_COLUMN.LCP),
+      interactionToNextPaint: toSpeedReading(measurements, WEB_VITALS_COLUMN.INP),
+      firstContentfulPaint: toSpeedReading(measurements, WEB_VITALS_COLUMN.FCP),
+      cumulativeLayoutShift: toSpeedReading(measurements, WEB_VITALS_COLUMN.CLS),
+      slowestPages: slowPageRows.map((slowPage) => ({
+        ...slowPage,
+        ...toPageNames(slowPage.path, pageNames),
+      })),
+    };
   };
-};
 
 export const productAnalyticsInsightsService = {
   overview: (range: InsightRange) => loadInsight(INSIGHT_NAMES.OVERVIEW, range, buildOverview),
@@ -373,5 +414,11 @@ export const productAnalyticsInsightsService = {
     loadInsight(INSIGHT_NAMES.ZERO_RESULT_SEARCHES, range, buildZeroResultSearches),
   siteTraffic: (range: InsightRange) =>
     loadInsight(INSIGHT_NAMES.SITE_TRAFFIC, range, buildSiteTraffic),
-  siteSpeed: (range: InsightRange) => loadInsight(INSIGHT_NAMES.SITE_SPEED, range, buildSiteSpeed),
+  siteSpeed: (range: InsightRange, filters: SpeedFilters = DEFAULT_SPEED_FILTERS) =>
+    loadInsight(
+      INSIGHT_NAMES.SITE_SPEED,
+      range,
+      buildSiteSpeed(filters),
+      `:${filters.device}:${filters.page}`,
+    ),
 };

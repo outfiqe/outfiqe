@@ -82,6 +82,8 @@ plan has one PostHog project, the production one, so a local token would mix dev
 test orders into real numbers. The project id and a read-only query key are safe locally: the
 admin page then reads production analytics without writing anything.
 
+The speed insight (`GET /platform/analytics/speed`) takes `?device=all|mobile|desktop&page=all|home|products|explore`. Each choice is cached on its own. It uses a new cache name, `site-speed-detail`, because week-old saved copies of the old shape would fail the admin schema. Each measurement carries its own reading count, because one `$web_vitals` event holds only some measurements.
+
 ## Funnel
 
 **User-facing:** shoppers, creators and brands never see this module. Co-founders, and staff whose

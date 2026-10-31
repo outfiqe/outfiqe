@@ -14,6 +14,7 @@ type InsightQueryData<Insight> = {
 };
 
 type AnalyticsInsightSectionProps<Insight> = {
+  sectionId: string;
   title: string;
   description: string;
   insightQuery: UseQueryResult<InsightQueryData<Insight>>;
@@ -28,6 +29,7 @@ const formatRefreshedAt = (refreshedAt: string | null): string =>
   refreshedAt ? ` (from ${formatDateTime(refreshedAt)})` : "";
 
 export const AnalyticsInsightSection = <Insight,>({
+  sectionId,
   title,
   description,
   insightQuery,
@@ -66,7 +68,11 @@ export const AnalyticsInsightSection = <Insight,>({
   };
 
   return (
-    <section aria-labelledby={headingId} className="rounded-2xl border border-border bg-card p-5">
+    <section
+      id={sectionId}
+      aria-labelledby={headingId}
+      className="scroll-mt-24 rounded-2xl border border-border bg-card p-5"
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id={headingId} className="font-display text-lg font-bold text-foreground">

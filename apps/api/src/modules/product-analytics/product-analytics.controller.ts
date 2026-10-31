@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { InsightRangeQuery } from "./product-analytics.schemas.js";
+import type { InsightRangeQuery, SiteSpeedQuery } from "./product-analytics.schemas.js";
 import { productAnalyticsService } from "./product-analytics.service.js";
 
 const readRange = (res: Response) => validated.query<InsightRangeQuery>(res).range;
@@ -46,6 +46,11 @@ export const productAnalyticsController = {
   },
 
   async siteSpeed(_req: Request, res: Response) {
-    sendSuccess(res, await productAnalyticsService.siteSpeed(readRange(res)), "Site speed.");
+    const { range, device, page } = validated.query<SiteSpeedQuery>(res);
+    sendSuccess(
+      res,
+      await productAnalyticsService.siteSpeed(range, { device, page }),
+      "Site speed.",
+    );
   },
 };

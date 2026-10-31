@@ -4,9 +4,10 @@ import { percent } from "@/features/financial-rollup/constants/financialRollup.c
 
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
 import type { RankedPage } from "../api/platformAnalyticsSchemas";
+import { METRIC_HINT, SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import { usePlatformAnalyticsInsight } from "../hooks/usePlatformAnalyticsInsight";
-import { formatSessionLength, toPageLabel } from "../utils/platformAnalytics.utils";
+import { formatSessionLength, toPageLabel, toSiteUrl } from "../utils/platformAnalytics.utils";
 import { AnalyticsInsightSection } from "./AnalyticsInsightSection";
 import { RankedList } from "./RankedList";
 
@@ -15,8 +16,9 @@ const NO_PAGE_VIEWS_MESSAGE = "No page views in this range yet.";
 const toRankedRows = (pages: RankedPage[]) =>
   pages.map((page) => ({
     rowKey: page.path,
-    label: <span title={page.path}>{toPageLabel(page)}</span>,
+    label: toPageLabel(page),
     value: page.count,
+    href: toSiteUrl(page.path),
   }));
 
 export const SiteTrafficSection = ({ range }: { range: AnalyticsRange }) => {
@@ -28,8 +30,9 @@ export const SiteTrafficSection = ({ range }: { range: AnalyticsRange }) => {
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-traffic"
       title="Site traffic"
-      description="How much of the site people use, and where their visits start and end."
+      description={SECTION_DESCRIPTION.TRAFFIC}
       insightQuery={trafficQuery}
     >
       {({
@@ -43,17 +46,25 @@ export const SiteTrafficSection = ({ range }: { range: AnalyticsRange }) => {
       }) => (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Page views" value={pageViews.toLocaleString()} />
             <StatCard
-              label="Sessions"
-              value={sessions.toLocaleString()}
-              hint="One visit, from arriving to leaving"
+              label="Page views"
+              value={pageViews.toLocaleString()}
+              hint={METRIC_HINT.PAGE_VIEWS}
             />
-            <StatCard label="Average session" value={formatSessionLength(averageSessionSeconds)} />
             <StatCard
-              label="Bounce rate"
+              label="Visits"
+              value={sessions.toLocaleString()}
+              hint={METRIC_HINT.SESSIONS}
+            />
+            <StatCard
+              label="Average visit length"
+              value={formatSessionLength(averageSessionSeconds)}
+              hint={METRIC_HINT.AVERAGE_SESSION}
+            />
+            <StatCard
+              label="Left straight away"
               value={percent(bounceRate)}
-              hint="Sessions that left without doing anything"
+              hint={METRIC_HINT.BOUNCE_RATE}
             />
           </div>
           <div className="grid gap-6 lg:grid-cols-3">

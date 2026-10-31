@@ -2,6 +2,7 @@ import type { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
+import type { SpeedDevice, SpeedPage } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import {
   acquisitionResultSchema,
@@ -25,6 +26,8 @@ const getInsight = async <ResultSchema extends z.ZodType>(
   return resultSchema.parse(res.data);
 };
 
+export type SpeedFilters = { device: SpeedDevice; page: SpeedPage };
+
 export const platformAnalyticsApi = {
   getOverview: (range: AnalyticsRange) => getInsight("overview", range, overviewResultSchema),
   getPurchaseFunnel: (range: AnalyticsRange) =>
@@ -37,5 +40,10 @@ export const platformAnalyticsApi = {
   getZeroResultSearches: (range: AnalyticsRange) =>
     getInsight("search/zero-results", range, zeroResultSearchesResultSchema),
   getSiteTraffic: (range: AnalyticsRange) => getInsight("traffic", range, siteTrafficResultSchema),
-  getSiteSpeed: (range: AnalyticsRange) => getInsight("speed", range, siteSpeedResultSchema),
+  getSiteSpeed: async (range: AnalyticsRange, { device, page }: SpeedFilters) => {
+    const res = await apiClient.get<unknown>("/platform/analytics/speed", {
+      params: { range, device, page },
+    });
+    return siteSpeedResultSchema.parse(res.data);
+  },
 };

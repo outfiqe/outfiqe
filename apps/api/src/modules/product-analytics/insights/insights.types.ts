@@ -43,7 +43,12 @@ export type ZeroResultSearchesInsight = {
   searches: { query: string; searchCount: number }[];
 };
 
-export type RankedPage = { path: string; productName: string | null; count: number };
+export type RankedPage = {
+  path: string;
+  productName: string | null;
+  brandName: string | null;
+  count: number;
+};
 
 export type SiteTrafficInsight = {
   pageViews: number;
@@ -55,12 +60,29 @@ export type SiteTrafficInsight = {
   exitPages: RankedPage[];
 };
 
+export type SpeedReading = {
+  sampleCount: number;
+  p75: number | null;
+  p90: number | null;
+  p95: number | null;
+  p99: number | null;
+};
+
+export type SlowPage = {
+  path: string;
+  productName: string | null;
+  brandName: string | null;
+  typicalLoadMs: number;
+  sampleCount: number;
+};
+
 export type SiteSpeedInsight = {
   measurementCount: number;
-  largestContentfulPaintMs: number | null;
-  interactionToNextPaintMs: number | null;
-  firstContentfulPaintMs: number | null;
-  cumulativeLayoutShift: number | null;
+  largestContentfulPaint: SpeedReading;
+  interactionToNextPaint: SpeedReading;
+  firstContentfulPaint: SpeedReading;
+  cumulativeLayoutShift: SpeedReading;
+  slowestPages: SlowPage[];
 };
 
 export type InsightResult<Insight> = {
