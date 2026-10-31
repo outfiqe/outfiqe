@@ -13,7 +13,6 @@ type PostActionsRowProps = {
   likeDisabledReason?: string;
   commentCount: number;
   onCommentClick?: () => void;
-  commentsOpen?: boolean;
   isSaved: boolean;
   onSave: () => void;
   isSaving?: boolean;
@@ -29,7 +28,6 @@ export const PostActionsRow = ({
   likeDisabledReason,
   commentCount,
   onCommentClick,
-  commentsOpen,
   isSaved,
   onSave,
   isSaving,
@@ -68,7 +66,6 @@ export const PostActionsRow = ({
         <button
           type="button"
           onClick={onCommentClick}
-          aria-pressed={commentsOpen}
           className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <MessageCircle className="size-5" />

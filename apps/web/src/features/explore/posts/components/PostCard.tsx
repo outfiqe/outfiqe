@@ -5,7 +5,7 @@ import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
-import { PostCommentsSection } from "../../comments/components/PostCommentsSection";
+import { LIST_POST_MEDIA_CLASS_NAME } from "../../constants/explore.constants";
 import type { FeedPost } from "../../feed/api/exploreFeedSchemas";
 import { usePostCardState } from "../hooks/usePostCardState";
 import { useRecordLookView } from "../hooks/useRecordLookView";
@@ -19,10 +19,11 @@ import { ReportContentModal } from "./ReportContentModal";
 interface PostCardProps {
   post: FeedPost;
   onImageClick?: () => void;
+  onOpenComments: () => void;
   trendingRank?: TrendingRank;
 }
 
-export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) => {
+export const PostCard = ({ post, onImageClick, onOpenComments, trendingRank }: PostCardProps) => {
   const {
     id,
     creator,
@@ -43,7 +44,6 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   } = creator;
 
   const {
-    isAuthenticated,
     isOwnPost,
     isStaff,
     likeDisabledReason,
@@ -53,17 +53,10 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
     saveMutation,
     followMutation,
     shareLook,
-    commentsOpen,
-    setCommentsOpen,
-    draft,
-    setDraft,
-    comments,
-    submitComment,
     reportOpen,
     setReportOpen,
     reportMutation,
   } = usePostCardState(post);
-  const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
@@ -97,6 +90,8 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           images={images}
           fallbackColor={getAvatarColor(id)}
           aspectRatio={String(POST_LAYOUT_ASPECT[layout])}
+          imageFrameClassName={LIST_POST_MEDIA_CLASS_NAME}
+          showsWholeImage
           onImageClick={onImageClick}
           onDoubleTapLike={
             likeDisabledReason
@@ -132,27 +127,13 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           isLiking={isLiking}
           likeDisabledReason={likeDisabledReason}
           commentCount={commentCount}
-          onCommentClick={isStaff ? undefined : () => setCommentsOpen((open) => !open)}
-          commentsOpen={commentsOpen}
+          onCommentClick={isStaff ? undefined : onOpenComments}
           isSaved={isSaved}
           onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
           isSaving={isSaving}
           onShare={() => void shareLook()}
           className={hasCaptionContent ? "mt-2.5 border-t border-border pt-2.5" : undefined}
         />
-
-        {commentsOpen && (
-          <PostCommentsSection
-            lookId={id}
-            isLoading={commentsLoading}
-            comments={commentsData?.comments}
-            isAuthenticated={isAuthenticated}
-            draft={draft}
-            onDraftChange={setDraft}
-            onSubmit={() => gated(() => void submitComment())}
-            className="mt-2.5 border-t border-border pt-2.5"
-          />
-        )}
       </div>
 
       {reportOpen && (
