@@ -1,4 +1,5 @@
-import { Button, Modal } from "@outfiqe/design-system";
+import { Button } from "./button";
+import { Modal } from "./modal";
 
 type ConfirmModalProps = {
   open: boolean;

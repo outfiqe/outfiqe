@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { ConfirmModal } from "./ConfirmModal";
+import { ConfirmModal } from "./confirm-modal";
 
 describe("ConfirmModal", () => {
   it("calls onConfirm and onCancel", async () => {

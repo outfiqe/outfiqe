@@ -1,10 +1,9 @@
-import { Badge, Button, Select, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";

@@ -1,8 +1,7 @@
-import { Button, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, ConfirmModal, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { contentBrowserApi } from "../api/contentBrowserApi";

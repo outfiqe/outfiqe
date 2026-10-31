@@ -1,10 +1,9 @@
-import { Badge, Button, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
