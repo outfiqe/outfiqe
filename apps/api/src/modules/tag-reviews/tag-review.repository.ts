@@ -3,6 +3,7 @@ import { Prisma } from "#generated/prisma/client.js";
 import type { TagApprovalSource, TagRejectionReason } from "#generated/prisma/enums.js";
 import { BrandTagReviewPolicy, TagReviewStatus } from "#generated/prisma/enums.js";
 
+import { tagReviewMetricTagsRepository } from "./metrics/metric-tags.repository.js";
 import { tagReviewMetricsRepository } from "./metrics/metrics.repository.js";
 import { tagReviewQueueRepository } from "./queue/queue.repository.js";
 import type {
@@ -141,4 +142,5 @@ export const tagReviewRepository = {
   ...tagReviewQueueRepository,
 
   ...tagReviewMetricsRepository,
+  ...tagReviewMetricTagsRepository,
 };

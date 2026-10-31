@@ -1,8 +1,7 @@
-import { Button, FormBanner, Input, Modal, Select, toast } from "@outfiqe/design-system";
-import { MS_PER_MINUTE } from "@outfiqe/utils";
+import { Button, DateInput, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
+import { isPastDateTimeInputValue, MS_PER_MINUTE, toDateTimeInputValue } from "@outfiqe/utils";
 import { useState } from "react";
 
-import { DATETIME_LOCAL_LENGTH } from "@/lib/dateInputs";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { announcementsApi } from "../api/announcementsApi";
@@ -29,9 +28,7 @@ const isLargeAudience = (announcement: Announcement): boolean =>
 
 const defaultScheduleValue = (): string => {
   const soon = new Date(Date.now() + MIN_SCHEDULE_LEAD_MINUTES * MS_PER_MINUTE);
-  soon.setSeconds(0, 0);
-  const localSoon = new Date(soon.getTime() - soon.getTimezoneOffset() * MS_PER_MINUTE);
-  return localSoon.toISOString().slice(0, DATETIME_LOCAL_LENGTH);
+  return toDateTimeInputValue(soon);
 };
 
 export const SendConfirmationModal = ({
@@ -45,6 +42,9 @@ export const SendConfirmationModal = ({
   );
   const [scheduledAt, setScheduledAt] = useState(defaultScheduleValue());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isScheduling = mode === SendMode.SCHEDULE;
+  const hasPastSchedule = isScheduling && isPastDateTimeInputValue(scheduledAt);
+  const canSend = !isScheduling || (scheduledAt !== "" && !hasPastSchedule);
 
   const submit = async () => {
     setIsSubmitting(true);
@@ -72,7 +72,7 @@ export const SendConfirmationModal = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()} isLoading={isSubmitting}>
+          <Button onClick={() => void submit()} disabled={!canSend} isLoading={isSubmitting}>
             {mode === SendMode.SCHEDULE ? "Schedule" : "Send now"}
           </Button>
         </div>
@@ -118,12 +118,19 @@ export const SendConfirmationModal = ({
             >
               Send at
             </label>
-            <Input
+            <DateInput
+              includesTime
               id="announcement-scheduled-at"
-              type="datetime-local"
+              min={toDateTimeInputValue()}
+              aria-invalid={hasPastSchedule}
               value={scheduledAt}
               onChange={(event) => setScheduledAt(event.target.value)}
             />
+            {hasPastSchedule && (
+              <p role="alert" className="mt-1 text-xs text-destructive">
+                Choose a time in the future.
+              </p>
+            )}
           </div>
         )}
       </div>

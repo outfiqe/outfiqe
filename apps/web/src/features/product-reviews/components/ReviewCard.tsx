@@ -1,6 +1,7 @@
 "use client";
 
 import { Rating } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { BadgeCheck, ThumbsUp } from "lucide-react";
 
 import { AppImage } from "@/shared/components/AppImage";
@@ -61,11 +62,7 @@ export const ReviewCard = ({
           <div className="mt-1 flex items-center gap-2">
             <Rating value={rating} readOnly size="sm" />
             <time dateTime={createdAt} className="text-[11px] text-muted-foreground">
-              {new Date(createdAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+              {formatDate(createdAt)}
             </time>
           </div>
 

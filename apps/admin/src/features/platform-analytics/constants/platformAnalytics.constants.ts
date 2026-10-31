@@ -15,6 +15,8 @@ export const INSIGHT_STATUSES = ["fresh", "stale", "not_connected", "unavailable
 
 export const PLATFORM_ANALYTICS_QUERY_KEY = ["platform-analytics"] as const;
 
+export const ANALYTICS_STALE_TIME_MS = 60_000;
+
 export const EXACT_ORDER_TOTALS_QUERY_KEY = ["platform-analytics", "exact-order-totals"] as const;
 
 export const FUNNEL_STEP_LABEL: Record<string, string> = {
@@ -48,6 +50,7 @@ export const INSIGHT_MESSAGE = {
     "Analytics isn't connected yet. Add the read-only PostHog key (POSTHOG_QUERY_API_KEY and POSTHOG_PROJECT_ID) to the API server to see these numbers.",
   UNAVAILABLE: "PostHog didn't answer just now. Try again in a few minutes.",
   REQUEST_FAILED: "Couldn't load this section.",
+  UPDATED: "Updated",
   STALE: "PostHog didn't answer, so this shows the last saved numbers",
 } as const;
 

@@ -1,4 +1,5 @@
 import { Button, FormBanner, Select, StatCardSkeleton } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -12,9 +13,6 @@ import type { TenantSort } from "../api/platformMetricsSchemas";
 const PAGE_SIZE = 25;
 
 const compactNumber = (value: number) => value.toLocaleString();
-
-const formatDay = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—";
 
 const StatCard = ({ label, value }: { label: string; value: number }) => (
   <div className="rounded-lg border border-border bg-card p-4">
@@ -163,7 +161,7 @@ export const PlatformMetricsPage = () => {
                     <td className="py-2 pr-4">{compactNumber(tenant.contactCount)}</td>
                     <td className="py-2 pr-4">{compactNumber(tenant.dealCount)}</td>
                     <td className="py-2 pr-4">{compactNumber(tenant.ticketCount)}</td>
-                    <td className="py-2">{formatDay(tenant.lastCrmActivityAt)}</td>
+                    <td className="py-2">{formatDate(tenant.lastCrmActivityAt)}</td>
                   </tr>
                 ))}
               </tbody>

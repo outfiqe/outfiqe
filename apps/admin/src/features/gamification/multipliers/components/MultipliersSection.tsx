@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -13,6 +14,7 @@ import {
   Modal,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
@@ -93,7 +95,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime max={form.watch("endsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -106,7 +108,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime min={form.watch("startsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -245,8 +247,7 @@ export const MultipliersSection = () => {
                 <span className="ml-2 text-xs text-muted-foreground">(deactivated)</span>
               )}
               <span className="ml-2 block text-xs text-muted-foreground sm:inline">
-                {new Date(multiplierRow.startsAt).toLocaleString()} –{" "}
-                {new Date(multiplierRow.endsAt).toLocaleString()}
+                {formatDateTime(multiplierRow.startsAt)} – {formatDateTime(multiplierRow.endsAt)}
               </span>
             </p>
             {canManageGamification && (

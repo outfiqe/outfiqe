@@ -54,3 +54,5 @@ DUE)` and `fulfilment_status <> CANCELLED`** — the same "this is a real sale" 
 - **Index reliance:** the revenue and trend queries filter `products` by `brand_id` (served by
   `@@index([brandId])`) and join `order_items` by `product_id` (`@@index([productId])`) and
   `orders` by id. Acceptable for a single brand's catalog and order volume at this scale.
+
+The overview takes `?days=7|30|90` (default 30), read with the shared `overviewPeriodQuerySchema`. Besides the totals it returns `topProducts` for the period and `lowStockProducts` right now.

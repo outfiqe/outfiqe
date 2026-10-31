@@ -4,7 +4,7 @@ import { validate } from "#middlewares/validate.js";
 import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { productAnalyticsController } from "./product-analytics.controller.js";
-import { insightRangeQuerySchema } from "./product-analytics.schemas.js";
+import { insightRangeQuerySchema, siteSpeedQuerySchema } from "./product-analytics.schemas.js";
 
 export const productAnalyticsRoutes = Router();
 
@@ -50,6 +50,7 @@ productAnalyticsRoutes.get(
 );
 productAnalyticsRoutes.get(
   "/analytics/speed",
-  ...analyticsChain,
+  ...platformGuards.analyticsRead,
+  validate({ query: siteSpeedQuerySchema }),
   productAnalyticsController.siteSpeed,
 );

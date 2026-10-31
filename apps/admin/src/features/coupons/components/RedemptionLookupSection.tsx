@@ -1,4 +1,5 @@
 import { Badge, Button } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -98,7 +99,7 @@ export const RedemptionLookupSection = () => {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {redemption.userEmail} · Order {redemption.orderId} · Rs.{" "}
                   {redemption.discountAmount.toLocaleString()} discount ·{" "}
-                  {new Date(redemption.createdAt).toLocaleDateString()}
+                  {formatDate(redemption.createdAt)}
                 </p>
                 {redemption.flaggedForReview && redemption.flagReason && (
                   <p className="mt-1 text-sm text-destructive">Flag: {redemption.flagReason}</p>

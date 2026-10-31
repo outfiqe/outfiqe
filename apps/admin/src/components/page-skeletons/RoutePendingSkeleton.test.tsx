@@ -67,7 +67,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← Back to customers")).toBeInTheDocument();
+    expect(screen.getByText("All customers")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Recent orders" })).toBeInTheDocument();
   });
 
@@ -76,7 +76,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← Back to partners")).toBeInTheDocument();
+    expect(screen.getByText("All partners")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Per product" })).toBeInTheDocument();
   });
 
@@ -94,8 +94,8 @@ describe("RoutePendingSkeleton", () => {
     render(<RoutePendingSkeleton />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Quick access" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Settlement reconciliation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Needs action" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Where the money went" })).toBeInTheDocument();
   });
 
   it("shows the back link and the real card titles of an order while it loads", () => {
@@ -103,7 +103,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("Orders")).toBeInTheDocument();
+    expect(screen.getByText("All orders")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Buyer" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Totals" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Items" })).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe("RoutePendingSkeleton", () => {
 
     render(<RoutePendingSkeleton />);
 
-    expect(screen.getByText("← All tenants")).toBeInTheDocument();
+    expect(screen.getByText("All tenants")).toBeInTheDocument();
     expect(screen.getByText("Activity trend")).toBeInTheDocument();
   });
 

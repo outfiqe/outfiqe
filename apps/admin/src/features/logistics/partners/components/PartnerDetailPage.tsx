@@ -1,8 +1,7 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
@@ -40,13 +39,7 @@ export const PartnerDetailPage = ({ partnerId }: PartnerDetailPageProps) => {
 
   return (
     <div className="space-y-8">
-      <Link
-        to="/logistics/partners"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Delivery partners
-      </Link>
+      <BackLink to="/logistics/partners">All delivery partners</BackLink>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

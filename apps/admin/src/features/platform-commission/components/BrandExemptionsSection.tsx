@@ -5,6 +5,8 @@ import {
   AutocompleteInput,
   AutocompleteItem,
   Button,
+  ConfirmModal,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -17,13 +19,13 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
@@ -217,7 +219,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput max={form.watch("endsAt")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,7 +232,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput min={form.watch("startsAt")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -280,8 +282,8 @@ export const BrandExemptionsSection = () => {
                   {isRevoked && <span className="ml-2 text-xs text-destructive">Revoked</span>}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {new Date(exemption.startsAt).toLocaleDateString()} –{" "}
-                  {new Date(exemption.endsAt).toLocaleDateString()} · {exemption.reason}
+                  {formatDate(exemption.startsAt)} – {formatDate(exemption.endsAt)} ·{" "}
+                  {exemption.reason}
                 </p>
               </div>
               {canManageCommissions && !isRevoked && (

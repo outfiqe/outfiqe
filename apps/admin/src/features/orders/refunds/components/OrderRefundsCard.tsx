@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 
 import {
   REFUND_CAUSE_LABELS,
@@ -59,7 +60,7 @@ export const OrderRefundsCard = ({ orderId }: OrderRefundsCardProps) => {
                   </span>
                 </div>
                 <p className="text-muted-foreground">
-                  {new Date(createdAt).toLocaleString()} · {reason}
+                  {formatDateTime(createdAt)} · {reason}
                 </p>
                 <ul className="mt-1 text-xs text-muted-foreground">
                   {lines.map((line) => (

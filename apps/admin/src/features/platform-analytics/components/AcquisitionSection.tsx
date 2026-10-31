@@ -1,9 +1,10 @@
 import { StatCard } from "@outfiqe/design-system";
 
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
+import { METRIC_HINT, SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import { usePlatformAnalyticsInsight } from "../hooks/usePlatformAnalyticsInsight";
-import { toTrafficSourceLabel } from "../utils/platformAnalytics.utils";
+import { toTrafficSourceLabel, toTrafficSourceUrl } from "../utils/platformAnalytics.utils";
 import { AnalyticsInsightSection } from "./AnalyticsInsightSection";
 import { RankedList } from "./RankedList";
 
@@ -16,8 +17,9 @@ export const AcquisitionSection = ({ range }: { range: AnalyticsRange }) => {
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-sources"
       title="Where visitors come from"
-      description="Visitors by the site that sent them, by campaign, and through muse links."
+      description={SECTION_DESCRIPTION.SOURCES}
       insightQuery={acquisitionQuery}
     >
       {({ sources, campaigns, creatorLinkClicks }) => (
@@ -29,10 +31,11 @@ export const AcquisitionSection = ({ range }: { range: AnalyticsRange }) => {
               rowKey: source,
               label: toTrafficSourceLabel(source),
               value: visitors,
+              href: toTrafficSourceUrl(source),
             }))}
           />
           <RankedList
-            heading="Campaigns (UTM)"
+            heading="Campaigns"
             emptyMessage="No campaign links used in this range."
             rows={campaigns.map(({ campaign, visitors }) => ({
               rowKey: campaign,
@@ -43,7 +46,7 @@ export const AcquisitionSection = ({ range }: { range: AnalyticsRange }) => {
           <StatCard
             label="Muse link clicks"
             value={creatorLinkClicks.toLocaleString()}
-            hint="Clicks on muses' shared product links"
+            hint={METRIC_HINT.MUSE_LINK_CLICKS}
           />
         </div>
       )}

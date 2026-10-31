@@ -1,10 +1,11 @@
 "use client";
 
 import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
-import { ArrowLeft, Shirt } from "lucide-react";
-import Link from "next/link";
+import { formatDate } from "@outfiqe/utils";
+import { Shirt } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { AppImage } from "@/shared/components/AppImage";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -194,15 +195,9 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
 
   return (
     <div>
-      <Link
-        href="/manage-orders"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        All orders
-      </Link>
+      <BackLink href="/manage-orders">All orders</BackLink>
 
-      <div className="mt-4">
+      <div>
         {isError ? (
           <FormBanner>We couldn&apos;t load this shipment right now. Please try again.</FormBanner>
         ) : isPending || !shipment ? (
@@ -215,7 +210,7 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
                   Order {formatShortOrderId(shipment.orderId)}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Placed {new Date(shipment.orderCreatedAt).toLocaleDateString()} ·{" "}
+                  Placed {formatDate(shipment.orderCreatedAt)} ·{" "}
                   {PAYMENT_STATUS_LABEL[shipment.orderPaymentStatus]} ·{" "}
                   {ORDER_SUMMARY_LABEL[shipment.orderFulfilmentSummary]}
                 </p>

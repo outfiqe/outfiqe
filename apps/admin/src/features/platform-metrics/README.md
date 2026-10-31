@@ -2,11 +2,11 @@
 
 ## Purpose
 
-The platform-admin monitoring dashboard: the Platform section's `/platform` landing (totals,
-a platform-wide activity trend, and a settlement-reconciliation glance), platform-wide totals with
+The platform-admin monitoring dashboard: the Platform section's `/platform` landing (what needs
+action, where the money went, totals and a platform-wide activity trend), platform-wide totals with
 one aggregate row per CRM tenant, and a per-tenant detail with a 30-day activity trend. Reads the
-`/api/platform/metrics/*` endpoints (plus `/api/admin/financial-rollup` for the reconciliation
-card). Visible only to accounts with `platform:access` (it sits in the sidebar's Platform
+`/api/platform/metrics/*` endpoints (plus `/api/admin/financial-rollup/money-breakdown` for the
+money section). Visible only to accounts with `platform:access` (it sits in the sidebar's Platform
 section).
 
 ## Structure
@@ -15,24 +15,22 @@ section).
   `TenantMetricDetail`, `TenantSparklinePoint`, `PlatformActivityTrendPoint`).
 - `api/platformMetricsApi.ts` — `platformMetricsApi` (`getOverview`, `getActivityTrend`, `listTenants`,
   `getTenantDetail`).
-- `components/PlatformOverviewPage.tsx` — the `/platform` landing. A `StatCard` KPI row from `getOverview`
-  (tenants / members / contacts / deals / tickets / activities), a "Quick access" row of `Link`
-  shortcuts to the most-used admin pages (Orders, Products, Brand applications, Coupons,
-  Withdrawal requests, Support requests — a fixed, hand-picked list, not derived from actual
-  navigation frequency), an `<ChartCard>` + `<TrendChart>` area chart of platform-wide CRM activity
-  per day (`getActivityTrend`), and a settlement-reconciliation section that compares gateway
-  net-held against total ledger owed for the last 30 days (`financialRollupApi.get("30d")`). The
-  reconciliation query is independent and `retry: false` — if the caller's role can't read the
-  rollup it degrades to a one-line note instead of a page-level error. Once the overview has
-  loaded it also mounts `features/product-tour`'s `PlatformDashboardTour` and shows a "Take the
-  tour" link in the header that replays it — see that feature's own README.
+- `components/PlatformOverviewPage.tsx` — the `/platform` landing. KPI cards from `getOverview`, each
+  linking to the organization list, the sections below, and an `<ChartCard>` + `<TrendChart>` area
+  chart of platform-wide CRM activity per day (`getActivityTrend`). Once the overview has loaded it
+  also mounts `features/product-tour`'s `PlatformDashboardTour` and shows a "Take the tour" link in
+  the header that replays it — see that feature's own README.
+- `components/QuickAccessSection.tsx` — "Needs action": shortcuts to the daily work queues, each
+  showing how much is waiting (`getAttentionCounts`). If the counts fail, the shortcuts still work.
+- `features/financial-rollup/components/MoneyBreakdownSection.tsx` — "Where the money went", shared
+  with the financial rollup page.
 - `components/PlatformMetricsPage.tsx` — six overview stat cards + a plan filter, a sort control, and a
   paginated tenant table. Each row links to the detail.
 - `components/TenantMetricsDetailPage.tsx` — the tenant's current metrics, its live partner/customer totals,
   and a `<TrendChart size="mini">` sparkline of `activityCount` across the rollup series.
 - `components/PlatformMetricsPage.integration.test.tsx` / `components/PlatformOverviewPage.integration.test.tsx` — MSW
-  render tests (table + empty state; KPI row, activity chart, settlement gap, rollup-forbidden
-  degradation, overview error).
+  render tests (table + empty state; KPI row, waiting counts, activity chart, money section, its
+  forbidden state, overview error).
 
 Routes: `_authenticated.platform.index.tsx` (`/platform` → `PlatformOverviewPage`),
 `_authenticated.platform.metrics.index.tsx` (`/platform/metrics`) and
@@ -56,7 +54,13 @@ shouldn't be). "Tenant metrics" lives in `PLATFORM_NAV_ITEMS`.
   second hand-rolled chart wasn't worth keeping — the mini variant drops axes/grid/tooltip and is
   the same one `<path>` glance, now theme-aware and consistent with every other chart in the
   product.
-- **The settlement card gates on `advancedFeaturesEnabled`? No — it gates on whether the rollup
-  read succeeds.** `PlatformOverviewPage` is a `platform:access` surface; the financial rollup is
-  a separate nav-key-guarded route, so a platform admin without `financial-rollup` access still
-  gets the rest of the page and a quiet "unavailable for your role" line where the gap would be.
+- **The money section gates on whether its read succeeds.** `PlatformOverviewPage` is a
+  `platform:access` surface; the financial rollup is a separate nav-key-guarded route, so a platform
+  admin without `financial-rollup` access still gets the rest of the page and a quiet "isn't
+  available for your role" line.
+- **The old "Gap" card is gone because it warned about healthy money.** It compared money held with
+  only what is still owed, so platform fees, delivery fees and paid-out money all counted as a gap.
+  The money section follows paid orders through every destination and warns only about what can't
+  be traced.
+- **Waiting counts sit behind `platform:metrics:read`, not each queue's own permission.** They are
+  bare counts with no records, and each shortcut's page still checks its own access.

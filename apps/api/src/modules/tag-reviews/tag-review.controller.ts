@@ -7,6 +7,7 @@ import { validated } from "#middlewares/validate.js";
 import { TAG_REVIEW_RESPONSE_MESSAGES } from "./tag-review.constants.js";
 import type {
   ApproveTagBody,
+  ListMetricTagsQuery,
   ListTagReviewsQuery,
   RejectTagBody,
   TagReviewIdParam,
@@ -29,6 +30,12 @@ export const tagReviewController = {
 
   async metrics(_req: Request, res: Response) {
     sendSuccess(res, await tagReviewService.getMetrics(), TAG_REVIEW_RESPONSE_MESSAGES.metrics);
+  },
+
+  async metricTags(_req: Request, res: Response) {
+    const query = validated.query<ListMetricTagsQuery>(res);
+    const metricTagPage = await tagReviewService.listMetricTags(query);
+    sendSuccess(res, metricTagPage, TAG_REVIEW_RESPONSE_MESSAGES.metricTags);
   },
 
   async approve(_req: Request, res: Response) {

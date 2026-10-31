@@ -1,9 +1,9 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { bankAccountsAdminApi } from "@/features/bank-accounts/api/bankAccountsApi";
@@ -182,8 +182,7 @@ export const WithdrawRequestsListSection = () => {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Rs. {amount.toLocaleString()} · Bank account ••••{" "}
-                    {revealed?.accountNumber ?? bankAccountLast4} ·{" "}
-                    {new Date(createdAt).toLocaleDateString()}
+                    {revealed?.accountNumber ?? bankAccountLast4} · {formatDate(createdAt)}
                   </p>
                   {status === "UNDER_REVIEW" && requiresSecondSignOff && (
                     <p className="mt-1 text-sm text-amber-700">

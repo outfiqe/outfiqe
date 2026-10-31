@@ -1,11 +1,13 @@
+import type { CommissionSource } from "#generated/prisma/enums.js";
 import type { CreatorCommissionView } from "#modules/commissions/commission.types.js";
 
 export type CreatorOverviewKpis = {
   totalEarnings: number;
   pendingEarnings: number;
   availableEarnings: number;
-  last30DaysEarnings: number;
-  previous30DaysEarnings: number;
+  periodDays: number;
+  periodEarnings: number;
+  previousPeriodEarnings: number;
   lookCount: number;
   followerCount: number;
   totalLikes: number;
@@ -18,15 +20,34 @@ export type CreatorOverviewTrendPoint = {
   looks: number;
 };
 
+export type CreatorTopLook = {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  likeCount: number;
+  salesCount: number;
+  earnings: number;
+};
+
+export type CreatorEarningsBySource = {
+  source: CommissionSource;
+  earnings: number;
+  salesCount: number;
+};
+
 export type CreatorOverview = {
   kpis: CreatorOverviewKpis;
   trend: CreatorOverviewTrendPoint[];
+  handle: string;
+  nextAvailableAt: Date | null;
+  topLooks: CreatorTopLook[];
+  earningsBySource: CreatorEarningsBySource[];
   recentCommissions: CreatorCommissionView[];
 };
 
 export type EarningsWindowRow = {
-  last30: number;
-  previous30: number;
+  period: number;
+  previousPeriod: number;
 };
 
 export type LookAggregates = {

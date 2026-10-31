@@ -1,6 +1,8 @@
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
+import { SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import { usePlatformAnalyticsInsight } from "../hooks/usePlatformAnalyticsInsight";
+import { toSiteUrl } from "../utils/platformAnalytics.utils";
 import { AnalyticsInsightSection } from "./AnalyticsInsightSection";
 import { RankedList } from "./RankedList";
 
@@ -13,8 +15,9 @@ export const ZeroResultSearchesSection = ({ range }: { range: AnalyticsRange }) 
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-searches"
       title="Searches with no results"
-      description="What shoppers looked for and didn't find: ideas for brands to stock."
+      description={SECTION_DESCRIPTION.SEARCHES}
       insightQuery={searchesQuery}
     >
       {({ searches }) => (
@@ -25,6 +28,7 @@ export const ZeroResultSearchesSection = ({ range }: { range: AnalyticsRange }) 
             rowKey: query,
             label: query,
             value: searchCount,
+            href: toSiteUrl(`/search?q=${encodeURIComponent(query)}`),
           }))}
         />
       )}

@@ -27,17 +27,20 @@ export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
       {
         kind: "chartCard",
         title: "Purchase funnel",
-        description: "How many people reach each step from product page to placed order.",
+        description:
+          "Follow shoppers from seeing a product to placing an order, and see where they give up.",
       },
       {
         kind: "chartCard",
         title: "Muse looks to orders",
-        description: "Whether people who open muse looks go on to buy the pieces tagged in them.",
+        description:
+          "Whether people who open a muse's look go on to buy what's tagged. Click a muse to see their profile.",
       },
     ],
     sourceFiles: [
       `${FEATURES_DIR}/platform-analytics/components/PlatformAnalyticsPage.tsx`,
       `${FEATURES_DIR}/platform-analytics/constants/platformAnalytics.constants.ts`,
+      `${FEATURES_DIR}/platform-analytics/constants/analyticsCopy.constants.ts`,
       `${FEATURES_DIR}/platform-analytics/components/AnalyticsOverviewSection.tsx`,
       `${FEATURES_DIR}/platform-analytics/components/SiteTrafficSection.tsx`,
       `${FEATURES_DIR}/platform-analytics/components/PurchaseFunnelSection.tsx`,
@@ -60,9 +63,9 @@ export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
     ],
   },
   "/trending": {
-    title: "Trending debug",
+    title: "Trending",
     description:
-      "See what's trending right now, or look up any approved product to see exactly why it is, or isn't, trending.",
+      "What shoppers care about most right now. This list fills the Trending row on the home page. Pick any product to see why it is on the list, or why it isn't.",
     blocks: [
       {
         kind: "labeledSelect",

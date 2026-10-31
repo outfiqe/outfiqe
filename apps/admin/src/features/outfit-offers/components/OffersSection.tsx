@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -141,7 +142,7 @@ export const OffersSection = () => {
                   {outfitTitle ?? "Untitled build"} · {paymentMethod}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Rs. {amount.toLocaleString()} · {new Date(createdAt).toLocaleDateString()}
+                  Rs. {amount.toLocaleString()} · {formatDate(createdAt)}
                 </p>
               </div>
               {canManage && (

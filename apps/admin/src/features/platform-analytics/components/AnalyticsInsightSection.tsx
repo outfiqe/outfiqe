@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { type ReactNode, useId } from "react";
@@ -13,6 +14,7 @@ type InsightQueryData<Insight> = {
 };
 
 type AnalyticsInsightSectionProps<Insight> = {
+  sectionId: string;
   title: string;
   description: string;
   insightQuery: UseQueryResult<InsightQueryData<Insight>>;
@@ -24,9 +26,10 @@ const SectionMessage = ({ children }: { children: ReactNode }) => (
 );
 
 const formatRefreshedAt = (refreshedAt: string | null): string =>
-  refreshedAt ? ` (from ${new Date(refreshedAt).toLocaleString()})` : "";
+  refreshedAt ? ` (from ${formatDateTime(refreshedAt)})` : "";
 
 export const AnalyticsInsightSection = <Insight,>({
+  sectionId,
   title,
   description,
   insightQuery,
@@ -60,12 +63,21 @@ export const AnalyticsInsightSection = <Insight,>({
           </p>
         )}
         {children(insightResult.insight)}
+        {insightResult.status === "fresh" && insightResult.refreshedAt && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {`${INSIGHT_MESSAGE.UPDATED} ${formatDateTime(insightResult.refreshedAt)}`}
+          </p>
+        )}
       </>
     );
   };
 
   return (
-    <section aria-labelledby={headingId} className="rounded-2xl border border-border bg-card p-5">
+    <section
+      id={sectionId}
+      aria-labelledby={headingId}
+      className="scroll-mt-24 rounded-2xl border border-border bg-card p-5"
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id={headingId} className="font-display text-lg font-bold text-foreground">

@@ -13,7 +13,7 @@ to any one app.
   display name's fallback avatar initial).
 - `email-logo/` — `EMAIL_LOGO_PATH`, `EMAIL_LOGO_RENDER_SIZE`/`EMAIL_LOGO_DISPLAY_SIZE` and `emailLogoUrl(siteOrigin)`: the one agreement between `apps/web`, which draws the logo PNG at that path (`app/email/logo.png`), and `apps/api`'s email layout, which shows it. The image is drawn at twice the size it is displayed so it stays sharp on high-density screens.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
-- `time/` — `MS_PER_MINUTE`, `MS_PER_DAY`, `SECONDS_PER_HOUR` and the other time units, for apps that do not use `date-fns`.
+- `time/` — `MS_PER_MINUTE`, `MS_PER_DAY`, `SECONDS_PER_HOUR` and the other time units, for apps that do not use `date-fns`. Also `formatDate`, `formatDateTime` and `formatShortDate`, the one way to show a date in any app. Each shows a dash for a missing or broken date. `toDateInputValue`, `toDayStartIso`, `toDayEndIso` and `isPastDateInputValue` turn date box values into real moments: an "ends on" date uses `toDayEndIso` so it lasts the whole day in the person's own time, not until midnight UTC.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
 - `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
   `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,

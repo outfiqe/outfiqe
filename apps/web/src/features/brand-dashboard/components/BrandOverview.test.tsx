@@ -56,8 +56,10 @@ const buildShipment = (id: string): BrandShipmentSummary => ({
 const buildOverview = (overrides: Partial<BrandOverviewData> = {}): BrandOverviewData => ({
   kpis: {
     lifetimeRevenue: 50000,
-    last30DaysRevenue: 12000,
-    previous30DaysRevenue: 9000,
+    periodDays: 30,
+    periodRevenue: 12000,
+    previousPeriodRevenue: 9000,
+    periodOrderCount: 4,
     availablePayout: 8000,
     pendingPayout: 2000,
     productCount: 14,
@@ -69,6 +71,8 @@ const buildOverview = (overrides: Partial<BrandOverviewData> = {}): BrandOvervie
     revenue: index === 29 ? 7777 : 0,
     orderCount: index === 29 ? 4 : 0,
   })),
+  topProducts: [{ id: "top-1", name: "Dhaka Topi", imageUrl: null, unitsSold: 3, revenue: 900 }],
+  lowStockProducts: [{ id: "low-1", name: "Pashmina", imageUrl: null, stockLeft: 1 }],
   recentOrders: [buildShipment("a"), buildShipment("b")],
   ...overrides,
 });
@@ -84,6 +88,43 @@ const mockOverview = (value: Partial<ReturnType<typeof useBrandOverview>>) => {
 
 beforeEach(() => {
   mockOverview({ data: buildOverview(), isPending: false });
+});
+
+describe("BrandOverview details", () => {
+  it("opens the matching page from each card, and shows what sold and what is running out", () => {
+    mockOverview({ data: buildOverview() });
+    render(<BrandOverview />);
+
+    expect(screen.getByRole("link", { name: "4 orders" })).toHaveAttribute(
+      "href",
+      "/manage-orders",
+    );
+    expect(screen.getByRole("link", { name: "Withdraw" })).toHaveAttribute("href", "/wallet");
+    expect(screen.getByRole("link", { name: "Update stock" })).toHaveAttribute("href", "/products");
+    expect(screen.getByRole("link", { name: /Dhaka Topi/ })).toHaveAttribute(
+      "href",
+      "/product/top-1",
+    );
+    expect(screen.getByText("3 sold")).toBeInTheDocument();
+    expect(screen.getByText("1 item left")).toBeInTheDocument();
+  });
+
+  it("asks for the picked period", () => {
+    mockOverview({ data: buildOverview() });
+    render(<BrandOverview />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
+
+    expect(useBrandOverview).toHaveBeenLastCalledWith(7);
+  });
+
+  it("says so when nothing sold and nothing is running low", () => {
+    mockOverview({ data: buildOverview({ topProducts: [], lowStockProducts: [] }) });
+    render(<BrandOverview />);
+
+    expect(screen.getByText("No sales in this period.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing is running low.")).toBeInTheDocument();
+  });
 });
 
 describe("BrandOverview", () => {
@@ -140,7 +181,7 @@ describe("BrandOverview", () => {
   it("shows a positive revenue delta when the last 30 days beat the previous 30", () => {
     mockOverview({
       data: buildOverview({
-        kpis: { ...buildOverview().kpis, last30DaysRevenue: 12000, previous30DaysRevenue: 9000 },
+        kpis: { ...buildOverview().kpis, periodRevenue: 12000, previousPeriodRevenue: 9000 },
       }),
     });
 
@@ -154,7 +195,7 @@ describe("BrandOverview", () => {
   it("shows a negative revenue delta with a minus sign when sales fell", () => {
     mockOverview({
       data: buildOverview({
-        kpis: { ...buildOverview().kpis, last30DaysRevenue: 8000, previous30DaysRevenue: 12000 },
+        kpis: { ...buildOverview().kpis, periodRevenue: 8000, previousPeriodRevenue: 12000 },
       }),
     });
 
@@ -166,7 +207,7 @@ describe("BrandOverview", () => {
   it("hides the revenue delta when the two windows are equal", () => {
     mockOverview({
       data: buildOverview({
-        kpis: { ...buildOverview().kpis, last30DaysRevenue: 9000, previous30DaysRevenue: 9000 },
+        kpis: { ...buildOverview().kpis, periodRevenue: 9000, previousPeriodRevenue: 9000 },
       }),
     });
 

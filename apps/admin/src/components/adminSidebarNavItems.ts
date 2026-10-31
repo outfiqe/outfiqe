@@ -290,7 +290,7 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     id: "trending",
     href: "/trending",
-    label: "Trending debug",
+    label: "Trending",
     icon: TrendingUp,
     group: "growth",
   },

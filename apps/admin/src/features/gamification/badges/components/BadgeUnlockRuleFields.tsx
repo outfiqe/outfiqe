@@ -1,4 +1,4 @@
-import { Checkbox, Input, Select } from "@outfiqe/design-system";
+import { Checkbox, DateInput, Input, Select } from "@outfiqe/design-system";
 
 import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 
@@ -82,9 +82,10 @@ export const BadgeUnlockRuleFields = ({
             >
               Active from (optional — seasonal window)
             </label>
-            <Input
+            <DateInput
+              includesTime
               id={`${idPrefix}-active-from`}
-              type="datetime-local"
+              max={form.activeUntil}
               value={form.activeFrom}
               onChange={(e) => onChange({ ...form, activeFrom: e.target.value })}
               className="w-full sm:w-56"
@@ -97,10 +98,11 @@ export const BadgeUnlockRuleFields = ({
             >
               Active until (optional)
             </label>
-            <Input
+            <DateInput
+              includesTime
               id={`${idPrefix}-active-until`}
-              type="datetime-local"
               aria-invalid={"activeUntil" in errors}
+              min={form.activeFrom}
               value={form.activeUntil}
               onChange={(e) => onChange({ ...form, activeUntil: e.target.value })}
               className="w-full sm:w-56"

@@ -1,9 +1,11 @@
 import { StatCard } from "@outfiqe/design-system";
 import { TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 
 import { percent } from "@/features/financial-rollup/constants/financialRollup.constants";
 
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
+import { METRIC_HINT, SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import { usePlatformAnalyticsInsight } from "../hooks/usePlatformAnalyticsInsight";
 import { AnalyticsInsightSection } from "./AnalyticsInsightSection";
@@ -20,8 +22,9 @@ export const RetentionSection = ({ range }: { range: AnalyticsRange }) => {
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-returning"
       title="Coming back"
-      description="Weekly visitors over the last 8 weeks, and how many buyers in this range had ordered before."
+      description={SECTION_DESCRIPTION.RETURNING}
       insightQuery={retentionQuery}
     >
       {({ weeklyActiveVisitors, buyers, repeatBuyers, repeatPurchaseRate }) => (
@@ -34,14 +37,21 @@ export const RetentionSection = ({ range }: { range: AnalyticsRange }) => {
               xKey="weekStart"
               series={WEEKLY_ACTIVE_SERIES}
               variant="area"
+              formatXTick={(weekStart) => formatShortDate(String(weekStart))}
+              formatTooltipLabel={(weekStart) => `Week of ${formatShortDate(String(weekStart))}`}
             />
           )}
           <div className="grid gap-3">
-            <StatCard label="Buyers in this range" value={buyers.toLocaleString()} />
+            <StatCard
+              label="Buyers in this period"
+              value={buyers.toLocaleString()}
+              hint={METRIC_HINT.BUYERS_IN_RANGE}
+            />
             <StatCard
               label="Returning buyers"
               value={percent(repeatPurchaseRate)}
-              hint={`${repeatBuyers.toLocaleString()} had ordered before`}
+              delta={{ value: `${repeatBuyers.toLocaleString()} had ordered before` }}
+              hint={METRIC_HINT.RETURNING_BUYERS}
             />
           </div>
         </div>

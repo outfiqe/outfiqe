@@ -1,8 +1,10 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { TrendChart } from "@outfiqe/design-system/charts";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 
+import { BackLink } from "@/components/BackLink";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../api/platformMetricsApi";
@@ -53,9 +55,7 @@ export const TenantMetricsDetailPage = () => {
 
   return (
     <div>
-      <Link to="/platform/metrics" className="text-sm text-primary-strong underline">
-        ← All tenants
-      </Link>
+      <BackLink to="/platform/metrics">All tenants</BackLink>
 
       {detail.isLoading && <TenantMetricsSkeleton />}
       {detail.error && <FormBanner className="mt-4">{getErrorMessage(detail.error)}</FormBanner>}
@@ -81,11 +81,7 @@ export const TenantMetricsDetailPage = () => {
             <Metric
               label="Last activity"
               value={
-                detail.data.lastCrmActivityAt
-                  ? new Date(detail.data.lastCrmActivityAt).toLocaleDateString(undefined, {
-                      dateStyle: "medium",
-                    })
-                  : "—"
+                detail.data.lastCrmActivityAt ? formatDate(detail.data.lastCrmActivityAt) : "—"
               }
             />
           </div>

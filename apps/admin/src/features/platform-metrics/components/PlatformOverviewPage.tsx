@@ -1,20 +1,18 @@
-import { Button, FormBanner, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
-import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
-import { useQuery } from "@tanstack/react-query";
-import { Link, type LinkProps } from "@tanstack/react-router";
 import {
-  BanknoteArrowUp,
-  ClipboardList,
-  Compass,
-  LifeBuoy,
-  type LucideIcon,
-  Package,
-  ShoppingBag,
-  TicketPercent,
-} from "lucide-react";
-import type { ReactNode } from "react";
+  Button,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
+  FormBanner,
+  StatCard,
+  StatCardSkeleton,
+} from "@outfiqe/design-system";
+import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Compass } from "lucide-react";
 
-import { financialRollupApi } from "@/features/financial-rollup/api/financialRollupApi";
+import { StatCardFooterLink } from "@/components/MetricParts";
+import { MoneyBreakdownSection } from "@/features/financial-rollup/components/MoneyBreakdownSection";
 import {
   PLATFORM_KPI_TOUR_ANCHOR,
   PLATFORM_TOUR_REPLAY_SEARCH,
@@ -26,119 +24,64 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../api/platformMetricsApi";
 import type { PlatformActivityTrendPoint, PlatformOverview } from "../api/platformMetricsSchemas";
+import { QuickAccessSection, QuickAccessSkeleton } from "./QuickAccessSection";
 
 const OVERVIEW_KEY = ["platform-metrics-overview"];
 const ACTIVITY_TREND_KEY = ["platform-metrics-activity-trend"];
-const ROLLUP_KEY = ["platform-metrics-rollup-gap"];
 const KPI_CARD_COUNT = 6;
-const KPI_HINT = {
-  tenantCount: "Customer organizations using the CRM. Internal platform accounts are not counted.",
-  totalMembers: "People who belong to a customer organization, added up across every organization.",
-  totalContacts: "Contacts stored in the CRM, added up across every customer organization.",
-  totalDeals: "Pipeline deals created, added up across every customer organization.",
-  totalTickets: "Support tickets created, added up across every customer organization.",
-  totalActivities:
-    "Calls, notes and other activities logged, added up across every customer organization.",
-  gatewayNetHeld:
-    "Money the payment gateways collected in the last 30 days, minus refunds. This is what should be sitting with us.",
-  ledgerOwed:
-    "What the ledger says we still owe to brands and muses from the last 30 days, in payouts and commissions that have not been paid out yet.",
-  settlementGap:
-    "Gateway money held minus what the ledger owes. Under 2% counts as reconciled; anything larger needs a review.",
-} as const;
-const SETTLEMENT_CARD_COUNT = 3;
 const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
-const SETTLEMENT_GRID_CLASS = "grid grid-cols-1 gap-3 sm:grid-cols-3";
-const QUICK_ACCESS_TILE_CLASS =
-  "flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center";
 const MIN_TREND_POINTS = 2;
-const HEALTHY_GAP_RATIO = 0.02;
+const TENANT_LIST_PATH = "/platform/metrics";
 
-type QuickAccessShortcut = {
-  readonly to: LinkProps["to"];
-  readonly label: string;
-  readonly icon: LucideIcon;
-};
-
-const QUICK_ACCESS_SHORTCUTS: QuickAccessShortcut[] = [
-  { to: "/orders", label: "Orders", icon: ShoppingBag },
-  { to: "/products", label: "Products", icon: Package },
-  { to: "/platform/brand-applications", label: "Brand applications", icon: ClipboardList },
-  { to: "/coupons", label: "Coupons", icon: TicketPercent },
-  { to: "/withdraw-requests", label: "Withdrawal requests", icon: BanknoteArrowUp },
-  { to: "/support", label: "Support requests", icon: LifeBuoy },
+const KPI_CARDS: {
+  label: string;
+  metricKey: Exclude<keyof PlatformOverview, "tenantsByPlan">;
+  hint: string;
+}[] = [
+  {
+    label: "Tenants",
+    metricKey: "tenantCount",
+    hint: "Customer organizations using the CRM. Internal platform accounts are not counted.",
+  },
+  {
+    label: "Members",
+    metricKey: "totalMembers",
+    hint: "People who belong to a customer organization, added up across every organization.",
+  },
+  {
+    label: "Contacts",
+    metricKey: "totalContacts",
+    hint: "Contacts stored in the CRM, added up across every customer organization.",
+  },
+  {
+    label: "Deals",
+    metricKey: "totalDeals",
+    hint: "Pipeline deals created, added up across every customer organization.",
+  },
+  {
+    label: "Tickets",
+    metricKey: "totalTickets",
+    hint: "Support tickets created, added up across every customer organization.",
+  },
+  {
+    label: "Activities",
+    metricKey: "totalActivities",
+    hint: "Calls, notes and other activities logged, added up across every customer organization.",
+  },
 ];
-
-const QuickAccessSection = ({ children }: { children: ReactNode }) => (
-  <section>
-    <h2 className="font-display text-lg font-bold text-foreground">Quick access</h2>
-    <div className={`mt-3 ${KPI_GRID_CLASS}`}>{children}</div>
-  </section>
-);
-
-const QuickAccessShortcuts = () => (
-  <QuickAccessSection>
-    {QUICK_ACCESS_SHORTCUTS.map(({ to, label, icon: Icon }) => (
-      <Link
-        key={label}
-        to={to}
-        className={`${QUICK_ACCESS_TILE_CLASS} transition-colors hover:border-foreground`}
-      >
-        <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="text-sm font-medium text-foreground">{label}</span>
-      </Link>
-    ))}
-  </QuickAccessSection>
-);
-
-const QuickAccessSkeleton = () => (
-  <QuickAccessSection>
-    {QUICK_ACCESS_SHORTCUTS.map(({ label }) => (
-      <div key={label} className={QUICK_ACCESS_TILE_CLASS} aria-hidden>
-        <Skeleton className="size-5 rounded-md" />
-        <Skeleton className="h-5 w-24" />
-      </div>
-    ))}
-  </QuickAccessSection>
-);
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
   <div data-tour-anchor={PLATFORM_KPI_TOUR_ANCHOR} className={KPI_GRID_CLASS}>
-    <StatCard
-      label="Tenants"
-      value={overview.tenantCount.toLocaleString()}
-      hint={KPI_HINT.tenantCount}
-    />
-    <StatCard
-      label="Members"
-      value={overview.totalMembers.toLocaleString()}
-      hint={KPI_HINT.totalMembers}
-    />
-    <StatCard
-      label="Contacts"
-      value={overview.totalContacts.toLocaleString()}
-      hint={KPI_HINT.totalContacts}
-    />
-    <StatCard
-      label="Deals"
-      value={overview.totalDeals.toLocaleString()}
-      hint={KPI_HINT.totalDeals}
-    />
-    <StatCard
-      label="Tickets"
-      value={overview.totalTickets.toLocaleString()}
-      hint={KPI_HINT.totalTickets}
-    />
-    <StatCard
-      label="Activities"
-      value={overview.totalActivities.toLocaleString()}
-      hint={KPI_HINT.totalActivities}
-    />
+    {KPI_CARDS.map(({ label, metricKey, hint }) => (
+      <StatCard
+        key={label}
+        label={label}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        value={overview[metricKey].toLocaleString()}
+        hint={hint}
+        footer={<StatCardFooterLink to={TENANT_LIST_PATH} period="By organization" />}
+      />
+    ))}
   </div>
 );
 
@@ -162,70 +105,6 @@ const ActivityTrendTable = ({ points }: { points: PlatformActivityTrendPoint[] }
   </table>
 );
 
-const SettlementSkeleton = () => (
-  <div className={SETTLEMENT_GRID_CLASS}>
-    {Array.from({ length: SETTLEMENT_CARD_COUNT }, (_unused, cardIndex) => (
-      <StatCardSkeleton key={cardIndex} hasDelta={cardIndex === SETTLEMENT_CARD_COUNT - 1} />
-    ))}
-  </div>
-);
-
-const SettlementGap = () => {
-  const rollup = useQuery({
-    queryKey: ROLLUP_KEY,
-    queryFn: () => financialRollupApi.get("30d"),
-    retry: false,
-  });
-
-  if (rollup.isLoading) return <SettlementSkeleton />;
-  if (rollup.error || !rollup.data) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Settlement reconciliation is unavailable for your role.
-      </p>
-    );
-  }
-
-  const netHeld = rollup.data.gateway.netHeld;
-  const ledgerOwed = rollup.data.ledger.owedToBrands + rollup.data.ledger.owedToCreators;
-  const gap = netHeld - ledgerOwed;
-  const isHealthy = Math.abs(gap) <= Math.max(netHeld, ledgerOwed) * HEALTHY_GAP_RATIO;
-
-  return (
-    <div className={SETTLEMENT_GRID_CLASS}>
-      <StatCard
-        label="Gateway net held (30d)"
-        value={formatRupees(netHeld)}
-        hint={KPI_HINT.gatewayNetHeld}
-      />
-      <StatCard
-        label="Ledger owed (30d)"
-        value={formatRupees(ledgerOwed)}
-        hint={KPI_HINT.ledgerOwed}
-      />
-      <StatCard
-        label="Gap"
-        value={formatRupees(gap)}
-        hint={KPI_HINT.settlementGap}
-        delta={{
-          value: isHealthy ? "Reconciled" : "Needs review",
-          tone: isHealthy ? "positive" : "negative",
-        }}
-      />
-    </div>
-  );
-};
-
-const SettlementSection = ({ children }: { children: ReactNode }) => (
-  <section>
-    <h2 className="font-display text-lg font-bold text-foreground">Settlement reconciliation</h2>
-    <p className="mt-1 text-sm text-muted-foreground">
-      Gateway money held vs. what the ledger says is owed, last 30 days.
-    </p>
-    <div className="mt-4">{children}</div>
-  </section>
-);
-
 const ACTIVITY_CHART_TITLE = "Activity";
 const ACTIVITY_CHART_DESCRIPTION = "Platform-wide CRM activity per day";
 
@@ -240,9 +119,6 @@ const OverviewSkeleton = () => (
     <ChartCard title={ACTIVITY_CHART_TITLE} description={ACTIVITY_CHART_DESCRIPTION} isLoading>
       {null}
     </ChartCard>
-    <SettlementSection>
-      <SettlementSkeleton />
-    </SettlementSection>
   </div>
 );
 
@@ -259,7 +135,7 @@ export const PlatformOverviewPage = () => {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Platform-wide totals, activity trend and settlement reconciliation.
+            What needs action today, where the money went, and how the CRM is being used.
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -279,7 +155,7 @@ export const PlatformOverviewPage = () => {
           <>
             <OverviewKpiRow overview={overview.data} />
 
-            <QuickAccessShortcuts />
+            <QuickAccessSection />
 
             <ChartCard
               title={ACTIVITY_CHART_TITLE}
@@ -288,7 +164,7 @@ export const PlatformOverviewPage = () => {
               isLoading={activityTrend.isLoading}
               error={activityTrend.error ? getErrorMessage(activityTrend.error) : null}
               isEmpty={(activityTrend.data?.length ?? 0) < MIN_TREND_POINTS}
-              emptyMessage="Not enough history yet — the daily snapshot builds this trend over time."
+              emptyMessage="Not enough history yet. This fills in as days pass."
               dataTable={<ActivityTrendTable points={activityTrend.data ?? []} />}
             >
               <TrendChart
@@ -301,9 +177,7 @@ export const PlatformOverviewPage = () => {
               />
             </ChartCard>
 
-            <SettlementSection>
-              <SettlementGap />
-            </SettlementSection>
+            <MoneyBreakdownSection />
 
             <PlatformDashboardTour />
           </>

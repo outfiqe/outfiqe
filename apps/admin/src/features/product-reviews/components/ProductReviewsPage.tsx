@@ -1,10 +1,9 @@
-import { Badge, Button, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -75,6 +74,7 @@ const ReviewCardSkeleton = () => (
 export const ProductReviewsPage = () => {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const hasSearchToShow = query.trim().length > 0 && debouncedQuery.trim().length > 0;
   const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductReview | null>(null);
 
@@ -135,7 +135,7 @@ export const ProductReviewsPage = () => {
             />
           </div>
 
-          {debouncedQuery.trim().length > 0 && (
+          {hasSearchToShow && (
             <div className="max-w-md space-y-2">
               {isSearching && <ProductSuggestionSkeleton />}
               {!isSearching && suggestions?.length === 0 && (

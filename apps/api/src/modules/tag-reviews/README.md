@@ -16,6 +16,8 @@ already exist.
 - `tag-review.repository.ts` — `tagReviewRepository`, the object the service imports, with the queue and metrics repositories spread in: `findReviewableTag` (a single tag, only if its product's brand is one the caller is a member of), `findTagForTransition` (a tag by id with the fields an event payload needs — for the platform takedown path), `transitionTag` (conditional — see "Concurrent approve/reject" below), `trustCreator` (upsert into `BrandTrustedCreator`), `listMemberBrandIds`, `listSlaEligibleTags` / `listBrandBacklogs` (the two scheduled-job reads).
 - `queue/queue.repository.ts` — `tagReviewQueueRepository`: the keyset-paginated queue (`submittedAt` desc) and `countPending`. `resolveQueueSignals` annotates each page of queue rows with `isVerifiedBuyer` (creator has a settled on-platform purchase of that exact product) and `isTrustedCreator` (an explicit `BrandTrustedCreator` row) — two batched queries over the page's distinct creators/products/brands, not per row.
 - `metrics/metrics.repository.ts` — `tagReviewMetricsRepository`: `getMetrics` (raw-SQL `percentile_cont` for the per-policy review latency and time-to-first-shoppable, plus the source/reason mixes, the stuck-`APPROVAL_REQUIRED` count, the report totals, and the `overview` trend fields for the admin dashboard's top strip — see "The overview trend" below — one `Promise.all` of small aggregates, each its own named `fetch…` helper).
+- `metrics/metric-tags.repository.ts` — `tagReviewMetricTagsRepository`: `listMetricTags`, the tags behind each number on the admin page. One raw query, a filter and sort per view (`buildViewDefinition`), keyset paging on the sort value and id, and the matching total.
+- `metrics/metrics.sql.ts` — the time windows and SQL pieces both metrics repositories must agree on (when a tag was approved, whether its look still counts).
 - `tag-review.jobs.ts` — `runTagReviewSlaSweep` (auto-approves tags left `PENDING` past `TAG_REVIEW_SLA_DAYS` under a policy that doesn't require a per-tag decision — `OPEN` / `TRUSTED_ONLY`; an `APPROVAL_REQUIRED` brand's tag never auto-approves) and `runTagReviewReminderDigest` (publishes `TAG_REVIEW_REMINDER_DUE` per brand whose backlog has tags older than `TAG_REVIEW_REMINDER_MIN_AGE_HOURS`). Both are composed into `apps/api/src/jobs/scheduled-jobs.ts`'s `INTERVAL_JOBS`; the logic lives here, `src/jobs/` only lists them.
 - `tag-review.constants.ts` — the SLA window, reminder-digest cadence/threshold, and the success messages the controller sends.
 - `tag-review.errors.ts` — `tagReviewErrors`, the module's client-facing errors in one place.
@@ -30,6 +32,12 @@ already exist.
 **Background:** the scheduler runs `runTagReviewSlaSweep` (auto-approve past the SLA window, same event path as a brand approve but `auto: true`) and `runTagReviewReminderDigest` (publish `TAG_REVIEW_REMINDER_DUE` per brand with a standing backlog) on the intervals in `tag-review.constants.ts`.
 
 ## Non-obvious rationale
+
+**A tag's approval time is `COALESCE(reviewed_at, submitted_at)`, never `reviewed_at` alone.** Tags approved automatically when posted have no `reviewed_at`. Filtering on `reviewed_at` left them out, which made "Manual review rate" read 100% whenever a brand had reviewed anything and understated the earlier `tagsLive` total. Use `TAG_APPROVED_AT_SQL`.
+
+**Tags on deleted looks are left out of every metric and every list.** Shoppers can't reach them, and a card's number has to equal the list it opens. Use `LOOK_IS_LIVE_SQL`.
+
+**`GET /tag-reviews/metrics/tags` sorts on a computed value, so it can't use an index for the sort.** Slowest-first needs the difference between two timestamps, which is why it is raw SQL rather than a Prisma `orderBy`. We accept sorting the matching rows on each request: this is an admin page behind `platformGuards.reviewsModerate`, the filter on `review_status` narrows the rows first, and it pages with a keyset. A cursor that doesn't parse restarts from the first page, because its values go into the query as typed parameters.
 
 **The overview trend (`GET /tag-reviews/metrics`'s `overview` field) is computed live, this-7d-vs-prior-7d, with no snapshot table.** `getMetrics` adds three more `FILTER (WHERE ...)`-scoped aggregates to its existing `Promise.all`, keyed off two cutoffs (`trendCutoff` = now − 7d, `trendPriorCutoff` = now − 14d):
 

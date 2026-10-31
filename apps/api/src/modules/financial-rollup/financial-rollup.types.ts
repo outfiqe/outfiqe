@@ -1,7 +1,9 @@
 import type {
   BrandPayoutStatus,
   CommissionStatus,
+  FulfilmentStatus,
   PaymentMethod,
+  PaymentStatus,
 } from "#generated/prisma/enums.js";
 
 export type FinancialRollupRange = "cycle" | "30d" | "all";
@@ -55,11 +57,50 @@ export type FinancialRollupView = {
   attribution: AttributionView;
 };
 
+export type PaidOrderMoneyTotals = {
+  collected: number;
+  refunded: number;
+  orderFees: number;
+  couponSpend: number;
+  brandsOwed: number;
+  brandsPaid: number;
+  platformFees: number;
+  gatewayFees: number;
+  cancelledItems: number;
+  musesOwed: number;
+  musesPaid: number;
+};
+
+export type MoneyBreakdownView = {
+  range: FinancialRollupRange;
+  collected: number;
+  refunded: number;
+  held: number;
+  brandsOwed: number;
+  brandsPaid: number;
+  musesOwed: number;
+  musesPaid: number;
+  gatewayFees: number;
+  platformKeeps: number;
+  orderFees: number;
+  cancelledNotRefunded: number;
+  couponSpend: number;
+  unexplained: number;
+};
+
 export type LedgerRow = {
   orderId: string;
   orderItemId: string;
   createdAt: Date;
   paymentMethod: PaymentMethod;
+  orderPaymentStatus: PaymentStatus;
+  orderFulfilmentStatus: FulfilmentStatus;
+  quantity: number;
+  productName: string;
+  productImageUrl: string | null;
+  brandName: string;
+  buyerName: string;
+  museHandle: string | null;
   grossAmount: number | null;
   platformFee: number | null;
   gatewayFee: number | null;
@@ -69,7 +110,17 @@ export type LedgerRow = {
   creatorCommissionStatus: CommissionStatus | null;
 };
 
+export type LedgerTotals = {
+  rowCount: number;
+  grossAmount: number;
+  platformFee: number;
+  gatewayFee: number;
+  creatorCommissionAmount: number;
+  brandNetAmount: number;
+};
+
 export type LedgerPage = {
   entries: LedgerRow[];
   nextCursor: string | null;
+  totals: LedgerTotals;
 };

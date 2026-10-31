@@ -29,7 +29,8 @@ individual record.
 - `platform-metrics.schemas.ts` — Zod for the list query (`plan`, `sort`, `page`, `pageSize`) and
   the `:orgId` param.
 - `platform-metrics.controller.ts` / `platform-metrics.routes.ts` —
-  `GET /api/platform/metrics/overview`, `/metrics/activity-trend`, `/metrics/tenants`,
+  `GET /api/platform/metrics/overview`, `/metrics/attention` (bare counts of work waiting for staff),
+  `/metrics/activity-trend`, `/metrics/tenants`,
   `/metrics/tenants/:orgId`, all gated `requirePlatformRole("platform:metrics:read")`.
 - `platform-metrics.integration.test.ts`.
 

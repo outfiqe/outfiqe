@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -14,6 +15,7 @@ import {
   Select,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { toDateInputValue, toDayEndIso } from "@outfiqe/utils";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -46,7 +48,7 @@ const buildCreateInput = (values: CouponFormValues) => ({
   maxDiscountAmount: optionalNumber(values.maxDiscountAmount),
   minSubtotal: Number(values.minSubtotal),
   startsAt: new Date().toISOString(),
-  endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+  endsAt: values.endsAt ? toDayEndIso(values.endsAt) : null,
   totalBudgetAmount: optionalNumber(values.totalBudgetAmount),
   maxRedemptions: optionalNumber(values.maxRedemptions),
   firstOrderOnly: values.firstOrderOnly,
@@ -197,7 +199,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 <FormItem className="mt-0">
                   <FormLabel>Ends on (optional)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput min={toDateInputValue()} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

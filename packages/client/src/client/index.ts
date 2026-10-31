@@ -129,6 +129,11 @@ export const createApiClient = ({
     return res.data;
   };
 
+  const getBlob = async (path: string, options?: RequestOptions): Promise<Blob> => {
+    const res = await http.get<Blob>(path, { ...options, responseType: "blob" });
+    return res.data;
+  };
+
   const post = async <T>(
     path: string,
     body?: unknown,
@@ -163,6 +168,7 @@ export const createApiClient = ({
 
   return {
     get,
+    getBlob,
     post,
     patch,
     put,

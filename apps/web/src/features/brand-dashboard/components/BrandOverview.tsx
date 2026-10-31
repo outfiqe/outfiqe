@@ -1,17 +1,28 @@
 "use client";
 
-import { Button, FormBanner, Skeleton, StatCard } from "@outfiqe/design-system";
+import {
+  Button,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
+  FormBanner,
+  Skeleton,
+  StatCard,
+} from "@outfiqe/design-system";
 import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { AlertTriangle, Clock, Package, Wallet } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
+import { OverviewPeriodChips } from "@/components/OverviewPeriodChips";
+import { StatCardFooterLink } from "@/components/StatCardFooterLink";
 import {
   BRAND_KPI_TOUR_ANCHOR,
   BRAND_TOUR_REPLAY_HREF,
   BrandDashboardTour,
   TourReplayLink,
 } from "@/features/product-tour";
+import { formatRupees } from "@/shared/lib/formatRupees";
+import { DEFAULT_OVERVIEW_PERIOD_DAYS, type OverviewPeriodDays } from "@/shared/lib/overviewPeriod";
 
 import type {
   BrandOverview as BrandOverviewData,
@@ -19,13 +30,14 @@ import type {
 } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
 import { BrandShipmentRow } from "../shipments/components/BrandShipmentRow";
+import { BrandOverviewDetails } from "./BrandOverviewDetails";
 
 const KPI_CARD_COUNT = 7;
 const RECENT_ROW_COUNT = 5;
 
 const KPI_HINT = {
-  last30DaysRevenue:
-    "Total value of items sold from your products in the last 30 days, before platform and payment fees. Cash-on-delivery orders count; cancelled and failed orders do not.",
+  periodRevenue:
+    "Total value of items sold from your products in this period, before platform and payment fees. Cash-on-delivery orders count; cancelled and failed orders do not.",
   lifetimeRevenue:
     "Total value of every item ever sold from your products, before platform and payment fees. Cancelled and failed orders are not counted.",
   availablePayout:
@@ -39,20 +51,15 @@ const KPI_HINT = {
     "Paid and cash-on-delivery items that have not been delivered or cancelled yet.",
 } as const;
 
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-
 const revenueDeltaFor = (overview: BrandOverviewData) => {
-  const { last30DaysRevenue, previous30DaysRevenue } = overview.kpis;
-  const difference = last30DaysRevenue - previous30DaysRevenue;
+  const { periodDays, periodRevenue, previousPeriodRevenue } = overview.kpis;
+  const difference = periodRevenue - previousPeriodRevenue;
   if (difference === 0) return undefined;
 
   return {
     value: `${difference > 0 ? "+" : "−"}${formatRupees(Math.abs(difference))}`,
     tone: difference > 0 ? "positive" : "negative",
-    label: "vs previous 30 days",
+    label: `vs previous ${periodDays} days`,
   } as const;
 };
 
@@ -65,44 +72,63 @@ const BrandKpiRow = ({ overview }: { overview: BrandOverviewData }) => {
       className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
     >
       <StatCard
-        label="Revenue (30 days)"
-        value={formatRupees(kpis.last30DaysRevenue)}
+        label={`Revenue (${kpis.periodDays} days)`}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        value={formatRupees(kpis.periodRevenue)}
         icon={Wallet}
         delta={revenueDeltaFor(overview)}
-        hint={KPI_HINT.last30DaysRevenue}
+        hint={KPI_HINT.periodRevenue}
+        footer={
+          <StatCardFooterLink
+            href="/manage-orders"
+            label={`${kpis.periodOrderCount.toLocaleString()} orders`}
+          />
+        }
       />
       <StatCard
         label="Lifetime revenue"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.lifetimeRevenue)}
         hint={KPI_HINT.lifetimeRevenue}
+        footer={<StatCardFooterLink href="/manage-orders" label="All time" />}
       />
       <StatCard
         label="Available payout"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.availablePayout)}
         hint={KPI_HINT.availablePayout}
+        footer={<StatCardFooterLink href="/wallet" label="Withdraw" />}
       />
       <StatCard
         label="Pending payout"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.pendingPayout)}
         hint={KPI_HINT.pendingPayout}
+        footer={<StatCardFooterLink href="/wallet" label="See wallet" />}
       />
       <StatCard
         label="Products"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.productCount.toLocaleString()}
         icon={Package}
         hint={KPI_HINT.productCount}
+        footer={<StatCardFooterLink href="/products" label="Manage products" />}
       />
       <StatCard
         label="Low stock"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.lowStockCount.toLocaleString()}
         icon={AlertTriangle}
         hint={KPI_HINT.lowStockCount}
+        footer={<StatCardFooterLink href="/products" label="Update stock" />}
       />
       <StatCard
         label="To fulfil"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.unfulfilledItemCount.toLocaleString()}
         icon={Clock}
         hint={KPI_HINT.unfulfilledItemCount}
+        footer={<StatCardFooterLink href="/manage-orders" label="Open orders" />}
       />
     </div>
   );
@@ -110,7 +136,7 @@ const BrandKpiRow = ({ overview }: { overview: BrandOverviewData }) => {
 
 const RevenueTrendTable = ({ trend }: { trend: BrandOverviewTrendPoint[] }) => (
   <table>
-    <caption>Revenue per day over the last 30 days</caption>
+    <caption>Revenue per day over the chosen period</caption>
     <thead>
       <tr>
         <th scope="col">Date</th>
@@ -133,8 +159,8 @@ const RevenueTrendTable = ({ trend }: { trend: BrandOverviewTrendPoint[] }) => (
 const RevenueTrendCard = ({ overview }: { overview: BrandOverviewData }) => (
   <ChartCard
     title="Revenue"
-    description="Sales of your products per day, last 30 days"
-    ariaLabel="Revenue from your products per day over the last 30 days"
+    description={`Sales of your products per day, last ${overview.kpis.periodDays} days`}
+    ariaLabel="Revenue from your products per day over the chosen period"
     isEmpty={overview.kpis.lifetimeRevenue === 0}
     emptyMessage="Not enough data yet — revenue will show here once your products start selling."
     dataTable={<RevenueTrendTable trend={overview.trend} />}
@@ -195,7 +221,8 @@ const OverviewSkeleton = () => (
 );
 
 export const BrandOverview = () => {
-  const { data: overview, isPending, isError } = useBrandOverview();
+  const [periodDays, setPeriodDays] = useState<OverviewPeriodDays>(DEFAULT_OVERVIEW_PERIOD_DAYS);
+  const { data: overview, isPending, isError } = useBrandOverview(periodDays);
 
   return (
     <div>
@@ -218,10 +245,14 @@ export const BrandOverview = () => {
           <OverviewSkeleton />
         ) : (
           <>
-            <BrandKpiRow overview={overview} />
+            <OverviewPeriodChips selectedDays={periodDays} onSelect={setPeriodDays} />
+            <div className="mt-4">
+              <BrandKpiRow overview={overview} />
+            </div>
             <div className="mt-8">
               <RevenueTrendCard overview={overview} />
             </div>
+            <BrandOverviewDetails overview={overview} />
             <RecentOrders overview={overview} />
             <Suspense fallback={null}>
               <BrandDashboardTour />

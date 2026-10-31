@@ -95,7 +95,6 @@ export default defineConfig({
         "src/features/coupons/**/*.{ts,tsx}",
         "src/features/product-reviews/**/*.{ts,tsx}",
         "src/features/outfit-slot-types/**/*.{ts,tsx}",
-        "src/components/ConfirmModal.tsx",
         "src/components/TextPromptModal.tsx",
         "src/features/users/**/*.{ts,tsx}",
         "src/features/team/**/*.{ts,tsx}",

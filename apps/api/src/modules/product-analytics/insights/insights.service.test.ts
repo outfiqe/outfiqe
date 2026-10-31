@@ -23,6 +23,7 @@ vi.mock("./insights.repository.js", () => ({
   productAnalyticsInsightsRepository: {
     findCreatorNames: vi.fn(async () => [{ id: "creator-1", name: "Sita Rai", handle: "sita" }]),
     findProductNames: vi.fn(async () => [{ id: PRODUCT_ID, name: "Linen kurta" }]),
+    findBrandNames: vi.fn(async () => []),
   },
 }));
 
@@ -96,13 +97,67 @@ describe("productAnalyticsInsightsService", () => {
     ]);
   });
 
+  it("answers at once from a recent copy, and refreshes it in the background", async () => {
+    const recentCopy = { ...cachedOverview, refreshedAt: new Date().toISOString() };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(recentCopy);
+    vi.mocked(runPosthogQuery).mockResolvedValue(overviewRow);
+
+    const result = await productAnalyticsInsightsService.overview("30d");
+
+    expect(result).toMatchObject({ status: "fresh", insight: recentCopy.insight });
+    await vi.waitFor(() => expect(cacheService.set).toHaveBeenCalledTimes(2));
+  });
+
+  it("runs only one background refresh at a time for the same copy", async () => {
+    const recentCopy = { ...cachedOverview, refreshedAt: new Date().toISOString() };
+    vi.mocked(cacheService.get).mockImplementation(async (key) =>
+      key.includes("last-good") ? recentCopy : null,
+    );
+    let finishPosthogQuery: (rows: unknown[][]) => void = () => undefined;
+    vi.mocked(runPosthogQuery).mockReturnValue(
+      new Promise((resolve) => {
+        finishPosthogQuery = resolve;
+      }),
+    );
+
+    await productAnalyticsInsightsService.overview("90d");
+    await productAnalyticsInsightsService.overview("90d");
+
+    expect(runPosthogQuery).toHaveBeenCalledTimes(1);
+    finishPosthogQuery(overviewRow);
+    await vi.waitFor(() => expect(cacheService.set).toHaveBeenCalledTimes(2));
+  });
+
+  it("keeps the recent copy when the background refresh fails", async () => {
+    const recentCopy = { ...cachedOverview, refreshedAt: new Date().toISOString() };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(recentCopy);
+    vi.mocked(runPosthogQuery).mockRejectedValue(new Error("PostHog is down"));
+
+    const result = await productAnalyticsInsightsService.overview("7d");
+
+    expect(result).toMatchObject({ status: "fresh", insight: recentCopy.insight });
+    await vi.waitFor(() => expect(runPosthogQuery).toHaveBeenCalled());
+    expect(cacheService.set).not.toHaveBeenCalled();
+  });
+
+  it("waits for PostHog when the only copy is over a day old", async () => {
+    const oldCopy = { ...cachedOverview, refreshedAt: "2020-01-01T00:00:00.000Z" };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(oldCopy);
+    vi.mocked(runPosthogQuery).mockResolvedValue(overviewRow);
+
+    const { insight } = await productAnalyticsInsightsService.overview("30d");
+
+    expect(insight).toMatchObject({ visitors: 200 });
+  });
+
   it("shows the last good answer, marked stale, when PostHog fails", async () => {
-    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(cachedOverview);
+    const oldCopy = { ...cachedOverview, refreshedAt: "2020-01-01T00:00:00.000Z" };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(oldCopy);
     vi.mocked(runPosthogQuery).mockRejectedValue(new Error("PostHog is down"));
 
     const result = await productAnalyticsInsightsService.overview("30d");
 
-    expect(result).toMatchObject({ status: "stale", insight: cachedOverview.insight });
+    expect(result).toMatchObject({ status: "stale", insight: oldCopy.insight });
   });
 
   it("reports unavailable when PostHog fails and nothing was ever cached", async () => {
@@ -231,12 +286,12 @@ describe("productAnalyticsInsightsService", () => {
       averageSessionSeconds: 154.5,
       bounceRate: 0.25,
       topPages: [
-        { path: "/", productName: null, count: 18 },
-        { path: `/product/${PRODUCT_ID}`, productName: "Linen kurta", count: 6 },
-        { path: "/product/not-a-real-id", productName: null, count: 2 },
+        { path: "/", productName: null, brandName: null, count: 18 },
+        { path: `/product/${PRODUCT_ID}`, productName: "Linen kurta", brandName: null, count: 6 },
+        { path: "/product/not-a-real-id", productName: null, brandName: null, count: 2 },
       ],
-      entryPages: [{ path: "/", productName: null, count: 6 }],
-      exitPages: [{ path: "/login", productName: null, count: 1 }],
+      entryPages: [{ path: "/", productName: null, brandName: null, count: 6 }],
+      exitPages: [{ path: "/login", productName: null, brandName: null, count: 1 }],
     });
   });
 
@@ -254,7 +309,7 @@ describe("productAnalyticsInsightsService", () => {
 
     expect(status).toBe("fresh");
     expect(insight?.topPages).toEqual([
-      { path: `/product/${PRODUCT_ID}`, productName: null, count: 6 },
+      { path: `/product/${PRODUCT_ID}`, productName: null, brandName: null, count: 6 },
     ]);
   });
 
@@ -275,33 +330,57 @@ describe("productAnalyticsInsightsService", () => {
     });
   });
 
-  it("builds site speed from the 75th percentile of each measurement", async () => {
-    vi.mocked(runPosthogQuery).mockResolvedValueOnce([[19, 2284, 88, 1968, 0.0087]]);
+  const speedRow = [
+    19, 9, 2284, 2900, 3500, 5100, 5, 88, 120, 180, 300, 8, 1968, 2400, 2800, 4000, 7, 0.0087, 0.02,
+    0.05, 0.1,
+  ];
+
+  it("builds each speed measurement with its readings and four percentiles", async () => {
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([speedRow])
+      .mockResolvedValueOnce([["/", 4690, 12]]);
 
     const { insight, posthogUrl } = await productAnalyticsInsightsService.siteSpeed("30d");
 
-    expect(vi.mocked(runPosthogQuery).mock.calls[0]?.[2]).toContain("quantile(0.75)");
+    const [, , speedQuery] = vi.mocked(runPosthogQuery).mock.calls[0] ?? [];
+    expect(speedQuery).toContain("quantile(0.75)");
+    expect(speedQuery).toContain("quantile(0.99)");
     expect(posthogUrl).toBe("https://us.posthog.com/project/550784/web/web-vitals");
-    expect(insight).toEqual({
+    expect(insight).toMatchObject({
       measurementCount: 19,
-      largestContentfulPaintMs: 2284,
-      interactionToNextPaintMs: 88,
-      firstContentfulPaintMs: 1968,
-      cumulativeLayoutShift: 0.0087,
+      largestContentfulPaint: { sampleCount: 9, p75: 2284, p90: 2900, p95: 3500, p99: 5100 },
+      interactionToNextPaint: { sampleCount: 5, p75: 88, p99: 300 },
+      firstContentfulPaint: { sampleCount: 8, p75: 1968 },
+      cumulativeLayoutShift: { sampleCount: 7, p75: 0.0087, p99: 0.1 },
+      slowestPages: [
+        { path: "/", typicalLoadMs: 4690, sampleCount: 12, productName: null, brandName: null },
+      ],
     });
   });
 
+  it("narrows speed by device and page, and caches each choice apart", async () => {
+    vi.mocked(runPosthogQuery).mockResolvedValueOnce([speedRow]).mockResolvedValueOnce([]);
+
+    await productAnalyticsInsightsService.siteSpeed("7d", { device: "mobile", page: "home" });
+
+    const [, , speedQuery] = vi.mocked(runPosthogQuery).mock.calls[0] ?? [];
+    expect(speedQuery).toContain("= 'Mobile'");
+    expect(speedQuery).toContain("properties.$pathname) = '/'");
+    const [writtenKey] = vi.mocked(cacheService.set).mock.calls[0] ?? [];
+    expect(writtenKey).toContain(":mobile:home");
+  });
+
   it("keeps site speed empty, not zero, for a range with no measurements", async () => {
-    vi.mocked(runPosthogQuery).mockResolvedValueOnce([[0, null, null, null, null]]);
+    vi.mocked(runPosthogQuery)
+      .mockResolvedValueOnce([[0, ...Array.from({ length: 20 }, () => null)]])
+      .mockResolvedValueOnce([]);
 
     const { insight } = await productAnalyticsInsightsService.siteSpeed("7d");
 
-    expect(insight).toEqual({
+    expect(insight).toMatchObject({
       measurementCount: 0,
-      largestContentfulPaintMs: null,
-      interactionToNextPaintMs: null,
-      firstContentfulPaintMs: null,
-      cumulativeLayoutShift: null,
+      largestContentfulPaint: { sampleCount: 0, p75: null, p99: null },
+      slowestPages: [],
     });
   });
 });

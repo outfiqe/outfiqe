@@ -4,11 +4,47 @@ import { AppError } from "#middlewares/error-handler.js";
 import type {
   AttributionCounts,
   AttributionView,
+  FinancialRollupRange,
   LedgerRow,
+  MoneyBreakdownView,
+  PaidOrderMoneyTotals,
   PaymentMethodBreakdown,
   PaymentMethodOrderTotals,
   PaymentMethodPayoutFees,
 } from "./financial-rollup.types.js";
+
+const NOTHING_LEFT_TO_REFUND = 0;
+
+export const buildMoneyBreakdown = (
+  range: FinancialRollupRange,
+  paidOrderMoney: PaidOrderMoneyTotals,
+): MoneyBreakdownView => {
+  const { collected, refunded, orderFees, couponSpend, cancelledItems } = paidOrderMoney;
+  const { brandsOwed, brandsPaid, platformFees, gatewayFees, musesOwed, musesPaid } =
+    paidOrderMoney;
+
+  const held = collected - refunded;
+  const cancelledNotRefunded = Math.max(NOTHING_LEFT_TO_REFUND, cancelledItems - refunded);
+  const accountedFor =
+    brandsOwed + brandsPaid + platformFees + orderFees + cancelledNotRefunded - couponSpend;
+
+  return {
+    range,
+    collected,
+    refunded,
+    held,
+    brandsOwed,
+    brandsPaid,
+    musesOwed,
+    musesPaid,
+    gatewayFees,
+    platformKeeps: platformFees - gatewayFees - musesOwed - musesPaid,
+    orderFees,
+    cancelledNotRefunded,
+    couponSpend,
+    unexplained: held - accountedFor,
+  };
+};
 
 export const sumStatusBuckets = (
   amountByStatus: Partial<Record<string, number>>,
@@ -49,11 +85,22 @@ const LEDGER_CSV_HEADERS = [
   "Muse Commission",
   "Brand Net",
   "Brand Payout Status",
+  "Product",
+  "Brand",
+  "Buyer",
+  "Muse",
 ];
 
+const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
+const FORMULA_NEUTRALIZING_PREFIX = "'";
+
+const neutralizeSpreadsheetFormula = (text: string): string =>
+  SPREADSHEET_FORMULA_START.test(text) ? `${FORMULA_NEUTRALIZING_PREFIX}${text}` : text;
+
 const csvField = (value: string | number | null): string => {
-  const text = value === null ? "" : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  if (typeof value === "number") return String(value);
+  const text = neutralizeSpreadsheetFormula(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
 export const toLedgerCsv = (rows: LedgerRow[]): string => {
@@ -72,6 +119,10 @@ export const toLedgerCsv = (rows: LedgerRow[]): string => {
         row.creatorCommissionAmount,
         row.brandNetAmount,
         row.brandPayoutStatus,
+        row.productName,
+        row.brandName,
+        row.buyerName,
+        row.museHandle,
       ]
         .map(csvField)
         .join(","),

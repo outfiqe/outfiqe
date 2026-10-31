@@ -203,7 +203,7 @@ export const setProductDiscountSchema = z
   })
   .refine(discountAmountFieldsMatchType, { message: DISCOUNT_AMOUNT_FIELD_MISMATCH_MESSAGE })
   .refine((data) => !data.endsAt || data.endsAt > data.startsAt, {
-    message: "endsAt must be after startsAt.",
+    message: "The end date must be after the start date.",
     path: ["endsAt"],
   });
 

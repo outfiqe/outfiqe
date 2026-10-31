@@ -1,4 +1,14 @@
-import { Button, Input, Modal, MultiSelect, Select, Textarea, toast } from "@outfiqe/design-system";
+import {
+  Button,
+  DateInput,
+  Input,
+  Modal,
+  MultiSelect,
+  Select,
+  Textarea,
+  toast,
+} from "@outfiqe/design-system";
+import { isPastDateInputValue, toDateInputValue, toDayEndIso } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { ISO_DATE_LENGTH } from "@/lib/dateInputs";
@@ -71,7 +81,7 @@ export const ComposeAnnouncementModal = ({
         audiences,
         targetSurface: ctaMode === CtaMode.INTERNAL ? targetSurface : null,
         targetPath: ctaMode === CtaMode.NONE ? null : targetPath,
-        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        expiresAt: expiresAt ? toDayEndIso(expiresAt) : null,
       };
 
       const saved = announcement
@@ -88,6 +98,7 @@ export const ComposeAnnouncementModal = ({
     }
   };
 
+  const hasPastExpiry = isPastDateInputValue(expiresAt);
   const canSubmit =
     title.trim().length > 0 &&
     body.trim().length > 0 &&
@@ -111,7 +122,11 @@ export const ComposeAnnouncementModal = ({
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            <Button onClick={() => void submit()} disabled={!canSubmit} isLoading={isSubmitting}>
+            <Button
+              onClick={() => void submit()}
+              disabled={!canSubmit || hasPastExpiry}
+              isLoading={isSubmitting}
+            >
               Save draft
             </Button>
           </div>
@@ -244,12 +259,18 @@ export const ComposeAnnouncementModal = ({
           >
             Expires on (optional)
           </label>
-          <Input
+          <DateInput
             id="announcement-expires-at"
-            type="date"
+            min={toDateInputValue()}
+            aria-invalid={hasPastExpiry}
             value={expiresAt}
             onChange={(event) => setExpiresAt(event.target.value)}
           />
+          {hasPastExpiry && (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              The expiry date can&apos;t be in the past.
+            </p>
+          )}
           <p className="mt-1 text-xs text-muted-foreground">
             After this date the call-to-action stops working; the card stays in people&apos;s
             history.

@@ -1,4 +1,5 @@
 import { Button } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 
@@ -26,7 +27,7 @@ const TierChangeRow = ({ change }: { change: TierChange }) => {
           : `Added ${describeBand(after)}`}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {actorName ?? "Unknown admin"} · {new Date(createdAt).toLocaleString()}
+        {actorName ?? "Unknown admin"} · {formatDateTime(createdAt)}
       </p>
     </li>
   );

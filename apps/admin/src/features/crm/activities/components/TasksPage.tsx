@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -15,6 +16,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { toDateInputValue } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -111,7 +113,7 @@ const NewTaskModal = ({
                   Due date (optional)
                 </FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <DateInput min={toDateInputValue()} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -11,6 +11,10 @@ export const platformMetricsController = {
     sendSuccess(res, await platformMetricsService.overview(), "Platform overview.");
   },
 
+  async attention(_req: Request, res: Response) {
+    sendSuccess(res, await platformMetricsService.attentionCounts(), "Platform attention counts.");
+  },
+
   async activityTrend(_req: Request, res: Response) {
     sendSuccess(res, await platformMetricsService.activityTrend(), "Platform activity trend.");
   },

@@ -1,8 +1,9 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
@@ -55,13 +56,7 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/logistics/parcels"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Parcels
-      </Link>
+      <BackLink to="/logistics/parcels">All parcels</BackLink>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -178,7 +173,7 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
                   {!appliedToStatus && code !== NOTE_EVENT_CODE ? " · recorded only" : ""}
                 </p>
                 <p className="text-muted-foreground">
-                  {new Date(occurredAt).toLocaleString()} · {partnerName ?? actorName ?? source}
+                  {formatDateTime(occurredAt)} · {partnerName ?? actorName ?? source}
                 </p>
                 {note && <p className="text-muted-foreground">{note}</p>}
               </li>

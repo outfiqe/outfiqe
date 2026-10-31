@@ -1,21 +1,24 @@
 import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { type FormEvent, useId, useState } from "react";
+import { useDebouncedValue } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
+import { useId, useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { usePlatformAuditLog } from "../api/platformAuditApi";
+import { usePlatformAuditFilterOptions, usePlatformAuditLog } from "../api/platformAuditApi";
 import type { PlatformAuditEntry, PlatformAuditFilter } from "../api/platformAuditSchemas";
+import { toPlainAuditLabel } from "../utils/auditLabels.utils";
+import { AuditFilterPicker } from "./AuditFilterPicker";
 
 const SKELETON_ROW_COUNT = 5;
 const NO_ENTRIES = 0;
 const METADATA_INDENT = 2;
 const NO_METADATA_KEYS = 0;
+const ITEM_ID_DEBOUNCE_MS = 300;
 
-const toOptionalFilter = (text: string): string | undefined => {
-  const trimmedText = text.trim();
-  return trimmedText === "" ? undefined : trimmedText;
-};
+const toCodeChoice = (code: string) => ({ value: code, label: toPlainAuditLabel(code) });
 
 const AuditEntryRow = ({ entry }: { entry: PlatformAuditEntry }) => {
   const hasMetadata = Object.keys(entry.metadata).length > NO_METADATA_KEYS;
@@ -25,11 +28,11 @@ const AuditEntryRow = ({ entry }: { entry: PlatformAuditEntry }) => {
       <p className="text-xs text-muted-foreground">
         {entry.actorName ?? entry.actorUserId}
         {entry.onBehalfOfName ? ` (acting as ${entry.onBehalfOfName})` : ""} ·{" "}
-        {new Date(entry.createdAt).toLocaleString()} · {entry.action}
+        {formatDateTime(entry.createdAt)} · {toPlainAuditLabel(entry.action)}
       </p>
       {entry.targetType && (
         <p className="text-xs text-muted-foreground">
-          {entry.targetType} {entry.targetId}
+          {toPlainAuditLabel(entry.targetType)} {entry.targetId}
         </p>
       )}
       {hasMetadata && (
@@ -45,24 +48,24 @@ const AuditEntryRow = ({ entry }: { entry: PlatformAuditEntry }) => {
 };
 
 export const PlatformAuditPage = () => {
-  const actionFieldId = useId();
-  const targetTypeFieldId = useId();
-  const targetIdFieldId = useId();
-  const [actionText, setActionText] = useState("");
-  const [targetTypeText, setTargetTypeText] = useState("");
-  const [targetIdText, setTargetIdText] = useState("");
-  const [filter, setFilter] = useState<PlatformAuditFilter>({});
-  const auditLog = usePlatformAuditLog(filter);
-  const entries = auditLog.data?.pages.flatMap((page) => page.items) ?? [];
+  const itemIdFieldId = useId();
+  const [action, setAction] = useSearchFilter("action", rawTextFilter);
+  const [targetType, setTargetType] = useSearchFilter("itemType", rawTextFilter);
+  const [actorUserId, setActorUserId] = useSearchFilter("who", rawTextFilter);
+  const [itemIdText, setItemIdText] = useState("");
+  const itemId = useDebouncedValue(itemIdText, ITEM_ID_DEBOUNCE_MS).trim();
 
-  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFilter({
-      action: toOptionalFilter(actionText),
-      targetType: toOptionalFilter(targetTypeText),
-      targetId: toOptionalFilter(targetIdText),
-    });
+  const filter: PlatformAuditFilter = {
+    action: action || undefined,
+    targetType: targetType || undefined,
+    actorUserId: actorUserId || undefined,
+    targetId: itemId || undefined,
   };
+
+  const filterOptions = usePlatformAuditFilterOptions();
+  const auditLog = usePlatformAuditLog(filter);
+  const entries = auditLog.data?.pages.flatMap((auditPage) => auditPage.items) ?? [];
+  const areChoicesLoading = filterOptions.isLoading;
 
   return (
     <div className="space-y-6">
@@ -74,43 +77,45 @@ export const PlatformAuditPage = () => {
         </p>
       </div>
 
-      <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <label htmlFor={actionFieldId} className="text-xs text-muted-foreground">
-            Action
+      <div className="flex flex-wrap items-end gap-3">
+        <AuditFilterPicker
+          label="What happened"
+          placeholder="Search actions"
+          choices={filterOptions.data?.actions.map(toCodeChoice) ?? []}
+          selectedValue={action}
+          isLoading={areChoicesLoading}
+          onSelect={setAction}
+        />
+        <AuditFilterPicker
+          label="Who did it"
+          placeholder="Search staff"
+          choices={
+            filterOptions.data?.actors.map(({ id, name }) => ({ value: id, label: name })) ?? []
+          }
+          selectedValue={actorUserId}
+          isLoading={areChoicesLoading}
+          onSelect={setActorUserId}
+        />
+        <AuditFilterPicker
+          label="What it affected"
+          placeholder="Search item types"
+          choices={filterOptions.data?.targetTypes.map(toCodeChoice) ?? []}
+          selectedValue={targetType}
+          isLoading={areChoicesLoading}
+          onSelect={setTargetType}
+        />
+        <div className="w-full space-y-1 sm:w-64">
+          <label htmlFor={itemIdFieldId} className="text-xs text-muted-foreground">
+            Item ID (optional)
           </label>
           <Input
-            id={actionFieldId}
-            value={actionText}
-            placeholder="outfit-build.archived-by-admin"
-            onChange={(event) => setActionText(event.target.value)}
+            id={itemIdFieldId}
+            value={itemIdText}
+            placeholder="Paste an exact ID"
+            onChange={(event) => setItemIdText(event.target.value)}
           />
         </div>
-        <div className="space-y-1">
-          <label htmlFor={targetTypeFieldId} className="text-xs text-muted-foreground">
-            Target type
-          </label>
-          <Input
-            id={targetTypeFieldId}
-            value={targetTypeText}
-            placeholder="Outfit"
-            onChange={(event) => setTargetTypeText(event.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor={targetIdFieldId} className="text-xs text-muted-foreground">
-            Target ID
-          </label>
-          <Input
-            id={targetIdFieldId}
-            value={targetIdText}
-            onChange={(event) => setTargetIdText(event.target.value)}
-          />
-        </div>
-        <Button type="submit" variant="outline">
-          Filter
-        </Button>
-      </form>
+      </div>
 
       {auditLog.isLoading &&
         Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (

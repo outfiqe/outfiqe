@@ -17,6 +17,7 @@ type TableProps<Row> = {
   readonly rows: Row[];
   readonly rowKey: (row: Row) => string;
   readonly rowClassName?: (row: Row) => string | undefined;
+  readonly onRowClick?: (row: Row) => void;
   readonly caption?: string;
   readonly footer?: ReactNode;
   readonly emptyState?: ReactNode;
@@ -33,6 +34,7 @@ export const Table = <Row,>({
   rows,
   rowKey,
   rowClassName,
+  onRowClick,
   caption,
   footer,
   emptyState,
@@ -80,7 +82,15 @@ export const Table = <Row,>({
           </tr>
         ) : (
           rows.map((row) => (
-            <tr key={rowKey(row)} className={cn("border-t border-border", rowClassName?.(row))}>
+            <tr
+              key={rowKey(row)}
+              onClick={onRowClick && (() => onRowClick(row))}
+              className={cn(
+                "border-t border-border",
+                onRowClick && "cursor-pointer transition-colors hover:bg-muted/40",
+                rowClassName?.(row),
+              )}
+            >
               {columns.map((column) => (
                 <td key={column.key} className={cn("px-4 py-2.5", alignClass(column.align))}>
                   {column.render(row)}

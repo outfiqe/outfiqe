@@ -6,10 +6,16 @@ import { productService } from "#modules/products/product.service.js";
 
 import { tagReviewErrors } from "./tag-review.errors.js";
 import { tagReviewRepository } from "./tag-review.repository.js";
-import type { ApproveTagBody, ListTagReviewsQuery, RejectTagBody } from "./tag-review.schemas.js";
+import type {
+  ApproveTagBody,
+  ListMetricTagsQuery,
+  ListTagReviewsQuery,
+  RejectTagBody,
+} from "./tag-review.schemas.js";
 import type {
   ReviewableTag,
   TagReviewMetrics,
+  TagReviewMetricTagPage,
   TagReviewQueuePage,
   TransitionableTag,
 } from "./tag-review.types.js";
@@ -121,6 +127,10 @@ export const tagReviewService = {
 
   getMetrics(): Promise<TagReviewMetrics> {
     return tagReviewRepository.getMetrics();
+  },
+
+  listMetricTags(query: ListMetricTagsQuery): Promise<TagReviewMetricTagPage> {
+    return tagReviewRepository.listMetricTags(query);
   },
 
   async approveTag(userId: string, tagId: string, { trustCreator }: ApproveTagBody): Promise<void> {

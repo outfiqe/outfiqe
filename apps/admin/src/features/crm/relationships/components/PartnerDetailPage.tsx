@@ -1,7 +1,8 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { getRouteApi, Link } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 
+import { BackLink } from "@/components/BackLink";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
@@ -24,9 +25,7 @@ export const PartnerDetailPage = () => {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/crm/partners" className="text-sm font-semibold text-primary-strong underline">
-        ← Back to partners
-      </Link>
+      <BackLink to="/crm/partners">All partners</BackLink>
 
       {isLoading && <PartnerDetailSkeleton />}
       {error && <FormBanner className="mt-4">{getErrorMessage(error)}</FormBanner>}

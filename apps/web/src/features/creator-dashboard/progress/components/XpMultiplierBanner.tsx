@@ -1,6 +1,7 @@
 "use client";
 
 import { FormBanner } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 
 import { useActiveXpMultiplier } from "../hooks/useActiveXpMultiplier";
 
@@ -12,7 +13,7 @@ export const XpMultiplierBanner = () => {
 
   return (
     <FormBanner tone="positive" className="mb-4">
-      🔥 {label} — earning {multiplier}x XP until {new Date(endsAt).toLocaleString()}
+      🔥 {label} — earning {multiplier}x XP until {formatDateTime(endsAt)}
     </FormBanner>
   );
 };

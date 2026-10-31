@@ -14,12 +14,17 @@ own; this module is pure read-only aggregation over their tables, owns none of i
 ## Structure
 
 - `financial-rollup.routes.ts` — `GET /` (admin-only, `?range=cycle|30d|all`), `GET /ledger`
-  (paginated, filterable), `GET /ledger/export` (same filters, unpaginated CSV, capped).
+  (paginated, filterable, with whole-filter totals), `GET /ledger/export` (same filters, unpaginated
+  CSV, capped), `GET /ledger/:orderItemId` (the full story of one sold item), `GET /money-breakdown`
+  (where the money from paid orders went).
 - `financial-rollup.controller.ts` — reads the validated query, calls the service; `exportLedger`
   additionally logs the export event and sets the CSV response headers.
 - `financial-rollup.service.ts` — resolves `range` to a `since` cutoff date (or `null` for `all`),
   composes the rollup view, and owns ledger cursor encode/decode and the export row-cap check.
-- `financial-rollup.repository.ts` — the aggregation and ledger queries themselves.
+- `financial-rollup.repository.ts` — the aggregation queries, with the ledger topic spread in.
+- `ledger/ledger.repository.ts` — `financialRollupLedgerRepository`: `listLedger`, `sumLedger` and
+  `findLedgerItem`. Both ledger queries share one set of joins and one `buildMatchConditions`, so
+  the totals always describe exactly the rows listed.
 - `financial-rollup.constants.ts` — which `BrandPayoutStatus` / `CommissionStatus` values count as
   still-owed, plus the ledger page-size/export-row-cap constants.
 - `financial-rollup.utils.ts` — pure helpers: `sumStatusBuckets`, `buildPaymentMethodBreakdown`,
@@ -44,6 +49,25 @@ of JSON" rather than a separate code path.
 
 ## Non-obvious rationale
 
+- **`GET /money-breakdown` follows one group of orders, not several totals.** It takes the orders paid
+  in the period and follows those orders' payouts, commissions and refunds, so each part can be
+  added up to what was collected. Comparing period totals instead would mix orders paid in one
+  period with payouts created in another. An order's total is its items, plus delivery and COD fees,
+  minus platform coupons, and each item's value is the brand's net plus the platform fee. Gateway
+  fees and muse commissions come out of the platform fee, so `platformKeeps` can go negative.
+  `unexplained` is whatever is left, for example an item that never got a payout record.
+- **One ledger row per item, even with several commissions.** `creator_commissions` has no unique
+  order item, so a plain join could list an item twice and double its totals. The ledger reads
+  commissions through a `LATERAL` sum that ignores voided rows unless every row is voided, and
+  shows the most relevant status. `GET /ledger/:orderItemId` lists each commission separately.
+- **`focus` is one filter for the questions the rollup cards ask** (still owed to brands, refunded,
+  sold through a muse), because "still owed" spans several statuses a single status filter can't
+  express. It uses the same `OUTSTANDING_*` constants as the owed totals.
+- **CSV cells that start with `=`, `+`, `-`, `@` get a leading `'`.** The export carries product and
+  buyer names people typed, and a spreadsheet would otherwise run them as formulas (OWASP CSV
+  injection). Numbers are left alone so negative amounts stay numbers.
+- **`GET /ledger/:orderItemId` returns buyer contact details.** It sits behind the same
+  `financeRead` guard and nav check as the ledger, and never selects a gateway's raw response.
 - **Gateway-side sums use raw SQL, not the Prisma query builder.** `PaymentTransaction` has no
   `amount` column (see `payments/README.md` — a payment/refund's amount is its order's `total`,
   consistent with this codebase's all-or-nothing refund model), so "gross collected" requires

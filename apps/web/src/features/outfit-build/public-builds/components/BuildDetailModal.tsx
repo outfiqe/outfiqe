@@ -1,25 +1,30 @@
 "use client";
 
-import { Modal, Skeleton } from "@outfiqe/design-system";
+import { Modal } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { usePublicBuild } from "../../social/hooks/useBuildSocial";
+import { BuildDetailSkeleton } from "./BuildDetailSkeleton";
 import { PublicBuildDetailView } from "./PublicBuildDetailView";
+
+const STEADY_MODAL_CLASS_NAME = "h-[85dvh] sm:max-w-3xl";
 
 export const BuildDetailModal = ({
   outfitId,
+  title,
   onClose,
 }: {
   outfitId: string;
+  title: string;
   onClose: () => void;
 }) => {
   const t = useTranslations("outfitBuild.public");
   const { data: build, isPending, isError } = usePublicBuild(outfitId);
 
   return (
-    <Modal open onClose={onClose} title={build?.title ?? t("buildTitle")} className="sm:max-w-3xl">
-      {isPending && <Skeleton className="h-64 w-full rounded-xl" />}
+    <Modal open onClose={onClose} title={build?.title ?? title} className={STEADY_MODAL_CLASS_NAME}>
+      {isPending && <BuildDetailSkeleton />}
       {isError && <p className="text-sm text-destructive">{t("buildFailed")}</p>}
       {build && (
         <div className="space-y-3">

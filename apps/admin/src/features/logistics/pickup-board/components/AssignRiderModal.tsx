@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Label, Modal, Select } from "@outfiqe/design-system";
+import { Button, DateInput, FormBanner, Label, Modal, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useId, useState } from "react";
 
@@ -93,9 +93,9 @@ export const AssignRiderModal = ({
         </div>
         <div>
           <Label htmlFor={roundStartInputId}>Round starts</Label>
-          <Input
+          <DateInput
+            includesTime
             id={roundStartInputId}
-            type="datetime-local"
             value={roundStart}
             onChange={(event) => setRoundStart(event.target.value)}
           />

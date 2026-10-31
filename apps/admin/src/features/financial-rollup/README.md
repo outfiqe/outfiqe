@@ -2,58 +2,62 @@
 
 ## Purpose
 
-The admin screen for reconciling gateway money (what payment providers actually collected) with
-ledger money (what the settlement ledger says is owed to creators/brands), broken down by payment
-method, alongside the attributed-order-share headline number and a filterable, exportable
-order-level ledger. See `apps/api/src/modules/financial-rollup/README.md` for how each number is
-computed.
+The admin screens for answering "where is the money?": what came in, who is still owed, what the
+platform earned, and, down to one sold item, where each rupee went. See
+`apps/api/src/modules/financial-rollup/README.md` for how each number is computed.
 
 ## Structure
 
-- `api/financialRollupApi.ts` — `GET /admin/financial-rollup?range=` and `GET /admin/financial-rollup/ledger`
-  (paginated, filterable; `getLedger` builds the query string itself rather than relying on a
-  library, since filters are optional and cursor-driven).
-- `api/financialRollupSchemas.ts` — Zod validation for both response shapes (`financialRollupSchema`,
-  `ledgerPageSchema`) and the `LedgerFilters` type the UI passes to `api/financialRollupApi.ts`.
-- `constants/financialRollup.constants.ts` — payment-method/brand-payout-status label maps and the shared `money`/`percent`
-  formatters, used by both `FinancialRollupPage` and `LedgerTable`.
-- `components/FinancialRollupPage.tsx` — range tabs (this cycle / 30 days / all time), the attributed-order-
-  share stat card, the gateway-vs-ledger side-by-side cards, the GMV-by-payment-method breakdown,
-  and the `LedgerTable`.
-- `components/LedgerTable.tsx` — filters (payment method, brand payout status, date range), the order-level
-  table itself (via the shared `@outfiqe/design-system` `Table`), a "loaded rows" totals footer,
-  and cursor-paginated "Load more" via `useInfiniteCursorPage`.
+- `components/FinancialRollupPage.tsx` — the `/financial-rollup` route: period chips and the summary
+  sections below.
+- `components/RollupMoneyCards.tsx` — the plain-sentence banner (`utils/rollupInsight.utils.ts`) and
+  six clickable money cards.
+- `components/PayoutStatusSections.tsx` — brand payouts and muse commissions by status, with a plain
+  explanation of each status.
+- `components/RollupEarningsSections.tsx` — platform earnings after coupons, sales through muses, and
+  how shoppers paid.
+- `components/MoneyBreakdownSection.tsx` — "Where the money went": orders paid in the last 30 days
+  followed through to every destination, with a warning only for money that can't be traced. Also
+  shown on the admin overview.
+- `components/RollupSkeleton.tsx` — the loading state of the summary.
+- `components/FinancialLedgerPage.tsx` — the `/financial-rollup/ledger` route: one row per item sold.
+  `LedgerFilterBar.tsx` holds search and filters, `LedgerTable.tsx` holds the table and whole-filter
+  totals, and `LedgerItemDrawer.tsx` holds the side panel with one item's full story.
+- `hooks/useLedgerFilters.ts` — every ledger filter, kept in the URL so a filtered view is a link.
+  `hooks/useLedgerExport.ts` downloads the current filter as a CSV.
+- `constants/financialRollup.constants.ts` — plain labels and explanations, plus `money`/`percent`.
+- `utils/ledgerSearch.utils.ts` — reads the ledger's URL filters for the route.
+- `api/financialRollupApi.ts` / `api/financialRollupSchemas.ts` — the rollup, ledger, item and export
+  calls and their Zod schemas.
+
+Card, row and stat-card link pieces are shared with Tag reviews through
+`apps/admin/src/components/MetricParts.tsx`.
 
 ## Funnel
 
-**Admin-facing:** pick a range, see the attributed-order-share number up top, gross
-collected/refunded/net held on one side and what's pending/available/withdrawn for creators and
-brands on the other, then GMV split by COD/eSewa/Khalti with each method's realized take rate.
-Below that, filter and page through every order item's fees, or export the current filter to CSV.
-A close-to-zero gap between gateway net held and total ledger amounts owed is the healthy state; a
-persistent gap is what the gateway/ledger cards exist to surface.
+**User-facing:** open **Financial rollup**, pick a period and read the banner. Click any card or row
+to open the ledger already filtered to those items. Search, filter or pick dates, export what you
+see, and click a row to read who placed the order, what was bought, where the money went, and the
+payment history, with a link to the full order.
 
-**Technical:** `FinancialRollupPage` fetches the rollup once per range via `financialRollupApi.get`
-and renders its own panels plus `<LedgerTable />`; `LedgerTable` fetches the ledger independently
-via `financialRollupApi.getLedger`, so changing a ledger filter never refetches the rollup tiles
-above it (and vice versa). Both the range tabs and every ledger filter live in the URL —
-`FinancialRollupPage` binds `range` and `LedgerTable` binds `method` / `payout` / `from` / `to`,
-all through `@/lib/useSearchFilter` (`_authenticated.financial-rollup.tsx` declares the matching
-`validateSearch`). A filtered/ranged view survives a refresh and is a shareable link; the default
-`range=cycle` and empty filters are omitted from the URL.
+**Technical:** summary: `FinancialRollupPage` → `financialRollupApi.get` →
+`GET /admin/financial-rollup`. Ledger: `useLedgerFilters` → `FinancialLedgerPage` →
+`financialRollupApi.getLedger` → `GET /admin/financial-rollup/ledger`. Side panel:
+`LedgerItemDrawer` → `financialRollupApi.getLedgerItem` → `GET /admin/financial-rollup/ledger/:id`.
+Export: `useLedgerExport` → `apiClient.getBlob` → `GET /admin/financial-rollup/ledger/export`.
 
 ## Non-obvious rationale
 
-- **The ledger's footer totals are explicitly labeled "Totals (loaded rows)", not "Totals."** They
-  sum only the pages fetched so far via `useInfiniteCursorPage`, not the full filtered result set
-  server-side — a true full-filtered-set total would need a separate aggregate query. Labeling it
-  honestly was judged better than either building that extra query for Phase 1 or silently
-  presenting a partial sum as if it were complete.
-- **`constants/financialRollup.constants.ts` exists because `PAYMENT_METHOD_LABEL`/`money`/`percent` moved out of
-  `components/FinancialRollupPage.tsx`** once `components/LedgerTable.tsx` needed them too — matches this repo's rule
-  that a module-local helper only gets extracted once a second consumer actually needs it, not
-  ahead of time.
-- **The order ledger's `Table` component lives in `@outfiqe/design-system`, not locally in this
-  feature**, even though this is the only feature using it today — no table/data-grid primitive
-  existed anywhere in this codebase before this, and it's a genuinely reusable UI primitive (per
-  this repo's design-system-first rule), not bespoke chrome specific to this page.
+- **Picked dates replace the period chips.** Sending both would make one silently win, so the chips
+  turn off while a date is picked.
+- **Dates go to the server as the start and end of the person's own day.** A plain `2026-10-31`
+  would be read as midnight UTC and drop almost all of that last day.
+- **A "from" after the "to" is explained on the page and never sent.** The server would refuse it,
+  and all the page could then say is that the ledger failed to load.
+- **The ledger totals cover every matching item, not just loaded pages.** They include cancelled
+  items unless a brand payout status is picked, and the page says so.
+- **A card's number can differ slightly from its ledger total.** Money collected counts by payment
+  date and owed amounts by payout date, while the ledger filters by the date the item was sold. An
+  item sold on the last day of a period and paid the next day lands in different periods.
+- **Rows are clicked through a real button in the first column.** The click bubbles up to the
+  table's `onRowClick`, so a keyboard user gets the same action as a mouse user.

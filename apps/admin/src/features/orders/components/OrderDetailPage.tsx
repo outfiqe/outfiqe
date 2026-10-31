@@ -1,9 +1,9 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { formatDateTime } from "@outfiqe/utils";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { DeliveryRefusalsCard } from "@/features/logistics/refusals/components/DeliveryRefusalsCard";
@@ -104,20 +104,12 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
 
   return (
     <div>
-      <Link
-        to="/orders"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Orders
-      </Link>
+      <BackLink to="/orders">All orders</BackLink>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">{id}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {new Date(createdAt).toLocaleString()}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{formatDateTime(createdAt)}</p>
         </div>
         <div className="flex gap-1.5">
           {needsManualRefund && (
@@ -246,7 +238,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
                   {transaction.type} · {transaction.provider}
                 </p>
                 <p className="text-muted-foreground">
-                  {transaction.status} · {new Date(transaction.createdAt).toLocaleString()}
+                  {transaction.status} · {formatDateTime(transaction.createdAt)}
                 </p>
               </div>
             ))}
