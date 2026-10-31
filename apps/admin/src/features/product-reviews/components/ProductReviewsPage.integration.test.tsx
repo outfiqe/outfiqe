@@ -81,6 +81,16 @@ describe("ProductReviewsPage", () => {
     expect(await screen.findByText("Runs true to size.")).toBeInTheDocument();
   });
 
+  it("shows an empty search straight away after Change product", async () => {
+    const user = userEvent.setup();
+    await selectProduct(user);
+
+    await user.click(await screen.findByRole("button", { name: "Change product" }));
+
+    expect(screen.getByPlaceholderText("Search products by name…")).toHaveValue("");
+    expect(screen.queryByText("Everyday Tee")).not.toBeInTheDocument();
+  });
+
   it("shows an error message when a product's reviews fail to load", async () => {
     const user = userEvent.setup();
     mswServer.use(
