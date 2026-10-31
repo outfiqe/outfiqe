@@ -4,12 +4,17 @@ import {
   FulfilmentStatus,
   PaymentMethod,
   PaymentStatus,
+  PickupStatus,
 } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { FulfilmentGroupSpec, OrderFulfilmentRollup } from "../order.types.js";
 import { deriveOrderFulfilment } from "../order.utils.js";
 
+const PICKUP_STATUSES_BEFORE_COLLECTION = [
+  PickupStatus.AWAITING_BRAND,
+  PickupStatus.READY_FOR_PICKUP,
+];
 const CLOSED_GROUP_STATUSES = [FulfilmentStatus.CANCELLED, FulfilmentStatus.RETURNED];
 
 const markHubCollectedCashPaid = async (client: DbClient, orderId: string): Promise<void> => {
@@ -143,6 +148,17 @@ export const orderFulfilmentGroupRepository = {
           shipmentCount: row._count._all,
         },
       ];
+    });
+  },
+
+  async cancelUncollectedPickupsForOrder(
+    client: DbClient,
+    orderId: string,
+    cancelledAt: Date,
+  ): Promise<void> {
+    await client.orderFulfilmentGroup.updateMany({
+      where: { orderId, pickupStatus: { in: PICKUP_STATUSES_BEFORE_COLLECTION } },
+      data: { pickupStatus: PickupStatus.CANCELLED, pickupStatusChangedAt: cancelledAt },
     });
   },
 

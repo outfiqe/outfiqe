@@ -427,6 +427,8 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
 - `shipTo` (the customer's name, phone and address) is `null` for hub-flow groups, because the brand never needs it.
 - The brand's own status updates (`PATCH /orders/brand/fulfilment-groups/:groupId`) are refused for hub-flow groups with `409 DELIVERED_BY_OUTFIQE`.
 
+A pickup can only be marked ready for an order that is paid, or cash on delivery, and not cancelled. A cancelled or expired unpaid order never reaches the refund step that cancels a pickup for other orders, so it cancels its own pickups directly. Otherwise a rider could be sent to collect an order that no longer exists.
+
 **Riders and rounds:**
 
 - Staff invite a rider, who sets a password from the email link. Staff check a contractor's ID in

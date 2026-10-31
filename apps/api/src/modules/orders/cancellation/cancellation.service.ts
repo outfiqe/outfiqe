@@ -110,6 +110,7 @@ const settleCancellationInTransaction = async (
 
   if (order.paymentStatus === PaymentStatus.INITIATED) {
     await orderRepository.failUnsettledPayment(tx, orderId);
+    await orderFulfilmentGroupRepository.cancelUncollectedPickupsForOrder(tx, orderId, new Date());
     await paymentRepository.failPendingTransactions(tx, orderId);
   }
 
