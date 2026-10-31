@@ -29,6 +29,8 @@ const countTenantRelationships = async (organization: {
 };
 
 export const platformMetricsService = {
+  attentionCounts: () => platformMetricsRepository.attentionCounts(),
+
   listTenants(query: {
     plan?: string;
     sort?: TenantMetricListFilters["sort"];

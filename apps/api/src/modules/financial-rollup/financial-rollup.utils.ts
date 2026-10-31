@@ -4,11 +4,47 @@ import { AppError } from "#middlewares/error-handler.js";
 import type {
   AttributionCounts,
   AttributionView,
+  FinancialRollupRange,
   LedgerRow,
+  MoneyBreakdownView,
+  PaidOrderMoneyTotals,
   PaymentMethodBreakdown,
   PaymentMethodOrderTotals,
   PaymentMethodPayoutFees,
 } from "./financial-rollup.types.js";
+
+const NOTHING_LEFT_TO_REFUND = 0;
+
+export const buildMoneyBreakdown = (
+  range: FinancialRollupRange,
+  paidOrderMoney: PaidOrderMoneyTotals,
+): MoneyBreakdownView => {
+  const { collected, refunded, orderFees, couponSpend, cancelledItems } = paidOrderMoney;
+  const { brandsOwed, brandsPaid, platformFees, gatewayFees, musesOwed, musesPaid } =
+    paidOrderMoney;
+
+  const held = collected - refunded;
+  const cancelledNotRefunded = Math.max(NOTHING_LEFT_TO_REFUND, cancelledItems - refunded);
+  const accountedFor =
+    brandsOwed + brandsPaid + platformFees + orderFees + cancelledNotRefunded - couponSpend;
+
+  return {
+    range,
+    collected,
+    refunded,
+    held,
+    brandsOwed,
+    brandsPaid,
+    musesOwed,
+    musesPaid,
+    gatewayFees,
+    platformKeeps: platformFees - gatewayFees - musesOwed - musesPaid,
+    orderFees,
+    cancelledNotRefunded,
+    couponSpend,
+    unexplained: held - accountedFor,
+  };
+};
 
 export const sumStatusBuckets = (
   amountByStatus: Partial<Record<string, number>>,

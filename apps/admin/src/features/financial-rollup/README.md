@@ -16,6 +16,9 @@ platform earned, and, down to one sold item, where each rupee went. See
   explanation of each status.
 - `components/RollupEarningsSections.tsx` — platform earnings after coupons, sales through muses, and
   how shoppers paid.
+- `components/MoneyBreakdownSection.tsx` — "Where the money went": orders paid in the last 30 days
+  followed through to every destination, with a warning only for money that can't be traced. Also
+  shown on the admin overview.
 - `components/RollupSkeleton.tsx` — the loading state of the summary.
 - `components/FinancialLedgerPage.tsx` — the `/financial-rollup/ledger` route: one row per item sold.
   `LedgerFilterBar.tsx` holds search and filters, `LedgerTable.tsx` holds the table and whole-filter

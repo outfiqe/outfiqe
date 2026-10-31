@@ -11,6 +11,7 @@ import {
   ROLLUP_RANGE_ORDER,
 } from "../constants/financialRollup.constants";
 import { ROLLUP_RANGE_FILTER } from "../hooks/useLedgerFilters";
+import { MoneyBreakdownSection } from "./MoneyBreakdownSection";
 import { PayoutStatusSections } from "./PayoutStatusSections";
 import { RollupEarningsSections } from "./RollupEarningsSections";
 import { RollupInsightBanner, RollupMoneyCards } from "./RollupMoneyCards";
@@ -66,6 +67,7 @@ export const FinancialRollupPage = () => {
         <>
           <RollupInsightBanner rollup={rollup} />
           <RollupMoneyCards rollup={rollup} range={range} />
+          <MoneyBreakdownSection />
           <PayoutStatusSections rollup={rollup} range={range} />
           <RollupEarningsSections rollup={rollup} range={range} />
         </>

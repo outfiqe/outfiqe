@@ -60,3 +60,12 @@ export type TenantMetricDetail = TenantMetricRow & {
   customerCount: number;
   series: TenantSparklinePoint[];
 };
+
+export type PlatformAttentionCounts = {
+  ordersToPack: number;
+  productsToReview: number;
+  brandApplications: number;
+  refundsWaiting: number;
+  withdrawalRequests: number;
+  supportRequests: number;
+};
