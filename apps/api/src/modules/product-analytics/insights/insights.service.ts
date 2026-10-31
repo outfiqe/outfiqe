@@ -1,3 +1,5 @@
+import { subHours } from "date-fns/subHours";
+
 import logger from "#lib/winston.utils.js";
 import { cacheService } from "#redis/cache.service.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -10,6 +12,7 @@ import {
   type InsightName,
   type InsightRange,
   LAST_GOOD_INSIGHT_TTL_SECONDS,
+  MAX_INSTANT_COPY_AGE_HOURS,
   POSTHOG_PATH_BY_INSIGHT,
   type SpeedFilters,
 } from "./insights.constants.js";
@@ -77,6 +80,8 @@ const NO_CACHE_VARIANT = "";
 
 const DEFAULT_SPEED_FILTERS: SpeedFilters = { device: "all", page: "all" };
 
+type InsightCacheKeys = { fresh: string; lastGood: string };
+
 type InsightBuilder<Insight> = (
   connection: PosthogQueryConnection,
   days: number,
@@ -113,6 +118,37 @@ const writeCachedInsight = async <Insight>(
 const toPosthogUrl = ({ appHost, projectId }: PosthogQueryConnection, name: InsightName) =>
   new URL(`/project/${projectId}${POSTHOG_PATH_BY_INSIGHT[name]}`, appHost).toString();
 
+const insightRefreshesInProgress = new Set<string>();
+
+const isRecentEnoughToShowInstantly = ({ refreshedAt }: CachedInsight<unknown>): boolean =>
+  new Date(refreshedAt) > subHours(new Date(), MAX_INSTANT_COPY_AGE_HOURS);
+
+const saveNewInsight = async <Insight>(
+  keys: InsightCacheKeys,
+  fetchNewInsight: () => Promise<Insight>,
+): Promise<CachedInsight<Insight>> => {
+  const cachedInsight = {
+    insight: await fetchNewInsight(),
+    refreshedAt: new Date().toISOString(),
+  };
+  await writeCachedInsight(keys.fresh, cachedInsight, FRESH_INSIGHT_TTL_SECONDS);
+  await writeCachedInsight(keys.lastGood, cachedInsight, LAST_GOOD_INSIGHT_TTL_SECONDS);
+  return cachedInsight;
+};
+
+const refreshInsightInBackground = <Insight>(
+  keys: InsightCacheKeys,
+  fetchNewInsight: () => Promise<Insight>,
+): void => {
+  if (insightRefreshesInProgress.has(keys.fresh)) return;
+  insightRefreshesInProgress.add(keys.fresh);
+  saveNewInsight(keys, fetchNewInsight)
+    .catch((error: unknown) => {
+      logger.warn(`Product analytics refresh ${keys.fresh} failed: ${describeError(error)}`);
+    })
+    .finally(() => insightRefreshesInProgress.delete(keys.fresh));
+};
+
 const loadInsight = async <Insight>(
   name: InsightName,
   range: InsightRange,
@@ -130,21 +166,26 @@ const loadInsight = async <Insight>(
   }
 
   const posthogUrl = toPosthogUrl(connection, name);
-  const freshKey = insightCacheKey("fresh", name, range, variant);
-  const lastGoodKey = insightCacheKey("last-good", name, range, variant);
+  const keys: InsightCacheKeys = {
+    fresh: insightCacheKey("fresh", name, range, variant),
+    lastGood: insightCacheKey("last-good", name, range, variant),
+  };
 
-  const freshInsight = await readCachedInsight<Insight>(freshKey);
+  const freshInsight = await readCachedInsight<Insight>(keys.fresh);
   if (freshInsight) return { status: INSIGHT_STATUS.FRESH, posthogUrl, ...freshInsight };
 
+  const fetchNewInsight = () => buildInsight(connection, DAYS_IN_INSIGHT_RANGE[range]);
+  const lastGoodInsight = await readCachedInsight<Insight>(keys.lastGood);
+  if (lastGoodInsight && isRecentEnoughToShowInstantly(lastGoodInsight)) {
+    refreshInsightInBackground(keys, fetchNewInsight);
+    return { status: INSIGHT_STATUS.FRESH, posthogUrl, ...lastGoodInsight };
+  }
+
   try {
-    const insight = await buildInsight(connection, DAYS_IN_INSIGHT_RANGE[range]);
-    const cachedInsight = { insight, refreshedAt: new Date().toISOString() };
-    await writeCachedInsight(freshKey, cachedInsight, FRESH_INSIGHT_TTL_SECONDS);
-    await writeCachedInsight(lastGoodKey, cachedInsight, LAST_GOOD_INSIGHT_TTL_SECONDS);
-    return { status: INSIGHT_STATUS.FRESH, posthogUrl, ...cachedInsight };
+    const newInsight = await saveNewInsight(keys, fetchNewInsight);
+    return { status: INSIGHT_STATUS.FRESH, posthogUrl, ...newInsight };
   } catch (error) {
     logger.error(`Product analytics insight ${name} (${range}) failed: ${describeError(error)}`);
-    const lastGoodInsight = await readCachedInsight<Insight>(lastGoodKey);
     if (lastGoodInsight) return { status: INSIGHT_STATUS.STALE, posthogUrl, ...lastGoodInsight };
     return { status: INSIGHT_STATUS.UNAVAILABLE, refreshedAt: null, posthogUrl, insight: null };
   }

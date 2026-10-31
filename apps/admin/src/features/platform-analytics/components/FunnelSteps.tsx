@@ -3,7 +3,12 @@ import { percent } from "@/features/financial-rollup/constants/financialRollup.c
 import type { FunnelStep } from "../api/platformAnalyticsSchemas";
 import { FUNNEL_FIRST_STEP_NOTE } from "../constants/analyticsCopy.constants";
 import { FUNNEL_STEP_LABEL } from "../constants/platformAnalytics.constants";
-import { describeFunnelStep, findBiggestDrop, toStepShare } from "../utils/platformAnalytics.utils";
+import {
+  describeFunnelStep,
+  findBiggestDrop,
+  toPeopleLabel,
+  toStepShare,
+} from "../utils/platformAnalytics.utils";
 
 type FunnelStepsProps = {
   steps: FunnelStep[];
@@ -30,7 +35,7 @@ export const FunnelSteps = ({ steps, emptyMessage }: FunnelStepsProps) => {
       {biggestDrop && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
           <span className="font-semibold">Biggest drop:</span>{" "}
-          {biggestDrop.lostPeople.toLocaleString()} people stopped between &ldquo;
+          {toPeopleLabel(biggestDrop.lostPeople)} stopped between &ldquo;
           {toStepLabel(biggestDrop.fromEvent)}&rdquo; and &ldquo;
           {toStepLabel(biggestDrop.toEvent)}&rdquo;.
         </p>

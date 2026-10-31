@@ -97,13 +97,35 @@ describe("productAnalyticsInsightsService", () => {
     ]);
   });
 
+  it("answers at once from a recent copy, and refreshes it in the background", async () => {
+    const recentCopy = { ...cachedOverview, refreshedAt: new Date().toISOString() };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(recentCopy);
+    vi.mocked(runPosthogQuery).mockResolvedValue([[1, 1, 1, 1]]);
+
+    const result = await productAnalyticsInsightsService.overview("30d");
+
+    expect(result).toMatchObject({ status: "fresh", insight: recentCopy.insight });
+    await vi.waitFor(() => expect(cacheService.set).toHaveBeenCalled());
+  });
+
+  it("waits for PostHog when the only copy is over a day old", async () => {
+    const oldCopy = { ...cachedOverview, refreshedAt: "2020-01-01T00:00:00.000Z" };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(oldCopy);
+    vi.mocked(runPosthogQuery).mockResolvedValue([[9, 1, 1, 1]]);
+
+    const { insight } = await productAnalyticsInsightsService.overview("30d");
+
+    expect(insight).toMatchObject({ visitors: 9 });
+  });
+
   it("shows the last good answer, marked stale, when PostHog fails", async () => {
-    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(cachedOverview);
+    const oldCopy = { ...cachedOverview, refreshedAt: "2020-01-01T00:00:00.000Z" };
+    vi.mocked(cacheService.get).mockResolvedValueOnce(null).mockResolvedValueOnce(oldCopy);
     vi.mocked(runPosthogQuery).mockRejectedValue(new Error("PostHog is down"));
 
     const result = await productAnalyticsInsightsService.overview("30d");
 
-    expect(result).toMatchObject({ status: "stale", insight: cachedOverview.insight });
+    expect(result).toMatchObject({ status: "stale", insight: oldCopy.insight });
   });
 
   it("reports unavailable when PostHog fails and nothing was ever cached", async () => {

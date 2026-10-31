@@ -19,6 +19,7 @@ import {
   type SpeedPercentile,
 } from "../constants/analyticsCopy.constants";
 import {
+  ANALYTICS_STALE_TIME_MS,
   type AnalyticsRange,
   PLATFORM_ANALYTICS_QUERY_KEY,
   SPEED_LIMITS,
@@ -99,6 +100,7 @@ export const SiteSpeedSection = ({ range }: { range: AnalyticsRange }) => {
     queryKey: [...PLATFORM_ANALYTICS_QUERY_KEY, "site-speed", range, device, page],
     queryFn: () => platformAnalyticsApi.getSiteSpeed(range, { device, page }),
     placeholderData: keepPreviousData,
+    staleTime: ANALYTICS_STALE_TIME_MS,
   });
 
   return (

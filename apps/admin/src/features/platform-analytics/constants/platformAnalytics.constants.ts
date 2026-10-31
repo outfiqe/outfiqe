@@ -15,6 +15,8 @@ export const INSIGHT_STATUSES = ["fresh", "stale", "not_connected", "unavailable
 
 export const PLATFORM_ANALYTICS_QUERY_KEY = ["platform-analytics"] as const;
 
+export const ANALYTICS_STALE_TIME_MS = 60_000;
+
 export const EXACT_ORDER_TOTALS_QUERY_KEY = ["platform-analytics", "exact-order-totals"] as const;
 
 export const FUNNEL_STEP_LABEL: Record<string, string> = {

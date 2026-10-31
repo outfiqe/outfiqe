@@ -108,6 +108,7 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
 
 ## Non-obvious rationale
 
+- **The admin page shows a saved copy first, then refreshes it quietly.** PostHog queries took 3 to 22 seconds per section on production, against about 0.5 seconds from a saved copy. A saved copy under `MAX_INSTANT_COPY_AGE_HOURS` is returned at once and refreshed in the background, one refresh per copy at a time. An older copy still waits for PostHog, and is only shown, marked stale, if PostHog fails. Queries inside a section stay one after another to keep within PostHog's limit on parallel queries.
 - **Its own consumer group, in the `worker` role.** The bus gives each group its own acks,
   retries and dead-letter stream. So a PostHog outage, or a slow lookup here, never delays
   notifications or XP, and it can't fail an order. The consumers are registered in

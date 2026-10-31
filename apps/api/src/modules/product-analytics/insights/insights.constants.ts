@@ -49,6 +49,8 @@ export const LAST_GOOD_INSIGHT_TTL_SECONDS = millisecondsToSeconds(
   hoursToMilliseconds(HOURS_IN_A_WEEK),
 );
 
+export const MAX_INSTANT_COPY_AGE_HOURS = 24;
+
 export const POSTHOG_QUERY_TIMEOUT_MS = secondsToMilliseconds(20);
 
 export const POSTHOG_QUERY_NAME_PREFIX = "outfiqe-admin-analytics";
