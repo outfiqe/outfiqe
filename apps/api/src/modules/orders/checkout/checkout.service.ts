@@ -10,6 +10,7 @@ import { cartRepository } from "#modules/cart/cart.repository.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creator-link.repository.js";
 import { checkCashOnDeliveryEligibility } from "#modules/logistics/refusals/refusal.eligibility.js";
+import { assertGatewayAvailable } from "#modules/payments/payment.availability.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderRepository } from "../order.repository.js";
@@ -56,6 +57,7 @@ const checkoutOnce = async (
     body;
 
   if (paymentMethod === PaymentMethod.COD) await assertCashOnDeliveryAllowed(userId, phone);
+  await assertGatewayAvailable(paymentMethod, userId);
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 

@@ -66,8 +66,8 @@ const AboutPage = () => (
         <p>
           Outfiqe fixes that end to end. Brands list once and hand ready orders to our riders. Muses
           drop the looks that show those clothes on real people. Shoppers add across brands to one
-          cart, pay by cash on delivery, eSewa or Khalti, and track one parcel to their door, with
-          refunds handled for them if something goes wrong.
+          cart, pay by cash on delivery or eSewa, and track one parcel to their door, with refunds
+          handled for them if something goes wrong.
         </p>
       </div>
     </MarketingSection>

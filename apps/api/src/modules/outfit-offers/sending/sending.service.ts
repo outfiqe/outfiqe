@@ -5,6 +5,7 @@ import { withIdempotency } from "#lib/idempotency.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { outfitErrors } from "#modules/outfits/outfit.errors.js";
 import { outfitRepository } from "#modules/outfits/outfit.repository.js";
+import { assertGatewayAvailable } from "#modules/payments/payment.availability.js";
 import { PaymentVerifyStatus } from "#modules/payments/payment.types.js";
 import { platformSettingsService } from "#modules/platform-settings/platform-settings.service.js";
 
@@ -102,6 +103,7 @@ const sendOnce = async (
   outfitId: string,
   { creatorId, amount, paymentMethod, note }: SendOfferBody,
 ): Promise<SentOfferResult> => {
+  await assertGatewayAvailable(paymentMethod, userId);
   const { brandId, lockedVersion } = await requireOfferableBuild(userId, outfitId);
   if (creatorId === userId) throw offerErrors.creatorNotOnBuild();
   const isCreatorOnBuild = await outfitOfferRepository.isApprovedCreatorMember(
@@ -176,6 +178,7 @@ export const outfitOfferSendingService = {
     if (offer.status !== OutfitOfferStatus.PAYMENT_PENDING) {
       throw offerErrors.invalidTransition("This offer is no longer waiting for payment.");
     }
+    await assertGatewayAvailable(offer.paymentMethod, userId);
     const priorStatus = await verifyPendingPayment(offer);
     if (priorStatus === PaymentVerifyStatus.COMPLETE) {
       throw offerErrors.invalidTransition("This offer has already been paid.");

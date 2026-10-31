@@ -10,6 +10,8 @@ import {
   type CrmBillingProviderValue,
   type PlanDefinition,
 } from "../api/billingSchemas";
+import { useIsKhaltiOn } from "../hooks/useIsKhaltiOn";
+import { listBillingProviders } from "../utils/listBillingProviders";
 import { redirectToPaymentGateway } from "../utils/paymentRedirect";
 
 type PlanCheckoutModalProps = {
@@ -41,6 +43,7 @@ export const PlanCheckoutModal = ({
 }: PlanCheckoutModalProps) => {
   const [planId, setPlanId] = useState(initialPlanId);
   const [seats, setSeats] = useState(initialSeats);
+  const isKhaltiOn = useIsKhaltiOn();
   const [provider, setProvider] = useState<CrmBillingProviderValue>(CRM_BILLING_PROVIDER.ESEWA);
 
   const selectedPlan = planCatalog.find((plan) => plan.id === planId) ?? planCatalog[0];
@@ -120,7 +123,7 @@ export const PlanCheckoutModal = ({
             value={provider}
             onChange={(event) => setProvider(toProvider(event.target.value))}
           >
-            {Object.values(CRM_BILLING_PROVIDER).map((value) => (
+            {listBillingProviders(isKhaltiOn).map((value) => (
               <option key={value} value={value}>
                 {PROVIDER_LABEL[value]}
               </option>

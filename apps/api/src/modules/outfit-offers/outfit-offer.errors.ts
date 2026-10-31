@@ -45,7 +45,7 @@ export const offerErrors = {
   unsupportedPaymentMethod: () =>
     new AppError(
       "UNSUPPORTED_PAYMENT_METHOD",
-      "Offers can be paid with eSewa or Khalti.",
+      "That payment method can't be used for offers.",
       HTTP_STATUS.BAD_REQUEST,
     ),
 };
