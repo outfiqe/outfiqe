@@ -1,8 +1,9 @@
 "use client";
 
+import { BACK_LINK_CLASS_NAME, BackLinkLabel } from "@outfiqe/design-system";
 import { Button, CheriqIcon, toast, Tooltip } from "@outfiqe/design-system";
 import { ANALYTICS_EVENTS, THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
-import { ChevronLeft, Share2, Shirt, Zap } from "lucide-react";
+import { Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -150,13 +151,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="inline-flex items-center gap-1.5 py-3 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" />
-        Back
+      <button type="button" onClick={() => router.back()} className={BACK_LINK_CLASS_NAME}>
+        <BackLinkLabel>Back</BackLinkLabel>
       </button>
 
       <div className="grid gap-8 pb-10 lg:grid-cols-2 lg:gap-14">

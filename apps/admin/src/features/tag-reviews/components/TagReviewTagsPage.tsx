@@ -1,8 +1,9 @@
 import { Button, FilterChip, Skeleton } from "@outfiqe/design-system";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowLeft, X } from "lucide-react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import type { MetricTag } from "../api/tagReviewsSchemas";
@@ -55,13 +56,7 @@ export const TagReviewTagsPage = () => {
   return (
     <div className="space-y-5">
       <div>
-        <Link
-          to="/tag-reviews"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          Tag reviews
-        </Link>
+        <BackLink to="/tag-reviews">Tag reviews</BackLink>
         <h1 className="mt-2 font-display text-2xl font-bold text-foreground">{title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>

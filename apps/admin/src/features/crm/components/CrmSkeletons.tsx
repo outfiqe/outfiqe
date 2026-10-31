@@ -1,8 +1,8 @@
 import { KanbanBoardSkeleton } from "@outfiqe/components";
 import { Input, Select, Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
-import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -316,18 +316,14 @@ export const TicketsRouteSkeleton = () => (
 
 export const CustomerDetailRouteSkeleton = () => (
   <div className="mx-auto max-w-3xl">
-    <Link to="/crm/customers" className="text-sm font-semibold text-primary-strong underline">
-      ← Back to customers
-    </Link>
+    <BackLink to="/crm/customers">All customers</BackLink>
     <CustomerDetailSkeleton />
   </div>
 );
 
 export const PartnerDetailRouteSkeleton = () => (
   <div className="mx-auto max-w-3xl">
-    <Link to="/crm/partners" className="text-sm font-semibold text-primary-strong underline">
-      ← Back to partners
-    </Link>
+    <BackLink to="/crm/partners">All partners</BackLink>
     <PartnerDetailSkeleton />
   </div>
 );

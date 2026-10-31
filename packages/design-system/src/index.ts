@@ -2,6 +2,7 @@ export * from "./achievement-badge-icon";
 export * from "./achievement-badge-icon.constants";
 export * from "./autocomplete";
 export * from "./avatar-uploader";
+export * from "./back-link";
 export * from "./badge";
 export * from "./banner-uploader";
 export * from "./brand-palette";

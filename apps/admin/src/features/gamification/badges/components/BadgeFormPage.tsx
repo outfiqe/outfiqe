@@ -11,9 +11,9 @@ import {
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { NoSectionAccess } from "@/components/NoSectionAccess";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
@@ -132,13 +132,7 @@ const BadgeForm = ({
 
   return (
     <form id={BADGE_FORM_ID} noValidate onSubmit={submitBadge}>
-      <Link
-        to="/gamification/badges"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Badges
-      </Link>
+      <BackLink to="/gamification/badges">All badges</BackLink>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <AchievementBadgeIcon

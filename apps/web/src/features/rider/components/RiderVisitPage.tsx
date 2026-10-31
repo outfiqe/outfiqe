@@ -1,8 +1,9 @@
 "use client";
 
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import Link from "next/link";
 import { useState } from "react";
+
+import { BackLink } from "@/components/BackLink";
 
 import { RIDER_STOP_DIRECTION } from "../api/riderSchemas";
 import { PENDING_SCAN_STATE } from "../constants/pendingScans";
@@ -63,12 +64,7 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
 
   return (
     <>
-      <Link
-        href="/rider"
-        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-      >
-        ← All visits
-      </Link>
+      <BackLink href="/rider">All visits</BackLink>
       <PendingScansList />
 
       <section

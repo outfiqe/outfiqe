@@ -2,9 +2,9 @@ import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { formatDate, formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
@@ -123,12 +123,7 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
   const detail = build.data;
   return (
     <div className="space-y-4">
-      <Link
-        to="/outfit-builds"
-        className="text-sm text-muted-foreground underline underline-offset-4"
-      >
-        All builds
-      </Link>
+      <BackLink to="/outfit-builds">All builds</BackLink>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
