@@ -38,6 +38,10 @@ A feature only has the folders it needs. `index.ts` (when other features import 
 
 **Large features are split into topic folders**, each with the same layer folders inside. `creator-dashboard/` has `badges/`, `challenges/`, `earnings/`, `share-links/`, `looks/` and `progress/`; `brand-dashboard/` has `products/`, `shipments/`, `tag-reviews/` and `wallet/`; `explore/` has `feed/`, `posts/`, `comments/` and `suggestions/`; `outfit-build/` has `board/`, `my-builds/`, `publishing/`, `public-builds/` and `social/`; `auth/` has `login/`, `registration/`, `password/`, `oauth/`, `suspension/` and `phone-number/`; `pwa/` has `install/`, `app-manifest/`, `offline/`, `push/` and `service-worker/`. Code shared by several topics stays in the feature root's own layer folders. Topic folders are kebab-case; files keep React naming (PascalCase components, camelCase everything else).
 
+## The dashboard sidebar has a staff menu
+
+Most dashboard pages send staff to the admin panel, but build pages and account settings do not, so staff can still land on the sidebar. `components/useDashboardNav.ts` gives them a short menu with a link back to the admin panel instead of the shopper menu. Staff who are also creators keep the muse menu.
+
 ## Forms never submit natively
 
 Pages are rendered on the server, so a form is on screen before its JavaScript has loaded. On a slow phone connection that can take a long time, and a form with no `method` that is submitted in that gap is sent by the browser as a GET, with every field in the URL, password included. A URL ends up in browser history, server logs and analytics.
