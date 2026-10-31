@@ -95,7 +95,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
           <FormControl>
-            <DateInput includesTime {...field} />
+            <DateInput includesTime max={form.watch("endsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -108,7 +108,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
           <FormControl>
-            <DateInput includesTime {...field} />
+            <DateInput includesTime min={form.watch("startsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

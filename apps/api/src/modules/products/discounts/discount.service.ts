@@ -1,3 +1,5 @@
+import { isPast } from "date-fns/isPast";
+
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { DiscountType } from "#generated/prisma/enums.js";
@@ -123,7 +125,14 @@ export const productDiscountService = {
     if (nextEndsAt && nextEndsAt <= nextStartsAt) {
       throw new AppError(
         "INVALID_DISCOUNT_WINDOW",
-        "endsAt must be after startsAt.",
+        "The end date must be after the start date.",
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    if (input.endsAt && isPast(input.endsAt)) {
+      throw new AppError(
+        "INVALID_DISCOUNT_WINDOW",
+        "The end date can't be in the past.",
         HTTP_STATUS.BAD_REQUEST,
       );
     }

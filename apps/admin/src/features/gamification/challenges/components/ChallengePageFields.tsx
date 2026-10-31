@@ -58,6 +58,7 @@ export const ChallengePageFields = ({ idPrefix, form, onChange, errors }: Challe
             includesTime
             id={`${idPrefix}-active-from`}
             aria-invalid={"activeFrom" in errors}
+            max={form.activeUntil}
             value={form.activeFrom}
             onChange={(e) => onChange({ ...form, activeFrom: e.target.value })}
             className="w-full sm:w-56"
@@ -75,6 +76,7 @@ export const ChallengePageFields = ({ idPrefix, form, onChange, errors }: Challe
             includesTime
             id={`${idPrefix}-active-until`}
             aria-invalid={"activeUntil" in errors}
+            min={form.activeFrom}
             value={form.activeUntil}
             onChange={(e) => onChange({ ...form, activeUntil: e.target.value })}
             className="w-full sm:w-56"

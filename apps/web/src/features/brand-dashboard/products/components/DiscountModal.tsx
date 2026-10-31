@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, DateInput, Modal, Select, toast } from "@outfiqe/design-system";
+import { isPastDateInputValue, toDateInputValue, toDayEndIso } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -44,6 +45,7 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
   const [fixedAmount, setFixedAmount] = useState(existing?.fixedAmount ?? 0);
   const [endsAt, setEndsAt] = useState(existing?.endsAt?.slice(0, 10) ?? "");
 
+  const hasPastEndDate = isPastDateInputValue(endsAt);
   const isPending = setDiscount.isPending || updateDiscount.isPending || removeDiscount.isPending;
 
   if (!product) return null;
@@ -64,7 +66,7 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
           : undefined,
       fixedAmount: discountType === "FIXED" ? fixedAmount : undefined,
     };
-    const endsAtIso = endsAt ? new Date(endsAt).toISOString() : null;
+    const endsAtIso = endsAt ? toDayEndIso(endsAt) : null;
     const createInput = {
       discountType,
       ...amountFields,
@@ -136,7 +138,7 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
             <Button variant="outline" onClick={close}>
               Cancel
             </Button>
-            <Button onClick={() => void submit()} disabled={isPending}>
+            <Button onClick={() => void submit()} disabled={isPending || hasPastEndDate}>
               {setDiscount.isPending || updateDiscount.isPending
                 ? "Saving…"
                 : existing
@@ -216,9 +218,16 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
           </label>
           <DateInput
             id="ends-at"
+            min={toDateInputValue()}
+            aria-invalid={hasPastEndDate}
             value={endsAt}
             onChange={(event) => setEndsAt(event.target.value)}
           />
+          {hasPastEndDate && (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              The end date can&apos;t be in the past.
+            </p>
+          )}
           <p className="mt-1 text-xs text-muted-foreground">
             Leave blank to run until you remove it.
           </p>

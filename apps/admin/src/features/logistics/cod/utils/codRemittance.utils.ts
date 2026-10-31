@@ -39,11 +39,6 @@ export const sumRemittanceTotals = (
 
 export const formatCashAmount = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
-const DATE_INPUT_LOCALE = "en-CA";
-
-export const toDateInputValue = (date: Date) => date.toLocaleDateString(DATE_INPUT_LOCALE);
-
-export const dateInputValueToIso = (dateInputValue: string) =>
-  new Date(`${dateInputValue}T00:00:00`).toISOString();
+export { toDayStartIso as dateInputValueToIso, toDateInputValue } from "@outfiqe/utils";
 
 export const formatCashDate = (isoDate: string) => formatDate(isoDate);

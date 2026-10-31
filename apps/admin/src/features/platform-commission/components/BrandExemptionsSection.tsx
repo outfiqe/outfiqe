@@ -219,7 +219,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
                   <FormControl>
-                    <DateInput {...field} />
+                    <DateInput max={form.watch("endsAt")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -232,7 +232,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
                   <FormControl>
-                    <DateInput {...field} />
+                    <DateInput min={form.watch("startsAt")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
