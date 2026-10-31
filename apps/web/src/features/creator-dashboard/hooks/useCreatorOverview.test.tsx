@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CreatorStatus } from "@/features/auth/types";
+import { DEFAULT_OVERVIEW_PERIOD_DAYS } from "@/shared/lib/overviewPeriod";
 
 import { creatorOverviewApi } from "../api/creatorOverviewApi";
 import { useCreatorOverview } from "./useCreatorOverview";
@@ -21,7 +22,9 @@ const renderOverviewHook = (creatorStatus: CreatorStatus) => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useCreatorOverview(creatorStatus), { wrapper });
+  return renderHook(() => useCreatorOverview(creatorStatus, DEFAULT_OVERVIEW_PERIOD_DAYS), {
+    wrapper,
+  });
 };
 
 describe("useCreatorOverview", () => {

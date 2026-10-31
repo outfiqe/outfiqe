@@ -1,7 +1,7 @@
-import { FormBanner, StatCard } from "@outfiqe/design-system";
+import { CLICKABLE_STAT_CARD_CLASS_NAME, FormBanner, StatCard } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
-import { CLICKABLE_STAT_CARD_CLASS_NAME, StatCardFooterLink } from "@/components/MetricParts";
+import { StatCardFooterLink } from "@/components/MetricParts";
 
 import type { TagReviewMetrics } from "../api/tagReviewsSchemas";
 import { METRIC_TAG_VIEW, type MetricTagView } from "../constants/metricTagViews.constants";

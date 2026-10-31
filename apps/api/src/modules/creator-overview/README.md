@@ -56,3 +56,5 @@ CTE + Prisma aggregate) → DB`. Response is the REST envelope `{ success, messa
 - **VOIDED commissions are excluded from earnings** (cancelled/refunded/fraud orders) but the
   status-sum KPIs come straight from `sumByStatusForCreator`, which only ever adds PENDING +
   AVAILABLE + PAID — so both paths agree without special-casing.
+
+The overview takes `?days=7|30|90` (default 30), read with the shared `overviewPeriodQuerySchema`. Besides the totals it returns `topLooks`, `earningsBySource` and `nextAvailableAt`. Approved commission counts as pending, because the muse can't withdraw it yet.

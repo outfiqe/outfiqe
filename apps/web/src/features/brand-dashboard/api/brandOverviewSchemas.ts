@@ -4,8 +4,10 @@ import { brandShipmentSummarySchema } from "../shipments/api/brandFulfilmentSche
 
 export const brandOverviewKpisSchema = z.object({
   lifetimeRevenue: z.number(),
-  last30DaysRevenue: z.number(),
-  previous30DaysRevenue: z.number(),
+  periodDays: z.number(),
+  periodRevenue: z.number(),
+  previousPeriodRevenue: z.number(),
+  periodOrderCount: z.number(),
   availablePayout: z.number(),
   pendingPayout: z.number(),
   productCount: z.number(),
@@ -21,9 +23,26 @@ export const brandOverviewTrendPointSchema = z.object({
 });
 export type BrandOverviewTrendPoint = z.infer<typeof brandOverviewTrendPointSchema>;
 
+const brandTopProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  unitsSold: z.number(),
+  revenue: z.number(),
+});
+
+const brandLowStockProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  stockLeft: z.number(),
+});
+
 export const brandOverviewSchema = z.object({
   kpis: brandOverviewKpisSchema,
   trend: z.array(brandOverviewTrendPointSchema),
+  topProducts: z.array(brandTopProductSchema),
+  lowStockProducts: z.array(brandLowStockProductSchema),
   recentOrders: z.array(brandShipmentSummarySchema),
 });
 export type BrandOverview = z.infer<typeof brandOverviewSchema>;

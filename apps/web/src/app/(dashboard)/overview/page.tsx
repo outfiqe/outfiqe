@@ -5,6 +5,7 @@ import { CreatorStatus, UserRole } from "@/features/auth/types";
 import { BrandOverview, getBrandOverviewServer } from "@/features/brand-dashboard";
 import { CreatorOverview, getCreatorOverviewServer } from "@/features/creator-dashboard";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
+import { DEFAULT_OVERVIEW_PERIOD_DAYS } from "@/shared/lib/overviewPeriod";
 
 import { requireDashboardSession } from "../requireDashboardSession";
 
@@ -16,7 +17,7 @@ const DashboardOverviewPage = async () => {
 
   if (user.role === UserRole.BRAND_OWNER) {
     await queryClient.prefetchQuery({
-      queryKey: ["brand-overview", "mine"],
+      queryKey: ["brand-overview", "mine", DEFAULT_OVERVIEW_PERIOD_DAYS],
       queryFn: () => getBrandOverviewServer(accessToken),
     });
 
@@ -29,7 +30,7 @@ const DashboardOverviewPage = async () => {
 
   if (user.creatorStatus === CreatorStatus.APPROVED) {
     await queryClient.prefetchQuery({
-      queryKey: ["creator-overview", "mine"],
+      queryKey: ["creator-overview", "mine", DEFAULT_OVERVIEW_PERIOD_DAYS],
       queryFn: () => getCreatorOverviewServer(accessToken),
     });
   }

@@ -1,6 +1,6 @@
-import { FormBanner, StatCard } from "@outfiqe/design-system";
+import { CLICKABLE_STAT_CARD_CLASS_NAME, FormBanner, StatCard } from "@outfiqe/design-system";
 
-import { CLICKABLE_STAT_CARD_CLASS_NAME, StatCardFooterLink } from "@/components/MetricParts";
+import { StatCardFooterLink } from "@/components/MetricParts";
 
 import type { FinancialRollup, LedgerFocus, RollupRange } from "../api/financialRollupSchemas";
 import { LEDGER_PATH, money, ROLLUP_RANGE_LABEL } from "../constants/financialRollup.constants";
