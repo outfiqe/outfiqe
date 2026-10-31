@@ -30,6 +30,7 @@ const ROUTES = [
   "/crm/tasks",
   "/delivery-zones",
   "/financial-rollup",
+  "/financial-rollup/ledger",
   "/gamification",
   "/gamification/badges",
   "/gamification/badges/new",

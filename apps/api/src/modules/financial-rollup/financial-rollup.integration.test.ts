@@ -431,7 +431,11 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .set("Authorization", authHeader);
 
     expect(response.status).toBe(HTTP_STATUS.OK);
-    expect(response.body.data).toEqual({ entries: [], nextCursor: null });
+    expect(response.body.data).toMatchObject({
+      entries: [],
+      nextCursor: null,
+      totals: { rowCount: 0, grossAmount: 0, brandNetAmount: 0 },
+    });
   });
 
   it("returns one row per order item with the linked payout and commission amounts", async () => {
@@ -579,6 +583,151 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
   });
 });
 
+describe("GET /api/admin/financial-rollup/ledger details", () => {
+  const listLedger = async (query: string) => {
+    const { authHeader } = await createAdminSession();
+    return request(testApp)
+      .get(`/api/admin/financial-rollup/ledger?${query}`)
+      .set("Authorization", authHeader);
+  };
+
+  it("says who bought what, and totals every matching row, not just this page", async () => {
+    const { orderId } = await createLedgerItem({ createdAt: new Date("2026-01-01T00:00:00.000Z") });
+    const { orderItemId: secondItemId } = await createLedgerItem({
+      createdAt: new Date("2026-01-02T00:00:00.000Z"),
+    });
+
+    const response = await listLedger("limit=1");
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    const { entries, totals, nextCursor } = response.body.data;
+    expect(entries).toHaveLength(1);
+    expect(entries[0].orderItemId).toBe(secondItemId);
+    expect(entries[0].productName).toEqual(expect.any(String));
+    expect(entries[0].brandName).toEqual(expect.any(String));
+    expect(entries[0].buyerName).toBe("Rollup Tester");
+    expect(nextCursor).toEqual(expect.any(String));
+    expect(totals.rowCount).toBe(2);
+    expect(orderId).toEqual(expect.any(String));
+  });
+
+  it("keeps one row per item when two muses share a commission on it", async () => {
+    const { orderItemId } = await createLedgerItem({ createdAt: new Date() });
+    const { id: creatorId } = await createUser();
+    const { id: otherCreatorId } = await createUser();
+    const { id: tierId } = await prisma.commissionTier.create({
+      data: { minPrice: 0, maxPrice: null, amount: 100, sortOrder: 0 },
+    });
+    await prisma.creatorCommission.createMany({
+      data: [
+        { creatorId, orderItemId, tierId, source: CommissionSource.TAG_CLICK, amount: 100 },
+        {
+          creatorId: otherCreatorId,
+          orderItemId,
+          tierId,
+          source: CommissionSource.OUTFIT_BUILD,
+          amount: 50,
+          status: CommissionStatus.VOIDED,
+        },
+      ],
+    });
+
+    const response = await listLedger("");
+
+    const { entries, totals } = response.body.data;
+    expect(entries).toHaveLength(1);
+    expect(entries[0].creatorCommissionAmount).toBe(100);
+    expect(entries[0].creatorCommissionStatus).toBe(CommissionStatus.PENDING);
+    expect(totals.creatorCommissionAmount).toBe(100);
+  });
+
+  it("finds rows by buyer, and treats a percent sign as plain text", async () => {
+    const { orderItemId } = await createLedgerItem({ createdAt: new Date() });
+
+    const found = await listLedger("search=rollup%20tester");
+    const notFound = await listLedger("search=%25%25");
+
+    expect(found.body.data.entries[0].orderItemId).toBe(orderItemId);
+    expect(notFound.body.data.entries).toEqual([]);
+  });
+
+  it("rejects a one-letter search", async () => {
+    const response = await listLedger("search=a");
+
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+  });
+
+  it("shows only money still owed to brands for that focus", async () => {
+    const { orderItemId: owedItemId } = await createLedgerItem({
+      brandPayoutStatus: BrandPayoutStatus.AVAILABLE,
+      createdAt: new Date(),
+    });
+    await createLedgerItem({
+      brandPayoutStatus: BrandPayoutStatus.WITHDRAWN,
+      createdAt: new Date(),
+    });
+
+    const response = await listLedger("focus=OWED_TO_BRANDS");
+
+    const rowIds = response.body.data.entries.map(
+      ({ orderItemId }: { orderItemId: string }) => orderItemId,
+    );
+    expect(rowIds).toEqual([owedItemId]);
+  });
+
+  it("uses the period when no dates are picked, and picked dates when they are", async () => {
+    await createLedgerItem({ createdAt: new Date("2020-01-15T00:00:00.000Z") });
+
+    const thisCycle = await listLedger("range=cycle");
+    const pickedDates = await listLedger("range=cycle&dateFrom=2020-01-01");
+
+    expect(thisCycle.body.data.entries).toEqual([]);
+    expect(pickedDates.body.data.entries).toHaveLength(1);
+  });
+});
+
+describe("GET /api/admin/financial-rollup/ledger/:orderItemId", () => {
+  it("requires admin", async () => {
+    const buyer = await createUser();
+    const response = await request(testApp)
+      .get(`/api/admin/financial-rollup/ledger/${randomUUID()}`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(HTTP_STATUS.FORBIDDEN);
+  });
+
+  it("returns the buyer, order, money and payment story of one item", async () => {
+    const { authHeader } = await createAdminSession();
+    const { orderItemId, orderId } = await createLedgerItem({
+      brandPayoutStatus: BrandPayoutStatus.PENDING,
+      createdAt: new Date(),
+    });
+
+    const response = await request(testApp)
+      .get(`/api/admin/financial-rollup/ledger/${orderItemId}`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    const { id, order, brandPayout, product } = response.body.data;
+    expect(id).toBe(orderItemId);
+    expect(order.id).toBe(orderId);
+    expect(order.user.name).toBe("Rollup Tester");
+    expect(order._count.items).toBe(1);
+    expect(brandPayout.status).toBe(BrandPayoutStatus.PENDING);
+    expect(product.brand.name).toEqual(expect.any(String));
+    expect(JSON.stringify(response.body.data)).not.toContain("passwordHash");
+  });
+
+  it("says when the item does not exist", async () => {
+    const { authHeader } = await createAdminSession();
+    const response = await request(testApp)
+      .get(`/api/admin/financial-rollup/ledger/${randomUUID()}`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+  });
+});
+
 describe("GET /api/admin/financial-rollup/ledger/export", () => {
   it("requires admin", async () => {
     const user = await createUser();
@@ -612,7 +761,7 @@ describe("GET /api/admin/financial-rollup/ledger/export", () => {
 
     const lines = (response.text as string).split("\r\n");
     expect(lines[0]).toBe(
-      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status",
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status,Product,Brand,Buyer,Muse",
     );
     expect(lines).toHaveLength(2);
     expect(lines[1]).toContain(orderId);

@@ -1,132 +1,23 @@
-import { Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
-import type { PaymentMethod } from "@outfiqe/types";
+import { FilterChip } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
-import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
+import { useSearchFilter } from "@/lib/useSearchFilter";
 
 import { financialRollupApi } from "../api/financialRollupApi";
-import type { PaymentMethodBreakdown, RollupRange } from "../api/financialRollupSchemas";
 import {
-  money,
-  PAYMENT_METHOD_LABEL,
-  PAYMENT_METHOD_ORDER,
-  percent,
+  LEDGER_PATH,
+  ROLLUP_RANGE_LABEL,
+  ROLLUP_RANGE_ORDER,
 } from "../constants/financialRollup.constants";
-import { LedgerTable } from "./LedgerTable";
-
-const DEFAULT_RANGE: RollupRange = "cycle";
-const RANGE_TABS: RollupRange[] = [DEFAULT_RANGE, "30d", "all"];
-const RANGE_FILTER = oneOfFilter<RollupRange>(RANGE_TABS, DEFAULT_RANGE);
-const RANGE_LABEL: Record<RollupRange, string> = {
-  cycle: "This cycle",
-  "30d": "Last 30 days",
-  all: "All time",
-};
-
-const StatRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2 text-sm last:border-0">
-    <span className="text-muted-foreground">{label}</span>
-    <span className="font-medium text-foreground">{value}</span>
-  </div>
-);
-
-const PaymentMethodRow = ({
-  method,
-  breakdown,
-  shareOfGmv,
-}: {
-  method: PaymentMethod;
-  breakdown: PaymentMethodBreakdown;
-  shareOfGmv: number;
-}) => (
-  <div className="border-b border-border/60 py-3 last:border-0">
-    <div className="flex items-center justify-between text-sm">
-      <span className="font-medium text-foreground">{PAYMENT_METHOD_LABEL[method]}</span>
-      <span className="text-muted-foreground">
-        {breakdown.orderCount} order{breakdown.orderCount === 1 ? "" : "s"}
-      </span>
-    </div>
-    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full rounded-full bg-primary"
-        style={{ width: percent(shareOfGmv) }}
-        aria-hidden
-      />
-    </div>
-    <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-      <span>
-        {money(breakdown.gmv)} · {percent(shareOfGmv)} of GMV
-      </span>
-      <span>{percent(breakdown.realizedTakeRate)} realized take rate</span>
-    </div>
-  </div>
-);
-
-const LEDGER_CARD_SKELETON_ROW_COUNT = 4;
-const PAYMENT_METHOD_SKELETON_ROW_COUNT = 2;
-
-const ROLLUP_CARD_COPY = [
-  { title: "Gateway", description: "Money actually collected via payment gateways.", rowCount: 3 },
-  {
-    title: "Ledger",
-    description: "What's owed to muses and brands per the settlement ledger.",
-    rowCount: LEDGER_CARD_SKELETON_ROW_COUNT,
-  },
-];
-
-const RollupSkeleton = () => (
-  <>
-    <StatCardSkeleton hasDelta />
-    <div className="grid gap-4 lg:grid-cols-2">
-      {ROLLUP_CARD_COPY.map(({ title, description, rowCount }) => (
-        <div key={title} className="rounded-xl border border-border bg-card p-5">
-          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-            {title}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-          <div className="mt-3">
-            {Array.from({ length: rowCount }, (_unused, rowIndex) => (
-              <div
-                key={rowIndex}
-                className="flex items-center justify-between gap-3 border-b border-border/60 py-2 last:border-0"
-              >
-                <Skeleton className="h-5 w-28" />
-                <Skeleton className="h-5 w-20" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-    <div className="rounded-xl border border-border bg-card p-5">
-      <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-        GMV by payment method
-      </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Real margin depends heavily on the COD/wallet mix — eSewa and Khalti absorb a gateway fee
-        that COD doesn&apos;t.
-      </p>
-      <div className="mt-3">
-        {Array.from({ length: PAYMENT_METHOD_SKELETON_ROW_COUNT }, (_unused, rowIndex) => (
-          <div key={rowIndex} className="border-b border-border/60 py-3 last:border-0">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-5 w-16" />
-            </div>
-            <Skeleton className="mt-1.5 h-1.5 w-full" />
-            <div className="mt-1.5 flex items-center justify-between">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-4 w-36" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </>
-);
+import { ROLLUP_RANGE_FILTER } from "../hooks/useLedgerFilters";
+import { PayoutStatusSections } from "./PayoutStatusSections";
+import { RollupEarningsSections } from "./RollupEarningsSections";
+import { RollupInsightBanner, RollupMoneyCards } from "./RollupMoneyCards";
+import { RollupSkeleton } from "./RollupSkeleton";
 
 export const FinancialRollupPage = () => {
-  const [range, setRange] = useSearchFilter("range", RANGE_FILTER);
+  const [range, setRange] = useSearchFilter("range", ROLLUP_RANGE_FILTER);
 
   const {
     data: rollup,
@@ -139,21 +30,32 @@ export const FinancialRollupPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Financial rollup</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Financial rollup</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Where the money is: what came in, who is still owed, and what the platform earned. Click
+            any number to see the orders behind it.
+          </p>
+        </div>
+        <Link
+          to={LEDGER_PATH}
+          search={{ range }}
+          className="text-sm font-medium text-foreground underline underline-offset-2"
+        >
+          Open the order ledger
+        </Link>
+      </div>
 
       <div className="flex flex-wrap gap-2">
-        {RANGE_TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setRange(tab)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              range === tab
-                ? "bg-foreground text-background"
-                : "border border-border text-muted-foreground hover:text-foreground"
-            }`}
+        {ROLLUP_RANGE_ORDER.map((rangeOption) => (
+          <FilterChip
+            key={rangeOption}
+            isSelected={range === rangeOption}
+            onClick={() => setRange(rangeOption)}
           >
-            {RANGE_LABEL[tab]}
-          </button>
+            {ROLLUP_RANGE_LABEL[rangeOption]}
+          </FilterChip>
         ))}
       </div>
 
@@ -161,108 +63,13 @@ export const FinancialRollupPage = () => {
       {error && <p className="text-sm text-destructive">Couldn&apos;t load the rollup.</p>}
 
       {rollup && (
-        <StatCard
-          label="Attributed order share"
-          value={
-            <>
-              {percent(rollup.attribution.attributedShare)}
-              <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                {`${rollup.attribution.attributedItems} of ${rollup.attribution.totalItems} order item${
-                  rollup.attribution.totalItems === 1 ? "" : "s"
-                } ${RANGE_LABEL[range].toLowerCase()}`}
-              </span>
-            </>
-          }
-          hint="Order items whose attributedCreatorId is set — came through a muse's tag or link."
-        />
+        <>
+          <RollupInsightBanner rollup={rollup} />
+          <RollupMoneyCards rollup={rollup} range={range} />
+          <PayoutStatusSections rollup={rollup} range={range} />
+          <RollupEarningsSections rollup={rollup} range={range} />
+        </>
       )}
-
-      {rollup && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-              Gateway
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Money actually collected via payment gateways.
-            </p>
-            <div className="mt-3">
-              <StatRow label="Gross collected" value={money(rollup.gateway.grossCollected)} />
-              <StatRow label="Refunded" value={money(rollup.gateway.refunded)} />
-              <StatRow label="Net held" value={money(rollup.gateway.netHeld)} />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-              Ledger
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              What&apos;s owed to muses and brands per the settlement ledger.
-            </p>
-            <div className="mt-3">
-              <StatRow
-                label="Platform revenue realized"
-                value={money(rollup.ledger.platformRevenueRealized)}
-              />
-              <StatRow
-                label="Owed to muses (outstanding)"
-                value={money(rollup.ledger.owedToCreators)}
-              />
-              <StatRow
-                label="Owed to brands (outstanding)"
-                value={money(rollup.ledger.owedToBrands)}
-              />
-              {Object.entries(rollup.ledger.creatorCommissionsByStatus).map(([status, amount]) => (
-                <StatRow key={status} label={`Muses — ${status}`} value={money(amount)} />
-              ))}
-              {Object.entries(rollup.ledger.brandPayoutsByStatus).map(([status, amount]) => (
-                <StatRow key={status} label={`Brands — ${status}`} value={money(amount)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {rollup && (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-            GMV by payment method
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Real margin depends heavily on the COD/wallet mix — eSewa and Khalti absorb a gateway
-            fee that COD doesn&apos;t.
-          </p>
-          <div className="mt-3">
-            {Object.keys(rollup.byPaymentMethod).length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No orders in this range yet.
-              </p>
-            ) : (
-              (() => {
-                const totalGmv = Object.values(rollup.byPaymentMethod).reduce(
-                  (sum, breakdown) => sum + breakdown.gmv,
-                  0,
-                );
-                return PAYMENT_METHOD_ORDER.map((method) => {
-                  const breakdown = rollup.byPaymentMethod[method];
-                  if (!breakdown) return null;
-                  return (
-                    <PaymentMethodRow
-                      key={method}
-                      method={method}
-                      breakdown={breakdown}
-                      shareOfGmv={totalGmv > 0 ? breakdown.gmv / totalGmv : 0}
-                    />
-                  );
-                });
-              })()
-            )}
-          </div>
-        </div>
-      )}
-
-      <LedgerTable />
     </div>
   );
 };

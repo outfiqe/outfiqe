@@ -4,26 +4,30 @@ import { FEATURES_DIR, ROW_COUNT } from "./pageSkeletonSpecs.constants";
 export const financePageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
   "/financial-rollup": {
     title: "Financial rollup",
+    description:
+      "Where the money is: what came in, who is still owed, and what the platform earned. Click any number to see the orders behind it.",
     blocks: [
       { kind: "filterTabs", labels: ["This cycle", "Last 30 days", "All time"] },
-      { kind: "statCards", count: 1, columns: "four", hasDelta: true },
-      {
-        kind: "infoCards",
-        cards: [
-          {
-            title: "Gateway",
-            description: "Money actually collected via payment gateways.",
-            rowCount: 3,
-          },
-          {
-            title: "Ledger",
-            description: "What's owed to muses and brands per the settlement ledger.",
-            rowCount: 4,
-          },
-        ],
-      },
+      { kind: "bar" },
+      { kind: "statCards", count: 6, columns: "six" },
+      { kind: "infoCards", cards: [{ rowCount: 4 }, { rowCount: 5 }] },
     ],
-    sourceFiles: [`${FEATURES_DIR}/financial-rollup/components/FinancialRollupPage.tsx`],
+    sourceFiles: [
+      `${FEATURES_DIR}/financial-rollup/components/FinancialRollupPage.tsx`,
+      `${FEATURES_DIR}/financial-rollup/constants/financialRollup.constants.ts`,
+    ],
+  },
+  "/financial-rollup/ledger": {
+    title: "Order ledger",
+    description: "One row for every item sold, with every fee. Click a row to see the full story.",
+    blocks: [
+      { kind: "filterTabs", labels: ["This cycle", "Last 30 days", "All time"] },
+      { kind: "reportRows", count: ROW_COUNT },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/financial-rollup/components/FinancialLedgerPage.tsx`,
+      `${FEATURES_DIR}/financial-rollup/constants/financialRollup.constants.ts`,
+    ],
   },
   "/withdraw-policy": {
     title: "Withdrawal policy",

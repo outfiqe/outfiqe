@@ -90,6 +90,8 @@ const ROLLUP = {
     brandPayoutsByStatus: {},
     creatorCommissionsByStatus: {},
     platformRevenueRealized: 0,
+    couponSpend: 0,
+    netPlatformRevenue: 0,
   },
   byPaymentMethod: {
     COD: { gmv: 150000, orderCount: 40, realizedTakeRate: 0.1 },

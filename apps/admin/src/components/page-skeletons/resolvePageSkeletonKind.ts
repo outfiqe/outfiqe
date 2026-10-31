@@ -16,6 +16,7 @@ const DASHBOARD_PATHS = new Set([
   "/crm",
   "/crm/reports",
   "/financial-rollup",
+  "/financial-rollup/ledger",
   "/gamification",
   "/platform/jobs",
 ]);
