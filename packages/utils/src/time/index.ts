@@ -34,3 +34,27 @@ export const formatDateTime = (date: DisplayableDate): string =>
 
 export const formatShortDate = (date: DisplayableDate): string =>
   buildDateLabel(shortDateFormatter, date);
+
+const DATE_INPUT_VALUE_LENGTH = "YYYY-MM-DD".length;
+const DATE_TIME_INPUT_VALUE_LENGTH = "YYYY-MM-DDTHH:mm".length;
+
+const toLocalIsoText = (date: Date): string =>
+  new Date(date.getTime() - date.getTimezoneOffset() * MS_PER_MINUTE).toISOString();
+
+export const toDateInputValue = (date: Date = new Date()): string =>
+  toLocalIsoText(date).slice(0, DATE_INPUT_VALUE_LENGTH);
+
+export const toDateTimeInputValue = (date: Date = new Date()): string =>
+  toLocalIsoText(date).slice(0, DATE_TIME_INPUT_VALUE_LENGTH);
+
+export const toDayStartIso = (dateInputValue: string): string =>
+  new Date(`${dateInputValue}T00:00:00`).toISOString();
+
+export const toDayEndIso = (dateInputValue: string): string =>
+  new Date(`${dateInputValue}T23:59:59.999`).toISOString();
+
+export const isPastDateInputValue = (dateInputValue: string): boolean =>
+  dateInputValue !== "" && dateInputValue < toDateInputValue();
+
+export const isPastDateTimeInputValue = (dateTimeInputValue: string): boolean =>
+  dateTimeInputValue !== "" && dateTimeInputValue < toDateTimeInputValue();

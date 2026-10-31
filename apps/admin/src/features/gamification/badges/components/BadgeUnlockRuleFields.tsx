@@ -85,6 +85,7 @@ export const BadgeUnlockRuleFields = ({
             <DateInput
               includesTime
               id={`${idPrefix}-active-from`}
+              max={form.activeUntil}
               value={form.activeFrom}
               onChange={(e) => onChange({ ...form, activeFrom: e.target.value })}
               className="w-full sm:w-56"
@@ -101,6 +102,7 @@ export const BadgeUnlockRuleFields = ({
               includesTime
               id={`${idPrefix}-active-until`}
               aria-invalid={"activeUntil" in errors}
+              min={form.activeFrom}
               value={form.activeUntil}
               onChange={(e) => onChange({ ...form, activeUntil: e.target.value })}
               className="w-full sm:w-56"

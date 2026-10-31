@@ -176,7 +176,7 @@ describe("AnnouncementsPage", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Call to action"), "internal");
     await userEvent.type(screen.getByLabelText("Path"), "/events/spring-drop");
-    await userEvent.type(screen.getByLabelText("Expires on (optional)"), "2026-12-01");
+    await userEvent.type(screen.getByLabelText("Expires on (optional)"), "2036-12-01");
 
     await userEvent.click(screen.getByRole("button", { name: "Save draft" }));
 

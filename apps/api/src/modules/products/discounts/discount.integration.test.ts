@@ -182,6 +182,26 @@ describe("PATCH /api/products/:id/discount", () => {
     expect(response.body.data.percentBasisPoints).toBe(2_500);
   });
 
+  it("refuses an end date in the past", async () => {
+    const { owner, product } = await setUpOwnedProduct(2_000);
+    await request(testApp)
+      .post(`/api/products/${product.id}/discount`)
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send({
+        discountType: "PERCENT",
+        percentBasisPoints: 1_000,
+        startsAt: new Date(Date.now() - 172_800_000).toISOString(),
+      });
+
+    const response = await request(testApp)
+      .patch(`/api/products/${product.id}/discount`)
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send({ endsAt: new Date(Date.now() - 86_400_000).toISOString() });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("The end date can't be in the past.");
+  });
+
   it("rejects switching to a ceiling-exceeding fixed amount", async () => {
     const { owner, product } = await setUpOwnedProduct(2_000);
     await request(testApp)

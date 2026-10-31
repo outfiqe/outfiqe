@@ -69,7 +69,7 @@ export const createBrandCommissionExemptionSchema = z
     reason: z.string().trim().min(1).max(REASON_MAX),
   })
   .refine((body) => body.endsAt > body.startsAt, {
-    message: "endsAt must be after startsAt.",
+    message: "The end date must be after the start date.",
     path: ["endsAt"],
   });
 export type CreateBrandCommissionExemptionBody = z.infer<

@@ -1,4 +1,5 @@
 import { Badge, Drawer } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -9,7 +10,7 @@ import {
   SOURCE_EXPLANATION,
 } from "../constants/tagReviewMetrics.constants";
 import { describeTagOutcome, toStatusDisplay } from "../utils/metricTagOutcome.utils";
-import { formatDateTime, formatDuration, pluralize } from "../utils/tagReviewMetrics.utils";
+import { formatDuration, pluralize } from "../utils/tagReviewMetrics.utils";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 const NO_REPORTS = 0;

@@ -1,4 +1,5 @@
 import { Button, DateInput, FormBanner, Input, Label, Modal } from "@outfiqe/design-system";
+import { toDateTimeInputValue } from "@outfiqe/utils";
 import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -94,6 +95,7 @@ export const RiderPayRateModal = ({ payRates, onClose }: RiderPayRateModalProps)
           <DateInput
             includesTime
             id={`${fieldIdPrefix}-starts`}
+            min={toDateTimeInputValue()}
             value={startsOn}
             onChange={(event) => setStartsOn(event.target.value)}
           />

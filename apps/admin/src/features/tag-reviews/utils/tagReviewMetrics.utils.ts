@@ -8,8 +8,6 @@ const HOURS_PER_DAY = 24;
 const SHOW_DAYS_FROM_HOURS = 48;
 const TENTHS_PER_UNIT = 10;
 const SINGULAR_AMOUNT = 1;
-const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short" };
-const DATE_TIME_LOCALE = "en-US";
 
 export const pluralize = (count: number, noun: string, pluralNoun = `${noun}s`): string =>
   `${count.toLocaleString()} ${count === SINGULAR_AMOUNT ? noun : pluralNoun}`;
@@ -27,9 +25,6 @@ export const formatDuration = (hours: number | null): string => {
 };
 
 export const formatPercent = (value: number | null): string => (value === null ? "—" : `${value}%`);
-
-export const formatDateTime = (isoDate: string): string =>
-  new Date(isoDate).toLocaleString(DATE_TIME_LOCALE, DATE_TIME_FORMAT);
 
 export const hasEnoughToJudge = (sampleCount: number): boolean =>
   sampleCount >= MIN_SAMPLE_TO_JUDGE;
