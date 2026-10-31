@@ -9,7 +9,14 @@ export const logisticsPickupRepository = {
         brandId,
         fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS,
       },
-      select: { id: true, pickupStatus: true, pickupCode: true, readyForPickupAt: true },
+      select: {
+        id: true,
+        status: true,
+        pickupStatus: true,
+        pickupCode: true,
+        readyForPickupAt: true,
+        order: { select: { paymentStatus: true } },
+      },
     });
   },
 };

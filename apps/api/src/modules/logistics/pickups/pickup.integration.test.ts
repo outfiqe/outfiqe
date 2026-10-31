@@ -5,6 +5,7 @@ import { prisma } from "#db/prisma.js";
 import {
   FulfilmentMode,
   FulfilmentStatus,
+  PaymentStatus,
   PickupStatus,
   TrackingEventCode,
 } from "#generated/prisma/enums.js";
@@ -47,6 +48,38 @@ describe("brand marks a hub pickup ready", () => {
     ).toBe(ONE_EVENT);
     const rolledUpOrder = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(rolledUpOrder.fulfilmentStatus).toBe(FulfilmentStatus.PACKED);
+  });
+
+  it("refuses an order that has not been paid for yet", async () => {
+    const { authHeader, brandId } = await createBrandOwnerSession();
+    const { group, order } = await createPickupForBrand(brandId);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { paymentStatus: PaymentStatus.INITIATED },
+    });
+
+    const response = await request(testApp)
+      .post(readyPath(group.id))
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("ORDER_NOT_PAID_YET");
+  });
+
+  it("refuses an order that was cancelled", async () => {
+    const { authHeader, brandId } = await createBrandOwnerSession();
+    const { group } = await createPickupForBrand(brandId);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: group.id },
+      data: { status: FulfilmentStatus.CANCELLED },
+    });
+
+    const response = await request(testApp)
+      .post(readyPath(group.id))
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("PICKUP_CANCELLED");
   });
 
   it("answers a repeated press without recording it twice", async () => {
