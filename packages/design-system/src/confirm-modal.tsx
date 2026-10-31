@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Button } from "./button";
 import { Modal } from "./modal";
 
@@ -7,10 +9,12 @@ type ConfirmModalProps = {
   description?: string;
   confirmLabel?: string;
   pendingLabel?: string;
+  cancelLabel?: string;
   destructive?: boolean;
   isPending?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  children?: ReactNode;
 };
 
 export const ConfirmModal = ({
@@ -19,21 +23,22 @@ export const ConfirmModal = ({
   description,
   confirmLabel = "Confirm",
   pendingLabel = "Working…",
+  cancelLabel = "Cancel",
   destructive = false,
   isPending = false,
   onConfirm,
   onCancel,
+  children = null,
 }: ConfirmModalProps) => {
   return (
     <Modal
       open={open}
       onClose={onCancel}
       title={title}
-      description={description}
       footer={
         <div className="flex w-full justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
-            Cancel
+            {cancelLabel}
           </Button>
           <Button
             onClick={onConfirm}
@@ -47,7 +52,10 @@ export const ConfirmModal = ({
         </div>
       }
     >
-      {null}
+      <div className="space-y-2">
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {children}
+      </div>
     </Modal>
   );
 };

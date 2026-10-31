@@ -5,6 +5,23 @@ import { describe, expect, it, vi } from "vitest";
 import { ConfirmModal } from "./confirm-modal";
 
 describe("ConfirmModal", () => {
+  it("shows the warning text and its own cancel label", () => {
+    render(
+      <ConfirmModal
+        open
+        title="Leave this build?"
+        cancelLabel="Stay"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      >
+        <p>{"You'll leave its group chat."}</p>
+      </ConfirmModal>,
+    );
+
+    expect(screen.getByText("You'll leave its group chat.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stay" })).toBeInTheDocument();
+  });
+
   it("calls onConfirm and onCancel", async () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();

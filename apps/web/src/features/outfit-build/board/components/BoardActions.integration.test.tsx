@@ -1,5 +1,5 @@
 import { createTranslatedQueryWrapper } from "@test/integration/translationsWrapper";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,7 +9,7 @@ import { BoardActions } from "./BoardActions";
 
 const CREDIT_NOTE = /Your name will also come off this build/;
 
-const renderActions = (board: OutfitBoard, onLeave = vi.fn()) => {
+const renderActions = (board: OutfitBoard, onLeave = vi.fn(), onArchive = vi.fn()) => {
   const { Wrapper } = createTranslatedQueryWrapper();
   render(
     <BoardActions
@@ -19,15 +19,32 @@ const renderActions = (board: OutfitBoard, onLeave = vi.fn()) => {
       onToggleHappy={vi.fn()}
       onLock={vi.fn()}
       onUnlock={vi.fn()}
-      onArchive={vi.fn()}
+      onArchive={onArchive}
       onLeave={onLeave}
       onOpenSettings={vi.fn()}
       onOpenVisibility={vi.fn()}
     />,
     { wrapper: Wrapper },
   );
-  return { onLeave };
+  return { onLeave, onArchive };
 };
+
+describe("BoardActions archiving", () => {
+  it("warns in a popup before archiving, and does nothing until confirmed", async () => {
+    const { onArchive } = renderActions(buildBoard({ myRole: "OWNER", status: "DRAFT" }));
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+
+    const warning = screen.getByRole("dialog", { name: "Archive this build?" });
+    expect(within(warning).getByText(/You can't undo this/)).toBeInTheDocument();
+    expect(onArchive).not.toHaveBeenCalled();
+
+    await user.click(within(warning).getByRole("button", { name: "Archive" }));
+
+    expect(onArchive).toHaveBeenCalledOnce();
+  });
+});
 
 describe("BoardActions leaving", () => {
   it("asks before leaving and explains what happens to your credit on a locked build", async () => {

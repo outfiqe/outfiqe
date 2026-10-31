@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@outfiqe/design-system";
+import { ConfirmModal } from "@outfiqe/design-system";
 
 type ConfirmDeleteCommentModalProps = {
   isPending: boolean;
@@ -13,21 +13,15 @@ export const ConfirmDeleteCommentModal = ({
   onConfirm,
   onCancel,
 }: ConfirmDeleteCommentModalProps) => (
-  <Modal
+  <ConfirmModal
     open
-    onClose={onCancel}
     title="Delete chime?"
-    footer={
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={onConfirm} isLoading={isPending}>
-          Delete
-        </Button>
-      </div>
-    }
-  >
-    <p className="text-sm text-muted-foreground">This can&apos;t be undone.</p>
-  </Modal>
+    description="This can't be undone."
+    confirmLabel="Delete"
+    pendingLabel="Deleting…"
+    destructive
+    isPending={isPending}
+    onConfirm={onConfirm}
+    onCancel={onCancel}
+  />
 );

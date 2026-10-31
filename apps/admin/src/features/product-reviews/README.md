@@ -44,7 +44,7 @@ flagged (e.g., reported to support outside this app). A search-then-moderate flo
 better than a queue with nothing reliable to sort it by.
 
 **Deleting a review asks for confirmation and surfaces a real error on failure**, via the shared
-`ConfirmModal` (`apps/admin/`ConfirmModal`from`@outfiqe/design-system`) and `toast.error(getErrorMessage(...))`
+`ConfirmModal` from `@outfiqe/design-system` and `toast.error(getErrorMessage(...))`
 — the same pattern every other destructive admin action in this app already uses (delivery zones,
 withdraw requests, platform-commission exemptions). A found-in-audit gap: this page originally
 deleted on a single click with no confirmation and no failure feedback, so a mis-click destroyed a

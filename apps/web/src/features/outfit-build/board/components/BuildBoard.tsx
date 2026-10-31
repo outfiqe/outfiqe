@@ -1,11 +1,13 @@
 "use client";
 
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@outfiqe/design-system";
+import { Tabs, TabsContent, TabsList, TabsTrigger, toast } from "@outfiqe/design-system";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { useAuth } from "@/features/auth";
 import { BuildOffersSection } from "@/features/outfit-offers";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
@@ -15,9 +17,10 @@ import { useTabSearchParam } from "@/shared/hooks/useTabSearchParam";
 import { outfitApi } from "../../api/outfitApi";
 import type { OutfitBoard, OutfitVisibility } from "../../api/outfitSchemas";
 import { BuyBuildPanel } from "../../components/BuyBuildPanel";
-import { shareRecipientsQueryKey } from "../../hooks/outfitQueryKeys";
+import { SHARED_BUILDS_QUERY_KEY, shareRecipientsQueryKey } from "../../hooks/outfitQueryKeys";
 import { useMySizeByProductId } from "../../hooks/useMySizeByProductId";
 import { PostAsLookPanel } from "../../publishing/components/PostAsLookPanel";
+import { MY_BUILDS_PATH } from "../constants/boardLinks";
 import {
   BOARD_TAB,
   BOARD_TABS_WITH_PHOTOS,
@@ -53,6 +56,8 @@ export const BuildBoard = ({
   isReconnecting: boolean;
 }) => {
   const t = useTranslations("outfitBuild.board");
+  const tMyBuilds = useTranslations("outfitBuild.myBuilds");
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { state } = useAuth();
   const currentUserId = state.user?.id;
@@ -94,8 +99,25 @@ export const BuildBoard = ({
     );
   };
 
-  const runOwnerAction = (action: "lock" | "unlock" | "archive") =>
+  const runOwnerAction = (action: "lock" | "unlock") =>
     void runWrite((write) => outfitApi.runOwnerAction(write, action));
+
+  const returnToMyBuilds = (doneMessage: string) => {
+    toast.success(doneMessage);
+    router.push(MY_BUILDS_PATH);
+  };
+
+  const archiveBuild = async () => {
+    const isArchived = await runWrite((write) => outfitApi.runOwnerAction(write, "archive"));
+    if (isArchived) returnToMyBuilds(t("archivedDone"));
+  };
+
+  const leaveBuild = async () => {
+    const hasLeft = await runWrite((write) => outfitApi.leave(write));
+    if (!hasLeft) return;
+    void queryClient.invalidateQueries({ queryKey: SHARED_BUILDS_QUERY_KEY });
+    returnToMyBuilds(t("leftDone"));
+  };
 
   const saveVisibility = async (
     visibility: OutfitVisibility,
@@ -113,9 +135,17 @@ export const BuildBoard = ({
   return (
     <DndContext sensors={sensors} onDragEnd={dropProductOnSlot}>
       <div className="space-y-4">
+        {board.myRole !== "VIEWER" && (
+          <BackLink href={MY_BUILDS_PATH}>{tMyBuilds("title")}</BackLink>
+        )}
         <BoardHeader board={board} />
 
         <ReconnectingBanner isReconnecting={isReconnecting} />
+        {board.status === "ARCHIVED" && (
+          <p role="status" className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
+            {t("archivedNotice")}
+          </p>
+        )}
         {isSaving && (
           <p role="status" className="sr-only">
             {t("saving")}
@@ -129,8 +159,8 @@ export const BuildBoard = ({
           onToggleHappy={toggleHappy}
           onLock={() => runOwnerAction("lock")}
           onUnlock={() => runOwnerAction("unlock")}
-          onArchive={() => runOwnerAction("archive")}
-          onLeave={() => void runWrite((write) => outfitApi.leave(write))}
+          onArchive={() => void archiveBuild()}
+          onLeave={() => void leaveBuild()}
           onOpenSettings={() => setOpenModal("settings")}
           onOpenVisibility={() => setOpenModal("visibility")}
         />

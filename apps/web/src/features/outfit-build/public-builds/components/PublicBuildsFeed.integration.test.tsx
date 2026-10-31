@@ -7,6 +7,7 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
+import { FEED_LAYOUT, type FeedLayout } from "@/features/explore/constants/explore.constants";
 
 import type { PublicBuildCard, PublicBuildDetail } from "../../social/api/outfitSocialSchemas";
 import { SITA } from "../../testing/outfitFixtures";
@@ -60,11 +61,14 @@ const detail = (overrides: Partial<PublicBuildDetail> = {}): PublicBuildDetail =
   ...overrides,
 });
 
-const renderFeed = () => {
+const serveBuilds = () =>
+  mswServer.use(http.get("/api/outfits/public", () => ok({ items: [card()], nextCursor: null })));
+
+const renderFeed = (layout?: FeedLayout) => {
   const { Wrapper } = createTranslatedQueryWrapper();
   return render(
     <>
-      <PublicBuildsFeed />
+      <PublicBuildsFeed layout={layout} />
       <Toaster />
     </>,
     { wrapper: Wrapper },
@@ -91,6 +95,40 @@ beforeEach(() => {
       ok([{ id: "c1", slug: "festive", name: "Festive", imageUrl: null, productCount: 4 }]),
     ),
   );
+});
+
+describe("PublicBuildsFeed layout", () => {
+  const cardsLayoutClassName = async () => {
+    const [firstCard] = await screen.findAllByRole("article");
+    return firstCard?.parentElement?.className;
+  };
+
+  it("shows one column of builds in the list layout", async () => {
+    serveBuilds();
+
+    renderFeed(FEED_LAYOUT.LIST);
+
+    expect(await cardsLayoutClassName()).toContain("flex-col");
+  });
+
+  it("shows builds side by side in the grid layout", async () => {
+    serveBuilds();
+
+    renderFeed(FEED_LAYOUT.GRID);
+
+    expect(await cardsLayoutClassName()).toContain("sm:grid-cols-2");
+  });
+
+  it("names the popup from the card straight away, while the build loads", async () => {
+    serveBuilds();
+    mswServer.use(http.get("/api/outfits/outfit-1/public", () => new Promise(() => undefined)));
+    const user = userEvent.setup();
+
+    renderFeed();
+    await user.click(await screen.findByRole("button", { name: /^Open / }));
+
+    expect(screen.getByRole("dialog", { name: card().title ?? "" })).toBeInTheDocument();
+  });
 });
 
 describe("PublicBuildsFeed", () => {
