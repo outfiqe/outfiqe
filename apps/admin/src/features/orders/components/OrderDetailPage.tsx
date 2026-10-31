@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -115,9 +116,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">{id}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {new Date(createdAt).toLocaleString()}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{formatDateTime(createdAt)}</p>
         </div>
         <div className="flex gap-1.5">
           {needsManualRefund && (
@@ -246,7 +245,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
                   {transaction.type} · {transaction.provider}
                 </p>
                 <p className="text-muted-foreground">
-                  {transaction.status} · {new Date(transaction.createdAt).toLocaleString()}
+                  {transaction.status} · {formatDateTime(transaction.createdAt)}
                 </p>
               </div>
             ))}

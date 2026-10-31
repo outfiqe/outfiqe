@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { type ReactNode, useId } from "react";
@@ -24,7 +25,7 @@ const SectionMessage = ({ children }: { children: ReactNode }) => (
 );
 
 const formatRefreshedAt = (refreshedAt: string | null): string =>
-  refreshedAt ? ` (from ${new Date(refreshedAt).toLocaleString()})` : "";
+  refreshedAt ? ` (from ${formatDateTime(refreshedAt)})` : "";
 
 export const AnalyticsInsightSection = <Insight,>({
   title,

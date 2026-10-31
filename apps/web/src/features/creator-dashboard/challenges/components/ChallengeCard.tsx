@@ -1,4 +1,5 @@
 import { AchievementBadgeIcon, Badge, ProgressBar } from "@outfiqe/design-system";
+import { formatShortDate } from "@outfiqe/utils";
 
 import { AppImage } from "@/shared/components/AppImage";
 
@@ -17,8 +18,7 @@ const STATUS_TONE: Record<PublicChallenge["status"], "neutral" | "positive"> = {
   ENDED: "neutral",
 };
 
-const formatDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
+const formatDate = (iso: string | null) => (iso ? formatShortDate(iso) : null);
 
 export const ChallengeCard = ({ challenge }: { challenge: PublicChallenge }) => {
   const {

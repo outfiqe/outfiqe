@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { RefundDestinationKind } from "@outfiqe/types";
+import { formatDate } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -87,7 +88,7 @@ export const RefundQueueCard = ({ refund, canManage, onMarkPaid }: RefundQueueCa
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {customerPhone} · paid by {paymentMethod} · {REFUND_CAUSE_LABELS[cause]} ·{" "}
-            {new Date(createdAt).toLocaleDateString()}
+            {formatDate(createdAt)}
           </p>
           <p className="text-sm text-muted-foreground">{reason}</p>
           <Link

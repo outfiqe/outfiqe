@@ -5,6 +5,7 @@ import {
   AutocompleteInput,
   AutocompleteItem,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -17,6 +18,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -217,7 +219,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,7 +232,7 @@ export const BrandExemptionsSection = () => {
                 <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -280,8 +282,8 @@ export const BrandExemptionsSection = () => {
                   {isRevoked && <span className="ml-2 text-xs text-destructive">Revoked</span>}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {new Date(exemption.startsAt).toLocaleDateString()} –{" "}
-                  {new Date(exemption.endsAt).toLocaleDateString()} · {exemption.reason}
+                  {formatDate(exemption.startsAt)} – {formatDate(exemption.endsAt)} ·{" "}
+                  {exemption.reason}
                 </p>
               </div>
               {canManageCommissions && !isRevoked && (

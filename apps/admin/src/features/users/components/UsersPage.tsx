@@ -1,5 +1,6 @@
 import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
@@ -41,13 +42,7 @@ const STATUS_TONE: Record<AccountStatusValue, "success" | "neutral" | "negative"
 };
 
 const formatExpiry = (expiresAt: string | null): string =>
-  expiresAt
-    ? `until ${new Date(expiresAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}`
-    : "indefinitely";
+  expiresAt ? `until ${formatDate(expiresAt)}` : "indefinitely";
 
 export const UsersPage = () => {
   const { canUse } = usePlatformPermissions();

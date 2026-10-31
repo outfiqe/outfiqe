@@ -1,4 +1,5 @@
 import { Badge, Button } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import type { OrderToPack, PickupAtHub } from "../api/hubOperationsSchemas";
@@ -28,7 +29,7 @@ export const OrderToPackCard = ({ order, canManage }: OrderToPackCardProps) => {
           </h2>
           <p className="text-sm text-muted-foreground">
             Order {orderId.slice(SHORT_ORDER_ID_START, SHORT_ORDER_ID_LENGTH).toUpperCase()} ·{" "}
-            {paymentMethod} · placed {new Date(placedAt).toLocaleDateString()}
+            {paymentMethod} · placed {formatDate(placedAt)}
           </p>
         </div>
         {canManage && (

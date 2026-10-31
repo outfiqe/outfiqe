@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -197,7 +198,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 <FormItem className="mt-0">
                   <FormLabel>Ends on (optional)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

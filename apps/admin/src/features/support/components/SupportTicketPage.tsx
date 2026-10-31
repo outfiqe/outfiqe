@@ -1,4 +1,5 @@
 import { Badge, Button, Select } from "@outfiqe/design-system";
+import { formatDate, formatDateTime } from "@outfiqe/utils";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -56,7 +57,7 @@ const MessageBubble = ({ message }: { message: SupportMessage }) => {
         {message.authorName ?? AUTHOR_LABEL[message.authorKind]}
         {isInternal && <span className="text-amber-600 dark:text-amber-400"> · internal note</span>}
         {" · "}
-        {new Date(message.createdAt).toLocaleString()}
+        {formatDateTime(message.createdAt)}
       </p>
       <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
       {message.attachmentUrls.length > 0 && (
@@ -289,11 +290,9 @@ export const SupportTicketPage = () => {
             <p className="mt-2">Category: {CATEGORY_LABELS[ticket.category]}</p>
             {ticket.relatedBrandName && <p className="mt-1">Brand: {ticket.relatedBrandName}</p>}
             {ticket.relatedOrderId && <p className="mt-1">Linked to an order.</p>}
-            <p className="mt-2">Opened {new Date(ticket.createdAt).toLocaleDateString()}</p>
+            <p className="mt-2">Opened {formatDate(ticket.createdAt)}</p>
             {ticket.firstRespondedAt && (
-              <p className="mt-1">
-                First reply {new Date(ticket.firstRespondedAt).toLocaleDateString()}
-              </p>
+              <p className="mt-1">First reply {formatDate(ticket.firstRespondedAt)}</p>
             )}
           </div>
         </aside>

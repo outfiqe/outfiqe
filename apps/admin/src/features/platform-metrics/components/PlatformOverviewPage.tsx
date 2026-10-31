@@ -1,5 +1,6 @@
 import { Button, FormBanner, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import {
@@ -103,9 +104,6 @@ const QuickAccessSkeleton = () => (
 );
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
   <div data-tour-anchor={PLATFORM_KPI_TOUR_ANCHOR} className={KPI_GRID_CLASS}>

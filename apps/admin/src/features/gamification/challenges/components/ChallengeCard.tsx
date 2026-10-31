@@ -1,8 +1,7 @@
 import { Button } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 
 import type { ChallengeAdmin } from "../../api/gamificationSchemas";
-
-const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 
 export const ChallengeCard = ({
   challenge,

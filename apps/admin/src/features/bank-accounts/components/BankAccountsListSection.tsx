@@ -1,5 +1,6 @@
 import { Badge, Button, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -159,7 +160,7 @@ export const BankAccountsListSection = () => {
                     · {branchName}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Added {new Date(createdAt).toLocaleDateString()}
+                    Added {formatDate(createdAt)}
                   </p>
                   {qrCheckNote && (
                     <p className="mt-1 text-xs text-muted-foreground">{qrCheckNote}</p>

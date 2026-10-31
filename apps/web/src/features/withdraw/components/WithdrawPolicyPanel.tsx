@@ -1,4 +1,5 @@
 import { FormBanner, Skeleton } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 
 import type { WithdrawEligibility, WithdrawPolicy } from "../api/withdrawSchemas";
 
@@ -66,7 +67,7 @@ export const WithdrawPolicyPanel = ({
         <div>
           <dt className="text-muted-foreground">Window status</dt>
           <dd className="mt-0.5 text-foreground">
-            {windowOpen ? "Open" : `Opens ${new Date(nextWindowOpensAt).toLocaleDateString()}`}
+            {windowOpen ? "Open" : `Opens ${formatDate(nextWindowOpensAt)}`}
           </dd>
         </div>
         <div>
@@ -78,7 +79,7 @@ export const WithdrawPolicyPanel = ({
       {cooldownActive && cooldownEndsAt && (
         <p className="mt-4 text-xs text-muted-foreground">
           You&apos;re in a cooldown period after a recent rejection until{" "}
-          {new Date(cooldownEndsAt).toLocaleDateString()}.
+          {formatDate(cooldownEndsAt)}.
         </p>
       )}
     </div>

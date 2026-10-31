@@ -1,10 +1,9 @@
+import { formatDate } from "@outfiqe/utils";
+
 import { RIDER_EMPLOYMENT_TYPE_LABELS } from "../constants/riderLabels";
 import { useRiderInvites } from "../hooks/useRiderInvites";
 
 const NO_INVITES = 0;
-
-const formatInviteExpiry = (expiresAt: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(expiresAt));
 
 export const PendingRiderInvites = () => {
   const { data: invites } = useRiderInvites();
@@ -23,7 +22,7 @@ export const PendingRiderInvites = () => {
           >
             <span className="font-medium text-foreground">{invite.name}</span> · {invite.email} ·{" "}
             {RIDER_EMPLOYMENT_TYPE_LABELS[invite.employmentType]} · {invite.hubName} · expires{" "}
-            {formatInviteExpiry(invite.expiresAt)}
+            {formatDate(invite.expiresAt)}
           </li>
         ))}
       </ul>

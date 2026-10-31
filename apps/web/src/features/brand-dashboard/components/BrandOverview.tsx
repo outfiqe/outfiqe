@@ -2,6 +2,7 @@
 
 import { Button, FormBanner, Skeleton, StatCard } from "@outfiqe/design-system";
 import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { AlertTriangle, Clock, Package, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -40,9 +41,6 @@ const KPI_HINT = {
 } as const;
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 const revenueDeltaFor = (overview: BrandOverviewData) => {
   const { last30DaysRevenue, previous30DaysRevenue } = overview.kpis;

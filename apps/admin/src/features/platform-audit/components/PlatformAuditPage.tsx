@@ -1,4 +1,5 @@
 import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { type FormEvent, useId, useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -25,7 +26,7 @@ const AuditEntryRow = ({ entry }: { entry: PlatformAuditEntry }) => {
       <p className="text-xs text-muted-foreground">
         {entry.actorName ?? entry.actorUserId}
         {entry.onBehalfOfName ? ` (acting as ${entry.onBehalfOfName})` : ""} ·{" "}
-        {new Date(entry.createdAt).toLocaleString()} · {entry.action}
+        {formatDateTime(entry.createdAt)} · {entry.action}
       </p>
       {entry.targetType && (
         <p className="text-xs text-muted-foreground">

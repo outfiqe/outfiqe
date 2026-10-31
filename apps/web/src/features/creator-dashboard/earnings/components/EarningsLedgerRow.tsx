@@ -1,3 +1,4 @@
+import { formatDate } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 
 import { AppImage } from "@/shared/components/AppImage";
@@ -32,7 +33,7 @@ export const EarningsLedgerRow = ({ commission }: EarningsLedgerRowProps) => {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-foreground">{productName}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {brandName} · {SOURCE_LABEL[source]} · {new Date(createdAt).toLocaleDateString()}
+          {brandName} · {SOURCE_LABEL[source]} · {formatDate(createdAt)}
         </p>
       </div>
 

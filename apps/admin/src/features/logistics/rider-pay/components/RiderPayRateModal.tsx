@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Label, Modal } from "@outfiqe/design-system";
+import { Button, DateInput, FormBanner, Input, Label, Modal } from "@outfiqe/design-system";
 import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -91,9 +91,9 @@ export const RiderPayRateModal = ({ payRates, onClose }: RiderPayRateModalProps)
         ))}
         <div>
           <Label htmlFor={`${fieldIdPrefix}-starts`}>Starts (optional)</Label>
-          <Input
+          <DateInput
+            includesTime
             id={`${fieldIdPrefix}-starts`}
-            type="datetime-local"
             value={startsOn}
             onChange={(event) => setStartsOn(event.target.value)}
           />

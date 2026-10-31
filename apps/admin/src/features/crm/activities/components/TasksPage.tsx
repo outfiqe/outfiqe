@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -111,7 +112,7 @@ const NewTaskModal = ({
                   Due date (optional)
                 </FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <DateInput {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { ArrowLeft, Shirt } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -215,7 +216,7 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
                   Order {formatShortOrderId(shipment.orderId)}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Placed {new Date(shipment.orderCreatedAt).toLocaleDateString()} ·{" "}
+                  Placed {formatDate(shipment.orderCreatedAt)} ·{" "}
                   {PAYMENT_STATUS_LABEL[shipment.orderPaymentStatus]} ·{" "}
                   {ORDER_SUMMARY_LABEL[shipment.orderFulfilmentSummary]}
                 </p>

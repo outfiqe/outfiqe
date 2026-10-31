@@ -14,6 +14,7 @@ import {
   Select,
   toast,
 } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useForm } from "react-hook-form";
 
 import type { BankAccount } from "@/features/bank-accounts";
@@ -68,7 +69,7 @@ export const WithdrawRequestForm = ({
     return (
       <FormBanner tone="neutral">
         The withdrawal window isn&apos;t open right now. It opens{" "}
-        {new Date(eligibility.nextWindowOpensAt).toLocaleDateString()}.
+        {formatDate(eligibility.nextWindowOpensAt)}.
       </FormBanner>
     );
   }

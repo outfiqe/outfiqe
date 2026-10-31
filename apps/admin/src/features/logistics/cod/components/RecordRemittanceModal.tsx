@@ -1,4 +1,12 @@
-import { Button, FormBanner, Input, Label, Modal, Textarea } from "@outfiqe/design-system";
+import {
+  Button,
+  DateInput,
+  FormBanner,
+  Input,
+  Label,
+  Modal,
+  Textarea,
+} from "@outfiqe/design-system";
 import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -94,9 +102,8 @@ export const RecordRemittanceModal = ({
         </div>
         <div>
           <Label htmlFor={`${fieldIdPrefix}-date`}>Date the money arrived</Label>
-          <Input
+          <DateInput
             id={`${fieldIdPrefix}-date`}
-            type="date"
             value={receivedOn}
             max={todayInputValue}
             onChange={(event) => setReceivedOn(event.target.value)}

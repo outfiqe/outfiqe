@@ -1,4 +1,5 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Compass } from "lucide-react";
@@ -60,8 +61,7 @@ export const CrmPage = () => {
           {organization && (
             <p className="text-sm text-muted-foreground">
               {organization.name} · {organization.plan}
-              {organization.trialEndsAt &&
-                ` · trial ends ${new Date(organization.trialEndsAt).toLocaleDateString()}`}
+              {organization.trialEndsAt && ` · trial ends ${formatDate(organization.trialEndsAt)}`}
             </p>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { formatDate } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
@@ -55,8 +56,7 @@ export const OrderRow = ({ order }: OrderRowProps) => {
           {itemCount > 1 ? ` and ${itemCount - 1} more` : ""}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {new Date(createdAt).toLocaleDateString()} · {paymentMethod} · Rs.{" "}
-          {total.toLocaleString()}
+          {formatDate(createdAt)} · {paymentMethod} · Rs. {total.toLocaleString()}
         </p>
       </div>
 

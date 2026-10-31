@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate, formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
@@ -66,8 +67,7 @@ const BuildHistory = ({ outfitId }: { outfitId: string }) => {
             <span className="font-medium">v{event.version}</span> {event.type}
             <span className="text-muted-foreground">
               {" "}
-              by {event.actor?.name ?? "someone no longer here"} ·{" "}
-              {new Date(event.createdAt).toLocaleString()}
+              by {event.actor?.name ?? "someone no longer here"} · {formatDateTime(event.createdAt)}
             </span>
           </li>
         ))}
@@ -202,7 +202,7 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
             {detail.versions.map((version) => (
               <li key={version.version} className="text-foreground">
                 v{version.version} · {version.itemCount} items · Rs. {version.total} ·{" "}
-                {new Date(version.lockedAt).toLocaleString()}
+                {formatDateTime(version.lockedAt)}
                 {version.version === detail.publishedVersion ? " · shown to viewers" : ""}
               </li>
             ))}
@@ -229,8 +229,7 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
           <ul className="space-y-1 text-sm">
             {detail.looks.map((look) => (
               <li key={look.id} className="text-foreground">
-                {look.creator.name} · from v{look.sourceVersion} ·{" "}
-                {new Date(look.createdAt).toLocaleDateString()}
+                {look.creator.name} · from v{look.sourceVersion} · {formatDate(look.createdAt)}
                 {look.isDeleted ? " · deleted" : ""}
               </li>
             ))}
