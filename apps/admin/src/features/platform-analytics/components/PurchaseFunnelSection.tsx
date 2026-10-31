@@ -1,7 +1,8 @@
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
+import { SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import type { AnalyticsRange } from "../constants/platformAnalytics.constants";
 import { usePlatformAnalyticsInsight } from "../hooks/usePlatformAnalyticsInsight";
-import { toPaymentMethodLabel } from "../utils/platformAnalytics.utils";
+import { toLedgerMethod, toPaymentMethodLabel } from "../utils/platformAnalytics.utils";
 import { AnalyticsInsightSection } from "./AnalyticsInsightSection";
 import { FunnelSteps } from "./FunnelSteps";
 import { RankedList } from "./RankedList";
@@ -15,8 +16,9 @@ export const PurchaseFunnelSection = ({ range }: { range: AnalyticsRange }) => {
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-purchases"
       title="Purchase funnel"
-      description="How many people reach each step from product page to placed order."
+      description={SECTION_DESCRIPTION.PURCHASES}
       insightQuery={funnelQuery}
     >
       {({ steps, ordersByPaymentMethod }) => (
@@ -29,6 +31,8 @@ export const PurchaseFunnelSection = ({ range }: { range: AnalyticsRange }) => {
               rowKey: paymentMethod,
               label: toPaymentMethodLabel(paymentMethod),
               value: orders,
+              to: "/financial-rollup/ledger",
+              search: { method: toLedgerMethod(paymentMethod) },
             }))}
           />
         </div>

@@ -82,6 +82,8 @@ plan has one PostHog project, the production one, so a local token would mix dev
 test orders into real numbers. The project id and a read-only query key are safe locally: the
 admin page then reads production analytics without writing anything.
 
+The speed insight (`GET /platform/analytics/speed`) takes `?device=all|mobile|desktop&page=all|home|products|explore`. Each choice is cached on its own. It uses a new cache name, `site-speed-detail`, because week-old saved copies of the old shape would fail the admin schema. Each measurement carries its own reading count, because one `$web_vitals` event holds only some measurements.
+
 ## Funnel
 
 **User-facing:** shoppers, creators and brands never see this module. Co-founders, and staff whose
@@ -106,6 +108,7 @@ visitors, funnels, sources, retention and failed searches for the last 7, 30 or 
 
 ## Non-obvious rationale
 
+- **The admin page shows a saved copy first, then refreshes it quietly.** PostHog queries took 3 to 22 seconds per section on production, against about 0.5 seconds from a saved copy. A saved copy under `MAX_INSTANT_COPY_AGE_HOURS` is returned at once and refreshed in the background, one refresh per copy at a time. An older copy still waits for PostHog, and is only shown, marked stale, if PostHog fails. Queries inside a section stay one after another to keep within PostHog's limit on parallel queries.
 - **Its own consumer group, in the `worker` role.** The bus gives each group its own acks,
   retries and dead-letter stream. So a PostHog outage, or a slow lookup here, never delays
   notifications or XP, and it can't fail an order. The consumers are registered in

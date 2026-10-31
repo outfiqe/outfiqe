@@ -26,8 +26,9 @@ from the database (`financial-rollup`).
 - `components/SiteTrafficSection.tsx`: page views, sessions, average session and bounce rate,
   with the top pages and where visits start and end. Product pages show the product's name,
   with the path on hover.
-- `components/SiteSpeedSection.tsx`: the four web vitals, each rated Good, Needs work or Poor in
-  words on the card, against `SPEED_LIMITS` (Google's published limits).
+- `components/SiteSpeedSection.tsx`: the four speed measurements with chips for how slow a visit to look at (P75, P90, P95, P99), device and page, a reading count per measurement, and the slowest pages. Under 10 readings it says so instead of giving a rating.
+- `components/AnalyticsSectionNav.tsx`: jump links to each section.
+- `constants/analyticsCopy.constants.ts`: every tooltip and section description, written as full sentences for someone who isn't an engineer.
 - `components/PurchaseFunnelSection.tsx`, `LookToOrderSection.tsx`: the step lists
   (`FunnelSteps`) with orders by payment method, orders credited to a muse, and the most-viewed
   muses.
@@ -78,3 +79,5 @@ overview's exact cards → `useExactOrderTotals` → `GET /api/admin/financial-r
 - **Muse names come from our database, not PostHog.** PostHog only stores ids, never names. The
   API looks up the top 10 ids once per refresh, so names are in the cached answer. An id whose
   account was deleted shows as "A muse whose account no longer exists".
+
+**P75 is the one Google judges.** The Good and Poor limits were set for P75, so at P95 and P99 a rating of Poor is normal and doesn't mean the site is broken. The chips exist to show how bad the slow end gets.
