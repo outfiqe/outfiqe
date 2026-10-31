@@ -28,7 +28,5 @@ export const roundTimeToday = (roundTime: string, today: Date): string => {
 export const isCompleteDateTimeLocal = (value: string): boolean =>
   value.length === DATE_TIME_LOCAL_LENGTH && !Number.isNaN(new Date(value).getTime());
 
-export const formatRoundStart = (roundStartsAt: string): string =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(roundStartsAt),
-  );
+export const formatRoundStart = (roundStartsAt: string): string => formatDateTime(roundStartsAt);
+import { formatDateTime } from "@outfiqe/utils";

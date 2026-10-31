@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -51,7 +52,7 @@ export const SupportThread = ({ ticketId, onBack }: { ticketId: string; onBack: 
               {message.authorName && message.authorKind === "STAFF"
                 ? "Outfiqe Support"
                 : (AUTHOR_LABEL[message.authorKind] ?? "Outfiqe")}{" "}
-              · {new Date(message.createdAt).toLocaleString()}
+              · {formatDateTime(message.createdAt)}
             </p>
             <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
           </div>

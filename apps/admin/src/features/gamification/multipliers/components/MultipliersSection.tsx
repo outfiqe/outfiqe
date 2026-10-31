@@ -14,6 +14,7 @@ import {
   Modal,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
@@ -246,8 +247,7 @@ export const MultipliersSection = () => {
                 <span className="ml-2 text-xs text-muted-foreground">(deactivated)</span>
               )}
               <span className="ml-2 block text-xs text-muted-foreground sm:inline">
-                {new Date(multiplierRow.startsAt).toLocaleString()} –{" "}
-                {new Date(multiplierRow.endsAt).toLocaleString()}
+                {formatDateTime(multiplierRow.startsAt)} – {formatDateTime(multiplierRow.endsAt)}
               </span>
             </p>
             {canManageGamification && (

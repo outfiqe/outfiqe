@@ -1,3 +1,5 @@
+import { formatDate } from "@outfiqe/utils";
+
 import { XpActivityType, type XpTransaction } from "../api/xpSchemas";
 
 const ACTIVITY_LABEL: Record<XpTransaction["activityType"], string> = {
@@ -26,9 +28,7 @@ export const XpTransactionRow = ({ transaction }: XpTransactionRowProps) => {
     <div className="flex items-center justify-between rounded-2xl border border-border p-4">
       <div className="min-w-0">
         <p className="truncate text-sm text-foreground">{ACTIVITY_LABEL[activityType]}</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {new Date(createdAt).toLocaleDateString()}
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{formatDate(createdAt)}</p>
       </div>
       <p className="shrink-0 font-display text-sm font-bold text-primary-strong">+{amount} XP</p>
     </div>

@@ -9,6 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { type FormEvent, useId, useState } from "react";
 
@@ -147,7 +148,7 @@ const BuildList = () => {
                 {build.isStartedInChat ? " · started in a chat" : ""}
               </p>
               <p className="text-xs text-muted-foreground">
-                Updated {new Date(build.updatedAt).toLocaleString()}
+                Updated {formatDateTime(build.updatedAt)}
               </p>
             </Link>
           </li>

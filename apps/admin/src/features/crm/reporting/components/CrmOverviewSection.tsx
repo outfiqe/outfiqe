@@ -1,5 +1,6 @@
 import { FormBanner, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 import { BarSeries, ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -27,9 +28,6 @@ const ACTIVITY_CHART_TITLE = "Activity";
 const ACTIVITY_CHART_DESCRIPTION = "CRM activities logged per day, last 30 days";
 const PIPELINE_CHART_TITLE = "Pipeline value by stage";
 const PIPELINE_CHART_DESCRIPTION = "Open deal value per stage";
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   const { pipeline, tickets, openTasksDueTodayCount } = report;

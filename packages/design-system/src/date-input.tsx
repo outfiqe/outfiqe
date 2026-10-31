@@ -22,6 +22,7 @@ export const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
         onClick={openCalendar}
         className={cn(
           "cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer",
+          "dark:[color-scheme:dark]",
           className,
         )}
         {...props}

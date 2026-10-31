@@ -1,5 +1,5 @@
 import { Badge, Button, FormBanner, Label, Select, Skeleton } from "@outfiqe/design-system";
-import { MS_PER_DAY } from "@outfiqe/utils";
+import { formatDateTime, MS_PER_DAY } from "@outfiqe/utils";
 import { useId, useState } from "react";
 
 import type { WebhookReceipt } from "../api/partnersSchemas";
@@ -109,7 +109,7 @@ export const PartnerWebhookReceiptsSection = ({
                 className="flex flex-wrap items-center justify-between gap-2 p-3"
               >
                 <span className="text-sm text-foreground">
-                  {new Date(receipt.receivedAt).toLocaleString()}
+                  {formatDateTime(receipt.receivedAt)}
                 </span>
                 <Badge tone={tone} showDot={false}>
                   {label}

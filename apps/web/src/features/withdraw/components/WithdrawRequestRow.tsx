@@ -1,3 +1,5 @@
+import { formatDate } from "@outfiqe/utils";
+
 import { RequestStatus, type WithdrawRequest } from "../api/withdrawSchemas";
 import { WithdrawRequestStatusBadge } from "./WithdrawRequestStatusBadge";
 
@@ -15,9 +17,7 @@ export const WithdrawRequestRow = ({ request }: WithdrawRequestRowProps) => {
           <p className="font-display text-sm font-bold text-foreground">
             Rs. {amount.toLocaleString()}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Requested {new Date(createdAt).toLocaleDateString()}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Requested {formatDate(createdAt)}</p>
         </div>
         <WithdrawRequestStatusBadge status={status} />
       </div>

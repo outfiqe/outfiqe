@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/lib/apiClient";
@@ -134,7 +135,7 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
             capped so one spike can&apos;t take over the rankings.
           </p>
           <p className="text-xs text-muted-foreground">
-            Scored at {new Date(trendSnapshot.scoredAt).toLocaleString()}
+            Scored at {formatDateTime(trendSnapshot.scoredAt)}
           </p>
         </div>
       </div>

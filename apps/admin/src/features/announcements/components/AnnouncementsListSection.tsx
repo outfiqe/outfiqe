@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -56,9 +57,6 @@ const AUDIENCE_LABELS: Record<AnnouncementAudienceValue, string> = {
 
 const describeAudience = (announcement: Announcement): string =>
   announcement.audiences.map((audience) => AUDIENCE_LABELS[audience]).join(", ");
-
-const formatDateTime = (value: string | null): string =>
-  value ? new Date(value).toLocaleString() : "—";
 
 export const AnnouncementsListSection = () => {
   const [tab, setTab] = useSearchFilter("status", ANNOUNCEMENT_STATUS_FILTER);

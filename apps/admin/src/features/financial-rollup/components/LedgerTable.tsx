@@ -8,6 +8,7 @@ import {
 } from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 import type { BrandPayoutStatus, PaymentMethod } from "@outfiqe/types";
+import { formatDate } from "@outfiqe/utils";
 
 import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -31,11 +32,10 @@ const BRAND_PAYOUT_STATUS_FILTER = oneOfFilter<BrandPayoutStatus | typeof NO_FIL
   NO_FILTER,
 );
 
-const dateLabel = (iso: string) => new Date(iso).toLocaleDateString();
 const amountOrDash = (amount: number | null) => (amount === null ? "—" : money(amount));
 
 const columns: TableColumn<LedgerRow>[] = [
-  { key: "date", header: "Date", render: (row) => dateLabel(row.createdAt) },
+  { key: "date", header: "Date", render: (row) => formatDate(row.createdAt) },
   { key: "method", header: "Method", render: (row) => PAYMENT_METHOD_LABEL[row.paymentMethod] },
   {
     key: "gross",

@@ -1,4 +1,5 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -178,7 +179,7 @@ export const ParcelDetailPage = ({ shipmentId }: ParcelDetailPageProps) => {
                   {!appliedToStatus && code !== NOTE_EVENT_CODE ? " · recorded only" : ""}
                 </p>
                 <p className="text-muted-foreground">
-                  {new Date(occurredAt).toLocaleString()} · {partnerName ?? actorName ?? source}
+                  {formatDateTime(occurredAt)} · {partnerName ?? actorName ?? source}
                 </p>
                 {note && <p className="text-muted-foreground">{note}</p>}
               </li>

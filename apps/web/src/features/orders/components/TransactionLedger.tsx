@@ -1,3 +1,5 @@
+import { formatDate } from "@outfiqe/utils";
+
 import type { PaymentTransaction } from "../api/orderSchemas";
 import { PaymentTransactionType } from "../api/orderSchemas";
 
@@ -20,7 +22,7 @@ export const TransactionLedger = ({ transactions }: TransactionLedgerProps) => {
             {transactionRef ? ` · ${transactionRef}` : ""}
           </span>
           <span>
-            {status} · {new Date(createdAt).toLocaleDateString()}
+            {status} · {formatDate(createdAt)}
           </span>
         </div>
       ))}

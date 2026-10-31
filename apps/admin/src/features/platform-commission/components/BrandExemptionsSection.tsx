@@ -18,6 +18,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -281,8 +282,8 @@ export const BrandExemptionsSection = () => {
                   {isRevoked && <span className="ml-2 text-xs text-destructive">Revoked</span>}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {new Date(exemption.startsAt).toLocaleDateString()} –{" "}
-                  {new Date(exemption.endsAt).toLocaleDateString()} · {exemption.reason}
+                  {formatDate(exemption.startsAt)} – {formatDate(exemption.endsAt)} ·{" "}
+                  {exemption.reason}
                 </p>
               </div>
               {canManageCommissions && !isRevoked && (

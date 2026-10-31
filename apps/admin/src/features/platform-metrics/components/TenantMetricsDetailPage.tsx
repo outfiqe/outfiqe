@@ -1,5 +1,6 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { TrendChart } from "@outfiqe/design-system/charts";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 
@@ -81,11 +82,7 @@ export const TenantMetricsDetailPage = () => {
             <Metric
               label="Last activity"
               value={
-                detail.data.lastCrmActivityAt
-                  ? new Date(detail.data.lastCrmActivityAt).toLocaleDateString(undefined, {
-                      dateStyle: "medium",
-                    })
-                  : "—"
+                detail.data.lastCrmActivityAt ? formatDate(detail.data.lastCrmActivityAt) : "—"
               }
             />
           </div>
