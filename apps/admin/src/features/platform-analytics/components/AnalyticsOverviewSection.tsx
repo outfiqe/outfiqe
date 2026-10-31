@@ -1,8 +1,10 @@
-import { StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import { CLICKABLE_STAT_CARD_CLASS_NAME, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 
+import { StatCardFooterLink } from "@/components/MetricParts";
 import { money, percent } from "@/features/financial-rollup/constants/financialRollup.constants";
 
 import { platformAnalyticsApi } from "../api/platformAnalyticsApi";
+import { METRIC_HINT, SECTION_DESCRIPTION } from "../constants/analyticsCopy.constants";
 import {
   type AnalyticsRange,
   EXACT_TOTALS_UNAVAILABLE_MESSAGE,
@@ -35,18 +37,36 @@ const ExactOrderTotals = () => {
     <div className="grid gap-3 sm:grid-cols-3">
       <StatCard
         label="Orders, last 30 days"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={sumValues(paymentBreakdowns.map(({ orderCount }) => orderCount)).toLocaleString()}
-        hint="Exact, from the database"
+        hint={METRIC_HINT.ORDERS}
+        footer={<StatCardFooterLink to="/orders" period="See orders" />}
       />
       <StatCard
-        label="GMV, last 30 days"
+        label="Order value, last 30 days"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={money(sumValues(paymentBreakdowns.map(({ gmv }) => gmv)))}
-        hint="Exact, from the database"
+        hint={METRIC_HINT.ORDER_VALUE}
+        footer={
+          <StatCardFooterLink
+            to="/financial-rollup"
+            search={{ range: "30d" }}
+            period="See the money"
+          />
+        }
       />
       <StatCard
         label="Items credited to muses"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={percent(rollup.attribution.attributedShare)}
-        hint="Share of ordered items, last 30 days"
+        hint={METRIC_HINT.MUSE_ITEMS}
+        footer={
+          <StatCardFooterLink
+            to="/financial-rollup/ledger"
+            search={{ range: "30d", focus: "MUSE_CREDITED" }}
+            period="See the items"
+          />
+        }
       />
     </div>
   );
@@ -61,20 +81,29 @@ export const AnalyticsOverviewSection = ({ range }: { range: AnalyticsRange }) =
 
   return (
     <AnalyticsInsightSection
+      sectionId="analytics-overview"
       title="Overview"
-      description="Visitors, sign-ups and buyers, with exact order totals from the database."
+      description={SECTION_DESCRIPTION.OVERVIEW}
       insightQuery={overviewQuery}
     >
       {({ visitors, signups, buyers, visitToBuyerRate }) => (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Visitors" value={visitors.toLocaleString()} />
-            <StatCard label="Sign-ups" value={signups.toLocaleString()} />
-            <StatCard label="Buyers" value={buyers.toLocaleString()} />
+            <StatCard
+              label="Visitors"
+              value={visitors.toLocaleString()}
+              hint={METRIC_HINT.VISITORS}
+            />
+            <StatCard
+              label="Sign-ups"
+              value={signups.toLocaleString()}
+              hint={METRIC_HINT.SIGN_UPS}
+            />
+            <StatCard label="Buyers" value={buyers.toLocaleString()} hint={METRIC_HINT.BUYERS} />
             <StatCard
               label="Visitors who bought"
               value={percent(visitToBuyerRate)}
-              hint="Buyers divided by visitors"
+              hint={METRIC_HINT.VISITORS_WHO_BOUGHT}
             />
           </div>
           <ExactOrderTotals />

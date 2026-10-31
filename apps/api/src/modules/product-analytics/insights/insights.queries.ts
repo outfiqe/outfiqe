@@ -3,6 +3,9 @@ import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import {
   DIRECT_TRAFFIC_SOURCE,
   OWN_SITE_DOMAIN_SUFFIX,
+  type SpeedDevice,
+  type SpeedFilters,
+  type SpeedPage,
   STAFF_CREATED_SIGNUP_METHOD,
   TOP_ROWS_LIMIT,
   WEEKLY_ACTIVE_WEEKS,
@@ -12,7 +15,28 @@ import {
 export const PAGEVIEW_EVENT = "$pageview";
 
 const WEB_VITALS_EVENT = "$web_vitals";
-const WEB_VITALS_PERCENTILE = 0.75;
+const SPEED_PERCENTILES = [0.75, 0.9, 0.95, 0.99] as const;
+const TYPICAL_VISIT_PERCENTILE = 0.75;
+const WEB_VITAL_PROPERTIES = [
+  "$web_vitals_LCP_value",
+  "$web_vitals_INP_value",
+  "$web_vitals_FCP_value",
+  "$web_vitals_CLS_value",
+] as const;
+const MAIN_CONTENT_PROPERTY = "properties.$web_vitals_LCP_value";
+
+const SPEED_DEVICE_CONDITION: Record<SpeedDevice, string> = {
+  all: "",
+  mobile: "AND toString(properties.$device_type) = 'Mobile'",
+  desktop: "AND toString(properties.$device_type) = 'Desktop'",
+};
+
+const SPEED_PAGE_CONDITION: Record<SpeedPage, string> = {
+  all: "",
+  home: "AND toString(properties.$pathname) = '/'",
+  products: "AND startsWith(toString(properties.$pathname), '/product/')",
+  explore: "AND startsWith(toString(properties.$pathname), '/explore')",
+};
 
 const CURRENT_WEEK = 1;
 
@@ -216,14 +240,33 @@ export const entryPagesQuery = (days: number): string =>
 export const exitPagesQuery = (days: number): string =>
   pagesBySessionQuery(days, "session.$end_pathname");
 
-export const webVitalsQuery = (days: number): string => `
-  SELECT
-    count(),
-    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_LCP_value)),
-    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_INP_value)),
-    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_FCP_value)),
-    quantile(${WEB_VITALS_PERCENTILE})(toFloat(properties.$web_vitals_CLS_value))
+const webVitalColumns = (property: string): string[] => [
+  `countIf(properties.${property} IS NOT NULL)`,
+  ...SPEED_PERCENTILES.map(
+    (percentile) => `quantile(${percentile})(toFloat(properties.${property}))`,
+  ),
+];
+
+const webVitalsInRange = (days: number, { device, page }: SpeedFilters): string => `
   FROM events
   WHERE ${withinLastDays(days)}
     AND event = '${WEB_VITALS_EVENT}'
-    AND ${EXCLUDE_INTERNAL_PEOPLE}`;
+    AND ${EXCLUDE_INTERNAL_PEOPLE}
+    ${SPEED_DEVICE_CONDITION[device]}
+    ${SPEED_PAGE_CONDITION[page]}`;
+
+export const webVitalsQuery = (days: number, filters: SpeedFilters): string => `
+  SELECT
+    ${["count()", ...WEB_VITAL_PROPERTIES.flatMap(webVitalColumns)].join(",\n    ")}
+  ${webVitalsInRange(days, filters)}`;
+
+export const slowestPagesQuery = (days: number, filters: SpeedFilters): string => `
+  SELECT
+    toString(properties.$pathname) AS path,
+    quantile(${TYPICAL_VISIT_PERCENTILE})(toFloat(${MAIN_CONTENT_PROPERTY})) AS typical_load,
+    countIf(${MAIN_CONTENT_PROPERTY} IS NOT NULL)
+  ${webVitalsInRange(days, filters)}
+    AND ${MAIN_CONTENT_PROPERTY} IS NOT NULL
+  GROUP BY path
+  ORDER BY typical_load DESC
+  LIMIT ${TOP_ROWS_LIMIT}`;

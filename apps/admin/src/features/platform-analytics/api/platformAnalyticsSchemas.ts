@@ -58,6 +58,7 @@ export const zeroResultSearchesInsightSchema = z.object({
 const rankedPageSchema = z.object({
   path: z.string(),
   productName: z.string().nullable(),
+  brandName: z.string().nullable().default(null),
   count: z.number(),
 });
 
@@ -71,12 +72,30 @@ export const siteTrafficInsightSchema = z.object({
   exitPages: z.array(rankedPageSchema),
 });
 
+const speedReadingSchema = z.object({
+  sampleCount: z.number(),
+  p75: z.number().nullable(),
+  p90: z.number().nullable(),
+  p95: z.number().nullable(),
+  p99: z.number().nullable(),
+});
+export type SpeedReading = z.infer<typeof speedReadingSchema>;
+
+const slowPageSchema = z.object({
+  path: z.string(),
+  productName: z.string().nullable(),
+  brandName: z.string().nullable(),
+  typicalLoadMs: z.number(),
+  sampleCount: z.number(),
+});
+
 export const siteSpeedInsightSchema = z.object({
   measurementCount: z.number(),
-  largestContentfulPaintMs: z.number().nullable(),
-  interactionToNextPaintMs: z.number().nullable(),
-  firstContentfulPaintMs: z.number().nullable(),
-  cumulativeLayoutShift: z.number().nullable(),
+  largestContentfulPaint: speedReadingSchema,
+  interactionToNextPaint: speedReadingSchema,
+  firstContentfulPaint: speedReadingSchema,
+  cumulativeLayoutShift: speedReadingSchema,
+  slowestPages: z.array(slowPageSchema),
 });
 
 export const overviewResultSchema = insightResultSchema(overviewInsightSchema);
