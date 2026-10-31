@@ -6,12 +6,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
+  FulfilmentMode,
+  FulfilmentStatus,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
+  PickupStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { createPurchasableProduct } from "#test/integration/order-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
@@ -28,6 +32,7 @@ vi.mock("#modules/payments/providers/esewa.provider.js", () => ({
 const authHeaderFor = (userId: string): string =>
   `Bearer ${generateTokenpair({ sub: userId, role: UserRole.CUSTOMER }).accessToken}`;
 
+const PRODUCT_PRICE = 1000;
 const HOURS_AFTER_EXPIRY_MS = 60 * 60 * 1000;
 const OVERLAPPING_VERIFICATIONS = 2;
 
@@ -208,6 +213,29 @@ describe("payment recognition after the buyer pays late", () => {
     expect(reloaded.transactions.map(({ status }) => status)).toEqual([
       PaymentTransactionStatus.FAILED,
     ]);
+  });
+
+  it("takes an expired order off the brand's list and cancels its pickup", async () => {
+    const stale = new Date(Date.now() - RECONCILE_EXPIRE_AFTER_MS - HOURS_AFTER_EXPIRY_MS);
+    const { order } = await createEsewaOrderAwaitingPayment(stale);
+    const { brand } = await createPurchasableProduct(PRODUCT_PRICE);
+    await prisma.orderFulfilmentGroup.create({
+      data: {
+        orderId: order.id,
+        brandId: brand.id,
+        fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS,
+        pickupStatus: PickupStatus.AWAITING_BRAND,
+      },
+    });
+    esewaVerify.mockResolvedValue({ status: "PENDING", rawResponse: {} });
+
+    await runPaymentReconciliationSweep();
+
+    const group = await prisma.orderFulfilmentGroup.findFirstOrThrow({
+      where: { orderId: order.id },
+    });
+    expect(group.status).toBe(FulfilmentStatus.CANCELLED);
+    expect(group.pickupStatus).toBe(PickupStatus.CANCELLED);
   });
 
   it("leaves an overdue order untouched when the gateway cannot be reached", async () => {
