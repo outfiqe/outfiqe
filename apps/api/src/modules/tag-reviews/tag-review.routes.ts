@@ -11,6 +11,7 @@ import { platformGuards } from "#modules/platform-access/platform-access.guards.
 import { tagReviewController } from "./tag-review.controller.js";
 import {
   approveTagSchema,
+  listMetricTagsQuerySchema,
   listTagReviewsQuerySchema,
   rejectTagSchema,
   tagReviewIdParamSchema,
@@ -34,6 +35,13 @@ const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 export const tagReviewRoutes = Router();
 
 tagReviewRoutes.get("/metrics", ...platformGuards.reviewsModerate, tagReviewController.metrics);
+
+tagReviewRoutes.get(
+  "/metrics/tags",
+  ...platformGuards.reviewsModerate,
+  validate({ query: listMetricTagsQuerySchema }),
+  tagReviewController.metricTags,
+);
 
 tagReviewRoutes.get("/pending-count", ...requireBrandOwner, tagReviewController.pendingCount);
 
