@@ -593,7 +593,7 @@ describe("GET /api/tag-reviews/metrics/tags", () => {
   it("rejects a view it does not know", async () => {
     const { authHeader } = await createAdminSession();
     const response = await listMetricTags(authHeader, "view=EVERYTHING");
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
   it("lists exactly the tags behind the live number, with who, what and how", async () => {
