@@ -170,8 +170,11 @@ board at once, the loser's change is undone and they're told who got there first
   between them keeps the frame mounted and shows the page's `loading.tsx` skeleton at once, instead
   of leaving the previous page on screen while a different layout loads. `/builds/<id>` can't move
   there: it is also the public, indexable page for a shared build, and the dashboard layout marks
-  every page `noindex` and expects a session. So `app/builds/layout.tsx` checks the session itself
-  and renders `DashboardShell` when signed in, or the standalone public page when not.
+  every page `noindex` and expects a session. So `app/builds/[outfitId]/layout.tsx` decides for itself:
+  `DashboardShell` for someone who is part of the build (`board/api/isBuildMemberServer.ts`, which
+  asks `GET /api/outfits/:id` and looks for the live board view), and the normal site layout for
+  everyone else, signed in or not. Someone browsing another person's build is shopping, so they
+  stay in the site, not their dashboard.
 - **Lists and pages decide "loading" with react-query's `isPending`, not `isLoading`.** These
   components are server-rendered first, and on the server a query never fetches, so `isLoading`
   is false there. Using it put the empty state ("No builds yet") into the server HTML, which
