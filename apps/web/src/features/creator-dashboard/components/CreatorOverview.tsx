@@ -12,7 +12,7 @@ import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { formatShortDate } from "@outfiqe/utils";
 import { Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 
 import { OverviewPeriodChips } from "@/components/OverviewPeriodChips";
 import { StatCardFooterLink } from "@/components/StatCardFooterLink";
@@ -23,8 +23,8 @@ import {
   CreatorDashboardTour,
   TourReplayLink,
 } from "@/features/product-tour";
+import { useOverviewPeriod } from "@/shared/hooks/useOverviewPeriod";
 import { formatRupees } from "@/shared/lib/formatRupees";
-import { DEFAULT_OVERVIEW_PERIOD_DAYS, type OverviewPeriodDays } from "@/shared/lib/overviewPeriod";
 
 import type {
   CreatorOverview as CreatorOverviewData,
@@ -217,7 +217,7 @@ type CreatorOverviewProps = {
 };
 
 export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
-  const [periodDays, setPeriodDays] = useState<OverviewPeriodDays>(DEFAULT_OVERVIEW_PERIOD_DAYS);
+  const { periodDays, selectPeriodDays } = useOverviewPeriod();
   const { data: overview, isPending, isError } = useCreatorOverview(creatorStatus, periodDays);
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
@@ -250,7 +250,7 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
           <OverviewSkeleton />
         ) : (
           <>
-            <OverviewPeriodChips selectedDays={periodDays} onSelect={setPeriodDays} />
+            <OverviewPeriodChips selectedDays={periodDays} onSelect={selectPeriodDays} />
             <div className="mt-4">
               <OverviewKpiRow overview={overview} />
             </div>

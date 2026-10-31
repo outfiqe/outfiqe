@@ -15,6 +15,10 @@ import {
 import { useCreatorOverview } from "../hooks/useCreatorOverview";
 import { CreatorOverview } from "./CreatorOverview";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("../hooks/useCreatorOverview", () => ({
   useCreatorOverview: vi.fn(),
 }));
@@ -99,6 +103,7 @@ const mockOverview = (value: Partial<ReturnType<typeof useCreatorOverview>>) => 
 };
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/overview");
   mockOverview({ data: buildOverview(), isPending: false });
 });
 
@@ -128,6 +133,16 @@ describe("CreatorOverview details", () => {
     fireEvent.click(screen.getByRole("button", { name: "Last 90 days" }));
 
     expect(useCreatorOverview).toHaveBeenLastCalledWith(CreatorStatus.APPROVED, 90);
+    expect(window.location.search).toBe("?range=90d");
+  });
+
+  it("opens on the period in the link", () => {
+    window.history.replaceState(null, "", "/overview?range=7d");
+    mockOverview({ data: buildOverview() });
+
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(useCreatorOverview).toHaveBeenLastCalledWith(CreatorStatus.APPROVED, 7);
   });
 
   it("says so when there is nothing to show yet", () => {
