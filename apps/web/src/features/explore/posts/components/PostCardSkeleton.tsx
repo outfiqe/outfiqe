@@ -54,7 +54,7 @@ export const PostCardSkeleton = ({
   );
 };
 
-export const ListPostCardSkeleton = ({ mediaAspect }: { mediaAspect?: number }) => (
+const ListPostCardSkeleton = ({ mediaAspect }: { mediaAspect?: number }) => (
   <PostCardSkeleton mediaAspect={mediaAspect} mediaClassName={LIST_POST_MEDIA_CLASS_NAME} />
 );
 
