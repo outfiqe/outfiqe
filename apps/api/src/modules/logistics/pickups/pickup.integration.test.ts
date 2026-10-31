@@ -9,6 +9,7 @@ import {
   PickupStatus,
   TrackingEventCode,
 } from "#generated/prisma/enums.js";
+import { orderCancellationService } from "#modules/orders/cancellation/cancellation.service.js";
 import { redis } from "#redis/redis.client.js";
 import { createPickupForBrand } from "#test/integration/logistics-fixtures.js";
 import { createBrandOwnerSession } from "#test/integration/product-fixtures.js";
@@ -80,6 +81,30 @@ describe("brand marks a hub pickup ready", () => {
 
     expect(response.status).toBe(409);
     expect(response.body.code).toBe("PICKUP_CANCELLED");
+  });
+
+  it("takes a ready pickup off the board when its order is cancelled", async () => {
+    const { brandId } = await createBrandOwnerSession();
+    const { buyer, group, order } = await createPickupForBrand(brandId);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { paymentStatus: PaymentStatus.FAILED },
+    });
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: group.id },
+      data: { pickupStatus: PickupStatus.READY_FOR_PICKUP },
+    });
+
+    await orderCancellationService.cancel(
+      order.id,
+      { type: "BUYER", userId: buyer.id },
+      "Changed my mind",
+    );
+
+    const cancelledGroup = await prisma.orderFulfilmentGroup.findUniqueOrThrow({
+      where: { id: group.id },
+    });
+    expect(cancelledGroup.pickupStatus).toBe(PickupStatus.CANCELLED);
   });
 
   it("answers a repeated press without recording it twice", async () => {
