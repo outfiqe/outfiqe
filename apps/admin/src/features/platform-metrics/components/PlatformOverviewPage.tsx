@@ -1,11 +1,17 @@
-import { Button, FormBanner, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import {
+  Button,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
+  FormBanner,
+  StatCard,
+  StatCardSkeleton,
+} from "@outfiqe/design-system";
 import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { formatShortDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Compass } from "lucide-react";
 
-import { CLICKABLE_STAT_CARD_CLASS_NAME, StatCardFooterLink } from "@/components/MetricParts";
+import { StatCardFooterLink } from "@/components/MetricParts";
 import { MoneyBreakdownSection } from "@/features/financial-rollup/components/MoneyBreakdownSection";
 import {
   PLATFORM_KPI_TOUR_ANCHOR,
