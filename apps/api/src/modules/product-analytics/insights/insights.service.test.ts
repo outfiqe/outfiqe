@@ -286,12 +286,12 @@ describe("productAnalyticsInsightsService", () => {
       averageSessionSeconds: 154.5,
       bounceRate: 0.25,
       topPages: [
-        { path: "/", productName: null, count: 18 },
-        { path: `/product/${PRODUCT_ID}`, productName: "Linen kurta", count: 6 },
-        { path: "/product/not-a-real-id", productName: null, count: 2 },
+        { path: "/", productName: null, brandName: null, count: 18 },
+        { path: `/product/${PRODUCT_ID}`, productName: "Linen kurta", brandName: null, count: 6 },
+        { path: "/product/not-a-real-id", productName: null, brandName: null, count: 2 },
       ],
-      entryPages: [{ path: "/", productName: null, count: 6 }],
-      exitPages: [{ path: "/login", productName: null, count: 1 }],
+      entryPages: [{ path: "/", productName: null, brandName: null, count: 6 }],
+      exitPages: [{ path: "/login", productName: null, brandName: null, count: 1 }],
     });
   });
 
@@ -309,7 +309,7 @@ describe("productAnalyticsInsightsService", () => {
 
     expect(status).toBe("fresh");
     expect(insight?.topPages).toEqual([
-      { path: `/product/${PRODUCT_ID}`, productName: null, count: 6 },
+      { path: `/product/${PRODUCT_ID}`, productName: null, brandName: null, count: 6 },
     ]);
   });
 
