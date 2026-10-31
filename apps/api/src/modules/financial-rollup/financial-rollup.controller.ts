@@ -10,6 +10,7 @@ import type {
   FinancialLedgerExportQuery,
   FinancialLedgerQuery,
   FinancialRollupQuery,
+  LedgerItemParam,
 } from "./financial-rollup.schemas.js";
 import { financialRollupService } from "./financial-rollup.service.js";
 
@@ -26,6 +27,12 @@ export const financialRollupController = {
     const query = validated.query<FinancialLedgerQuery>(res);
     const page = await financialRollupService.getLedger(query);
     sendSuccess(res, page, "Financial ledger.");
+  },
+
+  async ledgerItem(_req: Request, res: Response) {
+    const { orderItemId } = validated.params<LedgerItemParam>(res);
+    const ledgerItem = await financialRollupService.getLedgerItem(orderItemId);
+    sendSuccess(res, ledgerItem, "Financial ledger item.");
   },
 
   async exportLedger(_req: Request, res: Response) {

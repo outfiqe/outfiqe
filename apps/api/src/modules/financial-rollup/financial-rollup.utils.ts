@@ -49,11 +49,22 @@ const LEDGER_CSV_HEADERS = [
   "Muse Commission",
   "Brand Net",
   "Brand Payout Status",
+  "Product",
+  "Brand",
+  "Buyer",
+  "Muse",
 ];
 
+const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
+const FORMULA_NEUTRALIZING_PREFIX = "'";
+
+const neutralizeSpreadsheetFormula = (text: string): string =>
+  SPREADSHEET_FORMULA_START.test(text) ? `${FORMULA_NEUTRALIZING_PREFIX}${text}` : text;
+
 const csvField = (value: string | number | null): string => {
-  const text = value === null ? "" : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  if (typeof value === "number") return String(value);
+  const text = neutralizeSpreadsheetFormula(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
 export const toLedgerCsv = (rows: LedgerRow[]): string => {
@@ -72,6 +83,10 @@ export const toLedgerCsv = (rows: LedgerRow[]): string => {
         row.creatorCommissionAmount,
         row.brandNetAmount,
         row.brandPayoutStatus,
+        row.productName,
+        row.brandName,
+        row.buyerName,
+        row.museHandle,
       ]
         .map(csvField)
         .join(","),

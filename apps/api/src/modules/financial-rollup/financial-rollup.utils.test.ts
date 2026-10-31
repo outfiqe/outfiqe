@@ -98,10 +98,32 @@ const buildLedgerRow = (overrides: Partial<LedgerRow> = {}): LedgerRow => ({
   platformFee: 50,
   gatewayFee: 0,
   brandNetAmount: 950,
+  orderPaymentStatus: "PAID",
+  orderFulfilmentStatus: "DELIVERED",
+  quantity: 1,
+  productName: "Item",
+  productImageUrl: null,
+  brandName: "Brand",
+  buyerName: "Buyer",
+  museHandle: null,
   brandPayoutStatus: "WITHDRAWN",
   creatorCommissionAmount: 100,
   creatorCommissionStatus: "AVAILABLE",
   ...overrides,
+});
+
+describe("toLedgerCsv spreadsheet safety", () => {
+  it("stops a name from running as a spreadsheet formula", () => {
+    const csv = toLedgerCsv([buildLedgerRow({ buyerName: '=HYPERLINK("http://bad.test")' })]);
+
+    expect(csv).toContain(`"'=HYPERLINK(`);
+  });
+
+  it("leaves plain amounts alone, even a negative one", () => {
+    const csv = toLedgerCsv([buildLedgerRow({ grossAmount: -100 })]);
+
+    expect(csv).toContain(",-100,");
+  });
 });
 
 describe("toLedgerCsv", () => {
@@ -110,7 +132,7 @@ describe("toLedgerCsv", () => {
     const lines = csv.split("\r\n");
 
     expect(lines[0]).toBe(
-      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status",
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status,Product,Brand,Buyer,Muse",
     );
     expect(lines[1]).toBe(
       "order-1,item-1,2026-01-05T10:00:00.000Z,COD,1000,50,0,100,950,WITHDRAWN",

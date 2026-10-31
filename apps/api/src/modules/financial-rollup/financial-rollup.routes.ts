@@ -9,6 +9,7 @@ import {
   financialLedgerExportQuerySchema,
   financialLedgerQuerySchema,
   financialRollupQuerySchema,
+  ledgerItemParamSchema,
 } from "./financial-rollup.schemas.js";
 
 export const financialRollupRoutes = Router();
@@ -35,4 +36,12 @@ financialRollupRoutes.get(
   requirePlatformNavItem("financial-rollup"),
   validate({ query: financialLedgerExportQuerySchema }),
   financialRollupController.exportLedger,
+);
+
+financialRollupRoutes.get(
+  "/ledger/:orderItemId",
+  ...platformGuards.financeRead,
+  requirePlatformNavItem("financial-rollup"),
+  validate({ params: ledgerItemParamSchema }),
+  financialRollupController.ledgerItem,
 );
