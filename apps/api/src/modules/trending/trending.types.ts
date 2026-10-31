@@ -37,9 +37,16 @@ export type ProductScoreBreakdown = {
   score: number;
 };
 
+export type TrendDailyActivity = {
+  date: string;
+  purchaseUnits: number;
+  totalActions: number;
+};
+
 export type TrendDebugSnapshot = ProductScoreBreakdown & {
   rank: number | null;
   scoredAt: Date;
+  dailyActivity: TrendDailyActivity[];
 };
 
 export type TrendingEntry = { productId: string; score: number };

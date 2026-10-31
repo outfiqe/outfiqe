@@ -80,7 +80,7 @@ const GROUP_STEPS: PlatformTourStep[] = [
     groupKey: "growth",
     anchorSelector: groupSelector("growth"),
     title: "Growth",
-    body: "Trending debug tools, the muses directory, announcements sent to users, and the gamification system: XP and levels, badges and challenges, and leaderboards.",
+    body: "Trending tools, the muses directory, announcements sent to users, and the gamification system: XP and levels, badges and challenges, and leaderboards.",
   },
   {
     id: "platform-settings",

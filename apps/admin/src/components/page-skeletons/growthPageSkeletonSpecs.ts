@@ -60,9 +60,9 @@ export const growthPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> = {
     ],
   },
   "/trending": {
-    title: "Trending debug",
+    title: "Trending",
     description:
-      "See what's trending right now, or look up any approved product to see exactly why it is, or isn't, trending.",
+      "What shoppers care about most right now. This list fills the Trending row on the home page. Pick any product to see why it is on the list, or why it isn't.",
     blocks: [
       {
         kind: "labeledSelect",
