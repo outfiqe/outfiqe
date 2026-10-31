@@ -53,6 +53,8 @@ const ROLLUP = {
     brandPayoutsByStatus: { PENDING: 30000, AVAILABLE: 15000, WITHDRAWN: 200000, VOIDED: 8000 },
     creatorCommissionsByStatus: { PENDING: 10000, AVAILABLE: 5000, PAID: 90000, VOIDED: 3000 },
     platformRevenueRealized: 0,
+    couponSpend: 0,
+    netPlatformRevenue: 0,
   },
   byPaymentMethod: {},
   attribution: { totalItems: 0, attributedItems: 0, attributedShare: 0 },

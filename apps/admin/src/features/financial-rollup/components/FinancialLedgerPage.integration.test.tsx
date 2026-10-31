@@ -171,7 +171,7 @@ describe("FinancialLedgerPage", () => {
 
     expect(await screen.findByText("Dhaka Topi")).toBeInTheDocument();
     expect(screen.getByText(/Everlane · bought by Asha Rai/)).toBeInTheDocument();
-    expect(screen.getByText("Paid out")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("Paid out")).toBeInTheDocument();
     expect(screen.getByText("Total for all 12 items")).toBeInTheDocument();
     expect(screen.getByText("Rs. 11,400")).toBeInTheDocument();
   });

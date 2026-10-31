@@ -431,7 +431,11 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
       .set("Authorization", authHeader);
 
     expect(response.status).toBe(HTTP_STATUS.OK);
-    expect(response.body.data).toEqual({ entries: [], nextCursor: null });
+    expect(response.body.data).toMatchObject({
+      entries: [],
+      nextCursor: null,
+      totals: { rowCount: 0, grossAmount: 0, brandNetAmount: 0 },
+    });
   });
 
   it("returns one row per order item with the linked payout and commission amounts", async () => {
@@ -607,9 +611,10 @@ describe("GET /api/admin/financial-rollup/ledger details", () => {
     expect(orderId).toEqual(expect.any(String));
   });
 
-  it("keeps one row per item when an item has more than one commission", async () => {
+  it("keeps one row per item when two muses share a commission on it", async () => {
     const { orderItemId } = await createLedgerItem({ createdAt: new Date() });
     const { id: creatorId } = await createUser();
+    const { id: otherCreatorId } = await createUser();
     const { id: tierId } = await prisma.commissionTier.create({
       data: { minPrice: 0, maxPrice: null, amount: 100, sortOrder: 0 },
     });
@@ -617,7 +622,7 @@ describe("GET /api/admin/financial-rollup/ledger details", () => {
       data: [
         { creatorId, orderItemId, tierId, source: CommissionSource.TAG_CLICK, amount: 100 },
         {
-          creatorId,
+          creatorId: otherCreatorId,
           orderItemId,
           tierId,
           source: CommissionSource.OUTFIT_BUILD,

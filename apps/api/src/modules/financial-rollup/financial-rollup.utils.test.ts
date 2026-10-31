@@ -135,7 +135,7 @@ describe("toLedgerCsv", () => {
       "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status,Product,Brand,Buyer,Muse",
     );
     expect(lines[1]).toBe(
-      "order-1,item-1,2026-01-05T10:00:00.000Z,COD,1000,50,0,100,950,WITHDRAWN",
+      "order-1,item-1,2026-01-05T10:00:00.000Z,COD,1000,50,0,100,950,WITHDRAWN,Item,Brand,Buyer,",
     );
   });
 
@@ -151,7 +151,9 @@ describe("toLedgerCsv", () => {
       }),
     ]);
 
-    expect(csv.split("\r\n")[1]).toBe("order-1,item-1,2026-01-05T10:00:00.000Z,COD,,,,,,");
+    expect(csv.split("\r\n")[1]).toBe(
+      "order-1,item-1,2026-01-05T10:00:00.000Z,COD,,,,,,,Item,Brand,Buyer,",
+    );
   });
 
   it("quotes and escapes fields containing commas, quotes, or newlines", () => {
