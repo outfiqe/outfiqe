@@ -12,7 +12,7 @@ export const OverviewListCard = ({
   description: string;
   children: ReactNode;
 }) => (
-  <section className="rounded-xl border border-border bg-card p-5">
+  <section className="min-w-0 rounded-xl border border-border bg-card p-5">
     <h2 className="font-display text-lg font-bold text-foreground">{title}</h2>
     <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     <div className="mt-3">{children}</div>
