@@ -1,5 +1,6 @@
 "use client";
 
+import { BACK_LINK_CLASS_NAME, BackLinkLabel } from "@outfiqe/design-system";
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -29,12 +30,8 @@ export const SupportRequestsView = () => {
   if (isCreating) {
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => setIsCreating(false)}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          &larr; Your requests
+        <button type="button" onClick={() => setIsCreating(false)} className={BACK_LINK_CLASS_NAME}>
+          <BackLinkLabel>Your requests</BackLinkLabel>
         </button>
         <div className="mt-3">
           <SupportRequestForm onSubmitted={(result) => openTicket(result.id)} />

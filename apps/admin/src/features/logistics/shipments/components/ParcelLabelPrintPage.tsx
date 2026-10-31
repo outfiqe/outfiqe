@@ -1,6 +1,7 @@
 import { QrCode } from "@outfiqe/components";
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { Link } from "@tanstack/react-router";
+
+import { BackLink } from "@/components/BackLink";
 
 import { useMarkLabelPrinted } from "../hooks/useMarkLabelPrinted";
 import { useParcelLabel } from "../hooks/useParcelLabel";
@@ -34,13 +35,9 @@ export const ParcelLabelPrintPage = ({ shipmentId }: ParcelLabelPrintPageProps) 
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <Link
-            to="/logistics/parcels/$shipmentId"
-            params={{ shipmentId }}
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            ← Parcel
-          </Link>
+          <BackLink to="/logistics/parcels/$shipmentId" params={{ shipmentId }}>
+            Back to parcel
+          </BackLink>
           <h1 className="mt-1 font-display text-2xl font-bold text-foreground">Parcel label</h1>
           <p className="text-sm text-muted-foreground">
             {label.isLabelUpToDate

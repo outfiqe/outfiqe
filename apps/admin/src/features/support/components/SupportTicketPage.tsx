@@ -1,8 +1,9 @@
 import { Badge, Button, Select } from "@outfiqe/design-system";
 import { formatDate, formatDateTime } from "@outfiqe/utils";
-import { getRouteApi, Link } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
@@ -124,9 +125,7 @@ export const SupportTicketPage = () => {
 
   return (
     <div className="space-y-5">
-      <Link to="/support" className="text-sm text-muted-foreground hover:text-foreground">
-        &larr; All requests
-      </Link>
+      <BackLink to="/support">All requests</BackLink>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-muted-foreground">{ticket.reference}</span>

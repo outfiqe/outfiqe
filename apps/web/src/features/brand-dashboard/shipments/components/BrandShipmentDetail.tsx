@@ -2,10 +2,10 @@
 
 import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
 import { formatDate } from "@outfiqe/utils";
-import { ArrowLeft, Shirt } from "lucide-react";
-import Link from "next/link";
+import { Shirt } from "lucide-react";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { AppImage } from "@/shared/components/AppImage";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -195,15 +195,9 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
 
   return (
     <div>
-      <Link
-        href="/manage-orders"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        All orders
-      </Link>
+      <BackLink href="/manage-orders">All orders</BackLink>
 
-      <div className="mt-4">
+      <div>
         {isError ? (
           <FormBanner>We couldn&apos;t load this shipment right now. Please try again.</FormBanner>
         ) : isPending || !shipment ? (

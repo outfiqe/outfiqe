@@ -1,5 +1,4 @@
-import { Skeleton } from "@outfiqe/design-system";
-import { ArrowLeft } from "lucide-react";
+import { BACK_LINK_CLASS_NAME, BackLinkLabel, Skeleton } from "@outfiqe/design-system";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 
@@ -10,9 +9,8 @@ const ORDER_CARD_CLASS = "rounded-xl border border-border bg-card p-4";
 
 export const OrderDetailSkeleton = () => (
   <div role="status" aria-label="Loading">
-    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-      <ArrowLeft className="size-4" />
-      Orders
+    <span className={BACK_LINK_CLASS_NAME}>
+      <BackLinkLabel>All orders</BackLinkLabel>
     </span>
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
       <div>
