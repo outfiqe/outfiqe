@@ -25,10 +25,19 @@ type StatCardProps = {
   readonly icon?: ComponentType<{ className?: string }>;
   readonly delta?: StatCardDelta;
   readonly hint?: ReactNode;
+  readonly footer?: ReactNode;
   readonly className?: string;
 };
 
-export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: StatCardProps) => {
+export const StatCard = ({
+  label,
+  value,
+  icon: Icon,
+  delta,
+  hint,
+  footer,
+  className,
+}: StatCardProps) => {
   return (
     <div className={cn(STAT_CARD_CLASS, className)}>
       <div className="flex items-start justify-between gap-2">
@@ -39,7 +48,7 @@ export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: S
               <button
                 type="button"
                 aria-label={`How ${label} is calculated`}
-                className="mt-px inline-flex shrink-0 cursor-help text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="relative z-10 mt-px inline-flex shrink-0 cursor-help text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <Info className="size-3.5" aria-hidden />
               </button>
@@ -55,6 +64,7 @@ export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: S
           {delta.label && <span className="ml-1 text-muted-foreground">{delta.label}</span>}
         </p>
       )}
+      {footer}
     </div>
   );
 };

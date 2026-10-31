@@ -30,6 +30,8 @@ export const tagReviewMetricsSchema = z.object({
     tagsLive: periodTrendSchema,
     manualReviewRatePercent: periodTrendSchema,
     medianTimeToLiveHours: periodTrendSchema,
+    approvedLast7d: z.object({ total: z.number(), manual: z.number() }),
+    looksLiveLast7d: z.number(),
     openIssues: z.object({ count: z.number(), newLast7d: z.number() }),
   }),
   reviewLatencyByPolicy: z.array(
@@ -48,6 +50,47 @@ export const tagReviewMetricsSchema = z.object({
     p90Hours: z.number().nullable(),
   }),
   stuckApprovalRequiredCount: z.number(),
+  waitingCount: z.number(),
   reports: z.object({ open: z.number(), last30Days: z.number() }),
 });
 export type TagReviewMetrics = z.infer<typeof tagReviewMetricsSchema>;
+
+export const tagPolicySchema = z.enum(policyValues);
+export const tagApprovalSourceSchema = z.enum(sourceValues);
+export const tagRejectionReasonSchema = z.enum(reasonValues);
+export type TagPolicy = z.infer<typeof tagPolicySchema>;
+export type TagApprovalSourceValue = z.infer<typeof tagApprovalSourceSchema>;
+export type TagRejectionReasonValue = z.infer<typeof tagRejectionReasonSchema>;
+
+const metricTagSchema = z.object({
+  id: z.string(),
+  reviewStatus: z.enum(["PENDING", "APPROVED", "REJECTED"]),
+  approvalSource: tagApprovalSourceSchema.nullable(),
+  rejectionReason: tagRejectionReasonSchema.nullable(),
+  rejectionNote: z.string().nullable(),
+  reRequestCount: z.number(),
+  sizeWorn: z.string().nullable(),
+  reportCount: z.number(),
+  submittedAt: z.string(),
+  decidedAt: z.string().nullable(),
+  reviewerName: z.string().nullable(),
+  waitHours: z.number(),
+  hoursToGoLive: z.number().nullable(),
+  look: z.object({
+    id: z.string(),
+    imageUrl: z.string(),
+    caption: z.string().nullable(),
+    postedAt: z.string(),
+  }),
+  creator: z.object({ id: z.string(), name: z.string(), handle: z.string() }),
+  product: z.object({ id: z.string(), name: z.string(), imageUrl: z.string().nullable() }),
+  brand: z.object({ id: z.string(), name: z.string(), policy: tagPolicySchema }),
+});
+export type MetricTag = z.infer<typeof metricTagSchema>;
+
+export const metricTagPageSchema = z.object({
+  items: z.array(metricTagSchema),
+  nextCursor: z.string().nullable(),
+  totalCount: z.number(),
+});
+export type MetricTagPage = z.infer<typeof metricTagPageSchema>;

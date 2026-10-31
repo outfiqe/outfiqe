@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -102,6 +103,24 @@ const createTag = async (
   const [tag] = look.taggedProducts;
   if (!tag) throw new Error("tag not created");
   return { look, tag };
+};
+
+const seedApprovedTag = async (
+  creatorId: string,
+  brandId: string,
+  approval: {
+    approvalSource: "BRAND" | "POLICY_OPEN" | "SLA";
+    reviewedById?: string;
+    reviewedAt?: Date;
+  },
+) => {
+  const product = await createProduct(brandId);
+  const { look, tag } = await createTag(creatorId, product.id);
+  await prisma.creatorLookProduct.update({
+    where: { id: tag.id },
+    data: { reviewStatus: "APPROVED", ...approval },
+  });
+  return { look, tag, product };
 };
 
 const seedPendingTag = async () => {
@@ -525,5 +544,201 @@ describe("GET /api/tag-reviews/metrics", () => {
     expect(overview.manualReviewRatePercent.deltaPercent).toBeNull();
     expect(overview.medianTimeToLiveHours.value).toBeNull();
     expect(overview.medianTimeToLiveHours.deltaPercent).toBeNull();
+  });
+
+  it("counts instant automatic approvals and leaves out tags on deleted looks", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator } = await seedPendingTag();
+
+    await seedApprovedTag(creator.id, brand.id, { approvalSource: "POLICY_OPEN" });
+    await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "BRAND",
+      reviewedById: creator.id,
+      reviewedAt: new Date(),
+    });
+    const { look: deletedLook } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "BRAND",
+      reviewedById: creator.id,
+      reviewedAt: new Date(),
+    });
+    await prisma.creatorLook.update({
+      where: { id: deletedLook.id },
+      data: { deletedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews/metrics")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    const { overview, waitingCount, approvalSourceMix } = response.body.data;
+    expect(overview.tagsLive.value).toBe(2);
+    expect(overview.manualReviewRatePercent.value).toBe(50);
+    expect(overview.approvedLast7d).toEqual({ total: 2, manual: 1 });
+    expect(overview.looksLiveLast7d).toBe(2);
+    expect(waitingCount).toBe(1);
+    expect(approvalSourceMix).toContainEqual({ source: "BRAND", count: 1 });
+  });
+});
+
+describe("GET /api/tag-reviews/metrics/tags", () => {
+  const listMetricTags = (authHeader: string, query: string) =>
+    request(testApp).get(`/api/tag-reviews/metrics/tags?${query}`).set("Authorization", authHeader);
+
+  it("403s a non-platform user", async () => {
+    const response = await listMetricTags(brandOwnerHeader(randomUUID()), "view=LIVE");
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects a view it does not know", async () => {
+    const { authHeader } = await createAdminSession();
+    const response = await listMetricTags(authHeader, "view=EVERYTHING");
+    expect(response.status).toBe(400);
+  });
+
+  it("lists exactly the tags behind the live number, with who, what and how", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator } = await seedPendingTag();
+    const { tag, product, look } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "POLICY_OPEN",
+    });
+    const { look: deletedLook } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "POLICY_OPEN",
+    });
+    await prisma.creatorLook.update({
+      where: { id: deletedLook.id },
+      data: { deletedAt: new Date() },
+    });
+
+    const response = await listMetricTags(authHeader, "view=LIVE");
+
+    expect(response.status).toBe(200);
+    const { items, totalCount, nextCursor } = response.body.data;
+    expect(totalCount).toBe(1);
+    expect(nextCursor).toBeNull();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      id: tag.id,
+      reviewStatus: "APPROVED",
+      approvalSource: "POLICY_OPEN",
+      reportCount: 0,
+      waitHours: 0,
+      look: { id: look.id },
+      creator: { id: creator.id, handle: creator.handle },
+      product: { id: product.id },
+      brand: { id: brand.id, name: brand.name },
+    });
+    expect(items[0].decidedAt).not.toBeNull();
+  });
+
+  it("narrows by approval source and rejection reason inside the query", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator } = await seedPendingTag();
+    await seedApprovedTag(creator.id, brand.id, { approvalSource: "POLICY_OPEN" });
+    const { tag: slaTag } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "SLA",
+      reviewedAt: new Date(),
+    });
+    const { tag: rejectedTag } = await createTag(creator.id, (await createProduct(brand.id)).id);
+    await prisma.creatorLookProduct.update({
+      where: { id: rejectedTag.id },
+      data: {
+        reviewStatus: "REJECTED",
+        rejectionReason: "COUNTERFEIT_SUSPECTED",
+        reviewedAt: new Date(),
+      },
+    });
+
+    const bySource = await listMetricTags(authHeader, "view=LIVE&source=SLA");
+    const byReason = await listMetricTags(authHeader, "view=REJECTED&reason=NOT_OUR_PRODUCT");
+
+    expect(bySource.body.data.items.map(({ id }: { id: string }) => id)).toEqual([slaTag.id]);
+    expect(byReason.body.data.totalCount).toBe(0);
+    expect(byReason.body.data.items).toEqual([]);
+  });
+
+  it("shows stuck tags only under the review-every-tag policy, longest wait first", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator, tag: newestTag } = await seedPendingTag();
+    await prisma.brand.update({
+      where: { id: brand.id },
+      data: { tagReviewPolicy: "APPROVAL_REQUIRED" },
+    });
+    const { tag: olderTag } = await createTag(creator.id, (await createProduct(brand.id)).id);
+    const { tag: oldestTag } = await createTag(creator.id, (await createProduct(brand.id)).id);
+    await prisma.creatorLookProduct.update({
+      where: { id: olderTag.id },
+      data: { submittedAt: subDays(new Date(), 8) },
+    });
+    await prisma.creatorLookProduct.update({
+      where: { id: oldestTag.id },
+      data: { submittedAt: subDays(new Date(), 10) },
+    });
+
+    const response = await listMetricTags(authHeader, "view=STUCK");
+
+    const stuckTagIds = response.body.data.items.map(({ id }: { id: string }) => id);
+    expect(stuckTagIds).toEqual([oldestTag.id, olderTag.id]);
+    expect(stuckTagIds).not.toContain(newestTag.id);
+    expect(response.body.data.items[0].waitHours).toBeGreaterThanOrEqual(10 * 24);
+  });
+
+  it("lists one tag per look for the first-live view, slowest look first", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator } = await seedPendingTag();
+    const { look: slowLook, tag: slowLookFirstTag } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "BRAND",
+      reviewedAt: new Date(),
+    });
+    await prisma.creatorLook.update({
+      where: { id: slowLook.id },
+      data: { createdAt: subDays(new Date(), 6) },
+    });
+    await prisma.creatorLookProduct.create({
+      data: {
+        creatorLookId: slowLook.id,
+        productId: (await createProduct(brand.id)).id,
+        reviewStatus: "APPROVED",
+        approvalSource: "BRAND",
+        reviewedAt: new Date(Date.now() + 60_000),
+      },
+    });
+    const { tag: quickTag } = await seedApprovedTag(creator.id, brand.id, {
+      approvalSource: "POLICY_OPEN",
+    });
+
+    const response = await listMetricTags(authHeader, "view=FIRST_LIVE");
+
+    const { items, totalCount } = response.body.data;
+    expect(totalCount).toBe(2);
+    expect(items.map(({ id }: { id: string }) => id)).toEqual([slowLookFirstTag.id, quickTag.id]);
+    expect(items[0].hoursToGoLive).toBeGreaterThanOrEqual(6 * 24);
+  });
+
+  it("walks every page without a gap or a repeat and ignores a broken cursor", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand, creator } = await seedPendingTag();
+    const seededTagIds = [];
+    for (let index = 0; index < 3; index += 1) {
+      const { tag } = await seedApprovedTag(creator.id, brand.id, {
+        approvalSource: "POLICY_OPEN",
+      });
+      seededTagIds.push(tag.id);
+    }
+
+    const firstPage = await listMetricTags(authHeader, "view=LIVE&limit=2");
+    const { items: firstItems, nextCursor } = firstPage.body.data;
+    const secondPage = await listMetricTags(authHeader, `view=LIVE&limit=2&cursor=${nextCursor}`);
+    const brokenCursorPage = await listMetricTags(authHeader, "view=LIVE&limit=2&cursor=broken");
+
+    const walkedTagIds = [...firstItems, ...secondPage.body.data.items].map(
+      ({ id }: { id: string }) => id,
+    );
+    expect(new Set(walkedTagIds)).toEqual(new Set(seededTagIds));
+    expect(walkedTagIds).toHaveLength(seededTagIds.length);
+    expect(secondPage.body.data.nextCursor).toBeNull();
+    expect(firstPage.body.data.totalCount).toBe(3);
+    expect(brokenCursorPage.status).toBe(200);
+    expect(brokenCursorPage.body.data.items).toHaveLength(2);
   });
 });

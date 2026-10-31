@@ -62,6 +62,8 @@ export type TagReviewOverview = {
   tagsLive: PeriodTrend;
   manualReviewRatePercent: PeriodTrend;
   medianTimeToLiveHours: PeriodTrend;
+  approvedLast7d: { total: number; manual: number };
+  looksLiveLast7d: number;
   openIssues: { count: number; newLast7d: number };
 };
 
@@ -76,5 +78,32 @@ export type TagReviewMetrics = {
     p90Hours: number | null;
   };
   stuckApprovalRequiredCount: number;
+  waitingCount: number;
   reports: { open: number; last30Days: number };
+};
+
+export type TagReviewMetricTag = {
+  id: string;
+  reviewStatus: TagReviewStatus;
+  approvalSource: TagApprovalSource | null;
+  rejectionReason: TagRejectionReason | null;
+  rejectionNote: string | null;
+  reRequestCount: number;
+  sizeWorn: string | null;
+  reportCount: number;
+  submittedAt: Date;
+  decidedAt: Date | null;
+  reviewerName: string | null;
+  waitHours: number;
+  hoursToGoLive: number | null;
+  look: { id: string; imageUrl: string; caption: string | null; postedAt: Date };
+  creator: { id: string; name: string; handle: string };
+  product: { id: string; name: string; imageUrl: string | null };
+  brand: { id: string; name: string; policy: BrandTagReviewPolicy };
+};
+
+export type TagReviewMetricTagPage = {
+  items: TagReviewMetricTag[];
+  nextCursor: string | null;
+  totalCount: number;
 };

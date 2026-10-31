@@ -1,21 +1,27 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { TagReviewMetricsPage } from "@/features/tag-reviews/components/TagReviewMetricsPage";
 
 const API_BASE = "http://localhost:3000/api";
 
-const noTrend = { value: null, previousValue: null, deltaPercent: null };
-
 const baseMetrics = {
   overview: {
     tagsLive: { value: 8, previousValue: 4, deltaPercent: 100 },
     manualReviewRatePercent: { value: 75, previousValue: 50, deltaPercent: 50 },
     medianTimeToLiveHours: { value: 3, previousValue: 6, deltaPercent: -50 },
+    approvedLast7d: { total: 8, manual: 6 },
+    looksLiveLast7d: 6,
     openIssues: { count: 0, newLast7d: 0 },
   },
   reviewLatencyByPolicy: [
@@ -27,36 +33,141 @@ const baseMetrics = {
   ],
   rejectionReasonMix: [{ reason: "COUNTERFEIT_SUSPECTED", count: 3 }],
   timeToFirstShoppable: { looksWithApprovedTag: 12, p50Hours: 1.5, p90Hours: 30 },
-  stuckApprovalRequiredCount: 4,
-  reports: { open: 2, last30Days: 5 },
+  stuckApprovalRequiredCount: 0,
+  waitingCount: 4,
+  reports: { open: 0, last30Days: 5 },
 };
 
 const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  const rootRoute = createRootRoute({ component: TagReviewMetricsPage });
+  const childRoutes = ["/tag-reviews/tags", "/tag-reports"].map((path) =>
+    createRoute({ getParentRoute: () => rootRoute, path }),
   );
-  return render(<TagReviewMetricsPage />, { wrapper });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren(childRoutes),
+    history: createMemoryHistory({ initialEntries: ["/tag-reviews"] }),
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 };
 
-const mockMetrics = (data: unknown) => {
+const mockMetrics = (metrics: unknown) => {
   mswServer.use(
     http.get(`${API_BASE}/tag-reviews/metrics`, () =>
-      HttpResponse.json({ success: true, message: "ok", data }),
+      HttpResponse.json({ success: true, message: "ok", data: metrics }),
     ),
   );
 };
 
 describe("TagReviewMetricsPage", () => {
-  it("renders the funnel numbers from the API", async () => {
+  it("shows every number in plain words with its time period", async () => {
     mockMetrics(baseMetrics);
     renderPage();
 
-    expect(await screen.findByText(/Review every tag \(6\)/)).toBeInTheDocument();
-    expect(screen.getByText(/p50 5.2h · p90 41h/)).toBeInTheDocument();
-    expect(screen.getByText("Counterfeit suspected")).toBeInTheDocument();
-    expect(screen.getByText("Stuck > 7d under Review-every-tag")).toBeInTheDocument();
-    expect(screen.getByText("Open tag reports")).toBeInTheDocument();
+    expect(await screen.findByText("Live tags")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for a brand")).toBeInTheDocument();
+    expect(screen.getByText("Right now")).toBeInTheDocument();
+    expect(screen.getByText("Checked by a brand")).toBeInTheDocument();
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("Last 7 days · 6 of 8 tags")).toBeInTheDocument();
+    expect(screen.getByText("Typical time to go live")).toBeInTheDocument();
+    expect(screen.getByText("3 hours")).toBeInTheDocument();
+    expect(screen.getByText("↑ 100%")).toBeInTheDocument();
+    expect(screen.getByText("↓ 50%")).toBeInTheDocument();
+    expect(screen.queryByText(/p50|p90|SLA/)).not.toBeInTheDocument();
+  });
+
+  it("links each number to the tags behind it", async () => {
+    mockMetrics({ ...baseMetrics, stuckApprovalRequiredCount: 2 });
+    renderPage();
+
+    const allTimeLink = await screen.findByRole("link", { name: "All time" });
+    expect(allTimeLink.getAttribute("href")).toContain("view=LIVE");
+    expect(screen.getByRole("link", { name: /Right now/ }).getAttribute("href")).toContain(
+      "view=WAITING",
+    );
+    expect(screen.getByRole("link", { name: /Stuck tags/ }).getAttribute("href")).toContain(
+      "view=STUCK",
+    );
+    expect(screen.getByRole("link", { name: /Looks like a fake/ }).getAttribute("href")).toContain(
+      "reason=COUNTERFEIT_SUSPECTED",
+    );
+    expect(
+      screen.getByRole("link", { name: /Checked by the brand/ }).getAttribute("href"),
+    ).toContain("source=BRAND");
+    expect(screen.getByRole("link", { name: /Open tag reports/ }).getAttribute("href")).toContain(
+      "/tag-reports",
+    );
+  });
+
+  it("does not offer a link for an approval source with no tags", async () => {
+    mockMetrics(baseMetrics);
+    renderPage();
+
+    expect(await screen.findByText("Trusted muse")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Trusted muse/ })).not.toBeInTheDocument();
+  });
+
+  it("shows counts instead of a percent when too few tags were approved", async () => {
+    mockMetrics({
+      ...baseMetrics,
+      overview: { ...baseMetrics.overview, approvedLast7d: { total: 3, manual: 3 } },
+    });
+    renderPage();
+
+    expect(await screen.findByText("3 of 3")).toBeInTheDocument();
+    expect(screen.getByText("Last 7 days · too few to judge")).toBeInTheDocument();
+    expect(screen.queryByText("75%")).not.toBeInTheDocument();
+  });
+
+  it("judges speed only when there is enough data", async () => {
+    mockMetrics({
+      ...baseMetrics,
+      reviewLatencyByPolicy: [
+        { policy: "APPROVAL_REQUIRED", decidedCount: 1, p50Hours: 0, p90Hours: 0 },
+      ],
+      timeToFirstShoppable: { looksWithApprovedTag: 9, p50Hours: 165.6, p90Hours: 300 },
+    });
+    renderPage();
+
+    const brandRow = await screen.findByRole("link", { name: /Review every tag · 1 answer/ });
+    expect(within(brandRow).getByText("Too few to judge")).toBeInTheDocument();
+    const looksRow = screen.getByRole("link", { name: /9 looks with a live tag/ });
+    expect(within(looksRow).getByText("Too slow")).toBeInTheDocument();
+    expect(within(looksRow).getByText(/Usually 6.9 days/)).toBeInTheDocument();
+  });
+
+  it("warns in the banner when looks miss the target", async () => {
+    mockMetrics({
+      ...baseMetrics,
+      timeToFirstShoppable: { looksWithApprovedTag: 9, p50Hours: 165.6, p90Hours: 300 },
+    });
+    renderPage();
+
+    const banner = await screen.findByRole("alert");
+    expect(within(banner).getByText(/too long to become shoppable/)).toBeInTheDocument();
+    expect(within(banner).queryByText(/looks good/)).not.toBeInTheDocument();
+  });
+
+  it("shows friendly empty states", async () => {
+    mockMetrics({
+      ...baseMetrics,
+      rejectionReasonMix: [],
+      approvalSourceMix: [],
+      reviewLatencyByPolicy: [],
+      timeToFirstShoppable: { looksWithApprovedTag: 0, p50Hours: null, p90Hours: null },
+    });
+    renderPage();
+
+    expect(await screen.findByText("No tags have been rejected yet.")).toBeInTheDocument();
+    expect(screen.getByText(/No tags are live yet/)).toBeInTheDocument();
+    expect(screen.getByText("No brand has answered a tag yet.")).toBeInTheDocument();
+    expect(screen.getByText("No look has a live tag yet.")).toBeInTheDocument();
   });
 
   it("shows an error state when the request fails", async () => {
@@ -68,99 +179,5 @@ describe("TagReviewMetricsPage", () => {
     renderPage();
 
     expect(await screen.findByText(/Couldn't load tag review metrics/)).toBeInTheDocument();
-  });
-
-  it("shows the overview strip with headline numbers, plain-language subtext, and trend", async () => {
-    mockMetrics(baseMetrics);
-    renderPage();
-
-    expect(await screen.findByText("Tags live")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument();
-    expect(screen.getByText("Manual review rate")).toBeInTheDocument();
-    expect(screen.getByText("75%")).toBeInTheDocument();
-    expect(screen.getByText("Median time to live")).toBeInTheDocument();
-    expect(screen.getByText("3h")).toBeInTheDocument();
-    expect(screen.getByText("Open issues")).toBeInTheDocument();
-
-    expect(screen.getByText("↑ 100%")).toBeInTheDocument();
-    expect(screen.getByText("↓ 50%")).toBeInTheDocument();
-
-    expect(screen.getByRole("button", { name: "How Tags live is calculated" })).toBeInTheDocument();
-  });
-
-  it("shows an all-clear insight banner when there are no open issues and manual review has happened", async () => {
-    mockMetrics(baseMetrics);
-    renderPage();
-
-    expect(await screen.findByText(/Funnel looks healthy/)).toBeInTheDocument();
-  });
-
-  it("surfaces open issues as the most important insight, ahead of everything else", async () => {
-    mockMetrics({
-      ...baseMetrics,
-      overview: {
-        ...baseMetrics.overview,
-        openIssues: { count: 3, newLast7d: 2 },
-      },
-    });
-    renderPage();
-
-    expect(await screen.findByText(/3 issues need attention/)).toBeInTheDocument();
-    expect(screen.getByText(/2 of these are new in the last 7 days/)).toBeInTheDocument();
-  });
-
-  it("calls out zero manual review as the key insight when nothing else needs attention", async () => {
-    mockMetrics({
-      ...baseMetrics,
-      overview: {
-        ...baseMetrics.overview,
-        manualReviewRatePercent: { value: 0, previousValue: 0, deltaPercent: null },
-        openIssues: { count: 0, newLast7d: 0 },
-      },
-    });
-    renderPage();
-
-    expect(
-      await screen.findByText(/0 tags have gone through manual review yet/),
-    ).toBeInTheDocument();
-  });
-
-  it("labels legacy approvals as Legacy approval, not Grandfathered, with an explanatory tooltip", async () => {
-    mockMetrics({
-      ...baseMetrics,
-      approvalSourceMix: [
-        { source: "BRAND", count: 6 },
-        { source: "GRANDFATHERED", count: 4 },
-      ],
-    });
-    renderPage();
-
-    expect(await screen.findAllByText("Legacy approval")).not.toHaveLength(0);
-    expect(screen.queryByText("Grandfathered")).not.toBeInTheDocument();
-    expect(
-      await screen.findByRole("button", { name: "What does Legacy approval mean?" }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows plain-language empty-state guidance instead of a bare no-data message", async () => {
-    mockMetrics({ ...baseMetrics, rejectionReasonMix: [] });
-    renderPage();
-
-    expect(await screen.findByText(/No rejections yet — expected pre-launch/)).toBeInTheDocument();
-  });
-
-  it("shows 'not enough history yet' instead of a broken percentage when a trend has no prior data", async () => {
-    mockMetrics({
-      ...baseMetrics,
-      overview: {
-        tagsLive: { value: 0, previousValue: 0, deltaPercent: null },
-        manualReviewRatePercent: noTrend,
-        medianTimeToLiveHours: noTrend,
-        openIssues: { count: 0, newLast7d: 0 },
-      },
-    });
-    renderPage();
-
-    expect(await screen.findAllByText("Not enough history yet")).not.toHaveLength(0);
   });
 });

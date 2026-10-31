@@ -1,78 +1,124 @@
 import { FormBanner, StatCard } from "@outfiqe/design-system";
+import { Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 
 import type { TagReviewMetrics } from "../api/tagReviewsSchemas";
+import { METRIC_TAG_VIEW, type MetricTagView } from "../constants/metricTagViews.constants";
+import { buildTagReviewInsight } from "../utils/tagReviewInsight.utils";
 import {
-  MEDIAN_TIME_TO_LIVE_TARGET_HOURS,
-  TREND_WINDOW_LABEL,
-} from "../constants/tagReviewMetrics.constants";
-import { buildTrendDelta, formatHours, formatPercent } from "../utils/tagReviewMetrics.utils";
+  buildTrendDelta,
+  formatDuration,
+  formatPercent,
+  hasEnoughToJudge,
+  pluralize,
+} from "../utils/tagReviewMetrics.utils";
+import { MetricTagsLink } from "./MetricsCardParts";
 
-export const InsightBanner = ({ data }: { data: TagReviewMetrics }) => {
-  const { openIssues, manualReviewRatePercent, tagsLive } = data.overview;
+const CLICKABLE_CARD_CLASS_NAME = "relative transition-colors hover:border-foreground/30";
+const CARD_FOOTER_LINK_CLASS_NAME =
+  "mt-2 flex cursor-pointer items-center justify-between gap-2 text-xs text-muted-foreground after:absolute after:inset-0 after:rounded-xl after:ring-ring focus-visible:outline-none focus-visible:after:ring-2";
+const INSIGHT_ACTION_CLASS_NAME = "ml-1 font-semibold underline underline-offset-2";
+const NO_SAMPLES = 0;
 
-  if (openIssues.count > 0) {
-    return (
-      <FormBanner tone="negative">
-        <span className="font-semibold">
-          {openIssues.count} issue{openIssues.count === 1 ? "" : "s"} need
-          {openIssues.count === 1 ? "s" : ""} attention
-        </span>{" "}
-        — open tag reports and tags stuck past the review SLA.
-        {openIssues.newLast7d > 0 &&
-          ` ${openIssues.newLast7d} of these are new in the last 7 days.`}
-      </FormBanner>
-    );
-  }
+const CardFooterLink = ({ view, period }: { view: MetricTagView; period: string }) => (
+  <MetricTagsLink search={{ view }} className={CARD_FOOTER_LINK_CLASS_NAME}>
+    <span>{period}</span>
+    <ChevronRight className="size-4 shrink-0" aria-hidden />
+  </MetricTagsLink>
+);
 
-  if (tagsLive.value !== null && tagsLive.value > 0 && manualReviewRatePercent.value === 0) {
-    return (
-      <FormBanner tone="neutral">
-        <span className="font-semibold">0 tags have gone through manual review yet</span> — every
-        live tag was approved automatically or is a legacy approval.
-      </FormBanner>
-    );
-  }
+export const InsightBanner = ({ metrics }: { metrics: TagReviewMetrics }) => {
+  const { tone, headline, detail, action } = buildTagReviewInsight(metrics);
 
   return (
-    <FormBanner tone="success">
-      <span className="font-semibold">Funnel looks healthy</span> — no open issues, and tags are
-      going live at a reasonable pace.
+    <FormBanner tone={tone} className="mb-6">
+      <span className="font-semibold">{headline}.</span> {detail}
+      {action?.kind === "tags" && (
+        <MetricTagsLink search={{ view: action.view }} className={INSIGHT_ACTION_CLASS_NAME}>
+          {action.label}
+        </MetricTagsLink>
+      )}
+      {action?.kind === "reports" && (
+        <Link to="/tag-reports" className={INSIGHT_ACTION_CLASS_NAME}>
+          {action.label}
+        </Link>
+      )}
     </FormBanner>
   );
 };
 
-export const OverviewStrip = ({ data }: { data: TagReviewMetrics }) => {
-  const { tagsLive, manualReviewRatePercent, medianTimeToLiveHours, openIssues } = data.overview;
+const describeApprovalsPeriod = (total: number, manual: number): string => {
+  if (total === NO_SAMPLES) return "No approvals in the last 7 days";
+  if (!hasEnoughToJudge(total)) return "Last 7 days · too few to judge";
+  return `Last 7 days · ${manual} of ${pluralize(total, "tag")}`;
+};
+
+const describeLooksPeriod = (looks: number): string => {
+  if (looks === NO_SAMPLES) return "No looks went live in the last 7 days";
+  const lookCount = pluralize(looks, "look");
+  return hasEnoughToJudge(looks)
+    ? `Last 7 days · ${lookCount}`
+    : `Last 7 days · only ${lookCount}, too few to judge`;
+};
+
+export const OverviewStrip = ({ metrics }: { metrics: TagReviewMetrics }) => {
+  const { overview, waitingCount } = metrics;
+  const { tagsLive, manualReviewRatePercent, medianTimeToLiveHours } = overview;
+  const { approvedLast7d, looksLiveLast7d } = overview;
+  const { total: approvedTotal, manual: approvedManually } = approvedLast7d;
+  const hasEnoughApprovals = hasEnoughToJudge(approvedTotal);
+  const hasFewApprovals = approvedTotal > NO_SAMPLES && !hasEnoughApprovals;
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        label="Tags live"
+        label="Live tags"
+        className={CLICKABLE_CARD_CLASS_NAME}
         value={tagsLive.value === null ? "—" : tagsLive.value.toLocaleString()}
         delta={buildTrendDelta(tagsLive, "higherIsBetter")}
-        hint="How many muse product tags are currently approved and shoppable on the storefront right now."
+        hint="Product tags shoppers can use right now. Tags on deleted looks don't count."
+        footer={<CardFooterLink view={METRIC_TAG_VIEW.LIVE} period="All time" />}
       />
       <StatCard
-        label="Manual review rate"
-        value={formatPercent(manualReviewRatePercent.value)}
-        delta={buildTrendDelta(manualReviewRatePercent, "neutral")}
-        hint="Of the tags approved in the last 7 days, the share a brand staffer reviewed by hand rather than an automatic rule (open policy, trusted muse, verified buyer, or the SLA sweep)."
+        label="Waiting for a brand"
+        className={CLICKABLE_CARD_CLASS_NAME}
+        value={waitingCount.toLocaleString()}
+        hint="Tags a brand hasn't answered yet. Shoppers can't use them until the brand says yes."
+        footer={<CardFooterLink view={METRIC_TAG_VIEW.WAITING} period="Right now" />}
       />
       <StatCard
-        label="Median time to live"
-        value={formatHours(medianTimeToLiveHours.value)}
-        delta={buildTrendDelta(medianTimeToLiveHours, "lowerIsBetter")}
-        hint={`Typical (median) time from a muse dropping a look to that look's first tag going live, for tags that went live in the last 7 days. Target: under ${formatHours(MEDIAN_TIME_TO_LIVE_TARGET_HOURS)}.`}
+        label="Checked by a brand"
+        className={CLICKABLE_CARD_CLASS_NAME}
+        value={
+          hasFewApprovals
+            ? `${approvedManually} of ${approvedTotal}`
+            : formatPercent(manualReviewRatePercent.value)
+        }
+        delta={hasEnoughApprovals ? buildTrendDelta(manualReviewRatePercent, "neutral") : undefined}
+        hint="Of the tags approved in the last 7 days, how many a person at the brand checked. The rest went live automatically."
+        footer={
+          <CardFooterLink
+            view={METRIC_TAG_VIEW.APPROVED_THIS_WEEK}
+            period={describeApprovalsPeriod(approvedTotal, approvedManually)}
+          />
+        }
       />
       <StatCard
-        label="Open issues"
-        value={openIssues.count.toLocaleString()}
-        delta={{
-          value: openIssues.newLast7d > 0 ? `+${openIssues.newLast7d} new` : "No new issues",
-          tone: openIssues.newLast7d > 0 ? "negative" : "neutral",
-          label: TREND_WINDOW_LABEL,
-        }}
-        hint="Tags stuck pending under a brand's 'review every tag' policy past the 7-day SLA window, plus any currently open tag reports."
+        label="Typical time to go live"
+        className={CLICKABLE_CARD_CLASS_NAME}
+        value={formatDuration(medianTimeToLiveHours.value)}
+        delta={
+          hasEnoughToJudge(looksLiveLast7d)
+            ? buildTrendDelta(medianTimeToLiveHours, "lowerIsBetter")
+            : undefined
+        }
+        hint="From a muse posting a look to its first tag going live, for looks that went live in the last 7 days. Half were faster than this, half slower."
+        footer={
+          <CardFooterLink
+            view={METRIC_TAG_VIEW.FIRST_LIVE_THIS_WEEK}
+            period={describeLooksPeriod(looksLiveLast7d)}
+          />
+        }
       />
     </div>
   );

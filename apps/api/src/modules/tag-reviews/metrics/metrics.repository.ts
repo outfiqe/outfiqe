@@ -1,4 +1,3 @@
-import { secondsInHour } from "date-fns/constants";
 import { subDays } from "date-fns/subDays";
 
 import { prisma } from "#db/prisma.js";
@@ -12,14 +11,19 @@ import type {
   TagReviewMetrics,
   TagReviewOverview,
 } from "../tag-review.types.js";
+import {
+  LOOK_IS_LIVE_SQL,
+  roundToOneDecimal,
+  secondsToHours,
+  STUCK_TAG_AGE_DAYS,
+  TAG_APPROVED_AT_SQL,
+  TREND_WINDOW_DAYS,
+} from "./metrics.sql.js";
 
-const SLA_DECISION_WINDOW_DAYS = 7;
 const REPORT_RECENT_WINDOW_DAYS = 30;
-const TREND_WINDOW_DAYS = 7;
 const PRIOR_TREND_CUTOFF_DAYS = TREND_WINDOW_DAYS + TREND_WINDOW_DAYS;
 
-const TENTHS_PER_UNIT = 10;
-const TENTHS_OF_PERCENT_PER_RATIO = 1000;
+const PERCENT_PER_RATIO = 100;
 const NO_PRIOR_ACTIVITY = 0;
 const NO_APPROVED_TAGS = 0;
 
@@ -48,7 +52,11 @@ type ManualReviewRateRow = {
   previous_manual: number;
 };
 
-type MedianTimeToLiveRow = { current_p50: number | null; previous_p50: number | null };
+type MedianTimeToLiveRow = {
+  current_looks: number;
+  current_p50: number | null;
+  previous_p50: number | null;
+};
 
 const EMPTY_FIRST_SHOPPABLE: FirstShoppableRow = { looks: 0, p50: null, p90: null };
 const EMPTY_REPORT_TOTALS: ReportTotalsRow = { open: 0, last30: 0, last7: 0 };
@@ -61,26 +69,27 @@ const EMPTY_MANUAL_REVIEW_RATE: ManualReviewRateRow = {
   previous_manual: 0,
 };
 
-const EMPTY_MEDIAN_TIME_TO_LIVE: MedianTimeToLiveRow = { current_p50: null, previous_p50: null };
+const EMPTY_MEDIAN_TIME_TO_LIVE: MedianTimeToLiveRow = {
+  current_looks: 0,
+  current_p50: null,
+  previous_p50: null,
+};
 
 const buildMetricsCutoffs = (): MetricsCutoffs => {
   const now = new Date();
   return {
-    slaCutoff: subDays(now, SLA_DECISION_WINDOW_DAYS),
+    slaCutoff: subDays(now, STUCK_TAG_AGE_DAYS),
     reportRecentCutoff: subDays(now, REPORT_RECENT_WINDOW_DAYS),
     trendCutoff: subDays(now, TREND_WINDOW_DAYS),
     trendPriorCutoff: subDays(now, PRIOR_TREND_CUTOFF_DAYS),
   };
 };
 
-const roundToOneDecimal = (amount: number): number =>
-  Math.round(amount * TENTHS_PER_UNIT) / TENTHS_PER_UNIT;
-
 const toPercentWithOneDecimal = (ratio: number): number =>
-  Math.round(ratio * TENTHS_OF_PERCENT_PER_RATIO) / TENTHS_PER_UNIT;
+  roundToOneDecimal(ratio * PERCENT_PER_RATIO);
 
 const toHours = (seconds: number | null): number | null =>
-  seconds === null ? null : roundToOneDecimal(Number(seconds) / secondsInHour);
+  seconds === null ? null : secondsToHours(seconds);
 
 const toPeriodTrend = (value: number | null, previousValue: number | null): PeriodTrend => {
   if (value === null || previousValue === null || previousValue === NO_PRIOR_ACTIVITY) {
@@ -104,26 +113,32 @@ const fetchReviewLatencyRows = (): Promise<ReviewLatencyRow[]> =>
              ORDER BY EXTRACT(EPOCH FROM (clp.reviewed_at - clp.submitted_at))
            ) AS p90
     FROM creator_look_products clp
+    JOIN creator_looks cl ON cl.id = clp.creator_look_id
     JOIN products p ON p.id = clp.product_id
     JOIN brands b ON b.id = p.brand_id
     WHERE clp.reviewed_by_id IS NOT NULL AND clp.reviewed_at IS NOT NULL
+      AND ${LOOK_IS_LIVE_SQL}
     GROUP BY b.tag_review_policy
   `);
 
 const fetchApprovalSourceRows = () =>
   prisma.$queryRaw<{ approval_source: TagApprovalSource; count: number }[]>(Prisma.sql`
-    SELECT approval_source, COUNT(*)::int AS count
-    FROM creator_look_products
-    WHERE review_status = 'APPROVED' AND approval_source IS NOT NULL
-    GROUP BY approval_source
+    SELECT clp.approval_source, COUNT(*)::int AS count
+    FROM creator_look_products clp
+    JOIN creator_looks cl ON cl.id = clp.creator_look_id
+    WHERE clp.review_status = 'APPROVED' AND clp.approval_source IS NOT NULL
+      AND ${LOOK_IS_LIVE_SQL}
+    GROUP BY clp.approval_source
   `);
 
 const fetchRejectionReasonRows = () =>
   prisma.$queryRaw<{ rejection_reason: TagRejectionReason; count: number }[]>(Prisma.sql`
-    SELECT rejection_reason, COUNT(*)::int AS count
-    FROM creator_look_products
-    WHERE review_status = 'REJECTED' AND rejection_reason IS NOT NULL
-    GROUP BY rejection_reason
+    SELECT clp.rejection_reason, COUNT(*)::int AS count
+    FROM creator_look_products clp
+    JOIN creator_looks cl ON cl.id = clp.creator_look_id
+    WHERE clp.review_status = 'REJECTED' AND clp.rejection_reason IS NOT NULL
+      AND ${LOOK_IS_LIVE_SQL}
+    GROUP BY clp.rejection_reason
   `);
 
 const fetchFirstShoppableTimes = async (): Promise<FirstShoppableRow> => {
@@ -161,6 +176,11 @@ const countStuckApprovalRequiredTags = (slaCutoff: Date): Promise<number> =>
     },
   });
 
+const countWaitingTags = (): Promise<number> =>
+  prisma.creatorLookProduct.count({
+    where: { reviewStatus: TagReviewStatus.PENDING, creatorLook: { deletedAt: null } },
+  });
+
 const fetchReportTotals = async ({
   reportRecentCutoff,
   trendCutoff,
@@ -177,11 +197,13 @@ const fetchReportTotals = async ({
 const fetchTagsLive = async ({ trendCutoff }: MetricsCutoffs): Promise<TagsLiveRow> => {
   const [tagsLive = EMPTY_TAGS_LIVE] = await prisma.$queryRaw<TagsLiveRow[]>(Prisma.sql`
     SELECT
-      COUNT(*) FILTER (WHERE review_status = 'APPROVED')::int AS current,
+      COUNT(*) FILTER (WHERE clp.review_status = 'APPROVED')::int AS current,
       COUNT(*) FILTER (
-        WHERE review_status = 'APPROVED' AND reviewed_at <= ${trendCutoff}
+        WHERE clp.review_status = 'APPROVED' AND ${TAG_APPROVED_AT_SQL} <= ${trendCutoff}
       )::int AS previous
-    FROM creator_look_products
+    FROM creator_look_products clp
+    JOIN creator_looks cl ON cl.id = clp.creator_look_id
+    WHERE ${LOOK_IS_LIVE_SQL}
   `);
   return tagsLive;
 };
@@ -195,21 +217,22 @@ const fetchManualReviewRate = async ({
   >(Prisma.sql`
     SELECT
       COUNT(*) FILTER (
-        WHERE review_status = 'APPROVED' AND reviewed_at >= ${trendCutoff}
+        WHERE ${TAG_APPROVED_AT_SQL} >= ${trendCutoff}
       )::int AS current_total,
       COUNT(*) FILTER (
-        WHERE review_status = 'APPROVED' AND reviewed_at >= ${trendCutoff}
-          AND approval_source = 'BRAND'
+        WHERE ${TAG_APPROVED_AT_SQL} >= ${trendCutoff} AND clp.approval_source = 'BRAND'
       )::int AS current_manual,
       COUNT(*) FILTER (
-        WHERE review_status = 'APPROVED' AND reviewed_at >= ${trendPriorCutoff}
-          AND reviewed_at < ${trendCutoff}
+        WHERE ${TAG_APPROVED_AT_SQL} >= ${trendPriorCutoff}
+          AND ${TAG_APPROVED_AT_SQL} < ${trendCutoff}
       )::int AS previous_total,
       COUNT(*) FILTER (
-        WHERE review_status = 'APPROVED' AND reviewed_at >= ${trendPriorCutoff}
-          AND reviewed_at < ${trendCutoff} AND approval_source = 'BRAND'
+        WHERE ${TAG_APPROVED_AT_SQL} >= ${trendPriorCutoff}
+          AND ${TAG_APPROVED_AT_SQL} < ${trendCutoff} AND clp.approval_source = 'BRAND'
       )::int AS previous_manual
-    FROM creator_look_products
+    FROM creator_look_products clp
+    JOIN creator_looks cl ON cl.id = clp.creator_look_id
+    WHERE clp.review_status = 'APPROVED' AND ${LOOK_IS_LIVE_SQL}
   `);
   return manualReviewRate;
 };
@@ -229,6 +252,7 @@ const fetchMedianTimeToLive = async ({
       GROUP BY clp.creator_look_id
     )
     SELECT
+      COUNT(*) FILTER (WHERE fa.approved_at >= ${trendCutoff})::int AS current_looks,
       percentile_cont(0.5) WITHIN GROUP (
         ORDER BY EXTRACT(EPOCH FROM (fa.approved_at - cl.created_at))
       ) FILTER (WHERE fa.approved_at >= ${trendCutoff}) AS current_p50,
@@ -273,6 +297,11 @@ const buildOverview = ({
     toHours(medianTimeToLive.current_p50),
     toHours(medianTimeToLive.previous_p50),
   ),
+  approvedLast7d: {
+    total: manualReviewRate.current_total,
+    manual: manualReviewRate.current_manual,
+  },
+  looksLiveLast7d: medianTimeToLive.current_looks,
   openIssues: {
     count: reportTotals.open + stuckApprovalRequiredCount,
     newLast7d: reportTotals.last7,
@@ -289,6 +318,7 @@ export const tagReviewMetricsRepository = {
       rejectionReasonRows,
       firstShoppable,
       stuckApprovalRequiredCount,
+      waitingCount,
       reportTotals,
       tagsLive,
       manualReviewRate,
@@ -299,6 +329,7 @@ export const tagReviewMetricsRepository = {
       fetchRejectionReasonRows(),
       fetchFirstShoppableTimes(),
       countStuckApprovalRequiredTags(cutoffs.slaCutoff),
+      countWaitingTags(),
       fetchReportTotals(cutoffs),
       fetchTagsLive(cutoffs),
       fetchManualReviewRate(cutoffs),
@@ -328,6 +359,7 @@ export const tagReviewMetricsRepository = {
         p90Hours: toHours(firstShoppable.p90),
       },
       stuckApprovalRequiredCount,
+      waitingCount,
       reports: { open: reportTotals.open, last30Days: reportTotals.last30 },
     };
   },

@@ -54,6 +54,7 @@ const ROUTES = [
   "/support",
   "/tag-reports",
   "/tag-reviews",
+  "/tag-reviews/tags",
   "/team",
   "/trending",
   "/users",
