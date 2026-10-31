@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Button,
-  ChartCard,
-  CheriqIcon,
-  FormBanner,
-  Skeleton,
-  StatCard,
-  TrendChart,
-} from "@outfiqe/design-system";
+import { Button, CheriqIcon, FormBanner, Skeleton, StatCard } from "@outfiqe/design-system";
+import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -204,7 +197,7 @@ type CreatorOverviewProps = {
 };
 
 export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
-  const { data: overview, isPending, isError } = useCreatorOverview();
+  const { data: overview, isPending, isError } = useCreatorOverview(creatorStatus);
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (

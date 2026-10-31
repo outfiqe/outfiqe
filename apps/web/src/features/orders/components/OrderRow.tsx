@@ -5,6 +5,7 @@ import { AppImage } from "@/shared/components/AppImage";
 
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
+import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
 import { StatusBadge } from "./StatusBadge";
 
 const ORDER_THUMBNAIL_SIZE = "56px";
@@ -62,7 +63,13 @@ export const OrderRow = ({ order }: OrderRowProps) => {
       <div className="flex shrink-0 gap-1.5">
         <StatusBadge
           status={paymentStatus}
-          label={paymentStatus === PaymentStatus.DUE ? "COD due" : paymentStatus}
+          label={
+            hasNothingLeftToPay(fulfilmentStatus, paymentStatus)
+              ? NOTHING_TO_PAY_LABEL
+              : paymentStatus === PaymentStatus.DUE
+                ? "COD due"
+                : paymentStatus
+          }
         />
         <StatusBadge status={fulfilmentStatus} />
       </div>

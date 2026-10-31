@@ -1,4 +1,5 @@
-import { StatCard, TrendChart } from "@outfiqe/design-system";
+import { StatCard } from "@outfiqe/design-system";
+import { TrendChart } from "@outfiqe/design-system/charts";
 
 import { percent } from "@/features/financial-rollup/constants/financialRollup.constants";
 

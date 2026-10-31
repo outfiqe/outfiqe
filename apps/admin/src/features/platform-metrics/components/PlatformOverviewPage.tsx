@@ -1,12 +1,5 @@
-import {
-  Button,
-  ChartCard,
-  FormBanner,
-  Skeleton,
-  StatCard,
-  StatCardSkeleton,
-  TrendChart,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { useQuery } from "@tanstack/react-query";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import {

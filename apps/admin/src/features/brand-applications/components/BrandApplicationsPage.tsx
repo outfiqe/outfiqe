@@ -29,6 +29,9 @@ const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
   REJECTED: "Rejected",
 };
 
+const INVITE_NOT_DELIVERED_MESSAGE =
+  "The invite email didn't send. Use Resend invite on the Approved tab.";
+
 const reviewFailureMessage = (mutationError: unknown, fallback: string): string =>
   mutationError instanceof ApiClientError ? mutationError.message : fallback;
 
@@ -51,7 +54,19 @@ export const BrandApplicationsPage = () => {
   const approve = useApiMutation({
     mutationFn: (id: string) => brandApplicationsApi.approve(id),
     invalidateKeys: [["brand-applications"]],
-    onSuccess: () => toast.success("Application approved."),
+    onSuccess: ({ isInviteDelivered }) => {
+      if (isInviteDelivered) toast.success("Application approved. Invite sent.");
+      else toast.error(INVITE_NOT_DELIVERED_MESSAGE);
+    },
+  });
+
+  const resendInvite = useApiMutation({
+    mutationFn: (id: string) => brandApplicationsApi.resendInvite(id),
+    invalidateKeys: [["brand-applications"]],
+    onSuccess: ({ isInviteDelivered }) => {
+      if (isInviteDelivered) toast.success("Invite resent.");
+      else toast.error(INVITE_NOT_DELIVERED_MESSAGE);
+    },
   });
 
   const reject = useApiMutation({
@@ -67,6 +82,9 @@ export const BrandApplicationsPage = () => {
   const actionErrorFor = (applicationId: string): string | null => {
     if (approve.isError && approve.variables === applicationId) {
       return reviewFailureMessage(approve.error, "Couldn't approve this application. Try again.");
+    }
+    if (resendInvite.isError && resendInvite.variables === applicationId) {
+      return reviewFailureMessage(resendInvite.error, "Couldn't resend the invite. Try again.");
     }
     if (reject.isError && reject.variables?.id === applicationId) {
       return reviewFailureMessage(reject.error, "Couldn't reject this application. Try again.");
@@ -112,8 +130,17 @@ export const BrandApplicationsPage = () => {
         )}
 
         {applications.map((application) => {
-          const { id, brandName, status, contactName, makesOwnPieces, email, phone, instagram } =
-            application;
+          const {
+            id,
+            brandName,
+            status,
+            contactName,
+            makesOwnPieces,
+            email,
+            phone,
+            instagram,
+            isAwaitingBrandSetup,
+          } = application;
 
           const summaryLine = [contactName, makesOwnPieces].filter(Boolean).join(" · ");
           const actionError = actionErrorFor(id);
@@ -135,6 +162,17 @@ export const BrandApplicationsPage = () => {
                     {email || "No email on file"} &middot; {phone} &middot; {instagram}
                   </p>
                 </div>
+
+                {canReviewBrands && isAwaitingBrandSetup && (
+                  <Button
+                    variant="outline"
+                    onClick={() => resendInvite.mutate(id)}
+                    isLoading={resendInvite.isPending && resendInvite.variables === id}
+                    disabled={resendInvite.isPending}
+                  >
+                    Resend invite
+                  </Button>
+                )}
 
                 {canReviewBrands && status === "PENDING" && (
                   <div className="flex gap-2">

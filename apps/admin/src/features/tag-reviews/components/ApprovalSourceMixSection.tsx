@@ -1,4 +1,4 @@
-import { BarSeries, ChartCard } from "@outfiqe/design-system";
+import { BarSeries, ChartCard } from "@outfiqe/design-system/charts";
 
 import type { TagReviewMetrics } from "../api/tagReviewsSchemas";
 import {

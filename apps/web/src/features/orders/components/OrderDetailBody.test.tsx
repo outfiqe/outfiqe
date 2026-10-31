@@ -15,12 +15,17 @@ const mocks = vi.hoisted(() => ({
     isError: false,
     error: null as unknown,
   },
+  authState: { isAuthenticated: true, isAuthResolved: true },
   redirectToPaymentGateway: vi.fn(),
   cancelOrder: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { redirectToPaymentGateway, cancelOrder, orderResult } = mocks;
+const { authState, redirectToPaymentGateway, cancelOrder, orderResult } = mocks;
 const initiateMutate = mocks.initiate.mutate;
+
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => mocks.authState,
+}));
 
 vi.mock("../hooks/useOrder", () => ({
   useOrder: () => mocks.orderResult,
@@ -89,6 +94,8 @@ const renderOrderDetail = () => {
 beforeEach(() => {
   orderResult.data = buildOrder();
   orderResult.isLoading = false;
+  authState.isAuthenticated = true;
+  authState.isAuthResolved = true;
 });
 
 afterEach(() => {
@@ -102,6 +109,27 @@ afterEach(() => {
 });
 
 describe("OrderDetailBody", () => {
+  it("waits for sign-in to resolve before deciding the order is missing", () => {
+    authState.isAuthResolved = false;
+    orderResult.data = undefined;
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/couldn't find that order/)).not.toBeInTheDocument();
+  });
+
+  it("asks a signed-out visitor to sign in and returns them to the order", () => {
+    authState.isAuthenticated = false;
+    orderResult.data = undefined;
+
+    renderOrderDetail();
+
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login?redirect=/orders/ORDER-1",
+    );
+  });
+
   it("shows a skeleton while the order is loading", () => {
     orderResult.data = undefined;
     orderResult.isLoading = true;
@@ -205,6 +233,69 @@ describe("OrderDetailBody", () => {
 
     expect(screen.getByText("This order was cancelled.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
+  });
+
+  it("shows nothing to pay and hides failed attempts on a cancelled unpaid wallet order", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "FAILED",
+      fulfilmentStatus: "CANCELLED",
+      transactions: [
+        {
+          id: "transaction-1",
+          provider: "ESEWA",
+          type: "PAYMENT",
+          status: "FAILED",
+          transactionRef: null,
+          createdAt: "2026-09-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("FAILED")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment via ESEWA/)).not.toBeInTheDocument();
+  });
+
+  it("stops asking for cash once a COD order has been delivered and paid", () => {
+    orderResult.data = buildOrder({ fulfilmentStatus: "DELIVERED", paymentStatus: "PAID" });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Payment of Rs. 2,760 via COD.")).toBeInTheDocument();
+  });
+
+  it("stops asking for cash when a refused COD parcel comes back", () => {
+    orderResult.data = buildOrder({ fulfilmentStatus: "RETURNED", paymentStatus: "DUE" });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+  });
+
+  it("shows nothing to pay and no collected cash on a cancelled COD order", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "CANCELLED",
+      transactions: [
+        {
+          id: "transaction-1",
+          provider: "COD",
+          type: "PAYMENT",
+          status: "SUCCEEDED",
+          transactionRef: null,
+          createdAt: "2026-09-01T00:00:00.000Z",
+        },
+      ],
+    });
+    renderOrderDetail();
+
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("DUE")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment via COD/)).not.toBeInTheDocument();
   });
 
   it("re-initiates payment for the order when Resume payment is clicked", async () => {

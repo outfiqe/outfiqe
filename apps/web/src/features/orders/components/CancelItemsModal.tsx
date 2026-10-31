@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { OrderItem } from "../api/orderSchemas";
 import { useCancelOrderItems } from "../hooks/useCancelOrderItems";
+import { describeItemCancellation } from "../utils/cancellationWording.utils";
 
 const NOTHING_CHOSEN = 0;
 const MAX_REASON_LENGTH = 500;
@@ -35,7 +36,7 @@ export const CancelItemsModal = ({ orderId, cancellableItems, onClose }: CancelI
       { lines, ...(trimmedReason ? { reason: trimmedReason } : {}) },
       {
         onSuccess: (refund) => {
-          toast.success(`Cancelled. Rs. ${refund.totalAmount.toLocaleString()} will be refunded.`);
+          toast.success(describeItemCancellation(refund));
           onClose();
         },
       },

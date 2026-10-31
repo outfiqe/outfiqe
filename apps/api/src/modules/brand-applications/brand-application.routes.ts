@@ -49,6 +49,13 @@ brandApplicationRoutes.post(
 );
 
 brandApplicationRoutes.post(
+  "/:id/resend-invite",
+  ...platformGuards.brandsManage,
+  validate({ params: brandApplicationIdParamSchema }),
+  brandApplicationController.resendInvite,
+);
+
+brandApplicationRoutes.post(
   "/:id/reject",
   ...platformGuards.brandsManage,
   validate({ params: brandApplicationIdParamSchema, body: rejectBrandApplicationSchema }),

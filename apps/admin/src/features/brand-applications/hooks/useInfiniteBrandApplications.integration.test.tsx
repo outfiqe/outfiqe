@@ -22,6 +22,7 @@ const buildApplication = (id: string) => ({
   reviewedAt: null,
   reviewedById: null,
   createdAt: "2026-01-01T00:00:00.000Z",
+  isAwaitingBrandSetup: false,
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => {
@@ -60,7 +61,11 @@ describe("brandApplicationsApi.approve", () => {
     mswServer.use(
       http.post(`${API_BASE}/brand-applications/:id/approve`, ({ params }) => {
         requestedId = params.id;
-        return HttpResponse.json({ success: true, message: "Application approved.", data: null });
+        return HttpResponse.json({
+          success: true,
+          message: "Application approved.",
+          data: { isInviteDelivered: true },
+        });
       }),
     );
 

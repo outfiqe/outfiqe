@@ -13,8 +13,10 @@ import { getExploreFeedFirstPageServer } from "@/features/explore/feed/api/serve
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 
+const EXPLORE_PAGE_TITLE = "Explore muse looks";
+
 export const metadata: Metadata = buildPageMetadata({
-  title: "Explore muse looks",
+  title: EXPLORE_PAGE_TITLE,
   description:
     "A feed of real outfits from Nepali muses. Every look is shoppable. Tap any piece to see the price, sizes and the brand behind it.",
   path: "/explore",
@@ -55,6 +57,7 @@ const ExplorePage = async ({ searchParams }: ExplorePageProps) => {
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main>
+        <h1 className="sr-only">{EXPLORE_PAGE_TITLE}</h1>
         <HydrationBoundary state={dehydrate(queryClient)}>
           <Suspense fallback={null}>
             <ExploreFeed />

@@ -5,6 +5,8 @@ import { apiClient } from "@/lib/apiClient";
 import {
   brandApplicationSchema,
   type BrandApplicationStatusValue,
+  type BrandInviteDelivery,
+  brandInviteDeliverySchema,
 } from "./brandApplicationsSchemas";
 
 const brandApplicationPageSchema = z.object({
@@ -26,8 +28,16 @@ export const brandApplicationsApi = {
     return brandApplicationPageSchema.parse(res.data);
   },
 
-  async approve(id: string): Promise<void> {
-    await apiClient.post(`/brand-applications/${id}/approve`);
+  async approve(id: string): Promise<BrandInviteDelivery> {
+    const res = await apiClient.post<BrandInviteDelivery>(`/brand-applications/${id}/approve`);
+    return brandInviteDeliverySchema.parse(res.data);
+  },
+
+  async resendInvite(id: string): Promise<BrandInviteDelivery> {
+    const res = await apiClient.post<BrandInviteDelivery>(
+      `/brand-applications/${id}/resend-invite`,
+    );
+    return brandInviteDeliverySchema.parse(res.data);
   },
 
   async reject(id: string, reason?: string): Promise<void> {

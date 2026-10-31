@@ -42,6 +42,8 @@ half-provisioned.
 
 ## Non-obvious rationale
 
+- **An invite email can fail after approval.** The approval is already saved by then, and the brand has no other way in, so the admin is told when it did not send and can use Resend invite. Resending replaces the token on the same invite, so the older link stops working and the seven days start again.
+
 - `approve` rejects (409 `ALREADY_REVIEWED`) if the application isn't `PENDING` — this guards
   against a double-click or two admins approving the same application concurrently; only the first
   request wins. The service-level check is a fast-path pre-check only; the actual guarantee is an

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { cn } from "@/shared/lib/cn";
 
 import {
@@ -16,6 +17,11 @@ import {
 } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
+import {
+  hasNoMoneyTaken,
+  hasNothingLeftToPay,
+  NOTHING_TO_PAY_LABEL,
+} from "../utils/cancellationWording.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -34,15 +40,27 @@ type OrderDetailBodyProps = {
 };
 
 export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
+  const { isAuthenticated, isAuthResolved } = useAuth();
   const orderQuery = useOrder(orderId);
   const hasRefunds = (orderQuery.data?.refundedAmount ?? NOTHING_REFUNDED) > NOTHING_REFUNDED;
   const refundDestinationQuery = useRefundDestination(orderId, hasRefunds);
   const [isCancelItemsOpen, setIsCancelItemsOpen] = useState(false);
 
-  if (orderQuery.isLoading) {
+  if (!isAuthResolved || orderQuery.isLoading) {
     return (
       <div className="mx-auto max-w-lg py-10">
         <Skeleton className="h-96 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="py-14 text-center">
+        <p className="text-sm text-muted-foreground">Sign in to see this order.</p>
+        <Button asChild className="mt-5">
+          <Link href={`/login?redirect=/orders/${orderId}`}>Sign in</Link>
+        </Button>
       </div>
     );
   }
@@ -84,6 +102,8 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     (refundDestination.canEdit || refundDestination.destination !== null);
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
+  const isMoneyUntaken = hasNoMoneyTaken(paymentStatus);
+  const hasNothingToPay = hasNothingLeftToPay(fulfilmentStatus, paymentStatus);
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
@@ -118,11 +138,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Order {id}
         </h1>
-        {!orderCancelled && (
+        {!orderCancelled && !hasNothingToPay && (
           <p className="mt-4 text-sm text-muted-foreground">
             {awaitingPayment
               ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
-              : paymentMethod === PaymentMethod.COD
+              : isMoneyUntaken
                 ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
                 : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
           </p>
@@ -161,7 +181,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           )}
         >
           <span>Payment</span>
-          <StatusBadge status={paymentStatus} />
+          {hasNothingToPay ? (
+            <span>{NOTHING_TO_PAY_LABEL}</span>
+          ) : (
+            <StatusBadge status={paymentStatus} />
+          )}
         </div>
         <div className="flex justify-between py-1.5 text-sm text-muted-foreground">
           <span>Delivering to</span>
@@ -174,14 +198,15 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <span>Rs. {total.toLocaleString()}</span>
         </div>
 
-        <TransactionLedger transactions={transactions} />
+        {!isMoneyUntaken && <TransactionLedger transactions={transactions} />}
       </div>
 
       <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">
         {items.map((orderItem) => (
           <li key={orderItem.id}>
             {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
-            {orderItem.refundedQty > NOTHING_REFUNDED && ` (${orderItem.refundedQty} refunded)`}
+            {orderItem.refundedQty > NOTHING_REFUNDED &&
+              ` (${orderItem.refundedQty} ${isMoneyUntaken ? "cancelled" : "refunded"})`}
           </li>
         ))}
       </ul>
