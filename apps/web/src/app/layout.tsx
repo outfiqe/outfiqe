@@ -1,6 +1,7 @@
 import "./globals.css";
 
 import { THEME_INIT_SCRIPT } from "@outfiqe/design-system";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 
 import {
@@ -67,6 +68,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <JsonLd id="organization-jsonld" data={organizationSchema()} />
         <JsonLd id="website-jsonld" data={websiteSchema()} />
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
