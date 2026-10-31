@@ -56,6 +56,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
+  html:has([aria-modal="true"]) {
+    background-color: color-mix(in srgb, hsl(var(--background)) 40%, black);
+  }
   body {
     @apply bg-background text-foreground font-body antialiased;
     font-size: 15px;

@@ -27,6 +27,7 @@ export default defineConfig({
         "src/filter-menu.tsx",
         "src/scroll-row.tsx",
         "src/modal.tsx",
+        "src/confirm-modal.tsx",
         "src/layers.ts",
         "src/table.tsx",
         "src/tour.tsx",

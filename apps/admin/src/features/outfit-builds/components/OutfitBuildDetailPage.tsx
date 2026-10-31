@@ -18,8 +18,16 @@ import {
   useAdminBuildHistory,
 } from "../api/outfitBuildsApi";
 import type { AdminBuildAction, AdminBuildDetail } from "../api/outfitBuildsSchemas";
+import {
+  BUILD_PHOTO_STATUS_LABEL,
+  BUILD_ROLE_LABEL,
+  BUILD_STATUS_LABEL,
+  BUILD_VISIBILITY_LABEL,
+} from "../constants/buildLabels.constants";
+import { toBuildChangeCountLabel, toBuildEventLabel } from "../utils/buildLabels.utils";
 
 const SKELETON_ROW_COUNT = 4;
+
 const NOTHING = 0;
 const BUILDS_MANAGE_PERMISSION = "platform:builds:manage";
 
@@ -64,11 +72,9 @@ const BuildHistory = ({ outfitId }: { outfitId: string }) => {
       <ol className="space-y-1 text-sm">
         {events.map((event) => (
           <li key={event.version} className="text-foreground">
-            <span className="font-medium">v{event.version}</span> {event.type}
-            <span className="text-muted-foreground">
-              {" "}
-              by {event.actor?.name ?? "someone no longer here"} · {formatDateTime(event.createdAt)}
-            </span>
+            <span className="font-medium">{event.actor?.name ?? "Someone no longer here"}</span>{" "}
+            {toBuildEventLabel(event.type)}
+            <span className="text-muted-foreground"> · {formatDateTime(event.createdAt)}</span>
           </li>
         ))}
       </ol>
@@ -131,13 +137,13 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
           </h1>
           <div className="mt-1 flex flex-wrap gap-2">
             <Badge tone="neutral" showDot={false}>
-              {detail.status}
+              {BUILD_STATUS_LABEL[detail.status]}
             </Badge>
             <Badge tone="neutral" showDot={false}>
-              {detail.visibility}
+              {BUILD_VISIBILITY_LABEL[detail.visibility]}
             </Badge>
             <Badge tone="neutral" showDot={false}>
-              Version {detail.version}
+              {toBuildChangeCountLabel(detail.version)}
             </Badge>
             {detail.openReportCount > NOTHING && (
               <Badge tone="negative" showDot={false}>
@@ -169,7 +175,8 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
           <ul className="space-y-1 text-sm">
             {detail.members.map(({ user, role, isHappy }) => (
               <li key={user.id} className="text-foreground">
-                {user.name} <span className="text-muted-foreground">@{user.handle}</span> · {role}
+                {user.name} <span className="text-muted-foreground">@{user.handle}</span> ·{" "}
+                {BUILD_ROLE_LABEL[role]}
                 {isHappy ? " · happy" : ""}
               </li>
             ))}
@@ -196,7 +203,7 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
           <ul className="space-y-1 text-sm">
             {detail.versions.map((version) => (
               <li key={version.version} className="text-foreground">
-                v{version.version} · {version.itemCount} items · Rs. {version.total} ·{" "}
+                Version {version.version} · {version.itemCount} items · Rs. {version.total} ·{" "}
                 {formatDateTime(version.lockedAt)}
                 {version.version === detail.publishedVersion ? " · shown to viewers" : ""}
               </li>
@@ -243,7 +250,8 @@ export const OutfitBuildDetailPage = ({ outfitId }: { outfitId: string }) => {
                   loading="lazy"
                 />
                 <span className="block">
-                  {photo.kind === "TRY_ON" ? "Try-on" : "Build photo"} · {photo.status}
+                  {photo.kind === "TRY_ON" ? "Try-on" : "Build photo"} ·{" "}
+                  {BUILD_PHOTO_STATUS_LABEL[photo.status]}
                   {photo.coverPosition === null ? "" : " · cover"}
                 </span>
               </li>

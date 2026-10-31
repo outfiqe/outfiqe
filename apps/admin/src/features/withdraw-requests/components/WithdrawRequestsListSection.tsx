@@ -1,10 +1,9 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { bankAccountsAdminApi } from "@/features/bank-accounts/api/bankAccountsApi";

@@ -5,6 +5,7 @@ import {
   AutocompleteInput,
   AutocompleteItem,
   Button,
+  ConfirmModal,
   DateInput,
   Form,
   FormBanner,
@@ -25,7 +26,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";

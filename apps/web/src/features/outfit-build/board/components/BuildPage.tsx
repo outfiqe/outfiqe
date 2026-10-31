@@ -6,12 +6,12 @@ import { useTranslations } from "next-intl";
 
 import { PublishedBuildView } from "../../publishing/components/PublishedBuildView";
 import { SocialBuildView } from "../../social/components/SocialBuildView";
+import { MY_BUILDS_PATH } from "../constants/boardLinks";
 import { useOutfit } from "../hooks/useOutfit";
 import { useOutfitLiveSync } from "../hooks/useOutfitLiveSync";
 import { BuildBoard } from "./BuildBoard";
 
 const SKELETON_SLOT_COUNT = 6;
-const MY_BUILDS_PATH = "/builds";
 
 export const BuildPage = ({ outfitId }: { outfitId: string }) => {
   const t = useTranslations("outfitBuild.board");

@@ -66,7 +66,10 @@
         "people": "People · {count}",
         "photos": "Photos",
         "buyAndDrop": "Buy & drop"
-      }
+      },
+      "archivedDone": "Build archived.",
+      "leftDone": "You left the build.",
+      "archivedNotice": "This build is archived, so it can't be changed. It no longer shows in My Builds."
     },
     "slots": {
       "filledOf": "{filled} of {max}",
@@ -177,9 +180,13 @@
         "itemsSoldOut": "Swap the sold-out items to lock.",
         "notEveryoneHappy": "Everyone needs to tap I'm happy to lock."
       },
-      "archiveConfirm": "Archive this build? It will be hidden from My Builds.",
+      "archiveConfirm": {
+        "title": "Archive this build?",
+        "body": "It will be hidden from My Builds. You can't undo this."
+      },
       "archive": "Archive",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "working": "Working…"
     },
     "writes": {
       "conflictBy": "Board updated by {name}, showing latest.",

@@ -2,6 +2,7 @@ import {
   AchievementBadgeIcon,
   Button,
   Checkbox,
+  ConfirmModal,
   FormBanner,
   Tabs,
   TabsContent,
@@ -14,7 +15,6 @@ import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-rout
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { BackLink } from "@/components/BackLink";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { NoSectionAccess } from "@/components/NoSectionAccess";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";

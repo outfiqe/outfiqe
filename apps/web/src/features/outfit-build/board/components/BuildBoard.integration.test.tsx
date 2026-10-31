@@ -23,8 +23,11 @@ import {
 import { BuildBoard } from "./BuildBoard";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+const { goToPage } = vi.hoisted(() => ({ goToPage: vi.fn() }));
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
+  useRouter: () => ({ push: goToPage }),
 }));
 
 const ok = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
@@ -342,9 +345,56 @@ describe("BuildBoard", () => {
     expect(await screen.findByText("Your size M: sold out")).toBeInTheDocument();
   });
 
+  it("takes the owner back to My Builds once the build is archived", async () => {
+    mswServer.use(
+      http.post("/api/outfits/outfit-1/archive", () =>
+        ok({ version: 5, board: buildBoard({ version: 5, status: "ARCHIVED" }) }),
+      ),
+    );
+    renderBoard(buildBoard());
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+    const warning = screen.getByRole("dialog", { name: "Archive this build?" });
+    await user.click(within(warning).getByRole("button", { name: "Archive" }));
+
+    await waitFor(() => expect(goToPage).toHaveBeenCalledWith("/builds"));
+  });
+
+  it("stays on the build when archiving is refused", async () => {
+    goToPage.mockClear();
+    mswServer.use(
+      http.post("/api/outfits/outfit-1/archive", () =>
+        HttpResponse.json({ success: false, message: "Not now" }, { status: 422 }),
+      ),
+    );
+    renderBoard(buildBoard());
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+    const warning = screen.getByRole("dialog", { name: "Archive this build?" });
+    await user.click(within(warning).getByRole("button", { name: "Archive" }));
+
+    expect(await screen.findByText("Not now")).toBeInTheDocument();
+    expect(goToPage).not.toHaveBeenCalled();
+  });
+
+  it("explains an archived build", () => {
+    renderBoard(buildBoard({ status: "ARCHIVED" }));
+
+    expect(screen.getByText(/This build is archived/)).toBeInTheDocument();
+  });
+
+  it("links people on the build back to My Builds", () => {
+    renderBoard(buildBoard({ myRole: "EDITOR" }));
+
+    expect(screen.getByRole("link", { name: "My Builds" })).toHaveAttribute("href", "/builds");
+  });
+
   it("only shows the board read-only to someone watching from the chat", () => {
     renderBoard(buildBoard({ myRole: "VIEWER" }));
 
+    expect(screen.queryByRole("link", { name: "My Builds" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add to Top" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Lock build" })).not.toBeInTheDocument();
   });

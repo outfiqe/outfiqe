@@ -11,6 +11,7 @@ export * from "./carousel";
 export * from "./checkbox";
 export * from "./cheriq-icon";
 export * from "./cn";
+export * from "./confirm-modal";
 export * from "./crop-image";
 export * from "./crop-surface";
 export * from "./date-input";

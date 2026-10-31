@@ -1,7 +1,14 @@
-import { Badge, Button, Checkbox, FormBanner, Modal, Select } from "@outfiqe/design-system";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  ConfirmModal,
+  FormBanner,
+  Modal,
+  Select,
+} from "@outfiqe/design-system";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
-import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 

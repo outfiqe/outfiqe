@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, Modal, Skeleton, toast } from "@outfiqe/design-system";
 import { Plus, Ruler } from "lucide-react";
 import { useState } from "react";
 
@@ -208,32 +208,23 @@ export const ProductsSection = () => {
         <SizeChartModal product={sizeChartProduct} onClose={() => setSizeChartProduct(null)} />
       )}
 
-      <Modal
+      <ConfirmModal
         open={deletingProduct !== null}
-        onClose={() => setDeletingProduct(null)}
         title="Delete this product?"
         description="This can't be undone."
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeletingProduct(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              isLoading={deleteProduct.isPending}
-              className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
-            >
-              Delete
-            </Button>
-          </div>
-        }
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        destructive
+        isPending={deleteProduct.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingProduct(null)}
       >
         <p className="text-sm text-muted-foreground">
           {deletingProduct?.status === "APPROVED"
             ? "This product is live — it will disappear from the store immediately."
             : "It will be removed from your product list."}
         </p>
-      </Modal>
+      </ConfirmModal>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, toast } from "@outfiqe/design-system";
+import { Button, ConfirmModal, Modal, toast } from "@outfiqe/design-system";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -27,19 +27,20 @@ export const DeleteLinkModal = ({ link, onClose, onDeleted }: DeleteLinkModalPro
   };
 
   return (
-    <Modal open onClose={onClose} title="Delete link" ariaLabel="Delete link">
+    <ConfirmModal
+      open
+      title="Delete link"
+      confirmLabel="Delete"
+      pendingLabel="Deleting…"
+      destructive
+      isPending={deleteLink.isPending}
+      onConfirm={() => void confirmDelete()}
+      onCancel={onClose}
+    >
       <p className="text-sm text-muted-foreground">
         Delete this link? It stops working right away, and anyone who opens it will see that it is
         no longer available. Clicks and commission you have already earned from it are kept.
       </p>
-      <div className="mt-6 flex justify-end gap-2.5">
-        <Button type="button" variant="outline" onClick={onClose} disabled={deleteLink.isPending}>
-          Cancel
-        </Button>
-        <Button type="button" onClick={confirmDelete} isLoading={deleteLink.isPending}>
-          Delete
-        </Button>
-      </div>
-    </Modal>
+    </ConfirmModal>
   );
 };
