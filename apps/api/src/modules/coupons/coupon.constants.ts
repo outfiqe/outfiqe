@@ -17,7 +17,7 @@ export const REFUSAL_MESSAGES = {
   COUPON_MIN_SUBTOTAL_NOT_MET: "Your order doesn't meet this coupon's minimum.",
   COUPON_ALREADY_USED: "You've already used this coupon.",
   COUPON_NOT_ELIGIBLE_FOR_ITEMS: "This coupon doesn't apply to the items in your bag.",
-  COUPON_REQUIRES_PREPAID: "This coupon requires prepaid checkout (eSewa or Khalti).",
+  COUPON_REQUIRES_PREPAID: "This coupon only works with online payment.",
   COUPON_FIRST_ORDER_ONLY: "This coupon is only valid on your first order.",
   COUPON_EXHAUSTED: "This coupon has reached its limit.",
 } as const;

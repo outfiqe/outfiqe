@@ -12,7 +12,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Help centre",
   description:
-    "Answers to common Outfiqe questions: tracking your order, delivery across Nepal, cash on delivery, eSewa and Khalti, cancelling, refunds, Thrift, reviews and your account.",
+    "Answers to common Outfiqe questions: tracking your order, delivery across Nepal, cash on delivery and eSewa, cancelling, refunds, Thrift, reviews and your account.",
   path: "/help",
   keywords: ["Outfiqe help", "Outfiqe FAQ", "Outfiqe order support", "Outfiqe refunds"],
 });
@@ -49,7 +49,7 @@ const paymentFaqs = [
   {
     question: "How can I pay?",
     answer:
-      "Cash on delivery, eSewa or Khalti. Cash on delivery adds a small handling fee, which you'll see before you place the order.",
+      "Cash on delivery or eSewa. Cash on delivery adds a small handling fee, which you'll see before you place the order.",
   },
   {
     question: "Why can't I choose cash on delivery?",
@@ -72,7 +72,7 @@ const refundFaqs = [
   {
     question: "How is the money paid back?",
     answer:
-      "Khalti payments go straight back to your Khalti account. For cash on delivery, the amount is simply taken off what you pay the rider. For eSewa payments, we'll ask you for a refund account (eSewa, Khalti or bank) on the order page, and our team sends the money there.",
+      "For cash on delivery, the amount is simply taken off what you pay the rider. For eSewa payments, we'll ask you for a refund account (eSewa, Khalti or bank) on the order page, and our team sends the money there.",
   },
   {
     question: "Can I return something after delivery?",

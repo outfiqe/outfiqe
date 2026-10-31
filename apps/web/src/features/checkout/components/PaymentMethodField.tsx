@@ -1,9 +1,10 @@
 "use client";
 
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { cn } from "@/shared/lib/cn";
 
 import { PaymentMethod, type PaymentMethodValue } from "../api/checkoutSchemas";
-import { PAYMENT_METHODS } from "../constants/checkout.constants";
+import { listCheckoutPaymentMethods } from "../utils/listCheckoutPaymentMethods";
 
 type PaymentMethodFieldProps = {
   value: PaymentMethodValue;
@@ -16,11 +17,13 @@ export const PaymentMethodField = ({
   onChange,
   codUnavailableReason = null,
 }: PaymentMethodFieldProps) => {
+  const isKhaltiOn = useFeatureFlag("khalti_payments");
+
   return (
     <div>
       <p className="mb-2 text-xs text-muted-foreground">Payment method</p>
       <div className="space-y-2">
-        {PAYMENT_METHODS.map((method) => {
+        {listCheckoutPaymentMethods(isKhaltiOn).map((method) => {
           const isCodUnavailable =
             codUnavailableReason !== null && method.value === PaymentMethod.COD;
           const isEnabled = method.enabled && !isCodUnavailable;

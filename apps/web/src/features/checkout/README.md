@@ -32,6 +32,10 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 
 **Technical**: `CheckoutBody` reads either the persisted cart (`useCart`) or a Buy Now payload, builds a `Cart`-shaped object either way, and hands it — along with the fetched `DeliveryZone[]` (`useDeliveryZones`) — to `CheckoutForm`, which resolves the delivery fee live from the form's own `city` field and submits via `useCheckout` → `checkoutApi.submit` → `POST /orders/checkout` (see `apps/api/src/modules/orders/README.md`).
 
+## Khalti is hidden unless its switch is on
+
+`utils/listCheckoutPaymentMethods.ts` leaves Khalti out while the `khalti_payments` feature switch is off. The API refuses it too, see the payments module README.
+
 ## Buy Now bypasses the cart entirely
 
 `ProductDetail.tsx`'s Buy Now button calls `saveBuyNowPayload` (a `sessionStorage` write, not a cart mutation) with everything needed to render an order summary, then navigates to `/checkout?buyNow=1`. `CheckoutBody` reads that flag via `useSearchParams` and, when set, skips `useCart()` entirely — `useBuyNowPayload` reads the stored payload post-mount (inside an effect, not during render, so the client-only `sessionStorage` read can't cause a hydration mismatch against the server-rendered HTML) and `buildBuyNowCart` turns it into the same `Cart` shape the normal flow uses. It always sets `deliveryFee: 0` on that object — delivery-fee resolution isn't a Buy Now concern at all, it's `CheckoutForm`'s job for both paths alike (see Structure above), so a Buy Now cart's own `city` is always `null` and its `deliveryFee` field is never read for display. `CheckoutForm` is otherwise unchanged by any of this — it only ever consumes a `Cart`, never knows which source it came from — except that on submit it also passes `{ productId, sizeId, qty }` through as `buyNow` in the request body, and clears the stored payload once the order is placed.

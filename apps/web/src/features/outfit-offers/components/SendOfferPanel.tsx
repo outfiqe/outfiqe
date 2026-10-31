@@ -4,10 +4,12 @@ import { Button, FormBanner, Input, RadioGroup, Select, Textarea } from "@outfiq
 import { useTranslations } from "next-intl";
 import { type FormEvent, useId, useState } from "react";
 
+import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
-import { OFFER_PAYMENT_METHODS, type OfferPaymentMethod } from "../api/offerSchemas";
+import type { OfferPaymentMethod } from "../api/offerSchemas";
 import { useSendOffer } from "../hooks/useOffers";
+import { listOfferPaymentMethods } from "../utils/listOfferPaymentMethods";
 
 const WHOLE_RUPEES = /^\d+$/;
 const NO_CREATOR_PICKED = "";
@@ -29,7 +31,8 @@ export const SendOfferPanel = ({ outfitId, people }: SendOfferPanelProps) => {
   const sendOffer = useSendOffer(outfitId);
   const [creatorId, setCreatorId] = useState(NO_CREATOR_PICKED);
   const [enteredAmount, setEnteredAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<OfferPaymentMethod>("KHALTI");
+  const isKhaltiOn = useFeatureFlag("khalti_payments");
+  const [paymentMethod, setPaymentMethod] = useState<OfferPaymentMethod>("ESEWA");
   const [note, setNote] = useState("");
   const [formProblem, setFormProblem] = useState<string | null>(null);
 
@@ -109,7 +112,7 @@ export const SendOfferPanel = ({ outfitId, people }: SendOfferPanelProps) => {
           legend={t("payWith")}
           value={paymentMethod}
           onChange={setPaymentMethod}
-          options={OFFER_PAYMENT_METHODS.map((method) => ({
+          options={listOfferPaymentMethods(isKhaltiOn).map((method) => ({
             value: method,
             label: t(`method.${method}`),
           }))}
