@@ -1,36 +1,16 @@
 import { Drawer, DrawerScrollArea } from "@outfiqe/design-system";
-import { ChevronRight, Shirt } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 
 import { formatRupees } from "../../utils/format.utils";
 import type { PartnerDetail } from "../api/relationshipsSchemas";
+import { PRODUCT_ROW_CLASS_NAME } from "../constants/productRow";
+import { toPublicProductUrl } from "../utils/productUrl.utils";
+import { ProductThumbnail } from "./ProductThumbnail";
 
 type PartnerProduct = PartnerDetail["productBreakdown"][number];
-
-const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
-const PRODUCT_ROW_CLASS_NAME =
-  "-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-center gap-3 rounded-lg border-b border-border/60 px-2 py-2.5 text-left text-sm transition-colors last:border-0 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-
-const ProductThumbnail = ({
-  imageUrl,
-  productName,
-}: Pick<PartnerProduct, "imageUrl" | "productName">) =>
-  imageUrl ? (
-    <img
-      src={imageUrl}
-      alt={productName}
-      className="size-12 shrink-0 rounded-lg bg-muted object-cover"
-    />
-  ) : (
-    <span
-      aria-hidden
-      className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted"
-    >
-      <Shirt className="size-5 text-muted-foreground" />
-    </span>
-  );
 
 const PartnerProductPanel = ({
   product,
@@ -50,7 +30,7 @@ const PartnerProductPanel = ({
         isLive && (
           <div className="px-5 py-3">
             <a
-              href={`${WEB_URL}/product/${productId}`}
+              href={toPublicProductUrl(productId)}
               target="_blank"
               rel="noreferrer"
               className="text-sm font-medium text-foreground underline underline-offset-4"
@@ -105,7 +85,7 @@ export const PartnerProductsSection = ({ products }: { products: PartnerProduct[
           >
             <ProductThumbnail imageUrl={product.imageUrl} productName={product.productName} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium text-foreground">
+              <span className="line-clamp-2 break-words font-medium text-foreground sm:block sm:truncate">
                 {product.productName}
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">

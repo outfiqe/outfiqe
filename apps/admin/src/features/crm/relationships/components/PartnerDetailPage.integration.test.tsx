@@ -66,14 +66,27 @@ describe("PartnerDetailPage", () => {
             ],
             recentAttributedOrders: [
               {
-                orderItemId: "oi-1",
                 orderId: "o-1",
-                productName: "Graphic Tee",
-                qty: 1,
-                unitPrice: 1500,
+                itemCount: 1,
+                brandSubtotal: 1500,
+                paymentMethod: "ESEWA",
                 paymentStatus: "PAID",
                 fulfilmentStatus: "DELIVERED",
+                deliveredAt: "2026-08-22T00:00:00.000Z",
                 createdAt: "2026-08-20T00:00:00.000Z",
+                lines: [
+                  {
+                    orderItemId: "oi-1",
+                    productId: "p-oi-1",
+                    productName: "Graphic Tee",
+                    imageUrl: null,
+                    sizeLabel: "M",
+                    qty: 1,
+                    unitPrice: 1500,
+                    refundedQty: 0,
+                    isLive: true,
+                  },
+                ],
               },
             ],
           },
@@ -84,8 +97,7 @@ describe("PartnerDetailPage", () => {
     renderDetail("/_authenticated/crm/partners/c-1");
 
     expect(await screen.findByRole("heading", { name: "Aasha Muse" })).toBeInTheDocument();
-    expect(screen.getByText("Graphic Tee")).toBeInTheDocument();
-    expect(screen.getByText("Graphic Tee × 1")).toBeInTheDocument();
+    expect(screen.getAllByText("Graphic Tee")).toHaveLength(2);
     expect(screen.getByText(/Paid · Delivered/)).toBeInTheDocument();
   });
 

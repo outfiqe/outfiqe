@@ -7,7 +7,8 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -35,46 +36,95 @@ const renderDetail = (initialPath: string) => {
   );
 };
 
+const mockCustomerWithOrder = () => {
+  mswServer.use(
+    http.get(`${API_BASE}/crm/timeline`, () =>
+      HttpResponse.json({ success: true, data: { entries: [], partial: false } }),
+    ),
+    http.get(`${API_BASE}/crm/customers/c-1`, () =>
+      HttpResponse.json({
+        success: true,
+        data: {
+          userId: "c-1",
+          name: "Sita Shopper",
+          handle: "sita",
+          avatarUrl: null,
+          orderCount: 2,
+          itemCount: 3,
+          totalPaid: 12000,
+          firstOrderAt: "2026-08-10T00:00:00.000Z",
+          lastOrderAt: "2026-08-20T00:00:00.000Z",
+          recentOrders: [
+            {
+              orderId: "o-1",
+              itemCount: 2,
+              brandSubtotal: 8000,
+              paymentMethod: "ESEWA",
+              paymentStatus: "PAID",
+              fulfilmentStatus: "DELIVERED",
+              deliveredAt: "2026-08-22T00:00:00.000Z",
+              createdAt: "2026-08-20T00:00:00.000Z",
+              lines: [
+                {
+                  orderItemId: "oi-1",
+                  productId: "p-oi-1",
+                  productName: "Oversized Coat",
+                  imageUrl: "https://img.test/coat.jpg",
+                  sizeLabel: "M",
+                  qty: 1,
+                  unitPrice: 6500,
+                  refundedQty: 1,
+                  isLive: true,
+                },
+                {
+                  orderItemId: "oi-2",
+                  productId: "p-oi-2",
+                  productName: "Graphic Tee",
+                  imageUrl: null,
+                  sizeLabel: "M",
+                  qty: 1,
+                  unitPrice: 1500,
+                  refundedQty: 0,
+                  isLive: false,
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ),
+  );
+};
+
 describe("CustomerDetailPage", () => {
   it("renders the customer summary and recent orders", async () => {
-    mswServer.use(
-      http.get(`${API_BASE}/crm/timeline`, () =>
-        HttpResponse.json({ success: true, data: { entries: [], partial: false } }),
-      ),
-      http.get(`${API_BASE}/crm/customers/c-1`, () =>
-        HttpResponse.json({
-          success: true,
-          data: {
-            userId: "c-1",
-            name: "Sita Shopper",
-            handle: "sita",
-            avatarUrl: null,
-            orderCount: 2,
-            itemCount: 3,
-            totalPaid: 12000,
-            firstOrderAt: "2026-08-10T00:00:00.000Z",
-            lastOrderAt: "2026-08-20T00:00:00.000Z",
-            recentOrders: [
-              {
-                orderId: "o-1",
-                itemCount: 2,
-                brandSubtotal: 8000,
-                paymentStatus: "PAID",
-                fulfilmentStatus: "DELIVERED",
-                createdAt: "2026-08-20T00:00:00.000Z",
-              },
-            ],
-          },
-        }),
-      ),
-    );
+    mockCustomerWithOrder();
 
     renderDetail("/_authenticated/crm/customers/c-1");
 
     expect(await screen.findByRole("heading", { name: "Sita Shopper" })).toBeInTheDocument();
     expect(screen.getByText("Rs. 12,000")).toBeInTheDocument();
-    expect(screen.getByText("2 items")).toBeInTheDocument();
-    expect(screen.getByText(/Paid · Delivered/)).toBeInTheDocument();
+    expect(screen.getByText(/2 items · Paid · Delivered/)).toBeInTheDocument();
+
+    const orderRow = screen.getByRole("button", { name: /Oversized Coat \+ 1 more/ });
+    expect(within(orderRow).getByRole("img", { name: "Oversized Coat" })).toHaveAttribute(
+      "src",
+      "https://img.test/coat.jpg",
+    );
+  });
+
+  it("opens an order's products and details from its row", async () => {
+    mockCustomerWithOrder();
+    renderDetail("/_authenticated/crm/customers/c-1");
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: /Oversized Coat \+ 1 more/ }));
+
+    expect(await screen.findByText("Order #O-1")).toBeInTheDocument();
+    expect(screen.getByText(/Size M × 1 · 1 refunded/)).toBeInTheDocument();
+    expect(screen.getByText("eSewa")).toBeInTheDocument();
+    expect(screen.getByText("Only your products from this order are shown.")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "See it on Outfiqe" })).toHaveLength(1);
   });
 
   it("surfaces a 404 as an error banner", async () => {

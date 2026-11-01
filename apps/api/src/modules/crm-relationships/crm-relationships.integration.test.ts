@@ -272,7 +272,15 @@ describe("GET /api/crm/partners/:creatorId", () => {
         isLive: true,
       }),
     ]);
-    expect(found.body.data.recentAttributedOrders).toHaveLength(1);
+    expect(found.body.data.recentAttributedOrders).toEqual([
+      expect.objectContaining({
+        itemCount: 1,
+        brandSubtotal: 1500,
+        paymentMethod: "COD",
+        deliveredAt: null,
+        lines: [expect.objectContaining({ productId: product.id, qty: 1, isLive: true })],
+      }),
+    ]);
 
     const stranger = await createUser("Unrelated Muse", UserRole.CUSTOMER);
     const missing = await request(testApp)
@@ -350,6 +358,48 @@ describe("GET /api/crm/customers", () => {
     expect(userIds).toEqual([buyerOfA.id]);
     expect(response.body.data.items[0].orderCount).toBe(1);
     expect(response.body.data.items[0].totalPaid).toBe(3000);
+  });
+
+  it("shows a customer's orders with only this brand's products", async () => {
+    const { product } = await createBrandWithProduct("Order Lines Brand");
+    const { product: otherProduct } = await createBrandWithProduct("Other Lines Brand");
+    const tenant = await linkTenantToBrand(
+      (await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).brandId,
+    );
+    const buyer = await createUser("Order Lines Buyer", UserRole.CUSTOMER);
+    const { id: orderId } = await placeCustomerOrder(buyer.id, product.id, "PAID");
+    const [size, otherSize] = await Promise.all([
+      prisma.productSize.findFirstOrThrow({ where: { productId: product.id } }),
+      prisma.productSize.findFirstOrThrow({ where: { productId: otherProduct.id } }),
+    ]);
+    await prisma.orderItem.create({
+      data: {
+        orderId,
+        productId: otherProduct.id,
+        sizeId: otherSize.id,
+        qty: 1,
+        unitPrice: 999,
+        listUnitPrice: 999,
+      },
+    });
+
+    const response = await request(testApp)
+      .get(`/api/crm/customers/${buyer.id}`)
+      .set("Host", tenant.host)
+      .set("Authorization", authHeaderFor(tenant.staff.id));
+
+    expect(response.status).toBe(200);
+    const [order] = response.body.data.recentOrders;
+    expect(order.orderId).toBe(orderId);
+    expect(order.lines).toEqual([
+      expect.objectContaining({
+        productId: product.id,
+        productName: product.name,
+        sizeLabel: size.label,
+        refundedQty: 0,
+        isLive: true,
+      }),
+    ]);
   });
 
   it("404s a customer detail lookup for a shopper who never bought from this brand", async () => {

@@ -1,12 +1,16 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 
-import { RECENT_ACTIVITY_LIMIT } from "../crm-relationships.constants.js";
-import { nameOrHandleSearch, readTotalCount, toIso } from "../crm-relationships.query-helpers.js";
+import {
+  nameOrHandleSearch,
+  readTotalCount,
+  recentBrandOrders,
+  toIso,
+} from "../crm-relationships.query-helpers.js";
 import type {
-  PartnerAttributedOrderRow,
   PartnerProductBreakdownRow,
   PartnerSummary,
+  RelationshipOrderRow,
 } from "../crm-relationships.types.js";
 
 const NO_RECORDED_ACTIVITY = 0;
@@ -243,38 +247,10 @@ export const crmPartnerRepository = {
     }));
   },
 
-  async recentAttributedOrders(
-    brandId: string,
-    creatorId: string,
-  ): Promise<PartnerAttributedOrderRow[]> {
-    const orderItems = await prisma.orderItem.findMany({
-      where: {
-        attributedCreatorId: creatorId,
-        product: { brandId },
-        order: { fulfilmentStatus: { not: "CANCELLED" } },
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: RECENT_ACTIVITY_LIMIT,
-      select: {
-        id: true,
-        orderId: true,
-        qty: true,
-        unitPrice: true,
-        createdAt: true,
-        product: { select: { name: true } },
-        order: { select: { paymentStatus: true, fulfilmentStatus: true } },
-      },
-    });
-
-    return orderItems.map((item) => ({
-      orderItemId: item.id,
-      orderId: item.orderId,
-      productName: item.product.name,
-      qty: item.qty,
-      unitPrice: item.unitPrice,
-      paymentStatus: item.order.paymentStatus,
-      fulfilmentStatus: item.order.fulfilmentStatus,
-      createdAt: item.createdAt.toISOString(),
-    }));
+  recentAttributedOrders(brandId: string, creatorId: string): Promise<RelationshipOrderRow[]> {
+    return recentBrandOrders(
+      brandId,
+      Prisma.sql`AND oi.attributed_creator_id = ${creatorId}::uuid`,
+    );
   },
 };
