@@ -89,7 +89,7 @@ export const PlatformMetricsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Tenant metrics</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        How each business is using the CRM. Counts only, so their private contacts and deals stay
+        How each business is using the CRM. Counts only, so their private contacts and sales stay
         private. Click a business to see its account and activity.
       </p>
 

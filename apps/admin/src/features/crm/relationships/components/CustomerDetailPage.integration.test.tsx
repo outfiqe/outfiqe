@@ -73,7 +73,7 @@ describe("CustomerDetailPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Sita Shopper" })).toBeInTheDocument();
     expect(screen.getByText(/Rs. 12,000 paid/)).toBeInTheDocument();
-    expect(screen.getByText(/paid \/ delivered/)).toBeInTheDocument();
+    expect(screen.getByText(/Paid \/ Delivered/)).toBeInTheDocument();
   });
 
   it("surfaces a 404 as an error banner", async () => {

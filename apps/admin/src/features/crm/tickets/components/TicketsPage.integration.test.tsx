@@ -122,7 +122,7 @@ describe("TicketsPage", () => {
     renderTicketsPage();
 
     expect(
-      await screen.findByText(/requests and problems raised by your customers/i),
+      await screen.findByText(/problems and requests from your customers/i),
     ).toBeInTheDocument();
     const user = userEvent.setup({ delay: null });
 
