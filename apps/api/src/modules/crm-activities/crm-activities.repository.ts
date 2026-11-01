@@ -22,6 +22,7 @@ const activitySelect = {
   partnerCreatorId: true,
   customerUserId: true,
   dealId: true,
+  contactId: true,
   createdAt: true,
   authorMembership: { select: { user: { select: { name: true } } } },
 } as const;
@@ -38,6 +39,7 @@ const taskSelect = {
   partnerCreatorId: true,
   customerUserId: true,
   dealId: true,
+  contactId: true,
   completedAt: true,
   createdAt: true,
   assigneeMembership: { select: { user: { select: { name: true } } } },
@@ -53,6 +55,7 @@ type ActivityRow = {
   partnerCreatorId: string | null;
   customerUserId: string | null;
   dealId: string | null;
+  contactId: string | null;
   createdAt: Date;
   authorMembership: { user: { name: string } } | null;
 };
@@ -69,6 +72,7 @@ type TaskRow = {
   partnerCreatorId: string | null;
   customerUserId: string | null;
   dealId: string | null;
+  contactId: string | null;
   completedAt: Date | null;
   createdAt: Date;
   assigneeMembership: { user: { name: string } } | null;
@@ -85,6 +89,7 @@ const toActivityRecord = (row: ActivityRow): ActivityRecord => ({
   partnerCreatorId: row.partnerCreatorId,
   customerUserId: row.customerUserId,
   dealId: row.dealId,
+  contactId: row.contactId,
   createdAt: row.createdAt.toISOString(),
 });
 
@@ -101,6 +106,7 @@ const toTaskRecord = (row: TaskRow): TaskRecord => ({
   partnerCreatorId: row.partnerCreatorId,
   customerUserId: row.customerUserId,
   dealId: row.dealId,
+  contactId: row.contactId,
   completedAt: row.completedAt?.toISOString() ?? null,
   createdAt: row.createdAt.toISOString(),
 });
@@ -261,6 +267,7 @@ export const crmActivitiesRepository = {
             AND a.partner_creator_id IS NOT DISTINCT FROM ${columns.partnerCreatorId}::uuid
             AND a.customer_user_id IS NOT DISTINCT FROM ${columns.customerUserId}::uuid
             AND a.deal_id IS NOT DISTINCT FROM ${columns.dealId}::uuid
+            AND a.contact_id IS NOT DISTINCT FROM ${columns.contactId}::uuid
       ),
       order_rows AS (
         SELECT 'order' AS kind,

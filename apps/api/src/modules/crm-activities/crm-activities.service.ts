@@ -6,6 +6,7 @@ import { CrmTaskStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta } from "#lib/crm-counters.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { crmContactsRepository } from "#modules/crm-contacts/crm-contacts.repository.js";
 import { crmPipelineRepository } from "#modules/crm-pipeline/crm-pipeline.repository.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -47,6 +48,17 @@ const requireValidSubject = async (
     }
     return;
   }
+  if (subject.subjectType === "contact") {
+    const contact = await crmContactsRepository.findById(organization.id, subject.subjectId);
+    if (!contact) {
+      throw new AppError(
+        "SUBJECT_NOT_FOUND",
+        "That contact isn't in this CRM.",
+        HTTP_STATUS.NOT_FOUND,
+      );
+    }
+    return;
+  }
   const deal = await crmPipelineRepository.findDeal(organization.id, subject.subjectId);
   if (!deal) {
     throw new AppError(
@@ -63,6 +75,28 @@ const resolveDealPartner = async (
 ): Promise<string | null> => {
   const deal = await crmPipelineRepository.findDeal(organizationId, dealId);
   return deal?.partnerCreatorId ?? null;
+};
+
+const resolveContactAccount = async (
+  organizationId: string,
+  contactId: string,
+): Promise<string | null> => {
+  const contact = await crmContactsRepository.findById(organizationId, contactId);
+  return contact?.linkedUserId ?? null;
+};
+
+const resolveTimelineOrderOwners = async (
+  organizationId: string,
+  { subjectType, subjectId }: SubjectRef,
+): Promise<{ attributedCreatorId: string | null; buyerUserId: string | null }> => {
+  if (subjectType === "partner") return { attributedCreatorId: subjectId, buyerUserId: null };
+  if (subjectType === "customer") return { attributedCreatorId: null, buyerUserId: subjectId };
+  if (subjectType === "contact") {
+    const linkedUserId = await resolveContactAccount(organizationId, subjectId);
+    return { attributedCreatorId: null, buyerUserId: linkedUserId };
+  }
+  const partnerCreatorId = await resolveDealPartner(organizationId, subjectId);
+  return { attributedCreatorId: partnerCreatorId, buyerUserId: null };
 };
 
 const publishTaskAssignment = async (
@@ -119,19 +153,12 @@ export const crmActivitiesService = {
 
     if (organization.linkedBrandId) {
       try {
-        const attributedCreatorId =
-          subject.subjectType === "partner"
-            ? subject.subjectId
-            : subject.subjectType === "deal"
-              ? await resolveDealPartner(organization.id, subject.subjectId)
-              : null;
-        const buyerUserId = subject.subjectType === "customer" ? subject.subjectId : null;
-
+        const orderOwners = await resolveTimelineOrderOwners(organization.id, subject);
         const entries = await crmActivitiesRepository.timelineForSubject(
           organization.id,
           organization.linkedBrandId,
           subject,
-          { attributedCreatorId, buyerUserId },
+          orderOwners,
           limit,
         );
         return { entries, partial: false };

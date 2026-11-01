@@ -3,6 +3,7 @@ import { Prisma } from "#generated/prisma/client.js";
 
 import { ACTIVITY_TREND_WINDOW_DAYS } from "./crm-reporting.constants.js";
 import type {
+  ContactSearchResult,
   CrmActivityTrendPoint,
   DealSearchResult,
   PipelineStageReportRow,
@@ -177,6 +178,26 @@ export const crmReportingRepository = {
       status: row.status,
       stageName: row.stage_name,
     }));
+  },
+
+  async searchContacts(
+    organizationId: string,
+    query: string,
+    limit: number,
+  ): Promise<ContactSearchResult[]> {
+    return prisma.contact.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { company: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      take: limit,
+      select: { id: true, name: true, company: true, lifecycleStage: true },
+    });
   },
 
   async searchTickets(

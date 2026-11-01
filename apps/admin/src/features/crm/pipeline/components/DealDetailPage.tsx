@@ -5,13 +5,15 @@ import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { BackLink } from "@/components/BackLink";
-import { MetricLinkRow, MetricRow, MetricSection } from "@/components/MetricParts";
+import { MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RecordDetailSkeleton } from "../../components/CrmSkeletons";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
@@ -30,6 +32,7 @@ export const DealDetailPage = () => {
   const { organization, hasPermission } = useCrmPermissions();
   const canEditDeal = hasPermission(DEALS_WRITE_PERMISSION);
   const canDeleteDeal = hasPermission(DEALS_DELETE_PERMISSION);
+  const dealSubject = { subjectType: "deal", subjectId: dealId } as const;
 
   const {
     data: deal,
@@ -110,20 +113,11 @@ export const DealDetailPage = () => {
               {deal.closedAt && <MetricRow label="Closed" value={formatDate(deal.closedAt)} />}
             </MetricSection>
 
-            <MetricSection
-              title="Who it's with"
-              description="Open the partner to see what they have sold for you."
-            >
-              <MetricLinkRow
-                to={`/crm/partners/${deal.partnerCreatorId}`}
-                label={deal.partnerName}
-                detail={`@${deal.partnerHandle}`}
-                value="View partner"
-              />
-            </MetricSection>
+            <ConnectedPeopleSection subject={dealSubject} />
           </div>
 
-          <TimelineSection subjectType="deal" subjectId={dealId} />
+          <ConnectedWorkSection subject={dealSubject} />
+          <TimelineSection {...dealSubject} />
 
           {stages && isEditing && (
             <DealFormModal

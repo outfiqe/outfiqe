@@ -3,13 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { BackLink } from "@/components/BackLink";
-import { MetricLinkRow, MetricRow, MetricSection } from "@/components/MetricParts";
+import { MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RecordDetailSkeleton } from "../../components/CrmSkeletons";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate, toPlainWords } from "../../utils/format.utils";
@@ -29,7 +31,7 @@ const STATUS_TONE: Record<TicketStatusValue, "neutral" | "positive" | "negative"
 };
 
 const TicketReportSection = ({ ticket }: { ticket: TicketWithComments }) => {
-  const { description, type, createdAt, resolvedAt, customerUserId, partnerCreatorId } = ticket;
+  const { description, type, createdAt, resolvedAt } = ticket;
 
   return (
     <MetricSection title="What was reported" description={`${toPlainWords(type)} ticket`}>
@@ -37,20 +39,6 @@ const TicketReportSection = ({ ticket }: { ticket: TicketWithComments }) => {
       <div className="mt-3 border-t border-border/60">
         <MetricRow label="Opened" value={formatDate(createdAt)} />
         {resolvedAt && <MetricRow label="Resolved" value={formatDate(resolvedAt)} />}
-        {customerUserId && (
-          <MetricLinkRow
-            to={`/crm/customers/${customerUserId}`}
-            label="Customer"
-            value="View customer"
-          />
-        )}
-        {partnerCreatorId && (
-          <MetricLinkRow
-            to={`/crm/partners/${partnerCreatorId}`}
-            label="Partner"
-            value="View partner"
-          />
-        )}
       </div>
     </MetricSection>
   );
@@ -59,6 +47,7 @@ const TicketReportSection = ({ ticket }: { ticket: TicketWithComments }) => {
 export const TicketDetailPage = () => {
   const { ticketId } = routeApi.useParams();
   const { organization, hasPermission } = useCrmPermissions();
+  const ticketSubject = { subjectType: "ticket", subjectId: ticketId } as const;
 
   const {
     data: ticket,
@@ -103,6 +92,8 @@ export const TicketDetailPage = () => {
           </div>
 
           <TicketCommentsSection ticket={ticket} canWrite={hasPermission("tickets:write")} />
+          <ConnectedPeopleSection subject={ticketSubject} />
+          <ConnectedWorkSection subject={ticketSubject} />
         </div>
       )}
     </div>

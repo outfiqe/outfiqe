@@ -45,6 +45,14 @@ const CONTACT = {
   updatedAt: "2026-08-02T00:00:00.000Z",
 };
 
+const CONNECTIONS = {
+  people: [{ userId: "u-1", name: "Anisha", handle: "anisha", role: "customer" }],
+  contacts: [],
+  deals: [{ id: "d-1", title: "Spring collab", value: 5000, status: "OPEN", stageName: "Lead" }],
+  tickets: [],
+  tasks: [],
+};
+
 const organizationFor = (viewer: ViewerAccess) =>
   http.get(`${API_BASE}/crm/organization`, () =>
     HttpResponse.json({
@@ -73,6 +81,12 @@ const mockContactPage = (viewer = FULL_ACCESS, contact: Record<string, unknown> 
       HttpResponse.json({ success: true, data: { items: [], total: 0, hasMore: false } }),
     ),
     http.get(`${API_BASE}/crm/members`, () => HttpResponse.json({ success: true, data: [] })),
+    http.get(`${API_BASE}/crm/timeline`, () =>
+      HttpResponse.json({ success: true, data: { entries: [], partial: false } }),
+    ),
+    http.get(`${API_BASE}/crm/connections`, () =>
+      HttpResponse.json({ success: true, data: CONNECTIONS }),
+    ),
   );
 
 const renderDetailPage = (initialPath: string) => {
@@ -116,6 +130,21 @@ describe("ContactDetailPage", () => {
     expect(screen.getByText("Anisha (@anisha)")).toBeInTheDocument();
     expect(screen.getByText("Prefers calls in the morning.")).toBeInTheDocument();
     expect(screen.getByText("wholesale")).toBeInTheDocument();
+  });
+
+  it("links to the account and work connected to the contact", async () => {
+    mockContactPage();
+    renderDetailPage(CONTACT_PATH);
+
+    expect(await screen.findByRole("link", { name: /View customer/ })).toHaveAttribute(
+      "href",
+      "/crm/customers/u-1",
+    );
+    expect(screen.getByRole("link", { name: /Spring collab/ })).toHaveAttribute(
+      "href",
+      "/crm/pipeline/d-1",
+    );
+    expect(await screen.findByLabelText("Activity note")).toBeInTheDocument();
   });
 
   it("says what is missing on a partly filled contact", async () => {

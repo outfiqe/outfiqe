@@ -13,6 +13,7 @@ import { useState } from "react";
 import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { crmApi } from "../api/crmApi";
+import { STAGE_LABELS } from "../contacts/constants/contactLabels";
 import { crmReportingApi } from "../reporting/api/reportingApi";
 import type { CrmSearchResults } from "../reporting/api/reportingSchemas";
 import { toPlainWords } from "../utils/format.utils";
@@ -24,6 +25,7 @@ const SEARCH_READ_PERMISSION_KEYS = [
   "customers:read",
   "deals:read",
   "tickets:read",
+  "contacts:read",
 ];
 
 type ResultRow = {
@@ -40,6 +42,7 @@ const buildRows = (
   goToCustomer: (userId: string) => void,
   goToDeal: (dealId: string) => void,
   goToTicket: (ticketId: string) => void,
+  goToContact: (contactId: string) => void,
 ): ResultRow[] => [
   ...results.partners.map((partner) => ({
     key: `partner:${partner.creatorId}`,
@@ -68,6 +71,13 @@ const buildRows = (
     primary: ticket.title,
     secondary: `${toPlainWords(ticket.type)} · ${toPlainWords(ticket.status)}`,
     navigate: () => goToTicket(ticket.id),
+  })),
+  ...results.contacts.map((contact) => ({
+    key: `contact:${contact.id}`,
+    groupLabel: "Contacts",
+    primary: contact.name,
+    secondary: contact.company ?? STAGE_LABELS[contact.lifecycleStage] ?? "",
+    navigate: () => goToContact(contact.id),
   })),
 ];
 
@@ -102,6 +112,7 @@ export const CrmSearchBox = () => {
         (userId) => navigate({ to: "/crm/customers/$userId", params: { userId } }),
         (dealId) => navigate({ to: "/crm/pipeline/$dealId", params: { dealId } }),
         (ticketId) => navigate({ to: "/crm/support/$ticketId", params: { ticketId } }),
+        (contactId) => navigate({ to: "/crm/contacts/$contactId", params: { contactId } }),
       )
     : [];
 

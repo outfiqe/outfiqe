@@ -66,9 +66,39 @@ export type TicketSearchResult = {
   status: string;
 };
 
+export type ContactSearchResult = {
+  id: string;
+  name: string;
+  company: string | null;
+  lifecycleStage: string;
+};
+
 export type CrmSearchResults = {
   partners: PartnerSummary[];
   customers: CustomerSummary[];
   deals: DealSearchResult[];
   tickets: TicketSearchResult[];
+  contacts: ContactSearchResult[];
+};
+
+export type ConnectedPerson = {
+  userId: string;
+  name: string;
+  handle: string;
+  role: "partner" | "customer";
+};
+
+export type ConnectedTask = {
+  id: string;
+  title: string;
+  dueAt: string;
+  assigneeName: string;
+};
+
+export type CrmConnections = {
+  people: ConnectedPerson[];
+  contacts: ContactSearchResult[] | null;
+  deals: DealSearchResult[] | null;
+  tickets: TicketSearchResult[] | null;
+  tasks: ConnectedTask[] | null;
 };

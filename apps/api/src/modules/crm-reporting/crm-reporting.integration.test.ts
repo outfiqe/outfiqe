@@ -344,6 +344,28 @@ describe("GET /api/crm/search", () => {
     );
   });
 
+  it("finds a contact by name, company or email", async () => {
+    const { organization, owner } = await seedSearchable();
+    const contact = await prisma.contact.create({
+      data: { organizationId: organization.id, name: "Ram Thapa", company: "Springfield Traders" },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/search")
+      .query({ q: "springfield" })
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.body.data.contacts).toEqual([
+      {
+        id: contact.id,
+        name: "Ram Thapa",
+        company: "Springfield Traders",
+        lifecycleStage: "LEAD",
+      },
+    ]);
+  });
+
   it("omits entity groups the caller has no permission to read", async () => {
     const { organization } = await seedSearchable();
     const limitedRole = await crmAccessRepository.createRole({
@@ -372,6 +394,7 @@ describe("GET /api/crm/search", () => {
     expect(response.body.data.deals).toEqual([]);
     expect(response.body.data.partners).toEqual([]);
     expect(response.body.data.customers).toEqual([]);
+    expect(response.body.data.contacts).toEqual([]);
   });
 
   it("never leaks another tenant's rows", async () => {

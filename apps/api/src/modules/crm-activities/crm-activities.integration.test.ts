@@ -256,6 +256,94 @@ describe("CRM activities & timeline", () => {
   });
 });
 
+describe("CRM contact timeline", () => {
+  it("logs against a contact and shows the orders of their linked account", async () => {
+    const { organization, customer, order, host, auth } = await seedActivitiesTenant();
+    const contact = await prisma.contact.create({
+      data: { organizationId: organization.id, name: "Linked Contact", linkedUserId: customer.id },
+    });
+
+    const logged = await request(testApp)
+      .post("/api/crm/activities")
+      .set("Host", host)
+      .set("Authorization", auth)
+      .send({
+        subjectType: "contact",
+        subjectId: contact.id,
+        type: "CALL",
+        body: "Called about a bulk order",
+      });
+    expect(logged.status).toBe(201);
+
+    const timeline = await request(testApp)
+      .get("/api/crm/timeline")
+      .query({ subjectType: "contact", subjectId: contact.id })
+      .set("Host", host)
+      .set("Authorization", auth);
+
+    expect(timeline.status).toBe(200);
+    const { entries } = timeline.body.data;
+    expect(entries.map((entry: { kind: string }) => entry.kind).sort()).toEqual([
+      "activity",
+      "order",
+    ]);
+    expect(entries.find((entry: { kind: string }) => entry.kind === "order").orderId).toBe(
+      order.id,
+    );
+  });
+
+  it("keeps a contact's notes off the timeline of the customer they are linked to", async () => {
+    const { organization, customer, host, auth } = await seedActivitiesTenant();
+    const contact = await prisma.contact.create({
+      data: { organizationId: organization.id, name: "Linked Contact", linkedUserId: customer.id },
+    });
+    await prisma.crmActivity.create({
+      data: {
+        organizationId: organization.id,
+        type: "NOTE",
+        body: "Contact only note",
+        contactId: contact.id,
+      },
+    });
+
+    const timeline = await request(testApp)
+      .get("/api/crm/timeline")
+      .query({ subjectType: "customer", subjectId: customer.id })
+      .set("Host", host)
+      .set("Authorization", auth);
+
+    expect(timeline.body.data.entries.map((entry: { kind: string }) => entry.kind)).toEqual([
+      "order",
+    ]);
+  });
+
+  it("rejects another tenant's contact and removes notes with the contact", async () => {
+    const owner = await seedActivitiesTenant();
+    const stranger = await seedActivitiesTenant();
+    const contact = await prisma.contact.create({
+      data: { organizationId: owner.organization.id, name: "Private Contact" },
+    });
+    const activity = await prisma.crmActivity.create({
+      data: {
+        organizationId: owner.organization.id,
+        type: "NOTE",
+        body: "Note",
+        contactId: contact.id,
+      },
+    });
+
+    const crossTenant = await request(testApp)
+      .get("/api/crm/timeline")
+      .query({ subjectType: "contact", subjectId: contact.id })
+      .set("Host", stranger.host)
+      .set("Authorization", stranger.auth);
+    expect(crossTenant.status).toBe(404);
+
+    await prisma.contact.delete({ where: { id: contact.id } });
+    expect(await prisma.crmActivity.findUnique({ where: { id: activity.id } })).toBeNull();
+  });
+});
+
 describe("CRM tasks", () => {
   it("creates a task, completes it, and stamps completedAt", async () => {
     const tenant = await seedActivitiesTenant();

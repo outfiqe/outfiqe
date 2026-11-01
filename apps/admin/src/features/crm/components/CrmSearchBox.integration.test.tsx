@@ -16,7 +16,7 @@ import { CrmSearchBox } from "./CrmSearchBox";
 
 const API_BASE = "http://localhost:3000/api";
 
-const EMPTY_RESULTS = { partners: [], customers: [], deals: [], tickets: [] };
+const EMPTY_RESULTS = { partners: [], customers: [], deals: [], tickets: [], contacts: [] };
 
 const mockOrganization = (
   viewer: { viewerIsSuperAdmin: boolean; viewerPermissionKeys: string[] } = {
@@ -52,6 +52,7 @@ const renderSearchBox = () => {
     "/crm/customers/$userId",
     "/crm/pipeline/$dealId",
     "/crm/support/$ticketId",
+    "/crm/contacts/$contactId",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(children),
@@ -86,6 +87,7 @@ describe("CrmSearchBox", () => {
               { id: "d1", title: "Spring collab", value: 4000, status: "OPEN", stageName: "Lead" },
             ],
             tickets: [{ id: "t1", title: "Spring order issue", type: "COMPLAINT", status: "OPEN" }],
+            contacts: [],
           },
         }),
       ),
@@ -108,6 +110,29 @@ describe("CrmSearchBox", () => {
 
     await user.click(screen.getByText("Spring Muse"));
     await waitFor(() => expect(screen.getByLabelText("Search the CRM")).toHaveValue(""));
+  }, 15000);
+
+  it("opens the exact contact that was picked", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/search`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            ...EMPTY_RESULTS,
+            contacts: [{ id: "ct1", name: "Spring Buyer", company: null, lifecycleStage: "LEAD" }],
+          },
+        }),
+      ),
+    );
+
+    const router = renderSearchBox();
+    const user = userEvent.setup({ delay: null });
+
+    await user.type(await screen.findByLabelText("Search the CRM"), "spring");
+    await user.click(await screen.findByText("Spring Buyer"));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/crm/contacts/ct1"));
   }, 15000);
 
   it("opens the exact opportunity or ticket that was picked", async () => {

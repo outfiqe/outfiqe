@@ -1,4 +1,4 @@
-export const CRM_SUBJECT_TYPES = ["partner", "customer", "deal"] as const;
+export const CRM_SUBJECT_TYPES = ["partner", "customer", "deal", "contact"] as const;
 
 export type CrmSubjectType = (typeof CRM_SUBJECT_TYPES)[number];
 

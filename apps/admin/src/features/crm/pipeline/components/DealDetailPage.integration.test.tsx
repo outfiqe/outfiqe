@@ -19,6 +19,7 @@ const API_BASE = "http://localhost:3000/api";
 type ViewerAccess = { viewerIsSuperAdmin: boolean; viewerPermissionKeys: string[] };
 
 const FULL_ACCESS: ViewerAccess = { viewerIsSuperAdmin: true, viewerPermissionKeys: [] };
+const DUE_DATE = "2026-11-10T00:00:00.000Z";
 const READ_ONLY_ACCESS = { viewerIsSuperAdmin: false, viewerPermissionKeys: ["deals:read"] };
 
 const STAGES = [
@@ -42,6 +43,14 @@ const DEAL = {
   status: "OPEN",
   closedAt: null,
   createdAt: "2026-08-20T00:00:00.000Z",
+};
+
+const CONNECTIONS = {
+  people: [{ userId: "c-1", name: "Aasha Muse", handle: "aasha", role: "partner" }],
+  contacts: [{ id: "ct-1", name: "Muse Manager", company: null, lifecycleStage: "LEAD" }],
+  deals: [],
+  tickets: [{ id: "tk-1", title: "Late payout", type: "COMPLAINT", status: "OPEN" }],
+  tasks: [{ id: "ts-1", title: "Send the brief", dueAt: DUE_DATE, assigneeName: "Bipin Karki" }],
 };
 
 const organizationFor = (viewer: ViewerAccess) =>
@@ -72,6 +81,10 @@ const mockDealPage = (viewer = FULL_ACCESS) =>
     http.get(`${API_BASE}/crm/deals`, () => HttpResponse.json({ success: true, data: [DEAL] })),
     http.get(`${API_BASE}/crm/timeline`, () =>
       HttpResponse.json({ success: true, data: { entries: [], partial: false } }),
+    ),
+    http.get(`${API_BASE}/crm/members`, () => HttpResponse.json({ success: true, data: [] })),
+    http.get(`${API_BASE}/crm/connections`, () =>
+      HttpResponse.json({ success: true, data: CONNECTIONS }),
     ),
   );
 
@@ -107,10 +120,84 @@ describe("DealDetailPage", () => {
     expect(await screen.findByRole("heading", { name: "Spring collab" })).toBeInTheDocument();
     expect(screen.getByText("Not set")).toBeInTheDocument();
     expect(screen.getByText("Unassigned")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Aasha Muse/ })).toHaveAttribute(
+  });
+
+  it("links to everyone and everything connected to the opportunity", async () => {
+    mockDealPage();
+    renderDetailPage(DEAL_PATH);
+
+    expect(await screen.findByRole("link", { name: /Aasha Muse/ })).toHaveAttribute(
       "href",
       "/crm/partners/c-1",
     );
+    expect(screen.getByRole("link", { name: /Muse Manager/ })).toHaveAttribute(
+      "href",
+      "/crm/contacts/ct-1",
+    );
+    expect(screen.getByRole("link", { name: /Late payout/ })).toHaveAttribute(
+      "href",
+      "/crm/support/tk-1",
+    );
+    expect(screen.getByText("Send the brief")).toBeInTheDocument();
+    expect(screen.getByText("No other opportunities yet.")).toBeInTheDocument();
+  });
+
+  it("adds a task tied to this opportunity", async () => {
+    mockDealPage();
+    let taskBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "mem-1",
+              userId: "u-1",
+              userName: "Bipin Karki",
+              userEmail: "b@x.test",
+              roleId: "r-1",
+              roleName: "Admin",
+              status: "ACTIVE",
+              isSuperAdmin: true,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+      http.post(`${API_BASE}/crm/tasks`, async ({ request }) => {
+        taskBody = await request.json();
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+    renderDetailPage(DEAL_PATH);
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Add a task" }));
+    await user.type(await screen.findByLabelText("Title"), "Call the partner");
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+
+    await waitFor(() =>
+      expect(taskBody).toMatchObject({
+        title: "Call the partner",
+        subjectType: "deal",
+        subjectId: "d-1",
+      }),
+    );
+  });
+
+  it("explains when connected records can't be loaded", async () => {
+    mockDealPage();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/connections`, () =>
+        HttpResponse.json({ success: false, message: "Something broke." }, { status: 500 }),
+      ),
+    );
+    renderDetailPage(DEAL_PATH);
+
+    expect(
+      await screen.findByText("Connected people are unavailable right now."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Spring collab" })).toBeInTheDocument();
   });
 
   it("shows the closing date only once the opportunity has closed", async () => {

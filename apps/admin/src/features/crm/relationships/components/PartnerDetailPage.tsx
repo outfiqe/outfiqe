@@ -9,6 +9,8 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { PartnerDetailSkeleton } from "../../components/CrmSkeletons";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
@@ -17,6 +19,7 @@ const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
 
 export const PartnerDetailPage = () => {
   const { creatorId } = routeApi.useParams();
+  const partnerSubject = { subjectType: "partner", subjectId: creatorId } as const;
   const {
     data: partner,
     isLoading,
@@ -91,7 +94,9 @@ export const PartnerDetailPage = () => {
             </MetricSection>
           </div>
 
-          <TimelineSection subjectType="partner" subjectId={creatorId} />
+          <ConnectedPeopleSection subject={partnerSubject} />
+          <ConnectedWorkSection subject={partnerSubject} />
+          <TimelineSection {...partnerSubject} />
         </div>
       )}
     </div>

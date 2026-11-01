@@ -39,6 +39,14 @@ const TICKET = {
   comments: [],
 };
 
+const CONNECTIONS = {
+  people: [{ userId: "c-1", name: "Sita Shopper", handle: "sita", role: "customer" }],
+  contacts: null,
+  deals: null,
+  tickets: [],
+  tasks: null,
+};
+
 const organizationFor = (viewer: ViewerAccess) =>
   http.get(`${API_BASE}/crm/organization`, () =>
     HttpResponse.json({
@@ -81,6 +89,9 @@ const mockTicketPage = (viewer = FULL_ACCESS) =>
         ],
       }),
     ),
+    http.get(`${API_BASE}/crm/connections`, () =>
+      HttpResponse.json({ success: true, data: CONNECTIONS }),
+    ),
   );
 
 const renderDetailPage = (initialPath: string) => {
@@ -116,7 +127,7 @@ describe("TicketDetailPage", () => {
     expect(screen.getByText("Arrived torn")).toBeInTheDocument();
     expect(screen.getByText("No comments yet.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "In progress" })).toBeEnabled();
-    expect(screen.getByRole("link", { name: /Customer/ })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: /Sita Shopper/ })).toHaveAttribute(
       "href",
       "/crm/customers/c-1",
     );
