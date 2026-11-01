@@ -9,13 +9,19 @@ import { useConnectedRecords } from "../hooks/useConnectedRecords";
 
 const PERSON_ROLE_LINKS: Record<
   CrmConnections["people"][number]["role"],
-  { path: string; label: string }
+  { path: string; label: string; sameRecordLabel: string }
 > = {
-  partner: { path: "/crm/partners", label: "View partner" },
-  customer: { path: "/crm/customers", label: "View customer" },
+  partner: { path: "/crm/partners", label: "View partner", sameRecordLabel: "Also a partner" },
+  customer: { path: "/crm/customers", label: "View customer", sameRecordLabel: "Also a customer" },
 };
 
-const ConnectedPeopleRows = ({ people, contacts }: CrmConnections) => {
+const SAME_PERSON_DETAIL = "This is the same person.";
+
+const ConnectedPeopleRows = ({
+  people,
+  contacts,
+  subjectId,
+}: CrmConnections & { subjectId: string }) => {
   const connectedContacts = contacts ?? [];
   if (people.length === 0 && connectedContacts.length === 0) {
     return <MetricEmptyState>No one else is connected to this yet.</MetricEmptyState>;
@@ -23,15 +29,19 @@ const ConnectedPeopleRows = ({ people, contacts }: CrmConnections) => {
 
   return (
     <>
-      {people.map(({ userId, name, handle, role }) => (
-        <MetricLinkRow
-          key={`${role}:${userId}`}
-          to={`${PERSON_ROLE_LINKS[role].path}/${userId}`}
-          label={name}
-          detail={`@${handle}`}
-          value={PERSON_ROLE_LINKS[role].label}
-        />
-      ))}
+      {people.map(({ userId, name, handle, role }) => {
+        const { path, label, sameRecordLabel } = PERSON_ROLE_LINKS[role];
+        const isSamePerson = userId === subjectId;
+        return (
+          <MetricLinkRow
+            key={`${role}:${userId}`}
+            to={`${path}/${userId}`}
+            label={isSamePerson ? sameRecordLabel : name}
+            detail={isSamePerson ? SAME_PERSON_DETAIL : `@${handle}`}
+            value={label}
+          />
+        );
+      })}
       {connectedContacts.map(({ id, name, company, lifecycleStage }) => (
         <MetricLinkRow
           key={id}
@@ -52,7 +62,7 @@ export const ConnectedPeopleSection = ({ subject }: { subject: ConnectionSubject
     <MetricSection title="People" description="Everyone connected to this record.">
       {isLoading && <Skeleton className="h-10 w-full" />}
       {error && <MetricEmptyState>Connected people are unavailable right now.</MetricEmptyState>}
-      {connections && <ConnectedPeopleRows {...connections} />}
+      {connections && <ConnectedPeopleRows {...connections} subjectId={subject.subjectId} />}
     </MetricSection>
   );
 };
