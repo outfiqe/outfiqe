@@ -34,9 +34,10 @@ export type SetProductDiscountInput = {
 export type UpdateProductDiscountInput = Partial<SetProductDiscountInput>;
 
 export const brandProductsApi = {
-  async list(cursor?: string): Promise<BrandProductPage> {
-    const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await apiClient.get<BrandProductPage>(`/products/mine${params}`);
+  async list(cursor?: string, search?: string): Promise<BrandProductPage> {
+    const res = await apiClient.get<BrandProductPage>("/products/mine", {
+      params: { cursor, search },
+    });
     return brandProductPageSchema.parse(res.data);
   },
 

@@ -9,6 +9,7 @@ export * from "./useConversationRoomSubscription";
 export * from "./useConversations";
 export * from "./useConversationSocket";
 export * from "./useConversationThread";
+export * from "./useDebouncedSearch";
 export * from "./useDebouncedValue";
 export * from "./useDragReorder";
 export * from "./useGroupChat";

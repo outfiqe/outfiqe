@@ -58,7 +58,7 @@ export const outfitShareRepository = {
 
   async listSharedWith(
     userId: string,
-    { cursor, limit }: { cursor?: string; limit: number },
+    { search, cursor, limit }: { search?: string; cursor?: string; limit: number },
   ): Promise<OutfitSummaryRow[]> {
     return prisma.outfit.findMany({
       where: {
@@ -67,6 +67,7 @@ export const outfitShareRepository = {
         publishedVersion: { not: null },
         removedAt: null,
         shares: { some: { userId } },
+        ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
       },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: limit + 1,

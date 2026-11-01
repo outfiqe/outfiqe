@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Skeleton } from "@outfiqe/design-system";
+import { Button, Input, SearchInput, Skeleton } from "@outfiqe/design-system";
 import { useConversations, useDebouncedValue } from "@outfiqe/hooks";
 import { Search, Users } from "lucide-react";
 import { useState } from "react";
@@ -48,17 +48,11 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
 
   const searchInput = (
     <div className="shrink-0 space-y-2 border-b border-border px-3 py-2">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search messages"
-          aria-label="Search messages"
-          className="pl-9"
-        />
-      </div>
+      <SearchInput
+        value={searchQuery}
+        onValueChange={setSearchQuery}
+        placeholder="Search messages"
+      />
       <Button
         variant="ghost"
         size="sm"

@@ -171,6 +171,32 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
     expect(shipped.body.data.items).toHaveLength(0);
   });
 
+  it("finds a shipment by product name or order number, and never another brand's", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await seedCommerceConfig(adminId);
+    const { brand, owner } = await createBrandWithOwner();
+    const { brand: otherBrand } = await createBrandWithOwner();
+    const mine = await createProduct(brand.id, 1000);
+    const theirs = await createProduct(otherBrand.id, 1000);
+    const buyer = await createUser(UserRole.CUSTOMER);
+    await checkoutBuyNow(buyer.id, mine.product.id, mine.size.id);
+    const buyerTwo = await createUser(UserRole.CUSTOMER);
+    await checkoutBuyNow(buyerTwo.id, theirs.product.id, theirs.size.id);
+
+    const all = await getGroups(owner.id);
+    const { orderId } = all.body.data.items[0];
+
+    const byName = await getGroups(owner.id, { search: mine.product.name.toUpperCase() });
+    const byOrderNumber = await getGroups(owner.id, { search: orderId.slice(0, 8) });
+    const byOtherBrand = await getGroups(owner.id, { search: theirs.product.name });
+    const noMatch = await getGroups(owner.id, { search: "nothing like this" });
+
+    expect(byName.body.data.items).toHaveLength(1);
+    expect(byOrderNumber.body.data.items).toHaveLength(1);
+    expect(noMatch.body.data.items).toHaveLength(0);
+    expect(byOtherBrand.body.data.items).toHaveLength(0);
+  });
+
   it("403s for a signed-in user whose role is not brand owner", async () => {
     const buyer = await createUser(UserRole.CUSTOMER);
     const response = await request(testApp)

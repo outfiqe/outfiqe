@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
+import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { FulfilmentStatus, PaymentMethod } from "#generated/prisma/enums.js";
 import { shippingAddressFields } from "#lib/shipping-address.schemas.js";
 import { COUPON_CODE_MAX_LENGTH } from "#modules/coupons/coupon.constants.js";
@@ -53,6 +54,7 @@ const brandFulfilmentGroupStatusFilters = [
 
 export const listBrandFulfilmentGroupsQuerySchema = z.object({
   status: z.enum(brandFulfilmentGroupStatusFilters).optional(),
+  search: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH).optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_LIST_PAGE_SIZE).default(DEFAULT_LIST_PAGE_SIZE),
 });

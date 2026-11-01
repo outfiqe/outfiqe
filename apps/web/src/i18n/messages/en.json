@@ -239,7 +239,10 @@
       "moreItems": "+{count} items",
       "people": "{count, plural, one {# person} other {# people}}",
       "loadFailed": "Couldn't load your builds. Try again.",
-      "loadMore": "Show more"
+      "loadMore": "Show more",
+      "searchPlaceholder": "Search your builds",
+      "clearSearch": "Clear search",
+      "noSearchResults": "No builds match this search."
     },
     "photos": {
       "title": "Photos",

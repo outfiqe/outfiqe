@@ -3,7 +3,7 @@ import {
   CLICKABLE_STAT_CARD_CLASS_NAME,
   FilterChip,
   FormBanner,
-  Input,
+  SearchInput,
   Select,
   STAT_CARD_LINK_CLASS_NAME,
   StatCard,
@@ -126,11 +126,11 @@ export const PlatformMetricsPage = () => {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Input
+        <SearchInput
           value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          onValueChange={setSearchText}
           placeholder="Search by business or subdomain"
-          aria-label="Search businesses"
+          ariaLabel="Search businesses"
           className="w-72"
         />
         <Select

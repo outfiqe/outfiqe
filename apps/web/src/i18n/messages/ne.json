@@ -239,7 +239,10 @@
       "moreItems": "+{count} वटा",
       "people": "{count} जना",
       "loadFailed": "तपाईंका बिल्डहरू लोड हुन सकेनन्। फेरि प्रयास गर्नुहोस्।",
-      "loadMore": "थप देखाउनुहोस्"
+      "loadMore": "थप देखाउनुहोस्",
+      "searchPlaceholder": "आफ्ना बिल्डहरू खोज्नुहोस्",
+      "clearSearch": "खोज हटाउनुहोस्",
+      "noSearchResults": "यो खोजसँग मिल्ने बिल्ड छैन।"
     },
     "photos": {
       "title": "तस्बिरहरू",
