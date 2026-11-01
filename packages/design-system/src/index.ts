@@ -1,6 +1,7 @@
 export * from "./achievement-badge-icon";
 export * from "./achievement-badge-icon.constants";
 export * from "./autocomplete";
+export { Avatar } from "./avatar";
 export * from "./avatar-uploader";
 export * from "./back-link";
 export * from "./badge";

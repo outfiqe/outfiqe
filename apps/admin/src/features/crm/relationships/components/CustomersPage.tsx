@@ -1,4 +1,4 @@
-import { FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
+import { Avatar, FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -19,17 +19,20 @@ const CUSTOMER_COLUMNS: TableColumn<CustomerSummary>[] = [
   {
     key: "shopper",
     header: "Shopper",
-    render: ({ userId, name, handle }) => (
-      <>
-        <Link
-          to="/crm/customers/$userId"
-          params={{ userId }}
-          className="font-semibold text-primary-strong underline"
-        >
-          {name}
-        </Link>
-        <span className="ml-2 text-muted-foreground">@{handle}</span>
-      </>
+    render: ({ userId, name, handle, avatarUrl }) => (
+      <span className="flex items-center gap-3">
+        <Avatar name={name} imageUrl={avatarUrl} size="sm" />
+        <span className="min-w-0">
+          <Link
+            to="/crm/customers/$userId"
+            params={{ userId }}
+            className="block font-semibold text-primary-strong underline"
+          >
+            {name}
+          </Link>
+          <span className="block text-xs text-muted-foreground">@{handle}</span>
+        </span>
+      </span>
     ),
   },
   { key: "orders", header: "Orders", render: ({ orderCount }) => orderCount.toLocaleString() },

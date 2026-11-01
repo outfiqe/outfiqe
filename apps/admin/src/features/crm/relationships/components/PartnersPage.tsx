@@ -1,4 +1,4 @@
-import { FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
+import { Avatar, FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -21,17 +21,20 @@ const PARTNER_COLUMNS: TableColumn<PartnerSummary>[] = [
   {
     key: "muse",
     header: "Muse",
-    render: ({ creatorId, name, handle }) => (
-      <>
-        <Link
-          to="/crm/partners/$creatorId"
-          params={{ creatorId }}
-          className="font-semibold text-primary-strong underline"
-        >
-          {name}
-        </Link>
-        <span className="ml-2 text-muted-foreground">@{handle}</span>
-      </>
+    render: ({ creatorId, name, handle, avatarUrl }) => (
+      <span className="flex items-center gap-3">
+        <Avatar name={name} imageUrl={avatarUrl} size="sm" />
+        <span className="min-w-0">
+          <Link
+            to="/crm/partners/$creatorId"
+            params={{ creatorId }}
+            className="block font-semibold text-primary-strong underline"
+          >
+            {name}
+          </Link>
+          <span className="block text-xs text-muted-foreground">@{handle}</span>
+        </span>
+      </span>
     ),
   },
   {

@@ -184,13 +184,19 @@ export const crmPartnerRepository = {
       {
         product_id: string;
         product_name: string;
+        image_url: string | null;
+        price: number;
+        is_thrift: boolean;
+        is_live: boolean;
         tag_click_count: number;
         attributed_order_count: number;
         attributed_revenue: number;
       }[]
     >(Prisma.sql`
       WITH brand_products AS (
-        SELECT id, name FROM products WHERE brand_id = ${brandId}::uuid
+        SELECT id, name, image_url, price, is_thrift, status
+          FROM products
+         WHERE brand_id = ${brandId}::uuid
       ),
       clicks AS (
         SELECT tc.product_id, COUNT(*)::int AS cnt
@@ -212,6 +218,8 @@ export const crmPartnerRepository = {
           GROUP BY oi.product_id
       )
       SELECT bp.id AS product_id, bp.name AS product_name,
+             bp.image_url, bp.price, bp.is_thrift,
+             bp.status = 'APPROVED' AS is_live,
              COALESCE(c.cnt, 0) AS tag_click_count,
              COALESCE(s.order_cnt, 0) AS attributed_order_count,
              COALESCE(s.revenue, 0) AS attributed_revenue
@@ -225,6 +233,10 @@ export const crmPartnerRepository = {
     return rows.map((row) => ({
       productId: row.product_id,
       productName: row.product_name,
+      imageUrl: row.image_url,
+      price: row.price,
+      isThrift: row.is_thrift,
+      isLive: row.is_live,
       tagClickCount: row.tag_click_count,
       attributedOrderCount: row.attributed_order_count,
       attributedRevenue: row.attributed_revenue,

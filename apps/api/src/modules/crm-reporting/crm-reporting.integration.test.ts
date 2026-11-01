@@ -498,6 +498,9 @@ describe("GET /api/crm/reports/summary", () => {
     expect(response.body.data.team).toEqual([
       expect.objectContaining({
         membershipId: membership.id,
+        avatarUrl: null,
+        roleName: expect.any(String),
+        joinedAt: expect.any(String),
         wonDealCount: 1,
         wonValue: 5000,
         resolvedTicketCount: 1,

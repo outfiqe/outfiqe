@@ -90,6 +90,9 @@ export const crmPeriodSummarySchema = z.object({
     z.object({
       membershipId: z.string(),
       name: z.string(),
+      avatarUrl: z.string().nullable(),
+      roleName: z.string(),
+      joinedAt: z.string(),
       wonDealCount: z.number(),
       wonValue: z.number(),
       resolvedTicketCount: z.number(),

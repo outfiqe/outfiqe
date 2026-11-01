@@ -10,6 +10,9 @@ type ReportPeriod = { from: Date; to: Date };
 type TeamMemberRow = {
   membership_id: string;
   name: string;
+  avatar_url: string | null;
+  role_name: string;
+  joined_at: Date;
   won_deal_count: number;
   won_value: number;
   resolved_ticket_count: number;
@@ -71,6 +74,9 @@ export const crmPeriodSummaryRepository = {
     const rows = await prisma.$queryRaw<TeamMemberRow[]>(Prisma.sql`
       SELECT m.id AS membership_id,
              u.name,
+             u.avatar_url,
+             r.name AS role_name,
+             m.created_at AS joined_at,
              (SELECT COUNT(*)::int FROM deals d
                WHERE d.organization_id = m.organization_id
                  AND d.owner_membership_id = m.id
@@ -95,6 +101,7 @@ export const crmPeriodSummaryRepository = {
                  AND a.occurred_at BETWEEN ${from} AND ${to}) AS activity_count
         FROM memberships m
         JOIN users u ON u.id = m.user_id
+        JOIN roles r ON r.id = m.role_id
        WHERE m.organization_id = ${organizationId}::uuid
          AND m.status = 'ACTIVE'
        ORDER BY won_value DESC, resolved_ticket_count DESC, u.name ASC
@@ -104,6 +111,9 @@ export const crmPeriodSummaryRepository = {
     return rows.map((row) => ({
       membershipId: row.membership_id,
       name: row.name,
+      avatarUrl: row.avatar_url,
+      roleName: row.role_name,
+      joinedAt: row.joined_at.toISOString(),
       wonDealCount: row.won_deal_count,
       wonValue: row.won_value,
       resolvedTicketCount: row.resolved_ticket_count,

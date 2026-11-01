@@ -33,6 +33,10 @@ export type RelationshipListPage<TItem> = {
 export type PartnerProductBreakdownRow = {
   productId: string;
   productName: string;
+  imageUrl: string | null;
+  price: number;
+  isThrift: boolean;
+  isLive: boolean;
   tagClickCount: number;
   attributedOrderCount: number;
   attributedRevenue: number;

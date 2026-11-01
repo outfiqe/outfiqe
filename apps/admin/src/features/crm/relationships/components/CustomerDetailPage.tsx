@@ -1,4 +1,4 @@
-import { FormBanner, StatCard } from "@outfiqe/design-system";
+import { Avatar, FormBanner, StatCard } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
@@ -44,6 +44,7 @@ export const CustomerDetailPage = () => {
         <div className="mt-4 space-y-6">
           <CrmPageHeader
             title={customer.name}
+            leading={<Avatar name={customer.name} imageUrl={customer.avatarUrl} size="lg" />}
             description={`@${customer.handle} · customer since ${formatDate(customer.firstOrderAt)}`}
           />
 

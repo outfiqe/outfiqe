@@ -1,4 +1,4 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { Avatar, Skeleton } from "@outfiqe/design-system";
 
 import { MetricEmptyState, MetricLinkRow, MetricSection } from "@/components/MetricParts";
 
@@ -29,14 +29,19 @@ const ConnectedPeopleRows = ({
 
   return (
     <>
-      {people.map(({ userId, name, handle, role }) => {
+      {people.map(({ userId, name, handle, avatarUrl, role }) => {
         const { path, label, sameRecordLabel } = PERSON_ROLE_LINKS[role];
         const isSamePerson = userId === subjectId;
         return (
           <MetricLinkRow
             key={`${role}:${userId}`}
             to={`${path}/${userId}`}
-            label={isSamePerson ? sameRecordLabel : name}
+            label={
+              <span className="flex items-center gap-2">
+                <Avatar name={name} imageUrl={avatarUrl} size="sm" />
+                {isSamePerson ? sameRecordLabel : name}
+              </span>
+            }
             detail={isSamePerson ? SAME_PERSON_DETAIL : `@${handle}`}
             value={label}
           />

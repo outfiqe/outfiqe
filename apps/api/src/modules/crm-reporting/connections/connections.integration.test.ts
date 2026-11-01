@@ -147,6 +147,7 @@ describe("GET /api/crm/connections", () => {
         userId: tenant.partner.id,
         name: "Connected Muse",
         handle: tenant.partner.handle,
+        avatarUrl: null,
         role: "partner",
       },
     ]);
