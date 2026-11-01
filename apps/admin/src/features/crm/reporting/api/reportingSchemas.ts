@@ -74,6 +74,14 @@ export const ticketSearchResultSchema = z.object({
   status: z.string(),
 });
 
+export const crmAttentionReportSchema = z.object({
+  overdueTaskCount: z.number(),
+  tasksDueTodayCount: z.number(),
+  unassignedTicketCount: z.number(),
+  stuckDealCount: z.number(),
+});
+export type CrmAttentionReport = z.infer<typeof crmAttentionReportSchema>;
+
 export const contactSearchResultSchema = z.object({
   id: z.string(),
   name: z.string(),

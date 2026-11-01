@@ -1,3 +1,5 @@
+import { subDays } from "date-fns/subDays";
+
 import logger from "#lib/winston.utils.js";
 import type { OrganizationRecord } from "#modules/crm-access/crm-access.types.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
@@ -8,9 +10,11 @@ import {
   CRM_SEARCH_ENTITY,
   CRM_SEARCH_ENTITY_PERMISSION,
   SEARCH_RESULTS_PER_TYPE,
+  STUCK_DEAL_DAYS,
 } from "./crm-reporting.constants.js";
 import { crmReportingRepository } from "./crm-reporting.repository.js";
 import type {
+  CrmAttentionReport,
   CrmOverviewReport,
   CrmSearchResults,
   PipelineReport,
@@ -69,6 +73,17 @@ export const crmReportingService = {
     ]);
 
     return { pipeline, tickets, activityTrend, openTasksDueTodayCount };
+  },
+
+  getAttentionReport(
+    organizationId: string,
+    today: { dayStart: Date; dayEnd: Date },
+  ): Promise<CrmAttentionReport> {
+    return crmReportingRepository.attentionCounts(
+      organizationId,
+      today,
+      subDays(new Date(), STUCK_DEAL_DAYS),
+    );
   },
 
   async search(

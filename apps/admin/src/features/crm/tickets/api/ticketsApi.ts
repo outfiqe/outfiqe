@@ -16,6 +16,8 @@ export const crmTicketsApi = {
     filters: {
       status?: TicketStatusValue;
       assigneeMembershipId?: string;
+      activeOnly?: "true";
+      unassignedOnly?: "true";
       createdFrom?: string;
       createdTo?: string;
       cursor?: string;

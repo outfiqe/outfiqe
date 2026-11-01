@@ -10,6 +10,8 @@ import type {
   TicketWithComments,
 } from "./crm-tickets.types.js";
 
+const ACTIVE_TICKET_STATUSES: CrmTicketStatus[] = ["OPEN", "IN_PROGRESS"];
+
 const ticketSelect = {
   id: true,
   organizationId: true,
@@ -119,6 +121,8 @@ export const crmTicketsRepository = {
           ? { assigneeMembershipId: filters.assigneeMembershipId }
           : {}),
         ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.activeOnly ? { status: { in: ACTIVE_TICKET_STATUSES } } : {}),
+        ...(filters.unassignedOnly ? { assigneeMembershipId: null } : {}),
         ...(filters.createdFrom || filters.createdTo
           ? { createdAt: { gte: filters.createdFrom, lte: filters.createdTo } }
           : {}),

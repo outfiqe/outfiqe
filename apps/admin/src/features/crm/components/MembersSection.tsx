@@ -69,7 +69,7 @@ export const MembersSection = (memberActionsOptions: MemberActionsOptions) => {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Select
           value={member.roleId}
           disabled={member.isSuperAdmin || isViewersOwnRow(member) || isActing}

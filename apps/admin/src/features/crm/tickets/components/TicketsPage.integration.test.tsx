@@ -245,6 +245,30 @@ describe("TicketsPage", () => {
     await waitFor(() => expect(lastAssignee).toBe("mem-1"));
   });
 
+  it("opens straight to tickets still open with no one on them", async () => {
+    mockCommon();
+    let lastQuery = new URLSearchParams();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
+        lastQuery = new URL(request.url).searchParams;
+        return HttpResponse.json({ success: true, data: { tickets: [TICKET], nextCursor: null } });
+      }),
+    );
+
+    renderTicketsPage("/crm/support?status=ACTIVE&assignee=none");
+
+    await screen.findByRole("link", { name: /Damaged package/ });
+    expect(lastQuery.get("activeOnly")).toBe("true");
+    expect(lastQuery.get("unassignedOnly")).toBe("true");
+  });
+
+  it("opens the new ticket form when the link asks for it", async () => {
+    mockCommon();
+    renderTicketsPage("/crm/support?new=yes");
+
+    expect(await screen.findByRole("button", { name: "Create ticket" })).toBeInTheDocument();
+  });
+
   it("reads the status filter from the URL on load", async () => {
     mockCommon();
     let lastStatusParam: string | null = "unset";

@@ -26,6 +26,8 @@ export const CRM_SEARCH_ENTITY_PERMISSION: Record<
 
 export const CRM_SEARCH_READ_PERMISSION_KEYS = Object.values(CRM_SEARCH_ENTITY_PERMISSION);
 
+export const STUCK_DEAL_DAYS = 14;
+
 export const TASKS_READ_PERMISSION = "tasks:read";
 export const CONNECTED_RECORDS_PER_TYPE = 5;
 

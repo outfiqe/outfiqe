@@ -23,6 +23,7 @@ import { CsvExportButton } from "../../components/CsvExportButton";
 import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
 import { useCrmListFilters } from "../../hooks/useCrmListFilters";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
@@ -85,7 +86,7 @@ export const ContactsPage = () => {
     useCrmListFilters();
   const [stageFilter] = useSearchFilter("stage", rawTextFilter);
   const [ownerFilter] = useSearchFilter("owner", rawTextFilter);
-  const [modalOpen, setModalOpen] = useState(false);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
 
   const contactFilters = {
@@ -148,7 +149,7 @@ export const ContactsPage = () => {
               className="w-56"
             />
             <CsvExportButton isExporting={isExporting} onExport={() => void exportCsv()} />
-            <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Button size="sm" onClick={openNewRecordModal}>
               New contact
             </Button>
           </div>
@@ -189,8 +190,8 @@ export const ContactsPage = () => {
         )}
       </div>
 
-      {modalOpen && (
-        <ContactFormModal open={modalOpen} onClose={() => setModalOpen(false)} contact={null} />
+      {isNewRecordModalOpen && (
+        <ContactFormModal open onClose={closeNewRecordModal} contact={null} />
       )}
 
       <ConfirmModal

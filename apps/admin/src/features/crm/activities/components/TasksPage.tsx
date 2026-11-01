@@ -1,7 +1,6 @@
 import { Badge, Button, FilterChip, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -13,6 +12,7 @@ import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { useCrmMembers } from "../../hooks/useCrmMembers";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import { formatDate } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
 import type { Task } from "../api/activitiesSchemas";
@@ -52,7 +52,7 @@ export const TasksPage = () => {
       }),
   });
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
 
   const toggleTask = useApiMutation({
     mutationFn: (task: Task) =>
@@ -72,7 +72,7 @@ export const TasksPage = () => {
         actions={
           members &&
           members.length > 0 && (
-            <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Button size="sm" onClick={openNewRecordModal}>
               New task
             </Button>
           )
@@ -140,10 +140,10 @@ export const TasksPage = () => {
         )}
       </div>
 
-      {modalOpen && members && (
+      {isNewRecordModalOpen && members && (
         <NewTaskModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
+          open
+          onClose={closeNewRecordModal}
           members={members.map((member) => ({ id: member.id, userName: member.userName }))}
         />
       )}

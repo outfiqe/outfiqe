@@ -315,6 +315,35 @@ describe("CRM deals", () => {
     expect(exported.text).not.toContain(tenant.partner.name);
   });
 
+  it("filters the board to open opportunities stuck in their stage", async () => {
+    const tenant = await seedPipelineTenant();
+    const stage = await prisma.pipelineStage.findFirstOrThrow({
+      where: { organizationId: tenant.organization.id },
+    });
+    const addDeal = (title: string, stageEnteredAt: Date, status: "OPEN" | "WON") =>
+      prisma.deal.create({
+        data: {
+          organizationId: tenant.organization.id,
+          stageId: stage.id,
+          partnerCreatorId: tenant.partner.id,
+          title,
+          stageEnteredAt,
+          status,
+        },
+      });
+    await addDeal("Stuck", subDays(new Date(), 20), "OPEN");
+    await addDeal("Fresh", new Date(), "OPEN");
+    await addDeal("Won long ago", subDays(new Date(), 20), "WON");
+
+    const filtered = await request(testApp)
+      .get("/api/crm/deals")
+      .query({ stageEnteredBefore: subDays(new Date(), 14).toISOString() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.body.data.map(({ title }: { title: string }) => title)).toEqual(["Stuck"]);
+  });
+
   it("filters the board by owner", async () => {
     const tenant = await seedPipelineTenant();
     const stage = await prisma.pipelineStage.findFirstOrThrow({

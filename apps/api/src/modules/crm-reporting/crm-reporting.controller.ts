@@ -7,7 +7,11 @@ import {
   getResolvedOrganization,
 } from "#modules/crm-access/crm-access.middleware.js";
 
-import type { CrmConnectionsQuery, CrmSearchQuery } from "./crm-reporting.schemas.js";
+import type {
+  CrmAttentionQuery,
+  CrmConnectionsQuery,
+  CrmSearchQuery,
+} from "./crm-reporting.schemas.js";
 import { crmReportingService } from "./crm-reporting.service.js";
 
 export const crmReportingController = {
@@ -27,6 +31,16 @@ export const crmReportingController = {
     const organization = getResolvedOrganization(res);
     const report = await crmReportingService.getOverviewReport(organization.id);
     sendSuccess(res, report, "CRM overview report.");
+  },
+
+  async getAttentionReport(_req: Request, res: Response) {
+    const today = validated.query<CrmAttentionQuery>(res);
+    const organization = getResolvedOrganization(res);
+    sendSuccess(
+      res,
+      await crmReportingService.getAttentionReport(organization.id, today),
+      "What needs attention today.",
+    );
   },
 
   async getConnections(_req: Request, res: Response) {

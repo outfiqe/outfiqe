@@ -64,11 +64,11 @@ describe("CrmOverviewSection", () => {
 
     expect(await screen.findByText("Sales in progress")).toBeInTheDocument();
     expect(screen.getByText("Rs. 9,000")).toBeInTheDocument();
-    expect(screen.getByText("Tasks due today")).toBeInTheDocument();
+    expect(screen.getByText("Tasks due or overdue")).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
     expect(screen.getByText("2h")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "How Tasks due today is calculated" }),
+      screen.getByRole("button", { name: "How Tasks due or overdue is calculated" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "How Average time to solve is calculated" }),
