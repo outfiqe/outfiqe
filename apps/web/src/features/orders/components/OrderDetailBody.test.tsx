@@ -120,6 +120,37 @@ describe("OrderDetailBody", () => {
     expect(screen.getByText(/couldn't find that order/i)).toBeInTheDocument();
   });
 
+  it("shows a short order reference in the heading, not the raw id", () => {
+    orderResult.data = buildOrder({ id: "cb34b663-ef6b-495a-bd6f-cafcbb243ecf" });
+
+    renderOrderDetail();
+
+    expect(screen.getByRole("heading", { name: /Order #CB34B663/i })).toBeInTheDocument();
+    expect(screen.queryByText("cb34b663-ef6b-495a-bd6f-cafcbb243ecf")).not.toBeInTheDocument();
+  });
+
+  it("labels a cash-on-delivery payment as pending until it is collected", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "COD",
+      paymentStatus: "DUE",
+      transactions: [
+        {
+          id: "txn-1",
+          provider: "COD",
+          type: "PAYMENT",
+          status: "SUCCEEDED",
+          transactionRef: null,
+          createdAt: "2026-09-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText(/Pay on delivery/i)).toBeInTheDocument();
+    expect(screen.queryByText(/SUCCEEDED/i)).not.toBeInTheDocument();
+  });
+
   it("shows the delivery tracker for a paid order and no pending-payment panel", () => {
     orderResult.data = buildOrder({ paymentMethod: "ESEWA", paymentStatus: "PAID" });
 

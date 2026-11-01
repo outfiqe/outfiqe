@@ -15,6 +15,7 @@ import {
 } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { useRefundDestination } from "../hooks/useRefundDestination";
+import { formatOrderReference } from "../utils/orderReference.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -115,7 +116,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           )}
         </div>
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
-          Order {id}
+          Order {formatOrderReference(id)}
         </h1>
         {!orderCancelled && (
           <p className="mt-4 text-sm text-muted-foreground">
@@ -173,7 +174,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <span>Rs. {total.toLocaleString()}</span>
         </div>
 
-        <TransactionLedger transactions={transactions} />
+        <TransactionLedger
+          transactions={transactions}
+          paymentMethod={paymentMethod}
+          paymentStatus={paymentStatus}
+        />
       </div>
 
       <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">

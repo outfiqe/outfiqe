@@ -61,7 +61,7 @@ export const RatingSummary = ({ summary, selectedRating, onSelectRating }: Ratin
               type="button"
               onClick={() => onSelectRating(isSelected ? undefined : star)}
               aria-pressed={isSelected}
-              className="flex w-full items-center gap-2 rounded-md py-0.5 text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="flex min-h-6 w-full items-center gap-2 rounded-md px-1 py-1 text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <span className="w-9 shrink-0">{star} star</span>
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
