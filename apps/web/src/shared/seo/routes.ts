@@ -40,6 +40,24 @@ export const audienceRoutes: MarketingRoute[] = [
 
 export const supportRoutes: MarketingRoute[] = [
   { path: "/help", label: "Help centre", changeFrequency: "monthly", priority: 0.6 },
+  {
+    path: "/help/glossary",
+    label: "What our words mean",
+    changeFrequency: "monthly",
+    priority: 0.5,
+  },
+  {
+    path: "/help/shipping",
+    label: "Shipping & delivery guide",
+    changeFrequency: "monthly",
+    priority: 0.5,
+  },
+  {
+    path: "/help/returns",
+    label: "Returns & refunds guide",
+    changeFrequency: "monthly",
+    priority: 0.5,
+  },
   { path: "/size-guide", label: "Size guide", changeFrequency: "monthly", priority: 0.5 },
 ];
 

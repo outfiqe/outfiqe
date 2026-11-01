@@ -27,6 +27,8 @@ to answer the questions a shopper, creator or brand has before they commit.
 - `components/LegalDocument.tsx` — the long-form legal wrapper: title, summary, last-reviewed date,
   a "working draft" banner while `status="draft"`, and prose typography via arbitrary-variant
   Tailwind selectors so legal pages don't each restyle `h2`/`ul`/`a`.
+- `components/ExampleCallout.tsx` — the labelled "Example" block used to show a rule as a short story.
+- `components/GlossaryList.tsx` and `constants/glossaryTerms.ts` — the terms on `/help/glossary`. Each term has an id, so any page can link to `/help/glossary#muse`.
 - `index.ts` — barrel.
 
 The route files live under `app/` directly (`app/about/page.tsx`, `app/legal/privacy/page.tsx`,
@@ -64,3 +66,13 @@ FAQ-bearing pages pass `withSchema` to `FaqAccordion`. The routes are registered
 - **`/for-brands` is a marketing page; `/apply` is the form.** `/apply` already existed as the
   application form with a short intro. `/for-brands` is the fuller pitch and links to `/apply` for
   the form itself, rather than duplicating or replacing it.
+
+## Writing these pages
+
+Each guide explains a word before using it, and follows the same order where it fits: what it is, who does what, how it works, a real example, common questions, and what to do next.
+
+**Every fact must match the product.** Before changing a number or a step, check the code. No page states a commission rate, a brand fee or a delivery time, because those are still being set and vary by zone. Add them only once they are confirmed.
+
+**Plain guides sit beside the legal policies.** `/help/shipping` and `/help/returns` explain the rules in everyday words and link to `/legal/shipping-policy` and `/legal/returns-policy`. The policies are drafts waiting for legal review, so a change to one should be checked against its guide.
+
+**Don't name Khalti as a way to pay.** It is switched off by a feature flag by default, so these pages say "online". It can still be named as a refund account.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  ExampleCallout,
   FeatureGrid,
   MarketingCta,
   MarketingHero,
@@ -37,6 +38,25 @@ const principles = [
   },
 ];
 
+const roles = [
+  {
+    title: "Shoppers",
+    body: "People looking for clothes. They find pieces through looks and the shop, then buy from many brands in one cart.",
+  },
+  {
+    title: "Brands",
+    body: "Nepali clothing labels. They make or source the pieces, set the prices and keep their stock up to date.",
+  },
+  {
+    title: "Muses",
+    body: "Real people who wear those pieces, share photos called looks, and earn a commission when a look leads to a sale.",
+  },
+  {
+    title: "Outfiqe",
+    body: "The place that connects them. We run the store, take payment, collect orders from brands, check them at our hub, arrange delivery and handle refunds.",
+  },
+];
+
 const AboutPage = () => (
   <MarketingShell
     breadcrumbs={[
@@ -55,6 +75,43 @@ const AboutPage = () => (
       }
       lede="Outfiqe brings Nepal's clothing brands together in one storefront and shows every piece on real muses. Shopping starts with an outfit you like, not a search box."
     />
+
+    <MarketingSection heading="What Outfiqe is">
+      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p>
+          Outfiqe is an online fashion marketplace for Nepal. We don&apos;t make the clothes.
+          Independent Nepali brands sell them here, and we handle the shopping, payment, delivery
+          and support around each order.
+        </p>
+      </div>
+    </MarketingSection>
+
+    <MarketingSection heading="Who does what">
+      <FeatureGrid items={roles} columns={2} />
+      <p className="mt-6 max-w-2xl text-sm text-muted-foreground sm:text-base">
+        New words? See{" "}
+        <Link
+          href="/help/glossary"
+          className="font-medium text-foreground underline underline-offset-2"
+        >
+          what our words mean
+        </Link>
+        .
+      </p>
+    </MarketingSection>
+
+    <MarketingSection heading="How it fits together">
+      <ExampleCallout title="One kurta, three people">
+        <p>
+          A Kathmandu brand lists a kurta. Sita, a muse, wears it, posts a look and tags it. Maya
+          sees the look, taps the tag and buys the kurta.
+        </p>
+        <p>
+          Our rider collects it from the brand, we check it at our hub, and a delivery partner
+          brings it to Maya. The brand earns from the sale, and Sita earns a commission.
+        </p>
+      </ExampleCallout>
+    </MarketingSection>
 
     <MarketingSection heading="Why we started">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
