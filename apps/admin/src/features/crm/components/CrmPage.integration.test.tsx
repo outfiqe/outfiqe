@@ -23,6 +23,11 @@ vi.mock("@/features/auth/components/AuthContext", () => ({
   }),
 }));
 
+vi.mock("@/features/product-tour", async () => ({
+  ...(await vi.importActual("@/features/product-tour")),
+  CrmDashboardTour: () => <p>Welcome tour</p>,
+}));
+
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: () => <>{children}</> });
@@ -184,7 +189,7 @@ describe("CrmPage", () => {
     expect(screen.getByRole("button", { name: "Decline" })).toBeInTheDocument();
   });
 
-  it("warns the recipient the sender will be removed when that was requested", async () => {
+  it("tells a new brand's owner Outfiqe set this up, and holds the tour until they answer", async () => {
     mockOrganizationEndpoint({
       pendingOwnershipTransfer: {
         id: "transfer-1",
@@ -200,8 +205,19 @@ describe("CrmPage", () => {
     render(<CrmPage />, { wrapper });
 
     expect(
-      await screen.findByText(/The current owner will be removed from this organization/),
+      await screen.findByText(
+        "Outfiqe has set up this CRM for Meridian Apparel Co.. Accept to become its owner.",
+      ),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Welcome tour")).not.toBeInTheDocument();
+  });
+
+  it("shows the tour once there's no ownership question waiting", async () => {
+    mockOrganizationEndpoint();
+
+    render(<CrmPage />, { wrapper });
+
+    expect(await screen.findByText("Welcome tour")).toBeInTheDocument();
   });
 
   it("shows a bystander neither the cancel nor the accept/decline actions", async () => {

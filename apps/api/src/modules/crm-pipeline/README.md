@@ -65,3 +65,7 @@ columns; `pipeline:configure` renames, reorders, adds, and removes stages.
 `GET /api/crm/deals/export` returns the filtered opportunities as CSV through `#lib/csv-writer.utils`, which neutralizes spreadsheet formulas. It leaves muse details out on purpose and refuses more than `MAX_CRM_EXPORT_ROWS` rows. It has its own rate limit, and each export is logged.
 
 `stageEnteredAt` resets only when a deal really changes stage, so saving the same stage again keeps the count. Rows that existed before the column used `updated_at`, so their count is an estimate.
+
+## Board limit
+
+`GET /api/crm/deals` returns the latest `MAX_BOARD_DEALS_PER_STAGE` opportunities per stage, using a window function, so won and lost columns can't grow the response without limit. The CSV export uses its own, higher cap.
