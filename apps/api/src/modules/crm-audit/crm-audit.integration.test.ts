@@ -78,6 +78,11 @@ describe("CRM audit log", () => {
 
     const renameEntry = response.body.data.entries[0];
     expect(renameEntry.actorName).toBe("Audit Owner");
+    expect(renameEntry.actorAvatarUrl).toBeNull();
+    expect(renameEntry.actorMember).toMatchObject({
+      roleName: expect.any(String),
+      joinedAt: expect.any(String),
+    });
     expect(renameEntry.summary).toContain("Renamed Audit Co");
     expect(renameEntry.metadata.previousName).toBeDefined();
   });

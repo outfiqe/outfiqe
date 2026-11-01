@@ -7,6 +7,7 @@ import { PROVIDER_LABELS } from "../../billing/constants/providerLabels";
 import { formatDateTime, toPlainWords } from "../../utils/format.utils";
 import { AUDIT_TARGET_LINKS } from "../constants/auditLabels";
 import { type AuditLogRow, toAuditActionLabel, toAuditSummary } from "../utils/auditEntries.utils";
+import { AuditActor } from "./AuditActor";
 
 const SINGLE_OCCURRENCE = 1;
 
@@ -28,12 +29,14 @@ const toSimpleDetails = (metadata: Record<string, unknown>) =>
 
 export const AuditEntryPanel = ({
   entry,
+  onSelectActor,
   onClose,
 }: {
   entry: AuditLogRow;
+  onSelectActor: (entry: AuditLogRow) => void;
   onClose: () => void;
 }) => {
-  const { action, summary, actorName, createdAt, outcome, metadata } = entry;
+  const { action, summary, createdAt, outcome, metadata } = entry;
   const targetLink = entry.targetType ? AUDIT_TARGET_LINKS[entry.targetType] : undefined;
 
   return (
@@ -57,7 +60,7 @@ export const AuditEntryPanel = ({
       <DrawerScrollArea className="p-5">
         <p className="text-sm text-foreground">{toAuditSummary(summary)}</p>
         <div className="mt-4">
-          <MetricRow label="Who" value={actorName ?? "System"} />
+          <MetricRow label="Who" value={<AuditActor entry={entry} onSelect={onSelectActor} />} />
           <MetricRow label="When" value={formatDateTime(createdAt)} />
           <MetricRow label="Result" value={outcome === "FAILURE" ? "Failed" : "Done"} />
           {entry.occurrenceCount > SINGLE_OCCURRENCE && (

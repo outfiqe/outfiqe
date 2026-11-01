@@ -19,7 +19,7 @@ who did what, when, from which IP, and the outcome; never a token, password hash
   and the IP from `req.ip`. Type-only import of `crm-access` types, so no runtime dependency on
   that module.
 - `crm-audit.repository.ts` — `insert` (one `crmAuditLog.create`) and `list` (keyset pagination on
-  `[createdAt desc, id desc]`, then one `user.findMany` to resolve actor names — `actorUserId` has
+  `[createdAt desc, id desc]`, then one `user.findMany` to resolve each actor's name, picture and current team role — `actorUserId` has
   no FK so the log survives actor deletion).
 - `crm-audit.service.ts` — `crmAudit.record` (best-effort: wraps `insert` in try/catch and logs on
   failure, **never throws** — an audit write must not fail the action it records) and `list`

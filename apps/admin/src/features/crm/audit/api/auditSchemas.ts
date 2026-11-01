@@ -7,6 +7,10 @@ export const crmAuditEntrySchema = z.object({
   summary: z.string(),
   actorUserId: z.string().nullable(),
   actorName: z.string().nullable(),
+  actorAvatarUrl: z.string().nullable(),
+  actorMember: z
+    .object({ membershipId: z.string(), roleName: z.string(), joinedAt: z.string() })
+    .nullable(),
   targetType: z.string().nullable(),
   targetId: z.string().nullable(),
   metadata: z.record(z.string(), z.unknown()),
