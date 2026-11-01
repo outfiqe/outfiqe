@@ -67,3 +67,5 @@ trend is a `GROUP BY day` over `org_activity_rollups` (the snapshot table), not 
 - **`OrgActivityRollup` is snapshot history, not the source of truth.** The live numbers come from
   the `Organization` counters; the rollup is written once a day so the detail view can draw a
   trend. A missing day just leaves a gap in the sparkline.
+
+**The tenant list and detail add account facts, not records.** Search matches a business's name or subdomain, and sorting works on the counters already stored on `Organization`. Owner name and email, linked brand, subscription dates and the count of waiting invites come from platform-level tables, so "no route returns an individual CRM record" still holds.

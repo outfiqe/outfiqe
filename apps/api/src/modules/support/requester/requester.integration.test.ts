@@ -137,6 +137,33 @@ describe("requester access", () => {
   });
 });
 
+describe("GET /api/support/tickets/mine search", () => {
+  it("finds a request by its reference, and only the caller's own", async () => {
+    const requester = await createUser();
+    const other = await createUser();
+    const ownTicketId = await openTicket(authHeaderFor(requester.id));
+    await openTicket(authHeaderFor(other.id));
+    const { body } = await request(testApp)
+      .get("/api/support/tickets/mine")
+      .set("Authorization", authHeaderFor(requester.id));
+    const { reference } = body.data.tickets[0];
+
+    const found = await request(testApp)
+      .get("/api/support/tickets/mine")
+      .query({ search: reference })
+      .set("Authorization", authHeaderFor(requester.id));
+    const noMatch = await request(testApp)
+      .get("/api/support/tickets/mine")
+      .query({ search: "nothing like this" })
+      .set("Authorization", authHeaderFor(requester.id));
+
+    expect(found.body.data.tickets.map((ticket: { id: string }) => ticket.id)).toEqual([
+      ownTicketId,
+    ]);
+    expect(noMatch.body.data.tickets).toEqual([]);
+  });
+});
+
 describe("POST /api/support/reopen/:token", () => {
   it("reopens a resolved ticket with a valid token", async () => {
     const rawToken = generateOpaqueToken();

@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
   FulfilmentMode,
   FulfilmentStatus,
@@ -6,6 +7,7 @@ import {
   PaymentStatus,
   PickupStatus,
 } from "#generated/prisma/enums.js";
+import { toUuidPrefixRange } from "#lib/uuid.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { FulfilmentGroupSpec, OrderFulfilmentRollup } from "../order.types.js";
@@ -55,6 +57,16 @@ const setOrderFulfilmentRollup = async (
     });
     await markHubCollectedCashPaid(client, orderId);
   }
+};
+
+const shipmentSearchFilter = (search: string): Prisma.OrderFulfilmentGroupWhereInput => {
+  const orderIdRange = toUuidPrefixRange(search);
+  return {
+    OR: [
+      { items: { some: { product: { name: { contains: search, mode: "insensitive" } } } } },
+      ...(orderIdRange ? [{ orderId: orderIdRange }] : []),
+    ],
+  };
 };
 
 export const orderFulfilmentGroupRepository = {
@@ -192,10 +204,14 @@ export const orderFulfilmentGroupRepository = {
 
   async listFulfilmentGroupsForBrand(
     brandId: string,
-    params: { status?: FulfilmentStatus; cursor?: string; limit: number },
+    params: { status?: FulfilmentStatus; search?: string; cursor?: string; limit: number },
   ) {
     return prisma.orderFulfilmentGroup.findMany({
-      where: { brandId, ...(params.status ? { status: params.status } : {}) },
+      where: {
+        brandId,
+        ...(params.status ? { status: params.status } : {}),
+        ...(params.search ? shipmentSearchFilter(params.search) : {}),
+      },
       orderBy: [{ order: { createdAt: "desc" } }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),

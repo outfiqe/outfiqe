@@ -26,11 +26,32 @@ export const crmOrganizationRepository = {
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: { linkedBrand: { select: { name: true } } },
+      include: {
+        linkedBrand: { select: { name: true } },
+        subscription: { select: { status: true } },
+        _count: { select: { memberships: true } },
+      },
     });
-    return organizations.map(({ linkedBrand, ...organization }) => ({
+    const ownerMemberships = await prisma.membership.findMany({
+      where: {
+        id: {
+          in: organizations.flatMap(({ superAdminMembershipId }) =>
+            superAdminMembershipId ? [superAdminMembershipId] : [],
+          ),
+        },
+      },
+      select: { id: true, user: { select: { name: true } } },
+    });
+    const ownerNameByMembershipId = new Map(
+      ownerMemberships.map(({ id, user }) => [id, user.name]),
+    );
+
+    return organizations.map(({ linkedBrand, subscription, _count, ...organization }) => ({
       ...organization,
       linkedBrandName: linkedBrand?.name ?? null,
+      subscriptionStatus: subscription?.status ?? null,
+      memberCount: _count.memberships,
+      ownerName: ownerNameByMembershipId.get(organization.superAdminMembershipId ?? "") ?? null,
     }));
   },
 

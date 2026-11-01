@@ -23,6 +23,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { buildImpersonationHandoffUrl } from "@/lib/impersonationHandoff";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { platformMetricsApi } from "../../platform-metrics/api/platformMetricsApi";
 import { platformImpersonationApi } from "../api/platformImpersonationApi";
@@ -59,9 +60,10 @@ export const PlatformImpersonationPage = () => {
   const canRevokeAnySession = canUse(PLATFORM_MANAGE_PERMISSION.IMPERSONATION_SESSIONS);
   const canRevokeSession = (session: ImpersonationSession) =>
     canRevokeAnySession || session.impersonatorId === viewerUserId;
+  const [requestedOrganizationId] = useSearchFilter("org", rawTextFilter);
   const form = useForm<ImpersonationFormValues>({
     resolver: zodResolver(impersonationFormSchema),
-    defaultValues: EMPTY_IMPERSONATION_FORM,
+    defaultValues: { ...EMPTY_IMPERSONATION_FORM, organizationId: requestedOrganizationId },
     mode: FORM_VALIDATION_MODE,
   });
   const organizationId = form.watch("organizationId");

@@ -6,12 +6,12 @@ import { useAuth } from "@/features/auth";
 
 import { brandProductsApi } from "../api/brandProductsApi";
 
-export const useBrandProducts = () => {
+export const useBrandProducts = (search?: string) => {
   const { isAuthenticated } = useAuth();
 
   return useInfiniteCursorPage(
-    ["brand-products"],
-    (cursor) => brandProductsApi.list(cursor),
+    search ? ["brand-products", search] : ["brand-products"],
+    (cursor) => brandProductsApi.list(cursor, search),
     isAuthenticated,
   );
 };

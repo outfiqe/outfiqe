@@ -20,9 +20,10 @@ export const supportApi = {
     return createSupportResultSchema.parse(res.data);
   },
 
-  async listMine(cursor?: string): Promise<SupportTicketPage> {
-    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await apiClient.get<SupportTicketPage>(`/support/tickets/mine${query}`);
+  async listMine(cursor?: string, search?: string): Promise<SupportTicketPage> {
+    const res = await apiClient.get<SupportTicketPage>("/support/tickets/mine", {
+      params: { cursor, search },
+    });
     return supportTicketPageSchema.parse(res.data);
   },
 

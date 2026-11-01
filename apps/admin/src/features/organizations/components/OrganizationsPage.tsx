@@ -29,6 +29,7 @@ import {
   type OrganizationFormValues,
 } from "../schemas/organizationForm.schema";
 import { BusinessOwnerField } from "./BusinessOwnerField";
+import { OrganizationCard } from "./OrganizationCard";
 
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 
@@ -176,22 +177,7 @@ export const OrganizationsPage = () => {
         )}
 
         {organizations?.map((organization) => (
-          <div
-            key={organization.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <div>
-              <h2 className="font-display text-base font-bold text-foreground">
-                {organization.name}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {organization.subdomain} · {organization.plan} ·{" "}
-                {organization.linkedBrandName
-                  ? `linked to ${organization.linkedBrandName}`
-                  : "no linked brand"}
-              </p>
-            </div>
-          </div>
+          <OrganizationCard key={organization.id} organization={organization} />
         ))}
 
         {hasNextPage && (

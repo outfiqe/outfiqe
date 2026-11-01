@@ -1,41 +1,72 @@
-import { Button, FormBanner, Select, StatCardSkeleton } from "@outfiqe/design-system";
-import { formatDate } from "@outfiqe/utils";
+import {
+  Button,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
+  FilterChip,
+  FormBanner,
+  SearchInput,
+  Select,
+  STAT_CARD_LINK_CLASS_NAME,
+  StatCard,
+  StatCardSkeleton,
+} from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../api/platformMetricsApi";
-import type { TenantSort } from "../api/platformMetricsSchemas";
+import type { PlatformOverview, TenantSort } from "../api/platformMetricsSchemas";
+import {
+  TENANT_SORT_OPTIONS,
+  TENANT_TABLE_HEADERS,
+  TENANT_TOTAL_CARDS,
+} from "../constants/tenantMetrics.constants";
+import { useTenantFilters } from "../hooks/useTenantFilters";
+import { toPlanLabel, toTenantCountLabel } from "../utils/tenantMetrics.utils";
+import { TenantTable } from "./TenantTable";
 
 const PAGE_SIZE = 25;
+const OVERVIEW_STAT_COUNT = 5;
+const FIRST_PAGE = 1;
+const PAGE_STEP = 1;
+const NO_TENANTS = 0;
+const STAT_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5";
 
-const compactNumber = (value: number) => value.toLocaleString();
-
-const StatCard = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-lg border border-border bg-card p-4">
-    <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-    <p className="mt-1 font-display text-2xl font-bold text-foreground">{compactNumber(value)}</p>
+const TenantTotals = ({
+  overview,
+  sort,
+  onSort,
+}: {
+  overview: PlatformOverview;
+  sort: TenantSort;
+  onSort: (sort: TenantSort) => void;
+}) => (
+  <div className={STAT_GRID_CLASS}>
+    {TENANT_TOTAL_CARDS.map(({ label, metricKey, sort: cardSort, hint }) => (
+      <StatCard
+        key={label}
+        label={label}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        value={overview[metricKey].toLocaleString()}
+        hint={hint}
+        footer={
+          <button
+            type="button"
+            aria-pressed={sort === cardSort}
+            onClick={() => onSort(cardSort)}
+            className={STAT_CARD_LINK_CLASS_NAME}
+          >
+            {sort === cardSort ? "Sorted by this" : "Sort by this"}
+          </button>
+        }
+      />
+    ))}
   </div>
 );
 
-const OVERVIEW_STAT_COUNT = 6;
-const TENANT_TABLE_HEADERS = [
-  "Tenant",
-  "Plan",
-  "Members",
-  "Contacts",
-  "Deals",
-  "Tickets",
-  "Last activity",
-];
-
 export const PlatformMetricsPage = () => {
-  const [planFilter, setPlanFilter] = useState("");
-  const [sort, setSort] = useState<TenantSort>("recent-activity");
-  const [page, setPage] = useState(1);
+  const { plan, sort, page, search, searchText, setSearchText, selectPlan, selectSort, goToPage } =
+    useTenantFilters();
 
   const overview = useQuery({
     queryKey: ["platform-metrics-overview"],
@@ -43,138 +74,100 @@ export const PlatformMetricsPage = () => {
   });
 
   const tenants = useQuery({
-    queryKey: ["platform-metrics-tenants", planFilter, sort, page],
+    queryKey: ["platform-metrics-tenants", plan, search, sort, page],
     queryFn: () =>
       platformMetricsApi.listTenants({
-        plan: planFilter || undefined,
+        plan: plan || undefined,
+        search,
         sort,
         page,
         pageSize: PAGE_SIZE,
       }),
   });
 
-  const planOptions = overview.data?.tenantsByPlan.map((entry) => entry.plan) ?? [];
-
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Tenant metrics</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Aggregate activity across every CRM tenant. Counts only — no tenant records are shown here.
+        How each business is using the CRM. Counts only, so their private contacts and deals stay
+        private. Click a business to see its account and activity.
       </p>
 
       <div className="mt-6">
         {overview.isLoading && (
-          <div
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
-            role="status"
-            aria-label="Loading"
-          >
+          <div className={STAT_GRID_CLASS} role="status" aria-label="Loading">
             {Array.from({ length: OVERVIEW_STAT_COUNT }, (_unused, statIndex) => (
               <StatCardSkeleton key={statIndex} />
             ))}
           </div>
         )}
         {overview.error && <FormBanner>{getErrorMessage(overview.error)}</FormBanner>}
-        {overview.data && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Tenants" value={overview.data.tenantCount} />
-            <StatCard label="Members" value={overview.data.totalMembers} />
-            <StatCard label="Contacts" value={overview.data.totalContacts} />
-            <StatCard label="Deals" value={overview.data.totalDeals} />
-            <StatCard label="Tickets" value={overview.data.totalTickets} />
-            <StatCard label="Activities" value={overview.data.totalActivities} />
-          </div>
-        )}
+        {overview.data && <TenantTotals overview={overview.data} sort={sort} onSort={selectSort} />}
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-2">
-        <Select
-          value={planFilter}
-          onChange={(event) => {
-            setPlanFilter(event.target.value);
-            setPage(1);
-          }}
-          className="w-40"
-          aria-label="Filter by plan"
-        >
-          <option value="">All plans</option>
-          {planOptions.map((plan) => (
-            <option key={plan} value={plan}>
-              {plan}
-            </option>
-          ))}
-        </Select>
+      <div
+        className="mt-8 flex flex-wrap items-center gap-2"
+        role="group"
+        aria-label="Filter by plan"
+      >
+        <FilterChip isSelected={plan === ""} onClick={() => selectPlan("")}>
+          All plans
+          {overview.data ? ` (${overview.data.tenantCount.toLocaleString()})` : ""}
+        </FilterChip>
+        {overview.data?.tenantsByPlan.map(({ plan: planName, count }) => (
+          <FilterChip
+            key={planName}
+            isSelected={plan === planName}
+            onClick={() => selectPlan(planName)}
+          >
+            {toPlanLabel(planName)} ({count.toLocaleString()})
+          </FilterChip>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={searchText}
+          onValueChange={setSearchText}
+          placeholder="Search by business or subdomain"
+          ariaLabel="Search businesses"
+          className="w-72"
+        />
         <Select
           value={sort}
-          onChange={(event) => setSort(event.target.value as TenantSort)}
+          onChange={(event) => {
+            const nextSort = TENANT_SORT_OPTIONS.find(({ value }) => value === event.target.value);
+            if (nextSort) selectSort(nextSort.value);
+          }}
           className="w-48"
-          aria-label="Sort tenants"
+          aria-label="Sort businesses"
         >
-          <option value="recent-activity">Recent activity</option>
-          <option value="name">Name</option>
-          <option value="created">Newest</option>
+          {TENANT_SORT_OPTIONS.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </Select>
       </div>
 
       <div className="mt-4">
         {tenants.isLoading && <TableSkeleton headers={TENANT_TABLE_HEADERS} />}
         {tenants.error && <FormBanner>{getErrorMessage(tenants.error)}</FormBanner>}
-        {tenants.data && tenants.data.items.length === 0 && (
-          <p className="text-sm text-muted-foreground">No tenants match this filter.</p>
+        {tenants.data && tenants.data.items.length === NO_TENANTS && (
+          <p className="text-sm text-muted-foreground">No businesses match this filter.</p>
         )}
-        {tenants.data && tenants.data.items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 pr-4">Tenant</th>
-                  <th className="py-2 pr-4">Plan</th>
-                  <th className="py-2 pr-4">Members</th>
-                  <th className="py-2 pr-4">Contacts</th>
-                  <th className="py-2 pr-4">Deals</th>
-                  <th className="py-2 pr-4">Tickets</th>
-                  <th className="py-2">Last activity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tenants.data.items.map((tenant) => (
-                  <tr key={tenant.organizationId} className="border-t border-border">
-                    <td className="py-2 pr-4">
-                      <Link
-                        to="/platform/metrics/$orgId"
-                        params={{ orgId: tenant.organizationId }}
-                        className="font-semibold text-primary-strong underline"
-                      >
-                        {tenant.name}
-                      </Link>
-                      <span className="ml-2 text-muted-foreground">{tenant.subdomain}</span>
-                    </td>
-                    <td className="py-2 pr-4">
-                      {tenant.plan}
-                      {tenant.subscriptionStatus && (
-                        <span className="ml-1 text-muted-foreground">
-                          ({tenant.subscriptionStatus.toLowerCase()})
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-4">{compactNumber(tenant.memberCount)}</td>
-                    <td className="py-2 pr-4">{compactNumber(tenant.contactCount)}</td>
-                    <td className="py-2 pr-4">{compactNumber(tenant.dealCount)}</td>
-                    <td className="py-2 pr-4">{compactNumber(tenant.ticketCount)}</td>
-                    <td className="py-2">{formatDate(tenant.lastCrmActivityAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {tenants.data && tenants.data.items.length > NO_TENANTS && (
+          <>
+            <TenantTable tenants={tenants.data.items} sort={sort} onSort={selectSort} />
 
             <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{tenants.data.total} tenants</span>
+              <span>{toTenantCountLabel(tenants.data.total)}</span>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                  disabled={page === FIRST_PAGE}
+                  onClick={() => goToPage(page - PAGE_STEP)}
                 >
                   Previous
                 </Button>
@@ -182,13 +175,13 @@ export const PlatformMetricsPage = () => {
                   size="sm"
                   variant="outline"
                   disabled={!tenants.data.hasMore}
-                  onClick={() => setPage((current) => current + 1)}
+                  onClick={() => goToPage(page + PAGE_STEP)}
                 >
                   Next
                 </Button>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

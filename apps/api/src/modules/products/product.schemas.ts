@@ -280,6 +280,7 @@ export const listBrandProductsQuerySchema = z.object({
 });
 
 export const listMineProductsQuerySchema = z.object({
+  search: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH).optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });

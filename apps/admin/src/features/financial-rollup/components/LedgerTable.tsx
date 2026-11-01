@@ -1,5 +1,6 @@
 import { Badge, Table, type TableColumn } from "@outfiqe/design-system";
 import { formatDate } from "@outfiqe/utils";
+import { Link } from "@tanstack/react-router";
 
 import type { LedgerRow, LedgerTotals } from "../api/financialRollupSchemas";
 import {
@@ -10,8 +11,11 @@ import {
 
 const SINGLE_ITEM = 1;
 const LEADING_COLUMN_SPAN = 3;
+const SHORT_ORDER_ID_LENGTH = 8;
 
 const amountOrDash = (amount: number | null) => (amount === null ? "—" : money(amount));
+
+const toShortOrderId = (orderId: string) => orderId.slice(0, SHORT_ORDER_ID_LENGTH).toUpperCase();
 
 const payoutTone = ({ brandPayoutStatus }: LedgerRow) => {
   if (brandPayoutStatus === "VOIDED") return "negative";
@@ -24,27 +28,37 @@ const columns: TableColumn<LedgerRow>[] = [
     key: "item",
     header: "Item",
     render: (row) => (
-      <button
-        type="button"
-        className="flex w-64 cursor-pointer items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {row.productImageUrl ? (
-          <img
-            src={row.productImageUrl}
-            alt=""
-            loading="lazy"
-            className="size-10 shrink-0 rounded-md bg-muted object-cover"
-          />
-        ) : (
-          <span className="size-10 shrink-0 rounded-md bg-muted" aria-hidden />
-        )}
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-foreground">{row.productName}</span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {row.brandName} · bought by {row.buyerName}
+      <div>
+        <button
+          type="button"
+          className="flex w-64 cursor-pointer items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {row.productImageUrl ? (
+            <img
+              src={row.productImageUrl}
+              alt=""
+              loading="lazy"
+              className="size-10 shrink-0 rounded-md bg-muted object-cover"
+            />
+          ) : (
+            <span className="size-10 shrink-0 rounded-md bg-muted" aria-hidden />
+          )}
+          <span className="min-w-0">
+            <span className="block truncate font-medium text-foreground">{row.productName}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {row.brandName} · bought by {row.buyerName}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+        <Link
+          to="/orders/$orderId"
+          params={{ orderId: row.orderId }}
+          onClick={(event) => event.stopPropagation()}
+          className="ml-13 text-xs font-medium text-foreground underline underline-offset-2"
+        >
+          Order {toShortOrderId(row.orderId)}
+        </Link>
+      </div>
     ),
   },
   { key: "date", header: "Date", render: (row) => formatDate(row.createdAt) },

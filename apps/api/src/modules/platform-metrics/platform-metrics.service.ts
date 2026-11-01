@@ -15,6 +15,8 @@ import type {
 } from "./platform-metrics.types.js";
 
 const RELATIONSHIP_COUNT_QUERY = { query: "", page: 1, pageSize: 1 } as const;
+const LATEST_POINT_INDEX = -1;
+const NO_ACTIVE_MEMBERS = 0;
 
 const countTenantRelationships = async (organization: {
   id: string;
@@ -33,12 +35,14 @@ export const platformMetricsService = {
 
   listTenants(query: {
     plan?: string;
+    search?: string;
     sort?: TenantMetricListFilters["sort"];
     page?: number;
     pageSize?: number;
   }): Promise<TenantMetricListPage> {
     return platformMetricsRepository.listTenants({
       plan: query.plan,
+      search: query.search,
       sort: query.sort,
       page: query.page ?? 1,
       pageSize: query.pageSize ?? DEFAULT_TENANTS_PAGE_SIZE,
@@ -57,12 +61,14 @@ export const platformMetricsService = {
     const row = await platformMetricsRepository.findTenant(organizationId);
     if (!row) throw new AppError("TENANT_NOT_FOUND", "Tenant not found.", HTTP_STATUS.NOT_FOUND);
 
-    const [relationships, series] = await Promise.all([
+    const [relationships, series, account] = await Promise.all([
       countTenantRelationships({ id: row.organizationId, linkedBrandId: row.linkedBrandId }),
       platformMetricsRepository.sparkline(organizationId, SPARKLINE_DAYS),
+      platformMetricsRepository.findTenantAccount(organizationId),
     ]);
+    const activeMemberCount = series.at(LATEST_POINT_INDEX)?.activeMemberCount ?? NO_ACTIVE_MEMBERS;
 
-    return { ...row, ...relationships, series };
+    return { ...row, ...relationships, ...account, activeMemberCount, series };
   },
 
   async runDailySnapshot(): Promise<number> {

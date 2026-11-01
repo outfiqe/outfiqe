@@ -39,11 +39,12 @@ const recalculateOrderRollup = (orderId: string) =>
 export const orderFulfilmentGroupService = {
   async listBrandFulfilmentGroups(
     userId: string,
-    { status, cursor, limit }: ListBrandFulfilmentGroupsQuery,
+    { status, search, cursor, limit }: ListBrandFulfilmentGroupsQuery,
   ): Promise<{ items: BrandFulfilmentGroupSummaryView[]; nextCursor: string | null }> {
     const brandId = await requireBrandId(userId);
     const rows = await orderFulfilmentGroupRepository.listFulfilmentGroupsForBrand(brandId, {
       status,
+      search,
       cursor,
       limit,
     });

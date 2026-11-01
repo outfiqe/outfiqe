@@ -144,6 +144,60 @@ describe("platform metrics", () => {
     expect(res.body.data.items[0].memberCount).toBe(0);
   });
 
+  it("finds a tenant by name and sorts by the busiest", async () => {
+    const { auth } = await seedPlatformAdmin();
+    const quiet = await seedTenantWithCounters("starter", {
+      contactCount: 1,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+    const busy = await seedTenantWithCounters("starter", {
+      contactCount: 9,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+
+    const sorted = await request(testApp)
+      .get("/api/platform/metrics/tenants?sort=contacts")
+      .set("Authorization", auth);
+    const found = await request(testApp)
+      .get(`/api/platform/metrics/tenants?search=${encodeURIComponent(quiet.name.toUpperCase())}`)
+      .set("Authorization", auth);
+
+    expect(
+      sorted.body.data.items.map((row: { organizationId: string }) => row.organizationId),
+    ).toEqual([busy.id, quiet.id]);
+    expect(
+      found.body.data.items.map((row: { organizationId: string }) => row.organizationId),
+    ).toContain(quiet.id);
+  });
+
+  it("shows the account details on a tenant, with no owner before anyone accepts", async () => {
+    const { auth } = await seedPlatformAdmin();
+    const tenant = await seedTenantWithCounters("starter", {
+      contactCount: 0,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+
+    const { body } = await request(testApp)
+      .get(`/api/platform/metrics/tenants/${tenant.id}`)
+      .set("Authorization", auth);
+
+    expect(body.data).toMatchObject({
+      ownerName: null,
+      ownerEmail: null,
+      linkedBrandName: null,
+      seats: null,
+      cancelAtPeriodEnd: false,
+      pendingInviteCount: 0,
+      activeMemberCount: 0,
+    });
+  });
+
   it("returns a tenant detail with a rollup series after a snapshot runs", async () => {
     const { auth } = await seedPlatformAdmin();
     const tenant = await seedTenantWithCounters("starter", {

@@ -197,9 +197,9 @@ export const outfitService = {
 
   async listMine(
     userId: string,
-    { cursor, limit }: ListOutfitsQuery,
+    { search, cursor, limit }: ListOutfitsQuery,
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
-    const rows = await outfitRepository.listForMember(userId, { cursor, limit });
+    const rows = await outfitRepository.listForMember(userId, { search, cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     const coversByOutfitId = await loadCoversForBuilds(
       userId,
@@ -219,9 +219,9 @@ export const outfitService = {
 
   async listSharedWithMe(
     userId: string,
-    { cursor, limit }: ListOutfitsQuery,
+    { search, cursor, limit }: ListOutfitsQuery,
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
-    const rows = await outfitShareRepository.listSharedWith(userId, { cursor, limit });
+    const rows = await outfitShareRepository.listSharedWith(userId, { search, cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     const coversByOutfitId = await loadCoversForBuilds(
       userId,

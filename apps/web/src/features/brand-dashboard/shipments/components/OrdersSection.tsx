@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, SearchInput, Skeleton } from "@outfiqe/design-system";
+import { useDebouncedSearch } from "@outfiqe/hooks";
 
 import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
 
@@ -13,8 +14,9 @@ import { BrandShipmentRow } from "./BrandShipmentRow";
 const SKELETON_ROW_COUNT = 4;
 
 export const OrdersSection = () => {
+  const { searchText, setSearchText, search } = useDebouncedSearch();
   const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
-    useBrandShipments();
+    useBrandShipments(search);
   const isOrderLogisticsOn = useFeatureFlag("order_logistics");
   const shipments = data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -30,6 +32,13 @@ export const OrdersSection = () => {
       <DeliveryReliabilityPanel />
       <BrandReturnsPanel isOrderLogisticsOn={isOrderLogisticsOn} />
 
+      <SearchInput
+        value={searchText}
+        onValueChange={setSearchText}
+        placeholder="Search by product or order number"
+        className="mt-6 max-w-md"
+      />
+
       {isError && (
         <div className="mt-6">
           <FormBanner>We couldn&apos;t load your orders right now. Please try again.</FormBanner>
@@ -44,7 +53,11 @@ export const OrdersSection = () => {
         </div>
       )}
 
-      {!isPending && !isError && shipments.length === 0 && (
+      {!isPending && !isError && shipments.length === 0 && search && (
+        <p className="mt-6 text-sm text-muted-foreground">No orders match this search.</p>
+      )}
+
+      {!isPending && !isError && shipments.length === 0 && !search && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             No sales yet — orders will show up here once your products start selling.

@@ -11,9 +11,9 @@ import { crmAccessRepository } from "../crm-access.repository.js";
 import type {
   CreateOrganizationInput,
   OrganizationCreationSuggestion,
-  OrganizationListItem,
   OrganizationListPage,
   OrganizationRecord,
+  OrganizationWithBrandName,
 } from "../crm-access.types.js";
 import { crmOwnershipTransferService } from "../ownership-transfer/ownership-transfer.service.js";
 import { crmRoleRepository } from "../roles/role.repository.js";
@@ -48,7 +48,7 @@ const generateUniqueSubdomain = async (brandName: string): Promise<string> => {
 
 const withLinkedBrandName = async (
   organization: OrganizationRecord,
-): Promise<OrganizationListItem> => {
+): Promise<OrganizationWithBrandName> => {
   if (!organization.linkedBrandId) return { ...organization, linkedBrandName: null };
 
   const linkedBrand = await brandRepository.findById(organization.linkedBrandId);
@@ -98,7 +98,7 @@ const handOffToTargetOwner = async (
 };
 
 export const crmOrganizationService = {
-  async createOrganization(input: CreateOrganizationInput): Promise<OrganizationListItem> {
+  async createOrganization(input: CreateOrganizationInput): Promise<OrganizationWithBrandName> {
     const { name, subdomain, creatingUserId, targetOwnerUserId, linkedBrandId } = input;
 
     if (RESERVED_SUBDOMAINS.includes(subdomain)) {

@@ -195,6 +195,18 @@ describe("agreeing and locking", () => {
     });
   });
 
+  it("finds a build by its title", async () => {
+    const owner = await createOutfitUser("Sita");
+    await startBuildOrFail(owner);
+
+    const noMatch = await request(testApp)
+      .get("/api/outfits")
+      .query({ search: "nothing like this" })
+      .set("Authorization", owner.auth);
+
+    expect(noMatch.body.data.items).toEqual([]);
+  });
+
   it("archives a build, hiding it from My Builds", async () => {
     const owner = await createOutfitUser("Sita");
     const outfitId = await startBuildOrFail(owner);

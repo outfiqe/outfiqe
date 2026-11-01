@@ -64,3 +64,9 @@ shouldn't be). "Tenant metrics" lives in `PLATFORM_NAV_ITEMS`.
   be traced.
 - **Waiting counts sit behind `platform:metrics:read`, not each queue's own permission.** They are
   bare counts with no records, and each shortcut's page still checks its own access.
+
+**Tenant pages stay counts-only, on purpose.** Clicking a number never opens a business's contacts or deals, because those belong to that business. Totals and column headings sort the list instead, and the detail page shows account facts (owner, brand, plan, renewal, invites). "View as support" opens the impersonation page with that business picked, because that path is time-limited and logged.
+
+**Plan, sort and page live in the link.** `useTenantFilters` keeps them there, so a refresh or the back button returns to the same list. The search box stays local while typing.
+
+**`constants/tenantMetrics.constants.ts` and `utils/tenantMetrics.utils.ts` hold the wording and labels**, and `TenantTable.tsx`, `TenantAccountSection.tsx` and `TenantActivitySection.tsx` are the page's parts. The organizations feature reuses the same labels.

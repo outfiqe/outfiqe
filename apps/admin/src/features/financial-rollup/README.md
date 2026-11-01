@@ -61,3 +61,5 @@ Export: `useLedgerExport` → `apiClient.getBlob` → `GET /admin/financial-roll
   item sold on the last day of a period and paid the next day lands in different periods.
 - **Rows are clicked through a real button in the first column.** The click bubbles up to the
   table's `onRowClick`, so a keyboard user gets the same action as a mouse user.
+
+**Two ways into an order from the ledger.** Clicking a row opens the side panel, so the list, filters and place on the page stay put. The `Order 907AD2FC` link in the first cell, and "Open the full order" in the panel's fixed footer, go to the order page itself. Filters live in the link, so the browser's back button returns to the same list.
