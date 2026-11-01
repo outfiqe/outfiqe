@@ -38,8 +38,8 @@ const buildRows = (
   results: CrmSearchResults,
   goToPartner: (creatorId: string) => void,
   goToCustomer: (userId: string) => void,
-  goToPipeline: () => void,
-  goToSupport: () => void,
+  goToDeal: (dealId: string) => void,
+  goToTicket: (ticketId: string) => void,
 ): ResultRow[] => [
   ...results.partners.map((partner) => ({
     key: `partner:${partner.creatorId}`,
@@ -60,14 +60,14 @@ const buildRows = (
     groupLabel: "Opportunities",
     primary: deal.title,
     secondary: `${deal.stageName} · ${toPlainWords(deal.status)}`,
-    navigate: goToPipeline,
+    navigate: () => goToDeal(deal.id),
   })),
   ...results.tickets.map((ticket) => ({
     key: `ticket:${ticket.id}`,
     groupLabel: "Tickets",
     primary: ticket.title,
     secondary: `${toPlainWords(ticket.type)} · ${toPlainWords(ticket.status)}`,
-    navigate: goToSupport,
+    navigate: () => goToTicket(ticket.id),
   })),
 ];
 
@@ -100,8 +100,8 @@ export const CrmSearchBox = () => {
         results,
         (creatorId) => navigate({ to: "/crm/partners/$creatorId", params: { creatorId } }),
         (userId) => navigate({ to: "/crm/customers/$userId", params: { userId } }),
-        () => navigate({ to: "/crm/pipeline" }),
-        () => navigate({ to: "/crm/support" }),
+        (dealId) => navigate({ to: "/crm/pipeline/$dealId", params: { dealId } }),
+        (ticketId) => navigate({ to: "/crm/support/$ticketId", params: { ticketId } }),
       )
     : [];
 

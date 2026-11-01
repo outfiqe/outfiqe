@@ -1,12 +1,15 @@
-import { FormBanner } from "@outfiqe/design-system";
+import { FormBanner, StatCard } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { BackLink } from "@/components/BackLink";
+import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { PartnerDetailSkeleton } from "../../components/CrmSkeletons";
+import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
@@ -32,63 +35,61 @@ export const PartnerDetailPage = () => {
 
       {partner && (
         <div className="mt-4 space-y-6">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">{partner.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              @{partner.handle} · {partner.tagClickCount.toLocaleString()} tag clicks ·{" "}
-              {partner.attributedOrderCount.toLocaleString()} orders they brought ·{" "}
-              {formatRupees(partner.attributedRevenue)} in sales they brought
-            </p>
+          <CrmPageHeader
+            title={partner.name}
+            description={
+              partner.lastActivityAt
+                ? `@${partner.handle} · last active ${formatDate(partner.lastActivityAt)}`
+                : `@${partner.handle} · no activity yet`
+            }
+          />
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Tag clicks" value={partner.tagClickCount.toLocaleString()} />
+            <StatCard
+              label="Orders they brought"
+              value={partner.attributedOrderCount.toLocaleString()}
+            />
+            <StatCard label="Sales they brought" value={formatRupees(partner.attributedRevenue)} />
           </div>
 
-          <section>
-            <h2 className="font-display text-base font-bold text-foreground">Per product</h2>
-            {partner.productBreakdown.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No product-level activity.</p>
-            ) : (
-              <div className="mt-2 overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="py-2 pr-4">Product</th>
-                      <th className="py-2 pr-4">Tag clicks</th>
-                      <th className="py-2 pr-4">Orders</th>
-                      <th className="py-2">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {partner.productBreakdown.map((row) => (
-                      <tr key={row.productId} className="border-t border-border">
-                        <td className="py-2 pr-4">{row.productName}</td>
-                        <td className="py-2 pr-4">{row.tagClickCount.toLocaleString()}</td>
-                        <td className="py-2 pr-4">{row.attributedOrderCount.toLocaleString()}</td>
-                        <td className="py-2">{formatRupees(row.attributedRevenue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+          <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>
+            <MetricSection
+              title="Per product"
+              description="Which of your products this partner helps sell."
+            >
+              {partner.productBreakdown.length === 0 ? (
+                <MetricEmptyState>No product activity yet.</MetricEmptyState>
+              ) : (
+                partner.productBreakdown.map((product) => (
+                  <MetricRow
+                    key={product.productId}
+                    label={product.productName}
+                    detail={`${product.tagClickCount.toLocaleString()} tag clicks · ${product.attributedOrderCount.toLocaleString()} orders`}
+                    value={formatRupees(product.attributedRevenue)}
+                  />
+                ))
+              )}
+            </MetricSection>
 
-          <section>
-            <h2 className="font-display text-base font-bold text-foreground">
-              Recent orders they brought
-            </h2>
-            {partner.recentAttributedOrders.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No orders from this muse yet.</p>
-            ) : (
-              <ul className="mt-2 space-y-2 text-sm">
-                {partner.recentAttributedOrders.map((order) => (
-                  <li key={order.orderItemId} className="rounded-lg border border-border p-3">
-                    {order.productName} × {order.qty} · {formatRupees(order.unitPrice * order.qty)}{" "}
-                    · {toPlainWords(order.paymentStatus)} / {toPlainWords(order.fulfilmentStatus)} ·{" "}
-                    {formatDate(order.createdAt)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+            <MetricSection
+              title="Recent orders they brought"
+              description="The latest orders that came through this partner."
+            >
+              {partner.recentAttributedOrders.length === 0 ? (
+                <MetricEmptyState>No orders from this partner yet.</MetricEmptyState>
+              ) : (
+                partner.recentAttributedOrders.map((order) => (
+                  <MetricRow
+                    key={order.orderItemId}
+                    label={`${order.productName} × ${order.qty}`}
+                    detail={`${toPlainWords(order.paymentStatus)} · ${toPlainWords(order.fulfilmentStatus)} · ${formatDate(order.createdAt)}`}
+                    value={formatRupees(order.unitPrice * order.qty)}
+                  />
+                ))
+              )}
+            </MetricSection>
+          </div>
 
           <TimelineSection subjectType="partner" subjectId={creatorId} />
         </div>

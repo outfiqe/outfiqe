@@ -22,14 +22,13 @@ import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { crmApi } from "../../api/crmApi";
 import { type ContactInput, crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
+import { CONTACTS_QUERY_KEY, toContactQueryKey } from "../constants/contactQueryKeys";
 import {
   contactFormSchema,
   type ContactFormValues,
   EMPTY_CONTACT_FORM,
   parseContactTags,
 } from "../schemas/contactForm.schema";
-
-const CONTACTS_QUERY_KEY = ["crm-contacts"];
 
 const LIFECYCLE_STAGES = contactLifecycleStageSchema.options;
 
@@ -105,7 +104,9 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
       isEditing
         ? crmContactsApi.updateContact(contact.id, toContactInput(values))
         : crmContactsApi.createContact(toContactInput(values)),
-    invalidateKeys: [CONTACTS_QUERY_KEY],
+    invalidateKeys: isEditing
+      ? [CONTACTS_QUERY_KEY, toContactQueryKey(contact.id)]
+      : [CONTACTS_QUERY_KEY],
     successMessage: isEditing ? "Contact saved." : "Contact created.",
     onSuccess: () => onClose(),
   });

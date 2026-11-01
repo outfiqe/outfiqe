@@ -273,6 +273,23 @@ describe("CRM deals", () => {
 
     expect(crossTenant.status).toBe(404);
 
+    const ownDeal = await request(testApp)
+      .get(`/api/crm/deals/${created.body.data.id}`)
+      .set("Host", tenantA.host)
+      .set("Authorization", tenantA.auth);
+    expect(ownDeal.status).toBe(200);
+    expect(ownDeal.body.data).toMatchObject({
+      id: created.body.data.id,
+      title: "A deal",
+      stageName: firstStageA.name,
+    });
+
+    const crossTenantRead = await request(testApp)
+      .get(`/api/crm/deals/${created.body.data.id}`)
+      .set("Host", tenantB.host)
+      .set("Authorization", tenantB.auth);
+    expect(crossTenantRead.status).toBe(404);
+
     const listB = await request(testApp)
       .get("/api/crm/deals")
       .set("Host", tenantB.host)

@@ -3,15 +3,18 @@ import { useRouterState } from "@tanstack/react-router";
 import {
   AuditRouteSkeleton,
   BillingRouteSkeleton,
+  ContactDetailRouteSkeleton,
   ContactsRouteSkeleton,
   CustomerDetailRouteSkeleton,
   CustomersRouteSkeleton,
+  DealDetailRouteSkeleton,
   PartnerDetailRouteSkeleton,
   PartnersRouteSkeleton,
   PipelineRouteSkeleton,
   ReportsRouteSkeleton,
   RolesRouteSkeleton,
   TasksRouteSkeleton,
+  TicketDetailRouteSkeleton,
   TicketsRouteSkeleton,
 } from "@/features/crm/components/CrmSkeletons";
 import { BadgeFormSkeleton } from "@/features/gamification/badges/components/BadgeFormSkeleton";
@@ -45,8 +48,10 @@ const SKELETON_BY_CRM_ROUTE = {
   [CRM_ROUTE_SKELETON_KEY.AUDIT]: AuditRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.BILLING]: BillingRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.CONTACTS]: ContactsRouteSkeleton,
+  [CRM_ROUTE_SKELETON_KEY.CONTACT_DETAIL]: ContactDetailRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.CUSTOMERS]: CustomersRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.CUSTOMER_DETAIL]: CustomerDetailRouteSkeleton,
+  [CRM_ROUTE_SKELETON_KEY.DEAL_DETAIL]: DealDetailRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.PARTNERS]: PartnersRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.PARTNER_DETAIL]: PartnerDetailRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.PIPELINE]: PipelineRouteSkeleton,
@@ -54,6 +59,7 @@ const SKELETON_BY_CRM_ROUTE = {
   [CRM_ROUTE_SKELETON_KEY.ROLES]: RolesRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.SUPPORT]: TicketsRouteSkeleton,
   [CRM_ROUTE_SKELETON_KEY.TASKS]: TasksRouteSkeleton,
+  [CRM_ROUTE_SKELETON_KEY.TICKET_DETAIL]: TicketDetailRouteSkeleton,
 };
 
 const SKELETON_BY_DETAIL_ROUTE = {

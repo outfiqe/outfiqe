@@ -115,9 +115,9 @@ support reports, and review the organization's audit log — against the `/api/c
   reverse-chronological table (when / who / action / details) of the organization's security
   changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
 - `components/CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
-  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers / Deals /
-  Tickets); selecting one navigates to its detail route (`/crm/partners/$creatorId`,
-  `/crm/customers/$userId`) or the relevant tab (`/crm/pipeline`, `/crm/support`). Renders nothing
+  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers /
+  Opportunities / Tickets); selecting one opens that exact record (`/crm/partners/$creatorId`,
+  `/crm/customers/$userId`, `/crm/pipeline/$dealId`, `/crm/support/$ticketId`). Renders nothing
   for a viewer holding none of the four per-entity read permissions (the endpoint would 403).
 - `reporting/api/reportingApi.ts` / `reporting/api/reportingSchemas.ts` — `crmReportingApi` (`getPipelineReport`,
   `getTicketReport`, `getOverviewReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and
@@ -154,8 +154,11 @@ support reports, and review the organization's audit log — against the `/api/c
 - `contacts/components/ContactsPage.tsx` / `contacts/components/ContactFormModal.tsx` — the manually-managed contact list (search +
   lifecycle-stage filter + offset pagination) and the create/edit modal (name, email, phone,
   company, title, stage, source, comma-separated tags, owner from the members list, notes). The
-  modal is keyed by contact id so its form state resets between create and each edit. Unlike
+  modal mounts only while open, so its form always starts from the current contact. Unlike
   Partners/Customers, Contacts is not brand-scoped, so its sidebar item has no `requiresLinkedBrand`.
+- `contacts/components/ContactDetailPage.tsx` — one contact's page, opened from their name in the list:
+  how to reach them, the relationship, notes and tags, plus Edit and Delete gated on
+  `contacts:write` / `contacts:delete`.
 - `relationships/components/PartnerDetailPage.tsx` / `relationships/components/CustomerDetailPage.tsx` — per-product breakdown + recent attributed
   orders (partner) / recent order history (customer), reached from a list row.
 - `pipeline/api/pipelineApi.ts` / `pipeline/api/pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
@@ -167,23 +170,30 @@ support reports, and review the organization's audit log — against the `/api/c
   "Configure stages" (`pipeline/components/StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
   `useDragReorder`). The board itself is passed `disabled={!canWriteDeals || moveDeal.isPending}`
   (see `KanbanBoard`'s own README for why) and a failed move surfaces as a toast instead of
-  silently reverting. Moving a card patches the deal's `stageId`.
+  silently reverting. Moving a card patches the deal's `stageId`. Clicking a card opens the
+  opportunity's own page; the card link is `draggable={false}` so a drag still moves the card
+  instead of dragging the link.
+- `pipeline/components/DealDetailPage.tsx` — one opportunity's page (`/crm/pipeline/$dealId`):
+  its facts, a link to the partner, the timeline, and Edit and Delete gated on `deals:write` /
+  `deals:delete`.
 - `activities/api/activitiesApi.ts` / `activities/api/activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
   CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
 - `activities/components/TimelineSection.tsx` — the merged Timeline (logged activity + live order rows) with an inline
-  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage`.
+  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage` / `DealDetailPage`.
   Shows a notice when the response is `partial`.
 - `activities/components/TasksPage.tsx` — the Tasks tab: a list of due-dated tasks with an overdue badge and a
   complete checkbox, plus a "New task" modal with an assignee picker (needs `members:read`).
 - `tickets/api/ticketsApi.ts` / `tickets/api/ticketsSchemas.ts` — `crmTicketsApi` (list, get-with-comments, create,
   status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
-- `tickets/components/TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
-  `tickets/components/TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
-  internal comment thread). "New ticket" modal collects type / title / description / a customer
+- `tickets/components/TicketDetailPage.tsx` — one ticket's page (`/crm/support/$ticketId`): what was
+  reported with links to the customer or partner, `TicketHandlingSection.tsx` (forward-only status
+  buttons, assignee `<Select>`) and `TicketCommentsSection.tsx` (internal comment thread).
+- `tickets/components/TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a
+  row opens that ticket's page. "New ticket" modal collects type / title / description / a customer
   picked via `CustomerSearchField` (the same debounced-search pattern as `PartnerSearchField`, over
   `crmRelationshipsApi.listCustomers`). "New ticket", the status buttons, and the comment form are
   all gated on `tickets:write`; the assignee `<Select>` is gated on the stricter `tickets:manage`
-  (`TicketsPage` computes both and passes them into `TicketDetail` as `canWrite`/
+  (`TicketDetailPage` computes both and passes them down as `canWrite`/
   `canManageAssignee`) — matching what the corresponding routes actually require server-side
   (`crm-tickets.routes.ts`), not just hiding the "New ticket" button while leaving every other
   control interactive for a read-only viewer. The
@@ -211,10 +221,13 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
 `_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
 `_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`),
-`_authenticated.crm.contacts.index.tsx` (`/crm/contacts` → `ContactsPage`), and
+`_authenticated.crm.contacts.index.tsx` (`/crm/contacts` → `ContactsPage`),
+`_authenticated.crm.contacts.$contactId.tsx` (`→ ContactDetailPage`), and
 `_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
+`_authenticated.crm.pipeline.$dealId.tsx` (`→ DealDetailPage`),
 `_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
 `_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),
+`_authenticated.crm.support.$ticketId.tsx` (`→ TicketDetailPage`),
 `_authenticated.crm.roles.index.tsx` (`/crm/roles` → `RolesPage`),
 `_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`),
 `_authenticated.crm.audit.index.tsx` (`/crm/audit` → `AuditPage`) — the `.index`
@@ -375,3 +388,13 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **On screen, Pipeline is the "Sales board" and a deal is an "Opportunity".** Plain words help people who have never used a CRM. Only the words changed: code, routes, permissions and API fields still say pipeline and deal, so links and data keep working.
 
 **Every CRM page uses `components/CrmPageHeader.tsx`.** It keeps the title, description and actions in the same place on every page. Add a new page's words to `CRM_PAGE_TEXT`, and write the description for someone new to CRMs.
+
+## Detail pages
+
+**Every record has its own link.** Partners, customers, opportunities, contacts and tickets all open a page of their own, so a record can be bookmarked, shared with a teammate or opened in a new tab. Each page has the same shape: `BackLink`, `CrmPageHeader` with the actions, then `MetricSection` cards.
+
+**Detail data has its own query key, away from the list.** A key under the list's prefix would be refetched by the delete's list invalidation while the page is still open, and the visitor would see a "not found" flash before moving back to the list. So each save refreshes both keys, and a delete refreshes only the list.
+
+**`hooks/useCrmPermissions.ts` hides actions the viewer can't use.** The API still enforces every permission; this only keeps people from clicking a button that would fail.
+
+**Contacts have no timeline yet.** `CrmActivity` has no contact column, so a timeline needs a migration. That comes with connected records.

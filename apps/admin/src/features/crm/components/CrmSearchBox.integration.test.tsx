@@ -50,8 +50,8 @@ const renderSearchBox = () => {
     "/crm",
     "/crm/partners/$creatorId",
     "/crm/customers/$userId",
-    "/crm/pipeline",
-    "/crm/support",
+    "/crm/pipeline/$dealId",
+    "/crm/support/$ticketId",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(children),
@@ -62,6 +62,7 @@ const renderSearchBox = () => {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 };
 
 describe("CrmSearchBox", () => {
@@ -107,6 +108,35 @@ describe("CrmSearchBox", () => {
 
     await user.click(screen.getByText("Spring Muse"));
     await waitFor(() => expect(screen.getByLabelText("Search the CRM")).toHaveValue(""));
+  }, 15000);
+
+  it("opens the exact opportunity or ticket that was picked", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/search`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            ...EMPTY_RESULTS,
+            deals: [
+              { id: "d1", title: "Spring collab", value: 4000, status: "OPEN", stageName: "Lead" },
+            ],
+            tickets: [{ id: "t1", title: "Spring order issue", type: "COMPLAINT", status: "OPEN" }],
+          },
+        }),
+      ),
+    );
+
+    const router = renderSearchBox();
+    const user = userEvent.setup({ delay: null });
+
+    await user.type(await screen.findByLabelText("Search the CRM"), "spring");
+    await user.click(await screen.findByText("Spring collab"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/crm/pipeline/d1"));
+
+    await user.type(screen.getByLabelText("Search the CRM"), "spring");
+    await user.click(await screen.findByText("Spring order issue"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/crm/support/t1"));
   }, 15000);
 
   it("shows an explicit empty state when nothing matches", async () => {

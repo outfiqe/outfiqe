@@ -1,6 +1,7 @@
 import { Button, ConfirmModal, FormBanner, Input, Select } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
@@ -11,25 +12,17 @@ import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageCon
 import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
+import { STAGE_LABELS } from "../constants/contactLabels";
+import { CONTACTS_QUERY_KEY } from "../constants/contactQueryKeys";
 import { ContactFormModal } from "./ContactFormModal";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
-const CONTACTS_QUERY_KEY = ["crm-contacts"];
-
-const STAGE_LABELS: Record<string, string> = {
-  LEAD: "Lead",
-  QUALIFIED: "Qualified",
-  CUSTOMER: "Customer",
-  PARTNER: "Partner",
-  OTHER: "Other",
-};
 
 export const ContactsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [editing, setEditing] = useState<Contact | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
@@ -56,16 +49,6 @@ export const ContactsPage = () => {
     successMessage: "Contact deleted.",
     onSuccess: () => setContactToDelete(null),
   });
-
-  const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (contact: Contact) => {
-    setEditing(contact);
-    setModalOpen(true);
-  };
 
   return (
     <div>
@@ -99,7 +82,7 @@ export const ContactsPage = () => {
               }}
               className="w-56"
             />
-            <Button size="sm" onClick={openCreate}>
+            <Button size="sm" onClick={() => setModalOpen(true)}>
               New contact
             </Button>
           </div>
@@ -136,13 +119,13 @@ export const ContactsPage = () => {
                 {contactPage.items.map((contact) => (
                   <tr key={contact.id} className="border-t border-border">
                     <td className="py-2 pr-4">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(contact)}
+                      <Link
+                        to="/crm/contacts/$contactId"
+                        params={{ contactId: contact.id }}
                         className="cursor-pointer font-semibold text-primary-strong underline"
                       >
                         {contact.name}
-                      </button>
+                      </Link>
                       {contact.email && (
                         <span className="ml-2 text-muted-foreground">{contact.email}</span>
                       )}
@@ -191,12 +174,9 @@ export const ContactsPage = () => {
         )}
       </div>
 
-      <ContactFormModal
-        key={editing?.id ?? "new"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        contact={editing}
-      />
+      {modalOpen && (
+        <ContactFormModal open={modalOpen} onClose={() => setModalOpen(false)} contact={null} />
+      )}
 
       <ConfirmModal
         open={contactToDelete !== null}

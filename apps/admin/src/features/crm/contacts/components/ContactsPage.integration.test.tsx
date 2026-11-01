@@ -185,7 +185,7 @@ describe("ContactsPage", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("opens the edit modal when a contact name is clicked", async () => {
+  it("links each contact name to its own page", async () => {
     mockOrganization();
     mswServer.use(
       http.get(`${API_BASE}/crm/contacts`, () =>
@@ -198,10 +198,10 @@ describe("ContactsPage", () => {
 
     renderContactsPage();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Anisha Gurung" }));
-
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByDisplayValue("Anisha Gurung")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Anisha Gurung" })).toHaveAttribute(
+      "href",
+      "/crm/contacts/c-1",
+    );
   });
 
   it("deletes a contact and shows the error banner when the delete fails", async () => {
