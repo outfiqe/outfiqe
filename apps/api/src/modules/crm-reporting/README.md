@@ -103,3 +103,7 @@ ticket dashboard (open / resolved counts, mean time to resolve, status breakdown
 - If one group's query fails it is logged and returns an empty list, so the rest of the page still works.
 
 CRM search also covers contacts (name, email, company), gated on `contacts:read`.
+
+## Period summary
+
+`period-summary/period-summary.repository.ts` serves `GET /api/crm/reports/summary?from=&to=`: sales, support and per-person totals for a period. Won and lost use `closed_at`, new opportunities use `created_at`, and solved tickets use `resolved_at`, so a sale opened in June and won in August counts as an August win. An average with nothing to average is `null`, not zero.

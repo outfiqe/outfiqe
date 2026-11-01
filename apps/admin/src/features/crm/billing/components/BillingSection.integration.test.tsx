@@ -1,19 +1,13 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { BillingSection } from "./BillingSection";
 
 const API_BASE = "http://localhost:3000/api";
-
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-};
 
 const PLAN_CATALOG = [
   {
@@ -50,7 +44,7 @@ describe("BillingSection", () => {
     });
     mockInvoices([]);
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
 
     expect(await screen.findByText("Free trial")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Subscribe" })).toBeInTheDocument();
@@ -89,10 +83,12 @@ describe("BillingSection", () => {
       },
     ]);
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
 
-    expect(await screen.findByText("Starter")).toBeInTheDocument();
-    expect(screen.getByText(/5 seats · 3 in use/)).toBeInTheDocument();
+    expect(await screen.findAllByText("Starter")).not.toHaveLength(0);
+    expect(screen.getByText(/3 of 5 seats used/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Manage your team" })).toBeInTheDocument();
+    expect(screen.getByText(/^Your plan renews on/)).toBeInTheDocument();
     expect(await screen.findByText("Rs. 4,500")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel renewal" })).toBeInTheDocument();
   });
@@ -129,7 +125,7 @@ describe("BillingSection", () => {
       },
     ]);
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
 
     expect(await screen.findByText(/unpaid invoice for Rs\. 2,700/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pay now" })).toBeInTheDocument();
@@ -144,7 +140,7 @@ describe("BillingSection", () => {
     });
     mockInvoices([]);
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
 
     const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Subscribe" }));
@@ -167,7 +163,7 @@ describe("BillingSection", () => {
       ),
     );
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
 
     await waitFor(() => expect(screen.getByText("Forbidden")).toBeInTheDocument());
   });
@@ -207,7 +203,7 @@ describe("BillingSection", () => {
       }),
     );
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
     const user = userEvent.setup();
 
     expect(await screen.findByText("Rs. 900")).toBeInTheDocument();
@@ -257,7 +253,7 @@ describe("BillingSection", () => {
       }),
     );
 
-    render(<BillingSection />, { wrapper });
+    renderWithRouter(<BillingSection />);
     const user = userEvent.setup();
 
     expect(await screen.findByText("Rs. 900")).toBeInTheDocument();
@@ -267,5 +263,84 @@ describe("BillingSection", () => {
 
     expect(await screen.findByText("Rs. 700")).toBeInTheDocument();
     expect(requestedFlags).toEqual([null, "true"]);
+  });
+
+  const ACTIVE_OVERVIEW = {
+    subscription: {
+      id: "sub-1",
+      organizationId: "org-1",
+      plan: "starter",
+      status: "ACTIVE",
+      seats: 5,
+      currentPeriodEnd: "2026-10-01T00:00:00.000Z",
+      cancelAtPeriodEnd: false,
+    },
+    advancedFeaturesEnabled: true,
+    planCatalog: PLAN_CATALOG,
+    activeSeatCount: 3,
+  };
+
+  const OPEN_INVOICE = {
+    id: "inv-1",
+    plan: "starter",
+    seats: 5,
+    amount: 4500,
+    status: "OPEN",
+    periodStart: "2026-09-01T00:00:00.000Z",
+    periodEnd: "2026-10-01T00:00:00.000Z",
+    provider: null,
+    initiatedAt: null,
+    paidAt: null,
+    voidedAt: null,
+    createdAt: "2026-09-01T00:00:00.000Z",
+  };
+
+  it("warns before cancelling and only cancels once confirmed", async () => {
+    mockOverview(ACTIVE_OVERVIEW);
+    mockInvoices([]);
+    let cancelCount = 0;
+    mswServer.use(
+      http.post(`${API_BASE}/crm/billing/cancel`, () => {
+        cancelCount += 1;
+        return HttpResponse.json({ success: true, data: null });
+      }),
+    );
+    renderWithRouter(<BillingSection />);
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Cancel renewal" }));
+    const warning = await screen.findByRole("dialog", { name: "Cancel renewal?" });
+    expect(within(warning).getByText(/stays active until/)).toBeInTheDocument();
+    expect(cancelCount).toBe(0);
+
+    await user.click(within(warning).getByRole("button", { name: "Cancel renewal" }));
+    await waitFor(() => expect(cancelCount).toBe(1));
+  });
+
+  it("opens an invoice panel from its row, with a way to pay an open invoice", async () => {
+    mockOverview(ACTIVE_OVERVIEW);
+    mockInvoices([OPEN_INVOICE]);
+    renderWithRouter(<BillingSection />);
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("cell", { name: "Rs. 4,500" }));
+
+    const panel = await screen.findByRole("dialog", { name: "Invoice for Rs. 4,500" });
+    expect(within(panel).getByText("Starter")).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole("button", { name: "Pay this invoice" }));
+    expect(await screen.findByLabelText("Pay with")).toBeInTheDocument();
+  });
+
+  it("explains when a cancelled plan will end", async () => {
+    mockOverview({
+      ...ACTIVE_OVERVIEW,
+      subscription: { ...ACTIVE_OVERVIEW.subscription, cancelAtPeriodEnd: true },
+    });
+    mockInvoices([]);
+    renderWithRouter(<BillingSection />);
+
+    expect(await screen.findByText(/stays active until .*, then it ends/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancel renewal" })).not.toBeInTheDocument();
   });
 });

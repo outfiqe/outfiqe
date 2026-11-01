@@ -3,6 +3,7 @@ import { useDebouncedValue } from "@outfiqe/hooks";
 import { formatDateTime } from "@outfiqe/utils";
 import { useId, useState } from "react";
 
+import { AuditFilterPicker } from "@/components/AuditFilterPicker";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -10,7 +11,6 @@ import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 import { usePlatformAuditFilterOptions, usePlatformAuditLog } from "../api/platformAuditApi";
 import type { PlatformAuditEntry, PlatformAuditFilter } from "../api/platformAuditSchemas";
 import { toPlainAuditLabel } from "../utils/auditLabels.utils";
-import { AuditFilterPicker } from "./AuditFilterPicker";
 
 const SKELETON_ROW_COUNT = 5;
 const NO_ENTRIES = 0;

@@ -432,3 +432,15 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **An opportunity counts as stuck after 14 days in one stage.** The same number lives in `pipeline/constants/stuckDeals.ts` and in `STUCK_DEAL_DAYS` on the API; change both together.
 
 **`?new=1` opens a new-record form.** `hooks/useNewRecordModal.ts` keeps that form's open state in the link, which is how `CrmQuickActions.tsx` lands on a page with the form already open.
+
+## Reports, Audit log and Billing
+
+**Reports show two kinds of number.** `reporting/components/ReportPeriodSummary.tsx` counts what happened in the chosen period (`GET /api/crm/reports/summary`), and the period stays in the link. `ReportsSection.tsx` shows how things stand right now, so its figures don't change with the period. They are labelled "right now" so the two aren't confused.
+
+**The audit log stays read-only.** Filters, the date range and the CSV never change a record. `audit/utils/auditEntries.utils.ts` does two display-only things: it folds repeats that sit next to each other, and it corrects the old "(1 seats)" wording on screen. Stored entries are never rewritten, so an exported CSV keeps the original words on older rows.
+
+**Audit filters and CSV follow `audit:read`.** The pick-list choices come from `GET /api/crm/audit/filters`, so people only see actions and teammates that exist in their own log. `AuditFilterPicker` is shared with the platform audit log.
+
+**Billing's payment flow is unchanged.** `PlanCheckoutModal` still does all the paying. Only the summary, plan comparison, invoice panel and cancel warning are new. The panel shows only what the invoice stores: amount, dates, plan, seats and payment provider, with no card or account details.
+
+**Cancelling keeps the plan until the period ends.** The warning says so because the API only stops renewal; it does not end the plan straight away.

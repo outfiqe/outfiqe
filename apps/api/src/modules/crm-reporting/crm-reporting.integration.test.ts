@@ -425,6 +425,112 @@ describe("GET /api/crm/search", () => {
   });
 });
 
+describe("GET /api/crm/reports/summary", () => {
+  const inPeriod = new Date("2026-08-15T10:00:00.000Z");
+  const beforePeriod = new Date("2026-06-15T10:00:00.000Z");
+  const period = { from: "2026-08-01T00:00:00.000Z", to: "2026-08-31T23:59:59.999Z" };
+
+  it("counts sales, support and team work inside the period only", async () => {
+    const { organization, owner, partnerCreator, leadStage, wonStage } =
+      await seedReportingTenant();
+    const membership = await prisma.membership.findFirstOrThrow({
+      where: { organizationId: organization.id, userId: owner.id },
+    });
+    const dealBase = {
+      organizationId: organization.id,
+      partnerCreatorId: partnerCreator.id,
+      ownerMembershipId: membership.id,
+    };
+    await prisma.deal.createMany({
+      data: [
+        { ...dealBase, title: "New", stageId: leadStage.id, value: 100, createdAt: inPeriod },
+        {
+          ...dealBase,
+          title: "Won now",
+          stageId: wonStage.id,
+          value: 5000,
+          status: DealStatus.WON,
+          closedAt: inPeriod,
+          createdAt: beforePeriod,
+        },
+        {
+          ...dealBase,
+          title: "Won earlier",
+          stageId: wonStage.id,
+          value: 9000,
+          status: DealStatus.WON,
+          closedAt: beforePeriod,
+          createdAt: beforePeriod,
+        },
+      ],
+    });
+    await prisma.crmTicket.create({
+      data: {
+        organizationId: organization.id,
+        type: CrmTicketType.COMPLAINT,
+        status: CrmTicketStatus.RESOLVED,
+        title: "Solved",
+        description: "x",
+        assigneeMembershipId: membership.id,
+        createdAt: subHours(inPeriod, 2),
+        resolvedAt: inPeriod,
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query(period)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.sales).toEqual({
+      newDealCount: 1,
+      wonDealCount: 1,
+      wonValue: 5000,
+      lostDealCount: 0,
+    });
+    expect(response.body.data.support).toEqual({
+      openedCount: 1,
+      resolvedCount: 1,
+      meanResolutionSeconds: 7200,
+    });
+    expect(response.body.data.team).toEqual([
+      expect.objectContaining({
+        membershipId: membership.id,
+        wonDealCount: 1,
+        wonValue: 5000,
+        resolvedTicketCount: 1,
+      }),
+    ]);
+  });
+
+  it("returns zeroes and no average for an empty period", async () => {
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query(period)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.body.data.sales.wonDealCount).toBe(0);
+    expect(response.body.data.support.meanResolutionSeconds).toBeNull();
+  });
+
+  it("rejects a period that ends before it starts", async () => {
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query({ from: period.to, to: period.from })
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(422);
+  });
+});
+
 describe("GET /api/crm/reports/attention", () => {
   const today = {
     dayStart: subHours(new Date(), 1).toISOString(),

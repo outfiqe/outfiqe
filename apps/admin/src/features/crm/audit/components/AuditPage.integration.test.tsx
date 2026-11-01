@@ -7,7 +7,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -75,7 +75,42 @@ const renderAuditPage = () => {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 };
+
+const CHECKOUT_ENTRY = {
+  action: "SUBSCRIPTION_CHECKOUT_STARTED",
+  outcome: "SUCCESS",
+  summary: "Started checkout for the starter plan (1 seats)",
+  actorUserId: "u-1",
+  actorName: "Bipin Karki",
+  targetType: "subscription",
+  targetId: null,
+  metadata: { plan: "starter" },
+  ipAddress: null,
+  createdAt: "2026-11-01T00:00:00.000Z",
+};
+
+const mockAuditEntries = (seenGroups: (string | null)[]) =>
+  mswServer.use(
+    http.get(`${API_BASE}/crm/audit/filters`, () =>
+      HttpResponse.json({ success: true, data: { actions: [], actors: [] } }),
+    ),
+    http.get(`${API_BASE}/crm/audit`, ({ request }) => {
+      seenGroups.push(new URL(request.url).searchParams.get("group"));
+      return HttpResponse.json({
+        success: true,
+        data: {
+          entries: [
+            { ...CHECKOUT_ENTRY, id: "a-1" },
+            { ...CHECKOUT_ENTRY, id: "a-2" },
+            { ...CHECKOUT_ENTRY, id: "a-3" },
+          ],
+          nextCursor: null,
+        },
+      });
+    }),
+  );
 
 describe("AuditPage", () => {
   it("renders audit entries with a human action label and the actor name", async () => {
@@ -102,6 +137,27 @@ describe("AuditPage", () => {
     expect(screen.getByText("System")).toBeInTheDocument();
   });
 
+  it("filters by group, keeps it in the link and opens an entry's details", async () => {
+    const seenGroups: (string | null)[] = [];
+    mockAuditEntries(seenGroups);
+    const router = renderAuditPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Billing" }));
+
+    await waitFor(() => expect(seenGroups).toContain("billing"));
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ group: "billing" }));
+
+    await user.click(await screen.findByRole("cell", { name: /starter plan \(1 seat\)/ }));
+
+    const panel = await screen.findByRole("dialog", { name: "Checkout started" });
+    expect(within(panel).getByRole("link", { name: "See billing" })).toHaveAttribute(
+      "href",
+      "/crm/billing",
+    );
+    expect(within(panel).getByText("3 times in a row")).toBeInTheDocument();
+  });
+
   it("shows an explicit empty state", async () => {
     mockOrganization();
     mswServer.use(
@@ -112,7 +168,7 @@ describe("AuditPage", () => {
 
     renderAuditPage();
 
-    expect(await screen.findByText("No audit entries yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/No audit entries yet/)).toBeInTheDocument();
   });
 
   it("shows an error banner when the log fails to load", async () => {

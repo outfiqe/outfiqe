@@ -1,5 +1,7 @@
 import type { CrmAuditAction, CrmAuditOutcome } from "#generated/prisma/enums.js";
 
+import type { AuditActionGroup } from "./crm-audit.constants.js";
+
 export type AuditActor = {
   actorUserId: string | null;
   actorMembershipId: string | null;
@@ -38,4 +40,17 @@ export type CrmAuditLogRecord = {
 export type CrmAuditLogPage = {
   entries: CrmAuditLogRecord[];
   nextCursor: string | null;
+};
+
+export type AuditLogFilters = {
+  action?: CrmAuditLogRecord["action"];
+  group?: AuditActionGroup;
+  actorUserId?: string;
+  from?: Date;
+  to?: Date;
+};
+
+export type AuditFilterOptions = {
+  actions: CrmAuditLogRecord["action"][];
+  actors: { id: string; name: string }[];
 };

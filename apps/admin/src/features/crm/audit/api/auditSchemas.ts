@@ -20,3 +20,9 @@ export const crmAuditPageSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type CrmAuditPage = z.infer<typeof crmAuditPageSchema>;
+
+export const crmAuditFilterOptionsSchema = z.object({
+  actions: z.array(z.string()),
+  actors: z.array(z.object({ id: z.string(), name: z.string() })),
+});
+export type CrmAuditFilterOptions = z.infer<typeof crmAuditFilterOptionsSchema>;

@@ -74,6 +74,32 @@ export const ticketSearchResultSchema = z.object({
   status: z.string(),
 });
 
+export const crmPeriodSummarySchema = z.object({
+  sales: z.object({
+    newDealCount: z.number(),
+    wonDealCount: z.number(),
+    wonValue: z.number(),
+    lostDealCount: z.number(),
+  }),
+  support: z.object({
+    openedCount: z.number(),
+    resolvedCount: z.number(),
+    meanResolutionSeconds: z.number().nullable(),
+  }),
+  team: z.array(
+    z.object({
+      membershipId: z.string(),
+      name: z.string(),
+      wonDealCount: z.number(),
+      wonValue: z.number(),
+      resolvedTicketCount: z.number(),
+      completedTaskCount: z.number(),
+      activityCount: z.number(),
+    }),
+  ),
+});
+export type CrmPeriodSummary = z.infer<typeof crmPeriodSummarySchema>;
+
 export const crmAttentionReportSchema = z.object({
   overdueTaskCount: z.number(),
   tasksDueTodayCount: z.number(),

@@ -66,3 +66,7 @@ who / action / details) with "Load more" paging.
 - **The read endpoint is not behind `requireAdvancedCrmFeatures`.** Unlike Partners/Pipeline/
   Reports, an organization whose trial lapsed can still review its own audit history — locking a
   security record behind a paywall would be the wrong call.
+
+## Filters and export
+
+`GET /api/crm/audit` filters by `action`, `group`, `actorUserId`, `from` and `to`. Groups (team, roles, billing, organization) are lists of actions in `AUDIT_ACTION_GROUPS`; add any new action to one of them. `GET /api/crm/audit/filters` returns the actions and teammates that actually appear in this tenant's log. `GET /api/crm/audit/export` returns the filtered log as CSV, capped at `MAX_AUDIT_EXPORT_ROWS` and rate limited. It leaves out IP addresses and metadata.
