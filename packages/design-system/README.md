@@ -105,3 +105,5 @@ The shared UI primitive library both `apps/web` and `apps/admin` build on — Ra
 **`ConfirmModal` is the one warning pop-up.** Use it for anything that asks "are you sure?", with `destructive` when the action removes something, instead of building a footer by hand or showing a warning inside the page. Web passes translated labels; the English defaults are there for admin.
 
 **Opening a modal must not move the page.** A modal locks page scrolling, which removes the scrollbar and would widen the page. Web and admin keep the space with `scrollbar-gutter: stable` on `html`, and darken that strip while a modal is open so the overlay reaches the edge. Any new app needs the same two rules.
+
+**`Drawer` doesn't scroll on its own.** Its body hides overflow so the chat panel can manage its own scrolling. Anything else with content taller than the panel wraps it in `DrawerScrollArea`, or the bottom is cut off with no way to reach it.

@@ -1,4 +1,4 @@
-import { Drawer, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Drawer, DrawerScrollArea, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { formatDate, formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -190,13 +190,6 @@ const LedgerItemStory = ({ item }: { item: LedgerItem }) => (
     <MuseCreditSection item={item} />
     <OrderSection order={item.order} />
     <PaymentHistorySection order={item.order} />
-    <Link
-      to="/orders/$orderId"
-      params={{ orderId: item.order.id }}
-      className="inline-block text-sm font-medium text-foreground underline underline-offset-2"
-    >
-      Open the full order
-    </Link>
   </div>
 );
 
@@ -217,8 +210,25 @@ export const LedgerItemDrawer = ({
   });
 
   return (
-    <Drawer open onClose={onClose} title={item?.product.name ?? "Order item"}>
-      <div className="p-5">
+    <Drawer
+      open
+      onClose={onClose}
+      title={item?.product.name ?? "Order item"}
+      footer={
+        item && (
+          <div className="px-5 py-3">
+            <Link
+              to="/orders/$orderId"
+              params={{ orderId: item.order.id }}
+              className="text-sm font-medium text-foreground underline underline-offset-2"
+            >
+              Open the full order
+            </Link>
+          </div>
+        )
+      }
+    >
+      <DrawerScrollArea className="p-5">
         {isLoading && (
           <div className="space-y-2" role="status" aria-label="Loading the item">
             {Array.from({ length: SKELETON_ROW_COUNT }, (_unused, index) => (
@@ -228,7 +238,7 @@ export const LedgerItemDrawer = ({
         )}
         {isError && <FormBanner>Couldn&apos;t load this item.</FormBanner>}
         {item && <LedgerItemStory item={item} />}
-      </div>
+      </DrawerScrollArea>
     </Drawer>
   );
 };

@@ -1,4 +1,4 @@
-import { Badge, Drawer } from "@outfiqe/design-system";
+import { Badge, Drawer, DrawerScrollArea } from "@outfiqe/design-system";
 import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -101,7 +101,7 @@ export const MetricTagDrawer = ({ tag, onClose }: { tag: MetricTag; onClose: () 
 
   return (
     <Drawer open onClose={onClose} title={tag.product.name}>
-      <div className="space-y-5 p-5">
+      <DrawerScrollArea className="space-y-5 p-5">
         <img
           src={look.imageUrl}
           alt={`Look by @${creator.handle} wearing ${tag.product.name}`}
@@ -137,7 +137,7 @@ export const MetricTagDrawer = ({ tag, onClose }: { tag: MetricTag; onClose: () 
         <SiteLink path={`/creator/${creator.handle}?look=${look.id}`}>
           Open this look on the site
         </SiteLink>
-      </div>
+      </DrawerScrollArea>
     </Drawer>
   );
 };

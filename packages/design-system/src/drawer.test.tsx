@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Drawer } from "./drawer";
+import { Drawer, DrawerScrollArea } from "./drawer";
 import { stubMatchMedia } from "./testing/setup";
 
 const originalInnerHeight = window.innerHeight;
@@ -217,5 +217,13 @@ describe("Drawer", () => {
 
       expect(screen.getByRole("dialog").style.height).toBe("");
     });
+  });
+});
+
+describe("DrawerScrollArea", () => {
+  it("lets tall content scroll inside the drawer", () => {
+    render(<DrawerScrollArea className="p-5">Order details</DrawerScrollArea>);
+
+    expect(screen.getByText("Order details")).toHaveClass("overflow-y-auto", "h-full", "p-5");
   });
 });
