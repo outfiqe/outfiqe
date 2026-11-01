@@ -169,7 +169,7 @@ export const crmPipelineService = {
   },
 
   listDeals(organizationId: string, filters: DealListFilters): Promise<DealWithRelations[]> {
-    return crmPipelineRepository.listDeals(organizationId, filters);
+    return crmPipelineRepository.listBoardDeals(organizationId, filters);
   },
 
   async exportDealsCsv(

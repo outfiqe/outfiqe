@@ -1,6 +1,8 @@
 import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
 import { DealStatus } from "#generated/prisma/enums.js";
 
+import { MAX_BOARD_DEALS_PER_STAGE } from "./crm-pipeline.constants.js";
 import type {
   CreateDealInput,
   CreateStageInput,
@@ -134,6 +136,41 @@ export const crmPipelineRepository = {
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       ...(rowLimit ? { take: rowLimit } : {}),
+      select: dealWithRelationsSelect,
+    });
+    return rows.map(toDealWithRelations);
+  },
+
+  async listBoardDeals(
+    organizationId: string,
+    { ownerMembershipId, stageEnteredBefore }: DealListFilters,
+  ): Promise<DealWithRelations[]> {
+    const ownerFilter = ownerMembershipId
+      ? Prisma.sql`AND d.owner_membership_id = ${ownerMembershipId}::uuid`
+      : Prisma.empty;
+    const stuckFilter = stageEnteredBefore
+      ? Prisma.sql`AND d.status = 'OPEN' AND d.stage_entered_at < ${stageEnteredBefore}`
+      : Prisma.empty;
+
+    const boardDeals = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT ranked.id
+        FROM (
+          SELECT d.id,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY d.stage_id
+                   ORDER BY d.created_at DESC, d.id DESC
+                 ) AS stage_rank
+            FROM deals d
+           WHERE d.organization_id = ${organizationId}::uuid
+             ${ownerFilter}
+             ${stuckFilter}
+        ) ranked
+       WHERE ranked.stage_rank <= ${MAX_BOARD_DEALS_PER_STAGE}
+    `);
+
+    const rows = await prisma.deal.findMany({
+      where: { organizationId, id: { in: boardDeals.map(({ id }) => id) } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: dealWithRelationsSelect,
     });
     return rows.map(toDealWithRelations);
