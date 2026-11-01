@@ -92,7 +92,7 @@ describe("TenantMetricsDetailPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Kastha Studio" })).toBeInTheDocument();
     expect(screen.getAllByText("Growth")).toHaveLength(2);
-    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getAllByText("Active")).toHaveLength(2);
     expect(
       screen.getByText(/Kastha Studio has 4 members and last used the CRM on/),
     ).toBeInTheDocument();
