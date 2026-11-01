@@ -773,6 +773,7 @@ model ProductSize {
   orderItems OrderItem[]
 
   @@unique([productId, label])
+  @@unique([productId, id])
   @@map("product_sizes")
 }
 
@@ -1247,7 +1248,7 @@ model CartItem {
   productId String      @map("product_id") @db.Uuid
   product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   sizeId    String      @map("size_id") @db.Uuid
-  size      ProductSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+  size      ProductSize @relation(fields: [productId, sizeId], references: [productId, id], onDelete: Cascade)
   qty       Int         @default(1)
   createdAt DateTime    @default(now()) @map("created_at")
 
@@ -1880,7 +1881,7 @@ model OrderItem {
   productId              String      @map("product_id") @db.Uuid
   product                Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
   sizeId                 String      @map("size_id") @db.Uuid
-  size                   ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+  size                   ProductSize @relation(fields: [productId, sizeId], references: [productId, id], onDelete: Restrict)
   qty                    Int
   unitPrice              Int         @map("unit_price")
   listUnitPrice          Int         @map("list_unit_price")
