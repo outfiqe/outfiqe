@@ -306,6 +306,19 @@ describe("FinancialLedgerPage", () => {
     expect(within(panel).getByRole("link", { name: "Open the full order" })).toBeInTheDocument();
   });
 
+  it("goes straight to the order from the first cell, without opening the panel", async () => {
+    mockLedger([buildRow()]);
+    const user = userEvent.setup();
+    renderPage();
+
+    const orderLink = await screen.findByRole("link", { name: "Order ORDER-1" });
+    expect(orderLink).toHaveAttribute("href", expect.stringContaining("/orders/order-1"));
+
+    await user.click(orderLink);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("explains when an item's story can't load", async () => {
     mockLedger([buildRow()]);
     mswServer.use(
