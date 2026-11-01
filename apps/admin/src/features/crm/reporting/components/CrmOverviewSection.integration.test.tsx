@@ -1,8 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { CrmOverviewSection } from "./CrmOverviewSection";
@@ -49,18 +48,13 @@ const buildOverview = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-};
-
 describe("CrmOverviewSection", () => {
   it("renders the KPI row and both chart cards from the overview report", async () => {
     mswServer.use(
       http.get(OVERVIEW_URL, () => HttpResponse.json({ success: true, data: buildOverview() })),
     );
 
-    render(<CrmOverviewSection />, { wrapper });
+    renderWithRouter(<CrmOverviewSection />);
 
     expect(await screen.findByText("Sales in progress")).toBeInTheDocument();
     expect(screen.getByText("Rs. 9,000")).toBeInTheDocument();
@@ -106,7 +100,7 @@ describe("CrmOverviewSection", () => {
       ),
     );
 
-    render(<CrmOverviewSection />, { wrapper });
+    renderWithRouter(<CrmOverviewSection />);
 
     expect(
       await screen.findByText(/logged calls, notes and emails will show here/i),
@@ -127,7 +121,7 @@ describe("CrmOverviewSection", () => {
       ),
     );
 
-    render(<CrmOverviewSection />, { wrapper });
+    renderWithRouter(<CrmOverviewSection />);
 
     expect(await screen.findByText("Server error")).toBeInTheDocument();
   });

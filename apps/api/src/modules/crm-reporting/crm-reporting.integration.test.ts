@@ -428,7 +428,7 @@ describe("GET /api/crm/search", () => {
 describe("GET /api/crm/reports/attention", () => {
   const today = {
     dayStart: subHours(new Date(), 1).toISOString(),
-    dayEnd: addHours(new Date(), 1).toISOString(),
+    dayEnd: addHours(new Date(), 2).toISOString(),
   };
 
   const seedAttention = async () => {
