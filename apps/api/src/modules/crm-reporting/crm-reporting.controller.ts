@@ -10,6 +10,7 @@ import {
 import type {
   CrmAttentionQuery,
   CrmConnectionsQuery,
+  CrmPeriodSummaryQuery,
   CrmSearchQuery,
 } from "./crm-reporting.schemas.js";
 import { crmReportingService } from "./crm-reporting.service.js";
@@ -31,6 +32,16 @@ export const crmReportingController = {
     const organization = getResolvedOrganization(res);
     const report = await crmReportingService.getOverviewReport(organization.id);
     sendSuccess(res, report, "CRM overview report.");
+  },
+
+  async getPeriodSummary(_req: Request, res: Response) {
+    const period = validated.query<CrmPeriodSummaryQuery>(res);
+    const organization = getResolvedOrganization(res);
+    sendSuccess(
+      res,
+      await crmReportingService.getPeriodSummary(organization.id, period),
+      "CRM summary for the period.",
+    );
   },
 
   async getAttentionReport(_req: Request, res: Response) {

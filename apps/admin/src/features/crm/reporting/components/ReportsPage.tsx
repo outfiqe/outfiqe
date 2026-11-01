@@ -4,6 +4,7 @@ import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { ReportPeriodSummary } from "./ReportPeriodSummary";
 import { ReportsSection } from "./ReportsSection";
 
 export const ReportsPage = () => {
@@ -20,7 +21,8 @@ export const ReportsPage = () => {
 
       <CrmPageHeader {...CRM_PAGE_TEXT.reports} />
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-6">
+        <ReportPeriodSummary />
         <ReportsSection />
       </div>
     </div>

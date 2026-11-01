@@ -5,6 +5,8 @@ import {
   crmAttentionReportSchema,
   type CrmOverviewReport,
   crmOverviewReportSchema,
+  type CrmPeriodSummary,
+  crmPeriodSummarySchema,
   type CrmSearchResults,
   crmSearchResultsSchema,
   type PipelineReport,
@@ -27,6 +29,11 @@ export const crmReportingApi = {
   async getOverviewReport(): Promise<CrmOverviewReport> {
     const res = await apiClient.get<CrmOverviewReport>("/crm/reports/overview");
     return crmOverviewReportSchema.parse(res.data);
+  },
+
+  async getPeriodSummary(period: { from: string; to: string }): Promise<CrmPeriodSummary> {
+    const res = await apiClient.get<CrmPeriodSummary>("/crm/reports/summary", { params: period });
+    return crmPeriodSummarySchema.parse(res.data);
   },
 
   async getAttentionReport(today: {

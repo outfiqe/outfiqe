@@ -240,13 +240,13 @@ export const ReportsRouteSkeleton = () => (
     <StackedHeading {...CRM_PAGE_TEXT.reports} />
     <div className="mt-6 space-y-6">
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-display text-lg font-bold text-foreground">Sales value by stage</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Sales right now</h2>
         <div className="mt-4">
           <ReportSkeleton />
         </div>
       </section>
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-display text-lg font-bold text-foreground">Support tickets</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Support right now</h2>
         <div className="mt-4">
           <ReportSkeleton />
         </div>

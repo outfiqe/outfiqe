@@ -16,10 +16,12 @@ import { crmReportingRepository } from "./crm-reporting.repository.js";
 import type {
   CrmAttentionReport,
   CrmOverviewReport,
+  CrmPeriodSummary,
   CrmSearchResults,
   PipelineReport,
   TicketReport,
 } from "./crm-reporting.types.js";
+import { crmPeriodSummaryRepository } from "./period-summary/period-summary.repository.js";
 
 type SearchEntity = (typeof CRM_SEARCH_ENTITY)[keyof typeof CRM_SEARCH_ENTITY];
 
@@ -73,6 +75,18 @@ export const crmReportingService = {
     ]);
 
     return { pipeline, tickets, activityTrend, openTasksDueTodayCount };
+  },
+
+  async getPeriodSummary(
+    organizationId: string,
+    period: { from: Date; to: Date },
+  ): Promise<CrmPeriodSummary> {
+    const [sales, support, team] = await Promise.all([
+      crmPeriodSummaryRepository.salesSummary(organizationId, period),
+      crmPeriodSummaryRepository.supportSummary(organizationId, period),
+      crmPeriodSummaryRepository.teamSummary(organizationId, period),
+    ]);
+    return { sales, support, team };
   },
 
   getAttentionReport(

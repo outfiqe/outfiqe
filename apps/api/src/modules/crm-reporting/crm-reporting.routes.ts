@@ -19,6 +19,7 @@ import { crmReportingController } from "./crm-reporting.controller.js";
 import {
   crmAttentionQuerySchema,
   crmConnectionsQuerySchema,
+  crmPeriodSummaryQuerySchema,
   crmSearchQuerySchema,
 } from "./crm-reporting.schemas.js";
 
@@ -55,6 +56,14 @@ crmReportingRoutes.get(
   ...tenantChain,
   requirePermission(REPORTS_READ),
   crmReportingController.getOverviewReport,
+);
+
+crmReportingRoutes.get(
+  "/reports/summary",
+  ...tenantChain,
+  requirePermission(REPORTS_READ),
+  validate({ query: crmPeriodSummaryQuerySchema }),
+  crmReportingController.getPeriodSummary,
 );
 
 crmReportingRoutes.get(

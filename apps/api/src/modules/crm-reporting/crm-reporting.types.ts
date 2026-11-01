@@ -51,6 +51,31 @@ export type CrmOverviewReport = {
   activityTrend: CrmActivityTrendPoint[];
 };
 
+export type CrmTeamMemberSummary = {
+  membershipId: string;
+  name: string;
+  wonDealCount: number;
+  wonValue: number;
+  resolvedTicketCount: number;
+  completedTaskCount: number;
+  activityCount: number;
+};
+
+export type CrmPeriodSummary = {
+  sales: {
+    newDealCount: number;
+    wonDealCount: number;
+    wonValue: number;
+    lostDealCount: number;
+  };
+  support: {
+    openedCount: number;
+    resolvedCount: number;
+    meanResolutionSeconds: number | null;
+  };
+  team: CrmTeamMemberSummary[];
+};
+
 export type CrmAttentionReport = {
   overdueTaskCount: number;
   tasksDueTodayCount: number;

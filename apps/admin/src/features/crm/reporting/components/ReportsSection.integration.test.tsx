@@ -100,7 +100,7 @@ describe("ReportsSection", () => {
 
     render(<ReportsSection />, { wrapper });
 
-    expect(await screen.findByText("Sales value by stage")).toBeInTheDocument();
+    expect(await screen.findByText("Sales right now")).toBeInTheDocument();
     expect(await screen.findByText("Rs. 5,000")).toBeInTheDocument();
     expect(screen.getAllByText("Rs. 3,000").length).toBeGreaterThan(0);
     expect(screen.getByText("Lead")).toBeInTheDocument();

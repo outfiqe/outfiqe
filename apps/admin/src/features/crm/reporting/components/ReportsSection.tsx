@@ -138,13 +138,13 @@ export const ReportsSection = () => {
 
   return (
     <div className="space-y-6">
-      <ReportCard title="Sales value by stage">
+      <ReportCard title="Sales right now">
         {pipeline.isLoading && <ReportSkeleton />}
         {pipeline.error && <FormBanner>{getErrorMessage(pipeline.error)}</FormBanner>}
         {pipeline.data && <PipelineValueChart report={pipeline.data} />}
       </ReportCard>
 
-      <ReportCard title="Support tickets">
+      <ReportCard title="Support right now">
         {tickets.isLoading && <ReportSkeleton />}
         {tickets.error && <FormBanner>{getErrorMessage(tickets.error)}</FormBanner>}
         {tickets.data && <TicketDashboard report={tickets.data} />}
