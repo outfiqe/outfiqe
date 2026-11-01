@@ -138,8 +138,7 @@ export const createApp = () => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        const isAllowed = isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN);
-        callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
+        callback(null, isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN));
       },
       credentials: true,
     }),
