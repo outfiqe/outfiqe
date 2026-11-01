@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +21,8 @@ const tenantsResponse = {
         subscriptionStatus: null,
         isPlatformOrg: false,
         linkedBrandId: null,
+        linkedBrandName: null,
+        ownerName: null,
         memberCount: 2,
         contactCount: 0,
         dealCount: 0,
@@ -54,14 +56,7 @@ const buildSession = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const renderPage = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <PlatformImpersonationPage />
-    </QueryClientProvider>,
-  );
-};
+const renderPage = () => renderWithRouter(<PlatformImpersonationPage />);
 
 describe("PlatformImpersonationPage", () => {
   afterEach(() => {
