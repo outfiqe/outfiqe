@@ -24,6 +24,8 @@ const mockBase = () => {
               subscriptionStatus: null,
               isPlatformOrg: false,
               linkedBrandId: null,
+              linkedBrandName: null,
+              ownerName: null,
               memberCount: 1,
               contactCount: 0,
               dealCount: 0,

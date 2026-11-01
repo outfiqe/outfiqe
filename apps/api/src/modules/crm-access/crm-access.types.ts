@@ -13,7 +13,15 @@ export type OrganizationRecord = {
   updatedAt: Date;
 };
 
-export type OrganizationListItem = OrganizationRecord & {
+export type OrganizationWithBrandName = OrganizationRecord & {
+  linkedBrandName: string | null;
+};
+
+export type OrganizationListItem = OrganizationWithBrandName & {
+  memberCount: number;
+  ownerName: string | null;
+  subscriptionStatus: string | null;
+  lastCrmActivityAt: Date | null;
   linkedBrandName: string | null;
 };
 

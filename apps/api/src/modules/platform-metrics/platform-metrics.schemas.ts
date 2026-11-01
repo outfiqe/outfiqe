@@ -1,10 +1,22 @@
 import { z } from "zod";
 
-import { MAX_TENANTS_PAGE_SIZE } from "./platform-metrics.constants.js";
+import { MAX_TENANT_SEARCH_LENGTH, MAX_TENANTS_PAGE_SIZE } from "./platform-metrics.constants.js";
 
 export const listTenantsQuerySchema = z.object({
   plan: z.string().trim().min(1).max(40).optional(),
-  sort: z.enum(["recent-activity", "name", "created"]).optional(),
+  search: z.string().trim().min(1).max(MAX_TENANT_SEARCH_LENGTH).optional(),
+  sort: z
+    .enum([
+      "recent-activity",
+      "name",
+      "created",
+      "members",
+      "contacts",
+      "deals",
+      "tickets",
+      "activities",
+    ])
+    .optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(MAX_TENANTS_PAGE_SIZE).optional(),
 });

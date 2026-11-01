@@ -1,27 +1,22 @@
 import { Toaster } from "@outfiqe/design-system";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { OrganizationsPage } from "./OrganizationsPage";
 
 const API_BASE = "http://localhost:3000/api";
 
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
+const renderOrganizationsPage = () =>
+  renderWithRouter(
+    <>
+      <OrganizationsPage />
       <Toaster />
-    </QueryClientProvider>
+    </>,
   );
-};
-
-const renderOrganizationsPage = () => render(<OrganizationsPage />, { wrapper });
 
 describe("OrganizationsPage", () => {
   it("renders the organization list with linked-brand status", async () => {
@@ -38,6 +33,10 @@ describe("OrganizationsPage", () => {
                 plan: "trial",
                 linkedBrandId: null,
                 linkedBrandName: null,
+                memberCount: 2,
+                ownerName: null,
+                subscriptionStatus: null,
+                lastCrmActivityAt: null,
                 createdAt: "2026-01-01T00:00:00.000Z",
               },
               {
@@ -47,6 +46,10 @@ describe("OrganizationsPage", () => {
                 plan: "trial",
                 linkedBrandId: "brand-7",
                 linkedBrandName: "Kastha Studio",
+                memberCount: 2,
+                ownerName: null,
+                subscriptionStatus: null,
+                lastCrmActivityAt: null,
                 createdAt: "2026-01-02T00:00:00.000Z",
               },
             ],
@@ -59,8 +62,12 @@ describe("OrganizationsPage", () => {
     renderOrganizationsPage();
 
     expect(await screen.findByText("Outfiqe")).toBeInTheDocument();
-    expect(screen.getByText("outfiqe · trial · no linked brand")).toBeInTheDocument();
-    expect(screen.getByText("meridian · trial · linked to Kastha Studio")).toBeInTheDocument();
+    expect(screen.getAllByText("Trial")).toHaveLength(2);
+    expect(
+      screen.getByText(/outfiqe · No linked brand · Owner hasn't accepted yet/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/meridian · Brand: Kastha Studio/)).toBeInTheDocument();
+    expect(screen.getAllByText("2 members · Last used: Never used")).toHaveLength(2);
   });
 
   it("loads the next page of organizations on demand", async () => {
@@ -79,6 +86,10 @@ describe("OrganizationsPage", () => {
                   plan: "trial",
                   linkedBrandId: null,
                   linkedBrandName: null,
+                  memberCount: 2,
+                  ownerName: null,
+                  subscriptionStatus: null,
+                  lastCrmActivityAt: null,
                   createdAt: "2026-01-01T00:00:00.000Z",
                 },
               ],
@@ -97,6 +108,10 @@ describe("OrganizationsPage", () => {
                 plan: "trial",
                 linkedBrandId: null,
                 linkedBrandName: null,
+                memberCount: 2,
+                ownerName: null,
+                subscriptionStatus: null,
+                lastCrmActivityAt: null,
                 createdAt: "2026-01-02T00:00:00.000Z",
               },
             ],
