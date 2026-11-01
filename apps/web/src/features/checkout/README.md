@@ -8,6 +8,16 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 
 - `components/CheckoutBody.tsx` — the page's top-level gate: resolves auth, bounces `BRAND_OWNER`/`ADMIN` accounts to `<NotAShopperNotice>` (checkout is `CUSTOMER`-only — the server gate is in `apps/api/src/modules/orders`), loads the cart (or a Buy Now payload), and picks which state to render.
 - `components/CheckoutForm.tsx` / `CheckoutAddressFields.tsx` / `CheckoutSummary.tsx` / `PaymentMethodField.tsx` — the address + payment form (its name/phone/address/city/landmark fields are `CheckoutAddressFields`, shown for a new address or while editing a saved one) and its order-summary sidebar. `CheckoutForm` owns delivery-zone resolution: it watches the form's live `city` field and resolves it against `zones` (via `resolveZonePreview`) on every keystroke, so `CheckoutSummary` always renders the fee for the zone matching what's actually typed, not a stale value computed once at page load. `CheckoutSummary` takes an explicit `deliveryFee` prop for this reason (it never reads `cart.deliveryFee` for display) and an optional `couponSlot` node, rendered where the cart path's read-only applied-coupon line would go — Buy Now is the only current user of it (see below).
+- `hooks/useCheckoutAnalytics.ts` — the checkout's analytics events (see `features/analytics`).
+  - `checkout:checkout_start` fires once when the form opens.
+  - `checkout:payment_method_select` fires when the shopper picks a method. The automatic switch
+    away from COD when it isn't available doesn't count as a choice.
+  - `checkout:order_submit` fires when Place order is pressed, before the request. The server's
+    own `checkout:order_place` confirms the order exists, so the gap between the two shows orders
+    lost after the button press.
+
+  `CheckoutForm` calls the functions it returns.
+
 - `components/BuyNowCouponForm.tsx` — the coupon apply/remove UI for the Buy Now path, since it has no cart page to have applied one on beforehand.
 - `api/checkoutApi.ts` / `checkoutSchemas.ts` — `POST /orders/checkout` and its request/response shapes, plus `previewBuyNowCoupon` (`POST /coupons/preview-buy-now`).
 - `hooks/useCheckout.ts` — the submit mutation.
@@ -21,6 +31,10 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 **Cash on delivery can be unavailable** for two reasons, and `PaymentMethodField` shows the one that applies under the greyed-out option (`codUnavailableReason`, worded in `constants/checkout.constants.ts`): the applied coupon is prepaid-only, or the buyer refused 2 deliveries in the last year (by this account or the phone typed in the form). The refusal check is `useCodEligibility` → `checkoutApi.getCodEligibility` → `GET /logistics/cod-eligibility?phone=`, debounced while the phone is typed. If that check fails the option stays on; the API refuses a blocked COD checkout anyway (`COD_UNAVAILABLE_REFUSALS`).
 
 **Technical**: `CheckoutBody` reads either the persisted cart (`useCart`) or a Buy Now payload, builds a `Cart`-shaped object either way, and hands it — along with the fetched `DeliveryZone[]` (`useDeliveryZones`) — to `CheckoutForm`, which resolves the delivery fee live from the form's own `city` field and submits via `useCheckout` → `checkoutApi.submit` → `POST /orders/checkout` (see `apps/api/src/modules/orders/README.md`).
+
+## Khalti is hidden unless its switch is on
+
+`utils/listCheckoutPaymentMethods.ts` leaves Khalti out while the `khalti_payments` feature switch is off. The API refuses it too, see the payments module README.
 
 ## Buy Now bypasses the cart entirely
 
@@ -43,6 +57,8 @@ landmark` snapshot, never a `savedAddressId`. The address book is a convenience 
 still owns its own copy of the address (see `apps/api/src/modules/orders/README.md`).
 
 ## Non-obvious rationale
+
+**One checkout attempt keeps one idempotency key.** `CheckoutForm` creates the key once, not per tap, and the API replays a finished request with the same key instead of running it again. A double tap, a retry after a lost response, or a retry after a failed payment start therefore reuse the same order. `isPlacingOrder` also ignores extra taps while a request is in flight, so a double tap doesn't surface the API's "already being processed" error.
 
 **Every client-generated id in this feature goes through `@outfiqe/utils`' `generateUuid`, never `crypto.randomUUID()` directly.** `randomUUID` requires a secure context, which isn't guaranteed for every way this app gets opened (a LAN IP over plain HTTP during on-device testing, for one) — calling it directly once threw a bare `TypeError` before the checkout request was even built, surfacing only as a generic "Something went wrong" toast with nothing in the server logs to explain it. `generateUuid` falls back to `crypto.getRandomValues` (no such restriction) to hand-build the id instead.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, ConfirmModal } from "@outfiqe/design-system";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -88,28 +88,12 @@ export const BoardActions = ({
             </Button>
           </>
         )}
-        {!isOwner && !isConfirmingLeave && (
+        {!isOwner && (
           <Button variant="ghost" onClick={() => setIsConfirmingLeave(true)} disabled={isSaving}>
             {t("leave")}
           </Button>
         )}
       </div>
-
-      {!isOwner && isConfirmingLeave && (
-        <div role="alert" className="space-y-2 rounded-lg border border-border p-3 text-sm">
-          <p className="font-medium text-foreground">{t("leaveConfirm.title")}</p>
-          <p className="text-muted-foreground">{t("leaveConfirm.body")}</p>
-          {hasBeenLocked && <p className="text-muted-foreground">{t("leaveConfirm.creditNote")}</p>}
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={onLeave} disabled={isSaving}>
-              {t("leaveConfirm.confirm")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setIsConfirmingLeave(false)}>
-              {t("leaveConfirm.stay")}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {isOwner && isDraft && blocker && (
         <p className="text-xs text-muted-foreground">
@@ -117,27 +101,41 @@ export const BoardActions = ({
         </p>
       )}
 
-      {isOwner &&
-        (isConfirmingArchive ? (
-          <div role="alert" className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-foreground">{t("archiveConfirm")}</span>
-            <Button
-              size="sm"
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={onArchive}
-              disabled={isSaving}
-            >
-              {t("archive")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setIsConfirmingArchive(false)}>
-              {t("cancel")}
-            </Button>
-          </div>
-        ) : (
-          <Button size="sm" variant="ghost" onClick={() => setIsConfirmingArchive(true)}>
-            {t("archive")}
-          </Button>
-        ))}
+      {isOwner && (
+        <Button size="sm" variant="ghost" onClick={() => setIsConfirmingArchive(true)}>
+          {t("archive")}
+        </Button>
+      )}
+
+      <ConfirmModal
+        open={isConfirmingArchive}
+        title={t("archiveConfirm.title")}
+        description={t("archiveConfirm.body")}
+        confirmLabel={t("archive")}
+        pendingLabel={t("working")}
+        cancelLabel={t("cancel")}
+        destructive
+        isPending={isSaving}
+        onConfirm={onArchive}
+        onCancel={() => setIsConfirmingArchive(false)}
+      />
+
+      <ConfirmModal
+        open={isConfirmingLeave}
+        title={t("leaveConfirm.title")}
+        description={t("leaveConfirm.body")}
+        confirmLabel={t("leaveConfirm.confirm")}
+        pendingLabel={t("working")}
+        cancelLabel={t("leaveConfirm.stay")}
+        destructive
+        isPending={isSaving}
+        onConfirm={onLeave}
+        onCancel={() => setIsConfirmingLeave(false)}
+      >
+        {hasBeenLocked && (
+          <p className="text-sm text-muted-foreground">{t("leaveConfirm.creditNote")}</p>
+        )}
+      </ConfirmModal>
     </section>
   );
 };

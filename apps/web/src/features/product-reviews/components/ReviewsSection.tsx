@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, Select, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, ConfirmModal, Modal, Select, Skeleton, toast } from "@outfiqe/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -210,28 +210,19 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
         initialValues={reviewFormInitialValues}
       />
 
-      <Modal
+      <ConfirmModal
         open={deletingReviewId !== null}
-        onClose={() => setDeletingReviewId(null)}
         title="Delete review?"
         description="This can't be undone."
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeletingReviewId(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              isLoading={deleteReview.isPending}
-              className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
-            >
-              Delete
-            </Button>
-          </div>
-        }
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        destructive
+        isPending={deleteReview.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingReviewId(null)}
       >
         <p className="text-sm text-muted-foreground">This review will be removed permanently.</p>
-      </Modal>
+      </ConfirmModal>
     </section>
   );
 };

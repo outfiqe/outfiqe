@@ -12,6 +12,7 @@ flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
 ## Structure
 
+- `logistics.errors.ts` — `logisticsErrors`, the errors this module raises from more than one place.
 - `logistics.journeys.integration.test.ts` — the whole flow through the real endpoints, from a
   brand pressing "Ready for pickup" to the customer. It covers:
   - three brands in one cash parcel, delivered by spreadsheet, with the cash and rider pay
@@ -425,6 +426,8 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
 - The brand order list and detail include `fulfilmentMode`, `pickupStatus` and, on the detail, the pickup code.
 - `shipTo` (the customer's name, phone and address) is `null` for hub-flow groups, because the brand never needs it.
 - The brand's own status updates (`PATCH /orders/brand/fulfilment-groups/:groupId`) are refused for hub-flow groups with `409 DELIVERED_BY_OUTFIQE`.
+
+A pickup can only be marked ready for an order that is paid, or cash on delivery, and not cancelled. Cancelling an order cancels any pickup that has not been collected, and so does an unpaid order expiring. Otherwise a rider could be sent to collect an order that no longer exists.
 
 **Riders and rounds:**
 

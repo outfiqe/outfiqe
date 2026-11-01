@@ -23,6 +23,7 @@ const CONTENT_MODERATION_ACCESS = anyOf("platform:content:moderate");
 export const PLATFORM_SECTION_ACCESS: Record<PlatformNavKey, PlatformSectionAccess> = {
   "brand-applications": anyOf("platform:brands:read", "platform:brands:manage"),
   "platform-metrics": anyOf("platform:metrics:read"),
+  "platform-analytics": anyOf("platform:analytics:read"),
   "platform-features": anyOf("platform:features:manage"),
   "platform-impersonation": anyOf("platform:impersonate", "platform:impersonate:manage"),
   "platform-nav-access": CO_FOUNDER_ONLY,

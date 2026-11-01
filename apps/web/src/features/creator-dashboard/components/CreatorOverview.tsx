@@ -2,17 +2,20 @@
 
 import {
   Button,
-  ChartCard,
   CheriqIcon,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
   FormBanner,
   Skeleton,
   StatCard,
-  TrendChart,
 } from "@outfiqe/design-system";
+import { ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { OverviewPeriodChips } from "@/components/OverviewPeriodChips";
+import { StatCardFooterLink } from "@/components/StatCardFooterLink";
 import { CreatorStatus } from "@/features/auth/types";
 import {
   CREATOR_KPI_TOUR_ANCHOR,
@@ -20,6 +23,8 @@ import {
   CreatorDashboardTour,
   TourReplayLink,
 } from "@/features/product-tour";
+import { useOverviewPeriod } from "@/shared/hooks/useOverviewPeriod";
+import { formatRupees } from "@/shared/lib/formatRupees";
 
 import type {
   CreatorOverview as CreatorOverviewData,
@@ -27,6 +32,7 @@ import type {
 } from "../api/creatorOverviewSchemas";
 import { EarningsLedgerRow } from "../earnings/components/EarningsLedgerRow";
 import { useCreatorOverview } from "../hooks/useCreatorOverview";
+import { CreatorOverviewDetails } from "./CreatorOverviewDetails";
 import { CreatorStatusGate } from "./CreatorStatusGate";
 
 const KPI_CARD_COUNT = 6;
@@ -43,14 +49,9 @@ const KPI_HINT = {
   totalLikes: "Cheriqs across all of your live looks.",
 } as const;
 
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-
 const earningsDeltaFor = (overview: CreatorOverviewData) => {
-  const { last30DaysEarnings, previous30DaysEarnings } = overview.kpis;
-  const difference = last30DaysEarnings - previous30DaysEarnings;
+  const { periodDays, periodEarnings, previousPeriodEarnings } = overview.kpis;
+  const difference = periodEarnings - previousPeriodEarnings;
   if (difference === 0) return undefined;
 
   const tone = difference > 0 ? "positive" : "negative";
@@ -58,7 +59,7 @@ const earningsDeltaFor = (overview: CreatorOverviewData) => {
   return {
     value: `${sign}${formatRupees(Math.abs(difference))}`,
     tone,
-    label: "vs previous 30 days",
+    label: `vs previous ${periodDays} days`,
   } as const;
 };
 
@@ -72,38 +73,50 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
     >
       <StatCard
         label="Total earnings"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.totalEarnings)}
         icon={Wallet}
         delta={earningsDeltaFor(overview)}
         hint={KPI_HINT.totalEarnings}
+        footer={<StatCardFooterLink href="/earnings" label="See earnings" />}
       />
       <StatCard
         label="Available"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.availableEarnings)}
         hint={KPI_HINT.availableEarnings}
+        footer={<StatCardFooterLink href="/withdraw" label="Withdraw" />}
       />
       <StatCard
         label="Pending"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={formatRupees(kpis.pendingEarnings)}
         hint={KPI_HINT.pendingEarnings}
+        footer={<StatCardFooterLink href="/earnings" label="See earnings" />}
       />
       <StatCard
         label="Followers"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.followerCount.toLocaleString()}
         icon={Users}
         hint={KPI_HINT.followerCount}
+        footer={<StatCardFooterLink href={`/creator/${overview.handle}`} label="See profile" />}
       />
       <StatCard
         label="Looks"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.lookCount.toLocaleString()}
         icon={ImageIcon}
         hint={KPI_HINT.lookCount}
+        footer={<StatCardFooterLink href={`/creator/${overview.handle}`} label="See looks" />}
       />
       <StatCard
         label="Total cheriqs"
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
         value={kpis.totalLikes.toLocaleString()}
         icon={CheriqIcon}
         hint={KPI_HINT.totalLikes}
+        footer={<StatCardFooterLink href={`/creator/${overview.handle}`} label="See looks" />}
       />
     </div>
   );
@@ -111,7 +124,7 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
 
 const EarningsTrendTable = ({ trend }: { trend: CreatorOverviewTrendPoint[] }) => (
   <table>
-    <caption>Earnings per day over the last 30 days</caption>
+    <caption>Earnings per day over the chosen period</caption>
     <thead>
       <tr>
         <th scope="col">Date</th>
@@ -136,8 +149,8 @@ const EarningsTrendCard = ({ overview }: { overview: CreatorOverviewData }) => {
   return (
     <ChartCard
       title="Earnings"
-      description="Commission per day, last 30 days"
-      ariaLabel="Commission earnings per day over the last 30 days"
+      description={`Commission per day, last ${kpis.periodDays} days`}
+      ariaLabel="Commission earnings per day over the chosen period"
       isEmpty={!hasEarnings}
       emptyMessage="Not enough data yet — commission from your tagged drops will show here."
       dataTable={<EarningsTrendTable trend={trend} />}
@@ -204,7 +217,8 @@ type CreatorOverviewProps = {
 };
 
 export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
-  const { data: overview, isPending, isError } = useCreatorOverview();
+  const { periodDays, selectPeriodDays } = useOverviewPeriod();
+  const { data: overview, isPending, isError } = useCreatorOverview(creatorStatus, periodDays);
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
@@ -236,10 +250,14 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
           <OverviewSkeleton />
         ) : (
           <>
-            <OverviewKpiRow overview={overview} />
+            <OverviewPeriodChips selectedDays={periodDays} onSelect={selectPeriodDays} />
+            <div className="mt-4">
+              <OverviewKpiRow overview={overview} />
+            </div>
             <div className="mt-8">
               <EarningsTrendCard overview={overview} />
             </div>
+            <CreatorOverviewDetails overview={overview} />
             <RecentCommissions overview={overview} />
             <Suspense fallback={null}>
               <CreatorDashboardTour />

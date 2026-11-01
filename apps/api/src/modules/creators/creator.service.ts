@@ -1,3 +1,4 @@
+import { millisecondsInSecond } from "date-fns/constants";
 import { LRUCache } from "lru-cache";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
@@ -44,11 +45,10 @@ import { toProfile, toSearchResult } from "./creator.utils.js";
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
-const MS_PER_SECOND = 1000;
 
 const autocompleteMemoryCache = new LRUCache<string, CreatorSearchResult[]>({
   max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.CREATOR_AUTOCOMPLETE * MS_PER_SECOND,
+  ttl: CACHE_TTL.CREATOR_AUTOCOMPLETE * millisecondsInSecond,
 });
 
 const requireUser = async (userId: string): Promise<UserRecord> => {

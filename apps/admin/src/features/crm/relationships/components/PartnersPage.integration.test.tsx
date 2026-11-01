@@ -111,7 +111,7 @@ describe("PartnersPage", () => {
 
     renderPartnersPage();
 
-    expect(await screen.findByText("No partners yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/No partners yet/)).toBeInTheDocument();
   });
 
   it("shows an error banner when the list fails", async () => {
@@ -150,12 +150,12 @@ describe("PartnersPage", () => {
     );
 
     renderPartnersPage();
-    await screen.findByText("No partners yet.");
+    await screen.findByText(/No partners yet/);
 
     await userEvent.type(screen.getByPlaceholderText("Search muses"), "aasha");
 
     await waitFor(() => expect(lastQuery).toBe("aasha"));
-    expect(await screen.findByText("No partners match your search.")).toBeInTheDocument();
+    expect(await screen.findByText(/No partners match your search/)).toBeInTheDocument();
   });
 
   it("pages forward and back through partners", async () => {

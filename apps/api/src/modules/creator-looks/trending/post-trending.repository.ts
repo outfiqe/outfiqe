@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
@@ -29,7 +31,7 @@ import {
   scorePost,
 } from "./post-scoring.utils.js";
 
-const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const TRENDING_WINDOW_MS = 14 * millisecondsInDay;
 
 const upsertPostLikesBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, likes, updated_at)
@@ -123,7 +125,7 @@ export const buildLegacyTrendingSnapshot = async (): Promise<string[]> => {
 };
 
 const listRecentPostMetricBuckets = async (sinceDays: number): Promise<PostMetricBucket[]> => {
-  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - sinceDays * millisecondsInDay);
   const rows = await prisma.creatorLookTrendMetric.findMany({
     where: { bucketStart: { gte: since } },
     orderBy: [{ creatorLookId: "asc" }, { bucketStart: "asc" }],

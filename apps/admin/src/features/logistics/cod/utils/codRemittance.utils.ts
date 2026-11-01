@@ -1,3 +1,5 @@
+import { formatDate } from "@outfiqe/utils";
+
 import type { UnremittedParcel } from "../api/codSchemas";
 
 const NO_AMOUNT = 0;
@@ -37,12 +39,6 @@ export const sumRemittanceTotals = (
 
 export const formatCashAmount = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
-const DATE_INPUT_LOCALE = "en-CA";
+export { toDayStartIso as dateInputValueToIso, toDateInputValue } from "@outfiqe/utils";
 
-export const toDateInputValue = (date: Date) => date.toLocaleDateString(DATE_INPUT_LOCALE);
-
-export const dateInputValueToIso = (dateInputValue: string) =>
-  new Date(`${dateInputValue}T00:00:00`).toISOString();
-
-export const formatCashDate = (isoDate: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(isoDate));
+export const formatCashDate = (isoDate: string) => formatDate(isoDate);

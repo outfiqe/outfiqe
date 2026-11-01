@@ -9,6 +9,7 @@ import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prism
 import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
 
+import { MAX_RECENT_ACTORS } from "../notification.constants.js";
 import { resolveNotificationTarget } from "../notification.targets.js";
 import type {
   CreateIndividualNotificationInput,
@@ -46,6 +47,9 @@ type RawGroupRow = {
 const isRawForeignKeyViolation = (error: unknown): boolean =>
   describeError(error).toLowerCase().includes("foreign key constraint");
 
+const readGroupMetadata = (row: RawGroupRow): NotificationMetadata =>
+  (row.metadata ?? {}) as NotificationMetadata;
+
 const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   id: row.id,
   recipientId: row.recipient_id,
@@ -56,7 +60,7 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   targetSurface: row.target_surface,
   targetPath: row.target_path,
   organizationId: row.organization_id,
-  metadata: (row.metadata ?? {}) as NotificationMetadata,
+  metadata: readGroupMetadata(row),
   groupKey: row.group_key,
   actorCount: row.actor_count,
   isRead: row.is_read,
@@ -64,6 +68,83 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
+
+const insertGroupRow = async (
+  tx: Prisma.TransactionClient,
+  input: UpsertGroupInput,
+): Promise<RawGroupRow | undefined> => {
+  const metadata: NotificationMetadata = { ...input.metadata, recentActors: [input.actor] };
+  const insertTarget = resolveNotificationTarget({
+    type: input.type,
+    entityId: input.entityId ?? null,
+    metadata,
+  });
+
+  const [insertedRow] = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+    INSERT INTO "notifications"
+      ("id", "recipient_id", "actor_id", "type", "entity_type", "entity_id", "target_surface", "target_path", "metadata", "group_key", "actor_count", "updated_at")
+    VALUES
+      (gen_random_uuid(), ${input.recipientId}::uuid, ${input.actorId}::uuid, ${input.type}::"NotificationType",
+       ${input.entityType ?? null}::"NotificationEntityType", ${input.entityId ?? null},
+       ${insertTarget?.surface ?? null}::"NotificationSurface", ${insertTarget?.path ?? null},
+       ${JSON.stringify(metadata)}::jsonb, ${input.groupKey}, 1, now())
+    ON CONFLICT ("recipient_id", "group_key") WHERE "is_read" = false AND "group_key" IS NOT NULL
+    DO NOTHING
+    RETURNING *
+  `);
+  return insertedRow;
+};
+
+const lockOpenGroupRow = async (
+  tx: Prisma.TransactionClient,
+  input: { recipientId: string; groupKey: string },
+): Promise<RawGroupRow | undefined> => {
+  const [openRow] = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+    SELECT * FROM "notifications"
+    WHERE "recipient_id" = ${input.recipientId}::uuid
+      AND "group_key" = ${input.groupKey}
+      AND "is_read" = false
+    FOR UPDATE
+  `);
+  return openRow;
+};
+
+const mergeActorIntoGroupRow = async (
+  tx: Prisma.TransactionClient,
+  input: UpsertGroupInput,
+  existing: RawGroupRow,
+): Promise<RawGroupRow> => {
+  const existingMetadata = readGroupMetadata(existing);
+  const dedupedActors = (existingMetadata.recentActors ?? []).filter(
+    (actor) => actor.id !== input.actor.id,
+  );
+  const nextRecentActors = [input.actor, ...dedupedActors].slice(0, MAX_RECENT_ACTORS);
+  const nextMetadata: NotificationMetadata = {
+    ...existingMetadata,
+    ...input.metadata,
+    recentActors: nextRecentActors,
+  };
+  const nextActorCount = existing.actor_count + 1;
+  const nextTarget = resolveNotificationTarget({
+    type: input.type,
+    entityId: input.entityId ?? null,
+    metadata: nextMetadata,
+  });
+
+  const [updated] = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+    UPDATE "notifications"
+    SET "metadata" = ${JSON.stringify(nextMetadata)}::jsonb,
+        "actor_count" = ${nextActorCount},
+        "actor_id" = ${input.actorId}::uuid,
+        "target_surface" = ${nextTarget?.surface ?? null}::"NotificationSurface",
+        "target_path" = ${nextTarget?.path ?? null},
+        "updated_at" = now()
+    WHERE "id" = ${existing.id}::uuid
+    RETURNING *
+  `);
+  if (!updated) throw new Error(`Failed to update notification group: ${existing.id}`);
+  return updated;
+};
 
 export const notificationDeliveryRepository = {
   async createIndividual(
@@ -150,74 +231,17 @@ export const notificationDeliveryRepository = {
   ): Promise<{ record: NotificationRecord; wasCreated: boolean } | null> {
     try {
       return await prisma.$transaction(async (tx) => {
-        const metadata: NotificationMetadata = { ...input.metadata, recentActors: [input.actor] };
-        const insertTarget = resolveNotificationTarget({
-          type: input.type,
-          entityId: input.entityId ?? null,
-          metadata,
-        });
-
-        const inserted = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-          INSERT INTO "notifications"
-            ("id", "recipient_id", "actor_id", "type", "entity_type", "entity_id", "target_surface", "target_path", "metadata", "group_key", "actor_count", "updated_at")
-          VALUES
-            (gen_random_uuid(), ${input.recipientId}::uuid, ${input.actorId}::uuid, ${input.type}::"NotificationType",
-             ${input.entityType ?? null}::"NotificationEntityType", ${input.entityId ?? null},
-             ${insertTarget?.surface ?? null}::"NotificationSurface", ${insertTarget?.path ?? null},
-             ${JSON.stringify(metadata)}::jsonb, ${input.groupKey}, 1, now())
-          ON CONFLICT ("recipient_id", "group_key") WHERE "is_read" = false AND "group_key" IS NOT NULL
-          DO NOTHING
-          RETURNING *
-        `);
-
-        const insertedRow = inserted[0];
+        const insertedRow = await insertGroupRow(tx, input);
         if (insertedRow) return { record: toRecordFromRaw(insertedRow), wasCreated: true };
 
-        const existingRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-          SELECT * FROM "notifications"
-          WHERE "recipient_id" = ${input.recipientId}::uuid
-            AND "group_key" = ${input.groupKey}
-            AND "is_read" = false
-          FOR UPDATE
-        `);
-        const existing = existingRows[0];
+        const existing = await lockOpenGroupRow(tx, input);
         if (!existing) {
           throw new Error(
             `Notification group conflicted but no open row was found: recipient=${input.recipientId} groupKey=${input.groupKey}`,
           );
         }
 
-        const existingMetadata = (existing.metadata ?? {}) as NotificationMetadata;
-        const dedupedActors = (existingMetadata.recentActors ?? []).filter(
-          (actor) => actor.id !== input.actor.id,
-        );
-        const nextRecentActors = [input.actor, ...dedupedActors].slice(0, 3);
-        const nextMetadata: NotificationMetadata = {
-          ...existingMetadata,
-          ...input.metadata,
-          recentActors: nextRecentActors,
-        };
-        const nextActorCount = existing.actor_count + 1;
-        const nextTarget = resolveNotificationTarget({
-          type: input.type,
-          entityId: input.entityId ?? null,
-          metadata: nextMetadata,
-        });
-
-        const updatedRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-          UPDATE "notifications"
-          SET "metadata" = ${JSON.stringify(nextMetadata)}::jsonb,
-              "actor_count" = ${nextActorCount},
-              "actor_id" = ${input.actorId}::uuid,
-              "target_surface" = ${nextTarget?.surface ?? null}::"NotificationSurface",
-              "target_path" = ${nextTarget?.path ?? null},
-              "updated_at" = now()
-          WHERE "id" = ${existing.id}::uuid
-          RETURNING *
-        `);
-        const updated = updatedRows[0];
-        if (!updated) throw new Error(`Failed to update notification group: ${existing.id}`);
-
+        const updated = await mergeActorIntoGroupRow(tx, input, existing);
         return { record: toRecordFromRaw(updated), wasCreated: false };
       });
     } catch (error) {
@@ -231,14 +255,7 @@ export const notificationDeliveryRepository = {
 
   async retractGroupActor(input: RetractGroupActorInput): Promise<NotificationRecord | null> {
     return prisma.$transaction(async (tx) => {
-      const existingRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-        SELECT * FROM "notifications"
-        WHERE "recipient_id" = ${input.recipientId}::uuid
-          AND "group_key" = ${input.groupKey}
-          AND "is_read" = false
-        FOR UPDATE
-      `);
-      const existing = existingRows[0];
+      const existing = await lockOpenGroupRow(tx, input);
       if (!existing) return null;
 
       const nextActorCount = existing.actor_count - 1;
@@ -247,7 +264,7 @@ export const notificationDeliveryRepository = {
         return null;
       }
 
-      const existingMetadata = (existing.metadata ?? {}) as NotificationMetadata;
+      const existingMetadata = readGroupMetadata(existing);
       const nextRecentActors = removeRecentActor(
         existingMetadata.recentActors ?? [],
         input.actorId,

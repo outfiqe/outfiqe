@@ -1,4 +1,5 @@
 import { RESERVED_TENANT_SUBDOMAINS, TENANT_SUBDOMAIN_REGEX } from "@outfiqe/utils";
+import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
 
 import type { PermissionRecord } from "./crm-access.types.js";
 
@@ -25,11 +26,11 @@ export const PERMISSION_CATALOG: PermissionRecord[] = [
   { key: "contacts:read", label: "View contacts", group: "Partners, customers & contacts" },
   { key: "contacts:write", label: "Edit contacts", group: "Partners, customers & contacts" },
   { key: "contacts:delete", label: "Delete contacts", group: "Partners, customers & contacts" },
-  { key: "pipeline:read", label: "View pipeline", group: "Pipeline & deals" },
-  { key: "pipeline:configure", label: "Configure pipeline stages", group: "Pipeline & deals" },
-  { key: "deals:read", label: "View deals", group: "Pipeline & deals" },
-  { key: "deals:write", label: "Edit deals", group: "Pipeline & deals" },
-  { key: "deals:delete", label: "Delete deals", group: "Pipeline & deals" },
+  { key: "pipeline:read", label: "View the sales board", group: "Sales board & opportunities" },
+  { key: "pipeline:configure", label: "Edit sales stages", group: "Sales board & opportunities" },
+  { key: "deals:read", label: "View opportunities", group: "Sales board & opportunities" },
+  { key: "deals:write", label: "Edit opportunities", group: "Sales board & opportunities" },
+  { key: "deals:delete", label: "Delete opportunities", group: "Sales board & opportunities" },
   { key: "tickets:read", label: "View tickets", group: "Support" },
   { key: "tickets:write", label: "Edit tickets", group: "Support" },
   { key: "tickets:manage", label: "Manage ticket assignment", group: "Support" },
@@ -108,20 +109,20 @@ export const RESERVED_SUBDOMAINS = RESERVED_TENANT_SUBDOMAINS;
 
 export const CRM_TRIAL_LENGTH_DAYS = 60;
 
-export const ORGANIZATION_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const ORGANIZATION_INVITE_TTL_MS = 7 * millisecondsInDay;
 
-export const OWNERSHIP_TRANSFER_REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const OWNERSHIP_TRANSFER_REQUEST_TTL_MS = 7 * millisecondsInDay;
 
-export const CRM_INVITE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const CRM_INVITE_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const CRM_INVITE_RATE_LIMIT_MAX_REQUESTS = 20;
 
-export const CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS = 10;
 
-export const CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_MAX_REQUESTS = 10;
 
-export const CRM_ROLE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+export const CRM_ROLE_RATE_LIMIT_WINDOW_MS = millisecondsInHour;
 export const CRM_ROLE_RATE_LIMIT_MAX_REQUESTS = 40;
 
 export const DEFAULT_ORGANIZATION_PAGE_SIZE = 25;

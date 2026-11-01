@@ -12,6 +12,7 @@ import {
   WEB_MANIFEST_PATH,
 } from "@/features/pwa";
 import { isPwaKillSwitchEngagedOnServer } from "@/features/pwa/service-worker/utils/pwaKillSwitchServer";
+import { NATIVE_FORM_SUBMIT_GUARD_SCRIPT } from "@/shared/lib/nativeFormSubmitGuard";
 import {
   JsonLd,
   organizationSchema,
@@ -60,6 +61,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         )}
         <AppleSplashLinks />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: NATIVE_FORM_SUBMIT_GUARD_SCRIPT }} />
       </head>
       <body>
         <JsonLd id="organization-jsonld" data={organizationSchema()} />

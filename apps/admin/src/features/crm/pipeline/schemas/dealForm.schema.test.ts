@@ -26,13 +26,13 @@ describe("buildDealFormSchema", () => {
   });
 
   it("asks for a title and a stage", () => {
-    expect(messageFor(false, { title: " " }, "title")).toBe("Enter a title for the deal.");
+    expect(messageFor(false, { title: " " }, "title")).toBe("Enter a title for this opportunity.");
     expect(messageFor(false, { stageId: "" }, "stageId")).toBe("Choose a stage.");
   });
 
   it("requires a partner for a new deal but not when editing", () => {
     expect(messageFor(false, { partnerCreatorId: "" }, "partnerCreatorId")).toBe(
-      "Choose the partner for this deal.",
+      "Choose the partner for this opportunity.",
     );
     expect(messageFor(true, { partnerCreatorId: "" }, "partnerCreatorId")).toBeUndefined();
   });

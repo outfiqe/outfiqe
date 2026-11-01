@@ -142,10 +142,14 @@ export const productRepository = {
 
   async listByBrandId(
     brandId: string,
-    params: { cursor?: string; limit: number },
+    params: { search?: string; cursor?: string; limit: number },
   ): Promise<ProductWithStockSizesAndImages[]> {
     const rows = await prisma.product.findMany({
-      where: { brandId, deletedAt: null },
+      where: {
+        brandId,
+        deletedAt: null,
+        ...(params.search ? { name: { contains: params.search, mode: "insensitive" } } : {}),
+      },
       include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,

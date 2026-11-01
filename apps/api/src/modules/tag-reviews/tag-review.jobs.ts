@@ -1,3 +1,6 @@
+import { subDays } from "date-fns/subDays";
+import { subHours } from "date-fns/subHours";
+
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { TagApprovalSource } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
@@ -6,11 +9,8 @@ import { TAG_REVIEW_REMINDER_MIN_AGE_HOURS, TAG_REVIEW_SLA_DAYS } from "./tag-re
 import { tagReviewRepository } from "./tag-review.repository.js";
 import { applyTagApproval } from "./tag-review.service.js";
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
-
 export const runTagReviewSlaSweep = async (): Promise<{ approved: number }> => {
-  const submittedBefore = new Date(Date.now() - TAG_REVIEW_SLA_DAYS * DAY_MS);
+  const submittedBefore = subDays(new Date(), TAG_REVIEW_SLA_DAYS);
   const eligibleTags = await tagReviewRepository.listSlaEligibleTags(submittedBefore);
 
   let approvedCount = 0;
@@ -29,7 +29,7 @@ export const runTagReviewSlaSweep = async (): Promise<{ approved: number }> => {
 };
 
 export const runTagReviewReminderDigest = async (): Promise<{ brandsNotified: number }> => {
-  const submittedBefore = new Date(Date.now() - TAG_REVIEW_REMINDER_MIN_AGE_HOURS * HOUR_MS);
+  const submittedBefore = subHours(new Date(), TAG_REVIEW_REMINDER_MIN_AGE_HOURS);
   const backlogs = await tagReviewRepository.listBrandBacklogs(submittedBefore);
 
   for (const { brandId, pendingCount } of backlogs) {

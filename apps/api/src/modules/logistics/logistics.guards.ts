@@ -2,16 +2,13 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { RiderStatus } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "./logistics.errors.js";
 import { logisticsRiderRepository } from "./riders/rider.repository.js";
 
 export const requireActiveRider = async (userId: string) => {
   const rider = await logisticsRiderRepository.findRiderByUserId(userId);
   if (!rider) {
-    throw new AppError(
-      "RIDER_NOT_FOUND",
-      "No rider profile for this account.",
-      HTTP_STATUS.FORBIDDEN,
-    );
+    throw logisticsErrors.noRiderProfile();
   }
   if (rider.status !== RiderStatus.ACTIVE) {
     throw new AppError(

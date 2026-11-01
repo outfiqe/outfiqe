@@ -6,6 +6,7 @@ import { userRepository } from "#modules/users/user.repository.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 
+import { authErrors } from "../../auth.errors.js";
 import { isLockedOut, recordFailedLogin, resetFailedLogins } from "../../auth.lockout.utils.js";
 import { issueTokens } from "../../auth.tokens.js";
 import type { IssuedTokens } from "../../auth.types.js";
@@ -118,11 +119,11 @@ export const oauthLinkingService = {
 
     const user = await userRepository.findById(pendingRecord.userId);
     if (!user) {
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.invalidCredentials();
     }
 
     if (await isLockedOut(user.email)) {
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.invalidCredentials();
     }
 
     const isPasswordValid = user.passwordHash
@@ -131,7 +132,7 @@ export const oauthLinkingService = {
 
     if (!isPasswordValid) {
       await recordFailedLogin(user.email);
-      throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
+      throw authErrors.invalidCredentials();
     }
 
     await resetFailedLogins(user.email);
@@ -160,7 +161,7 @@ export const oauthLinkingService = {
     if (user.passwordHash) {
       const isPasswordValid = password ? await verifyPassword(password, user.passwordHash) : false;
       if (!isPasswordValid) {
-        throw new AppError("INVALID_CREDENTIALS", "Incorrect password.", HTTP_STATUS.UNAUTHORIZED);
+        throw authErrors.invalidCredentials();
       }
     }
 

@@ -8,6 +8,7 @@ can only ever be opened against a creator who actually has a relationship with t
 
 ## Structure
 
+- `crm-pipeline.errors.ts` — `crmPipelineErrors`, the errors this module raises from more than one place.
 - `crm-pipeline.constants.ts` — `DEFAULT_PIPELINE_STAGES` (the Lead → Contacted → Negotiating →
   Won → Lost preset, reused by both the migration backfill, `crm-access`'s `createOrganization`,
   and `seed-crm.ts`), and the stage/deal count + page-size bounds.
@@ -21,7 +22,8 @@ can only ever be opened against a creator who actually has a relationship with t
   is validated against `crmRelationshipsService.isPartner`. Moving a deal into a won/lost stage
   sets `status` + `closedAt`; moving it back out clears them.
 - `crm-pipeline.controller.ts` / `crm-pipeline.routes.ts` — routes under `/api/crm/pipeline/stages`
-  and `/api/crm/deals`, mounted at `/api/crm` before `crm-access`. Each runs
+  and `/api/crm/deals` (plus `GET /api/crm/deals/:dealId` for one opportunity's page), mounted at
+  `/api/crm` before `crm-access`. Each runs
   `resolveTenant` → `requireAuth` → `requireAdvancedCrmFeatures` → `requirePermission`
   (`pipeline:read` / `pipeline:configure` / `deals:read|write|delete`).
 - `crm-pipeline.schemas.ts` — Zod validation.
@@ -57,3 +59,9 @@ columns; `pipeline:configure` renames, reorders, adds, and removes stages.
   source: a migration backfills it for every organization that already existed,
   `crm-access`'s `createOrganization` transaction creates it for every new tenant, and
   `seed-crm.ts` creates it for the demo orgs (which bypass `createOrganization`).
+
+## Exports and time in stage
+
+`GET /api/crm/deals/export` returns the filtered opportunities as CSV through `#lib/csv-writer.utils`, which neutralizes spreadsheet formulas. It leaves muse details out on purpose and refuses more than `MAX_CRM_EXPORT_ROWS` rows. It has its own rate limit, and each export is logged.
+
+`stageEnteredAt` resets only when a deal really changes stage, so saving the same stage again keeps the count. Rows that existed before the column used `updated_at`, so their count is an estimate.

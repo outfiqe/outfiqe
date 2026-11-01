@@ -9,6 +9,12 @@ import { listPlatformAuditQuerySchema } from "./platform-audit.schemas.js";
 export const platformAuditRoutes = Router();
 
 platformAuditRoutes.get(
+  "/audit/filters",
+  ...requirePlatformRole("platform:audit:read"),
+  platformAuditController.listFilterOptions,
+);
+
+platformAuditRoutes.get(
   "/audit",
   ...requirePlatformRole("platform:audit:read"),
   validate({ query: listPlatformAuditQuerySchema }),

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { CSV_CONTENT_TYPE } from "#lib/csv-writer.utils.js";
 import logger from "#lib/winston.utils.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -10,10 +11,9 @@ import type {
   FinancialLedgerExportQuery,
   FinancialLedgerQuery,
   FinancialRollupQuery,
+  LedgerItemParam,
 } from "./financial-rollup.schemas.js";
 import { financialRollupService } from "./financial-rollup.service.js";
-
-const CSV_CONTENT_TYPE = "text/csv; charset=utf-8";
 
 export const financialRollupController = {
   async get(_req: Request, res: Response) {
@@ -22,10 +22,22 @@ export const financialRollupController = {
     sendSuccess(res, rollup, "Financial rollup.");
   },
 
+  async moneyBreakdown(_req: Request, res: Response) {
+    const query = validated.query<FinancialRollupQuery>(res);
+    const moneyBreakdown = await financialRollupService.getMoneyBreakdown(query);
+    sendSuccess(res, moneyBreakdown, "Money breakdown.");
+  },
+
   async ledger(_req: Request, res: Response) {
     const query = validated.query<FinancialLedgerQuery>(res);
     const page = await financialRollupService.getLedger(query);
     sendSuccess(res, page, "Financial ledger.");
+  },
+
+  async ledgerItem(_req: Request, res: Response) {
+    const { orderItemId } = validated.params<LedgerItemParam>(res);
+    const ledgerItem = await financialRollupService.getLedgerItem(orderItemId);
+    sendSuccess(res, ledgerItem, "Financial ledger item.");
   },
 
   async exportLedger(_req: Request, res: Response) {

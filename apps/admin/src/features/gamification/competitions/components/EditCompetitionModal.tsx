@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { gamificationApi, type UpdateCreatorCompetitionFormInput } from "../../api/gamificationApi";
 import type { CreatorCompetitionAdmin } from "../../api/gamificationSchemas";
@@ -27,7 +28,7 @@ export const EditCompetitionModal = ({
   const form = useForm<CompetitionFormValues>({
     resolver: zodResolver(competitionFormSchema),
     defaultValues: formForCompetition(competition),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({

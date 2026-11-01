@@ -1,5 +1,6 @@
 import { Button, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -41,7 +42,7 @@ export const ImpersonationActivityBanner = () => {
     organization.viewerIsSuperAdmin ||
     organization.viewerPermissionKeys.includes(END_SESSION_PERMISSION_KEY);
   const startedBy = activeImpersonation.byName ?? "An Outfiqe staff member";
-  const startedAt = new Date(activeImpersonation.since).toLocaleString();
+  const startedAt = formatDateTime(activeImpersonation.since);
   const actingAsName = activeImpersonation.targetUserName ?? "this tenant's account";
 
   return (
@@ -90,7 +91,7 @@ export const ImpersonationActivityBanner = () => {
             <ul className="space-y-1 text-xs text-muted-foreground">
               {history.data.map((entry) => (
                 <li key={entry.id}>
-                  {new Date(entry.at).toLocaleString()} —{" "}
+                  {formatDateTime(entry.at)} —{" "}
                   {entry.kind === "started" ? "Session started" : "Session ended"} by{" "}
                   {entry.staffName ?? "Outfiqe support"}
                   {entry.kind === "started" && entry.scope ? ` (${entry.scope}-only)` : ""}

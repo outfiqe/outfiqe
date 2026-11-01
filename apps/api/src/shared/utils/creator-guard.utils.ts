@@ -33,9 +33,12 @@ export const requireApprovedCreator = async (
   }
 };
 
+const CANNOT_EARN_COMMISSION = false;
+const CAN_EARN_COMMISSION = true;
+
 const canUserEarnCommission = async (user: GuardedUser): Promise<boolean> => {
-  if (!user || user.role !== UserRole.CUSTOMER) return false;
-  if (isApprovedCreator(user)) return true;
+  if (!user || user.role !== UserRole.CUSTOMER) return CANNOT_EARN_COMMISSION;
+  if (isApprovedCreator(user)) return CAN_EARN_COMMISSION;
   const [hasCommission, hasOfferPayout] = await Promise.all([
     commissionRepository.hasAnyForPerson(user.id),
     outfitOfferRepository.hasPayoutForCreator(user.id),

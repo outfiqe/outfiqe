@@ -14,8 +14,6 @@ export const upsertZoneInCache = (queryClient: QueryClient, zone: DeliveryZone):
   });
 };
 
-// setDefault flips isDefault off on the zone that previously held it — a plain upsert of the
-// returned zone alone would leave that old default zone stale until the next refetch.
 export const applyDefaultZoneInCache = (queryClient: QueryClient, zone: DeliveryZone): void => {
   queryClient.setQueryData<DeliveryZone[]>(ZONES_QUERY_KEY, (zones) => {
     if (!zones) return zones;

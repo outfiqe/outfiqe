@@ -22,16 +22,23 @@ export const escalateCounterfeitTagRemoval = async ({
   await tagReportService.recordCounterfeitEscalation(tagId, creatorId, note);
 };
 
-export const registerTagReportEventConsumers = (): void => {
+const subscribeToProductTagRejected = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAG_REJECTED,
     groupName: TAG_REPORT_CONSUMER_GROUP,
     handler: escalateCounterfeitTagRemoval,
   });
+};
 
+const subscribeToProductTagRevoked = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAG_REVOKED,
     groupName: TAG_REPORT_CONSUMER_GROUP,
     handler: escalateCounterfeitTagRemoval,
   });
+};
+
+export const registerTagReportEventConsumers = (): void => {
+  subscribeToProductTagRejected();
+  subscribeToProductTagRevoked();
 };

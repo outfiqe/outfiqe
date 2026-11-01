@@ -1,7 +1,9 @@
 import { Badge, Button, Select } from "@outfiqe/design-system";
-import { getRouteApi, Link } from "@tanstack/react-router";
+import { formatDate, formatDateTime } from "@outfiqe/utils";
+import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { useAuth } from "@/features/auth/components/AuthContext";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
@@ -28,6 +30,9 @@ import { useSupportStatus } from "../hooks/useSupportStatus";
 import { useSupportTicket } from "../hooks/useSupportTicket";
 import { SupportTicketSkeleton } from "./SupportTicketSkeleton";
 
+const PUBLIC_REPLY = "PUBLIC";
+const INTERNAL_NOTE = "INTERNAL";
+
 const routeApi = getRouteApi("/_authenticated/support/$ticketId");
 
 const AUTHOR_LABEL: Record<SupportMessage["authorKind"], string> = {
@@ -37,7 +42,7 @@ const AUTHOR_LABEL: Record<SupportMessage["authorKind"], string> = {
 };
 
 const MessageBubble = ({ message }: { message: SupportMessage }) => {
-  const isInternal = message.visibility === "INTERNAL";
+  const isInternal = message.visibility === INTERNAL_NOTE;
   const isStaff = message.authorKind === "STAFF";
   return (
     <div
@@ -53,7 +58,7 @@ const MessageBubble = ({ message }: { message: SupportMessage }) => {
         {message.authorName ?? AUTHOR_LABEL[message.authorKind]}
         {isInternal && <span className="text-amber-600 dark:text-amber-400"> · internal note</span>}
         {" · "}
-        {new Date(message.createdAt).toLocaleString()}
+        {formatDateTime(message.createdAt)}
       </p>
       <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
       {message.attachmentUrls.length > 0 && (
@@ -92,7 +97,7 @@ export const SupportTicketPage = () => {
   const setPriority = useSupportPriority(ticketId);
 
   const [body, setBody] = useState("");
-  const [visibility, setVisibility] = useState<SupportVisibilityValue>("PUBLIC");
+  const [visibility, setVisibility] = useState<SupportVisibilityValue>(PUBLIC_REPLY);
   const [moveToWaiting, setMoveToWaiting] = useState(false);
 
   if (isLoading) return <SupportTicketSkeleton />;
@@ -105,7 +110,7 @@ export const SupportTicketPage = () => {
       {
         body: body.trim(),
         visibility,
-        moveToWaitingOnCustomer: visibility === "PUBLIC" && moveToWaiting,
+        moveToWaitingOnCustomer: visibility === PUBLIC_REPLY && moveToWaiting,
       },
       {
         onSuccess: () => {
@@ -120,9 +125,7 @@ export const SupportTicketPage = () => {
 
   return (
     <div className="space-y-5">
-      <Link to="/support" className="text-sm text-muted-foreground hover:text-foreground">
-        &larr; All requests
-      </Link>
+      <BackLink to="/support">All requests</BackLink>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-muted-foreground">{ticket.reference}</span>
@@ -146,9 +149,9 @@ export const SupportTicketPage = () => {
               <div className="mb-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setVisibility("PUBLIC")}
+                  onClick={() => setVisibility(PUBLIC_REPLY)}
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    visibility === "PUBLIC"
+                    visibility === PUBLIC_REPLY
                       ? "bg-foreground text-background"
                       : "border border-border text-muted-foreground"
                   }`}
@@ -157,9 +160,9 @@ export const SupportTicketPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setVisibility("INTERNAL")}
+                  onClick={() => setVisibility(INTERNAL_NOTE)}
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    visibility === "INTERNAL"
+                    visibility === INTERNAL_NOTE
                       ? "bg-foreground text-background"
                       : "border border-border text-muted-foreground"
                   }`}
@@ -172,13 +175,13 @@ export const SupportTicketPage = () => {
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
                 placeholder={
-                  visibility === "PUBLIC"
+                  visibility === PUBLIC_REPLY
                     ? "This reply is emailed to the customer…"
                     : "Only the support team sees this…"
                 }
                 className="w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm text-foreground outline-none focus-visible:border-foreground"
               />
-              {visibility === "PUBLIC" && (
+              {visibility === PUBLIC_REPLY && (
                 <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <input
                     type="checkbox"
@@ -195,7 +198,7 @@ export const SupportTicketPage = () => {
                 isLoading={reply.isPending}
                 className="mt-2"
               >
-                {visibility === "PUBLIC" ? "Send reply" : "Add note"}
+                {visibility === PUBLIC_REPLY ? "Send reply" : "Add note"}
               </Button>
             </div>
           )}
@@ -286,11 +289,9 @@ export const SupportTicketPage = () => {
             <p className="mt-2">Category: {CATEGORY_LABELS[ticket.category]}</p>
             {ticket.relatedBrandName && <p className="mt-1">Brand: {ticket.relatedBrandName}</p>}
             {ticket.relatedOrderId && <p className="mt-1">Linked to an order.</p>}
-            <p className="mt-2">Opened {new Date(ticket.createdAt).toLocaleDateString()}</p>
+            <p className="mt-2">Opened {formatDate(ticket.createdAt)}</p>
             {ticket.firstRespondedAt && (
-              <p className="mt-1">
-                First reply {new Date(ticket.firstRespondedAt).toLocaleDateString()}
-              </p>
+              <p className="mt-1">First reply {formatDate(ticket.firstRespondedAt)}</p>
             )}
           </div>
         </aside>

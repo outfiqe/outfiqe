@@ -9,6 +9,7 @@ Socket.IO.
 
 ## Structure
 
+- `product-review.errors.ts` — `productReviewErrors`, the errors this module raises from more than one place.
 - `product-review.constants.ts` — page size bounds, review body/title length bounds, image count
   cap, and the rate limits for posting a review and casting a helpful vote.
 - `product-review.types.ts` — `ProductReviewRow` (repository-level Prisma shape) vs.

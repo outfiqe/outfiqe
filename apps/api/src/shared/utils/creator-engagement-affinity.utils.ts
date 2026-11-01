@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 
@@ -10,7 +12,7 @@ export const computeViewerEngagementAffinity = async (
   viewerId: string,
   lookbackDays: number,
 ): Promise<EngagementAffinity> => {
-  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - lookbackDays * millisecondsInDay);
 
   const rows = await prisma.$queryRaw<{ creator_id: string; tag: string | null }[]>(Prisma.sql`
     SELECT cl.creator_id, h.tag
@@ -48,7 +50,7 @@ export const listCreatorsByHashtagAffinity = async (
   limit: number,
 ): Promise<HashtagAffinityCandidate[]> => {
   if (tags.length === 0) return [];
-  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - lookbackDays * millisecondsInDay);
 
   const rows = await prisma.$queryRaw<{ creator_id: string; matching_posts: bigint }[]>(Prisma.sql`
     SELECT cl.creator_id, COUNT(*) AS matching_posts

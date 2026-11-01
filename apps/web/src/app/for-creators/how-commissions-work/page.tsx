@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  ExampleCallout,
   FaqAccordion,
   MarketingHero,
   MarketingSection,
@@ -83,6 +84,16 @@ const HowCommissionsWorkPage = () => (
       lede="Everything you earn on Outfiqe is tracked for you. Here is how a sale becomes a commission, and how that commission reaches your bank account."
     />
 
+    <MarketingSection heading="What is a commission?">
+      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p>
+          A commission is the money you earn when your look or link leads to a sale. You don&apos;t
+          pay for anything or handle the order. The shopper pays the normal price, and Outfiqe
+          tracks the sale for you.
+        </p>
+      </div>
+    </MarketingSection>
+
     <MarketingSection heading="From sale to payout">
       <StepList steps={lifecycle} />
     </MarketingSection>
@@ -99,6 +110,29 @@ const HowCommissionsWorkPage = () => (
           the commission.
         </p>
       </div>
+    </MarketingSection>
+
+    <MarketingSection heading="See it in action">
+      <ExampleCallout title="From Sita's tag to her bank account">
+        <p>
+          <strong>Day 1:</strong> Maya taps Sita&apos;s tag on a kurta.
+        </p>
+        <p>
+          <strong>Day 3:</strong> Maya buys it. That&apos;s within 7 days, so a pending commission
+          appears in Sita&apos;s Earnings.
+        </p>
+        <p>
+          <strong>Day 8:</strong> The order is delivered, and the 7-day return window starts.
+        </p>
+        <p>
+          <strong>Day 15:</strong> The window ends, and the commission is ready to withdraw.
+        </p>
+        <p>
+          <strong>Later:</strong> Sita requests a withdrawal. Our team reviews it and sends the
+          money to her verified bank account.
+        </p>
+        <p>If Maya had returned the kurta, the commission would have been removed.</p>
+      </ExampleCallout>
     </MarketingSection>
 
     <MarketingSection heading="Questions">

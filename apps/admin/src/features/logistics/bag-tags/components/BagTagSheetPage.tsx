@@ -1,6 +1,7 @@
 import { QrCode } from "@outfiqe/components";
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { Link } from "@tanstack/react-router";
+
+import { BackLink } from "@/components/BackLink";
 
 import { useBagTagSheet } from "../hooks/useBagTagSheet";
 
@@ -28,12 +29,7 @@ export const BagTagSheetPage = ({ batchId }: BagTagSheetPageProps) => {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <Link
-            to="/logistics/bag-tags"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            ← Bag stickers
-          </Link>
+          <BackLink to="/logistics/bag-tags">All bag stickers</BackLink>
           <h1 className="mt-1 font-display text-2xl font-bold text-foreground">
             {sheet.hubName} stickers
           </h1>

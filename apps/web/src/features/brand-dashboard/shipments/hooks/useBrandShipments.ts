@@ -8,12 +8,12 @@ import { brandFulfilmentApi } from "../api/brandFulfilmentApi";
 
 export const BRAND_SHIPMENTS_QUERY_KEY = ["brand-shipments"] as const;
 
-export const useBrandShipments = () => {
+export const useBrandShipments = (search?: string) => {
   const { isAuthenticated } = useAuth();
 
   return useInfiniteCursorPage(
-    BRAND_SHIPMENTS_QUERY_KEY,
-    (cursor) => brandFulfilmentApi.list(cursor),
+    search ? [...BRAND_SHIPMENTS_QUERY_KEY, search] : BRAND_SHIPMENTS_QUERY_KEY,
+    (cursor) => brandFulfilmentApi.list(cursor, search),
     isAuthenticated,
   );
 };

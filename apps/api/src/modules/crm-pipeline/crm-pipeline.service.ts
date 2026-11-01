@@ -1,18 +1,37 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DealStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
+import { toCsv } from "#lib/csv-writer.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 
-import { MAX_PIPELINE_STAGES, MIN_PIPELINE_STAGES } from "./crm-pipeline.constants.js";
+import {
+  MAX_CRM_EXPORT_ROWS,
+  MAX_PIPELINE_STAGES,
+  MIN_PIPELINE_STAGES,
+} from "./crm-pipeline.constants.js";
+import { crmPipelineErrors } from "./crm-pipeline.errors.js";
 import { crmPipelineRepository } from "./crm-pipeline.repository.js";
 import type {
+  DealListFilters,
   DealWithRelations,
   PipelineStageRecord,
   UpdateDealInput,
   UpdateStageInput,
 } from "./crm-pipeline.types.js";
+
+const NEXT_ROW = 1;
+const DEAL_EXPORT_HEADERS = [
+  "Opportunity",
+  "Stage",
+  "Result",
+  "Value",
+  "Expected close",
+  "Looked after by",
+  "Opened",
+  "Closed",
+];
 
 type TenantOrganization = { id: string; linkedBrandId: string | null };
 
@@ -50,7 +69,7 @@ const requireStage = async (
 ): Promise<PipelineStageRecord> => {
   const stage = await crmPipelineRepository.findStage(organizationId, stageId);
   if (!stage)
-    throw new AppError("STAGE_NOT_FOUND", "Pipeline stage not found.", HTTP_STATUS.NOT_FOUND);
+    throw new AppError("STAGE_NOT_FOUND", "Sales stage not found.", HTTP_STATUS.NOT_FOUND);
   return stage;
 };
 
@@ -79,11 +98,7 @@ export const crmPipelineService = {
       return await crmPipelineRepository.createStage({ organizationId, ...input }, sortOrder);
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new AppError(
-          "STAGE_NAME_TAKEN",
-          "A stage with that name already exists.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw crmPipelineErrors.stageNameTaken();
       }
       throw error;
     }
@@ -103,11 +118,7 @@ export const crmPipelineService = {
       return await crmPipelineRepository.updateStage(organizationId, stageId, data);
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        throw new AppError(
-          "STAGE_NAME_TAKEN",
-          "A stage with that name already exists.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw crmPipelineErrors.stageNameTaken();
       }
       throw error;
     }
@@ -129,7 +140,7 @@ export const crmPipelineService = {
     if (dealCount > 0) {
       throw new AppError(
         "STAGE_NOT_EMPTY",
-        "Move or delete this stage's deals before removing it.",
+        "Move or delete this stage's opportunities before removing it.",
         HTTP_STATUS.CONFLICT,
       );
     }
@@ -157,13 +168,48 @@ export const crmPipelineService = {
     await crmPipelineRepository.reorderStages(organizationId, orderedStageIds);
   },
 
-  listDeals(organizationId: string): Promise<DealWithRelations[]> {
-    return crmPipelineRepository.listDeals(organizationId);
+  listDeals(organizationId: string, filters: DealListFilters): Promise<DealWithRelations[]> {
+    return crmPipelineRepository.listDeals(organizationId, filters);
+  },
+
+  async exportDealsCsv(
+    organizationId: string,
+    filters: DealListFilters,
+  ): Promise<{ csv: string; rowCount: number }> {
+    const deals = await crmPipelineRepository.listDeals(
+      organizationId,
+      filters,
+      MAX_CRM_EXPORT_ROWS + NEXT_ROW,
+    );
+    if (deals.length > MAX_CRM_EXPORT_ROWS) {
+      throw new AppError(
+        "CRM_EXPORT_TOO_LARGE",
+        `This list has more than ${MAX_CRM_EXPORT_ROWS} opportunities. Filter by owner first.`,
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    return {
+      csv: toCsv(
+        DEAL_EXPORT_HEADERS,
+        deals.map((deal) => [
+          deal.title,
+          deal.stageName,
+          deal.status,
+          deal.value,
+          deal.expectedCloseDate?.toISOString() ?? null,
+          deal.ownerName,
+          deal.createdAt.toISOString(),
+          deal.closedAt?.toISOString() ?? null,
+        ]),
+      ),
+      rowCount: deals.length,
+    };
   },
 
   async getDeal(organizationId: string, dealId: string): Promise<DealWithRelations> {
     const deal = await crmPipelineRepository.findDeal(organizationId, dealId);
-    if (!deal) throw new AppError("DEAL_NOT_FOUND", "Deal not found.", HTTP_STATUS.NOT_FOUND);
+    if (!deal)
+      throw new AppError("DEAL_NOT_FOUND", "Opportunity not found.", HTTP_STATUS.NOT_FOUND);
     return deal;
   },
 
@@ -204,7 +250,7 @@ export const crmPipelineService = {
     dealId: string,
     data: UpdateDealInput,
   ): Promise<DealWithRelations> {
-    await this.getDeal(organizationId, dealId);
+    const { stageId: currentStageId } = await this.getDeal(organizationId, dealId);
     await this.assertOwnerMembership(organizationId, data.ownerMembershipId ?? null);
 
     let resolvedStatus: { status: DealStatus; closedAt: Date | null } | null = null;
@@ -218,6 +264,7 @@ export const crmPipelineService = {
       dealId,
       data,
       resolvedStatus,
+      data.stageId && data.stageId !== currentStageId ? new Date() : undefined,
     );
     await touchCrmActivity(organizationId);
     return deal;
@@ -234,7 +281,7 @@ export const crmPipelineService = {
     if (!isPartner) {
       throw new AppError(
         "NOT_A_PARTNER",
-        "A deal can only be opened against a partner of this brand.",
+        "An opportunity can only be opened against a partner of this brand.",
         HTTP_STATUS.BAD_REQUEST,
       );
     }
@@ -252,7 +299,7 @@ export const crmPipelineService = {
     if (!membership) {
       throw new AppError(
         "OWNER_NOT_FOUND",
-        "The deal owner isn't a member of this organization.",
+        "The opportunity owner isn't a member of this organization.",
         HTTP_STATUS.NOT_FOUND,
       );
     }

@@ -1,4 +1,5 @@
 import { FormBanner, Select } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 
@@ -83,7 +84,7 @@ export const BuildMetricsSection = () => {
                 {metrics.data.weeks.map((week) => (
                   <tr key={week.weekStart} className="border-t border-border">
                     <th scope="row" className="py-2 pr-4 font-normal">
-                      {new Date(week.weekStart).toLocaleDateString()}
+                      {formatDate(week.weekStart)}
                     </th>
                     <td className="py-2 pr-4">{week.buildsStartedAlone}</td>
                     <td className="py-2 pr-4">{week.buildsStartedFromChat}</td>

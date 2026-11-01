@@ -11,10 +11,11 @@ the block/settings rule. The Admin/Support conversation type is not built yet â€
 
 ## Structure
 
-The `chat.*` files at the root are the shared availability and settings layer. Each part of
-messaging has its own folder holding its routes, controller, service, repository, schemas, types,
-utils and tests: `conversations/`, `messages/`, `groups/`, and `build-chat/` (the group chat that
-belongs to an outfit build).
+- `chat.errors.ts` â€” `chatErrors`, the errors this module raises from more than one place.
+  The `chat.*` files at the root are the shared availability and settings layer. Each part of
+  messaging has its own folder holding its routes, controller, service, repository, schemas, types,
+  utils and tests: `conversations/`, `messages/`, `groups/`, and `build-chat/` (the group chat that
+  belongs to an outfit build).
 
 **Availability (Phase 1)**
 

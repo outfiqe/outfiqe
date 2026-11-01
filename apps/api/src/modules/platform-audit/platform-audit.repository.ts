@@ -1,7 +1,9 @@
 import { prisma, prismaRead } from "#db/prisma.js";
-import type { Prisma } from "#generated/prisma/client.js";
+import { Prisma } from "#generated/prisma/client.js";
 
+import { MAX_PLATFORM_AUDIT_FILTER_OPTIONS } from "./platform-audit.constants.js";
 import type {
+  PlatformAuditFilterOptions,
   PlatformAuditListFilters,
   PlatformAuditLogRecord,
   RecordPlatformAuditInput,
@@ -27,7 +29,46 @@ const listRowSelect = {
 
 type ListRow = Prisma.PlatformAuditLogGetPayload<{ select: typeof listRowSelect }>;
 
+const listDistinctActions = async (): Promise<string[]> => {
+  const rows = await prismaRead.$queryRaw<{ action: string }[]>(Prisma.sql`
+    SELECT DISTINCT action
+    FROM platform_audit_logs
+    ORDER BY action
+    LIMIT ${MAX_PLATFORM_AUDIT_FILTER_OPTIONS}
+  `);
+  return rows.map(({ action }) => action);
+};
+
+const listDistinctTargetTypes = async (): Promise<string[]> => {
+  const rows = await prismaRead.$queryRaw<{ target_type: string }[]>(Prisma.sql`
+    SELECT DISTINCT target_type
+    FROM platform_audit_logs
+    WHERE target_type IS NOT NULL
+    ORDER BY target_type
+    LIMIT ${MAX_PLATFORM_AUDIT_FILTER_OPTIONS}
+  `);
+  return rows.map(({ target_type: targetType }) => targetType);
+};
+
+const listDistinctActors = (): Promise<PlatformAuditFilterOptions["actors"]> =>
+  prismaRead.$queryRaw<PlatformAuditFilterOptions["actors"]>(Prisma.sql`
+    SELECT DISTINCT actor.id, actor.name
+    FROM platform_audit_logs entry
+    JOIN users actor ON actor.id = entry.actor_user_id
+    ORDER BY actor.name, actor.id
+    LIMIT ${MAX_PLATFORM_AUDIT_FILTER_OPTIONS}
+  `);
+
 export const platformAuditRepository = {
+  async listFilterOptions(): Promise<PlatformAuditFilterOptions> {
+    const [actions, targetTypes, actors] = await Promise.all([
+      listDistinctActions(),
+      listDistinctTargetTypes(),
+      listDistinctActors(),
+    ]);
+    return { actions, targetTypes, actors };
+  },
+
   async insert(input: RecordPlatformAuditInput): Promise<void> {
     await prisma.platformAuditLog.create({
       data: {

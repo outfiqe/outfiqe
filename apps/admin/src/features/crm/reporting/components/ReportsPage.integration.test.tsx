@@ -80,8 +80,8 @@ describe("ReportsPage", () => {
     renderReportsPage();
 
     expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
-    expect(await screen.findByText("Pipeline value by stage")).toBeInTheDocument();
-    expect(screen.getByText("Support tickets")).toBeInTheDocument();
+    expect(await screen.findByText("Sales right now")).toBeInTheDocument();
+    expect(screen.getByText("Support right now")).toBeInTheDocument();
   });
 
   it("shows the plan-gate banner when advanced features are locked", async () => {

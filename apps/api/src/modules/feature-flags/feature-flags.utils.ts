@@ -6,6 +6,9 @@ import type {
   FeatureFlagViewer,
 } from "./feature-flags.types.js";
 
+const FLAG_ON = true;
+const FLAG_OFF = false;
+
 export const defaultFeatureFlagState = (key: string): FeatureFlagState => ({
   key,
   rollout: FeatureFlagRollout.OFF,
@@ -18,8 +21,8 @@ export const isFlagOnFor = (
   { rollout, allowedUserIds, allowedBrandIds }: FeatureFlagSettings,
   { userId, brandIds }: FeatureFlagViewer,
 ): boolean => {
-  if (rollout === FeatureFlagRollout.EVERYONE) return true;
-  if (rollout === FeatureFlagRollout.OFF) return false;
+  if (rollout === FeatureFlagRollout.EVERYONE) return FLAG_ON;
+  if (rollout === FeatureFlagRollout.OFF) return FLAG_OFF;
 
   const isAllowedUser = userId !== null && allowedUserIds.includes(userId);
   const isAllowedBrandMember = brandIds.some((brandId) => allowedBrandIds.includes(brandId));

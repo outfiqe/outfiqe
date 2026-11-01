@@ -22,6 +22,8 @@ import { platformRolesApi } from "@/features/platform-roles/api/platformRolesApi
 import { PlatformRolesSection } from "@/features/platform-roles/components/PlatformRolesSection";
 import { PlatformTeamSection } from "@/features/platform-roles/components/PlatformTeamSection";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { teamApi } from "../api/teamApi";
 import type { AdminInviteSummary } from "../api/teamSchemas";
@@ -56,7 +58,7 @@ export const TeamPage = () => {
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: EMPTY_INVITE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const invite = useApiMutation({
@@ -151,7 +153,7 @@ export const TeamPage = () => {
 
         <div className="mt-6 space-y-3">
           {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
+            Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <CardRowSkeleton
                 key={index}
                 hasBadge={false}

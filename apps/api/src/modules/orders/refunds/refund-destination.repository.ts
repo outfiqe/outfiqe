@@ -2,6 +2,9 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { OrderRefundStatus, type RefundDestinationKind } from "#generated/prisma/enums.js";
 
+const MANUAL_REFUND_NOT_FLAGGED = false;
+const MANUAL_REFUND_FLAGGED = true;
+
 const NOTHING_UPDATED = 0;
 
 const destinationSelect = {
@@ -119,9 +122,9 @@ export const orderRefundDestinationRepository = {
             },
           },
         });
-        if (count === NOTHING_UPDATED) return false;
+        if (count === NOTHING_UPDATED) return MANUAL_REFUND_NOT_FLAGGED;
         await tx.order.update({ where: { id: orderId }, data: { needsManualRefund: true } });
-        return true;
+        return MANUAL_REFUND_FLAGGED;
       });
       if (isMoved) movedRefundIds.push(id);
     }

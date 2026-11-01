@@ -1,3 +1,4 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
 import { createTranslatedQueryWrapper } from "@test/integration/translationsWrapper";
@@ -12,6 +13,12 @@ import { MyBuildsPage } from "./MyBuildsPage";
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
   useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
+const trackEvent = vi.fn();
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
 }));
 
 beforeEach(() => window.history.replaceState(null, "", "/builds"));
@@ -74,6 +81,9 @@ describe("MyBuildsPage", () => {
     await user.click(await screen.findByRole("button", { name: "New build" }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/builds/outfit-new"));
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.OUTFIT_BUILD_CREATE, {
+      build_id: "outfit-new",
+    });
   });
 
   it("says builds are coming soon while the feature is switched off", async () => {

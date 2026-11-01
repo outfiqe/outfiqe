@@ -3,6 +3,7 @@ import type { AxiosError } from "axios";
 import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 
 import { ApiClientError } from "../errors";
+import { isSessionRejected } from "./sessionRefresh";
 
 type RequestOptions = AxiosRequestConfig & { skipAuthRetry?: boolean };
 type RetriableConfig = InternalAxiosRequestConfig & { skipAuthRetry?: boolean; _retried?: boolean };
@@ -101,9 +102,11 @@ export const createApiClient = ({
         try {
           await refreshAccessToken();
           return http(config);
-        } catch {
-          accessToken = null;
-          unauthorizedHandler?.();
+        } catch (refreshError) {
+          if (isSessionRejected(refreshError)) {
+            accessToken = null;
+            unauthorizedHandler?.();
+          }
         }
       }
 
@@ -123,6 +126,11 @@ export const createApiClient = ({
 
   const get = async <T>(path: string, options?: RequestOptions): Promise<ApiSuccessEnvelope<T>> => {
     const res = await http.get<ApiSuccessEnvelope<T>>(path, options);
+    return res.data;
+  };
+
+  const getBlob = async (path: string, options?: RequestOptions): Promise<Blob> => {
+    const res = await http.get<Blob>(path, { ...options, responseType: "blob" });
     return res.data;
   };
 
@@ -160,6 +168,7 @@ export const createApiClient = ({
 
   return {
     get,
+    getBlob,
     post,
     patch,
     put,

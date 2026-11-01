@@ -23,10 +23,12 @@ then confirm the outcome when the gateway redirects them back.
   can also show a "this already went through" message instead of a red error.
 - `hooks/useVerifyPayment.ts` — polls `POST /payments/:orderId/verify` every 3s while the server
   says `PENDING`, up to 10 attempts, then exposes `hasTimedOut`.
-- `components/PaymentCallbackScreen.tsx` — the callback page body. Takes `orderId` and an optional
-  `gatewayReportedFailure` as props (the route pages under
-  `app/payments/[provider]/callback/[orderId]/` supply them) and picks one of `PaymentSuccess` /
-  `PaymentFailed` / `PaymentStillPending` / `PaymentPending` from the verify result.
+- `components/PaymentCallbackScreen.tsx` — the callback page body. Takes `orderId`, the
+  `paymentProvider` from the URL and an optional `gatewayReportedFailure` as props (the route pages
+  under `app/payments/[provider]/callback/[orderId]/` supply them), and picks one of
+  `PaymentSuccess` / `PaymentFailed` / `PaymentStillPending` / `PaymentPending` from the verify
+  result. `PaymentFailed` sends the `checkout:payment_fail` analytics event once per order, with
+  the gateway as the payment method (see `features/analytics`).
 - `api/paymentsApi.ts` / `paymentsSchemas.ts` — the two endpoints and their response shapes.
 
 ## Funnel

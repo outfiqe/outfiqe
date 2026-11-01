@@ -2,6 +2,7 @@ import { HTTP_STATUS } from "#constants/http.constants.js";
 import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { crmAccessErrors } from "../crm-access.errors.js";
 import { assertPermissionKeysWithinActorGrant } from "../crm-access.guards.js";
 import type {
   ActingPermissionGrant,
@@ -64,7 +65,7 @@ export const crmRoleService = {
   ): Promise<RoleWithPermissions> {
     const role = await crmRoleRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
+      throw crmAccessErrors.roleNotFound();
     }
     if (role.isBuiltIn) {
       throw new AppError(
@@ -91,7 +92,7 @@ export const crmRoleService = {
   async deleteRole(organizationId: string, roleId: string): Promise<void> {
     const role = await crmRoleRepository.findRoleById(organizationId, roleId);
     if (!role) {
-      throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
+      throw crmAccessErrors.roleNotFound();
     }
     if (role.isBuiltIn) {
       throw new AppError(
@@ -103,22 +104,14 @@ export const crmRoleService = {
 
     const memberCount = await crmRoleRepository.countMembershipsForRole(organizationId, roleId);
     if (!canDeleteRole(role, memberCount)) {
-      throw new AppError(
-        "ROLE_IN_USE",
-        "Reassign every member on this role before deleting it.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw crmAccessErrors.roleInUse();
     }
 
     try {
       await crmRoleRepository.deleteRole(organizationId, roleId);
     } catch (err) {
       if (isForeignKeyConstraintError(err)) {
-        throw new AppError(
-          "ROLE_IN_USE",
-          "Reassign every member on this role before deleting it.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw crmAccessErrors.roleInUse();
       }
       throw err;
     }

@@ -1,3 +1,6 @@
+export const NEXT_PAGE_PROBE_ROWS = 1;
+export const CURSOR_ROW_SKIP = 1;
+
 export type CursorPageParams = {
   cursor?: string;
   limit: number;

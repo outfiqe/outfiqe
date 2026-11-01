@@ -16,6 +16,7 @@ const DASHBOARD_PATHS = new Set([
   "/crm",
   "/crm/reports",
   "/financial-rollup",
+  "/financial-rollup/ledger",
   "/gamification",
   "/platform/jobs",
 ]);
@@ -96,6 +97,7 @@ const LIST_PATHS = new Set([
   "/support",
   "/tag-reports",
   "/tag-reviews",
+  "/tag-reviews/tags",
   "/trending",
   "/users",
   "/withdraw-requests",

@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import {
   PartnerSearchField,
@@ -24,13 +25,13 @@ import {
 } from "../../relationships/components/PartnerSearchField";
 import { crmPipelineApi } from "../api/pipelineApi";
 import type { Deal, PipelineStage } from "../api/pipelineSchemas";
+import { DEALS_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
 import {
   buildDealFormSchema,
   type DealFormValues,
   dealValueFrom,
 } from "../schemas/dealForm.schema";
 
-const DEALS_QUERY_KEY = ["crm-deals"];
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
 type DealFormModalProps = {
@@ -52,7 +53,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
       value: String(deal?.value ?? 0),
       partnerCreatorId: "",
     },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const save = useApiMutation({
@@ -69,15 +70,15 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             value: dealValueFrom(values.value),
             partnerCreatorId: values.partnerCreatorId,
           }),
-    invalidateKeys: [DEALS_QUERY_KEY],
-    successMessage: isEditing ? "Deal saved." : "Deal created.",
+    invalidateKeys: isEditing ? [DEALS_QUERY_KEY, toDealQueryKey(deal.id)] : [DEALS_QUERY_KEY],
+    successMessage: isEditing ? "Opportunity saved." : "Opportunity created.",
     onSuccess: () => onClose(),
   });
 
   const submitDeal = form.handleSubmit((values) => save.mutate(values));
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditing ? "Edit deal" : "New deal"}>
+    <Modal open={open} onClose={onClose} title={isEditing ? "Edit opportunity" : "New opportunity"}>
       <Form {...form}>
         <form onSubmit={submitDeal} noValidate className="space-y-4">
           <FormField
@@ -158,7 +159,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
               Cancel
             </Button>
             <Button type="submit" isLoading={save.isPending}>
-              {isEditing ? "Save deal" : "Create deal"}
+              {isEditing ? "Save opportunity" : "Create opportunity"}
             </Button>
           </div>
         </form>

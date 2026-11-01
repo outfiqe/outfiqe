@@ -263,7 +263,15 @@ describe("GET /api/crm/partners/:creatorId", () => {
       .set("Host", tenant.host)
       .set("Authorization", authHeaderFor(tenant.staff.id));
     expect(found.status).toBe(200);
-    expect(found.body.data.productBreakdown).toHaveLength(1);
+    expect(found.body.data.productBreakdown).toEqual([
+      expect.objectContaining({
+        productId: product.id,
+        imageUrl: null,
+        price: 1500,
+        isThrift: false,
+        isLive: true,
+      }),
+    ]);
     expect(found.body.data.recentAttributedOrders).toHaveLength(1);
 
     const stranger = await createUser("Unrelated Muse", UserRole.CUSTOMER);
@@ -272,6 +280,50 @@ describe("GET /api/crm/partners/:creatorId", () => {
       .set("Host", tenant.host)
       .set("Authorization", authHeaderFor(tenant.staff.id));
     expect(missing.status).toBe(404);
+  });
+
+  it("opens a muse the list shows who has no clicks or orders yet", async () => {
+    const { brand, product } = await createBrandWithProduct("New Partner Brand");
+    const tenant = await linkTenantToBrand(brand.id);
+    const creator = await createUser("New Muse", UserRole.CUSTOMER);
+    const look = await prisma.creatorLook.create({
+      data: { creatorId: creator.id, imageUrl: "https://img.test/look.jpg" },
+    });
+    await prisma.creatorLookProduct.create({
+      data: { creatorLookId: look.id, productId: product.id },
+    });
+
+    const list = await request(testApp)
+      .get("/api/crm/partners")
+      .set("Host", tenant.host)
+      .set("Authorization", authHeaderFor(tenant.staff.id));
+    expect(list.body.data.items).toHaveLength(1);
+
+    const detail = await request(testApp)
+      .get(`/api/crm/partners/${creator.id}`)
+      .set("Host", tenant.host)
+      .set("Authorization", authHeaderFor(tenant.staff.id));
+    expect(detail.status).toBe(200);
+    expect(detail.body.data).toMatchObject({
+      tagClickCount: 0,
+      attributedOrderCount: 0,
+      productBreakdown: [],
+      recentAttributedOrders: [],
+    });
+  });
+
+  it("keeps a muse hidden from a brand they only worked with elsewhere", async () => {
+    const { brand } = await createBrandWithProduct("Own Brand");
+    const { product: otherProduct } = await createBrandWithProduct("Other Brand");
+    const tenant = await linkTenantToBrand(brand.id);
+    const creator = await createUser("Other Brand Muse", UserRole.CUSTOMER);
+    await attachCreatorSignals(creator.id, otherProduct.id);
+
+    const detail = await request(testApp)
+      .get(`/api/crm/partners/${creator.id}`)
+      .set("Host", tenant.host)
+      .set("Authorization", authHeaderFor(tenant.staff.id));
+    expect(detail.status).toBe(404);
   });
 });
 

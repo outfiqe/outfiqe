@@ -77,6 +77,75 @@ describe("GET /api/brand-applications", () => {
   });
 });
 
+describe("POST /api/brand-applications/:id/resend-invite", () => {
+  const approveNewApplication = async (authHeader: string) => {
+    const application = await prisma.brandApplication.create({ data: validApplicationBody() });
+    await request(testApp)
+      .post(`/api/brand-applications/${application.id}/approve`)
+      .set("Authorization", authHeader);
+    return application;
+  };
+
+  it("replaces the invite so only the newest link works", async () => {
+    const { authHeader } = await createAdminSession();
+    const { id: applicationId } = await approveNewApplication(authHeader);
+    const { tokenHash: originalTokenHash } = await prisma.brandInvite.findFirstOrThrow({
+      where: { brand: { applicationId } },
+    });
+
+    const response = await request(testApp)
+      .post(`/api/brand-applications/${applicationId}/resend-invite`)
+      .set("Authorization", authHeader);
+
+    const invites = await prisma.brandInvite.findMany({ where: { brand: { applicationId } } });
+    expect(response.status).toBe(200);
+    expect(response.body.data.isInviteDelivered).toBe(true);
+    expect(invites).toHaveLength(1);
+    expect(invites[0]?.tokenHash).not.toBe(originalTokenHash);
+  });
+
+  it("refuses once the brand has accepted its invite", async () => {
+    const { authHeader } = await createAdminSession();
+    const { id: applicationId } = await approveNewApplication(authHeader);
+    await prisma.brandInvite.updateMany({
+      where: { brand: { applicationId } },
+      data: { acceptedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .post(`/api/brand-applications/${applicationId}/resend-invite`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("NO_INVITE_TO_RESEND");
+  });
+
+  it("refuses an application that was never approved", async () => {
+    const { authHeader } = await createAdminSession();
+    const application = await prisma.brandApplication.create({ data: validApplicationBody() });
+
+    const response = await request(testApp)
+      .post(`/api/brand-applications/${application.id}/resend-invite`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+  });
+
+  it("lists an approved brand as still waiting to set up", async () => {
+    const { authHeader } = await createAdminSession();
+    const { id: applicationId } = await approveNewApplication(authHeader);
+
+    const response = await request(testApp)
+      .get("/api/brand-applications?status=APPROVED&limit=50")
+      .set("Authorization", authHeader);
+
+    const listedApplication = response.body.data.applications.find(
+      ({ id }: { id: string }) => id === applicationId,
+    );
+    expect(listedApplication.isAwaitingBrandSetup).toBe(true);
+  });
+});
+
 describe("POST /api/brand-applications/:id/approve", () => {
   it("approves a pending application and provisions a brand invite", async () => {
     const { authHeader } = await createAdminSession();

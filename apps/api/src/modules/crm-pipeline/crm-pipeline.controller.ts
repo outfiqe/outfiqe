@@ -2,6 +2,9 @@ import type { Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { CSV_CONTENT_TYPE } from "#lib/csv-writer.utils.js";
+import logger from "#lib/winston.utils.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
 
@@ -9,6 +12,7 @@ import type {
   CreateDealBody,
   CreateStageBody,
   DealIdParams,
+  DealListQuery,
   ReorderStagesBody,
   StageIdParams,
   UpdateDealBody,
@@ -55,8 +59,32 @@ export const crmPipelineController = {
   },
 
   async listDeals(_req: Request, res: Response) {
+    const filters = validated.query<DealListQuery>(res);
     const organization = getResolvedOrganization(res);
-    sendSuccess(res, await crmPipelineService.listDeals(organization.id), "Deals.");
+    sendSuccess(res, await crmPipelineService.listDeals(organization.id, filters), "Deals.");
+  },
+
+  async exportDeals(_req: Request, res: Response) {
+    const filters = validated.query<DealListQuery>(res);
+    const organization = getResolvedOrganization(res);
+    const { csv, rowCount } = await crmPipelineService.exportDealsCsv(organization.id, filters);
+
+    const exporterId = getAuthPrincipal(res)?.userId ?? "unknown";
+    logger.info(
+      `CRM opportunities export: org=${organization.id} exporter=${exporterId} rows=${rowCount}`,
+    );
+
+    res
+      .status(HTTP_STATUS.OK)
+      .set("Content-Type", CSV_CONTENT_TYPE)
+      .set("Content-Disposition", `attachment; filename="opportunities-${Date.now()}.csv"`)
+      .send(csv);
+  },
+
+  async getDeal(_req: Request, res: Response) {
+    const { dealId } = validated.params<DealIdParams>(res);
+    const organization = getResolvedOrganization(res);
+    sendSuccess(res, await crmPipelineService.getDeal(organization.id, dealId), "Deal.");
   },
 
   async createDeal(_req: Request, res: Response) {

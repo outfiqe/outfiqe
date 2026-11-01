@@ -2,14 +2,19 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import {
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
   PaymentTransactionType,
 } from "#generated/prisma/enums.js";
+import { orderFulfilmentGroupRepository } from "#modules/orders/fulfilment-groups/fulfilment-group.repository.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { SUPERSEDED_BY_RETRY_MARKER, VERIFIABLE_ATTEMPTS_LIMIT } from "./payment.constants.js";
+
+const ORDER_NOT_EXPIRED = false;
+const ORDER_EXPIRED = true;
 
 const SUPERSEDED_ATTEMPT_FILTER = {
   status: PaymentTransactionStatus.FAILED,
@@ -158,12 +163,19 @@ export const paymentRepository = {
     return prisma.$transaction(async (tx) => {
       const { count } = await tx.order.updateMany({
         where: { id: orderId, paymentStatus: PaymentStatus.INITIATED },
-        data: { paymentStatus: PaymentStatus.FAILED, fulfilmentStatus: FulfilmentStatus.CANCELLED },
+        data: {
+          paymentStatus: PaymentStatus.FAILED,
+          fulfilmentStatus: FulfilmentStatus.CANCELLED,
+          fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+        },
       });
-      if (count === NO_ORDERS_EXPIRED) return false;
+      if (count === NO_ORDERS_EXPIRED) return ORDER_NOT_EXPIRED;
 
+      const expiredAt = new Date();
+      await orderFulfilmentGroupRepository.cancelFulfilmentGroupsForOrder(tx, orderId, expiredAt);
+      await orderFulfilmentGroupRepository.cancelUncollectedPickupsForOrder(tx, orderId, expiredAt);
       await paymentRepository.failPendingTransactions(tx, orderId);
-      return true;
+      return ORDER_EXPIRED;
     });
   },
 

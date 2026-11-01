@@ -210,6 +210,7 @@ type AutocompleteContentProps = React.ComponentPropsWithoutRef<typeof PopoverPri
 export const AutocompleteContent = ({
   className,
   children,
+  onInteractOutside,
   ...props
 }: AutocompleteContentProps) => {
   const { contentRef, listboxId, activeValue, setActiveValue, autoHighlightFirst } =
@@ -227,6 +228,14 @@ export const AutocompleteContent = ({
     setActiveValue(autoHighlightFirst ? (options.at(0)?.dataset.value ?? null) : null);
   });
 
+  const keepOpenForOwnInput: AutocompleteContentProps["onInteractOutside"] = (event) => {
+    onInteractOutside?.(event);
+    const { target } = event.detail.originalEvent;
+    const isOwnInput =
+      target instanceof Element && target.getAttribute("aria-controls") === listboxId;
+    if (isOwnInput) event.preventDefault();
+  };
+
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -236,6 +245,7 @@ export const AutocompleteContent = ({
         align="start"
         sideOffset={6}
         onOpenAutoFocus={(event) => event.preventDefault()}
+        onInteractOutside={keepOpenForOwnInput}
         className={cn(
           "max-h-72 w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border border-border bg-card p-1.5 shadow-lg",
           OVERLAY_LAYER.FLOATING,

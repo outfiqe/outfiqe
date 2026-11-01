@@ -103,6 +103,7 @@ export const supportRequesterService = {
 
   listMine(requesterUserId: string, query: MineListQuery): Promise<SupportTicketPage> {
     return supportRepository.listForRequester(requesterUserId, {
+      search: query.search,
       cursor: query.cursor,
       limit: query.limit,
     });

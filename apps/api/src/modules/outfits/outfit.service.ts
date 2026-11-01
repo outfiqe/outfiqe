@@ -33,6 +33,9 @@ import { parseSnapshotItems, toSummaryView, toViewerRole } from "./outfit.utils.
 import { loadCoversForBuilds } from "./photos/photo.service.js";
 import { outfitShareRepository } from "./visibility/visibility.repository.js";
 
+const CANNOT_SEE_VERSION = false;
+const CAN_SEE_VERSION = true;
+
 const FIRST_VERSION = 0;
 
 const LOOKAHEAD_ROW = 1;
@@ -91,9 +94,9 @@ const canSeePublishedVersion = async (
   outfit: NonNullable<Awaited<ReturnType<typeof outfitRepository.findAccess>>>,
   viewerId: string,
 ): Promise<boolean> => {
-  if (outfit.removedAt !== null) return false;
-  if (outfit.visibility === OutfitVisibility.PUBLIC) return true;
-  if (outfit.visibility !== OutfitVisibility.SHARED) return false;
+  if (outfit.removedAt !== null) return CANNOT_SEE_VERSION;
+  if (outfit.visibility === OutfitVisibility.PUBLIC) return CAN_SEE_VERSION;
+  if (outfit.visibility !== OutfitVisibility.SHARED) return CANNOT_SEE_VERSION;
   return outfitShareRepository.hasShare(prisma, outfit.id, viewerId);
 };
 
@@ -194,9 +197,9 @@ export const outfitService = {
 
   async listMine(
     userId: string,
-    { cursor, limit }: ListOutfitsQuery,
+    { search, cursor, limit }: ListOutfitsQuery,
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
-    const rows = await outfitRepository.listForMember(userId, { cursor, limit });
+    const rows = await outfitRepository.listForMember(userId, { search, cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     const coversByOutfitId = await loadCoversForBuilds(
       userId,
@@ -216,9 +219,9 @@ export const outfitService = {
 
   async listSharedWithMe(
     userId: string,
-    { cursor, limit }: ListOutfitsQuery,
+    { search, cursor, limit }: ListOutfitsQuery,
   ): Promise<{ items: OutfitSummaryView[]; nextCursor: string | null }> {
-    const rows = await outfitShareRepository.listSharedWith(userId, { cursor, limit });
+    const rows = await outfitShareRepository.listSharedWith(userId, { search, cursor, limit });
     const { items, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     const coversByOutfitId = await loadCoversForBuilds(
       userId,

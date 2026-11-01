@@ -23,13 +23,10 @@ const NO_CONTRIBUTORS = 0;
 
 type PublicBuildDetailViewProps = {
   build: PublicBuildDetail;
-  headingLevel?: "h1" | "h2";
+  showsTitle?: boolean;
 };
 
-export const PublicBuildDetailView = ({
-  build,
-  headingLevel = "h1",
-}: PublicBuildDetailViewProps) => {
+export const PublicBuildDetailView = ({ build, showsTitle = true }: PublicBuildDetailViewProps) => {
   const t = useTranslations("outfitBuild.public");
   const tPublished = useTranslations("outfitBuild.published");
   const tBudget = useTranslations("outfitBuild.budget");
@@ -38,17 +35,18 @@ export const PublicBuildDetailView = ({
   const { isAuthenticated } = useAuth();
   const [isReporting, setIsReporting] = useState(false);
   const reportBuild = useReportContent(() => setIsReporting(false));
-  const Heading = headingLevel;
   const hasContributors = build.contributors.length > NO_CONTRIBUTORS;
 
   return (
     <article className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Heading className="font-display text-2xl font-bold text-foreground">
-            {build.title ?? tBoard("untitled")}
-          </Heading>
-          <p className="mt-1 text-sm text-muted-foreground">
+          {showsTitle && (
+            <h1 className="mb-1 font-display text-2xl font-bold text-foreground">
+              {build.title ?? tBoard("untitled")}
+            </h1>
+          )}
+          <p className="text-sm text-muted-foreground">
             {tPublished("lockedOn", { date: formatNepalDateTime(build.lockedAt, locale) })}
           </p>
         </div>

@@ -3,6 +3,7 @@ import { describeError } from "#redis/redis.utils.js";
 
 import { platformAuditRepository } from "./platform-audit.repository.js";
 import type {
+  PlatformAuditFilterOptions,
   PlatformAuditListFilters,
   PlatformAuditLogPage,
   RecordPlatformAuditInput,
@@ -17,6 +18,10 @@ export const platformAudit = {
         `Platform audit write failed for ${input.action} by ${input.actorUserId}: ${describeError(error)}`,
       );
     }
+  },
+
+  listFilterOptions(): Promise<PlatformAuditFilterOptions> {
+    return platformAuditRepository.listFilterOptions();
   },
 
   async list(filters: PlatformAuditListFilters): Promise<PlatformAuditLogPage> {

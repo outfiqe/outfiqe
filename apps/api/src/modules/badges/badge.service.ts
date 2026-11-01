@@ -13,6 +13,7 @@ import { xpService } from "#modules/xp/xp.service.js";
 import { storage } from "#storage/storage.js";
 
 import { ICON_IMAGE_EDGE_PX } from "./badge.constants.js";
+import { badgeErrors } from "./badge.errors.js";
 import { badgeRepository } from "./badge.repository.js";
 import type {
   AwardBadgeBody,
@@ -210,7 +211,7 @@ const listAllBadgesAdmin = async (): Promise<BadgeAdminRecord[]> =>
 const findBadgeAdmin = async (badgeId: string): Promise<BadgeAdminRecord> => {
   const badge = await badgeRepository.findBadgeAdminById(badgeId);
   if (!badge) {
-    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", HTTP_STATUS.NOT_FOUND);
+    throw badgeErrors.badgeNotFound();
   }
   return badge;
 };
@@ -263,7 +264,7 @@ const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> =>
 const updateBadge = async (badgeId: string, input: UpdateBadgeBody): Promise<BadgeAdminRecord> => {
   const existing = await badgeRepository.findBadgeAdminById(badgeId);
   if (!existing) {
-    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", HTTP_STATUS.NOT_FOUND);
+    throw badgeErrors.badgeNotFound();
   }
   assertManagedImageUrls(input.designConfig);
   await assertSponsorBrandExists(input.sponsorBrandId);

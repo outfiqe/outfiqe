@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "../../api/crmApi";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RoleListSkeleton } from "../../components/CrmSkeletons";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { RolesSection } from "./RolesSection";
@@ -17,10 +18,7 @@ export const RolesPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">
-        {CRM_PAGE_TEXT.roles.title}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.roles.description}</p>
+      <CrmPageHeader {...CRM_PAGE_TEXT.roles} />
 
       <div className="mt-6">
         {isLoading && <RoleListSkeleton />}

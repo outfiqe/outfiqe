@@ -29,7 +29,8 @@ export const useSearchFilter = <T extends string>(
   const navigate = useNavigate();
 
   const rawValue = search[key];
-  const value = parse(typeof rawValue === "string" ? rawValue : undefined);
+  const textValue = typeof rawValue === "number" ? String(rawValue) : rawValue;
+  const value = parse(typeof textValue === "string" ? textValue : undefined);
 
   const setValue = (next: T) => {
     void navigate({

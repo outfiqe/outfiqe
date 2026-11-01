@@ -8,6 +8,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { FULFILMENT_ADVANCE_FROM } from "../order.constants.js";
+import { orderErrors } from "../order.errors.js";
 import type {
   AdvanceBrandFulfilmentGroupBody,
   ListBrandFulfilmentGroupsQuery,
@@ -24,14 +25,26 @@ import {
   toBrandFulfilmentGroupSummaryView,
 } from "./fulfilment-group.utils.js";
 
+const recalculateOrderRollup = (orderId: string) =>
+  prisma.$transaction(async (tx) => {
+    const groupStatuses = await orderFulfilmentGroupRepository.listFulfilmentGroupStatuses(
+      tx,
+      orderId,
+    );
+    const rollup = deriveOrderFulfilment(groupStatuses);
+    await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, orderId, rollup);
+    return rollup.fulfilmentStatus;
+  });
+
 export const orderFulfilmentGroupService = {
   async listBrandFulfilmentGroups(
     userId: string,
-    { status, cursor, limit }: ListBrandFulfilmentGroupsQuery,
+    { status, search, cursor, limit }: ListBrandFulfilmentGroupsQuery,
   ): Promise<{ items: BrandFulfilmentGroupSummaryView[]; nextCursor: string | null }> {
     const brandId = await requireBrandId(userId);
     const rows = await orderFulfilmentGroupRepository.listFulfilmentGroupsForBrand(brandId, {
       status,
+      search,
       cursor,
       limit,
     });
@@ -49,7 +62,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!group) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!group) throw orderErrors.notFound();
     return toBrandFulfilmentGroupDetailView(group, {
       allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
     });
@@ -65,7 +78,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw orderErrors.notFound();
     if (existing.fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS) {
       throw new AppError(
         "DELIVERED_BY_OUTFIQE",
@@ -91,16 +104,7 @@ export const orderFulfilmentGroupService = {
     }
 
     const rollupStatusBefore = existing.order.fulfilmentStatus;
-    let rollupStatusAfter = rollupStatusBefore;
-    await prisma.$transaction(async (tx) => {
-      const groupStatuses = await orderFulfilmentGroupRepository.listFulfilmentGroupStatuses(
-        tx,
-        advanced.orderId,
-      );
-      const rollup = deriveOrderFulfilment(groupStatuses);
-      rollupStatusAfter = rollup.fulfilmentStatus;
-      await orderFulfilmentGroupRepository.setOrderFulfilmentRollup(tx, advanced.orderId, rollup);
-    });
+    const rollupStatusAfter = await recalculateOrderRollup(advanced.orderId);
 
     if (rollupStatusAfter !== rollupStatusBefore) {
       await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
@@ -114,7 +118,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!updatedGroup) throw orderErrors.notFound();
     return toBrandFulfilmentGroupDetailView(updatedGroup, {
       allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
     });
@@ -130,7 +134,7 @@ export const orderFulfilmentGroupService = {
       groupId,
       brandId,
     );
-    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!existing) throw orderErrors.notFound();
 
     const flagged = await orderFulfilmentGroupRepository.flagFulfilmentGroupCancellationRequest(
       groupId,

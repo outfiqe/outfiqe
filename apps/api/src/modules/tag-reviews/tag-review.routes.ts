@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -10,20 +11,23 @@ import { platformGuards } from "#modules/platform-access/platform-access.guards.
 import { tagReviewController } from "./tag-review.controller.js";
 import {
   approveTagSchema,
+  listMetricTagsQuerySchema,
   listTagReviewsQuerySchema,
   rejectTagSchema,
   tagReviewIdParamSchema,
 } from "./tag-review.schemas.js";
 
-const REVIEW_WINDOW_MS = 60 * 60 * 1000;
+const REVIEW_RATE_LIMIT_NAMESPACE = "tag-review-write";
+const REVIEW_WINDOW_MS = millisecondsInHour;
 const REVIEW_MAX_REQUESTS = 300;
+const REVIEW_RATE_LIMIT_MESSAGE = "Too many tag reviews at once. Please slow down.";
 
 const reviewRateLimit = rateLimit({
-  namespace: "tag-review-write",
+  namespace: REVIEW_RATE_LIMIT_NAMESPACE,
   windowMs: REVIEW_WINDOW_MS,
   max: REVIEW_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
-  message: "Too many tag reviews at once. Please slow down.",
+  message: REVIEW_RATE_LIMIT_MESSAGE,
 });
 
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
@@ -31,6 +35,13 @@ const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 export const tagReviewRoutes = Router();
 
 tagReviewRoutes.get("/metrics", ...platformGuards.reviewsModerate, tagReviewController.metrics);
+
+tagReviewRoutes.get(
+  "/metrics/tags",
+  ...platformGuards.reviewsModerate,
+  validate({ query: listMetricTagsQuerySchema }),
+  tagReviewController.metricTags,
+);
 
 tagReviewRoutes.get("/pending-count", ...requireBrandOwner, tagReviewController.pendingCount);
 

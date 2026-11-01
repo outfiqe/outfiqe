@@ -12,6 +12,7 @@ import { adminInviteRepository } from "#modules/admin-invites/admin-invite.repos
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { authErrors } from "../auth.errors.js";
 import { resolvePlatformFields } from "../auth.platform-fields.js";
 import { authRepository } from "../auth.repository.js";
 import { issueTokens } from "../auth.tokens.js";
@@ -32,31 +33,53 @@ const runRegistrationTransaction = <Result>(
   createAccount: (transaction: Prisma.TransactionClient) => Promise<Result>,
 ): Promise<Result> => runWithHandleCollisionRetry(() => prisma.$transaction(createAccount));
 
+type RegisteredUser = Parameters<typeof toAuthUser>[0];
+
+const assertInviteStillOpen = (expiresAt: Date, acceptedAt: Date | null): void => {
+  if (expiresAt.getTime() <= Date.now()) {
+    throw authErrors.inviteExpired();
+  }
+
+  if (acceptedAt) {
+    throw authErrors.inviteUsed();
+  }
+};
+
+const assertPhoneFree = async (phone: string): Promise<void> => {
+  const existingByPhone = await userRepository.findByPhone(phone);
+  if (existingByPhone) {
+    throw authErrors.phoneExists();
+  }
+};
+
+const assertEmailAndPhoneFree = async (email: string, phone: string): Promise<void> => {
+  const existingByEmail = await userRepository.findByEmail(email);
+  if (existingByEmail) {
+    throw authErrors.userExists();
+  }
+
+  await assertPhoneFree(phone);
+};
+
+const toStaffSessionUser = async (user: RegisteredUser) => ({
+  ...toAuthUser(user),
+  ...(await resolvePlatformFields(user.id, user.role)),
+  hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
+});
+
 export const authInviteService = {
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError(
-        "INVALID_INVITE",
-        "This invite link is not valid.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.invalidInvite();
     }
 
     if (invite.expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteExpired();
     }
 
     if (invite.acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteUsed();
     }
 
     return { email: invite.email, brandName: invite.brand.name };
@@ -67,48 +90,13 @@ export const authInviteService = {
 
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError(
-        "INVALID_INVITE",
-        "This invite link is not valid or has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteInvalidOrAlreadyUsed();
     }
 
     const { expiresAt, acceptedAt, email: inviteEmail, brandId, id: inviteId, brand } = invite;
 
-    if (expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const existingByEmail = await userRepository.findByEmail(inviteEmail);
-    if (existingByEmail) {
-      throw new AppError(
-        "USER_EXISTS",
-        "An account with this email already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    assertInviteStillOpen(expiresAt, acceptedAt);
+    await assertEmailAndPhoneFree(inviteEmail, phone);
 
     const passwordHash = await hashPassword(password);
     const user = await runRegistrationTransaction(async (tx) => {
@@ -167,27 +155,15 @@ export const authInviteService = {
   async getAdminInvite(inviteToken: string): Promise<AdminInviteInfo> {
     const invite = await adminInviteRepository.findByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError(
-        "INVALID_INVITE",
-        "This invite link is not valid.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.invalidInvite();
     }
 
     if (invite.expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteExpired();
     }
 
     if (invite.acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteUsed();
     }
 
     return { email: invite.email, name: invite.name };
@@ -198,48 +174,13 @@ export const authInviteService = {
 
     const invite = await adminInviteRepository.findByTokenHash(hashToken(inviteToken));
     if (!invite) {
-      throw new AppError(
-        "INVALID_INVITE",
-        "This invite link is not valid or has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+      throw authErrors.inviteInvalidOrAlreadyUsed();
     }
 
     const { expiresAt, acceptedAt, email: inviteEmail, name: inviteName, id: inviteId } = invite;
 
-    if (expiresAt.getTime() <= Date.now()) {
-      throw new AppError(
-        "INVITE_EXPIRED",
-        "This invite link has expired. Please contact us for a new one.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    if (acceptedAt) {
-      throw new AppError(
-        "INVITE_USED",
-        "This invite link has already been used.",
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    }
-
-    const existingByEmail = await userRepository.findByEmail(inviteEmail);
-    if (existingByEmail) {
-      throw new AppError(
-        "USER_EXISTS",
-        "An account with this email already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
-
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    assertInviteStillOpen(expiresAt, acceptedAt);
+    await assertEmailAndPhoneFree(inviteEmail, phone);
 
     const passwordHash = await hashPassword(password);
     const user = await runRegistrationTransaction(async (tx) => {
@@ -278,14 +219,7 @@ export const authInviteService = {
 
     logger.info(`Admin registered: ${user.id}`);
 
-    return {
-      ...tokens,
-      user: {
-        ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id, user.role)),
-        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
-      },
-    };
+    return { ...tokens, user: await toStaffSessionUser(user) };
   },
 
   async getCrmInvite(inviteToken: string): Promise<CrmInviteInfo> {
@@ -306,14 +240,7 @@ export const authInviteService = {
       );
     }
 
-    const existingByPhone = await userRepository.findByPhone(phone);
-    if (existingByPhone) {
-      throw new AppError(
-        "PHONE_EXISTS",
-        "An account with this phone number already exists.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
+    await assertPhoneFree(phone);
 
     const passwordHash = await hashPassword(password);
     const { user, membership } = await runRegistrationTransaction(async (tx) => {
@@ -350,11 +277,7 @@ export const authInviteService = {
 
     return {
       ...tokens,
-      user: {
-        ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id, user.role)),
-        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
-      },
+      user: await toStaffSessionUser(user),
       crmMembership: { id: membership.id, organizationId: membership.organizationId },
     };
   },

@@ -1,10 +1,12 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { BACK_LINK_CLASS_NAME, BackLinkLabel, Skeleton } from "@outfiqe/design-system";
 
 const TENANT_METRIC_SKELETON_COUNT = 8;
 
 export const TenantMetricsSkeleton = () => (
   <div role="status" aria-label="Loading">
-    <span className="text-sm text-primary-strong underline">← All tenants</span>
+    <span className={BACK_LINK_CLASS_NAME}>
+      <BackLinkLabel>All tenants</BackLinkLabel>
+    </span>
     <div className="mt-4">
       <Skeleton className="h-8 w-56" />
       <Skeleton className="mt-1 h-5 w-48" />

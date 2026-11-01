@@ -134,6 +134,8 @@ When clearing space by hand, never pass `--volumes` to `docker system prune`. It
 
 ## Known gotchas
 
+- **The visitor's IP reaches the API through two proxies, and only a secret proves it.** Browsers call `outfiqe.com/api`, which Vercel forwards to Caddy and then the API, so the address the API sees by itself is one of Vercel's, shared by every visitor. Rate limits and audit logs need the real one. `apps/web/vercel.json` adds an `x-origin-secret` header to every `/api` request, and Vercel replaces any value a visitor sends. When it matches `ORIGIN_SECRET`, `shared/middlewares/client-ip.ts` in the API takes the visitor's address from `x-vercel-forwarded-for`. A request straight to `api.outfiqe.com` has no valid secret, so it can't fake an address. Set `ORIGIN_SECRET` to the same value in Vercel and `.env.prod`. If it is missing or differs, nothing breaks, but all visitors fall back to sharing Vercel's addresses.
+
 - **Syncing a new `Caddyfile` to the droplet does not make Caddy use it.** `caddy` mounts the file
   read-only (`./Caddyfile:/etc/caddy/Caddyfile:ro`) and its service definition in
   `docker-compose.prod.yml` never changes, so `docker compose up -d` sees nothing different and

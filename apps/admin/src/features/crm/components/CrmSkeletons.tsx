@@ -1,9 +1,10 @@
 import { KanbanBoardSkeleton } from "@outfiqe/components";
 import { Input, Select, Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
-import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { BackLink } from "@/components/BackLink";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { MetricSection } from "@/components/MetricParts";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
 
@@ -14,20 +15,19 @@ import {
   CUSTOMER_TABLE_HEADERS,
   INVOICE_TABLE_HEADERS,
   PARTNER_TABLE_HEADERS,
-  PRODUCT_BREAKDOWN_HEADERS,
+  RECORD_SECTIONS_GRID_CLASS_NAME,
 } from "../constants/crmPageContent";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
+import { CrmPageHeader } from "./CrmPageHeader";
 
 const INVOICE_SKELETON_ROW_COUNT = 3;
-const RECENT_ORDER_SKELETON_COUNT = 3;
-const PRODUCT_BREAKDOWN_SKELETON_ROW_COUNT = 4;
+const RECORD_ROW_SKELETON_COUNT = 3;
+const RECORD_SECTION_SKELETON_COUNT = 2;
+const PARTNER_STAT_SKELETON_COUNT = 3;
+const CUSTOMER_STAT_SKELETON_COUNT = 4;
 const ROLE_SKELETON_COUNT = 3;
 const REPORT_TILE_COUNT = 3;
 const REPORT_BAR_ROW_COUNT = 4;
-
-const HEADING_CLASS = "font-display text-2xl font-bold text-foreground";
-const DESCRIPTION_CLASS = "mt-1 text-sm text-muted-foreground";
-const SPLIT_HEADER_CLASS = "flex flex-wrap items-center justify-between gap-3";
 
 export const BillingSkeleton = () => (
   <div className="space-y-6">
@@ -48,40 +48,65 @@ export const BillingSkeleton = () => (
   </div>
 );
 
+const RecordHeadingSkeleton = () => (
+  <div>
+    <Skeleton className="h-8 w-56" />
+    <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+  </div>
+);
+
+const RecordRowsSkeleton = () => (
+  <div className="space-y-3">
+    {Array.from({ length: RECORD_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+      <Skeleton key={rowIndex} className="h-10 w-full" />
+    ))}
+  </div>
+);
+
+export const RecordDetailSkeleton = () => (
+  <div className="mt-4 space-y-6" role="status" aria-label="Loading">
+    <RecordHeadingSkeleton />
+    <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>
+      {Array.from({ length: RECORD_SECTION_SKELETON_COUNT }, (_unused, sectionIndex) => (
+        <div key={sectionIndex} className="rounded-xl border border-border bg-card p-5">
+          <Skeleton className="mb-4 h-5 w-40" />
+          <RecordRowsSkeleton />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export const CustomerDetailSkeleton = () => (
   <div className="mt-4 space-y-6" role="status" aria-label="Loading">
-    <div>
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+    <RecordHeadingSkeleton />
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: CUSTOMER_STAT_SKELETON_COUNT }, (_unused, statIndex) => (
+        <StatCardSkeleton key={statIndex} />
+      ))}
     </div>
-    <section>
-      <h2 className="font-display text-base font-bold text-foreground">Recent orders</h2>
-      <ul className="mt-2 space-y-2 text-sm">
-        {Array.from({ length: RECENT_ORDER_SKELETON_COUNT }, (_unused, orderIndex) => (
-          <li key={orderIndex} className="rounded-lg border border-border p-3">
-            <Skeleton className="h-5 w-full max-w-xl" />
-          </li>
-        ))}
-      </ul>
-    </section>
+    <MetricSection title="Recent orders">
+      <RecordRowsSkeleton />
+    </MetricSection>
   </div>
 );
 
 export const PartnerDetailSkeleton = () => (
-  <div className="mt-4 space-y-6">
-    <div>
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+  <div className="mt-4 space-y-6" role="status" aria-label="Loading">
+    <RecordHeadingSkeleton />
+    <div className="grid gap-4 sm:grid-cols-3">
+      {Array.from({ length: PARTNER_STAT_SKELETON_COUNT }, (_unused, statIndex) => (
+        <StatCardSkeleton key={statIndex} />
+      ))}
     </div>
-    <section>
-      <h2 className="font-display text-base font-bold text-foreground">Per product</h2>
-      <div className="mt-2">
-        <TableSkeleton
-          headers={PRODUCT_BREAKDOWN_HEADERS}
-          rowCount={PRODUCT_BREAKDOWN_SKELETON_ROW_COUNT}
-        />
-      </div>
-    </section>
+    <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>
+      <MetricSection title="Per product">
+        <RecordRowsSkeleton />
+      </MetricSection>
+      <MetricSection title="Recent orders they brought">
+        <RecordRowsSkeleton />
+      </MetricSection>
+    </div>
   </div>
 );
 
@@ -121,39 +146,10 @@ export const RoleListSkeleton = () => (
 
 type PageTextProps = { title: string; description: string };
 
-const StackedHeading = ({ title, description }: PageTextProps) => (
-  <>
-    <h1 className={HEADING_CLASS}>{title}</h1>
-    <p className={DESCRIPTION_CLASS}>{description}</p>
-  </>
-);
+const StackedHeading = (pageText: PageTextProps) => <CrmPageHeader {...pageText} />;
 
-const SplitHeading = ({
-  title,
-  description,
-  controls,
-}: PageTextProps & { controls: ReactNode }) => (
-  <div className={SPLIT_HEADER_CLASS}>
-    <div>
-      <h1 className={HEADING_CLASS}>{title}</h1>
-      <p className={DESCRIPTION_CLASS}>{description}</p>
-    </div>
-    {controls}
-  </div>
-);
-
-const SearchHeading = ({
-  title,
-  description,
-  controls,
-}: PageTextProps & { controls: ReactNode }) => (
-  <>
-    <div className={SPLIT_HEADER_CLASS}>
-      <h1 className={HEADING_CLASS}>{title}</h1>
-      {controls}
-    </div>
-    <p className={DESCRIPTION_CLASS}>{description}</p>
-  </>
+const SplitHeading = ({ controls, ...pageText }: PageTextProps & { controls: ReactNode }) => (
+  <CrmPageHeader {...pageText} actions={controls} />
 );
 
 const DisabledSearchInput = ({
@@ -181,7 +177,7 @@ const DisabledFilter = ({ allLabel }: { allLabel: string }) => (
 
 export const ContactsRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.contacts}
       controls={
         <div className="flex flex-wrap items-center gap-2">
@@ -199,7 +195,7 @@ export const ContactsRouteSkeleton = () => (
 
 export const CustomersRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.customers}
       controls={<DisabledSearchInput placeholder="Search shoppers" widthClass="w-64" />}
     />
@@ -211,7 +207,7 @@ export const CustomersRouteSkeleton = () => (
 
 export const PartnersRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.partners}
       controls={<DisabledSearchInput placeholder="Search muses" widthClass="w-64" />}
     />
@@ -244,13 +240,13 @@ export const ReportsRouteSkeleton = () => (
     <StackedHeading {...CRM_PAGE_TEXT.reports} />
     <div className="mt-6 space-y-6">
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-display text-lg font-bold text-foreground">Pipeline value by stage</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Sales right now</h2>
         <div className="mt-4">
           <ReportSkeleton />
         </div>
       </section>
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-display text-lg font-bold text-foreground">Support tickets</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Support right now</h2>
         <div className="mt-4">
           <ReportSkeleton />
         </div>
@@ -274,8 +270,8 @@ export const PipelineRouteSkeleton = () => (
       {...CRM_PAGE_TEXT.pipeline}
       controls={
         <div className="flex gap-2">
-          <SkeletonButton size="sm" label="Configure stages" />
-          <SkeletonButton size="sm" variant="default" label="New deal" />
+          <SkeletonButton size="sm" label="Edit stages" />
+          <SkeletonButton size="sm" variant="default" label="New opportunity" />
         </div>
       }
     />
@@ -315,19 +311,36 @@ export const TicketsRouteSkeleton = () => (
 );
 
 export const CustomerDetailRouteSkeleton = () => (
-  <div className="mx-auto max-w-3xl">
-    <Link to="/crm/customers" className="text-sm font-semibold text-primary-strong underline">
-      ← Back to customers
-    </Link>
+  <div>
+    <BackLink to="/crm/customers">All customers</BackLink>
     <CustomerDetailSkeleton />
   </div>
 );
 
 export const PartnerDetailRouteSkeleton = () => (
-  <div className="mx-auto max-w-3xl">
-    <Link to="/crm/partners" className="text-sm font-semibold text-primary-strong underline">
-      ← Back to partners
-    </Link>
+  <div>
+    <BackLink to="/crm/partners">All partners</BackLink>
     <PartnerDetailSkeleton />
+  </div>
+);
+
+export const DealDetailRouteSkeleton = () => (
+  <div>
+    <BackLink to="/crm/pipeline">Sales board</BackLink>
+    <RecordDetailSkeleton />
+  </div>
+);
+
+export const ContactDetailRouteSkeleton = () => (
+  <div>
+    <BackLink to="/crm/contacts">All contacts</BackLink>
+    <RecordDetailSkeleton />
+  </div>
+);
+
+export const TicketDetailRouteSkeleton = () => (
+  <div>
+    <BackLink to="/crm/support">All tickets</BackLink>
+    <RecordDetailSkeleton />
   </div>
 );

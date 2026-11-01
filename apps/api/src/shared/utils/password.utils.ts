@@ -15,10 +15,14 @@ const ARGON2ID_PREFIX = "$argon2id$";
 
 export const hashPassword = async (password: string): Promise<string> => argon2Hash(password);
 
+const LEGACY_PASSWORD_NOT_VERIFIED = false;
+
 const verifyLegacyScryptPassword = async (password: string, stored: string): Promise<boolean> => {
   const [scheme, saltHex, hashHex] = stored.split(":");
 
-  if (scheme !== LEGACY_SCRYPT_SCHEME || !saltHex || !hashHex) return false;
+  if (scheme !== LEGACY_SCRYPT_SCHEME || !saltHex || !hashHex) {
+    return LEGACY_PASSWORD_NOT_VERIFIED;
+  }
 
   const derived = await scryptAsync(password, Buffer.from(saltHex, "hex"), KEY_LEN);
   const expected = Buffer.from(hashHex, "hex");

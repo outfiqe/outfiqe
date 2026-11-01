@@ -1,3 +1,4 @@
+import { millisecondsInSecond } from "date-fns/constants";
 import { LRUCache } from "lru-cache";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
@@ -28,11 +29,10 @@ import { creatorLookFeedRepository } from "./feed.repository.js";
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
-const MS_PER_SECOND = 1000;
 
 const autocompleteMemoryCache = new LRUCache<string, PostSuggestion[]>({
   max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
-  ttl: CACHE_TTL.LOOK_AUTOCOMPLETE * MS_PER_SECOND,
+  ttl: CACHE_TTL.LOOK_AUTOCOMPLETE * millisecondsInSecond,
 });
 
 const FOLLOWING_TAB = "following";

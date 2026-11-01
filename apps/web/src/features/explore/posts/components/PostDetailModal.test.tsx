@@ -1,9 +1,16 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FeedPost } from "../../feed/api/exploreFeedSchemas";
 import { PostDetailModal } from "./PostDetailModal";
+
+const trackEvent = vi.fn();
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
+}));
 
 const { authState } = vi.hoisted(() => ({ authState: { isStaff: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
@@ -78,6 +85,22 @@ const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
 
 afterEach(() => {
   authState.isStaff = false;
+});
+
+describe("PostDetailModal analytics", () => {
+  it("records one look view with its creator", () => {
+    trackEvent.mockClear();
+    const post = aPost();
+
+    const { rerender } = render(<PostDetailModal post={post} onClose={vi.fn()} />);
+    rerender(<PostDetailModal post={post} onClose={vi.fn()} />);
+
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.LOOK_DETAIL_VIEW, {
+      look_id: "look-1",
+      creator_id: "creator-1",
+    });
+  });
 });
 
 describe("PostDetailModal caption spacing", () => {

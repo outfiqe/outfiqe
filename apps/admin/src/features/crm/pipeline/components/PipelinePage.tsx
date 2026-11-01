@@ -1,25 +1,34 @@
 import { KanbanBoard, KanbanBoardSkeleton } from "@outfiqe/components";
-import { Button, FormBanner, toast } from "@outfiqe/design-system";
+import { Button, FilterChip, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CrmMemberFilter } from "../../components/CrmMemberFilter";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
+import { CsvExportButton } from "../../components/CsvExportButton";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
-import type { Deal } from "../api/pipelineSchemas";
+import { DEALS_QUERY_KEY, STAGES_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
+import { STUCK_DEAL_DAYS, STUCK_FILTER_VALUE, toStuckBefore } from "../constants/stuckDeals";
+import { toDaysInStageLabel } from "../utils/dealCard.utils";
 import { DealFormModal } from "./DealFormModal";
 import { StageConfigModal } from "./StageConfigModal";
 
-const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
-const DEALS_QUERY_KEY = ["crm-deals"];
 const PIPELINE_CONFIGURE_PERMISSION = "pipeline:configure";
 const DEALS_WRITE_PERMISSION = "deals:write";
+const EXPORT_FILE_NAME = "opportunities.csv";
+const EXPORT_FAILURE_MESSAGE = "Couldn't export your opportunities. Try filtering by owner.";
 
 export const PipelinePage = () => {
   const { data: organization } = useQuery({
@@ -32,19 +41,30 @@ export const PipelinePage = () => {
     isLoading: stagesLoading,
     error: stagesError,
   } = useQuery({ queryKey: STAGES_QUERY_KEY, queryFn: crmPipelineApi.listStages });
-  const { data: deals } = useQuery({
-    queryKey: DEALS_QUERY_KEY,
-    queryFn: crmPipelineApi.listDeals,
+  const [ownerFilter, setOwnerFilter] = useSearchFilter("owner", rawTextFilter);
+  const [stuckFilter, setStuckFilter] = useSearchFilter("stuck", rawTextFilter);
+  const isShowingStuckDeals = stuckFilter === STUCK_FILTER_VALUE;
+  const toDealFilters = () => ({
+    ownerMembershipId: ownerFilter || undefined,
+    stageEnteredBefore: isShowingStuckDeals ? toStuckBefore() : undefined,
   });
+  const { data: deals } = useQuery({
+    queryKey: [...DEALS_QUERY_KEY, ownerFilter, isShowingStuckDeals],
+    queryFn: () => crmPipelineApi.listDeals(toDealFilters()),
+  });
+  const { exportCsv, isExporting } = useCrmCsvExport(
+    () => crmPipelineApi.exportDeals(toDealFilters()),
+    EXPORT_FILE_NAME,
+    EXPORT_FAILURE_MESSAGE,
+  );
 
-  const [dealModalOpen, setDealModalOpen] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
   const [stageModalOpen, setStageModalOpen] = useState(false);
 
   const moveDeal = useApiMutation({
     mutationFn: ({ dealId, stageId }: { dealId: string; stageId: string }) =>
       crmPipelineApi.updateDeal(dealId, { stageId }),
-    invalidateKeys: [DEALS_QUERY_KEY],
+    invalidateKeys: (_movedDeal, { dealId }) => [DEALS_QUERY_KEY, toDealQueryKey(dealId)],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -72,33 +92,37 @@ export const PipelinePage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.pipeline.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.pipeline.description}</p>
-        </div>
-        <div className="flex gap-2">
-          {canConfigure && (
-            <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>
-              Configure stages
-            </Button>
-          )}
-          {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New deal" />}
-          {canWriteDeals && stages && stages.length > 0 && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingDeal(null);
-                setDealModalOpen(true);
-              }}
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.pipeline}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChip
+              isSelected={isShowingStuckDeals}
+              onClick={() => setStuckFilter(isShowingStuckDeals ? "" : STUCK_FILTER_VALUE)}
             >
-              New deal
-            </Button>
-          )}
-        </div>
-      </div>
+              Stuck for {STUCK_DEAL_DAYS}+ days
+            </FilterChip>
+            <CrmMemberFilter
+              label="Filter by owner"
+              allLabel="All owners"
+              value={ownerFilter}
+              onChange={setOwnerFilter}
+            />
+            <CsvExportButton isExporting={isExporting} onExport={() => void exportCsv()} />
+            {canConfigure && (
+              <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>
+                Edit stages
+              </Button>
+            )}
+            {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New opportunity" />}
+            {canWriteDeals && stages && stages.length > 0 && (
+              <Button size="sm" onClick={openNewRecordModal}>
+                New opportunity
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <div className="mt-6">
         {stagesLoading && <KanbanBoardSkeleton />}
@@ -106,7 +130,7 @@ export const PipelinePage = () => {
 
         {stages && stages.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            This pipeline has no stages yet. Configure stages to get started.
+            This board has no stages yet. Add your stages to get started.
           </p>
         )}
 
@@ -116,33 +140,33 @@ export const PipelinePage = () => {
             cards={cards}
             onCardMove={(dealId, stageId) => moveDeal.mutate({ dealId, stageId })}
             disabled={!canWriteDeals || moveDeal.isPending}
-            emptyColumnLabel="No deals"
+            emptyColumnLabel="No opportunities"
             renderCard={(card) => (
-              <button
-                type="button"
-                className="w-full cursor-pointer text-left"
-                onClick={() => {
-                  setEditingDeal(card.deal);
-                  setDealModalOpen(true);
-                }}
+              <Link
+                to="/crm/pipeline/$dealId"
+                params={{ dealId: card.deal.id }}
+                draggable={false}
+                className="block w-full cursor-pointer text-left"
               >
                 <span className="font-semibold text-foreground">{card.deal.title}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {card.deal.partnerName} · {formatRupees(card.deal.value)}
+                <span className="mt-1 block text-sm font-medium text-foreground">
+                  {formatRupees(card.deal.value)}
                 </span>
-              </button>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  with {card.deal.partnerName}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {card.deal.ownerName ?? "Unassigned"}
+                  {toDaysInStageLabel(card.deal) && ` · ${toDaysInStageLabel(card.deal)}`}
+                </span>
+              </Link>
             )}
           />
         )}
       </div>
 
-      {stages && dealModalOpen && (
-        <DealFormModal
-          open={dealModalOpen}
-          onClose={() => setDealModalOpen(false)}
-          stages={stages}
-          deal={editingDeal}
-        />
+      {stages && isNewRecordModalOpen && (
+        <DealFormModal open onClose={closeNewRecordModal} stages={stages} deal={null} />
       )}
 
       {stages && stageModalOpen && (

@@ -61,20 +61,31 @@ export const brandTenantsPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec
   "/platform/metrics": {
     title: "Tenant metrics",
     description:
-      "Aggregate activity across every CRM tenant. Counts only — no tenant records are shown here.",
+      "How each business is using the CRM. Counts only, so their private contacts and sales stay private. Click a business to see its account and activity.",
     blocks: [
       {
         kind: "labeledStats",
         isWide: true,
-        labels: ["Tenants", "Members", "Contacts", "Deals", "Tickets", "Activities"],
+        labels: ["Members", "Contacts", "Opportunities", "Tickets", "Activities"],
       },
       { kind: "selectBar", options: ["All plans", "Recent activity"] },
       {
         kind: "table",
-        headers: ["Tenant", "Plan", "Members", "Contacts", "Deals", "Tickets", "Last activity"],
+        headers: [
+          "Business",
+          "Plan",
+          "Members",
+          "Contacts",
+          "Opportunities",
+          "Tickets",
+          "Last used",
+        ],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-metrics/components/PlatformMetricsPage.tsx`],
+    sourceFiles: [
+      `${FEATURES_DIR}/platform-metrics/components/PlatformMetricsPage.tsx`,
+      `${FEATURES_DIR}/platform-metrics/constants/tenantMetrics.constants.ts`,
+    ],
   },
   "/platform/brand-applications": {
     title: "Brand applications",

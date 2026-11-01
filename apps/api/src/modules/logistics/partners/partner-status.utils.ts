@@ -53,10 +53,12 @@ export const compileReferencePattern = (referencePattern: string): RegExp | null
   }
 };
 
+const BROKEN_PATTERN_ALLOWS_REFERENCE = false;
+
 export const isReferenceAllowedByPattern = (
   referencePattern: string | null,
   partnerReference: string,
-): boolean => {
-  if (referencePattern === null) return true;
-  return compileReferencePattern(referencePattern)?.test(partnerReference) ?? false;
-};
+): boolean =>
+  referencePattern === null ||
+  (compileReferencePattern(referencePattern)?.test(partnerReference) ??
+    BROKEN_PATTERN_ALLOWS_REFERENCE);

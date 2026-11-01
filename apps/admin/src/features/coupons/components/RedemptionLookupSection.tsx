@@ -1,7 +1,9 @@
 import { Badge, Button } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { useInfiniteRedemptions } from "../hooks/useInfiniteRedemptions";
 
@@ -67,7 +69,7 @@ export const RedemptionLookupSection = () => {
       {filters !== null && (
         <div className="space-y-3">
           {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
+            Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <CardRowSkeleton key={index} textLineCount={1} />
             ))}
           {error && <p className="text-sm text-destructive">Couldn&apos;t search redemptions.</p>}
@@ -97,7 +99,7 @@ export const RedemptionLookupSection = () => {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {redemption.userEmail} · Order {redemption.orderId} · Rs.{" "}
                   {redemption.discountAmount.toLocaleString()} discount ·{" "}
-                  {new Date(redemption.createdAt).toLocaleDateString()}
+                  {formatDate(redemption.createdAt)}
                 </p>
                 {redemption.flaggedForReview && redemption.flagReason && (
                   <p className="mt-1 text-sm text-destructive">Flag: {redemption.flagReason}</p>

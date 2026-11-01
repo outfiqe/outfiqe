@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/DashboardShell";
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { PendingScansProvider } from "@/features/rider";
 
 import { requireRiderSession } from "../requireRiderSession";
@@ -16,7 +17,9 @@ const RiderLayout = async ({ children }: { children: ReactNode }) => {
 
   return (
     <PendingScansProvider riderUserId={user.id}>
-      <DashboardShell>{children}</DashboardShell>
+      <DashboardShell>
+        <div className={`${PRIVATE_ANALYTICS_CLASS_NAME} contents`}>{children}</div>
+      </DashboardShell>
     </PendingScansProvider>
   );
 };

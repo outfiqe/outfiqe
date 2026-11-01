@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 
 import { authApi } from "@/features/auth/api/authApi";
 import { ApiClientError } from "@/lib/apiClient";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import {
   changePasswordFormSchema,
@@ -35,7 +36,7 @@ export const ChangePasswordCard = () => {
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordFormSchema),
     defaultValues: EMPTY_CHANGE_PASSWORD_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const changePassword = useMutation({

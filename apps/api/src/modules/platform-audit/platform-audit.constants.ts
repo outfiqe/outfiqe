@@ -60,3 +60,4 @@ export const PLATFORM_AUDIT_ACTION = {
   OUTFIT_OFFER_REFUNDED_BY_ADMIN: "outfit-offer.refunded-by-admin",
   OUTFIT_OFFER_MARKED_REFUNDED: "outfit-offer.marked-refunded",
 } as const;
+export const MAX_PLATFORM_AUDIT_FILTER_OPTIONS = 200;

@@ -12,6 +12,7 @@ import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { logisticsRiderRepository } from "#modules/logistics/riders/rider.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { authErrors } from "../auth.errors.js";
 import { resolvePlatformFields } from "../auth.platform-fields.js";
 import { issueTokens } from "../auth.tokens.js";
 import type { AuthSession, RegisterRiderInput, RiderInviteInfo } from "../auth.types.js";
@@ -22,13 +23,12 @@ const STARTING_STATUS_BY_EMPLOYMENT_TYPE: Record<RiderEmploymentType, RiderStatu
   [RiderEmploymentType.CONTRACTOR]: RiderStatus.PENDING_VERIFICATION,
 };
 
-const inviteUsedError = () =>
-  new AppError("INVITE_USED", "This invite link has already been used.", HTTP_STATUS.BAD_REQUEST);
+const inviteUsedError = () => authErrors.inviteUsed();
 
 const requireAcceptableRiderInvite = async (inviteToken: string) => {
   const invite = await logisticsRiderRepository.findRiderInviteByTokenHash(hashToken(inviteToken));
   if (!invite) {
-    throw new AppError("INVALID_INVITE", "This invite link is not valid.", HTTP_STATUS.BAD_REQUEST);
+    throw authErrors.invalidInvite();
   }
   if (isPast(invite.expiresAt)) {
     throw new AppError(
@@ -43,18 +43,10 @@ const requireAcceptableRiderInvite = async (inviteToken: string) => {
 
 const assertRiderContactIsFree = async (email: string, phone: string) => {
   if (await userRepository.findByEmail(email)) {
-    throw new AppError(
-      "USER_EXISTS",
-      "An account with this email already exists.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw authErrors.userExists();
   }
   if (await userRepository.findByPhone(phone)) {
-    throw new AppError(
-      "PHONE_EXISTS",
-      "An account with this phone number already exists.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw authErrors.phoneExists();
   }
 };
 

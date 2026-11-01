@@ -1,9 +1,13 @@
+import { millisecondsInDay, millisecondsInHour } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
 import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
 
-import type { MetricBucket, ProductTrendMeta } from "./trending.types.js";
+import { METRIC_RETENTION_DAYS } from "./trending.constants.js";
+import type { MetricBucket, ProductTrendMeta, TrendDailyActivity } from "./trending.types.js";
 
-const HOUR_MS = 60 * 60 * 1000;
+const TODAY_COUNTED_IN_WINDOW = 1;
 
 const upsertPurchaseUnitsBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO product_trend_metrics (id, product_id, bucket_start, purchase_units, updated_at)
@@ -59,7 +63,7 @@ const upsertTagClicksBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$ex
 `;
 
 const upsertProductMetricsForHour = (bucketStart: Date): Promise<unknown> => {
-  const bucketEnd = new Date(bucketStart.getTime() + HOUR_MS);
+  const bucketEnd = new Date(bucketStart.getTime() + millisecondsInHour);
   return Promise.all([
     upsertPurchaseUnitsBucket(bucketStart, bucketEnd),
     upsertCartAddsBucket(bucketStart, bucketEnd),
@@ -71,7 +75,7 @@ const upsertProductMetricsForHour = (bucketStart: Date): Promise<unknown> => {
 
 export const trendingRepository = {
   async upsertHourlyMetrics(bucketStart: Date): Promise<void> {
-    const previousBucketStart = new Date(bucketStart.getTime() - HOUR_MS);
+    const previousBucketStart = new Date(bucketStart.getTime() - millisecondsInHour);
     await Promise.all([
       upsertProductMetricsForHour(bucketStart),
       upsertProductMetricsForHour(previousBucketStart),
@@ -85,8 +89,37 @@ export const trendingRepository = {
     return count;
   },
 
+  listDailyActivity(productId: string): Promise<TrendDailyActivity[]> {
+    return prisma.$queryRaw<TrendDailyActivity[]>(Prisma.sql`
+      WITH days AS (
+        SELECT generate_series(
+          date_trunc('day', now() AT TIME ZONE 'UTC')
+            - make_interval(days => ${METRIC_RETENTION_DAYS - TODAY_COUNTED_IN_WINDOW}),
+          date_trunc('day', now() AT TIME ZONE 'UTC'),
+          interval '1 day'
+        ) AS day
+      ),
+      daily AS (
+        SELECT
+          date_trunc('day', bucket_start) AS day,
+          SUM(purchase_units)::int AS purchase_units,
+          SUM(purchase_units + cart_adds + saves + creator_tags + tag_clicks)::int AS total_actions
+        FROM product_trend_metrics
+        WHERE product_id = ${productId}::uuid
+        GROUP BY 1
+      )
+      SELECT
+        to_char(days.day, 'YYYY-MM-DD') AS date,
+        COALESCE(daily.purchase_units, 0)::int AS "purchaseUnits",
+        COALESCE(daily.total_actions, 0)::int AS "totalActions"
+      FROM days
+      LEFT JOIN daily ON daily.day = days.day
+      ORDER BY days.day
+    `);
+  },
+
   async listRecentMetricBuckets(sinceDays: number): Promise<MetricBucket[]> {
-    const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - sinceDays * millisecondsInDay);
     return prisma.productTrendMetric.findMany({
       where: { bucketStart: { gte: since } },
       orderBy: [{ productId: "asc" }, { bucketStart: "asc" }],

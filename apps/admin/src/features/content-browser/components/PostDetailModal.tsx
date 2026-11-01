@@ -1,5 +1,5 @@
 import { Badge, Button, Modal } from "@outfiqe/design-system";
-import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+import { formatDate, POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 
 import type { AdminLook } from "../api/contentBrowserSchemas";
 import { PostCommentsPanel } from "./PostCommentsPanel";
@@ -13,13 +13,6 @@ type PostDetailModalProps = {
   onDeleteComment: (commentId: string, preview: string) => void;
   deletingCommentId: string | null;
 };
-
-const formatCreatedAt = (createdAt: string): string =>
-  new Date(createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 
 export const PostDetailModal = ({
   look,
@@ -60,7 +53,7 @@ export const PostDetailModal = ({
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {likeCount} cheriqs &middot; {commentCount} chimes &middot; {saveCount} stashes
-              &middot; {formatCreatedAt(createdAt)} &middot;{" "}
+              &middot; {formatDate(createdAt)} &middot;{" "}
               <a
                 href={`${WEB_URL}/creator/${creator.handle}?look=${id}`}
                 target="_blank"

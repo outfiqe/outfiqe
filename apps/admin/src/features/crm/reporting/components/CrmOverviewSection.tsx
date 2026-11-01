@@ -1,41 +1,42 @@
 import {
-  BarSeries,
-  ChartCard,
+  CLICKABLE_STAT_CARD_CLASS_NAME,
   FormBanner,
   StatCard,
   StatCardSkeleton,
-  TrendChart,
 } from "@outfiqe/design-system";
+import { BarSeries, ChartCard, TrendChart } from "@outfiqe/design-system/charts";
+import { formatShortDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
+import { StatCardFooterLink } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmQuickActions } from "../../components/CrmQuickActions";
 import { formatDuration, formatRupees } from "../../utils/format.utils";
 import { crmReportingApi } from "../api/reportingApi";
 import type { CrmOverviewReport } from "../api/reportingSchemas";
+import { CrmAttentionSection } from "./CrmAttentionSection";
 
 const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;
 const KPI_HINT = {
   openPipelineValue:
-    "Total value of deals that are still being worked, across every pipeline stage. Won and lost deals are not counted.",
-  openDealCount: "Number of deals that are still being worked. Won and lost deals are not counted.",
-  wonDealValue: "Total value of deals you have moved to a won stage.",
+    "Total value of opportunities your team is still working on, across every stage. Won and lost ones are not counted.",
+  openDealCount:
+    "Number of opportunities your team is still working on. Won and lost ones are not counted.",
+  wonDealValue: "Total value of the opportunities you have won.",
   openTicketCount: "Support tickets that still need attention: tickets marked open or in progress.",
   meanTimeToResolve:
     "Average time between a ticket being created and being resolved, across all resolved tickets. Shows a dash until a ticket has been resolved.",
   tasksDueToday:
     "Open tasks due by the end of today. This includes open tasks that are already overdue.",
 } as const;
-const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
+const KPI_GRID_CLASS = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3";
 const CHART_GRID_CLASS = "grid gap-4 lg:grid-cols-2";
 const ACTIVITY_CHART_TITLE = "Activity";
 const ACTIVITY_CHART_DESCRIPTION = "CRM activities logged per day, last 30 days";
-const PIPELINE_CHART_TITLE = "Pipeline value by stage";
-const PIPELINE_CHART_DESCRIPTION = "Open deal value per stage";
-
-const formatShortDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const PIPELINE_CHART_TITLE = "Sales value by stage";
+const PIPELINE_CHART_DESCRIPTION = "Value of open opportunities at each stage";
 
 const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   const { pipeline, tickets, openTasksDueTodayCount } = report;
@@ -43,34 +44,52 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   return (
     <div className={KPI_GRID_CLASS}>
       <StatCard
-        label="Open pipeline"
+        label="Sales in progress"
         value={formatRupees(pipeline.totals.openValue)}
         hint={KPI_HINT.openPipelineValue}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/pipeline" period="Open the sales board" />}
       />
       <StatCard
-        label="Open deals"
+        label="Open opportunities"
         value={String(pipeline.totals.openDealCount)}
         hint={KPI_HINT.openDealCount}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/pipeline" period="See each one" />}
       />
       <StatCard
         label="Won value"
         value={formatRupees(pipeline.totals.wonValue)}
         hint={KPI_HINT.wonDealValue}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/reports" period="See your reports" />}
       />
       <StatCard
         label="Open tickets"
         value={String(tickets.openCount)}
         hint={KPI_HINT.openTicketCount}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={
+          <StatCardFooterLink
+            to="/crm/support"
+            search={{ status: "ACTIVE" }}
+            period="See open tickets"
+          />
+        }
       />
       <StatCard
-        label="Mean time to resolve"
+        label="Average time to solve"
         value={formatDuration(tickets.meanResolutionSeconds)}
         hint={KPI_HINT.meanTimeToResolve}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/reports" period="See your reports" />}
       />
       <StatCard
-        label="Tasks due today"
+        label="Tasks due or overdue"
         value={String(openTasksDueTodayCount)}
         hint={KPI_HINT.tasksDueToday}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/tasks" period="See your tasks" />}
       />
     </div>
   );
@@ -98,12 +117,12 @@ const ActivityTrendTable = ({ report }: { report: CrmOverviewReport }) => (
 
 const PipelineStageTable = ({ report }: { report: CrmOverviewReport }) => (
   <table>
-    <caption>Open deal value by pipeline stage</caption>
+    <caption>Value of open opportunities by stage</caption>
     <thead>
       <tr>
         <th scope="col">Stage</th>
         <th scope="col">Open value</th>
-        <th scope="col">Open deals</th>
+        <th scope="col">Open opportunities</th>
       </tr>
     </thead>
     <tbody>
@@ -150,9 +169,9 @@ const OverviewCharts = ({ report }: { report: CrmOverviewReport }) => {
       <ChartCard
         title={PIPELINE_CHART_TITLE}
         description={PIPELINE_CHART_DESCRIPTION}
-        ariaLabel="Open deal value by pipeline stage"
+        ariaLabel="Value of open opportunities by stage"
         isEmpty={!hasPipelineValue}
-        emptyMessage="Not enough data yet — add deals to the pipeline to see value by stage."
+        emptyMessage="Not enough data yet. Add opportunities to the sales board to see their value by stage."
         dataTable={<PipelineStageTable report={report} />}
       >
         <BarSeries
@@ -201,7 +220,7 @@ export const CrmOverviewSection = () => {
       <div>
         <h2 className="font-display text-lg font-bold text-foreground">Overview</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pipeline, support and activity for this organization at a glance.
+          Your sales, support and team activity at a glance.
         </p>
       </div>
 
@@ -214,6 +233,10 @@ export const CrmOverviewSection = () => {
         </>
       ) : (
         <>
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <CrmAttentionSection />
+            <CrmQuickActions />
+          </div>
           <OverviewKpiRow report={report} />
           <OverviewCharts report={report} />
         </>

@@ -1,5 +1,7 @@
 import { THEME_INIT_SCRIPT_SHA256 } from "@outfiqe/design-system";
 
+import { NATIVE_FORM_SUBMIT_GUARD_SHA256 } from "./nativeFormSubmitGuard";
+
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 const ESEWA_FORM_POST_ORIGINS = "https://epay.esewa.com.np https://rc-epay.esewa.com.np";
@@ -34,7 +36,7 @@ const scriptSrc = (nonce: string, isDev: boolean, renderMode: CspRenderMode): st
 
   const trustAnchor = isDev ? "'unsafe-eval'" : "'strict-dynamic' 'wasm-unsafe-eval'";
 
-  return `script-src 'self' 'nonce-${nonce}' '${THEME_INIT_SCRIPT_SHA256}' ${trustAnchor} ${TURNSTILE_ORIGIN}`;
+  return `script-src 'self' 'nonce-${nonce}' '${THEME_INIT_SCRIPT_SHA256}' '${NATIVE_FORM_SUBMIT_GUARD_SHA256}' ${trustAnchor} ${TURNSTILE_ORIGIN}`;
 };
 
 export const buildContentSecurityPolicy = ({

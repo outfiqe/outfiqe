@@ -57,8 +57,9 @@ it (directly or transitively) call `getIO()` from `#socket/socket.server.ts`?
   `registerCreatorLeaderboardEventConsumer`, `registerMessageEventConsumer`,
   `registerPresenceSocketConsumer`, and the `*SocketEventConsumer` group.
 - **No -> `registerBackgroundConsumers` (`worker` / `all`).** These only write to
-  Postgres or enqueue work: `registerXpEventConsumers`,
-  `registerAchievementEventConsumers`, `registerNotificationEventConsumers`. The
+  Postgres, enqueue work or send to outside services: `registerXpEventConsumers`,
+  `registerAchievementEventConsumers`, `registerNotificationEventConsumers`,
+  `registerProductAnalyticsEventConsumers` (PostHog, see `modules/product-analytics`). The
   notification event consumer publishes a `NOTIFICATION_CREATED` domain event
   that the `api` role's `registerNotificationSocketEventConsumer` turns into a
   socket emit, so the DB write and the emit stay in their own roles.

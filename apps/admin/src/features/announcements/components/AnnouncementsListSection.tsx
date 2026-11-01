@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -7,6 +8,7 @@ import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { announcementsApi } from "../api/announcementsApi";
@@ -55,9 +57,6 @@ const AUDIENCE_LABELS: Record<AnnouncementAudienceValue, string> = {
 
 const describeAudience = (announcement: Announcement): string =>
   announcement.audiences.map((audience) => AUDIENCE_LABELS[audience]).join(", ");
-
-const formatDateTime = (value: string | null): string =>
-  value ? new Date(value).toLocaleString() : "—";
 
 export const AnnouncementsListSection = () => {
   const [tab, setTab] = useSearchFilter("status", ANNOUNCEMENT_STATUS_FILTER);
@@ -116,7 +115,7 @@ export const AnnouncementsListSection = () => {
 
       <div className="mt-4 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               textLineCount={1}

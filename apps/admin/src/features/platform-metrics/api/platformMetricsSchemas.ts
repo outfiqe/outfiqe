@@ -8,6 +8,8 @@ export const tenantMetricRowSchema = z.object({
   subscriptionStatus: z.string().nullable(),
   isPlatformOrg: z.boolean(),
   linkedBrandId: z.string().nullable(),
+  linkedBrandName: z.string().nullable(),
+  ownerName: z.string().nullable(),
   memberCount: z.number(),
   contactCount: z.number(),
   dealCount: z.number(),
@@ -36,6 +38,16 @@ export const platformOverviewSchema = z.object({
 });
 export type PlatformOverview = z.infer<typeof platformOverviewSchema>;
 
+export const platformAttentionCountsSchema = z.object({
+  ordersToPack: z.number(),
+  productsToReview: z.number(),
+  brandApplications: z.number(),
+  refundsWaiting: z.number(),
+  withdrawalRequests: z.number(),
+  supportRequests: z.number(),
+});
+export type PlatformAttentionCounts = z.infer<typeof platformAttentionCountsSchema>;
+
 export const tenantSparklinePointSchema = z.object({
   day: z.string(),
   contactCount: z.number(),
@@ -58,11 +70,28 @@ export type PlatformActivityTrendPoint = z.infer<typeof platformActivityTrendPoi
 export const platformActivityTrendSchema = z.array(platformActivityTrendPointSchema);
 
 export const tenantMetricDetailSchema = tenantMetricRowSchema.extend({
+  ownerEmail: z.string().nullable(),
+  trialEndsAt: z.string().nullable(),
+  seats: z.number().nullable(),
+  currentPeriodEnd: z.string().nullable(),
+  cancelAtPeriodEnd: z.boolean(),
+  pendingInviteCount: z.number(),
   partnerCount: z.number(),
   customerCount: z.number(),
+  activeMemberCount: z.number(),
   series: z.array(tenantSparklinePointSchema),
 });
 export type TenantMetricDetail = z.infer<typeof tenantMetricDetailSchema>;
 
-export const tenantSortSchema = z.enum(["recent-activity", "name", "created"]);
+export const tenantSortValues = [
+  "recent-activity",
+  "name",
+  "created",
+  "members",
+  "contacts",
+  "deals",
+  "tickets",
+  "activities",
+] as const;
+export const tenantSortSchema = z.enum(tenantSortValues);
 export type TenantSort = z.infer<typeof tenantSortSchema>;

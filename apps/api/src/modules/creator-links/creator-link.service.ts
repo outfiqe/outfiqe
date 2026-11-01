@@ -4,8 +4,10 @@ import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
+import { creatorLinkErrors } from "./creator-link.errors.js";
 import { creatorLinkRepository } from "./creator-link.repository.js";
 import type { CreatorLinkView } from "./creator-link.types.js";
 import { buildTargetUrl, toCreatorLinkView } from "./creator-link.utils.js";
@@ -79,11 +81,7 @@ export const creatorLinkService = {
     await requireApprovedCreator(creatorId, "Only approved muses can manage links.");
     const link = await creatorLinkRepository.findOwned(linkId, creatorId);
     if (!link) {
-      throw new AppError(
-        "LINK_NOT_FOUND",
-        "This link is no longer available.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLinkErrors.linkNotFound();
     }
 
     await creatorLinkRepository.revoke(link.id);
@@ -96,11 +94,7 @@ export const creatorLinkService = {
   ): Promise<{ targetUrl: string }> {
     const link = await creatorLinkRepository.findByToken(token);
     if (!link || link.status === CreatorLinkStatus.REVOKED) {
-      throw new AppError(
-        "LINK_NOT_FOUND",
-        "This link is no longer available.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLinkErrors.linkNotFound();
     }
 
     const shouldRecordClick =
@@ -110,6 +104,13 @@ export const creatorLinkService = {
 
     if (shouldRecordClick) {
       await creatorLinkRepository.recordClick({ linkId: link.id, userId, sessionId });
+      productAnalyticsService.captureCreatorLinkClick({
+        visitorUserId: userId,
+        visitorSessionId: sessionId,
+        creatorId: link.creatorId,
+        productId: link.productId,
+        linkType: link.type,
+      });
     }
 
     return { targetUrl: buildTargetUrl(link.productId, link.creator.handle) };

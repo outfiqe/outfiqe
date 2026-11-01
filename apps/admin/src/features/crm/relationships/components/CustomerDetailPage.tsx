@@ -1,18 +1,29 @@
-import { FormBanner } from "@outfiqe/design-system";
+import { Avatar, FormBanner, StatCard } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { getRouteApi, Link } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 
+import { BackLink } from "@/components/BackLink";
+import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CustomerDetailSkeleton } from "../../components/CrmSkeletons";
-import { formatDate, formatRupees } from "../../utils/format.utils";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
+import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
 
+const SINGLE_ITEM_COUNT = 1;
+
+const toItemCountLabel = (itemCount: number) =>
+  `${itemCount} ${itemCount === SINGLE_ITEM_COUNT ? "item" : "items"}`;
+
 export const CustomerDetailPage = () => {
   const { userId } = routeApi.useParams();
+  const customerSubject = { subjectType: "customer", subjectId: userId } as const;
   const {
     data: customer,
     isLoading,
@@ -23,43 +34,45 @@ export const CustomerDetailPage = () => {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link to="/crm/customers" className="text-sm font-semibold text-primary-strong underline">
-        ← Back to customers
-      </Link>
+    <div>
+      <BackLink to="/crm/customers">All customers</BackLink>
 
       {isLoading && <CustomerDetailSkeleton />}
       {error && <FormBanner className="mt-4">{getErrorMessage(error)}</FormBanner>}
 
       {customer && (
         <div className="mt-4 space-y-6">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">{customer.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              @{customer.handle} · {customer.orderCount.toLocaleString()} orders ·{" "}
-              {customer.itemCount.toLocaleString()} items · {formatRupees(customer.totalPaid)} paid
-              · first order {formatDate(customer.firstOrderAt)}
-            </p>
+          <CrmPageHeader
+            title={customer.name}
+            leading={<Avatar name={customer.name} imageUrl={customer.avatarUrl} size="lg" />}
+            description={`@${customer.handle} · customer since ${formatDate(customer.firstOrderAt)}`}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Orders" value={customer.orderCount.toLocaleString()} />
+            <StatCard label="Items bought" value={customer.itemCount.toLocaleString()} />
+            <StatCard label="Total paid" value={formatRupees(customer.totalPaid)} />
+            <StatCard label="Last order" value={formatDate(customer.lastOrderAt)} />
           </div>
 
-          <section>
-            <h2 className="font-display text-base font-bold text-foreground">Recent orders</h2>
+          <MetricSection title="Recent orders" description="The latest orders from this customer.">
             {customer.recentOrders.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No orders yet.</p>
+              <MetricEmptyState>No orders yet.</MetricEmptyState>
             ) : (
-              <ul className="mt-2 space-y-2 text-sm">
-                {customer.recentOrders.map((order) => (
-                  <li key={order.orderId} className="rounded-lg border border-border p-3">
-                    {order.itemCount} item{order.itemCount === 1 ? "" : "s"} ·{" "}
-                    {formatRupees(order.brandSubtotal)} · {order.paymentStatus.toLowerCase()} /{" "}
-                    {order.fulfilmentStatus.toLowerCase()} · {formatDate(order.createdAt)}
-                  </li>
-                ))}
-              </ul>
+              customer.recentOrders.map((order) => (
+                <MetricRow
+                  key={order.orderId}
+                  label={toItemCountLabel(order.itemCount)}
+                  detail={`${toPlainWords(order.paymentStatus)} · ${toPlainWords(order.fulfilmentStatus)} · ${formatDate(order.createdAt)}`}
+                  value={formatRupees(order.brandSubtotal)}
+                />
+              ))
             )}
-          </section>
+          </MetricSection>
 
-          <TimelineSection subjectType="customer" subjectId={userId} />
+          <ConnectedPeopleSection subject={customerSubject} />
+          <ConnectedWorkSection subject={customerSubject} />
+          <TimelineSection {...customerSubject} />
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ The shopper's bag: the `/cart` page, and the hooks other features use to add to 
 - `components/CouponForm.tsx` — apply or remove a coupon code.
 - `api/cartApi.ts`, `api/cartSchemas.ts` — the `/cart` client (`get`, add, update quantity, remove, set city, apply coupon, remove coupon) and the `Cart` shape.
 - `hooks/useCart.ts` — the `["cart"]` query, only enabled for a shopper.
-- `hooks/useAddToCart.ts`, `useUpdateCartItem.ts`, `useRemoveCartItem.ts`, `useUpdateCartCity.ts`, `useApplyCoupon.ts`, `useRemoveCoupon.ts` — one mutation each.
+- `hooks/useAddToCart.ts`, `useUpdateCartItem.ts`, `useRemoveCartItem.ts`, `useUpdateCartCity.ts`, `useApplyCoupon.ts`, `useRemoveCoupon.ts` — one mutation each. `useAddToCart` and `useRemoveCartItem` also send the `cart:item_add` / `cart:item_remove` analytics events once the server confirms (see `features/analytics`). The removal reads the item's product from the cart cached before the removal, because the returned cart no longer has it.
 - `constants/cart.constants.ts` — `CART_QUERY_KEY`.
 - `index.ts` — what other features import (`product-detail` adds to the bag, `checkout` reads it).
 

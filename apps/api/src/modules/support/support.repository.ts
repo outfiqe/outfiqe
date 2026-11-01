@@ -1,3 +1,5 @@
+import { millisecondsInHour } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import {
@@ -115,6 +117,19 @@ const buildAdminWhere = (filters: SupportTicketFilters): Prisma.SupportTicketWhe
     : {}),
 });
 
+const requesterSearchFilter = (search: string): Prisma.SupportTicketWhereInput => {
+  const ticketNumberText = TICKET_REFERENCE_PATTERN.exec(search)?.[TICKET_NUMBER_GROUP];
+  return {
+    OR: [
+      { subject: { contains: search, mode: Prisma.QueryMode.insensitive } },
+      ...(ticketNumberText ? [{ ticketNumber: Number(ticketNumberText) }] : []),
+    ],
+  };
+};
+
+const TICKET_REFERENCE_PATTERN = /^(?:OFQ-)?(\d{1,9})$/i;
+const TICKET_NUMBER_GROUP = 1;
+
 const listPage = async (
   where: Prisma.SupportTicketWhereInput,
   params: { cursor?: string; limit: number },
@@ -213,9 +228,9 @@ export const supportRepository = {
 
   listForRequester(
     requesterUserId: string,
-    params: { cursor?: string; limit: number },
+    { search, ...params }: { search?: string; cursor?: string; limit: number },
   ): Promise<{ tickets: SupportTicketRecord[]; nextCursor: string | null }> {
-    return listPage({ requesterUserId }, params);
+    return listPage({ requesterUserId, ...(search ? requesterSearchFilter(search) : {}) }, params);
   },
 
   listForAdmin(
@@ -327,7 +342,7 @@ export const supportRepository = {
     ]);
 
     const oldestWaitingAgeHours = oldestWaiting
-      ? Math.round((Date.now() - oldestWaiting.createdAt.getTime()) / (60 * 60 * 1000))
+      ? Math.round((Date.now() - oldestWaiting.createdAt.getTime()) / millisecondsInHour)
       : null;
 
     return { open, unassigned, awaitingUs, oldestWaitingAgeHours };

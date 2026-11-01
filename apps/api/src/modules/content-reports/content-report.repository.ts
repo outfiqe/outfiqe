@@ -8,7 +8,12 @@ import {
   OutfitPhotoStatus,
   OutfitVisibility,
 } from "#generated/prisma/enums.js";
-import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import {
+  buildCursorPage,
+  decodeCursor,
+  encodeCursor,
+  NEXT_PAGE_PROBE_ROWS,
+} from "#lib/pagination.utils.js";
 
 import type {
   ContentReportListItem,
@@ -223,6 +228,60 @@ const idsOfType = (
   targetType: ContentReportTarget,
 ): string[] => rows.filter((row) => row.targetType === targetType).map((row) => row.targetId);
 
+const listInclude = { reportedBy: { select: { name: true } } } as const;
+
+type ContentReportListRow = Prisma.ContentReportGetPayload<{ include: typeof listInclude }>;
+
+const buildReportCursorWhere = (cursor?: string): Prisma.ContentReportWhereInput => {
+  const decodedCursor = decodeCursor<ReportCursor>(cursor);
+  if (!decodedCursor) return {};
+
+  const { c: cursorCreatedAt, i: cursorReportId } = decodedCursor;
+  return {
+    OR: [
+      { createdAt: { lt: new Date(cursorCreatedAt) } },
+      { AND: [{ createdAt: new Date(cursorCreatedAt) }, { id: { lt: cursorReportId } }] },
+    ],
+  };
+};
+
+const hydrateTargetsByType = async (
+  rows: ContentReportListRow[],
+): Promise<Record<ContentReportTarget, Map<string, ContentReportTargetPreview>>> => {
+  const [lookTargets, commentTargets, buildTargets, buildCommentTargets, photoTargets] =
+    await Promise.all([
+      hydrateLookTargets(idsOfType(rows, ContentReportTarget.CREATOR_LOOK)),
+      hydrateCommentTargets(idsOfType(rows, ContentReportTarget.CREATOR_LOOK_COMMENT)),
+      hydrateBuildTargets(idsOfType(rows, ContentReportTarget.OUTFIT_BUILD)),
+      hydrateBuildCommentTargets(idsOfType(rows, ContentReportTarget.OUTFIT_BUILD_COMMENT)),
+      hydratePhotoTargets(idsOfType(rows, ContentReportTarget.OUTFIT_PHOTO)),
+    ]);
+  return {
+    [ContentReportTarget.CREATOR_LOOK]: lookTargets,
+    [ContentReportTarget.CREATOR_LOOK_COMMENT]: commentTargets,
+    [ContentReportTarget.OUTFIT_BUILD]: buildTargets,
+    [ContentReportTarget.OUTFIT_BUILD_COMMENT]: buildCommentTargets,
+    [ContentReportTarget.OUTFIT_PHOTO]: photoTargets,
+  };
+};
+
+const toContentReportListItem = (
+  row: ContentReportListRow,
+  target: ContentReportTargetPreview | null,
+): ContentReportListItem => ({
+  id: row.id,
+  targetType: row.targetType,
+  targetId: row.targetId,
+  reason: row.reason,
+  note: row.note,
+  status: row.status,
+  createdAt: row.createdAt,
+  resolvedAt: row.resolvedAt,
+  resolutionNote: row.resolutionNote,
+  reporterName: row.reportedBy?.name ?? null,
+  target,
+});
+
 export const contentReportRepository = {
   async findReportableTarget(
     targetType: ContentReportTarget,
@@ -303,61 +362,21 @@ export const contentReportRepository = {
     cursor?: string;
     limit: number;
   }): Promise<ContentReportPage> {
-    const decoded = decodeCursor<ReportCursor>(cursor);
-    const cursorWhere: Prisma.ContentReportWhereInput = decoded
-      ? {
-          OR: [
-            { createdAt: { lt: new Date(decoded.c) } },
-            { AND: [{ createdAt: new Date(decoded.c) }, { id: { lt: decoded.i } }] },
-          ],
-        }
-      : {};
-
     const rows = await prisma.contentReport.findMany({
-      where: { ...(status ? { status } : {}), ...cursorWhere },
+      where: { ...(status ? { status } : {}), ...buildReportCursorWhere(cursor) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
-      include: { reportedBy: { select: { name: true } } },
+      take: limit + NEXT_PAGE_PROBE_ROWS,
+      include: listInclude,
     });
 
     const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
       encodeCursor<ReportCursor>({ c: row.createdAt.toISOString(), i: row.id }),
     );
 
-    const [lookTargets, commentTargets, buildTargets, buildCommentTargets, photoTargets] =
-      await Promise.all([
-        hydrateLookTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK)),
-        hydrateCommentTargets(idsOfType(pageRows, ContentReportTarget.CREATOR_LOOK_COMMENT)),
-        hydrateBuildTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD)),
-        hydrateBuildCommentTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_BUILD_COMMENT)),
-        hydratePhotoTargets(idsOfType(pageRows, ContentReportTarget.OUTFIT_PHOTO)),
-      ]);
-    const targetsByType: Record<ContentReportTarget, Map<string, ContentReportTargetPreview>> = {
-      [ContentReportTarget.CREATOR_LOOK]: lookTargets,
-      [ContentReportTarget.CREATOR_LOOK_COMMENT]: commentTargets,
-      [ContentReportTarget.OUTFIT_BUILD]: buildTargets,
-      [ContentReportTarget.OUTFIT_BUILD_COMMENT]: buildCommentTargets,
-      [ContentReportTarget.OUTFIT_PHOTO]: photoTargets,
-    };
-
-    const items: ContentReportListItem[] = pageRows.map((row) => {
-      const { targetType, targetId } = row;
-      const target = targetsByType[targetType].get(targetId) ?? null;
-
-      return {
-        id: row.id,
-        targetType,
-        targetId,
-        reason: row.reason,
-        note: row.note,
-        status: row.status,
-        createdAt: row.createdAt,
-        resolvedAt: row.resolvedAt,
-        resolutionNote: row.resolutionNote,
-        reporterName: row.reportedBy?.name ?? null,
-        target,
-      };
-    });
+    const targetsByType = await hydrateTargetsByType(pageRows);
+    const items = pageRows.map((row) =>
+      toContentReportListItem(row, targetsByType[row.targetType].get(row.targetId) ?? null),
+    );
 
     return { items, nextCursor };
   },

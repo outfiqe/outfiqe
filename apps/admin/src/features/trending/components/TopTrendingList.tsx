@@ -47,8 +47,8 @@ export const TopTrendingList = ({
   if (entries.length === 0) {
     return (
       <p className="mt-3 text-sm text-muted-foreground">
-        Nothing is trending yet. Check back once there&apos;s real purchase, cart, stash, or
-        muse-tag activity.
+        Nothing is on the list yet. It fills in once shoppers start buying, carting and stashing, or
+        muses start tagging.
       </p>
     );
   }

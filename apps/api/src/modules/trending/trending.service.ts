@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { millisecondsInDay } from "date-fns/constants";
+
 import { decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -182,7 +184,7 @@ export const trendingService = {
     const bucketStart = truncateToHour(new Date());
     await trendingRepository.upsertHourlyMetrics(bucketStart);
 
-    const retentionCutoff = new Date(Date.now() - METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const retentionCutoff = new Date(Date.now() - METRIC_RETENTION_DAYS * millisecondsInDay);
     const deletedBuckets = await trendingRepository.deleteMetricsOlderThan(retentionCutoff);
 
     return { bucketStart, deletedBuckets };
@@ -272,7 +274,10 @@ export const trendingService = {
       await computeAllScoreBreakdowns(now);
     const rankIndex = candidates.findIndex((candidate) => candidate.productId === productId);
     const rankedBreakdown = rankIndex >= 0 ? candidates[rankIndex] : undefined;
-    if (rankedBreakdown) return { ...rankedBreakdown, rank: rankIndex + 1, scoredAt: now };
+    const dailyActivity = await trendingRepository.listDailyActivity(productId);
+    if (rankedBreakdown) {
+      return { ...rankedBreakdown, rank: rankIndex + 1, scoredAt: now, dailyActivity };
+    }
 
     const breakdown = scoreProduct({
       productId,
@@ -284,6 +289,6 @@ export const trendingService = {
       globalBaseline,
       now,
     });
-    return { ...breakdown, rank: null, scoredAt: now };
+    return { ...breakdown, rank: null, scoredAt: now, dailyActivity };
   },
 };

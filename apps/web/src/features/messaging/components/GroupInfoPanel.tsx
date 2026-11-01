@@ -1,6 +1,15 @@
 "use client";
 
-import { Badge, Button, FormBanner, Input, Label, Modal, Skeleton } from "@outfiqe/design-system";
+import {
+  Badge,
+  Button,
+  ConfirmModal,
+  FormBanner,
+  Input,
+  Label,
+  Modal,
+  Skeleton,
+} from "@outfiqe/design-system";
 import { useGroupActions, useGroupMembers } from "@outfiqe/hooks";
 import type { ChatContact, ConversationMember, ConversationMemberRole } from "@outfiqe/types";
 import { type FormEvent, useId, useState } from "react";
@@ -224,36 +233,28 @@ export const GroupInfoPanel = ({
         )}
 
         <section className="border-t border-border pt-4">
-          {isConfirmingLeave ? (
-            <div className="space-y-2">
-              <p className="text-sm text-foreground">
-                Leave {groupName}? You won&apos;t see new messages unless someone adds you back.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="border-destructive text-destructive"
-                  onClick={leaveGroup}
-                  isLoading={leave.isPending}
-                >
-                  Yes, leave
-                </Button>
-                <Button variant="ghost" onClick={() => setIsConfirmingLeave(false)}>
-                  Stay
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="border-destructive text-destructive"
-              onClick={() => setIsConfirmingLeave(true)}
-            >
-              Leave group
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            className="border-destructive text-destructive"
+            onClick={() => setIsConfirmingLeave(true)}
+          >
+            Leave group
+          </Button>
         </section>
       </div>
+
+      <ConfirmModal
+        open={isConfirmingLeave}
+        title={`Leave ${groupName}?`}
+        description="You won't see new messages unless someone adds you back."
+        confirmLabel="Yes, leave"
+        pendingLabel="Leaving…"
+        cancelLabel="Stay"
+        destructive
+        isPending={leave.isPending}
+        onConfirm={leaveGroup}
+        onCancel={() => setIsConfirmingLeave(false)}
+      />
     </Modal>
   );
 };

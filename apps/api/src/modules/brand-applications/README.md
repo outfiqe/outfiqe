@@ -8,6 +8,7 @@ time-limited invite the brand uses to set up their account.
 
 ## Structure
 
+- `brand-application.errors.ts` — `brandApplicationErrors`, the errors this module raises from more than one place.
 - `brand-application.routes.ts` — `POST /` (public, rate-limited), `GET /` (admin, cursor-paginated,
   filterable by status), `POST /:id/approve`, `POST /:id/reject` (both admin-only).
 - `brand-application.controller.ts` — reads validated request data, calls the service, sends the
@@ -40,6 +41,8 @@ and a `BrandInvite` in the same DB transaction as the status update, so a brand 
 half-provisioned.
 
 ## Non-obvious rationale
+
+- **An invite email can fail after approval.** The approval is already saved by then, and the brand has no other way in, so the admin is told when it did not send and can use Resend invite. Resending replaces the token on the same invite, so the older link stops working and the seven days start again.
 
 - `approve` rejects (409 `ALREADY_REVIEWED`) if the application isn't `PENDING` — this guards
   against a double-click or two admins approving the same application concurrently; only the first

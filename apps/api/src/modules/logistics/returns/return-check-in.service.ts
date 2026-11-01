@@ -12,6 +12,7 @@ import { orderService } from "#modules/orders/order.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsRefusalRepository } from "../refusals/refusal.repository.js";
 import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
@@ -45,13 +46,9 @@ type TransactionClient = Prisma.TransactionClient;
 
 const requireParcelAwaitingReturn = async (shipmentId: string): Promise<ParcelForReturn> => {
   const parcel = await logisticsReturnRepository.findParcelForReturn(prisma, shipmentId);
-  if (!parcel) throw new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+  if (!parcel) throw logisticsErrors.parcelNotFound();
   if (parcel.returnCheckedInAt) {
-    throw new AppError(
-      "PARCEL_RETURN_ALREADY_CHECKED_IN",
-      "This parcel's return has already been checked in.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw logisticsErrors.parcelReturnAlreadyCheckedIn();
   }
   if (!PARCEL_STATUSES_ACCEPTING_RETURN.has(parcel.status)) {
     throw new AppError(
@@ -160,6 +157,32 @@ const recordOutcomeConsequences = async (
   }
 };
 
+type ParcelAwaitingReturn = Awaited<ReturnType<typeof requireParcelAwaitingReturn>>;
+
+const refundReturnedParcel = async ({
+  staffUserId,
+  shipmentId,
+  parcel,
+  refundCause,
+  reason,
+}: {
+  staffUserId: string;
+  shipmentId: string;
+  parcel: ParcelAwaitingReturn;
+  refundCause: ReturnType<typeof resolveReturnOutcome>["refundCause"];
+  reason: string;
+}) => {
+  const refundLines = toRefundLines(parcel);
+  if (refundLines.length <= NO_UNITS) return null;
+
+  return orderService.refundOrderItems(
+    staffUserId,
+    parcel.orderId,
+    { lines: refundLines, cause: refundCause, reason, restock: false },
+    `${RETURN_REFUND_KEY_PREFIX}:${shipmentId}`,
+  );
+};
+
 export const logisticsReturnCheckInService = {
   async checkInReturnedParcel(
     staffUserId: string,
@@ -180,21 +203,13 @@ export const logisticsReturnCheckInService = {
       ? calculateGoodsStillInParcel(parcelItems)
       : null;
 
-    const refundLines = toRefundLines(parcel);
-    const refund =
-      refundLines.length > NO_UNITS
-        ? await orderService.refundOrderItems(
-            staffUserId,
-            parcel.orderId,
-            {
-              lines: refundLines,
-              cause: rules.refundCause,
-              reason: note ?? RETURN_REFUND_REASONS[outcome],
-              restock: false,
-            },
-            `${RETURN_REFUND_KEY_PREFIX}:${shipmentId}`,
-          )
-        : null;
+    const refund = await refundReturnedParcel({
+      staffUserId,
+      shipmentId,
+      parcel,
+      refundCause: rules.refundCause,
+      reason: note ?? RETURN_REFUND_REASONS[outcome],
+    });
 
     const checkedInAt = new Date();
     const { brandReturnIds, pickupOutcomes } = await prisma.$transaction(async (tx) => {
@@ -206,11 +221,7 @@ export const logisticsReturnCheckInService = {
         partnerClaimAmount,
       });
       if (!isCheckedIn) {
-        throw new AppError(
-          "PARCEL_RETURN_ALREADY_CHECKED_IN",
-          "This parcel's return has already been checked in.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw logisticsErrors.parcelReturnAlreadyCheckedIn();
       }
       const returnPickupOutcomes = await recordReturnEvents(tx, parcel, staffUserId, checkedInAt);
       const createdReturnIds = await createBrandReturns(tx, parcel, lines);

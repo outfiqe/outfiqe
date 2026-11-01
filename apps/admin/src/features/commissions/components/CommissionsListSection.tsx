@@ -1,5 +1,6 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -7,6 +8,7 @@ import { TextPromptModal } from "@/components/TextPromptModal";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { commissionsApi } from "../api/commissionsApi";
@@ -95,7 +97,7 @@ export const CommissionsListSection = () => {
 
       <div className="mt-4 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton
               key={index}
               textLineCount={2}
@@ -146,7 +148,7 @@ export const CommissionsListSection = () => {
                   {productName} · {brandName} · {SOURCE_LABEL[source]}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Rs. {amount.toLocaleString()} · {new Date(createdAt).toLocaleDateString()}
+                  Rs. {amount.toLocaleString()} · {formatDate(createdAt)}
                 </p>
               </div>
 

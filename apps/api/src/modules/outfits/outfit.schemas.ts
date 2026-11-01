@@ -1,6 +1,7 @@
 import { OUTFIT_ITEMS_PER_MEMBER_CHOICES, PUBLIC_BUILD_SORT } from "@outfiqe/utils";
 import { z } from "zod";
 
+import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { OutfitPhotoKind, OutfitVisibility } from "#generated/prisma/enums.js";
 import {
   hasAlignedImageAssetIds,
@@ -183,6 +184,7 @@ export const addOutfitCommentSchema = z
   .strict();
 
 export const listOutfitsQuerySchema = z.object({
+  search: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH).optional(),
   cursor: z.string().optional(),
   limit: z.coerce
     .number()

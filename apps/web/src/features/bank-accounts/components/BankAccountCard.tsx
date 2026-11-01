@@ -3,6 +3,7 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { Landmark } from "lucide-react";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BankAccount, OwnerTypeValue } from "../api/bankAccountSchemas";
@@ -35,7 +36,9 @@ export const BankAccountCard = ({ ownerType, bankAccount }: BankAccountCardProps
   };
 
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border p-4">
+    <div
+      className={`${PRIVATE_ANALYTICS_CLASS_NAME} flex items-center gap-4 rounded-2xl border border-border p-4`}
+    >
       {qrCodeImageUrl ? (
         <a
           href={qrCodeImageUrl}

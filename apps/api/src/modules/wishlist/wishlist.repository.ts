@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
+import { CURSOR_ROW_SKIP, NEXT_PAGE_PROBE_ROWS } from "#lib/pagination.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 
 export const wishlistRepository = {
@@ -8,10 +9,10 @@ export const wishlistRepository = {
       const existing = await tx.savedProduct.findUnique({
         where: { userId_productId: { userId, productId } },
       });
-      if (existing) return false;
+      const isNewlySaved = existing === null;
 
-      await tx.savedProduct.create({ data: { userId, productId } });
-      return true;
+      if (isNewlySaved) await tx.savedProduct.create({ data: { userId, productId } });
+      return isNewlySaved;
     });
   },
 
@@ -20,10 +21,12 @@ export const wishlistRepository = {
       const existing = await tx.savedProduct.findUnique({
         where: { userId_productId: { userId, productId } },
       });
-      if (!existing) return false;
+      const wasSaved = existing !== null;
 
-      await tx.savedProduct.delete({ where: { userId_productId: { userId, productId } } });
-      return true;
+      if (wasSaved) {
+        await tx.savedProduct.delete({ where: { userId_productId: { userId, productId } } });
+      }
+      return wasSaved;
     });
   },
 
@@ -52,14 +55,14 @@ export const wishlistRepository = {
 
   async listSaved(
     userId: string,
-    params: { cursor?: string; limit: number },
+    { cursor, limit }: { cursor?: string; limit: number },
   ): Promise<{ product: ProductWithBrand; productId: string }[]> {
     return prisma.savedProduct.findMany({
       where: { userId, product: { status: ProductStatus.APPROVED } },
       orderBy: [{ createdAt: "desc" }, { productId: "desc" }],
-      take: params.limit + 1,
-      ...(params.cursor
-        ? { cursor: { userId_productId: { userId, productId: params.cursor } }, skip: 1 }
+      take: limit + NEXT_PAGE_PROBE_ROWS,
+      ...(cursor
+        ? { cursor: { userId_productId: { userId, productId: cursor } }, skip: CURSOR_ROW_SKIP }
         : {}),
       include: {
         product: {

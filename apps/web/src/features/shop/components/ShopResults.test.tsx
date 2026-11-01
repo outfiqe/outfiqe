@@ -109,6 +109,28 @@ beforeEach(() => {
 });
 
 describe("ShopResults", () => {
+  it("offers a retry instead of an empty shop when products fail to load", async () => {
+    const user = userEvent.setup();
+    const retryLoadingProducts = vi.fn();
+    mockInfiniteProducts({ data: undefined, isError: true, refetch: retryLoadingProducts });
+    render(<ShopResults />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("We couldn't load these pieces.");
+    expect(screen.queryByText("No pieces here yet. Check back soon.")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(retryLoadingProducts).toHaveBeenCalledOnce();
+  });
+
+  it("keeps products on screen when a later refresh fails", () => {
+    mockInfiniteProducts({ isError: true });
+    render(<ShopResults />);
+
+    expect(screen.getByText("Everyday Tee")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("shows the loaded grid once products resolve", () => {
     render(<ShopResults />);
 

@@ -1,10 +1,15 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
-import type { TagReportReason, TagReportSource, TagReportStatus } from "#generated/prisma/enums.js";
-import type { TagReviewStatus } from "#generated/prisma/enums.js";
-import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import type { TagReportReason, TagReportSource, TagReviewStatus } from "#generated/prisma/enums.js";
+import { TagReportStatus } from "#generated/prisma/enums.js";
+import {
+  buildCursorPage,
+  decodeCursor,
+  encodeCursor,
+  NEXT_PAGE_PROBE_ROWS,
+} from "#lib/pagination.utils.js";
 
-import type { ReportableTag, TagReportPage } from "./tag-report.types.js";
+import type { ReportableTag, TagReportListItem, TagReportPage } from "./tag-report.types.js";
 
 type ReportCursor = { c: string; i: string };
 
@@ -40,6 +45,56 @@ const listInclude = {
   },
 } as const;
 
+type TagReportListRow = Prisma.TagReviewReportGetPayload<{ include: typeof listInclude }>;
+
+const buildReportCursorWhere = (cursor?: string): Prisma.TagReviewReportWhereInput => {
+  const decodedCursor = decodeCursor<ReportCursor>(cursor);
+  if (!decodedCursor) return {};
+
+  const { c: cursorCreatedAt, i: cursorReportId } = decodedCursor;
+  return {
+    OR: [
+      { createdAt: { lt: new Date(cursorCreatedAt) } },
+      { AND: [{ createdAt: new Date(cursorCreatedAt) }, { id: { lt: cursorReportId } }] },
+    ],
+  };
+};
+
+const toTagReportListItem = (row: TagReportListRow): TagReportListItem => {
+  const { creatorLookProduct: tag } = row;
+  const { creatorLook: look, product } = tag;
+  return {
+    id: row.id,
+    source: row.source,
+    reason: row.reason,
+    note: row.note,
+    status: row.status,
+    createdAt: row.createdAt,
+    reviewedAt: row.reviewedAt,
+    resolutionNote: row.resolutionNote,
+    reporterName: row.reportedBy?.name ?? null,
+    tag: {
+      id: tag.id,
+      lookId: look.id,
+      lookImageUrl: look.imageUrl,
+      reviewStatus: tag.reviewStatus,
+      sizeWorn: tag.sizeWorn,
+      product: {
+        id: product.id,
+        name: product.name,
+        brandId: product.brandId,
+        brandName: product.brand.name,
+      },
+      creator: {
+        id: look.creator.id,
+        name: look.creator.name,
+        handle: look.creator.handle,
+        counterfeitFlagCount: look.creator.tagCounterfeitFlagCount,
+      },
+    },
+  };
+};
+
 export const tagReportRepository = {
   async findReportableTag(lookId: string, productId: string): Promise<ReportableTag | null> {
     const tag = await prisma.creatorLookProduct.findFirst({
@@ -67,7 +122,7 @@ export const tagReportRepository = {
   },
 
   countOpen(): Promise<number> {
-    return prisma.tagReviewReport.count({ where: { status: "OPEN" } });
+    return prisma.tagReviewReport.count({ where: { status: TagReportStatus.OPEN } });
   },
 
   async listForAdmin({
@@ -79,63 +134,18 @@ export const tagReportRepository = {
     cursor?: string;
     limit: number;
   }): Promise<TagReportPage> {
-    const decoded = decodeCursor<ReportCursor>(cursor);
-    const cursorWhere: Prisma.TagReviewReportWhereInput = decoded
-      ? {
-          OR: [
-            { createdAt: { lt: new Date(decoded.c) } },
-            { AND: [{ createdAt: new Date(decoded.c) }, { id: { lt: decoded.i } }] },
-          ],
-        }
-      : {};
-
     const rows = await prisma.tagReviewReport.findMany({
-      where: { ...(status ? { status } : {}), ...cursorWhere },
+      where: { ...(status ? { status } : {}), ...buildReportCursorWhere(cursor) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: limit + 1,
+      take: limit + NEXT_PAGE_PROBE_ROWS,
       include: listInclude,
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, limit, (row) =>
+    const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
       encodeCursor<ReportCursor>({ c: row.createdAt.toISOString(), i: row.id }),
     );
 
-    return {
-      items: items.map((row) => {
-        const { creatorLookProduct: tag } = row;
-        return {
-          id: row.id,
-          source: row.source,
-          reason: row.reason,
-          note: row.note,
-          status: row.status,
-          createdAt: row.createdAt,
-          reviewedAt: row.reviewedAt,
-          resolutionNote: row.resolutionNote,
-          reporterName: row.reportedBy?.name ?? null,
-          tag: {
-            id: tag.id,
-            lookId: tag.creatorLook.id,
-            lookImageUrl: tag.creatorLook.imageUrl,
-            reviewStatus: tag.reviewStatus,
-            sizeWorn: tag.sizeWorn,
-            product: {
-              id: tag.product.id,
-              name: tag.product.name,
-              brandId: tag.product.brandId,
-              brandName: tag.product.brand.name,
-            },
-            creator: {
-              id: tag.creatorLook.creator.id,
-              name: tag.creatorLook.creator.name,
-              handle: tag.creatorLook.creator.handle,
-              counterfeitFlagCount: tag.creatorLook.creator.tagCounterfeitFlagCount,
-            },
-          },
-        };
-      }),
-      nextCursor,
-    };
+    return { items: pageRows.map(toTagReportListItem), nextCursor };
   },
 
   async findResolvableReport(id: string): Promise<{

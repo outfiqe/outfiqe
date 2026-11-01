@@ -11,17 +11,17 @@ import { platformSettingsPageSkeletonSpecs } from "./platformSettingsPageSkeleto
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
   "/platform": {
     title: "Overview",
-    description: "Platform-wide totals, activity trend and settlement reconciliation.",
+    description: "What needs action today, where the money went, and how the CRM is being used.",
     blocks: [
       { kind: "statCards", count: KPI_CARD_COUNT, columns: "six" },
       {
         kind: "tiles",
-        title: "Quick access",
+        title: "Needs action",
         labels: [
           "Orders",
           "Products",
           "Brand applications",
-          "Coupons",
+          "Refunds",
           "Withdrawal requests",
           "Support requests",
         ],
@@ -33,12 +33,16 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
       },
       {
         kind: "section",
-        title: "Settlement reconciliation",
-        description: "Gateway money held vs. what the ledger says is owed, last 30 days.",
+        title: "Where the money went",
+        description: "Orders paid in the last 30 days, followed all the way through.",
         blocks: [{ kind: "statCards", count: 3, columns: "four" }],
       },
     ],
-    sourceFiles: [`${FEATURES_DIR}/platform-metrics/components/PlatformOverviewPage.tsx`],
+    sourceFiles: [
+      `${FEATURES_DIR}/platform-metrics/components/PlatformOverviewPage.tsx`,
+      `${FEATURES_DIR}/platform-metrics/components/QuickAccessSection.tsx`,
+      `${FEATURES_DIR}/financial-rollup/components/MoneyBreakdownSection.tsx`,
+    ],
   },
   "/profile": {
     title: "Edit profile",

@@ -1,6 +1,7 @@
 @import "./fonts.css";
 
 :root {
+  color-scheme: light;
   --background: 32 30% 95%;
   --foreground: 200 12% 13%;
 
@@ -118,6 +119,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: 30 22% 8%;
   --foreground: 190 10% 94%;
 

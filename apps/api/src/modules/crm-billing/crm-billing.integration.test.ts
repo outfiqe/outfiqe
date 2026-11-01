@@ -8,6 +8,7 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
+import { turnKhaltiOff, turnKhaltiOn } from "#test/integration/khalti-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
@@ -83,8 +84,9 @@ const setUpTenantWithSuperAdmin = async (trialEndsAt: Date | null = addDays(new 
   return { organization, staff, membership, host: `${organization.subdomain}.localhost` };
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await turnKhaltiOn();
   esewaInitiate.mockResolvedValue(FORM_POST_RESULT);
   khaltiInitiate.mockResolvedValue({
     mode: "REDIRECT",
@@ -152,6 +154,26 @@ describe("POST /api/crm/billing/checkout", () => {
     expect(invoice.status).toBe("OPEN");
     expect(invoice.provider).toBe("ESEWA");
     expect(invoice.amount).toBe(2700);
+  });
+
+  it("refuses Khalti while its switch is off and still takes eSewa", async () => {
+    await turnKhaltiOff();
+    const { staff, host } = await setUpTenantWithSuperAdmin();
+
+    const khaltiCheckout = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 3, provider: "KHALTI" });
+    const esewaCheckout = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 3, provider: "ESEWA" });
+
+    expect(khaltiCheckout.status).toBe(422);
+    expect(khaltiCheckout.body.code).toBe("KHALTI_UNAVAILABLE");
+    expect(esewaCheckout.status).toBe(200);
   });
 
   it("reuses the existing open invoice instead of creating a duplicate on a second checkout", async () => {

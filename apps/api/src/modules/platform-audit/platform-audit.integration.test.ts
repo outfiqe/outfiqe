@@ -56,6 +56,54 @@ const addPlatformMember = async (organizationId: string, roleId: string) => {
   return user;
 };
 
+describe("GET /api/platform/audit/filters", () => {
+  it("offers the actions, item types and people that are really in the log", async () => {
+    const { organization, adminRole } = await seedPlatform();
+    const admin = await addPlatformMember(organization.id, adminRole.id);
+
+    await platformAudit.record({
+      actorUserId: admin.id,
+      action: "user.suspended",
+      summary: "Suspended a user",
+      targetType: "user",
+      targetId: randomUUID(),
+    });
+    await platformAudit.record({
+      actorUserId: admin.id,
+      action: "user.suspended",
+      summary: "Suspended another user",
+      targetType: "user",
+      targetId: randomUUID(),
+    });
+    await platformAudit.record({
+      actorUserId: admin.id,
+      action: "job.retried",
+      summary: "Retried a job",
+    });
+
+    const res = await request(testApp)
+      .get("/api/platform/audit/filters")
+      .set("Authorization", authHeaderFor(admin.id));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({
+      actions: ["job.retried", "user.suspended"],
+      targetTypes: ["user"],
+      actors: [{ id: admin.id, name: "Platform Person" }],
+    });
+  });
+
+  it("rejects a non-admin account", async () => {
+    const shopper = await createUser(UserRole.CUSTOMER);
+
+    const res = await request(testApp)
+      .get("/api/platform/audit/filters")
+      .set("Authorization", authHeaderFor(shopper.id));
+
+    expect(res.status).toBe(403);
+  });
+});
+
 describe("GET /api/platform/audit", () => {
   it("records an entry and lists it back for a platform admin", async () => {
     const { organization, adminRole } = await seedPlatform();

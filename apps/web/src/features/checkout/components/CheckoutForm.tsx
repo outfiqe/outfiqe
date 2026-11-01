@@ -32,6 +32,7 @@ import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { COD_UNAVAILABLE_REASON } from "../constants/checkout.constants";
 import { useCheckout } from "../hooks/useCheckout";
+import { useCheckoutAnalytics } from "../hooks/useCheckoutAnalytics";
 import { useCodEligibility } from "../hooks/useCodEligibility";
 import type { BuyNowPayload } from "../utils/buyNowStorage";
 import { clearBuyNowPayload } from "../utils/buyNowStorage";
@@ -69,6 +70,11 @@ export const CheckoutForm = ({
   const queryClient = useQueryClient();
   const { state } = useAuth();
   const checkout = useCheckout();
+  const { trackPaymentMethodSelect, trackOrderSubmit } = useCheckoutAnalytics({
+    cart,
+    isBuyNow: Boolean(buyNow),
+    hasCoupon: Boolean(cart.appliedCoupon ?? buyNowCoupon),
+  });
   const initiatePayment = useInitiatePayment();
   const createAddress = useCreateAddress();
   const isOnline = useIsOnline();
@@ -81,14 +87,17 @@ export const CheckoutForm = ({
   const [isEditingSelectedAddress, setIsEditingSelectedAddress] = useState(false);
   const [shouldSaveNewAddress, setShouldSaveNewAddress] = useState(true);
   const hasInitializedFromSavedAddresses = useRef(false);
+  const [checkoutAttemptKey] = useState(generateUuid);
+  const isPlacingOrder = useRef(false);
 
   const emptyName = state.user?.name ?? "";
+  const emptyPhone = state.user?.phone ?? "";
 
   const form = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
     defaultValues: {
       fullName: emptyName,
-      phone: "",
+      phone: emptyPhone,
       address: "",
       city: cart.city ?? "",
       landmark: "",
@@ -144,7 +153,7 @@ export const CheckoutForm = ({
       form.reset({
         ...form.getValues(),
         fullName: emptyName,
-        phone: "",
+        phone: emptyPhone,
         address: "",
         city: cart.city ?? "",
         landmark: "",
@@ -180,15 +189,20 @@ export const CheckoutForm = ({
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (isPlacingOrder.current) return;
+
     if (!isOnline) {
       toast.error("Checkout needs a connection. Try again once you're back online.");
       return;
     }
 
+    isPlacingOrder.current = true;
+    trackOrderSubmit(values.paymentMethod);
+
     try {
       const order = await checkout.mutateAsync({
         input: values,
-        idempotencyKey: generateUuid(),
+        idempotencyKey: checkoutAttemptKey,
         buyNow: buyNow
           ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
           : undefined,
@@ -212,6 +226,8 @@ export const CheckoutForm = ({
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
+    } finally {
+      isPlacingOrder.current = false;
     }
   }, revealAddressFieldsOnValidationError);
 
@@ -263,7 +279,10 @@ export const CheckoutForm = ({
             </h2>
             <PaymentMethodField
               value={paymentMethod}
-              onChange={(value) => form.setValue("paymentMethod", value)}
+              onChange={(value) => {
+                form.setValue("paymentMethod", value);
+                trackPaymentMethodSelect(value);
+              }}
               codUnavailableReason={codUnavailableReason}
             />
             {paymentMethod === PaymentMethod.COD && (

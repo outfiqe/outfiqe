@@ -33,9 +33,12 @@ export type ContactListPage = {
 export type ContactListFilters = {
   q?: string;
   lifecycleStage?: ContactLifecycleStage;
+  ownerMembershipId?: string;
   page: number;
   pageSize: number;
 };
+
+export type ContactExportFilters = Omit<ContactListFilters, "page" | "pageSize">;
 
 export type CreateContactInput = {
   organizationId: string;

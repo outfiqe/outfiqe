@@ -1,3 +1,4 @@
+import { millisecondsInHour } from "date-fns/constants";
 import { Router } from "express";
 
 import { optionalAuth } from "#middlewares/optional-auth.js";
@@ -13,7 +14,7 @@ import {
   tagReportIdParamSchema,
 } from "./tag-report.schemas.js";
 
-const REPORT_WINDOW_MS = 60 * 60 * 1000;
+const REPORT_WINDOW_MS = millisecondsInHour;
 const REPORT_MAX_PER_IP = 10;
 
 const reportRateLimit = rateLimit({

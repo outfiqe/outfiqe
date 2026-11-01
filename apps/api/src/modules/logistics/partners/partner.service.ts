@@ -4,6 +4,7 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { logisticsHubRepository } from "../hubs/hub.repository.js";
+import { logisticsErrors } from "../logistics.errors.js";
 import { partnerAdapterRegistry } from "./adapters/partner-adapter.registry.js";
 import { logisticsPartnerRepository, type PartnerWriteFields } from "./partner.repository.js";
 import type {
@@ -18,8 +19,7 @@ import { normalizePartnerRawStatus } from "./partner-status.utils.js";
 
 const hasNoDuplicates = (values: readonly string[]) => new Set(values).size === values.length;
 
-const partnerNotFoundError = () =>
-  new AppError("PARTNER_NOT_FOUND", "Delivery partner not found.", HTTP_STATUS.NOT_FOUND);
+const partnerNotFoundError = () => logisticsErrors.partnerNotFound();
 
 const requirePartner = async (partnerId: string) => {
   const partner = await logisticsPartnerRepository.findPartnerById(partnerId);
@@ -29,7 +29,7 @@ const requirePartner = async (partnerId: string) => {
 
 const requireHubInPartnerCountry = async (hubId: string, countryCode: string) => {
   const hub = await logisticsHubRepository.findHubById(hubId);
-  if (!hub) throw new AppError("HUB_NOT_FOUND", "Hub not found.", HTTP_STATUS.NOT_FOUND);
+  if (!hub) throw logisticsErrors.hubNotFound();
   if (hub.countryCode !== countryCode) {
     throw new AppError(
       "HUB_NOT_IN_PARTNER_COUNTRY",

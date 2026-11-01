@@ -1,7 +1,9 @@
 "use client";
 
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import Link from "next/link";
 
+import { trackEvent } from "@/features/analytics/utils/analyticsClient";
 import { cn } from "@/shared/lib/cn";
 import { formatHeight } from "@/shared/lib/formatHeight";
 
@@ -27,7 +29,13 @@ export const PostTagPill = ({ lookId, tag, creatorHeightCm, className }: PostTag
     <Link
       href={`/product/${tag.id}`}
       prefetch={false}
-      onClick={() => void exploreFeedApi.recordTagClick(lookId, tag.id)}
+      onClick={() => {
+        void exploreFeedApi.recordTagClick(lookId, tag.id);
+        trackEvent(ANALYTICS_EVENTS.LOOK_PRODUCT_TAG_CLICK, {
+          look_id: lookId,
+          product_id: tag.id,
+        });
+      }}
       className={cn(
         "inline-flex max-w-full flex-col items-start gap-0.5 rounded-2xl border border-border px-3 py-1.5 text-[12px] font-medium text-foreground transition-colors hover:border-foreground",
         className,

@@ -49,3 +49,9 @@ export type PlatformAuditLogPage = {
   entries: PlatformAuditLogRecord[];
   nextCursor: string | null;
 };
+
+export type PlatformAuditFilterOptions = {
+  actions: string[];
+  targetTypes: string[];
+  actors: { id: string; name: string }[];
+};

@@ -35,6 +35,7 @@ support reports, and review the organization's audit log — against the `/api/c
   explicit "nothing here for your role yet" message instead of a blank page. Once the organization
   has loaded it also shows a "Take the tour" link in the header and mounts
   `features/product-tour`'s `CrmDashboardTour` — see that feature's own README.
+- `hooks/useMemberActions.ts` — the member queries, role and status mutations, ownership transfer state and the rules for who can change what. `MembersSection` only renders what it returns.
 - `components/MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row, plus a
   "Transfer ownership" button on any `ACTIVE`, non-SUPERADMIN row (shown only when the viewer
   themselves is the SUPERADMIN and no transfer is already pending — takes `viewerIsSuperAdmin`/
@@ -114,9 +115,9 @@ support reports, and review the organization's audit log — against the `/api/c
   reverse-chronological table (when / who / action / details) of the organization's security
   changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
 - `components/CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
-  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers / Deals /
-  Tickets); selecting one navigates to its detail route (`/crm/partners/$creatorId`,
-  `/crm/customers/$userId`) or the relevant tab (`/crm/pipeline`, `/crm/support`). Renders nothing
+  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers /
+  Opportunities / Tickets); selecting one opens that exact record (`/crm/partners/$creatorId`,
+  `/crm/customers/$userId`, `/crm/pipeline/$dealId`, `/crm/support/$ticketId`). Renders nothing
   for a viewer holding none of the four per-entity read permissions (the endpoint would 403).
 - `reporting/api/reportingApi.ts` / `reporting/api/reportingSchemas.ts` — `crmReportingApi` (`getPipelineReport`,
   `getTicketReport`, `getOverviewReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and
@@ -153,8 +154,11 @@ support reports, and review the organization's audit log — against the `/api/c
 - `contacts/components/ContactsPage.tsx` / `contacts/components/ContactFormModal.tsx` — the manually-managed contact list (search +
   lifecycle-stage filter + offset pagination) and the create/edit modal (name, email, phone,
   company, title, stage, source, comma-separated tags, owner from the members list, notes). The
-  modal is keyed by contact id so its form state resets between create and each edit. Unlike
+  modal mounts only while open, so its form always starts from the current contact. Unlike
   Partners/Customers, Contacts is not brand-scoped, so its sidebar item has no `requiresLinkedBrand`.
+- `contacts/components/ContactDetailPage.tsx` — one contact's page, opened from their name in the list:
+  how to reach them, the relationship, notes and tags, plus Edit and Delete gated on
+  `contacts:write` / `contacts:delete`.
 - `relationships/components/PartnerDetailPage.tsx` / `relationships/components/CustomerDetailPage.tsx` — per-product breakdown + recent attributed
   orders (partner) / recent order history (customer), reached from a list row.
 - `pipeline/api/pipelineApi.ts` / `pipeline/api/pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
@@ -166,23 +170,30 @@ support reports, and review the organization's audit log — against the `/api/c
   "Configure stages" (`pipeline/components/StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
   `useDragReorder`). The board itself is passed `disabled={!canWriteDeals || moveDeal.isPending}`
   (see `KanbanBoard`'s own README for why) and a failed move surfaces as a toast instead of
-  silently reverting. Moving a card patches the deal's `stageId`.
+  silently reverting. Moving a card patches the deal's `stageId`. Clicking a card opens the
+  opportunity's own page; the card link is `draggable={false}` so a drag still moves the card
+  instead of dragging the link.
+- `pipeline/components/DealDetailPage.tsx` — one opportunity's page (`/crm/pipeline/$dealId`):
+  its facts, a link to the partner, the timeline, and Edit and Delete gated on `deals:write` /
+  `deals:delete`.
 - `activities/api/activitiesApi.ts` / `activities/api/activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
   CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
 - `activities/components/TimelineSection.tsx` — the merged Timeline (logged activity + live order rows) with an inline
-  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage`.
+  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage` / `DealDetailPage`.
   Shows a notice when the response is `partial`.
 - `activities/components/TasksPage.tsx` — the Tasks tab: a list of due-dated tasks with an overdue badge and a
   complete checkbox, plus a "New task" modal with an assignee picker (needs `members:read`).
 - `tickets/api/ticketsApi.ts` / `tickets/api/ticketsSchemas.ts` — `crmTicketsApi` (list, get-with-comments, create,
   status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
-- `tickets/components/TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
-  `tickets/components/TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
-  internal comment thread). "New ticket" modal collects type / title / description / a customer
+- `tickets/components/TicketDetailPage.tsx` — one ticket's page (`/crm/support/$ticketId`): what was
+  reported with links to the customer or partner, `TicketHandlingSection.tsx` (forward-only status
+  buttons, assignee `<Select>`) and `TicketCommentsSection.tsx` (internal comment thread).
+- `tickets/components/TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a
+  row opens that ticket's page. "New ticket" modal collects type / title / description / a customer
   picked via `CustomerSearchField` (the same debounced-search pattern as `PartnerSearchField`, over
   `crmRelationshipsApi.listCustomers`). "New ticket", the status buttons, and the comment form are
   all gated on `tickets:write`; the assignee `<Select>` is gated on the stricter `tickets:manage`
-  (`TicketsPage` computes both and passes them into `TicketDetail` as `canWrite`/
+  (`TicketDetailPage` computes both and passes them down as `canWrite`/
   `canManageAssignee`) — matching what the corresponding routes actually require server-side
   (`crm-tickets.routes.ts`), not just hiding the "New ticket" button while leaving every other
   control interactive for a read-only viewer. The
@@ -191,18 +202,6 @@ support reports, and review the organization's audit log — against the `/api/c
 - `utils/format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
   (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 
-## Deferred follow-ups
-
-- **`CRM_ITEM_ASSIGNED` in the notification bell.** The backend emits the event and writes a
-  `Notification` (`crm-tickets` / `crm-activities` → `notifications`), but `packages/types`'
-  hand-maintained `NotificationType` / `NotificationEntityType` unions — shared by `apps/web` and
-  `apps/admin` — don't yet carry the CRM values, so the shared `NotificationRow` has no link rule
-  for them. Widening those unions and adding the `/crm/support` / `/crm/tasks` link mapping is a
-  cross-package change that also touches `apps/web`'s notification rendering; tracked separately.
-- **Per-list status / owner / date-range filters** on Partners / Customers / Deals. Tickets
-  already has a server-side status filter demonstrating the query-string → `where` pattern;
-  extending it to the other lists is a follow-up.
-
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
 `_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
@@ -210,10 +209,13 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
 `_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
 `_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`),
-`_authenticated.crm.contacts.index.tsx` (`/crm/contacts` → `ContactsPage`), and
+`_authenticated.crm.contacts.index.tsx` (`/crm/contacts` → `ContactsPage`),
+`_authenticated.crm.contacts.$contactId.tsx` (`→ ContactDetailPage`), and
 `_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
+`_authenticated.crm.pipeline.$dealId.tsx` (`→ DealDetailPage`),
 `_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
 `_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),
+`_authenticated.crm.support.$ticketId.tsx` (`→ TicketDetailPage`),
 `_authenticated.crm.roles.index.tsx` (`/crm/roles` → `RolesPage`),
 `_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`),
 `_authenticated.crm.audit.index.tsx` (`/crm/audit` → `AuditPage`) — the `.index`
@@ -368,3 +370,83 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   (`_authenticated.gamification.badges.tsx` deliberately reduced to `() => <Outlet />`). The
   `.index` suffix marks a route as "the exact leaf here, no children, no outlet required," which
   is what `/crm` actually is.
+
+## Wording and page headers
+
+**On screen, Pipeline is the "Sales board" and a deal is an "Opportunity".** Plain words help people who have never used a CRM. Only the words changed: code, routes, permissions and API fields still say pipeline and deal, so links and data keep working.
+
+**Every CRM page uses `components/CrmPageHeader.tsx`.** It keeps the title, description and actions in the same place on every page. Add a new page's words to `CRM_PAGE_TEXT`, and write the description for someone new to CRMs.
+
+## Detail pages
+
+**Every record has its own link.** Partners, customers, opportunities, contacts and tickets all open a page of their own, so a record can be bookmarked, shared with a teammate or opened in a new tab. Each page has the same shape: `BackLink`, `CrmPageHeader` with the actions, then `MetricSection` cards.
+
+**Detail data has its own query key, away from the list.** A key under the list's prefix would be refetched by the delete's list invalidation while the page is still open, and the visitor would see a "not found" flash before moving back to the list. So each save refreshes both keys, and a delete refreshes only the list.
+
+**`hooks/useCrmPermissions.ts` hides actions the viewer can't use.** The API still enforces every permission; this only keeps people from clicking a button that would fail.
+
+## Connected records
+
+`connections/` shows everything tied to the record on screen, so no one has to search for it: `ConnectedPeopleSection.tsx` (partner, customer and contact links) and `ConnectedWorkSection.tsx` (opportunities, tickets and open tasks, plus "Add a task"). Both read `hooks/useConnectedRecords.ts`, which calls `GET /api/crm/connections`.
+
+**Records connect through the person.** A contact links to an Outfiqe account, an opportunity has a partner, and a ticket has a customer or partner, so the same person ties them all together in both directions.
+
+**The API leaves out what the viewer can't read.** A group comes back as `null` and its card is hidden; an empty list shows a short message instead. So `null` and `[]` mean different things.
+
+**Contacts have their own timeline.** Notes logged on a contact stay on the contact. If the contact is linked to an account, their orders with this brand appear there too. Deleting a contact also deletes its notes and tasks, the same as deleting an opportunity, and the warning says so.
+
+`activities/components/NewTaskModal.tsx` is shared by the Tasks page and the detail pages; the optional `subject` ties the new task to that record.
+
+## List pages
+
+**Filters live in the link.** `hooks/useCrmListFilters.ts` keeps the search and page in the URL, and each list keeps its other filters there too (`stage`, `owner`, `due`, `assignee`, `from`, `to`). So opening a record and pressing back returns to the same filtered list, and a filtered list can be shared.
+
+**Rows open the record.** Partners, customers and contacts use the shared `Table` with `onRowClick`. The name stays a real link so keyboard users and "open in new tab" still work.
+
+**CSV exports exist only on Contacts and the Sales board.** They run on the server, cover the whole filtered list and follow the viewer's read permission. Muse and shopper details are deliberately left out: the opportunities export has no partner column, and the contacts export has no linked account or notes.
+
+**Time in stage is an estimate for older opportunities.** `stageEnteredAt` starts from the migration, which used `updated_at` for existing rows because the real date was never stored. Moves after that are exact.
+
+**Task chips use the viewer's own day.** `activities/utils/taskDue.utils.ts` works out the day in the browser and sends exact times, so "Today" is correct for the person looking, whatever timezone the server is in. Support's date range works the same way.
+
+## CRM overview
+
+`reporting/components/CrmOverviewSection.tsx` is the first thing people see, so each part leads somewhere.
+
+**Every number card opens the list behind it.** A number should match the list it opens. That is why Support has a "Still open" filter (`?status=ACTIVE`): the "Open tickets" card counts open and in-progress tickets together, and neither single status would match.
+
+**"Needs attention today" shows only what's waiting.** `CrmAttentionSection.tsx` reads `GET /api/crm/reports/attention` and hides any row at zero, so an empty panel really means nothing is waiting. The browser sends the start and end of its own day, so "today" matches the person's clock.
+
+**An opportunity counts as stuck after 14 days in one stage.** The same number lives in `pipeline/constants/stuckDeals.ts` and in `STUCK_DEAL_DAYS` on the API; change both together.
+
+**`?new=1` opens a new-record form.** `hooks/useNewRecordModal.ts` keeps that form's open state in the link, which is how `CrmQuickActions.tsx` lands on a page with the form already open.
+
+## Reports, Audit log and Billing
+
+**Reports show two kinds of number.** `reporting/components/ReportPeriodSummary.tsx` counts what happened in the chosen period (`GET /api/crm/reports/summary`), and the period stays in the link. `ReportsSection.tsx` shows how things stand right now, so its figures don't change with the period. They are labelled "right now" so the two aren't confused.
+
+**The audit log stays read-only.** Filters, the date range and the CSV never change a record. `audit/utils/auditEntries.utils.ts` does two display-only things: it folds repeats that sit next to each other, and it corrects the old "(1 seats)" wording on screen. Stored entries are never rewritten, so an exported CSV keeps the original words on older rows.
+
+**Audit filters and CSV follow `audit:read`.** The pick-list choices come from `GET /api/crm/audit/filters`, so people only see actions and teammates that exist in their own log. `AuditFilterPicker` is shared with the platform audit log.
+
+**Billing's payment flow is unchanged.** `PlanCheckoutModal` still does all the paying. Only the summary, plan comparison, invoice panel and cancel warning are new. The panel shows only what the invoice stores: amount, dates, plan, seats and payment provider, with no card or account details.
+
+**Cancelling keeps the plan until the period ends.** The warning says so because the API only stops renewal; it does not end the plan straight away.
+
+## Notifications and tips
+
+**The bell opens the exact record.** A ticket notification opens that ticket's page. Tasks have no page of their own, so they open the Tasks list. The link is stored when the notification is created (`apps/api/src/modules/notifications/notification.targets.ts`), so older notifications still open the Support list.
+
+**Tips explain a term where it appears.** `components/CrmTermHint.tsx` adds a small info icon, and the wording lives in `constants/crmTerms.ts`. Add a tip only for a word a new person might not know.
+
+## Partner products
+
+`relationships/components/PartnerProductsSection.tsx` shows each product with its picture. A click opens a side panel, the same pattern as the invoice and audit panels. "See it on Outfiqe" only appears when the product is approved and on sale, because the public page doesn't exist for anything else. Tenant staff may not have the platform's product admin, so the panel links to the public page.
+
+## People pictures and details
+
+The design system's `Avatar` shows someone's picture, or their first letter if they have none or it can't load. Partner and customer tables, their detail pages, People cards and the Reports team table all use it.
+
+Clicking a team row on Reports opens `reporting/components/TeamMemberPanel.tsx`: role, join date and what they finished in the period. The email only shows for viewers with `members:read`.
+
+The audit panel doesn't show IP addresses. They stay stored, but they mean little to a business owner and older entries can hold a server's address rather than a person's.

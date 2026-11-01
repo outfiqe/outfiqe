@@ -1,11 +1,9 @@
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { TagReviewStatus } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
-import { AppError } from "#middlewares/error-handler.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
@@ -15,7 +13,7 @@ import { productService } from "#modules/products/product.service.js";
 import type { ProductRecord } from "#modules/products/product.types.js";
 
 import { creatorLookCommentService } from "./comments/comment.service.js";
-import { VALIDATION_STATUS } from "./creator-look.constants.js";
+import { creatorLookErrors } from "./creator-look.errors.js";
 import { isPlatformModerator } from "./creator-look.guards.js";
 import { creatorLookRepository } from "./creator-look.repository.js";
 import type { AdminListLooksQuery, CreateCreatorLookBody } from "./creator-look.schemas.js";
@@ -31,24 +29,24 @@ import { creatorLookFeedService } from "./feed/feed.service.js";
 import { resolveTagReviewForProducts } from "./tag-review/tag-review.service.js";
 import { creatorLookTrendingService } from "./trending/trending.service.js";
 
+const MAX_TAGGED_PRODUCTS_SETTING = "outfit.maxItemsPerBoard";
+const APPROVED_CREATOR_REQUIRED_MESSAGE = "Only approved muses can drop looks.";
+const NO_CAPTION = "";
+const CREATOR_LOOK_AUDIT_TARGET = "CreatorLook";
+
 const requireOwnedLook = async (lookId: string, userId: string): Promise<CreatorLookEditDetail> => {
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
-  if (!look)
-    throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
+  if (!look) throw creatorLookErrors.dropNotFound();
   return look;
 };
 
 const readMaxTaggedProducts = (): Promise<number> =>
-  platformSettingsService.get("outfit.maxItemsPerBoard");
+  platformSettingsService.get(MAX_TAGGED_PRODUCTS_SETTING);
 
 const assertWithinTagLimit = async (taggedProductCount: number): Promise<void> => {
   const maxTaggedProducts = await readMaxTaggedProducts();
   if (taggedProductCount > maxTaggedProducts) {
-    throw new AppError(
-      "TOO_MANY_TAGGED_PRODUCTS",
-      `A look can tag up to ${maxTaggedProducts} products.`,
-      VALIDATION_STATUS,
-    );
+    throw creatorLookErrors.tooManyTaggedProducts(maxTaggedProducts);
   }
 };
 
@@ -56,14 +54,60 @@ const requireApprovedProducts = async (
   productIds: string[],
 ): Promise<Map<string, ProductRecord>> => {
   const products = await productRepository.findApprovedByIds(productIds);
-  if (products.length !== productIds.length) {
-    throw new AppError(
-      "PRODUCT_NOT_AVAILABLE",
-      "One or more tagged products aren't available.",
-      HTTP_STATUS.NOT_FOUND,
-    );
-  }
+  if (products.length !== productIds.length) throw creatorLookErrors.productNotAvailable();
   return new Map(products.map((product) => [product.id, product]));
+};
+
+const validateLookBody = async (
+  userId: string,
+  { taggedProducts, imageUrls, imageAssetIds, caption }: CreateCreatorLookBody,
+) => {
+  await assertWithinTagLimit(taggedProducts.length);
+  assertContentAllowed(caption);
+  const productIds = taggedProducts.map((tag) => tag.productId);
+  const productsById = await requireApprovedProducts(productIds);
+  if (imageAssetIds?.length) {
+    await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+  }
+
+  const [coverImageUrl, ...restImageUrls] = imageUrls;
+  if (!coverImageUrl) throw creatorLookErrors.imageRequired();
+
+  const nonEmptyImageUrls: [string, ...string[]] = [coverImageUrl, ...restImageUrls];
+  return { productIds, productsById, nonEmptyImageUrls };
+};
+
+const toResolvedTagReview = (resolved: ResolvedTagReview | undefined): ResolvedTagReview => ({
+  reviewStatus: resolved?.reviewStatus ?? TagReviewStatus.PENDING,
+  approvalSource: resolved?.approvalSource ?? null,
+});
+
+const publishTagEvents = async ({
+  lookId,
+  creatorId,
+  approvedProductIds,
+  pendingProductIds,
+  brandIdOfProduct,
+}: {
+  lookId: string;
+  creatorId: string;
+  approvedProductIds: string[];
+  pendingProductIds: string[];
+  brandIdOfProduct: (productId: string) => string | undefined;
+}): Promise<void> => {
+  for (const productId of approvedProductIds) {
+    await eventBus.publish(DomainEvents.PRODUCT_TAGGED, { lookId, creatorId, productId });
+  }
+  for (const productId of pendingProductIds) {
+    const brandId = brandIdOfProduct(productId);
+    if (!brandId) continue;
+    await eventBus.publish(DomainEvents.PRODUCT_TAG_SUBMITTED, {
+      lookId,
+      creatorId,
+      productId,
+      brandId,
+    });
+  }
 };
 
 export const creatorLookService = {
@@ -73,41 +117,27 @@ export const creatorLookService = {
 
   async create(
     userId: string,
-    { taggedProducts, imageUrls, imageAssetIds, caption, layout }: CreateCreatorLookBody,
+    body: CreateCreatorLookBody,
     outfitSource?: LookOutfitSource,
   ): Promise<CreatorLookSummary> {
-    await requireApprovedCreator(userId, "Only approved muses can drop looks.");
-    await assertWithinTagLimit(taggedProducts.length);
-    assertContentAllowed(caption);
-    const productIds = taggedProducts.map((tag) => tag.productId);
-    const productsById = await requireApprovedProducts(productIds);
-    if (imageAssetIds?.length) {
-      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
-    }
-
-    const [coverImageUrl, ...restImageUrls] = imageUrls;
-    if (!coverImageUrl) {
-      throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
-    }
+    const { taggedProducts, imageAssetIds, caption, layout } = body;
+    await requireApprovedCreator(userId, APPROVED_CREATOR_REQUIRED_MESSAGE);
+    const { productIds, productsById, nonEmptyImageUrls } = await validateLookBody(userId, body);
 
     const resolvedTags = await resolveTagReviewForProducts(userId, productIds, productsById);
 
     const look = await creatorLookRepository.create({
       creatorId: userId,
       outfitSource,
-      imageUrls: [coverImageUrl, ...restImageUrls],
+      imageUrls: nonEmptyImageUrls,
       imageAssetIds,
       caption,
       layout,
-      taggedProducts: taggedProducts.map((tag) => {
-        const resolved = resolvedTags.get(tag.productId);
-        return {
-          ...tag,
-          reviewStatus: resolved?.reviewStatus ?? TagReviewStatus.PENDING,
-          approvalSource: resolved?.approvalSource ?? null,
-        };
-      }),
-      hashtags: extractHashtags(caption ?? ""),
+      taggedProducts: taggedProducts.map((tag) => ({
+        ...tag,
+        ...toResolvedTagReview(resolvedTags.get(tag.productId)),
+      })),
+      hashtags: extractHashtags(caption ?? NO_CAPTION),
     });
 
     const approvedProductIds = productIds.filter(
@@ -126,23 +156,13 @@ export const creatorLookService = {
       creatorId: userId,
       createdAt: look.createdAt.toISOString(),
     });
-    for (const productId of approvedProductIds) {
-      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
-        lookId: look.id,
-        creatorId: userId,
-        productId,
-      });
-    }
-    for (const productId of pendingProductIds) {
-      const brandId = resolvedTags.get(productId)?.brandId;
-      if (!brandId) continue;
-      await eventBus.publish(DomainEvents.PRODUCT_TAG_SUBMITTED, {
-        lookId: look.id,
-        creatorId: userId,
-        productId,
-        brandId,
-      });
-    }
+    await publishTagEvents({
+      lookId: look.id,
+      creatorId: userId,
+      approvedProductIds,
+      pendingProductIds,
+      brandIdOfProduct: (productId) => resolvedTags.get(productId)?.brandId,
+    });
 
     return look;
   },
@@ -156,19 +176,13 @@ export const creatorLookService = {
     userId: string,
     body: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
+    const { taggedProducts, imageAssetIds, caption } = body;
     const existing = await requireOwnedLook(lookId, userId);
-    await assertWithinTagLimit(body.taggedProducts.length);
-    assertContentAllowed(body.caption);
-    const incomingProductIds = body.taggedProducts.map((tag) => tag.productId);
-    const productsById = await requireApprovedProducts(incomingProductIds);
-    if (body.imageAssetIds?.length) {
-      await imageProcessingService.assertAssetsOwnedBy(body.imageAssetIds, userId);
-    }
-
-    const [coverImageUrl, ...restImageUrls] = body.imageUrls;
-    if (!coverImageUrl) {
-      throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
-    }
+    const {
+      productIds: incomingProductIds,
+      productsById,
+      nonEmptyImageUrls,
+    } = await validateLookBody(userId, body);
 
     const previousProductIds = new Set(existing.taggedProducts.map((tag) => tag.productId));
     const addedProductIds = incomingProductIds.filter(
@@ -180,26 +194,20 @@ export const creatorLookService = {
       productsById,
     );
     const newTagStatuses = new Map<string, ResolvedTagReview>(
-      addedProductIds.map((productId) => {
-        const resolved = resolvedAddedTags.get(productId);
-        return [
-          productId,
-          {
-            reviewStatus: resolved?.reviewStatus ?? TagReviewStatus.PENDING,
-            approvalSource: resolved?.approvalSource ?? null,
-          },
-        ];
-      }),
+      addedProductIds.map((productId) => [
+        productId,
+        toResolvedTagReview(resolvedAddedTags.get(productId)),
+      ]),
     );
 
     const { summary, newlyApprovedProductIds, submittedProductIds, removedProductIds } =
       await creatorLookRepository.update(lookId, {
-        imageUrls: [coverImageUrl, ...restImageUrls],
-        imageAssetIds: body.imageAssetIds,
-        caption: body.caption,
-        taggedProducts: body.taggedProducts,
+        imageUrls: nonEmptyImageUrls,
+        imageAssetIds,
+        caption,
+        taggedProducts,
         newTagStatuses,
-        hashtags: extractHashtags(body.caption ?? ""),
+        hashtags: extractHashtags(caption ?? NO_CAPTION),
       });
 
     const recountProductIds = [...new Set([...removedProductIds, ...newlyApprovedProductIds])];
@@ -207,34 +215,24 @@ export const creatorLookService = {
       recountProductIds.map((productId) => productService.recountWornBy(productId)),
     );
 
-    for (const productId of newlyApprovedProductIds) {
-      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, { lookId, creatorId: userId, productId });
-    }
-    for (const productId of submittedProductIds) {
-      const brandId = productsById.get(productId)?.brandId;
-      if (!brandId) continue;
-      await eventBus.publish(DomainEvents.PRODUCT_TAG_SUBMITTED, {
-        lookId,
-        creatorId: userId,
-        productId,
-        brandId,
-      });
-    }
+    await publishTagEvents({
+      lookId,
+      creatorId: userId,
+      approvedProductIds: newlyApprovedProductIds,
+      pendingProductIds: submittedProductIds,
+      brandIdOfProduct: (productId) => productsById.get(productId)?.brandId,
+    });
 
     return summary;
   },
 
   async remove(lookId: string, principal: { userId: string; role: UserRole }): Promise<void> {
     const existing = await creatorLookRepository.findActiveByIdForRemoval(lookId);
-    if (!existing) {
-      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
-    }
+    if (!existing) throw creatorLookErrors.dropNotFound();
 
     const isOwner = existing.creatorId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
-    if (!isOwner && !isModerator) {
-      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", HTTP_STATUS.NOT_FOUND);
-    }
+    if (!isOwner && !isModerator) throw creatorLookErrors.dropNotFound();
 
     await creatorLookRepository.softDelete(lookId);
 
@@ -248,7 +246,7 @@ export const creatorLookService = {
         action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_REMOVED_BY_ADMIN,
         summary: `Removed a drop by ${existing.creatorId}`,
         onBehalfOfUserId: existing.creatorId,
-        targetType: "CreatorLook",
+        targetType: CREATOR_LOOK_AUDIT_TARGET,
         targetId: lookId,
       });
     }

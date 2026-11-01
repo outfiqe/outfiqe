@@ -42,6 +42,12 @@ A feature only has the folders it needs. `index.ts` (when other features import 
 
 **Large features are split into topic folders**, each with the same layer folders inside. `crm/` has `billing/`, `audit/`, `reporting/`, `roles/`, `relationships/`, `contacts/`, `pipeline/`, `activities/` and `tickets/`; `gamification/` has `activity-config/`, `badges/` (with `design-studio/` inside), `challenges/`, `conditions/`, `competitions/`, `levels/`, `multipliers/`, `manual-actions/`, `leaderboards/` and `stats/`. Code shared by several topics stays in the feature root's own layer folders. Topic folders are kebab-case; files keep React naming (PascalCase components, camelCase everything else).
 
+## Non-obvious rationale
+
+**Queries have a default stale time.** `ADMIN_QUERY_STALE_TIME_MS` in `src/main.tsx` exists because the default `QueryClient` has a stale time of 0, so every route remount and window refocus refetched. That made pages like delivery zones hit the API repeatedly on normal navigation.
+
+**The logo links out on the platform host.** Admin is a separate origin from the marketing site, so `Logo` links to the marketing home page rather than an in-app route, the same as `apps/web`'s `Logo`. On a tenant's own subdomain the same bundle sits at `<tenant>.<baseDomain>/admin/*` with that tenant's storefront at the origin root, so the logo goes there instead.
+
 ## Deployment
 
 The Vite build sets `base: "/admin/"`, so every emitted URL (entry script, `assets/*`, favicon)

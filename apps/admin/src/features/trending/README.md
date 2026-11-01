@@ -8,7 +8,10 @@ A debugging view of product trend scoring: the current top trending products, an
 
 - `api/trendingApi.ts` — the top trending list (`GET /admin/trending/products`), one product's score breakdown (`GET /admin/trending/products/:productId/debug`), and the product search used to pick one.
 - `api/trendingSchemas.ts` — Zod schemas for the trending list and the score breakdown.
-- `components/TrendingDebugPage.tsx` — the page: product search plus the selected product's breakdown.
+- `components/TrendingDebugPage.tsx` — the page: product search, the current list, and the chosen product.
+- `components/TrendDebugResult.tsx` — loads one product and shows its loading and error states.
+- `components/TrendStory.tsx` — the plain story: a verdict, position, score, a 14-day activity chart, why it is here, and what would help.
+- `utils/trending.utils.ts` — turns the scoring numbers into plain words. `describeTrendVerdict` picks the sentence at the top.
 - `components/TopTrendingList.tsx` — the current top trending products.
 - `components/TrendStatCards.tsx` and `components/TrendDebugResult.tsx` — the score breakdown for one product.
 - `utils/trending.utils.ts` — number formatting for the score values and the label for each baseline source.

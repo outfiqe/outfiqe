@@ -18,7 +18,21 @@ const EXPIRY_LABEL_FORMAT = "MMMM d, yyyy";
 
 const supportUrl = `${env.FRONTEND_URL}/support`;
 
-export const registerSuspensionNotificationEventConsumers = (): void => {
+const toExpiryLabel = (expiresAt: string | null): string | null =>
+  expiresAt ? format(new Date(expiresAt), EXPIRY_LABEL_FORMAT) : null;
+
+const findBrandWithOwner = async (brandId: string) => {
+  const [brand, ownerUserId] = await Promise.all([
+    brandRepository.findById(brandId),
+    brandRepository.findOwnerUserId(brandId),
+  ]);
+  if (!brand || !ownerUserId) return null;
+
+  const owner = await userRepository.findById(ownerUserId);
+  return owner ? { brand, owner } : null;
+};
+
+const subscribeToUserSuspended = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.USER_SUSPENDED,
     groupName: SUSPENSION_NOTIFICATIONS_CONSUMER_GROUP,
@@ -28,13 +42,15 @@ export const registerSuspensionNotificationEventConsumers = (): void => {
 
       const { subject, html } = accountSuspendedTemplate({
         reason,
-        expiresAtLabel: expiresAt ? format(new Date(expiresAt), EXPIRY_LABEL_FORMAT) : null,
+        expiresAtLabel: toExpiryLabel(expiresAt),
         supportUrl,
       });
       await sendEmail({ to: user.email, subject, body: reason, html });
     },
   });
+};
 
+const subscribeToUserBanned = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.USER_BANNED,
     groupName: SUSPENSION_NOTIFICATIONS_CONSUMER_GROUP,
@@ -46,7 +62,9 @@ export const registerSuspensionNotificationEventConsumers = (): void => {
       await sendEmail({ to: user.email, subject, body: reason, html });
     },
   });
+};
 
+const subscribeToUserUnsuspended = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.USER_UNSUSPENDED,
     groupName: SUSPENSION_NOTIFICATIONS_CONSUMER_GROUP,
@@ -58,45 +76,47 @@ export const registerSuspensionNotificationEventConsumers = (): void => {
       await sendEmail({ to: user.email, subject, body: subject, html });
     },
   });
+};
 
+const subscribeToBrandSuspended = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_SUSPENDED,
     groupName: SUSPENSION_NOTIFICATIONS_CONSUMER_GROUP,
     handler: async ({ brandId, reason, expiresAt }): Promise<void> => {
-      const [brand, ownerUserId] = await Promise.all([
-        brandRepository.findById(brandId),
-        brandRepository.findOwnerUserId(brandId),
-      ]);
-      if (!brand || !ownerUserId) return;
+      const brandWithOwner = await findBrandWithOwner(brandId);
+      if (!brandWithOwner) return;
 
-      const owner = await userRepository.findById(ownerUserId);
-      if (!owner) return;
-
+      const { brand, owner } = brandWithOwner;
       const { subject, html } = brandSuspendedTemplate({
         brandName: brand.name,
         reason,
-        expiresAtLabel: expiresAt ? format(new Date(expiresAt), EXPIRY_LABEL_FORMAT) : null,
+        expiresAtLabel: toExpiryLabel(expiresAt),
         supportUrl,
       });
       await sendEmail({ to: owner.email, subject, body: reason, html });
     },
   });
+};
 
+const subscribeToBrandUnsuspended = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_UNSUSPENDED,
     groupName: SUSPENSION_NOTIFICATIONS_CONSUMER_GROUP,
     handler: async ({ brandId }): Promise<void> => {
-      const [brand, ownerUserId] = await Promise.all([
-        brandRepository.findById(brandId),
-        brandRepository.findOwnerUserId(brandId),
-      ]);
-      if (!brand || !ownerUserId) return;
+      const brandWithOwner = await findBrandWithOwner(brandId);
+      if (!brandWithOwner) return;
 
-      const owner = await userRepository.findById(ownerUserId);
-      if (!owner) return;
-
+      const { brand, owner } = brandWithOwner;
       const { subject, html } = brandRestoredTemplate(brand.name);
       await sendEmail({ to: owner.email, subject, body: subject, html });
     },
   });
+};
+
+export const registerSuspensionNotificationEventConsumers = (): void => {
+  subscribeToUserSuspended();
+  subscribeToUserBanned();
+  subscribeToUserUnsuspended();
+  subscribeToBrandSuspended();
+  subscribeToBrandUnsuspended();
 };

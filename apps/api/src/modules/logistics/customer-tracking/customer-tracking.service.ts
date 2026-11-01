@@ -4,6 +4,7 @@ import { TrackingEventCode, TrackingEventSource } from "#generated/prisma/enums.
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingRepository } from "../tracking/tracking.repository.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
@@ -23,8 +24,7 @@ import {
   toCustomerTrackingEventView,
 } from "./customer-tracking.utils.js";
 
-const orderNotFoundError = () =>
-  new AppError("ORDER_NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+const orderNotFoundError = () => logisticsErrors.orderNotFound();
 
 const alreadyReportedError = () =>
   new AppError(

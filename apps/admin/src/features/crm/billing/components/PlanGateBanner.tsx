@@ -1,7 +1,7 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
-const GATED_CAPABILITIES = "pipeline, deals, tickets and reporting";
+const GATED_CAPABILITIES = "the sales board, opportunities, tickets and reports";
 
 export const PlanGateBanner = ({
   advancedFeaturesEnabled,

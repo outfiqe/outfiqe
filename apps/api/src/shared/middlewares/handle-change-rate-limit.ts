@@ -1,9 +1,10 @@
+import { millisecondsInDay } from "date-fns/constants";
 import type { NextFunction, Request, Response } from "express";
 
 import { rateLimit } from "./rate-limit.js";
 import { getAuthPrincipal } from "./require-auth.js";
 
-const HANDLE_CHANGE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const HANDLE_CHANGE_WINDOW_MS = millisecondsInDay;
 const HANDLE_CHANGE_MAX_REQUESTS = 10;
 
 const handleChangeRateLimit = rateLimit({

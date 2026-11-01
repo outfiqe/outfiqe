@@ -1,4 +1,5 @@
-﻿import { Router } from "express";
+﻿import { millisecondsInHour } from "date-fns/constants";
+import { Router } from "express";
 
 import {
   bankAccountBodySchema,
@@ -13,7 +14,7 @@ import { requirePlatformRole } from "#modules/platform-access/platform-access.mi
 
 import { bankAccountController } from "./bank-account.controller.js";
 
-const CREATE_WINDOW_MS = 60 * 60 * 1000;
+const CREATE_WINDOW_MS = millisecondsInHour;
 const CREATE_MAX_REQUESTS = 10;
 
 const createBankAccountRateLimit = rateLimit({

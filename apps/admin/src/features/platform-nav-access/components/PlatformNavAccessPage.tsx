@@ -12,6 +12,7 @@ import { platformNavAccessApi } from "../api/platformNavAccessApi";
 const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "brand-applications": "Brand applications",
   "platform-metrics": "Tenant metrics",
+  "platform-analytics": "Product analytics",
   "platform-features": "Feature flags",
   "platform-impersonation": "Impersonation",
   "platform-nav-access": "Navigation access",
@@ -29,7 +30,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "tag-reports": "Tag reports",
   "content-reports": "Content reports",
   "content-browser": "Browse drops",
-  trending: "Trending debug",
+  trending: "Trending",
   creators: "Muses",
   commissions: "Commissions",
   "platform-commission": "Platform commission",

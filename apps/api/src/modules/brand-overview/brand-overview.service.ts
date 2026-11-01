@@ -7,22 +7,34 @@ import { brandOverviewRepository } from "./brand-overview.repository.js";
 import type { BrandOverview } from "./brand-overview.types.js";
 
 export const brandOverviewService = {
-  async getOverview(brandId: string): Promise<BrandOverview> {
-    const [revenueWindows, trend, catalogCounts, unfulfilledItemCount, payoutSummary, recentRows] =
-      await Promise.all([
-        brandOverviewRepository.getRevenueWindows(brandId),
-        brandOverviewRepository.getDailyTrend(brandId),
-        brandOverviewRepository.getCatalogCounts(brandId),
-        brandOverviewRepository.getUnfulfilledItemCount(brandId),
-        brandPayoutService.getSummary(brandId),
-        orderRepository.listFulfilmentGroupsForBrand(brandId, { limit: RECENT_ORDER_LIMIT }),
-      ]);
+  async getOverview(brandId: string, periodDays: number): Promise<BrandOverview> {
+    const [
+      revenueWindows,
+      trend,
+      catalogCounts,
+      unfulfilledItemCount,
+      payoutSummary,
+      recentRows,
+      topProducts,
+      lowStockProducts,
+    ] = await Promise.all([
+      brandOverviewRepository.getRevenueWindows(brandId, periodDays),
+      brandOverviewRepository.getDailyTrend(brandId, periodDays),
+      brandOverviewRepository.getCatalogCounts(brandId),
+      brandOverviewRepository.getUnfulfilledItemCount(brandId),
+      brandPayoutService.getSummary(brandId),
+      orderRepository.listFulfilmentGroupsForBrand(brandId, { limit: RECENT_ORDER_LIMIT }),
+      brandOverviewRepository.getTopProducts(brandId, periodDays),
+      brandOverviewRepository.getLowStockProducts(brandId),
+    ]);
 
     return {
       kpis: {
         lifetimeRevenue: revenueWindows.lifetime,
-        last30DaysRevenue: revenueWindows.last30,
-        previous30DaysRevenue: revenueWindows.previous30,
+        periodDays,
+        periodRevenue: revenueWindows.period,
+        previousPeriodRevenue: revenueWindows.previousPeriod,
+        periodOrderCount: revenueWindows.periodOrderCount,
         availablePayout: payoutSummary.available,
         pendingPayout: payoutSummary.pending,
         productCount: catalogCounts.productCount,
@@ -30,6 +42,8 @@ export const brandOverviewService = {
         unfulfilledItemCount,
       },
       trend,
+      topProducts,
+      lowStockProducts,
       recentOrders: recentRows.slice(0, RECENT_ORDER_LIMIT).map(toBrandFulfilmentGroupSummaryView),
     };
   },

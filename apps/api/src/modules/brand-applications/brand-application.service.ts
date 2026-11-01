@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import {
@@ -14,15 +16,17 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { brandApplicationErrors } from "./brand-application.errors.js";
 import { brandApplicationRepository } from "./brand-application.repository.js";
 import type { ListBrandApplicationsQuery } from "./brand-application.schemas.js";
 import type {
   BrandApplicationPage,
   BrandApplicationRecord,
+  BrandInviteDeliveryResult,
   CreateBrandApplicationInput,
 } from "./brand-application.types.js";
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = 7 * millisecondsInDay;
 
 const requirePendingApplication = async (
   applicationId: string,
@@ -33,14 +37,25 @@ const requirePendingApplication = async (
   }
 
   if (application.status !== BrandApplicationStatus.PENDING) {
-    throw new AppError(
-      "ALREADY_REVIEWED",
-      "This application has already been reviewed.",
-      HTTP_STATUS.CONFLICT,
-    );
+    throw brandApplicationErrors.alreadyReviewed();
   }
 
   return application;
+};
+
+const emailBrandInvite = async (
+  { brandName, email }: BrandApplicationRecord,
+  inviteToken: string,
+): Promise<boolean> => {
+  const inviteUrl = `${env.FRONTEND_URL}/register/brand?token=${inviteToken}`;
+  const { subject, html } = brandApprovedTemplate(brandName, inviteUrl);
+
+  return sendEmail({
+    to: email,
+    subject,
+    body: `${brandName} is approved. Set up your account: ${inviteUrl}`,
+    html,
+  });
 };
 
 export const brandApplicationService = {
@@ -78,9 +93,9 @@ export const brandApplicationService = {
     return { applications, nextCursor };
   },
 
-  async approve(applicationId: string, adminUserId: string): Promise<void> {
+  async approve(applicationId: string, adminUserId: string): Promise<BrandInviteDeliveryResult> {
     const application = await requirePendingApplication(applicationId);
-    const { brandName, email } = application;
+    const { email } = application;
 
     const existingAccountWithEmail = await userRepository.findByEmail(email);
     if (existingAccountWithEmail) {
@@ -98,17 +113,38 @@ export const brandApplicationService = {
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     });
 
-    const inviteUrl = `${env.FRONTEND_URL}/register/brand?token=${inviteToken}`;
-    const { subject, html } = brandApprovedTemplate(brandName, inviteUrl);
-
-    await sendEmail({
-      to: email,
-      subject,
-      body: `${brandName} is approved. Set up your account: ${inviteUrl}`,
-      html,
-    });
+    const isInviteDelivered = await emailBrandInvite(application, inviteToken);
 
     logger.info(`Brand application approved: ${applicationId} by admin ${adminUserId}`);
+    return { isInviteDelivered };
+  },
+
+  async resendInvite(
+    applicationId: string,
+    adminUserId: string,
+  ): Promise<BrandInviteDeliveryResult> {
+    const application = await brandApplicationRepository.findById(applicationId);
+    if (!application) {
+      throw new AppError("NOT_FOUND", "Brand application not found.", HTTP_STATUS.NOT_FOUND);
+    }
+
+    const inviteToken = generateOpaqueToken();
+    const isInviteRotated = await brandApplicationRepository.rotateUnacceptedInvite(applicationId, {
+      tokenHash: hashToken(inviteToken),
+      expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+    });
+    if (!isInviteRotated) {
+      throw new AppError(
+        "NO_INVITE_TO_RESEND",
+        "This brand has no invite waiting. It may already have set up its account.",
+        HTTP_STATUS.CONFLICT,
+      );
+    }
+
+    const isInviteDelivered = await emailBrandInvite(application, inviteToken);
+
+    logger.info(`Brand invite resent: ${applicationId} by admin ${adminUserId}`);
+    return { isInviteDelivered };
   },
 
   async reject(applicationId: string, adminUserId: string, reason?: string): Promise<void> {

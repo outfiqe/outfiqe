@@ -74,10 +74,55 @@ export const ticketSearchResultSchema = z.object({
   status: z.string(),
 });
 
+export const crmPeriodSummarySchema = z.object({
+  sales: z.object({
+    newDealCount: z.number(),
+    wonDealCount: z.number(),
+    wonValue: z.number(),
+    lostDealCount: z.number(),
+  }),
+  support: z.object({
+    openedCount: z.number(),
+    resolvedCount: z.number(),
+    meanResolutionSeconds: z.number().nullable(),
+  }),
+  team: z.array(
+    z.object({
+      membershipId: z.string(),
+      name: z.string(),
+      avatarUrl: z.string().nullable(),
+      roleName: z.string(),
+      joinedAt: z.string(),
+      wonDealCount: z.number(),
+      wonValue: z.number(),
+      resolvedTicketCount: z.number(),
+      completedTaskCount: z.number(),
+      activityCount: z.number(),
+    }),
+  ),
+});
+export type CrmPeriodSummary = z.infer<typeof crmPeriodSummarySchema>;
+
+export const crmAttentionReportSchema = z.object({
+  overdueTaskCount: z.number(),
+  tasksDueTodayCount: z.number(),
+  unassignedTicketCount: z.number(),
+  stuckDealCount: z.number(),
+});
+export type CrmAttentionReport = z.infer<typeof crmAttentionReportSchema>;
+
+export const contactSearchResultSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  company: z.string().nullable(),
+  lifecycleStage: z.string(),
+});
+
 export const crmSearchResultsSchema = z.object({
   partners: z.array(partnerSearchResultSchema),
   customers: z.array(customerSearchResultSchema),
   deals: z.array(dealSearchResultSchema),
   tickets: z.array(ticketSearchResultSchema),
+  contacts: z.array(contactSearchResultSchema),
 });
 export type CrmSearchResults = z.infer<typeof crmSearchResultsSchema>;

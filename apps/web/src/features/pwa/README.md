@@ -194,6 +194,7 @@ people always get fresh content when they have a connection and the saved copy w
 | A private page (cart, checkout, orders, wallet, messages, settings, sign-in) | Fetched fresh, **never saved**. With no connection the offline page is shown instead |
 | An uploaded photo                                                            | Served from disk once seen, kept for 30 days                                         |
 | Anything under `/api/`                                                       | **Never saved**                                                                      |
+| The analytics relay (`/a7x/`, see `features/analytics`)                      | **Never saved**                                                                      |
 | The iPhone launch images                                                     | Never saved — the phone reads them from disk at launch                               |
 
 Signing out, or a session expiring, tells the worker to forget every saved page and photo.

@@ -1,3 +1,4 @@
+import { millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -27,7 +28,7 @@ import {
 
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
 
-const FIT_SEARCH_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const FIT_SEARCH_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 const FIT_SEARCH_RATE_LIMIT_MAX_REQUESTS = 60;
 
 const fitSearchRateLimit = rateLimit({

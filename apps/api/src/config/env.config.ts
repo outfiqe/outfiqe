@@ -6,6 +6,7 @@ import { isOnReservedTenantSubdomain } from "#lib/admin-url.utils.js";
 import logger from "#lib/winston.utils.js";
 
 const JWT_SECRET_MIN_LENGTH = 32;
+const ORIGIN_SECRET_MIN_LENGTH = 32;
 
 const envSchema = z
   .object({
@@ -60,6 +61,7 @@ const envSchema = z
     CAPTCHA_ENABLED: z.stringbool(),
     TAG_REVIEW_ENABLED: z.stringbool().default(false),
     TURNSTILE_SECRET_KEY: z.string().min(1),
+    ORIGIN_SECRET: z.string().min(ORIGIN_SECRET_MIN_LENGTH).optional(),
     OAUTH_REDIRECT_BASE_URL: z.url(),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
@@ -71,6 +73,14 @@ const envSchema = z
     VAPID_PUBLIC_KEY: z.string().min(1).optional(),
     VAPID_PRIVATE_KEY: z.string().min(1).optional(),
     VAPID_SUBJECT: z.string().min(1).optional(),
+    POSTHOG_PROJECT_TOKEN: z.string().min(1).optional(),
+    POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
+    POSTHOG_APP_HOST: z.url().default("https://us.posthog.com"),
+    POSTHOG_PROJECT_ID: z
+      .string()
+      .regex(/^\d+$/, "POSTHOG_PROJECT_ID must be the numeric PostHog project id")
+      .optional(),
+    POSTHOG_QUERY_API_KEY: z.string().min(1).optional(),
   })
   .refine(
     ({ ADMIN_URL, TENANT_BASE_DOMAIN }) =>

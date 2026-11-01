@@ -5,5 +5,20 @@
       "dev": false
     }
   },
-  "ignoreCommand": "test \"$VERCEL_GIT_COMMIT_REF\" != \"main\""
+  "ignoreCommand": "test \"$VERCEL_GIT_COMMIT_REF\" != \"main\"",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": { "key": "x-origin-secret" },
+          "args": "$ORIGIN_SECRET",
+          "env": ["ORIGIN_SECRET"]
+        }
+      ],
+      "continue": true
+    }
+  ]
 }

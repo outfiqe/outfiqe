@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -13,6 +14,7 @@ import {
   Modal,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
@@ -20,7 +22,9 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import {
   type CreateXpMultiplierInput,
@@ -91,7 +95,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime max={form.watch("endsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -104,7 +108,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
         <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
           <FormControl>
-            <Input type="datetime-local" {...field} />
+            <DateInput includesTime min={form.watch("startsAt")} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -131,7 +135,7 @@ const EditMultiplierModal = ({
   const form = useForm<MultiplierFormValues>({
     resolver: zodResolver(multiplierFormSchema),
     defaultValues: formForMultiplier(multiplierRow),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({
@@ -181,7 +185,7 @@ export const MultipliersSection = () => {
   const form = useForm<MultiplierFormValues>({
     resolver: zodResolver(multiplierFormSchema),
     defaultValues: buildCurrentEmptyForm(),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({
@@ -222,7 +226,9 @@ export const MultipliersSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <ActionRowSkeleton key={index} />
+          ))}
         {multipliers?.length === 0 && (
           <p className="text-sm text-muted-foreground">No XP multipliers yet.</p>
         )}
@@ -241,8 +247,7 @@ export const MultipliersSection = () => {
                 <span className="ml-2 text-xs text-muted-foreground">(deactivated)</span>
               )}
               <span className="ml-2 block text-xs text-muted-foreground sm:inline">
-                {new Date(multiplierRow.startsAt).toLocaleString()} –{" "}
-                {new Date(multiplierRow.endsAt).toLocaleString()}
+                {formatDateTime(multiplierRow.startsAt)} – {formatDateTime(multiplierRow.endsAt)}
               </span>
             </p>
             {canManageGamification && (

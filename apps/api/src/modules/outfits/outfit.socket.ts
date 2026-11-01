@@ -12,6 +12,9 @@ import type { AppSocket } from "#socket/socket.types.js";
 import { resolveLiveBoardRole } from "./outfit.access.js";
 import { outfitService } from "./outfit.service.js";
 
+const RATE_LIMIT_CHECK_FAILS_OPEN = true;
+const CANNOT_WATCH_BOARD = false;
+
 const FIRST_VERSION = 0;
 
 const subscriptionSchema = z.object({ outfitId: z.uuid() });
@@ -30,13 +33,15 @@ const isWithinSocketRateLimit = async (userId: string): Promise<boolean> => {
     return messageCount <= OUTFIT_SOCKET_RATE_LIMIT.MAX_MESSAGES;
   } catch (error) {
     logger.error(`Outfit socket rate limit check failed for ${userId}: ${describeError(error)}`);
-    return true;
+    return RATE_LIMIT_CHECK_FAILS_OPEN;
   }
 };
 
 const canWatchLiveBoard = async (userId: string, outfitId: string): Promise<boolean> => {
-  if (!(await isWithinSocketRateLimit(userId))) return false;
-  if (!(await featureFlagsService.isEnabledForUser("outfit_builder", userId))) return false;
+  if (!(await isWithinSocketRateLimit(userId))) return CANNOT_WATCH_BOARD;
+  if (!(await featureFlagsService.isEnabledForUser("outfit_builder", userId))) {
+    return CANNOT_WATCH_BOARD;
+  }
   return (await resolveLiveBoardRole(outfitId, userId)) !== null;
 };
 

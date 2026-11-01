@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { ageHoursOf } from "#lib/trend-scoring.utils.js";
@@ -21,7 +23,7 @@ import {
 } from "./hashtag-scoring.utils.js";
 
 const TRENDING_TAGS_LIMIT = 15;
-const TRENDING_TAGS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const TRENDING_TAGS_WINDOW_MS = 7 * millisecondsInDay;
 const TRENDING_TAGS_CACHE_KEY = redisKeys.cache("creator-looks", "trending-tags");
 
 const fetchLegacyTrendingTags = async (): Promise<TrendingTag[]> => {
@@ -69,7 +71,7 @@ const upsertHashtagBucketForHour = (bucketStart: Date): Promise<unknown> =>
   upsertHashtagBucket(bucketStart, new Date(bucketStart.getTime() + HOUR_MS));
 
 const listRecentTagMetricBuckets = async (sinceDays: number): Promise<TagMetricBucket[]> => {
-  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - sinceDays * millisecondsInDay);
   return prisma.hashtagTrendMetric.findMany({
     where: { bucketStart: { gte: since } },
     select: { tag: true, bucketStart: true, postCount: true },

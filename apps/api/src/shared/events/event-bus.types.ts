@@ -1,4 +1,4 @@
-import type { OrderTrackingStage } from "@outfiqe/utils";
+import type { AnalyticsSignupMethod, OrderTrackingStage } from "@outfiqe/utils";
 
 import type { OrderRefundOutcome } from "#constants/commerce.constants.js";
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
@@ -68,7 +68,12 @@ export type MessageBroadcastPayload = {
 };
 
 export type DomainEventPayloads = {
-  [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
+  [DomainEvents.USER_CREATED]: {
+    userId: string;
+    email: string;
+    role?: UserRole;
+    signupMethod: AnalyticsSignupMethod;
+  };
   [DomainEvents.USER_DELETED]: { userId: string };
   [DomainEvents.USER_EMAIL_VERIFIED]: { userId: string; email: string };
   [DomainEvents.USER_PASSWORD_RESET]: { userId: string };

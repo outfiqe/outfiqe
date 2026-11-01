@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
   Checkbox,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -14,9 +15,11 @@ import {
   Select,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { toDateInputValue, toDayEndIso } from "@outfiqe/utils";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { couponsApi } from "../api/couponsApi";
 import type { CouponFormValues } from "../schemas/couponForm.schema";
@@ -45,7 +48,7 @@ const buildCreateInput = (values: CouponFormValues) => ({
   maxDiscountAmount: optionalNumber(values.maxDiscountAmount),
   minSubtotal: Number(values.minSubtotal),
   startsAt: new Date().toISOString(),
-  endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+  endsAt: values.endsAt ? toDayEndIso(values.endsAt) : null,
   totalBudgetAmount: optionalNumber(values.totalBudgetAmount),
   maxRedemptions: optionalNumber(values.maxRedemptions),
   firstOrderOnly: values.firstOrderOnly,
@@ -57,7 +60,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponFormSchema),
     defaultValues: EMPTY_COUPON_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const { control, watch, register } = form;
   const couponType = watch("type");
@@ -196,7 +199,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 <FormItem className="mt-0">
                   <FormLabel>Ends on (optional)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateInput min={toDateInputValue()} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -243,7 +246,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground">
               <Checkbox {...register("prepaidOnly")} />
-              Requires prepaid checkout (eSewa or Khalti)
+              Requires online payment
             </label>
             {!isPrepaidOnly && (
               <p className="pl-6 text-xs text-muted-foreground">

@@ -9,6 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { type FormEvent, useId, useState } from "react";
 
@@ -23,6 +24,7 @@ import {
   type BuildStatus,
   type BuildVisibility,
 } from "../api/outfitBuildsSchemas";
+import { BUILD_STATUS_LABEL, BUILD_VISIBILITY_LABEL } from "../constants/buildLabels.constants";
 import { BuildMetricsSection } from "./BuildMetricsSection";
 
 const SKELETON_ROW_COUNT = 5;
@@ -82,7 +84,7 @@ const BuildList = () => {
             <option value={ANY_VALUE}>Any status</option>
             {BUILD_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status}
+                {BUILD_STATUS_LABEL[status]}
               </option>
             ))}
           </Select>
@@ -99,7 +101,7 @@ const BuildList = () => {
             <option value={ANY_VALUE}>Anyone</option>
             {BUILD_VISIBILITIES.map((visibility) => (
               <option key={visibility} value={visibility}>
-                {visibility}
+                {BUILD_VISIBILITY_LABEL[visibility]}
               </option>
             ))}
           </Select>
@@ -129,10 +131,10 @@ const BuildList = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-foreground">{build.title ?? "Untitled build"}</p>
                 <Badge tone="neutral" showDot={false}>
-                  {build.status}
+                  {BUILD_STATUS_LABEL[build.status]}
                 </Badge>
                 <Badge tone="neutral" showDot={false}>
-                  {build.visibility}
+                  {BUILD_VISIBILITY_LABEL[build.visibility]}
                 </Badge>
                 {build.removedAt && (
                   <Badge tone="negative" showDot={false}>
@@ -147,7 +149,7 @@ const BuildList = () => {
                 {build.isStartedInChat ? " · started in a chat" : ""}
               </p>
               <p className="text-xs text-muted-foreground">
-                Updated {new Date(build.updatedAt).toLocaleString()}
+                Updated {formatDateTime(build.updatedAt)}
               </p>
             </Link>
           </li>

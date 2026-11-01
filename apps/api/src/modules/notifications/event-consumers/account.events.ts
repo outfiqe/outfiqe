@@ -6,7 +6,7 @@ import { ApprovedAccountKind, NOTIFICATION_CONSUMER_GROUP } from "../notificatio
 import { notificationRepository } from "../notification.repository.js";
 import { notificationService } from "../notification.service.js";
 
-export const registerAccountNotificationConsumers = (): void => {
+const subscribeToCreatorApproved = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CREATOR_APPROVED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -19,7 +19,9 @@ export const registerAccountNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToBrandOwnerRegistered = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_OWNER_REGISTERED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -37,7 +39,9 @@ export const registerAccountNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToBrandApplicationSubmitted = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_APPLICATION_SUBMITTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -51,4 +55,10 @@ export const registerAccountNotificationConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerAccountNotificationConsumers = (): void => {
+  subscribeToCreatorApproved();
+  subscribeToBrandOwnerRegistered();
+  subscribeToBrandApplicationSubmitted();
 };

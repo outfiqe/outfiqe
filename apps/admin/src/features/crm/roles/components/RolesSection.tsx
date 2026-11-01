@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmApi } from "../../api/crmApi";
 import type { Permission, Role } from "../../api/crmSchemas";
@@ -76,7 +77,7 @@ const RoleFormModal = ({
       name: editingRole?.name ?? "",
       permissionKeys: editingRole?.permissionKeys ?? [],
     },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const rolesOwnOriginalPermissionKeys = useMemo(
     () => new Set(editingRole?.permissionKeys ?? []),
@@ -213,7 +214,7 @@ const OrganizationNameCard = ({ currentName }: { currentName: string }) => {
   const form = useForm<OrganizationNameFormValues>({
     resolver: zodResolver(organizationNameFormSchema),
     defaultValues: { name: currentName },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const rename = useApiMutation({

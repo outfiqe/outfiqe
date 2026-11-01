@@ -8,7 +8,8 @@ export type FeatureFlagKey =
   | "outfit_try_on"
   | "outfit_public_feed"
   | "size_fit"
-  | "order_logistics";
+  | "order_logistics"
+  | "khalti_payments";
 
 const myFeatureFlagsSchema = z.object({ enabledKeys: z.array(z.string()) });
 

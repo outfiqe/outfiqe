@@ -1,3 +1,4 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -5,7 +6,12 @@ import type { ProductDetail as ProductDetailType } from "../api/productDetailSch
 import { ProductDetail } from "./ProductDetail";
 
 const addToCart = vi.fn();
+const trackEvent = vi.fn();
 const authState = { isAuthenticated: true, isBrandOwner: false, isStaff: false };
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
+}));
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => authState,
@@ -96,6 +102,27 @@ const cta = (name: RegExp) => screen.getByRole("button", { name });
 
 beforeEach(() => {
   featureFlagState.isSizeFitOn = false;
+  trackEvent.mockClear();
+});
+
+describe("ProductDetail analytics", () => {
+  it("records one product view with the brand, the price paid and the thrift flag", () => {
+    const product = buildProduct([{ id: "m", label: "M", inStock: true }], {
+      effectivePrice: 4320,
+      isThrift: true,
+    });
+
+    const { rerender } = render(<ProductDetail product={product} />);
+    rerender(<ProductDetail product={product} />);
+
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.PRODUCT_DETAIL_VIEW, {
+      product_id: "product-1",
+      brand_id: "brand-1",
+      product_price_npr: 4320,
+      is_thrift: true,
+    });
+  });
 });
 
 describe("ProductDetail out-of-stock handling", () => {

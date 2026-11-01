@@ -1,5 +1,13 @@
 # Payments — eSewa & Khalti
 
+n## Errors
+
+`payment.errors.ts` holds the errors this module raises from more than one place.
+
+## Khalti sits behind a switch
+
+`assertGatewayAvailable` in `payment.availability.ts` refuses Khalti unless the `khalti_payments` feature switch is on for that person. Checkout, starting or resuming an order payment, build offers and CRM plans all call it, so hiding the button is not the only protection. It is off by default because Outfiqe has no Khalti partnership yet. Checking, reconciling and refunding a payment already made with Khalti do not go through it, so turning the switch off never strands money.
+
 ## Stock decrement happens at verify, not at checkout
 
 Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order is created (see `orders/README.md`) — only `settleVerified` does, inside the same atomic pattern as everywhere else: guard the settlement with a conditional `updateMany WHERE status = 'INITIATED'`, then decrement stock, all in one transaction. If the decrement fails (sold out in the gap between initiate and verify), the order is marked `paymentStatus: PAID, fulfilmentStatus: CANCELLED, needsManualRefund: true` — the payment can't be undone from our side, so it's flagged for a human to refund by hand rather than silently failing. The decrement is all-or-nothing: when a multi-item order has one sold-out line, `decrementStockForItems` restores the lines it already took before returning, so the units from the order's other lines are not left reserved on an order that is being cancelled for manual refund (`products/README.md`).
@@ -7,6 +15,8 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 ## Gamification event (`PRODUCT_PURCHASED`)
 
 `settleVerified` publishes it, but only in the successful branch (stock decremented cleanly, `markOrderPlaced` reached) — never when `needsManualRefund` gets set. Money moved either way in that failure case, but the sale is headed for a human refund decision, and this module has no XP-reversal mechanism, so it's safer to simply not award "purchase" XP there rather than award-then-need-to-claw-back. See `orders/README.md` for the COD half of this same event (COD publishes it from checkout instead, since there's no separate settlement step) and `xp/README.md` for what it triggers.
+
+It also publishes it, and sends the "payment received" email, only from the call that actually settled the attempt. Two verifications of one payment can overlap: the buyer refreshes the callback page, or the callback runs while the sweep is checking. Both see the attempt open and both hear `COMPLETE` from the gateway, but only one `settleTransaction` update matches. The other gets `SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE` and stops there. It used to fall through to the publish, so the purchase was announced twice: XP, notifications, achievements, and the product analytics `checkout:order_place` event all counted the order twice.
 
 ## The callback URLs are path-only, and the redirect is never trusted
 

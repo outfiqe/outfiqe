@@ -29,12 +29,11 @@ const collectConstraintHints = (meta: Record<string, unknown> | null): string[] 
   return hints;
 };
 
-export const uniqueConstraintTargetIncludes = (error: unknown, columnName: string): boolean => {
-  if (!isUniqueConstraintError(error)) return false;
-
-  const meta = asRecord((error as Prisma.PrismaClientKnownRequestError).meta);
-  return collectConstraintHints(meta).some((hint) => hint.includes(columnName));
-};
+export const uniqueConstraintTargetIncludes = (error: unknown, columnName: string): boolean =>
+  isUniqueConstraintError(error) &&
+  collectConstraintHints(asRecord((error as Prisma.PrismaClientKnownRequestError).meta)).some(
+    (hint) => hint.includes(columnName),
+  );
 
 export const isForeignKeyConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
@@ -59,8 +58,10 @@ const DRIVER_ADAPTER_WRITE_CONFLICT_KIND = "TransactionWriteConflict";
 
 const isUnwrappedDriverAdapterWriteConflict = (error: unknown): boolean => {
   const errorRecord = asRecord(error);
-  if (errorRecord?.name !== DRIVER_ADAPTER_ERROR_NAME) return false;
-  return asRecord(errorRecord.cause)?.kind === DRIVER_ADAPTER_WRITE_CONFLICT_KIND;
+  return (
+    errorRecord?.name === DRIVER_ADAPTER_ERROR_NAME &&
+    asRecord(errorRecord.cause)?.kind === DRIVER_ADAPTER_WRITE_CONFLICT_KIND
+  );
 };
 
 export const isTransactionConflictError = (error: unknown): boolean =>
@@ -84,8 +85,10 @@ const isPrismaKnownRequestError = (error: unknown): error is Prisma.PrismaClient
 const violationMessageIncludesConstraint = (message: unknown, constraintName: string): boolean =>
   typeof message === "string" && message.includes(`violates check constraint "${constraintName}"`);
 
+const NOT_A_CHECK_VIOLATION = false;
+
 export const isCheckConstraintViolation = (error: unknown, constraintName: string): boolean => {
-  if (!isPrismaKnownRequestError(error)) return false;
+  if (!isPrismaKnownRequestError(error)) return NOT_A_CHECK_VIOLATION;
 
   const driverCause = asRecord(asRecord(error.meta)?.driverAdapterError)?.cause;
   const record = asRecord(driverCause);

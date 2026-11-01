@@ -17,12 +17,12 @@ import { GripVertical } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmPipelineApi } from "../api/pipelineApi";
 import type { PipelineStage } from "../api/pipelineSchemas";
+import { STAGES_QUERY_KEY } from "../constants/pipelineQueryKeys";
 import { stageFormSchema, type StageFormValues } from "../schemas/stageForm.schema";
-
-const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 
 export const StageConfigModal = ({
   open,
@@ -36,7 +36,7 @@ export const StageConfigModal = ({
   const form = useForm<StageFormValues>({
     resolver: zodResolver(stageFormSchema),
     defaultValues: { name: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const addStage = useApiMutation({
@@ -67,7 +67,7 @@ export const StageConfigModal = ({
   const anyError = addStage.error ?? removeStage.error ?? reorder.error;
 
   return (
-    <Modal open={open} onClose={onClose} title="Configure pipeline stages">
+    <Modal open={open} onClose={onClose} title="Edit sales stages">
       <div className="space-y-3">
         {anyError && <FormBanner>{getErrorMessage(anyError)}</FormBanner>}
 

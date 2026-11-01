@@ -170,8 +170,11 @@ board at once, the loser's change is undone and they're told who got there first
   between them keeps the frame mounted and shows the page's `loading.tsx` skeleton at once, instead
   of leaving the previous page on screen while a different layout loads. `/builds/<id>` can't move
   there: it is also the public, indexable page for a shared build, and the dashboard layout marks
-  every page `noindex` and expects a session. So `app/builds/layout.tsx` checks the session itself
-  and renders `DashboardShell` when signed in, or the standalone public page when not.
+  every page `noindex` and expects a session. So `app/builds/[outfitId]/layout.tsx` decides for itself:
+  `DashboardShell` for someone who is part of the build (`board/api/isBuildMemberServer.ts`, which
+  asks `GET /api/outfits/:id` and looks for the live board view), and the normal site layout for
+  everyone else, signed in or not. Someone browsing another person's build is shopping, so they
+  stay in the site, not their dashboard.
 - **Lists and pages decide "loading" with react-query's `isPending`, not `isLoading`.** These
   components are server-rendered first, and on the server a query never fetches, so `isLoading`
   is false there. Using it put the empty state ("No builds yet") into the server HTML, which
@@ -206,3 +209,11 @@ board at once, the loser's change is undone and they're told who got there first
   out "put together by", instead of printing a byline with no names.
 - **Tap first, drag second.** Every action works by tapping (and so by keyboard); dragging from
   the desktop side panel is an extra, using dnd-kit's pointer and keyboard sensors.
+
+**Archiving or leaving a build goes back to My Builds.** Both ask first in the shared `ConfirmModal`, then `BuildBoard` shows a confirmation and sends the person to `/builds`, because the board has nothing left for them to do. Anyone who opens an archived build by its link sees a note explaining why it can't be changed.
+
+**The back link on the board is for people on the build.** It shows for owners and editors, whose My Builds page lists it. Someone only viewing a shared build has no list to go back to, so `myRole === "VIEWER"` hides it, and the public build views never show it.
+
+**The build pop-up keeps one height while it loads.** Without that it grew twice as the build and then its images arrived, which moved everything under the cursor. `BuildDetailModal` has a fixed height and takes its first title from the card that was clicked. A short build leaves empty space at the bottom, which is the accepted cost.
+
+**`PublicBuildsFeed` takes the Explore `layout`.** List shows one wide column using the same width as the post list, so Grid and List behave the same on every Explore tab.

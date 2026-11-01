@@ -12,6 +12,7 @@ This is **not** `crm-tickets` — that module is a CRM _tenant's_ support desk, 
 
 ## Structure
 
+- `support.errors.ts` — `supportErrors`, the errors this module raises from more than one place.
 - `support.constants.ts` — `ALLOWED_SUPPORT_TRANSITIONS` (the status state machine),
   `formatReference`/`parseReference` (`OFQ-1042` &harr; `ticketNumber`), rate-limit windows, the
   reopen-token TTL, and `SUPPORT_PERMISSION` (the three `platform:support:*` keys).

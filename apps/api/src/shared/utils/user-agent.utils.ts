@@ -18,8 +18,10 @@ export const BOT_USER_AGENT_PATTERNS = [
   "discordbot",
 ] as const;
 
+const MISSING_USER_AGENT_IS_BOT = true;
+
 export const isLikelyBotUserAgent = (userAgent: string | undefined): boolean => {
-  if (!userAgent) return true;
+  if (!userAgent) return MISSING_USER_AGENT_IS_BOT;
   const normalized = userAgent.toLowerCase();
   return BOT_USER_AGENT_PATTERNS.some((pattern) => normalized.includes(pattern));
 };

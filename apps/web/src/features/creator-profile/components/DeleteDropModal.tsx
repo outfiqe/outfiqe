@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@outfiqe/design-system";
+import { ConfirmModal } from "@outfiqe/design-system";
 
 type DeleteDropModalProps = {
   isOpen: boolean;
@@ -15,28 +15,19 @@ export const DeleteDropModal = ({
   closeDeleteModal,
   confirmDeletePost,
 }: DeleteDropModalProps) => (
-  <Modal
+  <ConfirmModal
     open={isOpen}
-    onClose={closeDeleteModal}
     title="Delete drop?"
     description="This can't be undone."
-    footer={
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={closeDeleteModal}>
-          Cancel
-        </Button>
-        <Button
-          onClick={confirmDeletePost}
-          isLoading={isDeleting}
-          className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
-        >
-          Delete
-        </Button>
-      </div>
-    }
+    confirmLabel="Delete"
+    pendingLabel="Deleting…"
+    destructive
+    isPending={isDeleting}
+    onConfirm={confirmDeletePost}
+    onCancel={closeDeleteModal}
   >
     <p className="text-sm text-muted-foreground">
       Cheriqs, chimes, and tags on this drop will be removed too.
     </p>
-  </Modal>
+  </ConfirmModal>
 );

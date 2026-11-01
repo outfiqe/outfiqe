@@ -3,6 +3,8 @@ import { apiClient } from "@/lib/apiClient";
 import {
   type PlatformActivityTrendPoint,
   platformActivityTrendSchema,
+  type PlatformAttentionCounts,
+  platformAttentionCountsSchema,
   type PlatformOverview,
   platformOverviewSchema,
   type TenantMetricDetail,
@@ -12,12 +14,23 @@ import {
   type TenantSort,
 } from "./platformMetricsSchemas";
 
-type ListParams = { plan?: string; sort?: TenantSort; page?: number; pageSize?: number };
+type ListParams = {
+  plan?: string;
+  search?: string;
+  sort?: TenantSort;
+  page?: number;
+  pageSize?: number;
+};
 
 export const platformMetricsApi = {
   async getOverview(): Promise<PlatformOverview> {
     const res = await apiClient.get<PlatformOverview>("/platform/metrics/overview");
     return platformOverviewSchema.parse(res.data);
+  },
+
+  async getAttentionCounts(): Promise<PlatformAttentionCounts> {
+    const res = await apiClient.get<PlatformAttentionCounts>("/platform/metrics/attention");
+    return platformAttentionCountsSchema.parse(res.data);
   },
 
   async getActivityTrend(): Promise<PlatformActivityTrendPoint[]> {
@@ -31,6 +44,7 @@ export const platformMetricsApi = {
     const res = await apiClient.get<TenantMetricListPage>("/platform/metrics/tenants", {
       params: {
         ...(params.plan ? { plan: params.plan } : {}),
+        ...(params.search ? { search: params.search } : {}),
         ...(params.sort ? { sort: params.sort } : {}),
         ...(params.page ? { page: params.page } : {}),
         ...(params.pageSize ? { pageSize: params.pageSize } : {}),

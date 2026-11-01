@@ -6,6 +6,7 @@ import { toE164PhoneNumber } from "#lib/phone.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPickupCoverage } from "../logistics.pickup-coverage.js";
 import { logisticsPickupLocationRepository } from "./pickup-location.repository.js";
 import type { PickupLocationBody } from "./pickup-location.schemas.js";
@@ -18,11 +19,7 @@ const NO_LOCATIONS = 0;
 const requireOwnedLocation = async (brandId: string, locationId: string) => {
   const location = await logisticsPickupLocationRepository.findActiveForBrand(brandId, locationId);
   if (!location) {
-    throw new AppError(
-      "PICKUP_LOCATION_NOT_FOUND",
-      "Pickup location not found.",
-      HTTP_STATUS.NOT_FOUND,
-    );
+    throw logisticsErrors.pickupLocationNotFound();
   }
   return location;
 };

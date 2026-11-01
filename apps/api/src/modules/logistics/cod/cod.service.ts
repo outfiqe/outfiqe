@@ -9,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsCodRepository } from "./cod.repository.js";
 import type {
   ListCodRemittancesQuery,
@@ -43,8 +44,7 @@ type ParcelToRemit = {
 };
 type RemittanceLine = { shipmentId: string; collectedAmount: number; partnerFeeAmount: number };
 
-const partnerNotFoundError = () =>
-  new AppError("PARTNER_NOT_FOUND", "Delivery partner not found.", HTTP_STATUS.NOT_FOUND);
+const partnerNotFoundError = () => logisticsErrors.partnerNotFound();
 
 const requirePartnerForCash = async (partnerId: string) => {
   const partner = await logisticsCodRepository.findPartnerForCash(partnerId);

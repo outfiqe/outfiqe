@@ -6,7 +6,7 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
 
 ## Structure
 
-- `components/ProductDetail.tsx` — the page. It holds the chosen size, quantity and photo, and runs Add to bag (`cart`'s `useAddToCart`), Buy now (saves a Buy Now payload with `checkout`'s `saveBuyNowPayload`, then opens `/checkout?buyNow=1`) and save (`wishlist`'s `useToggleWishlist`). A signed-out visitor is sent to sign in first.
+- `components/ProductDetail.tsx` — the page. It holds the chosen size, quantity and photo, and runs Add to bag (`cart`'s `useAddToCart`), Buy now (saves a Buy Now payload with `checkout`'s `saveBuyNowPayload`, then opens `/checkout?buyNow=1`) and save (`wishlist`'s `useToggleWishlist`). A signed-out visitor is sent to sign in first. It sends `product:detail_view` once per product (brand, price paid, thrift flag) through `analytics`' `useTrackView`.
 - `components/SizeSelector.tsx`, `components/QuantitySelector.tsx` — the size and quantity pickers.
   Brand and staff accounts can't buy, so for them both are disabled: the sizes stay visible as
   information, next to the "Shopping is available on customer accounts" note.

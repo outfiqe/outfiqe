@@ -126,6 +126,35 @@ const getOverview = (authHeader: string) =>
   request(testApp).get("/api/creators/me/overview").set("Authorization", authHeader);
 
 describe("GET /api/creators/me/overview", () => {
+  it("counts approved commission as pending, and splits earnings by source", async () => {
+    const creator = await createApprovedCreator();
+    await seedCommission(creator.id, CommissionStatus.APPROVED, 200, new Date());
+    await seedCommission(creator.id, CommissionStatus.PENDING, 100, new Date());
+    await seedCommission(creator.id, CommissionStatus.VOIDED, 900, new Date());
+
+    const response = await request(testApp)
+      .get("/api/creators/me/overview?days=7")
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    const { kpis, trend, handle, earningsBySource, topLooks } = response.body.data;
+    expect(kpis).toMatchObject({ periodDays: 7, pendingEarnings: 300, totalEarnings: 300 });
+    expect(trend).toHaveLength(7);
+    expect(handle).toBe(creator.handle);
+    expect(earningsBySource).toEqual([expect.objectContaining({ earnings: 300, salesCount: 2 })]);
+    expect(topLooks).toEqual([]);
+  });
+
+  it("refuses a period it doesn't offer", async () => {
+    const creator = await createApprovedCreator();
+
+    const response = await request(testApp)
+      .get("/api/creators/me/overview?days=8")
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(HTTP_STATUS.UNPROCESSABLE_ENTITY);
+  });
+
   it("rejects a user who is not an approved muse", async () => {
     const shopper = await createUser();
 
@@ -145,8 +174,8 @@ describe("GET /api/creators/me/overview", () => {
       totalEarnings: 0,
       pendingEarnings: 0,
       availableEarnings: 0,
-      last30DaysEarnings: 0,
-      previous30DaysEarnings: 0,
+      periodEarnings: 0,
+      previousPeriodEarnings: 0,
       lookCount: 0,
       followerCount: 7,
       totalLikes: 0,
@@ -181,7 +210,7 @@ describe("GET /api/creators/me/overview", () => {
     expect(kpis.totalEarnings).toBe(400 + 250 + 100 + 500);
     expect(kpis.pendingEarnings).toBe(400);
     expect(kpis.availableEarnings).toBe(250);
-    expect(kpis.last30DaysEarnings).toBe(400 + 250 + 100);
+    expect(kpis.periodEarnings).toBe(400 + 250 + 100);
     expect(kpis.lookCount).toBe(2);
     expect(kpis.totalLikes).toBe(8);
 

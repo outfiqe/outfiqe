@@ -1,4 +1,3 @@
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { UserRole } from "#generated/prisma/enums.js";
 import { assertContentAllowed } from "#lib/content-check.utils.js";
@@ -8,6 +7,7 @@ import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.co
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 
 import { VALIDATION_STATUS } from "../creator-look.constants.js";
+import { creatorLookErrors } from "../creator-look.errors.js";
 import { isPlatformModerator, requireActiveLook } from "../creator-look.guards.js";
 import type { CommentPage, CommentReplyPage } from "../creator-look.types.js";
 import { creatorLookCommentRepository } from "./comment.repository.js";
@@ -18,7 +18,7 @@ const requireTopLevelComment = async (
 ): Promise<{ id: string; creatorLookId: string; userId: string }> => {
   const comment = await creatorLookCommentRepository.findCommentById(commentId);
   if (!comment || comment.creatorLookId !== lookId) {
-    throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", HTTP_STATUS.NOT_FOUND);
+    throw creatorLookErrors.commentNotFound();
   }
   if (comment.parentCommentId !== null) {
     throw new AppError(
@@ -38,21 +38,13 @@ export const creatorLookCommentService = {
   ): Promise<void> {
     const comment = await creatorLookCommentRepository.findCommentById(commentId);
     if (!comment || comment.creatorLookId !== lookId) {
-      throw new AppError(
-        "COMMENT_NOT_FOUND",
-        "This chime no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLookErrors.commentNotFound();
     }
 
     const isOwner = comment.userId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
     if (!isOwner && !isModerator) {
-      throw new AppError(
-        "COMMENT_NOT_FOUND",
-        "This chime no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw creatorLookErrors.commentNotFound();
     }
 
     await creatorLookCommentRepository.softDeleteComment({

@@ -12,6 +12,7 @@ import { platformAudit } from "#modules/platform-audit/platform-audit.service.js
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
+import { productReviewErrors } from "./product-review.errors.js";
 import { productReviewRepository } from "./product-review.repository.js";
 import type { ListProductReviewsQuery, WriteProductReviewBody } from "./product-review.schemas.js";
 import type { ProductReviewPage, ProductReviewRecord } from "./product-review.types.js";
@@ -39,7 +40,7 @@ const requireOwnedReview = async (
 ): Promise<void> => {
   const review = await productReviewRepository.findActiveById(reviewId);
   if (!review || review.productId !== productId) {
-    throw new AppError("REVIEW_NOT_FOUND", "This review no longer exists.", HTTP_STATUS.NOT_FOUND);
+    throw productReviewErrors.reviewNotFound();
   }
   if (review.userId !== userId) {
     throw new AppError("FORBIDDEN", "You can only edit your own review.", HTTP_STATUS.FORBIDDEN);
@@ -147,11 +148,7 @@ export const productReviewService = {
   ): Promise<void> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError(
-        "REVIEW_NOT_FOUND",
-        "This review no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw productReviewErrors.reviewNotFound();
     }
 
     const isOwner = review.userId === principal.userId;
@@ -189,11 +186,7 @@ export const productReviewService = {
   ): Promise<{ helpfulCount: number }> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError(
-        "REVIEW_NOT_FOUND",
-        "This review no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw productReviewErrors.reviewNotFound();
     }
     if (review.userId === userId) {
       throw new AppError(
@@ -213,11 +206,7 @@ export const productReviewService = {
   ): Promise<{ helpfulCount: number }> {
     const review = await productReviewRepository.findActiveById(reviewId);
     if (!review || review.productId !== productId) {
-      throw new AppError(
-        "REVIEW_NOT_FOUND",
-        "This review no longer exists.",
-        HTTP_STATUS.NOT_FOUND,
-      );
+      throw productReviewErrors.reviewNotFound();
     }
 
     return productReviewRepository.unvote(reviewId, userId);

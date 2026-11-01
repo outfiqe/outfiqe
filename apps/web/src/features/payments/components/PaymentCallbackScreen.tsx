@@ -11,11 +11,13 @@ import { PaymentSuccess } from "./PaymentSuccess";
 
 type PaymentCallbackScreenProps = {
   orderId: string;
+  paymentProvider: string;
   gatewayReportedFailure?: boolean;
 };
 
 export const PaymentCallbackScreen = ({
   orderId,
+  paymentProvider,
   gatewayReportedFailure = false,
 }: PaymentCallbackScreenProps) => {
   const verify = useVerifyPayment(orderId);
@@ -29,6 +31,7 @@ export const PaymentCallbackScreen = ({
     return (
       <PaymentFailed
         orderId={orderId}
+        paymentProvider={paymentProvider}
         isRetrying={retryPayment.isPending}
         onRetry={() =>
           retryPayment.mutate(orderId, {

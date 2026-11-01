@@ -1,5 +1,6 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
+import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
@@ -15,6 +16,7 @@ import { PaymentVerifyStatus } from "../payment.types.js";
 
 const RUPEES_TO_PAISA = 100;
 const INITIATE_FAILED_STATUS = HTTP_STATUS.BAD_GATEWAY;
+const MAX_LOGGED_REFUSAL_LENGTH = 300;
 
 const KhaltiLookupStatus = {
   COMPLETED: "Completed",
@@ -64,6 +66,10 @@ export const khaltiProvider: PaymentProvider = {
     });
 
     if (!res.ok) {
+      const refusalReason = await res.text().catch(() => "");
+      logger.error(
+        `Khalti refused payment ${transactionUuid}: ${res.status} ${refusalReason.slice(0, MAX_LOGGED_REFUSAL_LENGTH)}`,
+      );
       throw new AppError(
         "PAYMENT_INITIATE_FAILED",
         "Could not start Khalti payment. Please try again.",

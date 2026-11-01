@@ -3,6 +3,7 @@ import type { Prisma } from "#generated/prisma/client.js";
 import type { OrderRefundCause } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { orderErrors } from "../order.errors.js";
 import {
   CAUSES_RETURNING_ORDER_FEES,
   PAYMENT_STATUSES_WITH_MONEY_TAKEN,
@@ -65,8 +66,7 @@ const refundRaceError = () =>
     HTTP_STATUS.CONFLICT,
   );
 
-export const orderNotFoundError = () =>
-  new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+export const orderNotFoundError = () => orderErrors.notFound();
 
 const assertPaymentAllowsRefund = (order: OrderForRefund) => {
   const isSettled =

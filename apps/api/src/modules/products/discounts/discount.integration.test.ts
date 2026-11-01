@@ -182,6 +182,26 @@ describe("PATCH /api/products/:id/discount", () => {
     expect(response.body.data.percentBasisPoints).toBe(2_500);
   });
 
+  it("refuses an end date in the past", async () => {
+    const { owner, product } = await setUpOwnedProduct(2_000);
+    await request(testApp)
+      .post(`/api/products/${product.id}/discount`)
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send({
+        discountType: "PERCENT",
+        percentBasisPoints: 1_000,
+        startsAt: new Date(Date.now() - 172_800_000).toISOString(),
+      });
+
+    const response = await request(testApp)
+      .patch(`/api/products/${product.id}/discount`)
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send({ endsAt: new Date(Date.now() - 86_400_000).toISOString() });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("The end date can't be in the past.");
+  });
+
   it("rejects switching to a ceiling-exceeding fixed amount", async () => {
     const { owner, product } = await setUpOwnedProduct(2_000);
     await request(testApp)
@@ -273,6 +293,21 @@ describe("Effective price on public and brand product reads", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.effectivePrice).toBe(2_000);
     expect(response.body.data.discountPercent).toBeNull();
+  });
+
+  it("finds the brand's own product by name", async () => {
+    const { owner, product } = await setUpOwnedProduct(2_000);
+    const listMine = (search: string) =>
+      request(testApp)
+        .get("/api/products/mine")
+        .query({ search })
+        .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER));
+
+    const found = await listMine(product.name.toUpperCase());
+    const noMatch = await listMine("nothing like this");
+
+    expect(found.body.data.products.map(({ id }: { id: string }) => id)).toEqual([product.id]);
+    expect(noMatch.body.data.products).toEqual([]);
   });
 
   it("shows the brand's own product list with the active discount and effective price", async () => {

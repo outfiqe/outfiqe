@@ -99,6 +99,24 @@ describe("platform metrics", () => {
     );
   });
 
+  it("counts the work waiting for staff", async () => {
+    const { auth } = await seedPlatformAdmin();
+
+    const res = await request(testApp)
+      .get("/api/platform/metrics/attention")
+      .set("Authorization", auth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({
+      brandApplications: expect.any(Number),
+      ordersToPack: expect.any(Number),
+      productsToReview: expect.any(Number),
+      refundsWaiting: expect.any(Number),
+      supportRequests: expect.any(Number),
+      withdrawalRequests: expect.any(Number),
+    });
+  });
+
   it("lists one aggregate row per tenant with a plan filter", async () => {
     const { auth } = await seedPlatformAdmin();
     const starter = await seedTenantWithCounters("starter", {
@@ -124,6 +142,60 @@ describe("platform metrics", () => {
     ).toEqual([starter.id]);
     expect(res.body.data.items[0].contactCount).toBe(7);
     expect(res.body.data.items[0].memberCount).toBe(0);
+  });
+
+  it("finds a tenant by name and sorts by the busiest", async () => {
+    const { auth } = await seedPlatformAdmin();
+    const quiet = await seedTenantWithCounters("starter", {
+      contactCount: 1,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+    const busy = await seedTenantWithCounters("starter", {
+      contactCount: 9,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+
+    const sorted = await request(testApp)
+      .get("/api/platform/metrics/tenants?sort=contacts")
+      .set("Authorization", auth);
+    const found = await request(testApp)
+      .get(`/api/platform/metrics/tenants?search=${encodeURIComponent(quiet.name.toUpperCase())}`)
+      .set("Authorization", auth);
+
+    expect(
+      sorted.body.data.items.map((row: { organizationId: string }) => row.organizationId),
+    ).toEqual([busy.id, quiet.id]);
+    expect(
+      found.body.data.items.map((row: { organizationId: string }) => row.organizationId),
+    ).toContain(quiet.id);
+  });
+
+  it("shows the account details on a tenant, with no owner before anyone accepts", async () => {
+    const { auth } = await seedPlatformAdmin();
+    const tenant = await seedTenantWithCounters("starter", {
+      contactCount: 0,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+
+    const { body } = await request(testApp)
+      .get(`/api/platform/metrics/tenants/${tenant.id}`)
+      .set("Authorization", auth);
+
+    expect(body.data).toMatchObject({
+      ownerName: null,
+      ownerEmail: null,
+      linkedBrandName: null,
+      seats: null,
+      cancelAtPeriodEnd: false,
+      pendingInviteCount: 0,
+      activeMemberCount: 0,
+    });
   });
 
   it("returns a tenant detail with a rollup series after a snapshot runs", async () => {

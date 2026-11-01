@@ -82,6 +82,7 @@ const renderTasksPage = () => {
       <Toaster />
     </QueryClientProvider>,
   );
+  return router;
 };
 
 describe("TasksPage", () => {
@@ -118,6 +119,28 @@ describe("TasksPage", () => {
     expect(await screen.findByText("Chase invoice")).toBeInTheDocument();
     expect(screen.getByText("overdue")).toBeInTheDocument();
     expect(screen.getByText(/your team.s to-do list/i)).toBeInTheDocument();
+  });
+
+  it("asks the API for overdue open tasks and keeps the choice in the link", async () => {
+    mockCommon();
+    const seenQueries: URLSearchParams[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/members`, () => HttpResponse.json({ success: true, data: [] })),
+      http.get(`${API_BASE}/crm/tasks`, ({ request }) => {
+        seenQueries.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ success: true, data: [] });
+      }),
+    );
+
+    const router = renderTasksPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Overdue" }));
+
+    expect(await screen.findByText("Nothing is overdue. Nice work.")).toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ due: "overdue" }));
+    const overdueQuery = seenQueries.at(-1);
+    expect(overdueQuery?.get("status")).toBe("OPEN");
+    expect(overdueQuery?.get("dueTo")).toBeTruthy();
+    expect(overdueQuery?.get("dueFrom")).toBeNull();
   });
 
   it("toggles a task to done", async () => {
@@ -196,7 +219,7 @@ describe("TasksPage", () => {
     renderTasksPage();
     const user = userEvent.setup({ delay: null });
 
-    expect(await screen.findByText("No tasks yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/No tasks yet/)).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "New task" }));
     await user.type(await screen.findByLabelText("Title"), "Prep deck");
     await user.click(screen.getByRole("button", { name: "Create task" }));

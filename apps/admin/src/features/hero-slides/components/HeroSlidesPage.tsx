@@ -14,6 +14,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { PUBLISH_STATUS } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
@@ -22,7 +23,9 @@ import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { heroSlidesApi } from "../api/heroSlidesApi";
 import type { HeroSlide, HeroSlideStatusValue } from "../api/heroSlidesSchemas";
@@ -67,7 +70,7 @@ export const HeroSlidesPage = () => {
   const form = useForm<HeroSlideFormValues>({
     resolver: zodResolver(heroSlideFormSchema),
     defaultValues: EMPTY_HERO_SLIDE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const create = useApiMutation({
@@ -88,10 +91,15 @@ export const HeroSlidesPage = () => {
 
   const toggleStatus = useApiMutation({
     mutationFn: (slide: HeroSlide) =>
-      heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
+      heroSlidesApi.setStatus(
+        slide.id,
+        slide.status === PUBLISH_STATUS.PUBLISHED ? PUBLISH_STATUS.DRAFT : PUBLISH_STATUS.PUBLISHED,
+      ),
     invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     successMessage: (updated) =>
-      updated.status === "PUBLISHED" ? "Hero slide published." : "Hero slide unpublished.",
+      updated.status === PUBLISH_STATUS.PUBLISHED
+        ? "Hero slide published."
+        : "Hero slide unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -222,7 +230,9 @@ export const HeroSlidesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <HeroSlideRowSkeleton key={index} />)}
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
+            <HeroSlideRowSkeleton key={index} />
+          ))}
         {heroSlides?.length === 0 && (
           <p className="text-sm text-muted-foreground">No hero slides yet.</p>
         )}
@@ -257,11 +267,11 @@ export const HeroSlidesPage = () => {
 
               {canManageCatalog && (
                 <Button
-                  variant={status === "PUBLISHED" ? "ghost" : "default"}
+                  variant={status === PUBLISH_STATUS.PUBLISHED ? "ghost" : "default"}
                   onClick={() => toggleStatus.mutate(slide)}
                   disabled={toggleStatus.isPending}
                 >
-                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                  {status === PUBLISH_STATUS.PUBLISHED ? "Unpublish" : "Publish"}
                 </Button>
               )}
             </div>

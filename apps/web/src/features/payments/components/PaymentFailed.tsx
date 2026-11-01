@@ -1,17 +1,30 @@
 import { Button } from "@outfiqe/design-system";
+import { ANALYTICS_EVENTS, toAnalyticsPaymentMethod } from "@outfiqe/utils";
 import { X } from "lucide-react";
 import Link from "next/link";
 
+import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 
 type PaymentFailedProps = {
   orderId: string;
+  paymentProvider: string;
   onRetry: () => void;
   isRetrying: boolean;
 };
 
-export const PaymentFailed = ({ orderId, onRetry, isRetrying }: PaymentFailedProps) => {
+export const PaymentFailed = ({
+  orderId,
+  paymentProvider,
+  onRetry,
+  isRetrying,
+}: PaymentFailedProps) => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();
+  useTrackView(
+    ANALYTICS_EVENTS.PAYMENT_FAIL,
+    { order_id: orderId, payment_method: toAnalyticsPaymentMethod(paymentProvider) },
+    orderId,
+  );
 
   return (
     <div className="flex flex-col items-center text-center">

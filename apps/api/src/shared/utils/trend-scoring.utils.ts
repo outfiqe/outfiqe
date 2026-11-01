@@ -1,4 +1,4 @@
-const HOUR_MS = 60 * 60 * 1000;
+import { millisecondsInHour } from "date-fns/constants";
 
 export const truncateToHour = (date: Date): Date => {
   const truncated = new Date(date);
@@ -7,7 +7,7 @@ export const truncateToHour = (date: Date): Date => {
 };
 
 export const ageHoursOf = (bucket: { bucketStart: Date }, now: Date): number =>
-  (now.getTime() - bucket.bucketStart.getTime()) / HOUR_MS;
+  (now.getTime() - bucket.bucketStart.getTime()) / millisecondsInHour;
 
 export const decayWeight = (ageHours: number, halfLifeHours: number): number =>
   Math.exp(-ageHours / halfLifeHours);

@@ -47,7 +47,7 @@ const announcementBodySchema = z
   })
   .refine(ctaFieldsAreConsistent, { message: CTA_MISMATCH_MESSAGE, path: ["targetPath"] })
   .refine((data) => !data.expiresAt || isFuture(data.expiresAt), {
-    message: "expiresAt must be in the future.",
+    message: "The expiry date must be in the future.",
     path: ["expiresAt"],
   });
 
@@ -57,7 +57,7 @@ export const updateAnnouncementSchema = announcementBodySchema;
 export const sendAnnouncementSchema = z
   .object({ scheduledAt: z.coerce.date().optional() })
   .refine((data) => !data.scheduledAt || isFuture(data.scheduledAt), {
-    message: "scheduledAt must be in the future.",
+    message: "Choose a time in the future.",
     path: ["scheduledAt"],
   });
 

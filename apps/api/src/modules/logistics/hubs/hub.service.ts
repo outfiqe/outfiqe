@@ -3,6 +3,7 @@ import { prisma } from "#db/prisma.js";
 import { toE164PhoneNumber } from "#lib/phone.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsHubRepository } from "./hub.repository.js";
 import type { HubBody, SetHubPickupZonesBody } from "./hub.schemas.js";
 import type { HubView } from "./hub.types.js";
@@ -10,7 +11,7 @@ import { toHubView } from "./hub.utils.js";
 
 const requireHub = async (hubId: string) => {
   const hub = await logisticsHubRepository.findHubById(hubId);
-  if (!hub) throw new AppError("HUB_NOT_FOUND", "Hub not found.", HTTP_STATUS.NOT_FOUND);
+  if (!hub) throw logisticsErrors.hubNotFound();
   return hub;
 };
 

@@ -1,15 +1,31 @@
-import { render, screen } from "@testing-library/react";
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { FeedTaggedProduct } from "../../feed/api/exploreFeedSchemas";
 import { PostTagPill } from "./PostTagPill";
 
+const trackEvent = vi.fn();
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
+}));
 vi.mock("../../feed/api/exploreFeedApi", () => ({ exploreFeedApi: { recordTagClick: vi.fn() } }));
 vi.mock("next/link", () => ({
   __esModule: true,
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    onClick,
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: () => void;
+  }) => (
+    <a href={href} onClick={onClick}>
+      {children}
+    </a>
   ),
 }));
 
@@ -54,5 +70,16 @@ describe("PostTagPill", () => {
     render(<PostTagPill lookId="look-1" tag={aTag()} creatorHeightCm={168} />);
 
     expect(screen.getByRole("link")).toHaveAttribute("href", "/product/product-1");
+  });
+
+  it("records a tap on the tagged product for the look-to-order funnel", () => {
+    render(<PostTagPill lookId="look-1" tag={aTag()} creatorHeightCm={168} />);
+
+    fireEvent.click(screen.getByRole("link"));
+
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.LOOK_PRODUCT_TAG_CLICK, {
+      look_id: "look-1",
+      product_id: "product-1",
+    });
   });
 });

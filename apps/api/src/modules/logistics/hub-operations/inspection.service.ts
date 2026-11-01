@@ -13,6 +13,7 @@ import {
 import { AppError } from "#middlewares/error-handler.js";
 import { orderService } from "#modules/orders/order.service.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { brandIncidentRepository } from "../reliability/brand-incident.repository.js";
 import { logisticsReturnRepository } from "../returns/return.repository.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
@@ -32,7 +33,7 @@ type PickupForInspection = NonNullable<
 
 const requirePickupReadyForInspection = async (groupId: string) => {
   const pickup = await logisticsHubOperationRepository.findPickupForInspection(groupId);
-  if (!pickup) throw new AppError("PICKUP_NOT_FOUND", "Pickup not found.", HTTP_STATUS.NOT_FOUND);
+  if (!pickup) throw logisticsErrors.pickupNotFound();
   if (pickup.pickupStatus !== PickupStatus.AT_HUB) {
     throw new AppError(
       "PICKUP_NOT_AT_HUB",

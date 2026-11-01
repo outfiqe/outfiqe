@@ -6,6 +6,8 @@ export type TenantMetricRow = {
   subscriptionStatus: string | null;
   isPlatformOrg: boolean;
   linkedBrandId: string | null;
+  linkedBrandName: string | null;
+  ownerName: string | null;
   memberCount: number;
   contactCount: number;
   dealCount: number;
@@ -15,9 +17,20 @@ export type TenantMetricRow = {
   createdAt: Date;
 };
 
+export type TenantSort =
+  | "recent-activity"
+  | "name"
+  | "created"
+  | "members"
+  | "contacts"
+  | "deals"
+  | "tickets"
+  | "activities";
+
 export type TenantMetricListFilters = {
   plan?: string;
-  sort?: "recent-activity" | "name" | "created";
+  search?: string;
+  sort?: TenantSort;
   page: number;
   pageSize: number;
 };
@@ -55,8 +68,28 @@ export type PlatformActivityTrendPoint = {
   contactCount: number;
 };
 
-export type TenantMetricDetail = TenantMetricRow & {
-  partnerCount: number;
-  customerCount: number;
-  series: TenantSparklinePoint[];
+export type TenantAccount = {
+  ownerEmail: string | null;
+  trialEndsAt: Date | null;
+  seats: number | null;
+  currentPeriodEnd: Date | null;
+  cancelAtPeriodEnd: boolean;
+  pendingInviteCount: number;
+};
+
+export type TenantMetricDetail = TenantMetricRow &
+  TenantAccount & {
+    partnerCount: number;
+    customerCount: number;
+    activeMemberCount: number;
+    series: TenantSparklinePoint[];
+  };
+
+export type PlatformAttentionCounts = {
+  ordersToPack: number;
+  productsToReview: number;
+  brandApplications: number;
+  refundsWaiting: number;
+  withdrawalRequests: number;
+  supportRequests: number;
 };

@@ -14,6 +14,7 @@ import { generateRandomCode } from "#lib/random-code.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { PICKUP_STATUSES_NOT_COMING_TO_HUB } from "../logistics.constants.js";
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerBookingService } from "../partner-bookings/partner-booking.service.js";
 import { merchantReferenceForBooking } from "../partners/partner-status.utils.js";
 import { logisticsShipmentBookingRepository } from "../shipments/shipment-booking.repository.js";
@@ -155,6 +156,28 @@ const recordParcelEvents = async (
   return pickupOutcomes;
 };
 
+const createParcelBooking = async (
+  tx: TransactionClient,
+  partner: ParcelPartnerChoice,
+  shipmentId: string,
+  trackingCode: string,
+  staffUserId: string,
+) => {
+  const booking = await logisticsShipmentBookingRepository.createBooking(tx, {
+    shipmentId,
+    partnerId: partner.partnerId,
+    partnerAccountId: partner.partnerAccountId,
+    merchantReference: merchantReferenceForBooking(trackingCode, NO_EARLIER_BOOKINGS),
+    connection: partner.connection,
+    requestedById: staffUserId,
+  });
+  await logisticsPartnerBookingService.queueApiBooking(tx, {
+    bookingId: booking.id,
+    connection: partner.connection,
+  });
+  return booking;
+};
+
 const packInTransaction = async (
   tx: TransactionClient,
   params: {
@@ -192,21 +215,8 @@ const packInTransaction = async (
     );
   }
   const booking = partner
-    ? await logisticsShipmentBookingRepository.createBooking(tx, {
-        shipmentId: shipment.id,
-        partnerId: partner.partnerId,
-        partnerAccountId: partner.partnerAccountId,
-        merchantReference: merchantReferenceForBooking(trackingCode, NO_EARLIER_BOOKINGS),
-        connection: partner.connection,
-        requestedById: staffUserId,
-      })
+    ? await createParcelBooking(tx, partner, shipment.id, trackingCode, staffUserId)
     : null;
-  if (booking && partner) {
-    await logisticsPartnerBookingService.queueApiBooking(tx, {
-      bookingId: booking.id,
-      connection: partner.connection,
-    });
-  }
   const pickupOutcomes = await recordParcelEvents(tx, {
     staffUserId,
     shipmentId: shipment.id,
@@ -217,6 +227,22 @@ const packInTransaction = async (
   return { shipment, booking, pickupOutcomes };
 };
 
+const toRequestedBookingView = (
+  bookingId: string,
+  { partnerId, partnerName, connection }: ParcelPartnerChoice,
+  merchantReference: string,
+) => ({
+  bookingId,
+  partnerId,
+  partnerName,
+  status: PartnerBookingStatus.REQUESTED,
+  connection,
+  merchantReference,
+  partnerReference: null,
+  partnerTrackingUrl: null,
+  failureReason: null,
+});
+
 export const logisticsPackingService = {
   async packParcel(
     staffUserId: string,
@@ -224,7 +250,7 @@ export const logisticsPackingService = {
     body: PackParcelBody,
   ): Promise<PackedParcelView> {
     const order = await logisticsHubOperationRepository.findOrderForPacking(orderId);
-    if (!order) throw new AppError("ORDER_NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw logisticsErrors.orderNotFound();
     const { hubId, fulfilmentGroupIds } = selectPickupsToPack(order, body.packsOnlyPickupsAtHub);
 
     const firstShipmentId = await logisticsHubOperationRepository.findFirstShipmentIdForOrder(
@@ -267,17 +293,7 @@ export const logisticsPackingService = {
       fulfilmentGroupIds: [...fulfilmentGroupIds],
       booking:
         booking && partner
-          ? {
-              bookingId: booking.id,
-              partnerId: partner.partnerId,
-              partnerName: partner.partnerName,
-              status: PartnerBookingStatus.REQUESTED,
-              connection: partner.connection,
-              merchantReference: shipment.trackingCode,
-              partnerReference: null,
-              partnerTrackingUrl: null,
-              failureReason: null,
-            }
+          ? toRequestedBookingView(booking.id, partner, shipment.trackingCode)
           : null,
     };
   },

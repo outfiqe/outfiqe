@@ -18,6 +18,8 @@ import type {
   CouponWithEligibility,
 } from "./coupon.types.js";
 
+const NO_ELIGIBILITY_RULES_MATCH_EVERY_LINE = true;
+
 const FULL_PERCENT = 100;
 
 export const isCouponWithinWindow = (coupon: CouponRecord, at: Date): boolean =>
@@ -29,7 +31,7 @@ export const lineMatchesEligibility = (
   line: Pick<CouponLine, "brandId" | "productId" | "productTypeId" | "categoryIds">,
   eligibility: CouponEligibilityRow[],
 ): boolean => {
-  if (eligibility.length === 0) return true;
+  if (eligibility.length === 0) return NO_ELIGIBILITY_RULES_MATCH_EVERY_LINE;
   return eligibility.some((row) => {
     if (row.scopeType === CouponEligibilityScopeType.BRAND) return row.scopeId === line.brandId;
     if (row.scopeType === CouponEligibilityScopeType.PRODUCT) return row.scopeId === line.productId;
@@ -45,8 +47,8 @@ export const resolveEligibleLines = (
   lines: CouponLine[],
 ): CouponLine[] =>
   lines.filter((line) => {
-    if (!coupon.stacksWithBrandDiscount && line.hasBrandDiscount) return false;
-    return lineMatchesEligibility(line, coupon.eligibility);
+    const isBlockedByBrandDiscount = !coupon.stacksWithBrandDiscount && line.hasBrandDiscount;
+    return !isBlockedByBrandDiscount && lineMatchesEligibility(line, coupon.eligibility);
   });
 
 export const valuateCoupon = (

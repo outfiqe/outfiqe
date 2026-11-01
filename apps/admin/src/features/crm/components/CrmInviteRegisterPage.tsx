@@ -26,6 +26,7 @@ import {
 import { setAccessToken } from "@/lib/apiClient";
 import { useHideBootLoader } from "@/lib/bootLoader";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 const routeApi = getRouteApi("/crm/invites/register");
 
@@ -48,7 +49,7 @@ export const CrmInviteRegisterPage = () => {
   const form = useForm<CrmRegisterFormValues>({
     resolver: zodResolver(crmRegisterFormSchema),
     defaultValues: EMPTY_CRM_REGISTER_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const register = useApiMutation({

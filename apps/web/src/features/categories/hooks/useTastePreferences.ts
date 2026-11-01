@@ -1,8 +1,10 @@
 "use client";
 
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
+import { trackEvent } from "@/features/analytics/utils/analyticsClient";
 import { useAuth } from "@/features/auth";
 
 import { tastePreferencesApi } from "../api/tastePreferencesApi";
@@ -136,6 +138,7 @@ export const useTastePreferences = (): TastePreferences => {
     (slugs: string[]) => {
       saveLocal(slugs);
       if (isSignedIn) mutate(slugs);
+      trackEvent(ANALYTICS_EVENTS.TASTE_CATEGORY_SELECT, { category_count: slugs.length });
     },
     [saveLocal, isSignedIn, mutate],
   );

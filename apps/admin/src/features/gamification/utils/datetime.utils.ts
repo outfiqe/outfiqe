@@ -1,9 +1,7 @@
-export const toDatetimeLocalValue = (iso: string | null): string => {
-  if (!iso) return "";
-  const instant = new Date(iso);
-  const localOffsetMs = instant.getTimezoneOffset() * 60000;
-  return new Date(instant.getTime() - localOffsetMs).toISOString().slice(0, 16);
-};
+import { toDateTimeInputValue } from "@outfiqe/utils";
+
+export const toDatetimeLocalValue = (iso: string | null): string =>
+  iso ? toDateTimeInputValue(new Date(iso)) : "";
 
 export const toIsoOrNull = (datetimeLocalValue: string): string | null =>
   datetimeLocalValue ? new Date(datetimeLocalValue).toISOString() : null;

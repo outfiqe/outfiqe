@@ -118,7 +118,7 @@ describe("OutfitBuildDetailPage", () => {
     expect(screen.getByText(/Maroon Kurta · Kastha/)).toBeInTheDocument();
     expect(screen.getByText(/· shown to viewers/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Photo added by Sita Rai" })).toBeInTheDocument();
-    expect(await screen.findByText(/LOCKED/, { selector: "li" })).toBeInTheDocument();
+    expect(await screen.findByText(/locked the build/, { selector: "li" })).toBeInTheDocument();
   });
 
   it("unlocks the build with a reason", async () => {

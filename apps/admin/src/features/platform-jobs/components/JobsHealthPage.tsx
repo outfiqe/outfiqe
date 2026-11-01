@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDateTime } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -60,7 +61,7 @@ export const JobsHealthPage = () => {
               <p className="text-xs text-muted-foreground">Oldest waiting since</p>
               <p className="text-sm font-medium text-foreground">
                 {health.data.outbox.oldestUnpublishedAt
-                  ? new Date(health.data.outbox.oldestUnpublishedAt).toLocaleString()
+                  ? formatDateTime(health.data.outbox.oldestUnpublishedAt)
                   : "Nothing waiting"}
               </p>
             </div>
@@ -123,7 +124,7 @@ export const JobsHealthPage = () => {
                   <div className="min-w-0">
                     <p className="font-medium text-foreground">{event.topic}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(event.createdAt).toLocaleString()} · {event.attempts} tries
+                      {formatDateTime(event.createdAt)} · {event.attempts} tries
                     </p>
                     {event.lastError && (
                       <p className="mt-1 break-words text-xs text-destructive">{event.lastError}</p>

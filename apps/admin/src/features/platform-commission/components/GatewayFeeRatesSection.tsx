@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { platformCommissionApi } from "../api/platformCommissionApi";
@@ -45,7 +46,7 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
   const form = useForm<GatewayRateFormValues>({
     resolver: zodResolver(gatewayRateFormSchema),
     defaultValues: { ratePercent: "" },
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const createRate = useApiMutation({

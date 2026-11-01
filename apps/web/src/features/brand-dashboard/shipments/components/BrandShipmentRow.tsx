@@ -1,3 +1,4 @@
+import { formatDate } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
@@ -52,7 +53,7 @@ export const BrandShipmentRow = ({ shipment }: BrandShipmentRowProps) => {
           {totalQty} {totalQty === 1 ? "item" : "items"} · Ship to {shipToCity}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Order {formatShortOrderId(orderId)} · {new Date(orderCreatedAt).toLocaleDateString()}
+          Order {formatShortOrderId(orderId)} · {formatDate(orderCreatedAt)}
           {trackingNumber ? ` · ${trackingNumber}` : ""}
         </p>
       </div>

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CookieSettingsButton } from "@/features/analytics";
+
 import { FooterAppMenu } from "./FooterAppMenu";
 import { FooterLinkColumns } from "./FooterLinkColumns";
 import { Logo } from "./Logo";
@@ -36,6 +38,7 @@ export const SiteFooter = () => (
       <p className="text-xs text-muted-foreground">
         &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
       </p>
+      <CookieSettingsButton />
     </div>
   </footer>
 );

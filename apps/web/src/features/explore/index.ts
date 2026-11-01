@@ -11,6 +11,7 @@ export {
 } from "./constants/explore.constants";
 export type { FeedPost } from "./feed/api/exploreFeedSchemas";
 export { ExploreFeed } from "./feed/components/ExploreFeed";
+export { ExploreFeedLoading } from "./feed/components/ExploreFeedLoading";
 export { FeedFilterTabs } from "./feed/components/FeedFilterTabs";
 export { useInfiniteExploreFeed } from "./feed/hooks/useInfiniteExploreFeed";
 export { PostCaption } from "./posts/components/PostCaption";

@@ -20,7 +20,9 @@ import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { assertGatewayAvailable } from "./payment.availability.js";
 import { SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
+import { paymentErrors } from "./payment.errors.js";
 import { paymentRepository } from "./payment.repository.js";
 import type {
   PaymentInitiateResult,
@@ -31,6 +33,12 @@ import type {
 import { PaymentVerifyStatus } from "./payment.types.js";
 import { esewaProvider } from "./providers/esewa.provider.js";
 import { extractKhaltiTransactionId, khaltiProvider } from "./providers/khalti.provider.js";
+
+const SETTLEMENT_OUTCOME = {
+  SETTLED_ELSEWHERE: "settled_elsewhere",
+  NEEDS_MANUAL_REFUND: "needs_manual_refund",
+  PLACED: "placed",
+} as const;
 
 const providers: Partial<Record<PaymentMethod, PaymentProvider>> = {
   [PaymentMethod.ESEWA]: esewaProvider,
@@ -80,9 +88,9 @@ const settleVerified = async (
   transactionId: string,
   rawResponse: unknown,
 ): Promise<void> => {
-  const needsManualRefund = await prisma.$transaction(async (tx) => {
+  const settlementOutcome = await prisma.$transaction(async (tx) => {
     const settled = await paymentRepository.settleTransaction(tx, transactionId, rawResponse);
-    if (!settled) return false;
+    if (!settled) return SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE;
 
     const insufficientSizeIds = await productService.decrementStockForItems(
       tx,
@@ -96,14 +104,16 @@ const settleVerified = async (
 
     if (insufficientSizeIds.length > 0) {
       await paymentRepository.markOrderNeedsManualRefund(tx, order.id);
-      return true;
+      return SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND;
     }
 
     await paymentRepository.markOrderPlaced(tx, order.id);
-    return false;
+    return SETTLEMENT_OUTCOME.PLACED;
   });
 
-  if (needsManualRefund) {
+  if (settlementOutcome === SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE) return;
+
+  if (settlementOutcome === SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND) {
     alertOpsForManualRefund(order.id, order.total);
   } else {
     await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, {
@@ -168,7 +178,7 @@ const runVerify = async (order: PaymentOrder): Promise<PaymentVerifyStatusValue>
 export const paymentService = {
   async initiate(userId: string, orderId: string): Promise<PaymentInitiateResult> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw paymentErrors.notFound();
     if (order.paymentMethod === PaymentMethod.COD) {
       throw new AppError(
         "INVALID_PAYMENT_METHOD",
@@ -180,22 +190,15 @@ export const paymentService = {
       throw new AppError("ORDER_CANCELLED", "This order was cancelled.", HTTP_STATUS.CONFLICT);
     }
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
-      throw new AppError(
-        "ALREADY_SETTLED",
-        "This order has already been paid.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw paymentErrors.alreadySettled();
     }
+    await assertGatewayAvailable(order.paymentMethod, userId);
 
     const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
     if (priorAttempt?.transactionRef) {
       const priorAttemptStatus = await runVerify(order);
       if (priorAttemptStatus === PaymentVerifyStatus.COMPLETE) {
-        throw new AppError(
-          "ALREADY_SETTLED",
-          "This order has already been paid.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw paymentErrors.alreadySettled();
       }
       await paymentRepository.failTransaction(priorAttempt.id, {
         [SUPERSEDED_BY_RETRY_MARKER]: true,
@@ -229,7 +232,7 @@ export const paymentService = {
 
   async verify(userId: string, orderId: string): Promise<{ status: PaymentVerifyStatusValue }> {
     const order = await paymentRepository.findOrderForPayment(orderId, userId);
-    if (!order) throw new AppError("NOT_FOUND", "Order not found.", HTTP_STATUS.NOT_FOUND);
+    if (!order) throw paymentErrors.notFound();
 
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       return {

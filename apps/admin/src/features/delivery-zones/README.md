@@ -17,6 +17,10 @@ Lets the team set delivery pricing by city: each zone lists its cities, a standa
 - `utils/formatDeliveryDays.ts` — the delivery-days text on each zone card.
 - `utils/deliveryZonesCacheUpdate.ts` — the zone list's query key and the helpers that update the cached list in place after a write (add or replace a zone, move the default, remove a zone).
 
+## Setting a default zone
+
+`setDefault` turns `isDefault` off on the zone that held it before, so `applyDefaultZoneInCache` updates both zones. Upserting only the returned zone would leave the old default stale until the next refetch.
+
 ## Funnel
 
 **User-facing:** an admin opens Delivery zones, adds a zone with its cities and fees, and can mark it as the default. Shoppers' carts and checkout show the fee for the city they enter.

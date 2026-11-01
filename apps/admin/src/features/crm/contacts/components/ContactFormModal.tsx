@@ -17,18 +17,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmApi } from "../../api/crmApi";
 import { type ContactInput, crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
+import { CONTACTS_QUERY_KEY, toContactQueryKey } from "../constants/contactQueryKeys";
 import {
   contactFormSchema,
   type ContactFormValues,
   EMPTY_CONTACT_FORM,
   parseContactTags,
 } from "../schemas/contactForm.schema";
-
-const CONTACTS_QUERY_KEY = ["crm-contacts"];
 
 const LIFECYCLE_STAGES = contactLifecycleStageSchema.options;
 
@@ -90,7 +90,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: toFormValues(contact),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const { data: members } = useQuery({
@@ -104,7 +104,9 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
       isEditing
         ? crmContactsApi.updateContact(contact.id, toContactInput(values))
         : crmContactsApi.createContact(toContactInput(values)),
-    invalidateKeys: [CONTACTS_QUERY_KEY],
+    invalidateKeys: isEditing
+      ? [CONTACTS_QUERY_KEY, toContactQueryKey(contact.id)]
+      : [CONTACTS_QUERY_KEY],
     successMessage: isEditing ? "Contact saved." : "Contact created.",
     onSuccess: () => onClose(),
   });

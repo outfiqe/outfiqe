@@ -26,7 +26,7 @@ const REFUND_NOTIFICATION_TYPES: Record<OrderRefundOutcome, NotificationType> = 
   [ORDER_REFUND_OUTCOME.DETAILS_NEEDED]: NotificationType.ORDER_REFUND_DETAILS_NEEDED,
 };
 
-export const registerCommerceNotificationConsumers = (): void => {
+const subscribeToSaleGenerated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SALE_GENERATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -39,7 +39,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToProductPurchased = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_PURCHASED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -65,7 +67,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       await notificationService.notifyManyIndividual(inputs);
     },
   });
+};
 
+const subscribeToOrderStatusChanged = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ORDER_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -95,7 +99,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       await notificationService.notifyManyIndividual(inputs);
     },
   });
+};
 
+const subscribeToOrderRefundUpdated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ORDER_REFUND_UPDATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -110,7 +116,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToProductReviewed = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_REVIEWED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -135,7 +143,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       await notificationService.notifyManyIndividual(inputs);
     },
   });
+};
 
+const subscribeToWithdrawRequestStatusChanged = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -160,7 +170,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCouponApprovalRequested = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_APPROVAL_REQUESTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -178,7 +190,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCouponRedemptionFlagged = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_REDEMPTION_FLAGGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -192,7 +206,9 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCouponBudgetAlert = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_BUDGET_ALERT,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -209,4 +225,16 @@ export const registerCommerceNotificationConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerCommerceNotificationConsumers = (): void => {
+  subscribeToSaleGenerated();
+  subscribeToProductPurchased();
+  subscribeToOrderStatusChanged();
+  subscribeToOrderRefundUpdated();
+  subscribeToProductReviewed();
+  subscribeToWithdrawRequestStatusChanged();
+  subscribeToCouponApprovalRequested();
+  subscribeToCouponRedemptionFlagged();
+  subscribeToCouponBudgetAlert();
 };

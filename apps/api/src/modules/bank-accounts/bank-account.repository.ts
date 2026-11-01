@@ -8,6 +8,9 @@ import type {
   CreateBankAccountRepositoryInput,
 } from "./bank-account.types.js";
 
+const DEFAULT_NOT_CHANGED = false;
+const DEFAULT_CHANGED = true;
+
 const withBankName = { bank: { select: { name: true } } };
 
 const flattenBankName = <T extends { bank: { name: string } }>({
@@ -77,14 +80,14 @@ export const bankAccountRepository = {
   async setDefault(userId: string, id: string): Promise<boolean> {
     return prisma.$transaction(async (tx) => {
       const owned = await tx.bankAccount.findFirst({ where: { id, userId }, select: { id: true } });
-      if (!owned) return false;
+      if (!owned) return DEFAULT_NOT_CHANGED;
 
       await tx.bankAccount.updateMany({
         where: { userId, isDefault: true },
         data: { isDefault: false },
       });
       await tx.bankAccount.update({ where: { id }, data: { isDefault: true } });
-      return true;
+      return DEFAULT_CHANGED;
     });
   },
 

@@ -2,6 +2,7 @@
 
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { BankAccountsList, useBankAccounts } from "@/features/bank-accounts";
 
 import type { OwnerTypeValue } from "../api/withdrawSchemas";
@@ -48,7 +49,7 @@ export const WithdrawSection = ({
   const verifiedBankAccounts = (bankAccounts ?? []).filter((bankAccount) => bankAccount.isVerified);
 
   return (
-    <div>
+    <div className={PRIVATE_ANALYTICS_CLASS_NAME}>
       <div>
         <Heading className="font-display text-2xl font-bold text-foreground">{title}</Heading>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>

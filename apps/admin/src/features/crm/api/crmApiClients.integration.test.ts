@@ -35,6 +35,7 @@ const deal = {
   partnerCreatorId: "u1",
   partnerName: "Aasha",
   partnerHandle: "aasha",
+  stageEnteredAt: "2026-08-20T00:00:00.000Z",
   status: "OPEN" as const,
   closedAt: null,
   createdAt: "2026-08-20T00:00:00.000Z",

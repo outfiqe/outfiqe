@@ -23,12 +23,15 @@ import {
   type ExploreQueryParamKey,
   FEED_LAYOUT,
   type FeedLayout,
+  LIST_FEED_COLUMN_CLASS_NAME,
   STAFF_LOCKED_EXPLORE_TABS,
   STAFF_LOCKED_TAB_TOOLTIP,
 } from "../../constants/explore.constants";
 import { useExploreAuthGate } from "../../hooks/useExploreAuthGate";
+import { PostCard } from "../../posts/components/PostCard";
 import { ExploreFeedSkeleton } from "../../posts/components/PostCardSkeleton";
 import { PostGridCard } from "../../posts/components/PostGridCard";
+import { readFeedLayout } from "../../utils/readFeedLayout";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
@@ -43,9 +46,6 @@ const AddPostButton = dynamic(
     ssr: false,
   },
 );
-const PostCard = dynamic(() => import("../../posts/components/PostCard").then((m) => m.PostCard), {
-  loading: () => <ExploreFeedSkeleton layout={FEED_LAYOUT.LIST} />,
-});
 const PostDetailModal = dynamic(
   () => import("../../posts/components/PostDetailModal").then((m) => m.PostDetailModal),
   {
@@ -77,10 +77,7 @@ export const ExploreFeed = () => {
   const lockedTabTooltip = isStaffViewer ? STAFF_LOCKED_TAB_TOOLTIP : undefined;
   const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
   const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
-  const committedLayout: FeedLayout =
-    searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
-      ? FEED_LAYOUT.LIST
-      : FEED_LAYOUT.GRID;
+  const committedLayout = readFeedLayout(searchParams);
 
   const isRequestedTabLockedForAdmin =
     isAuthResolved && isStaff && lockedTabs.includes(requestedTab);
@@ -204,7 +201,7 @@ export const ExploreFeed = () => {
           )}
 
           {isBuildsTab ? (
-            <PublicBuildsFeed />
+            <PublicBuildsFeed layout={layout} />
           ) : followingGated ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <p className="text-sm text-muted-foreground">
@@ -284,7 +281,7 @@ export const ExploreFeed = () => {
               )}
             </>
           ) : (
-            <div className="mx-auto flex max-w-xl flex-col">
+            <div className={LIST_FEED_COLUMN_CLASS_NAME}>
               {posts.map((post, index) => (
                 <Fragment key={post.id}>
                   {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
@@ -292,7 +289,11 @@ export const ExploreFeed = () => {
                       Recent & popular
                     </p>
                   )}
-                  <PostCard post={post} trendingRank={trendingRankByPostId.get(post.id)} />
+                  <PostCard
+                    post={post}
+                    trendingRank={trendingRankByPostId.get(post.id)}
+                    onOpenComments={() => setDetailPostId(post.id)}
+                  />
                 </Fragment>
               ))}
             </div>

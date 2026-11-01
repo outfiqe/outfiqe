@@ -22,6 +22,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { slugify } from "@/lib/slugify";
 
 import { outfitSlotTypesApi } from "../api/outfitSlotTypesApi";
@@ -53,7 +54,7 @@ export const SlotTypeFormModal = ({
   const form = useForm<SlotTypeFormValues>({
     resolver: zodResolver(slotTypeFormSchema),
     defaultValues: slotType ? toSlotTypeFormValues(slotType) : EMPTY_SLOT_TYPE_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const [isKeyTouched, setIsKeyTouched] = useState(isEditing);
   const [acceptsAnyProductType, selectedIcon] = useWatch({

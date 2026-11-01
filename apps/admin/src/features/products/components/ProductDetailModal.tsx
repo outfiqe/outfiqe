@@ -1,6 +1,6 @@
 import { SizeChartTable, StretchBadge } from "@outfiqe/components";
 import { Badge, Button, Modal } from "@outfiqe/design-system";
-import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
+import { formatDate, THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 
 import type { Product, ProductStatusValue } from "../api/productsSchemas";
 
@@ -118,14 +118,7 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          <p className="mt-4 text-xs text-muted-foreground">
-            Submitted{" "}
-            {new Date(createdAt).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
-          </p>
+          <p className="mt-4 text-xs text-muted-foreground">Submitted {formatDate(createdAt)}</p>
 
           {canReview && status === "PENDING" && (
             <div className="mt-auto flex gap-2 pt-4">

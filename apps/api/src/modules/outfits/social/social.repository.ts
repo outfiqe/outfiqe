@@ -4,6 +4,9 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { OutfitStatus, OutfitVisibility } from "#generated/prisma/enums.js";
 
+const COMMENT_NOT_DELETED = false;
+const COMMENT_DELETED = true;
+
 const NO_STOCK = 0;
 const ONE = 1;
 const NO_ROWS = 0;
@@ -341,7 +344,7 @@ export const outfitSocialRepository = {
         where: { id: commentId, deletedAt: null },
         data: { deletedAt },
       });
-      if (deletedCount === NO_ROWS) return false;
+      if (deletedCount === NO_ROWS) return COMMENT_NOT_DELETED;
 
       const comment = await tx.outfitComment.findUniqueOrThrow({
         where: { id: commentId },
@@ -361,7 +364,7 @@ export const outfitSocialRepository = {
           data: { replyCount: { decrement: ONE } },
         });
       }
-      return true;
+      return COMMENT_DELETED;
     });
   },
 

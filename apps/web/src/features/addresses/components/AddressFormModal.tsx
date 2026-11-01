@@ -16,6 +16,7 @@ import {
 } from "@outfiqe/design-system";
 import { useForm } from "react-hook-form";
 
+import { PRIVATE_ANALYTICS_CLASS_NAME } from "@/features/analytics/constants/analytics.constants";
 import { CityAutocomplete } from "@/features/delivery-zones";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -73,7 +74,7 @@ export const AddressFormModal = ({ address, onClose }: AddressFormModalProps) =>
       ariaLabel={isEditing ? "Edit address" : "Add address"}
     >
       <Form {...form}>
-        <form onSubmit={submitAddress} noValidate>
+        <form onSubmit={submitAddress} noValidate className={PRIVATE_ANALYTICS_CLASS_NAME}>
           {activeMutation.isError && (
             <FormBanner className="mb-4">{getErrorMessage(activeMutation.error)}</FormBanner>
           )}

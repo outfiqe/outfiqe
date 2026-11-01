@@ -53,7 +53,14 @@ export const SavedPostsGrid = () => {
       >
         {posts.map((post) => {
           const { id } = post;
-          return <PostCard key={id} post={post} onImageClick={() => setDetailPostId(id)} />;
+          return (
+            <PostCard
+              key={id}
+              post={post}
+              onImageClick={() => setDetailPostId(id)}
+              onOpenComments={() => setDetailPostId(id)}
+            />
+          );
         })}
       </Masonry>
 

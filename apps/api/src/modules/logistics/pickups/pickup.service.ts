@@ -1,8 +1,15 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
-import { PickupStatus, TrackingEventCode, TrackingEventSource } from "#generated/prisma/enums.js";
+import {
+  FulfilmentStatus,
+  PaymentStatus,
+  PickupStatus,
+  TrackingEventCode,
+  TrackingEventSource,
+} from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { TRACKING_SUBJECT_KIND } from "../tracking/tracking.constants.js";
 import { logisticsTrackingService } from "../tracking/tracking.service.js";
 import { logisticsPickupRepository } from "./pickup.repository.js";
@@ -13,9 +20,29 @@ const READY_FOR_PICKUP_DEDUPE_PREFIX = "ready-for-pickup";
 const requireBrandHubPickup = async (fulfilmentGroupId: string, brandId: string) => {
   const pickup = await logisticsPickupRepository.findBrandHubPickup(fulfilmentGroupId, brandId);
   if (!pickup?.pickupStatus || !pickup.pickupCode) {
-    throw new AppError("PICKUP_NOT_FOUND", "Pickup not found.", HTTP_STATUS.NOT_FOUND);
+    throw logisticsErrors.pickupNotFound();
   }
   return { ...pickup, pickupStatus: pickup.pickupStatus, pickupCode: pickup.pickupCode };
+};
+
+const assertOrderCanBeCollected = ({
+  status,
+  order,
+}: Awaited<ReturnType<typeof requireBrandHubPickup>>): void => {
+  if (status === FulfilmentStatus.CANCELLED) {
+    throw new AppError(
+      "PICKUP_CANCELLED",
+      "This order was cancelled, so there's nothing to collect.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+  if (order.paymentStatus === PaymentStatus.INITIATED) {
+    throw new AppError(
+      "ORDER_NOT_PAID_YET",
+      "This order hasn't been paid for yet, so it can't be collected.",
+      HTTP_STATUS.CONFLICT,
+    );
+  }
 };
 
 const toBrandPickupView = (pickup: Awaited<ReturnType<typeof requireBrandHubPickup>>) => ({
@@ -29,6 +56,7 @@ export const logisticsPickupService = {
   async markReadyForPickup(userId: string, fulfilmentGroupId: string): Promise<BrandPickupView> {
     const brandId = await requireBrandId(userId);
     const pickup = await requireBrandHubPickup(fulfilmentGroupId, brandId);
+    assertOrderCanBeCollected(pickup);
     if (pickup.pickupStatus === PickupStatus.READY_FOR_PICKUP) return toBrandPickupView(pickup);
     if (pickup.pickupStatus !== PickupStatus.AWAITING_BRAND) {
       throw new AppError(

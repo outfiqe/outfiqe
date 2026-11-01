@@ -1,20 +1,36 @@
-import { Badge, Button, Checkbox, FormBanner } from "@outfiqe/design-system";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  ConfirmModal,
+  FormBanner,
+  Table,
+  type TableColumn,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { BillingSkeleton } from "../../components/CrmSkeletons";
-import { formatDate, formatRupees } from "../../utils/format.utils";
+import { CrmTermHint } from "../../components/CrmTermHint";
+import { CRM_TERMS } from "../../constants/crmTerms";
+import { useCrmPermissions } from "../../hooks/useCrmPermissions";
+import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
+import { toTrialLabel } from "../../utils/trial.utils";
 import { crmBillingApi } from "../api/billingApi";
 import {
   type BillingOverview,
-  type InvoiceStatusValue,
   type SubscriptionInvoice,
   type SubscriptionStatusValue,
 } from "../api/billingSchemas";
+import { INVOICE_STATUS_TONE } from "../constants/invoiceStatusTone";
+import { toPlanStatusSentence, toSeatUsage } from "../utils/billingStatus.utils";
+import { InvoicePanel } from "./InvoicePanel";
 import { PlanCheckoutModal } from "./PlanCheckoutModal";
+import { PlanComparison } from "./PlanComparison";
 
 const BILLING_OVERVIEW_KEY = ["crm-billing-overview"];
 const BILLING_INVOICES_KEY = ["crm-billing-invoices"];
@@ -29,24 +45,39 @@ const SUBSCRIPTION_STATUS_TONE: Record<
   CANCELED: "negative",
 };
 
-const INVOICE_STATUS_TONE: Record<InvoiceStatusValue, "neutral" | "positive" | "negative"> = {
-  OPEN: "neutral",
-  PAID: "positive",
-  VOID: "negative",
-};
+const INVOICE_COLUMNS: TableColumn<SubscriptionInvoice>[] = [
+  {
+    key: "period",
+    header: "Period",
+    render: ({ periodStart, periodEnd }) => `${formatDate(periodStart)} – ${formatDate(periodEnd)}`,
+  },
+  { key: "amount", header: "Amount", render: ({ amount }) => formatRupees(amount) },
+  {
+    key: "status",
+    header: "Status",
+    render: ({ status }) => (
+      <Badge tone={INVOICE_STATUS_TONE[status]}>{toPlainWords(status)}</Badge>
+    ),
+  },
+  { key: "paid", header: "Paid", render: ({ paidAt }) => (paidAt ? formatDate(paidAt) : "—") },
+];
 
 const SubscriptionCard = ({
   overview,
+  trialEndsAt,
   onManagePlan,
   onPayInvoice,
 }: {
   overview: BillingOverview;
-  onManagePlan: () => void;
+  trialEndsAt: string | null;
+  onManagePlan: (planId?: string) => void;
   onPayInvoice: (invoice: SubscriptionInvoice) => void;
 }) => {
   const { subscription, planCatalog, activeSeatCount } = overview;
 
   const [showVoidedInvoices, setShowVoidedInvoices] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<SubscriptionInvoice | null>(null);
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
   const {
     data: invoicePages,
     fetchNextPage: fetchMoreInvoices,
@@ -64,6 +95,8 @@ const SubscriptionCard = ({
   const cancelRenewal = useApiMutation({
     mutationFn: crmBillingApi.cancel,
     invalidateKeys: [BILLING_OVERVIEW_KEY],
+    onSuccess: () => setIsConfirmingCancel(false),
+    onError: () => setIsConfirmingCancel(false),
   });
 
   const planName =
@@ -79,32 +112,30 @@ const SubscriptionCard = ({
               <div>
                 <h3 className="font-display text-lg font-bold text-foreground">{planName}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {subscription.seats} seats · {activeSeatCount} in use · renews{" "}
-                  {formatDate(subscription.currentPeriodEnd)}
+                  {toPlanStatusSentence(subscription)}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  <CrmTermHint
+                    term={toSeatUsage(activeSeatCount, subscription.seats)}
+                    tip={CRM_TERMS.seat}
+                  />{" "}
+                  ·{" "}
+                  <Link to="/crm" className="font-medium text-foreground underline">
+                    Manage your team
+                  </Link>
                 </p>
               </div>
               <Badge tone={SUBSCRIPTION_STATUS_TONE[subscription.status]}>
-                {subscription.status.replace("_", " ").toLowerCase()}
+                {toPlainWords(subscription.status)}
               </Badge>
             </div>
 
-            {subscription.cancelAtPeriodEnd && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                This subscription will not renew after {formatDate(subscription.currentPeriodEnd)}.
-              </p>
-            )}
-
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" onClick={onManagePlan}>
+              <Button size="sm" onClick={() => onManagePlan()}>
                 Change plan or seats
               </Button>
               {subscription.status === "ACTIVE" && !subscription.cancelAtPeriodEnd && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isLoading={cancelRenewal.isPending}
-                  onClick={() => cancelRenewal.mutate()}
-                >
+                <Button size="sm" variant="outline" onClick={() => setIsConfirmingCancel(true)}>
                   Cancel renewal
                 </Button>
               )}
@@ -115,10 +146,11 @@ const SubscriptionCard = ({
             <h3 className="font-display text-lg font-bold text-foreground">Free trial</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {overview.advancedFeaturesEnabled
-                ? "Advanced CRM features are available during your trial. Subscribe to keep them."
-                : "Your trial has ended. Subscribe to use pipeline, deals, tickets and reporting."}
+                ? "Every CRM feature is included during your trial. Subscribe to keep them."
+                : "Your trial has ended. Subscribe to use the sales board, opportunities, tickets and reports."}
+              {trialEndsAt && ` ${toTrialLabel(trialEndsAt)}.`}
             </p>
-            <Button size="sm" className="mt-4" onClick={onManagePlan}>
+            <Button size="sm" className="mt-4" onClick={() => onManagePlan()}>
               Subscribe
             </Button>
           </>
@@ -152,7 +184,7 @@ const SubscriptionCard = ({
           />
           Show voided invoices
         </label>
-        <InvoiceHistory invoices={invoices} />
+        <InvoiceHistory invoices={invoices} onSelectInvoice={setSelectedInvoice} />
         {hasMoreInvoices && (
           <Button
             variant="outline"
@@ -165,44 +197,64 @@ const SubscriptionCard = ({
           </Button>
         )}
       </div>
+
+      <PlanComparison
+        plans={planCatalog}
+        currentPlanId={subscription?.plan ?? null}
+        onChoosePlan={onManagePlan}
+      />
+
+      {selectedInvoice && (
+        <InvoicePanel
+          invoice={selectedInvoice}
+          planName={
+            planCatalog.find((plan) => plan.id === selectedInvoice.plan)?.name ??
+            selectedInvoice.plan
+          }
+          onClose={() => setSelectedInvoice(null)}
+          onPay={(invoice) => {
+            setSelectedInvoice(null);
+            onPayInvoice(invoice);
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        open={isConfirmingCancel}
+        title="Cancel renewal?"
+        description={`Your plan stays active until ${
+          subscription ? formatDate(subscription.currentPeriodEnd) : "the end of this period"
+        }. After that it won't renew, and your team loses the sales board, tickets and reports.`}
+        confirmLabel="Cancel renewal"
+        pendingLabel="Cancelling…"
+        destructive
+        isPending={cancelRenewal.isPending}
+        onConfirm={() => cancelRenewal.mutate()}
+        onCancel={() => setIsConfirmingCancel(false)}
+      />
     </div>
   );
 };
 
-const InvoiceHistory = ({ invoices }: { invoices: SubscriptionInvoice[] }) => {
+const InvoiceHistory = ({
+  invoices,
+  onSelectInvoice,
+}: {
+  invoices: SubscriptionInvoice[];
+  onSelectInvoice: (invoice: SubscriptionInvoice) => void;
+}) => {
   if (invoices.length === 0) {
     return <p className="text-sm text-muted-foreground">No invoices yet.</p>;
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="text-xs uppercase text-muted-foreground">
-          <tr>
-            <th className="py-2 pr-4">Period</th>
-            <th className="py-2 pr-4">Amount</th>
-            <th className="py-2 pr-4">Status</th>
-            <th className="py-2">Paid</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoices.map((invoice) => (
-            <tr key={invoice.id} className="border-t border-border">
-              <td className="py-2 pr-4">
-                {formatDate(invoice.periodStart)} – {formatDate(invoice.periodEnd)}
-              </td>
-              <td className="py-2 pr-4">{formatRupees(invoice.amount)}</td>
-              <td className="py-2 pr-4">
-                <Badge tone={INVOICE_STATUS_TONE[invoice.status]}>
-                  {invoice.status.toLowerCase()}
-                </Badge>
-              </td>
-              <td className="py-2">{invoice.paidAt ? formatDate(invoice.paidAt) : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      caption="Invoices"
+      columns={INVOICE_COLUMNS}
+      rows={invoices}
+      rowKey={({ id }) => id}
+      onRowClick={onSelectInvoice}
+    />
   );
 };
 
@@ -213,8 +265,10 @@ export const BillingSection = () => {
     error,
   } = useQuery({ queryKey: BILLING_OVERVIEW_KEY, queryFn: crmBillingApi.getOverview });
 
+  const { organization } = useCrmPermissions();
   const [checkoutInvoiceId, setCheckoutInvoiceId] = useState<string | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [chosenPlanId, setChosenPlanId] = useState<string | null>(null);
 
   if (isLoading) {
     return <BillingSkeleton />;
@@ -224,14 +278,17 @@ export const BillingSection = () => {
     return <FormBanner>{getErrorMessage(error)}</FormBanner>;
   }
 
-  const currentPlanId = overview.subscription?.plan ?? overview.planCatalog[0]?.id ?? "";
+  const currentPlanId =
+    chosenPlanId ?? overview.subscription?.plan ?? overview.planCatalog[0]?.id ?? "";
   const currentSeats = Math.max(overview.subscription?.seats ?? 1, overview.activeSeatCount);
 
   return (
     <div>
       <SubscriptionCard
         overview={overview}
-        onManagePlan={() => {
+        trialEndsAt={organization?.trialEndsAt ?? null}
+        onManagePlan={(planId) => {
+          setChosenPlanId(planId ?? null);
           setCheckoutInvoiceId(null);
           setCheckoutOpen(true);
         }}

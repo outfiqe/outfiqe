@@ -1,13 +1,7 @@
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@outfiqe/utils";
 export const formatRupees = (amount: number): string => `Rs. ${amount.toLocaleString()}`;
 
-export const formatDate = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleDateString() : "—";
-
-export const formatDateTime = (iso: string): string => new Date(iso).toLocaleString();
-
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_HOUR = 60 * 60;
-const SECONDS_PER_DAY = 24 * 60 * 60;
+export { formatDate, formatDateTime } from "@outfiqe/utils";
 
 export const formatDuration = (seconds: number | null): string => {
   if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "—";
@@ -24,4 +18,12 @@ export const formatDuration = (seconds: number | null): string => {
     return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
   }
   return `${Math.round(seconds / SECONDS_PER_MINUTE)}m`;
+};
+
+const FIRST_LETTER_INDEX = 0;
+const AFTER_FIRST_LETTER = 1;
+
+export const toPlainWords = (systemValue: string): string => {
+  const words = systemValue.replaceAll("_", " ").toLowerCase();
+  return words.charAt(FIRST_LETTER_INDEX).toUpperCase() + words.slice(AFTER_FIRST_LETTER);
 };

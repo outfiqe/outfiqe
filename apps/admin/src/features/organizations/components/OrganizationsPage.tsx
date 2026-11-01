@@ -18,7 +18,9 @@ import { useForm } from "react-hook-form";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { organizationsApi } from "../api/organizationsApi";
 import {
@@ -27,6 +29,7 @@ import {
   type OrganizationFormValues,
 } from "../schemas/organizationForm.schema";
 import { BusinessOwnerField } from "./BusinessOwnerField";
+import { OrganizationCard } from "./OrganizationCard";
 
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 
@@ -45,7 +48,7 @@ export const OrganizationsPage = () => {
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: EMPTY_ORGANIZATION_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
   const pickedBrand = form.watch("brand");
   const pickedBrandId = pickedBrand?.id ?? null;
@@ -165,7 +168,7 @@ export const OrganizationsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
+          Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
             <CardRowSkeleton key={index} hasBadge={false} textLineCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
@@ -174,22 +177,7 @@ export const OrganizationsPage = () => {
         )}
 
         {organizations?.map((organization) => (
-          <div
-            key={organization.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <div>
-              <h2 className="font-display text-base font-bold text-foreground">
-                {organization.name}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {organization.subdomain} · {organization.plan} ·{" "}
-                {organization.linkedBrandName
-                  ? `linked to ${organization.linkedBrandName}`
-                  : "no linked brand"}
-              </p>
-            </div>
-          </div>
+          <OrganizationCard key={organization.id} organization={organization} />
         ))}
 
         {hasNextPage && (

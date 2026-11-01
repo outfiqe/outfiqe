@@ -1,3 +1,4 @@
+import { millisecondsInHour, millisecondsInMinute } from "date-fns/constants";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
@@ -26,7 +27,7 @@ import {
 import { orderRefundRoutes } from "./refunds/refund.routes.js";
 import { orderUnavailableItemRoutes } from "./unavailable-items/unavailable-item.routes.js";
 
-const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
+const CHECKOUT_WINDOW_MS = 5 * millisecondsInMinute;
 const CHECKOUT_MAX_REQUESTS = 10;
 
 const checkoutRateLimit = rateLimit({
@@ -37,7 +38,7 @@ const checkoutRateLimit = rateLimit({
   message: "Too many checkout attempts. Please wait a moment and try again.",
 });
 
-const CHECKOUT_BURST_WINDOW_MS = 60 * 1000;
+const CHECKOUT_BURST_WINDOW_MS = millisecondsInMinute;
 const CHECKOUT_BURST_MAX_REQUESTS = 5;
 
 const checkoutBurstRateLimit = rateLimit({
@@ -48,7 +49,7 @@ const checkoutBurstRateLimit = rateLimit({
   message: "Too many checkout attempts. Please wait a moment and try again.",
 });
 
-const CANCEL_WINDOW_MS = 60 * 60 * 1000;
+const CANCEL_WINDOW_MS = millisecondsInHour;
 const CANCEL_MAX_REQUESTS = 10;
 
 const cancelMyOrderRateLimit = rateLimit({
@@ -59,7 +60,7 @@ const cancelMyOrderRateLimit = rateLimit({
   message: "Too many cancellation attempts. Please wait a moment and try again.",
 });
 
-const BRAND_FULFILMENT_WINDOW_MS = 60 * 1000;
+const BRAND_FULFILMENT_WINDOW_MS = millisecondsInMinute;
 const BRAND_FULFILMENT_MAX_REQUESTS = 30;
 
 const brandFulfilmentRateLimit = rateLimit({

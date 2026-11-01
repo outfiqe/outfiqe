@@ -1,14 +1,51 @@
 import type { PaymentMethod } from "#generated/prisma/enums.js";
+import { toCsv } from "#lib/csv-writer.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
   AttributionCounts,
   AttributionView,
+  FinancialRollupRange,
   LedgerRow,
+  MoneyBreakdownView,
+  PaidOrderMoneyTotals,
   PaymentMethodBreakdown,
   PaymentMethodOrderTotals,
   PaymentMethodPayoutFees,
 } from "./financial-rollup.types.js";
+
+const NOTHING_LEFT_TO_REFUND = 0;
+
+export const buildMoneyBreakdown = (
+  range: FinancialRollupRange,
+  paidOrderMoney: PaidOrderMoneyTotals,
+): MoneyBreakdownView => {
+  const { collected, refunded, orderFees, couponSpend, cancelledItems } = paidOrderMoney;
+  const { brandsOwed, brandsPaid, platformFees, gatewayFees, musesOwed, musesPaid } =
+    paidOrderMoney;
+
+  const held = collected - refunded;
+  const cancelledNotRefunded = Math.max(NOTHING_LEFT_TO_REFUND, cancelledItems - refunded);
+  const accountedFor =
+    brandsOwed + brandsPaid + platformFees + orderFees + cancelledNotRefunded - couponSpend;
+
+  return {
+    range,
+    collected,
+    refunded,
+    held,
+    brandsOwed,
+    brandsPaid,
+    musesOwed,
+    musesPaid,
+    gatewayFees,
+    platformKeeps: platformFees - gatewayFees - musesOwed - musesPaid,
+    orderFees,
+    cancelledNotRefunded,
+    couponSpend,
+    unexplained: held - accountedFor,
+  };
+};
 
 export const sumStatusBuckets = (
   amountByStatus: Partial<Record<string, number>>,
@@ -49,37 +86,32 @@ const LEDGER_CSV_HEADERS = [
   "Muse Commission",
   "Brand Net",
   "Brand Payout Status",
+  "Product",
+  "Brand",
+  "Buyer",
+  "Muse",
 ];
 
-const csvField = (value: string | number | null): string => {
-  const text = value === null ? "" : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
-
-export const toLedgerCsv = (rows: LedgerRow[]): string => {
-  const lines = [LEDGER_CSV_HEADERS.map(csvField).join(",")];
-
-  for (const row of rows) {
-    lines.push(
-      [
-        row.orderId,
-        row.orderItemId,
-        row.createdAt.toISOString(),
-        row.paymentMethod,
-        row.grossAmount,
-        row.platformFee,
-        row.gatewayFee,
-        row.creatorCommissionAmount,
-        row.brandNetAmount,
-        row.brandPayoutStatus,
-      ]
-        .map(csvField)
-        .join(","),
-    );
-  }
-
-  return lines.join("\r\n");
-};
+export const toLedgerCsv = (rows: LedgerRow[]): string =>
+  toCsv(
+    LEDGER_CSV_HEADERS,
+    rows.map((row) => [
+      row.orderId,
+      row.orderItemId,
+      row.createdAt.toISOString(),
+      row.paymentMethod,
+      row.grossAmount,
+      row.platformFee,
+      row.gatewayFee,
+      row.creatorCommissionAmount,
+      row.brandNetAmount,
+      row.brandPayoutStatus,
+      row.productName,
+      row.brandName,
+      row.buyerName,
+      row.museHandle,
+    ]),
+  );
 
 export const buildPaymentMethodBreakdown = (
   orderTotals: PaymentMethodOrderTotals[],

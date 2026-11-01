@@ -4,6 +4,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { gamificationApi } from "../../api/gamificationApi";
 import type { ActivityXpConfig } from "../../api/gamificationSchemas";
@@ -26,7 +27,7 @@ export const EditActivityConfigModal = ({
   const form = useForm<ActivityConfigFormState>({
     resolver: zodResolver(activityConfigFormSchema),
     defaultValues: formForActivityConfig(config),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({

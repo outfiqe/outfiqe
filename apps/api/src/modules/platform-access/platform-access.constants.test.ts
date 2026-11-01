@@ -10,6 +10,7 @@ const SECTION_PERMISSION_MIGRATIONS = [
   "20260926090000_add_section_platform_permissions",
   "20261004150000_add_outfit_build_admin_permissions",
   "20261015130000_add_logistics_hubs_and_delivery_estimates",
+  "20261030120000_add_platform_analytics_permission",
 ].map((migrationName) =>
   path.resolve(import.meta.dirname, `../../../prisma/migrations/${migrationName}/migration.sql`),
 );

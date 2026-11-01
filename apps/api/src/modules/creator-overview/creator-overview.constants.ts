@@ -1,3 +1,2 @@
-export const TREND_WINDOW_DAYS = 30;
-export const COMPARISON_WINDOW_DAYS = 30;
 export const RECENT_COMMISSION_LIMIT = 5;
+export const TOP_LOOK_LIMIT = 5;

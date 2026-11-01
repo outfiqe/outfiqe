@@ -19,6 +19,8 @@ type TenantBrandOrganization = { id: string; linkedBrandId: string | null };
 
 type ListParams = { query: string; page: number; pageSize: number };
 
+const NOT_LINKED_TO_BRAND = false;
+
 const emptyPage = <TItem>(): RelationshipListPage<TItem> => ({
   items: [],
   total: 0,
@@ -110,16 +112,15 @@ export const crmRelationshipsService = {
   },
 
   async isPartner(organization: TenantBrandOrganization, creatorId: string): Promise<boolean> {
-    if (!organization.linkedBrandId) return false;
-    return crmRelationshipsRepository.isBrandPartner(organization.linkedBrandId, creatorId);
+    const { linkedBrandId } = organization;
+    if (!linkedBrandId) return NOT_LINKED_TO_BRAND;
+    return crmRelationshipsRepository.isBrandPartner(linkedBrandId, creatorId);
   },
 
   async isCustomer(organization: TenantBrandOrganization, userId: string): Promise<boolean> {
-    if (!organization.linkedBrandId) return false;
-    const core = await crmRelationshipsRepository.findCustomerCore(
-      organization.linkedBrandId,
-      userId,
-    );
+    const { linkedBrandId } = organization;
+    if (!linkedBrandId) return NOT_LINKED_TO_BRAND;
+    const core = await crmRelationshipsRepository.findCustomerCore(linkedBrandId, userId);
     return core !== null;
   },
 };

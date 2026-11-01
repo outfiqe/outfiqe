@@ -2,9 +2,11 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { CommissionStatus } from "#generated/prisma/enums.js";
 
-import { COMPARISON_WINDOW_DAYS, TREND_WINDOW_DAYS } from "./creator-overview.constants.js";
+import { TOP_LOOK_LIMIT } from "./creator-overview.constants.js";
 import type {
+  CreatorEarningsBySource,
   CreatorOverviewTrendPoint,
+  CreatorTopLook,
   EarningsWindowRow,
   LookAggregates,
 } from "./creator-overview.types.js";
@@ -21,15 +23,33 @@ type RawEarningsWindowRow = {
   previous_window: bigint;
 };
 
-const TREND_SPAN_DAYS = TREND_WINDOW_DAYS - 1;
+type RawTopLookRow = {
+  id: string;
+  image_url: string;
+  caption: string | null;
+  like_count: number;
+  sales_count: bigint;
+  earnings: bigint;
+};
+
+type RawEarningsBySourceRow = {
+  source: CreatorEarningsBySource["source"];
+  earnings: bigint;
+  sales_count: bigint;
+};
+
+const TODAY_COUNTED_IN_PERIOD = 1;
+const WINDOWS_COMPARED = 2;
+const NOT_YET_WITHDRAWABLE_STATUSES = [CommissionStatus.PENDING, CommissionStatus.APPROVED];
 
 export const creatorOverviewRepository = {
-  async getDailyTrend(creatorId: string): Promise<CreatorOverviewTrendPoint[]> {
+  async getDailyTrend(creatorId: string, periodDays: number): Promise<CreatorOverviewTrendPoint[]> {
+    const trendSpanDays = periodDays - TODAY_COUNTED_IN_PERIOD;
     const rows = await prisma.$queryRaw<RawTrendRow[]>(Prisma.sql`
       WITH bounds AS (
         SELECT
           date_trunc('day', now() AT TIME ZONE 'UTC') AS today,
-          date_trunc('day', now() AT TIME ZONE 'UTC') - make_interval(days => ${TREND_SPAN_DAYS}) AS first_day
+          date_trunc('day', now() AT TIME ZONE 'UTC') - make_interval(days => ${trendSpanDays}) AS first_day
       ),
       days AS (
         SELECT generate_series((SELECT first_day FROM bounds), (SELECT today FROM bounds), interval '1 day') AS day
@@ -69,12 +89,12 @@ export const creatorOverviewRepository = {
     }));
   },
 
-  async getEarningsWindows(creatorId: string): Promise<EarningsWindowRow> {
+  async getEarningsWindows(creatorId: string, periodDays: number): Promise<EarningsWindowRow> {
     const [row] = await prisma.$queryRaw<RawEarningsWindowRow[]>(Prisma.sql`
       WITH bounds AS (
         SELECT
-          (now() AT TIME ZONE 'UTC') - make_interval(days => ${COMPARISON_WINDOW_DAYS}) AS current_start,
-          (now() AT TIME ZONE 'UTC') - make_interval(days => ${COMPARISON_WINDOW_DAYS * 2}) AS previous_start
+          (now() AT TIME ZONE 'UTC') - make_interval(days => ${periodDays}) AS current_start,
+          (now() AT TIME ZONE 'UTC') - make_interval(days => ${periodDays * WINDOWS_COMPARED}) AS previous_start
       )
       SELECT
         COALESCE(
@@ -95,9 +115,77 @@ export const creatorOverviewRepository = {
     `);
 
     return {
-      last30: Number(row?.last_window ?? 0),
-      previous30: Number(row?.previous_window ?? 0),
+      period: Number(row?.last_window ?? 0),
+      previousPeriod: Number(row?.previous_window ?? 0),
     };
+  },
+
+  async getTopLooks(creatorId: string, periodDays: number): Promise<CreatorTopLook[]> {
+    const rows = await prisma.$queryRaw<RawTopLookRow[]>(Prisma.sql`
+      SELECT
+        cl.id,
+        cl.image_url,
+        cl.caption,
+        cl.like_count,
+        COUNT(cc.id)::bigint AS sales_count,
+        COALESCE(SUM(cc.amount), 0)::bigint AS earnings
+      FROM creator_looks cl
+      LEFT JOIN order_items oi ON oi.attributed_creator_look_id = cl.id
+      LEFT JOIN creator_commissions cc
+        ON cc.order_item_id = oi.id
+        AND cc.creator_id = cl.creator_id
+        AND cc.status::text <> ${CommissionStatus.VOIDED}
+        AND cc.created_at >= (now() AT TIME ZONE 'UTC') - make_interval(days => ${periodDays})
+      WHERE cl.creator_id = ${creatorId}::uuid AND cl.deleted_at IS NULL
+      GROUP BY cl.id
+      ORDER BY earnings DESC, cl.like_count DESC, cl.id
+      LIMIT ${TOP_LOOK_LIMIT}
+    `);
+
+    return rows.map((row) => ({
+      id: row.id,
+      imageUrl: row.image_url,
+      caption: row.caption,
+      likeCount: row.like_count,
+      salesCount: Number(row.sales_count),
+      earnings: Number(row.earnings),
+    }));
+  },
+
+  async getEarningsBySource(
+    creatorId: string,
+    periodDays: number,
+  ): Promise<CreatorEarningsBySource[]> {
+    const rows = await prisma.$queryRaw<RawEarningsBySourceRow[]>(Prisma.sql`
+      SELECT
+        source,
+        SUM(amount)::bigint AS earnings,
+        COUNT(*)::bigint AS sales_count
+      FROM creator_commissions
+      WHERE creator_id = ${creatorId}::uuid
+        AND status::text <> ${CommissionStatus.VOIDED}
+        AND created_at >= (now() AT TIME ZONE 'UTC') - make_interval(days => ${periodDays})
+      GROUP BY source
+      ORDER BY earnings DESC, source
+    `);
+
+    return rows.map((row) => ({
+      source: row.source,
+      earnings: Number(row.earnings),
+      salesCount: Number(row.sales_count),
+    }));
+  },
+
+  async findNextAvailableAt(creatorId: string): Promise<Date | null> {
+    const { _min: earliest } = await prisma.creatorCommission.aggregate({
+      where: {
+        creatorId,
+        status: { in: NOT_YET_WITHDRAWABLE_STATUSES },
+        availableAt: { gte: new Date() },
+      },
+      _min: { availableAt: true },
+    });
+    return earliest.availableAt;
   },
 
   async getLookAggregates(creatorId: string): Promise<LookAggregates> {
@@ -113,12 +201,12 @@ export const creatorOverviewRepository = {
     };
   },
 
-  async getFollowerCount(creatorId: string): Promise<number> {
+  async getCreatorProfile(creatorId: string): Promise<{ followerCount: number; handle: string }> {
     const user = await prisma.user.findUnique({
       where: { id: creatorId },
-      select: { followerCount: true },
+      select: { followerCount: true, handle: true },
     });
 
-    return user?.followerCount ?? 0;
+    return { followerCount: user?.followerCount ?? 0, handle: user?.handle ?? "" };
   },
 };

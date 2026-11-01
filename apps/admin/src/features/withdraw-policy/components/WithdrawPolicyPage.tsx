@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "../api/withdrawPolicyApi";
@@ -92,7 +93,7 @@ const PolicyFormFields = ({
   const form = useForm<PolicyFormValues>({
     resolver: zodResolver(policyFormSchema),
     defaultValues: formValuesForPolicy(policy),
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const update = useApiMutation({

@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDateTime, formatRupees } from "../../utils/format.utils";
+import { formatDateTime, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
 import {
   CRM_ACTIVITY_TYPES,
@@ -22,7 +22,7 @@ const toActivityType = (value: string): CrmActivityTypeValue =>
 
 const entryLine = (entry: TimelineEntry): string =>
   entry.kind === "activity"
-    ? `${entry.activityType.toLowerCase()}${entry.authorName ? ` · ${entry.authorName}` : ""} — ${entry.body}`
+    ? `${toPlainWords(entry.activityType)}${entry.authorName ? ` · ${entry.authorName}` : ""} — ${entry.body}`
     : `order ${entry.orderId.slice(0, 8)} · ${entry.itemCount} item${entry.itemCount === 1 ? "" : "s"} · ${formatRupees(entry.amount)} · ${entry.paymentStatus.toLowerCase()} / ${entry.fulfilmentStatus.toLowerCase()}`;
 
 type TimelineSectionProps = {
@@ -87,7 +87,7 @@ export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps
         >
           {CRM_ACTIVITY_TYPES.map((type) => (
             <option key={type} value={type}>
-              {type.toLowerCase()}
+              {toPlainWords(type)}
             </option>
           ))}
         </Select>

@@ -1,32 +1,14 @@
-import type {
-  PaymentMethodValue,
-  PaymentStatusValue,
-  PaymentTransaction,
-} from "../api/orderSchemas";
-import { PaymentMethod, PaymentStatus, PaymentTransactionType } from "../api/orderSchemas";
+import { formatDate } from "@outfiqe/utils";
+
+import type { PaymentTransaction } from "../api/orderSchemas";
+import { PaymentTransactionType } from "../api/orderSchemas";
 
 type TransactionLedgerProps = {
   transactions: PaymentTransaction[];
-  paymentMethod: PaymentMethodValue;
-  paymentStatus: PaymentStatusValue;
 };
 
-const PAY_ON_DELIVERY_LABEL = "Pay on delivery";
-
-export const TransactionLedger = ({
-  transactions,
-  paymentMethod,
-  paymentStatus,
-}: TransactionLedgerProps) => {
+export const TransactionLedger = ({ transactions }: TransactionLedgerProps) => {
   if (transactions.length === 0) return null;
-
-  const statusLabelFor = (transaction: PaymentTransaction): string => {
-    const isUncollectedCashOnDelivery =
-      transaction.type === PaymentTransactionType.PAYMENT &&
-      paymentMethod === PaymentMethod.COD &&
-      paymentStatus !== PaymentStatus.PAID;
-    return isUncollectedCashOnDelivery ? PAY_ON_DELIVERY_LABEL : transaction.status;
-  };
 
   return (
     <div className="mt-4 space-y-1.5">
@@ -41,7 +23,7 @@ export const TransactionLedger = ({
             {transaction.transactionRef ? ` · ${transaction.transactionRef}` : ""}
           </span>
           <span>
-            {statusLabelFor(transaction)} · {new Date(transaction.createdAt).toLocaleDateString()}
+            {transaction.status} · {formatDate(transaction.createdAt)}
           </span>
         </div>
       ))}

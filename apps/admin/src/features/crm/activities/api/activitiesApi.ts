@@ -30,6 +30,8 @@ export const crmActivitiesApi = {
     filters: {
       assigneeMembershipId?: string;
       status?: TaskStatusValue;
+      dueFrom?: string;
+      dueTo?: string;
     } = {},
   ): Promise<Task[]> {
     const res = await apiClient.get<Task[]>("/crm/tasks", { params: filters });

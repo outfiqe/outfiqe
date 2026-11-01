@@ -35,4 +35,48 @@ describe("OrderRow", () => {
       "/orders/cb34b663-ef6b-495a-bd6f-cafcbb243ecf",
     );
   });
+
+  it("labels an unpaid cash-on-delivery order as COD due", () => {
+    render(<OrderRow order={buildOrderSummary({ paymentMethod: "COD", paymentStatus: "DUE" })} />);
+
+    expect(screen.getByText("COD due")).toBeInTheDocument();
+  });
+
+  it("labels a cancelled unpaid order as having nothing to pay", () => {
+    render(
+      <OrderRow
+        order={buildOrderSummary({
+          paymentMethod: "COD",
+          paymentStatus: "DUE",
+          fulfilmentStatus: "CANCELLED",
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("COD due")).not.toBeInTheDocument();
+  });
+
+  it("shows the raw payment status for a paid order", () => {
+    render(
+      <OrderRow order={buildOrderSummary({ paymentMethod: "ESEWA", paymentStatus: "PAID" })} />,
+    );
+
+    expect(screen.getByText("PAID")).toBeInTheDocument();
+  });
+
+  it("shows a thumbnail and a multi-item summary when there is more than one item", () => {
+    render(
+      <OrderRow
+        order={buildOrderSummary({
+          itemCount: 3,
+          firstItemImageUrl: "https://cdn.example.com/jacket.jpg",
+          firstItemProductName: "Denim Trucker Jacket",
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/Denim Trucker Jacket/)).toBeInTheDocument();
+    expect(screen.getByText(/and 2 more/)).toBeInTheDocument();
+  });
 });

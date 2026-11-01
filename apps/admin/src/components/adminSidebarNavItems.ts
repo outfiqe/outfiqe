@@ -93,7 +93,7 @@ export const CRM_SUB_ITEMS: CrmSubItem[] = [
   {
     id: "crm-pipeline",
     href: "/crm/pipeline",
-    label: "Pipeline",
+    label: "Sales board",
     icon: KanbanSquare,
     permissionKey: "pipeline:read",
   },
@@ -169,6 +169,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     label: "Tenant metrics",
     icon: Gauge,
     group: "brand-tenants",
+  },
+  {
+    id: "platform-analytics",
+    href: "/platform/analytics",
+    label: "Product analytics",
+    icon: BarChart3,
+    group: "growth",
   },
   {
     id: "platform-features",
@@ -283,7 +290,7 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     id: "trending",
     href: "/trending",
-    label: "Trending debug",
+    label: "Trending",
     icon: TrendingUp,
     group: "growth",
   },

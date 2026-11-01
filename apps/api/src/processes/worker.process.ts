@@ -1,6 +1,7 @@
 import { closeImageProcessingQueues } from "@outfiqe/image-pipeline";
 
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
+import { productAnalyticsService } from "#modules/product-analytics/product-analytics.service.js";
 import { BACKGROUND_OUTBOX_QUEUE_NAMES } from "#outbox/outbox.constants.js";
 import { closeOutboxQueues } from "#outbox/outbox.queues.js";
 import { startOutboxWorkers, stopOutboxWorkers } from "#outbox/outbox.workers.js";
@@ -31,6 +32,7 @@ export const startWorkerProcess = async (): Promise<void> => {
     { name: "outbox-queues", run: closeOutboxQueues },
     { name: "image-workers", run: stopImageProcessingWorkers },
     { name: "image-queues", run: () => closeImageProcessingQueues(imageProcessingQueues) },
+    { name: "product-analytics", run: productAnalyticsService.flushPendingEvents },
     { name: "db", run: disconnectDb },
     { name: "redis", run: disconnectRedis },
   ]);

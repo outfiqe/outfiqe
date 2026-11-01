@@ -1,3 +1,5 @@
+import { millisecondsInDay } from "date-fns/constants";
+
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 
@@ -23,9 +25,7 @@ export const creatorLookTrendingService = {
     const bucketStart = truncateToHour(new Date());
     await creatorLookPostTrendingRepository.upsertHourlyPostMetrics(bucketStart);
 
-    const retentionCutoff = new Date(
-      Date.now() - TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-    );
+    const retentionCutoff = new Date(Date.now() - TREND_METRIC_RETENTION_DAYS * millisecondsInDay);
     const deletedBuckets =
       await creatorLookPostTrendingRepository.deleteTrendMetricsOlderThan(retentionCutoff);
 
@@ -56,7 +56,7 @@ export const creatorLookTrendingService = {
     await creatorLookHashtagTrendingRepository.upsertHourlyTagMetrics(bucketStart);
 
     const retentionCutoff = new Date(
-      Date.now() - TAG_TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+      Date.now() - TAG_TREND_METRIC_RETENTION_DAYS * millisecondsInDay,
     );
     const deletedBuckets =
       await creatorLookHashtagTrendingRepository.deleteTagTrendMetricsOlderThan(retentionCutoff);

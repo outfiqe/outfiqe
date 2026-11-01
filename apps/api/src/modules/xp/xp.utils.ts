@@ -1,8 +1,10 @@
+import { millisecondsInSecond } from "date-fns/constants";
+
 import type { LevelProgress, LevelRecord } from "./xp.types.js";
 
 const TOP_LEVEL_INDEX = 0;
 const NEXT_LEVEL_STEP = 1;
-const MS_PER_SECOND = 1000;
+const NO_MULTIPLIER = 1;
 
 export const computeLevelProgress = (totalXp: number, levelsDesc: LevelRecord[]): LevelProgress => {
   const level = levelsDesc.find((candidate) => totalXp >= candidate.requiredXp);
@@ -30,8 +32,11 @@ export const isWithinCooldown = (
   cooldownSeconds: number | null,
   now: Date,
 ): boolean => {
-  if (cooldownSeconds === null || lastAwardedAt === null) return false;
-  return now.getTime() - lastAwardedAt.getTime() < cooldownSeconds * MS_PER_SECOND;
+  const hasCooldownRunning = cooldownSeconds !== null && lastAwardedAt !== null;
+  return (
+    hasCooldownRunning &&
+    now.getTime() - lastAwardedAt.getTime() < cooldownSeconds * millisecondsInSecond
+  );
 };
 
 export const hasReachedDailyLimit = (
@@ -41,4 +46,4 @@ export const hasReachedDailyLimit = (
 ): boolean => dailyLimit !== null && sumLast24h + incomingAmount > dailyLimit;
 
 export const applyMultiplier = (baseAmount: number, multiplier: number | undefined): number =>
-  Math.round(baseAmount * (multiplier ?? 1));
+  Math.round(baseAmount * (multiplier ?? NO_MULTIPLIER));

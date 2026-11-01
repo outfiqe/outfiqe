@@ -6,6 +6,7 @@ The product catalogue: brands list, edit, discount and restock products; the adm
 
 ## Structure
 
+- `product.errors.ts` — `productErrors`, the errors this module raises from more than one place.
 - `product.routes.ts`, `product.controller.ts` — the HTTP layer for brand, admin and public endpoints.
 - `product.service.ts` — `productService`, the only object the controller and other modules import. Holds `create`, `update` (both resolve sizes from the brand's size standard and refuse fit data for types without charts), `updateSizeChart`, `delete` and `listMine` (a brand's own products) and spreads in every topic service below.
 - `product.repository.ts` — `productRepository`: product create/update/approve/reject/soft-delete, `updateSizeChart`, lookups by id, a brand's own list and the admin review list (with each size's fit range). Spreads in every topic repository below, and re-exports `DbClient`.

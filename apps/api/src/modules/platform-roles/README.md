@@ -9,6 +9,7 @@ or access.
 
 ## Structure
 
+- `platform-roles.errors.ts` — `platformRolesErrors`, the errors this module raises from more than one place.
 - `platform-roles.service.ts` — resolves the platform `Organization` and delegates to
   `crmAccessRepository`'s generic, already organization-scoped Role/Membership CRUD
   (`createRole`/`updateRole`/`deleteRole`/`findRoleById`/`countMembershipsForRole`/`listRoles`/

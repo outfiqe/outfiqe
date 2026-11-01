@@ -14,6 +14,7 @@ called directly.
   API also refuses to moderate), and the two confirmation modals.
 - `api/usersApi.ts` — `usersApi`, the typed client for `GET /users` (search + cursor pagination) and the
   `platform-suspensions` action endpoints (`POST /platform/users/:id/suspend|ban|unsuspend|unban`).
+- `hooks/useAccountModeration.ts` — the suspend, ban, unsuspend and unban mutations, which account a modal is open for, and the per-row error message.
 - `hooks/useInfiniteUsers.ts` — wraps `usersApi.list` in the shared `useInfiniteCursorPage`,
   keyed by the (debounced) search term.
 - `api/usersSchemas.ts` — the `AdminUser`/`AccountStatus` Zod shapes returned by `GET /users`.

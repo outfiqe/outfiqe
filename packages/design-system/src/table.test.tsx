@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { Table, type TableColumn } from "./table";
 
@@ -16,6 +16,22 @@ const columns: TableColumn<Row>[] = [
 ];
 
 describe("Table", () => {
+  it("calls onRowClick with the clicked row, including from a button inside it", () => {
+    const onRowClick = vi.fn();
+    render(
+      <Table
+        columns={[{ key: "name", header: "Name", render: (row: string) => <button>{row}</button> }]}
+        rows={["Asha"]}
+        rowKey={(row) => row}
+        onRowClick={onRowClick}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Asha" }));
+
+    expect(onRowClick).toHaveBeenCalledExactlyOnceWith("Asha");
+  });
+
   it("renders a header per column and one row per data item", () => {
     render(<Table columns={columns} rows={rows} rowKey={(row) => row.id} />);
 

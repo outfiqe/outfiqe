@@ -101,3 +101,7 @@ verbatim rather than inventing a second acceptance mechanism.
 ## Form validation
 
 The create form uses react-hook-form with `schemas/organizationForm.schema.ts`: a business must be picked and the subdomain must match the tenant subdomain rules from `@outfiqe/utils` (lowercase letters, numbers and hyphens, no hyphen at either end, up to 63 characters, not a reserved name). Picking a business fills the subdomain with the suggested one until the person edits it themselves. Messages show under the fields and a success toast follows a create.
+
+## Organization cards
+
+`components/OrganizationCard.tsx` shows plan, status, brand, owner, members and last use. The whole card opens the tenant page for anyone with `platform:metrics:read`; without it the card is plain text, because that page would refuse them.

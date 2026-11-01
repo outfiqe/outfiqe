@@ -10,12 +10,13 @@ export const moderationPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> 
   "/tag-reviews": {
     title: "Tag reviews",
     description:
-      "How the Brand Tag Review funnel is running across every brand. All-time unless noted.",
+      "When a muse tags a product, the brand may need to approve it before shoppers can use it. This page shows how that is going. Click any number to see the tags behind it.",
     blocks: [
       { kind: "bar" },
       { kind: "statCards", count: OVERVIEW_TILE_COUNT, columns: "four", hasDelta: true },
+      { kind: "infoCards", cards: [{ rowCount: 2 }, { rowCount: 2 }] },
+      { kind: "infoCards", cards: [{ rowCount: 2 }, { rowCount: 2 }] },
       { kind: "bar" },
-      { kind: "infoCards", cards: [{ rowCount: 2 }, { rowCount: 2 }, { rowCount: 3 }] },
     ],
     sourceFiles: [
       `${FEATURES_DIR}/tag-reviews/components/TagReviewMetricsPage.tsx`,
@@ -24,6 +25,15 @@ export const moderationPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec> 
       `${FEATURES_DIR}/tag-reviews/components/MetricsDetailSections.tsx`,
       `${FEATURES_DIR}/tag-reviews/components/MetricsCardParts.tsx`,
       `${FEATURES_DIR}/tag-reviews/constants/tagReviewMetrics.constants.ts`,
+    ],
+  },
+  "/tag-reviews/tags": {
+    title: "Live tags",
+    description: "Tags shoppers can use right now. Newest first.",
+    blocks: [{ kind: "reportRows", count: ROW_COUNT }],
+    sourceFiles: [
+      `${FEATURES_DIR}/tag-reviews/components/TagReviewTagsPage.tsx`,
+      `${FEATURES_DIR}/tag-reviews/constants/metricTagViews.constants.ts`,
     ],
   },
   "/content-browser": {

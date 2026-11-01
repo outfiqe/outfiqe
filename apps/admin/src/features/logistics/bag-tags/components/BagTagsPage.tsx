@@ -1,4 +1,5 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 
 import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermissions";
@@ -12,11 +13,6 @@ import { CreateBagTagBatchForm } from "./CreateBagTagBatchForm";
 
 const LOADING_ROW_COUNT = 3;
 const NO_BATCHES = 0;
-
-const formatBatchDate = (createdAt: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(createdAt),
-  );
 
 export const BagTagsPage = () => {
   const { canUse } = usePlatformPermissions();
@@ -68,7 +64,7 @@ export const BagTagsPage = () => {
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3"
           >
             <p className="text-sm text-foreground">
-              {tagCount} stickers · {usedTagCount} used · made {formatBatchDate(createdAt)}
+              {tagCount} stickers · {usedTagCount} used · made {formatDateTime(createdAt)}
             </p>
             <Button asChild size="sm" variant="outline">
               <Link to="/logistics/bag-tags/$batchId" params={{ batchId: id }}>

@@ -1,3 +1,4 @@
+import { formatDate } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
@@ -5,6 +6,7 @@ import { AppImage } from "@/shared/components/AppImage";
 
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
+import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
 import { formatOrderReference } from "../utils/orderReference.utils";
 import { StatusBadge } from "./StatusBadge";
 
@@ -55,15 +57,20 @@ export const OrderRow = ({ order }: OrderRowProps) => {
           {itemCount > 1 ? ` and ${itemCount - 1} more` : ""}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {new Date(createdAt).toLocaleDateString()} · {paymentMethod} · Rs.{" "}
-          {total.toLocaleString()}
+          {formatDate(createdAt)} · {paymentMethod} · Rs. {total.toLocaleString()}
         </p>
       </div>
 
       <div className="flex shrink-0 gap-1.5">
         <StatusBadge
           status={paymentStatus}
-          label={paymentStatus === PaymentStatus.DUE ? "COD due" : paymentStatus}
+          label={
+            hasNothingLeftToPay(fulfilmentStatus, paymentStatus)
+              ? NOTHING_TO_PAY_LABEL
+              : paymentStatus === PaymentStatus.DUE
+                ? "COD due"
+                : paymentStatus
+          }
         />
         <StatusBadge status={fulfilmentStatus} />
       </div>

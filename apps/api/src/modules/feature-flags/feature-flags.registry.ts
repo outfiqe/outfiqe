@@ -32,11 +32,18 @@ export const FEATURE_FLAG_REGISTRY = [
     description:
       "New orders from brands with a covered pickup location go through Outfiqe riders, the hub and delivery partners instead of the brand shipping them.",
   },
+  {
+    key: "khalti_payments",
+    label: "Khalti payments",
+    description:
+      "Lets people pay with Khalti at checkout, for build offers and for CRM plans. Payments already made with Khalti can still be checked and refunded.",
+  },
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_REGISTRY)[number]["key"];
 
 export const ORDER_LOGISTICS_FLAG = "order_logistics" satisfies FeatureFlagKey;
+export const KHALTI_PAYMENTS_FLAG = "khalti_payments" satisfies FeatureFlagKey;
 
 const FEATURE_FLAG_KEY_SET: ReadonlySet<string> = new Set(
   FEATURE_FLAG_REGISTRY.map((entry) => entry.key),

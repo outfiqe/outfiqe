@@ -52,12 +52,11 @@ export const platformAccessService = {
   },
 
   async principalHasPermission(
-    principal: { userId: string; role: UserRole },
+    { userId, role }: { userId: string; role: UserRole },
     key: PlatformPermissionKey,
   ): Promise<boolean> {
-    if (principal.role !== UserRole.ADMIN) return false;
-    const permissionKeys = await platformAccessService.permissionKeysFor(principal.userId);
-    return permissionKeys.includes(key);
+    const isAdmin = role === UserRole.ADMIN;
+    return isAdmin && (await platformAccessService.permissionKeysFor(userId)).includes(key);
   },
 
   async findUserIdsHoldingAnyPermission(keys: readonly PlatformPermissionKey[]): Promise<string[]> {

@@ -7,6 +7,11 @@ import type { ListPlatformAuditQuery } from "./platform-audit.schemas.js";
 import { platformAudit } from "./platform-audit.service.js";
 
 export const platformAuditController = {
+  async listFilterOptions(_req: Request, res: Response) {
+    const filterOptions = await platformAudit.listFilterOptions();
+    sendSuccess(res, filterOptions, "Platform audit filter options.");
+  },
+
   async listAuditLogs(_req: Request, res: Response) {
     const { organizationId, actorUserId, action, targetType, targetId, cursor, limit } =
       validated.query<ListPlatformAuditQuery>(res);

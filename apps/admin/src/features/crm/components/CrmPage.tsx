@@ -16,6 +16,7 @@ import { crmApi } from "../api/crmApi";
 import type { Organization } from "../api/crmSchemas";
 import { PlanGateBanner } from "../billing/components/PlanGateBanner";
 import { CrmOverviewSection } from "../reporting/components/CrmOverviewSection";
+import { toTrialLabel } from "../utils/trial.utils";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
@@ -60,8 +61,7 @@ export const CrmPage = () => {
           {organization && (
             <p className="text-sm text-muted-foreground">
               {organization.name} · {organization.plan}
-              {organization.trialEndsAt &&
-                ` · trial ends ${new Date(organization.trialEndsAt).toLocaleDateString()}`}
+              {organization.trialEndsAt && ` · ${toTrialLabel(organization.trialEndsAt)}`}
             </p>
           )}
         </div>

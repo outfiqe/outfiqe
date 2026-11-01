@@ -32,3 +32,5 @@ new status and the change appears in the history and the audit log.
 
 **Technical:** page → `useAdminBuilds` / `useQuery` / `useAdminBuildHistory` → `outfitBuildsApi`
 → `/api/platform/builds…` → `apps/api/src/modules/outfit-admin`.
+
+**Build details use plain words.** `constants/buildLabels.constants.ts` holds the wording for statuses, visibility, roles, photo states and history events, and `utils/buildLabels.utils.ts` builds the sentences. A new `OutfitEventType` still reads properly through the fallback, but add it to `BUILD_EVENT_LABEL`. "I'm happy" history says "changed", not "said they're happy", because the same event records someone taking it back.

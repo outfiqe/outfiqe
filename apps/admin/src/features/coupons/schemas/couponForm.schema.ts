@@ -1,3 +1,4 @@
+import { isPastDateInputValue } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { optionalWholeNumberText, wholeNumberText } from "@/lib/formFields";
@@ -9,6 +10,7 @@ export const COUPON_CODE_MAX_LENGTH = 24;
 const MAX_COUPON_AMOUNT = 10_000_000;
 const MAX_PERCENT_OFF = 100;
 const MIN_POSITIVE_AMOUNT = 1;
+const END_DATE_IN_PAST_MESSAGE = "The end date can't be in the past.";
 const DEFAULT_PERCENT_OFF = "10";
 const DEFAULT_FIXED_AMOUNT = "200";
 const DEFAULT_MIN_SUBTOTAL = "0";
@@ -47,6 +49,9 @@ export const couponFormSchema = z
     stacksWithBrandDiscount: z.boolean(),
   })
   .superRefine((values, context) => {
+    if (isPastDateInputValue(values.endsAt)) {
+      context.addIssue({ code: "custom", path: ["endsAt"], message: END_DATE_IN_PAST_MESSAGE });
+    }
     if (values.type === "PERCENT") {
       const percentResult = wholeNumberText("a percentage", { max: MAX_PERCENT_OFF }).safeParse(
         values.percentOff,

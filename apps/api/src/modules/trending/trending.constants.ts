@@ -1,5 +1,6 @@
-export const AGGREGATION_INTERVAL_MS = 15 * 60 * 1000;
-export const SCORING_INTERVAL_MS = 30 * 60 * 1000;
+import { millisecondsInDay, millisecondsInMinute } from "date-fns/constants";
+export const AGGREGATION_INTERVAL_MS = 15 * millisecondsInMinute;
+export const SCORING_INTERVAL_MS = 30 * millisecondsInMinute;
 
 export const METRIC_RETENTION_DAYS = 14;
 export const BASELINE_WINDOW_DAYS = 14;
@@ -25,7 +26,7 @@ export const DECAY_HALF_LIFE_HOURS = 20;
 export const SMOOTHING = 2;
 export const MOMENTUM_CAP = 8;
 
-export const FRESHNESS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+export const FRESHNESS_WINDOW_MS = 3 * millisecondsInDay;
 export const FRESHNESS_MULTIPLIER = 1.15;
 
 export const CANDIDATE_POOL_SIZE = 50;

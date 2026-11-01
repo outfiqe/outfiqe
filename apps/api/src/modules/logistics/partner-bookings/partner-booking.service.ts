@@ -18,6 +18,7 @@ import { enqueueOutboxEvent } from "#outbox/outbox.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { HUB_EVENT_DEDUPE_PREFIX } from "../hub-operations/hub-operation.constants.js";
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPartnerAdapters } from "../logistics.partner-adapters.js";
 import type {
   DeliveryPartnerAdapter,
@@ -190,14 +191,10 @@ export const logisticsPartnerBookingService = {
   async retryFailedBooking(staffUserId: string, shipmentId: string): Promise<void> {
     const shipment = await logisticsPartnerBookingRepository.findShipmentStatus(shipmentId);
     if (!shipment) {
-      throw new AppError("PARCEL_NOT_FOUND", "Parcel not found.", HTTP_STATUS.NOT_FOUND);
+      throw logisticsErrors.parcelNotFound();
     }
     if (shipment.status !== ShipmentStatus.PACKED) {
-      throw new AppError(
-        "PARCEL_ALREADY_LEFT",
-        "This parcel has already left the hub, so its booking can't be changed here.",
-        HTTP_STATUS.CONFLICT,
-      );
+      throw logisticsErrors.parcelAlreadyLeft();
     }
     const booking = await requireFailedApiBooking(shipmentId);
     const requestedAt = new Date();
@@ -208,11 +205,7 @@ export const logisticsPartnerBookingService = {
         requestedAt,
       });
       if (!isRequeued) {
-        throw new AppError(
-          "BOOKING_CHANGED",
-          "This booking was changed by someone else. Refresh and try again.",
-          HTTP_STATUS.CONFLICT,
-        );
+        throw logisticsErrors.bookingChanged();
       }
       await logisticsTrackingService.recordEventInTransaction(tx, {
         subject: shipmentSubjectFor(shipmentId),

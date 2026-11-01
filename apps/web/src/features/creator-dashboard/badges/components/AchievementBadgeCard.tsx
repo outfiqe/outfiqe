@@ -1,6 +1,7 @@
 "use client";
 
 import { AchievementBadgeIcon, Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
+import { formatDate } from "@outfiqe/utils";
 import Link from "next/link";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -70,9 +71,7 @@ export const AchievementBadgeCard = ({
         )}
 
         {isCollected && unlockedAt && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Unlocked {new Date(unlockedAt).toLocaleDateString()}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">Unlocked {formatDate(unlockedAt)}</p>
         )}
 
         {isCollected && isDynamicallyActive === false && (

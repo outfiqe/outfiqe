@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import {
+  ExampleCallout,
   FaqAccordion,
   FeatureGrid,
   MarketingCta,
@@ -66,7 +67,7 @@ const faqs = [
   {
     question: "What does it cost to sell on Outfiqe?",
     answer:
-      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece. That's the only deduction: we cover the eSewa and Khalti fees, and when a shopper uses an Outfiqe coupon, we pay for the discount, not you.",
+      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece. That's the only deduction: we cover the online payment fees, and when a shopper uses an Outfiqe coupon, we pay for the discount, not you.",
   },
   {
     question: "Who handles delivery?",
@@ -95,6 +96,21 @@ const faqs = [
   },
 ];
 
+const brandRoles = [
+  {
+    title: "What you do",
+    body: "Add your products, set sizes, stock and prices, approve muse tags, and pack each order with its pickup slip.",
+  },
+  {
+    title: "What Outfiqe does",
+    body: "Runs the store, takes payment, collects your orders, checks each piece at our hub, arranges delivery and handles customer refunds.",
+  },
+  {
+    title: "What muses do",
+    body: "Wear your pieces, post looks and tag your products, so shoppers see them on real people.",
+  },
+];
+
 const ForBrandsPage = () => (
   <MarketingShell
     breadcrumbs={[
@@ -113,6 +129,33 @@ const ForBrandsPage = () => (
       }
       lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and we'll put your pieces in front of shoppers and the muses who wear them, then collect your orders from your door."
     />
+
+    <MarketingSection heading="What is a brand on Outfiqe?">
+      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p>
+          A brand is a Nepali clothing label that sells through Outfiqe. Your pieces stay yours, and
+          you set the prices. We give you a storefront alongside other brands, and we take care of
+          payment and, in most areas, collection and delivery.
+        </p>
+      </div>
+    </MarketingSection>
+    <MarketingSection heading="Who does what">
+      <FeatureGrid items={brandRoles} />
+    </MarketingSection>
+    <MarketingSection heading="See it in action">
+      <ExampleCallout title="Your first order">
+        <p>
+          A shopper buys your kurta. It appears on your Orders page, and you pack it with the pickup
+          slip. Our rider collects it from your pickup location, and you never need the
+          customer&apos;s address.
+        </p>
+        <p>
+          We check the piece at our hub, and a delivery partner takes it to the shopper. Your
+          earnings show in your wallet, become available 7 days after delivery, and can be withdrawn
+          to your verified bank account.
+        </p>
+      </ExampleCallout>
+    </MarketingSection>
 
     <MarketingSection heading="How it works">
       <StepList steps={steps} />

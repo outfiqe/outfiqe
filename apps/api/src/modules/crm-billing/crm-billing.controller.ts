@@ -2,11 +2,13 @@ import type { Request, Response } from "express";
 
 import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
 import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
 import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
 import { buildAuditActor } from "#modules/crm-audit/crm-audit.utils.js";
+import { assertGatewayAvailable } from "#modules/payments/payment.availability.js";
 import { PaymentVerifyStatus } from "#modules/payments/payment.types.js";
 
 import { DEFAULT_INVOICE_PAGE_SIZE } from "./crm-billing.constants.js";
@@ -17,6 +19,11 @@ import type {
   PayInvoiceBody,
 } from "./crm-billing.schemas.js";
 import { crmBillingService } from "./crm-billing.service.js";
+
+const SINGLE_SEAT = 1;
+
+const toSeatLabel = (seats: number): string =>
+  seats === SINGLE_SEAT ? "1 seat" : `${seats} seats`;
 
 export const crmBillingController = {
   async getOverview(_req: Request, res: Response) {
@@ -40,6 +47,7 @@ export const crmBillingController = {
   async checkout(req: Request, res: Response) {
     const { plan, seats, provider } = validated.body<BillingCheckoutBody>(res);
     const organization = getResolvedOrganization(res);
+    await assertGatewayAvailable(provider, requireAuthPrincipal(res).userId);
 
     const redirect = await crmBillingService.checkout(organization, {
       planId: plan,
@@ -49,7 +57,7 @@ export const crmBillingController = {
     await crmAudit.record({
       organizationId: organization.id,
       action: CrmAuditAction.SUBSCRIPTION_CHECKOUT_STARTED,
-      summary: `Started checkout for the ${plan} plan (${seats} seats)`,
+      summary: `Started checkout for the ${plan} plan (${toSeatLabel(seats)})`,
       actor: buildAuditActor(req, res),
       target: { type: AUDIT_TARGET_TYPE.SUBSCRIPTION, id: null },
       metadata: { plan, seats, provider },
@@ -61,6 +69,7 @@ export const crmBillingController = {
     const { invoiceId } = validated.params<InvoiceIdParams>(res);
     const { provider } = validated.body<PayInvoiceBody>(res);
     const organization = getResolvedOrganization(res);
+    await assertGatewayAvailable(provider, requireAuthPrincipal(res).userId);
 
     const redirect = await crmBillingService.payOutstandingInvoice(
       organization,

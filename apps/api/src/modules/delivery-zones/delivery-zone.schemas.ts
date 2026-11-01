@@ -39,9 +39,13 @@ const DELIVERY_DAYS_RULE_MESSAGE =
 const hasConsistentDeliveryDays = ({ minDeliveryDays, maxDeliveryDays }: DeliveryDaysInput) => {
   const areBothLeftOut = minDeliveryDays === undefined && maxDeliveryDays === undefined;
   const areBothCleared = minDeliveryDays === null && maxDeliveryDays === null;
-  if (areBothLeftOut || areBothCleared) return true;
-  if (typeof minDeliveryDays !== "number" || typeof maxDeliveryDays !== "number") return false;
-  return minDeliveryDays <= maxDeliveryDays;
+  return (
+    areBothLeftOut ||
+    areBothCleared ||
+    (typeof minDeliveryDays === "number" &&
+      typeof maxDeliveryDays === "number" &&
+      minDeliveryDays <= maxDeliveryDays)
+  );
 };
 
 export const createDeliveryZoneSchema = z

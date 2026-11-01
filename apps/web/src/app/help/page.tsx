@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import {
   FaqAccordion,
+  FeatureGrid,
   MarketingHero,
   MarketingSection,
   MarketingShell,
@@ -12,7 +13,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Help centre",
   description:
-    "Answers to common Outfiqe questions: tracking your order, delivery across Nepal, cash on delivery, eSewa and Khalti, cancelling, refunds, Thrift, reviews and your account.",
+    "Answers to common Outfiqe questions: tracking your order, delivery across Nepal, cash on delivery and eSewa, cancelling, refunds, Thrift, reviews and your account.",
   path: "/help",
   keywords: ["Outfiqe help", "Outfiqe FAQ", "Outfiqe order support", "Outfiqe refunds"],
 });
@@ -36,7 +37,7 @@ const orderFaqs = [
   {
     question: "Can I cancel my order?",
     answer:
-      "Open the order. If you see Cancel items, you can cancel some or all of your pieces while the brand still has them, and the refund is worked out straight away. If you don't see it, raise a support request and we'll cancel the order for you if it hasn't shipped yet. If you started an eSewa or Khalti payment but didn't finish it, you can cancel the whole order from the order page.",
+      "Open the order. If you see Cancel items, you can cancel some or all of your pieces while the brand still has them, and the refund is worked out straight away. If you don't see it, raise a support request and we'll cancel the order for you if it hasn't shipped yet. If you started an online payment but didn't finish it, you can cancel the whole order from the order page.",
   },
   {
     question: "My order says delivered, but I didn't get it.",
@@ -49,12 +50,12 @@ const paymentFaqs = [
   {
     question: "How can I pay?",
     answer:
-      "Cash on delivery, eSewa or Khalti. Cash on delivery adds a small handling fee, which you'll see before you place the order.",
+      "Cash on delivery or online. Checkout shows the online options available to you. Cash on delivery adds a small handling fee, which you'll see before you place the order.",
   },
   {
     question: "Why can't I choose cash on delivery?",
     answer:
-      "There are two reasons this can happen. The coupon you applied may only work with online payment, or there have been 2 refused deliveries on your account or phone number in the last year. You can still pay with eSewa or Khalti.",
+      "There are two reasons this can happen. The coupon you applied may only work with online payment, or there have been 2 refused deliveries on your account or phone number in the last year. You can still pay online.",
   },
   {
     question: "My payment didn't go through. What now?",
@@ -72,7 +73,7 @@ const refundFaqs = [
   {
     question: "How is the money paid back?",
     answer:
-      "Khalti payments go straight back to your Khalti account. For cash on delivery, the amount is simply taken off what you pay the rider. For eSewa payments, we'll ask you for a refund account (eSewa, Khalti or bank) on the order page, and our team sends the money there.",
+      "For cash on delivery, the amount is simply taken off what you pay the rider. For eSewa payments, we'll ask you for a refund account (eSewa, Khalti or bank) on the order page, and our team sends the money there.",
   },
   {
     question: "Can I return something after delivery?",
@@ -107,6 +108,67 @@ const accountFaqs = [
   },
 ];
 
+const museFaqs = [
+  {
+    question: "What is a muse?",
+    answer:
+      "A real person who shares outfit photos, tags the pieces and earns a commission when a look leads to a sale. Create an account, then apply from your dashboard.",
+  },
+  {
+    question: "When can I withdraw my commission?",
+    answer:
+      "A commission becomes ready to withdraw 7 days after the order is delivered. You then request a withdrawal to your verified bank account from Earnings.",
+  },
+  {
+    question: "Why was my commission removed?",
+    answer:
+      "Any commission that hasn't been paid out yet is removed when the order is cancelled, refunded or returned.",
+  },
+];
+
+const brandFaqs = [
+  {
+    question: "What does it cost to sell?",
+    answer:
+      "Listing is free. Outfiqe takes a commission on each completed sale, based on the price of the piece.",
+  },
+  {
+    question: "Who delivers my orders?",
+    answer:
+      "In most areas, we do. Our rider collects ready orders from your pickup location. Your Orders page shows if any order needs to be sent by you instead.",
+  },
+  {
+    question: "When do I get paid?",
+    answer:
+      "Your earnings become available 7 days after delivery, and you can then withdraw them to your verified brand bank account from your wallet.",
+  },
+];
+
+const startingPoints = [
+  {
+    title: "New to Outfiqe?",
+    body: "Start with how it works, or see what words like muse, look and hub mean.",
+  },
+  {
+    title: "Shopping",
+    body: "Orders, delivery, payment and refunds are below, with full shipping and returns guides.",
+  },
+  {
+    title: "Muses and brands",
+    body: "Commissions, payouts and selling are answered further down this page.",
+  },
+];
+
+const guides = [
+  { href: "/help/glossary", label: "What our words mean" },
+  { href: "/how-it-works", label: "How Outfiqe works" },
+  { href: "/help/shipping", label: "Shipping & delivery guide" },
+  { href: "/help/returns", label: "Returns & refunds guide" },
+  { href: "/size-guide", label: "Size guide" },
+  { href: "/for-creators/how-commissions-work", label: "How commissions work" },
+  { href: "/for-brands", label: "Sell on Outfiqe" },
+];
+
 const HelpPage = () => (
   <MarketingShell
     breadcrumbs={[
@@ -119,6 +181,19 @@ const HelpPage = () => (
       title="How can we help?"
       lede="Quick answers to the questions we're asked most. If yours isn't here, raise a support request and we'll reply by email."
     />
+
+    <MarketingSection heading="Start here">
+      <FeatureGrid items={startingPoints} />
+      <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
+        {guides.map(({ href, label }) => (
+          <li key={href}>
+            <Link href={href} className="font-medium text-foreground underline underline-offset-2">
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </MarketingSection>
 
     <MarketingSection heading="Still need help?">
       <p className="text-sm leading-relaxed text-muted-foreground">
@@ -151,6 +226,14 @@ const HelpPage = () => (
 
     <MarketingSection heading="Account">
       <FaqAccordion entries={accountFaqs} />
+    </MarketingSection>
+
+    <MarketingSection heading="For muses">
+      <FaqAccordion entries={museFaqs} />
+    </MarketingSection>
+
+    <MarketingSection heading="For brands">
+      <FaqAccordion entries={brandFaqs} />
     </MarketingSection>
 
     <MarketingSection heading="Policies">

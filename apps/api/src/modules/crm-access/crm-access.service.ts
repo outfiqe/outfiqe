@@ -5,6 +5,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { crmAccessErrors } from "./crm-access.errors.js";
 import { assertPermissionKeysWithinActorGrant } from "./crm-access.guards.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
@@ -74,13 +75,13 @@ export const crmAccessService = {
 
     const membership = await crmAccessRepository.findMembershipById(organization.id, membershipId);
     if (!membership) {
-      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", HTTP_STATUS.NOT_FOUND);
+      throw crmAccessErrors.membershipNotFound();
     }
 
     if (data.roleId) {
       const role = await crmRoleRepository.findRoleById(organization.id, data.roleId);
       if (!role) {
-        throw new AppError("ROLE_NOT_FOUND", "Role not found.", HTTP_STATUS.NOT_FOUND);
+        throw crmAccessErrors.roleNotFound();
       }
       assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
     }

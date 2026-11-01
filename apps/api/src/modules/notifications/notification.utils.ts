@@ -66,7 +66,9 @@ const grantHoldsAnyOf = (
   permissionKeys: readonly string[],
 ): boolean => grant.isOwner || permissionKeys.some((key) => grant.permissionKeys.includes(key));
 
-const everyAccount: AudienceRule = () => true;
+const INCLUDED_IN_AUDIENCE = true;
+
+const everyAccount: AudienceRule = () => INCLUDED_IN_AUDIENCE;
 const storefrontAccounts: AudienceRule = ({ isStaffAccount }) => !isStaffAccount;
 const shopperAccounts: AudienceRule = ({ isShopperAccount }) => isShopperAccount;
 const approvedCreators: AudienceRule = ({ isApprovedCreator }) => isApprovedCreator;

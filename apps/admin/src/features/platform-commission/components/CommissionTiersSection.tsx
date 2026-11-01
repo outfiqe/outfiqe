@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
+import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
@@ -208,7 +209,7 @@ export const CommissionTiersSection = () => {
       </p>
       {activeRule && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Active since {new Date(activeRule.createdAt).toLocaleDateString()}.
+          Active since {formatDate(activeRule.createdAt)}.
         </p>
       )}
 

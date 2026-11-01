@@ -31,10 +31,10 @@ export const TrendingDebugPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">Trending debug</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground">Trending</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        See what&apos;s trending right now, or look up any approved product to see exactly why it
-        is, or isn&apos;t, trending.
+        What shoppers care about most right now. This list fills the Trending row on the home page.
+        Pick any product to see why it is on the list, or why it isn&apos;t.
       </p>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
@@ -89,7 +89,7 @@ export const TrendingDebugPage = () => {
           </Autocomplete>
 
           <h2 className="mt-6 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Top trending right now
+            On the list right now
           </h2>
           <TopTrendingList
             selectedId={selected?.id ?? null}
@@ -112,9 +112,7 @@ export const TrendingDebugPage = () => {
               <TrendDebugResult product={selected} />
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Pick a product from the trending list or search results to see its breakdown.
-            </p>
+            <p className="text-sm text-muted-foreground">Pick a product to see the full story.</p>
           )}
         </div>
       </div>

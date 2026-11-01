@@ -5,9 +5,12 @@ import { RESOLVED_TICKET_STATUSES } from "./crm-tickets.constants.js";
 import type {
   CreateTicketInput,
   TicketCommentRecord,
+  TicketListFilters,
   TicketRecord,
   TicketWithComments,
 } from "./crm-tickets.types.js";
+
+const ACTIVE_TICKET_STATUSES: CrmTicketStatus[] = ["OPEN", "IN_PROGRESS"];
 
 const ticketSelect = {
   id: true,
@@ -107,11 +110,7 @@ export const crmTicketsRepository = {
 
   async listTickets(
     organizationId: string,
-    filters: {
-      status?: CrmTicketStatus;
-      assigneeMembershipId?: string;
-      type?: TicketRecord["type"];
-    },
+    filters: TicketListFilters,
     page: { cursor?: string; limit: number },
   ): Promise<TicketRecord[]> {
     const rows = await prisma.crmTicket.findMany({
@@ -122,6 +121,11 @@ export const crmTicketsRepository = {
           ? { assigneeMembershipId: filters.assigneeMembershipId }
           : {}),
         ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.activeOnly ? { status: { in: ACTIVE_TICKET_STATUSES } } : {}),
+        ...(filters.unassignedOnly ? { assigneeMembershipId: null } : {}),
+        ...(filters.createdFrom || filters.createdTo
+          ? { createdAt: { gte: filters.createdFrom, lte: filters.createdTo } }
+          : {}),
       },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "desc" }],
       take: page.limit + 1,

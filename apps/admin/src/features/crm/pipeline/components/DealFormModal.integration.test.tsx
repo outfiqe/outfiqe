@@ -31,6 +31,7 @@ const DEAL: Deal = {
   partnerCreatorId: "u1",
   partnerName: "Aasha",
   partnerHandle: "aasha",
+  stageEnteredAt: "2026-08-20T00:00:00.000Z",
   status: "OPEN",
   closedAt: null,
   createdAt: "2026-08-20T00:00:00.000Z",
@@ -84,7 +85,7 @@ describe("DealFormModal", () => {
     await user.type(screen.getByLabelText("Title"), "Autumn drop");
     await user.type(screen.getByLabelText("Partner"), "aasha");
     await user.click(await screen.findByRole("option", { name: /Aasha/ }));
-    await user.click(screen.getByRole("button", { name: "Create deal" }));
+    await user.click(screen.getByRole("button", { name: "Create opportunity" }));
 
     await waitFor(() =>
       expect(body).toMatchObject({ title: "Autumn drop", stageId: "s1", partnerCreatorId: "u1" }),
@@ -142,10 +143,10 @@ describe("DealFormModal", () => {
 
     expect(screen.queryByLabelText("Partner")).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Stage"), "s2");
-    await user.click(screen.getByRole("button", { name: "Save deal" }));
+    await user.click(screen.getByRole("button", { name: "Save opportunity" }));
 
     await waitFor(() => expect(body).toMatchObject({ stageId: "s2", title: "Spring collab" }));
-    expect(await screen.findByText("Deal saved.")).toBeInTheDocument();
+    expect(await screen.findByText("Opportunity saved.")).toBeInTheDocument();
   });
 
   it("shows inline messages, not a browser popup, when a new deal is submitted empty", async () => {
@@ -160,10 +161,10 @@ describe("DealFormModal", () => {
     render(<DealFormModal open onClose={() => {}} stages={STAGES} deal={null} />, { wrapper });
     const user = userEvent.setup({ delay: null });
 
-    await user.click(screen.getByRole("button", { name: "Create deal" }));
+    await user.click(screen.getByRole("button", { name: "Create opportunity" }));
 
-    expect(await screen.findByText("Enter a title for the deal.")).toBeInTheDocument();
-    expect(screen.getByText("Choose the partner for this deal.")).toBeInTheDocument();
+    expect(await screen.findByText("Enter a title for this opportunity.")).toBeInTheDocument();
+    expect(screen.getByText("Choose the partner for this opportunity.")).toBeInTheDocument();
     expect(postRequested).not.toHaveBeenCalled();
   });
 
@@ -182,7 +183,7 @@ describe("DealFormModal", () => {
     const valueField = screen.getByLabelText("Value (Rs.)");
     await user.clear(valueField);
     await user.type(valueField, "12.5");
-    await user.click(screen.getByRole("button", { name: "Save deal" }));
+    await user.click(screen.getByRole("button", { name: "Save opportunity" }));
 
     expect(
       await screen.findByText("Enter a whole number of rupees, with no decimals or minus sign."),

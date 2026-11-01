@@ -6,6 +6,7 @@ Hand-picked product collections (for example "Monsoon Edit") that the team curat
 
 ## Structure
 
+- `collection.errors.ts` — `collectionErrors`, the errors this module raises from more than one place.
 - `collection.routes.ts` — `/api/collections`. Public: `GET /` (published collections), `GET /:slug` and `GET /:slug/products`. Admin (`platformGuards.catalogRead` to read, `catalogManage` to write): `GET /admin`, `GET /admin/:id/products`, `POST /`, `PATCH /:id`, and `PATCH /:id/products`. Every write also triggers a web cache refresh for the collections tag (`revalidateWebCacheOnWrite`).
 - `collection.controller.ts` — reads validated input and sends the response.
 - `collection.service.ts` — `collectionService`: create and update (a duplicate slug becomes `409 SLUG_TAKEN`), replace a collection's products, the admin lists, and the public cursor-paged lists.

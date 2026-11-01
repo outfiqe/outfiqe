@@ -1,10 +1,10 @@
 "use client";
 
 import { Modal } from "@outfiqe/design-system";
-import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+import { ANALYTICS_EVENTS, POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { type CSSProperties, useEffect } from "react";
 
-import { getMediaRowHeightPx } from "@/shared/components/MediaFormShell";
+import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import { PostCommentsSection } from "../../comments/components/PostCommentsSection";
@@ -15,6 +15,8 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostTagPill } from "./PostTagPill";
 import { ReportContentModal } from "./ReportContentModal";
+
+const MODAL_IMAGE_SIZES = "(min-width: 640px) 60vw, 100vw";
 
 type PostDetailModalProps = {
   post: FeedPost;
@@ -73,6 +75,7 @@ export const PostDetailModal = ({
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const { mutate: submitReport, isPending: isReporting } = reportMutation;
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
+  useTrackView(ANALYTICS_EVENTS.LOOK_DETAIL_VIEW, { look_id: id, creator_id: creatorId }, id);
 
   useEffect(() => {
     setCommentsOpen(true);
@@ -83,17 +86,21 @@ export const PostDetailModal = ({
       open
       onClose={onClose}
       ariaLabel={`Drop by ${creatorName}`}
-      className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl"
+      className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[92dvh] sm:w-fit sm:max-w-[94vw] sm:rounded-2xl"
     >
-      <div
-        className="-mx-6 -my-5 flex flex-col sm:h-[var(--modal-row-height)] sm:flex-row"
-        style={{ "--modal-row-height": `${getMediaRowHeightPx(photoAspect)}px` } as CSSProperties}
-      >
-        <div className="shrink-0 border-b border-border sm:w-95 sm:border-b-0 sm:border-r">
+      <div className="-mx-6 -my-5 flex flex-col sm:h-[min(92dvh,54rem)] sm:flex-row">
+        <div
+          className="flex shrink-0 items-center border-b border-border bg-black sm:w-[calc(min(92dvh,54rem)*var(--post-photo-aspect))] sm:max-w-[calc(94vw-26rem)] sm:border-b-0 sm:border-r"
+          style={{ "--post-photo-aspect": photoAspect } as CSSProperties}
+        >
           <PostCarousel
             images={images}
             fallbackColor={getAvatarColor(id)}
             aspectRatio={String(photoAspect)}
+            sizes={MODAL_IMAGE_SIZES}
+            className="w-full"
+            imageFrameClassName="max-h-[55dvh] bg-black sm:max-h-full"
+            showsWholeImage
             onDoubleTapLike={
               likeDisabledReason
                 ? undefined
@@ -105,7 +112,7 @@ export const PostDetailModal = ({
           />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col sm:overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col sm:w-[26rem] sm:flex-none">
           {showCreatorHeader && (
             <PostCardHeader
               creatorId={creatorId}
@@ -123,7 +130,7 @@ export const PostDetailModal = ({
             />
           )}
 
-          <div className="px-4 py-3.5">
+          <div className="flex min-h-0 flex-1 flex-col px-4 pt-3.5 sm:overflow-y-auto">
             {taggedProducts.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-1.5">
                 {taggedProducts.map((tag) => (
@@ -161,7 +168,8 @@ export const PostDetailModal = ({
               draft={draft}
               onDraftChange={setDraft}
               onSubmit={() => gated(() => void submitComment())}
-              className="mt-2.5 border-t border-border pt-2.5"
+              className="mt-2.5 flex flex-1 flex-col border-t border-border pt-2.5"
+              composerClassName="sticky bottom-0 -mx-4 mt-auto border-t border-border bg-card px-4 py-3"
             />
           </div>
         </div>

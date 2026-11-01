@@ -2,8 +2,10 @@ import type { BrandFulfilmentGroupSummaryView } from "#modules/orders/order.type
 
 export type BrandOverviewKpis = {
   lifetimeRevenue: number;
-  last30DaysRevenue: number;
-  previous30DaysRevenue: number;
+  periodDays: number;
+  periodRevenue: number;
+  previousPeriodRevenue: number;
+  periodOrderCount: number;
   availablePayout: number;
   pendingPayout: number;
   productCount: number;
@@ -17,16 +19,34 @@ export type BrandOverviewTrendPoint = {
   orderCount: number;
 };
 
+export type BrandTopProduct = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  unitsSold: number;
+  revenue: number;
+};
+
+export type BrandLowStockProduct = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  stockLeft: number;
+};
+
 export type BrandOverview = {
   kpis: BrandOverviewKpis;
   trend: BrandOverviewTrendPoint[];
+  topProducts: BrandTopProduct[];
+  lowStockProducts: BrandLowStockProduct[];
   recentOrders: BrandFulfilmentGroupSummaryView[];
 };
 
 export type RevenueWindows = {
   lifetime: number;
-  last30: number;
-  previous30: number;
+  period: number;
+  previousPeriod: number;
+  periodOrderCount: number;
 };
 
 export type CatalogCounts = {

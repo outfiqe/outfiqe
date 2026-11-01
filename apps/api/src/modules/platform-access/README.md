@@ -39,7 +39,7 @@ hasFullAccess, permissionKeys }` from the user's active membership in the platfo
   (`catalogRead`, `catalogManage`, `ordersRead`, `ordersManage`, `usersRead`, `usersManage`,
   `userSearch`, `creatorsRead`, `creatorsManage`, `brandsRead`, `brandsManage`,
   `reviewsModerate`, `contentModerate`, `financeRead`, `withdrawRead`, `withdrawManage`,
-  `teamManage`). A read guard accepts the read key or the manage key; a manage guard accepts only
+  `teamManage`, `analyticsRead`). A read guard accepts the read key or the manage key; a manage guard accepts only
   the manage key.
 - `platform-access.types.ts` — `PlatformPrincipal`, `PlatformAccess`.
 - `platform-access.constants.test.ts` — every key the shared section registry

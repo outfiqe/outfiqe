@@ -8,6 +8,7 @@ import {
   FulfilmentMode,
   FulfilmentStatus,
   PartnerWebhookVerification,
+  PaymentStatus,
   PickupStatus,
   RiderEmploymentType,
   RiderStatus,
@@ -266,7 +267,11 @@ export const createPickupForBrand = async (
 ) => {
   const buyer = await createBuyer();
   const hub = await createHub();
-  const order = await createOrder(buyer.id);
+  const { id: orderId } = await createOrder(buyer.id);
+  const order = await prisma.order.update({
+    where: { id: orderId },
+    data: { paymentStatus: PaymentStatus.DUE },
+  });
   const isHubFlow = fulfilmentMode === FulfilmentMode.OUTFIQE_LOGISTICS;
   const group = await prisma.orderFulfilmentGroup.create({
     data: {

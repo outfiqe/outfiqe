@@ -9,6 +9,7 @@ frequent sums than a creator, so they're governed by separate policy rows, not o
 
 ## Structure
 
+- `withdraw.errors.ts` — `withdrawErrors`, the errors this module raises from more than one place.
 - `withdraw.routes.ts` — user-facing: `GET /policy`, `GET /eligibility`, `POST /requests`,
   `GET /requests` (all `?ownerType=CREATOR|BUSINESS` for the GETs, `ownerType` in the body for the
   POST). Admin: `GET /admin/requests` (`?status=`), `PATCH /admin/requests/:id/approve|reject|

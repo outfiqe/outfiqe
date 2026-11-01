@@ -23,7 +23,10 @@ const pendingApplication = {
   reviewedAt: null,
   reviewedById: null,
   createdAt: "2026-01-01T00:00:00.000Z",
+  isAwaitingBrandSetup: false,
 };
+
+const inviteDelivered = { isInviteDelivered: true };
 
 const renderPage = () =>
   renderWithRouter(
@@ -136,6 +139,80 @@ describe("BrandApplicationsPage", () => {
     await waitFor(() => expect(requestedStatuses).toContain("REJECTED"));
   });
 
+  it("warns the admin when the invite email did not send", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { applications: [pendingApplication], nextCursor: null },
+        }),
+      ),
+      http.post(`${API_BASE}/brand-applications/app-1/approve`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { isInviteDelivered: false },
+        }),
+      ),
+    );
+
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByText(/invite email didn't send/)).toBeInTheDocument();
+  });
+
+  it("resends the invite for an approved brand that has not set up yet", async () => {
+    let resendCalled = false;
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: {
+            applications: [
+              { ...pendingApplication, status: "APPROVED", isAwaitingBrandSetup: true },
+            ],
+            nextCursor: null,
+          },
+        }),
+      ),
+      http.post(`${API_BASE}/brand-applications/app-1/resend-invite`, () => {
+        resendCalled = true;
+        return HttpResponse.json({ success: true, message: "ok", data: inviteDelivered });
+      }),
+    );
+
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Resend invite" }));
+
+    await waitFor(() => expect(resendCalled).toBe(true));
+    expect(await screen.findByText("Invite resent.")).toBeInTheDocument();
+  });
+
+  it("offers no resend once the brand has set up its account", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: {
+            applications: [{ ...pendingApplication, status: "APPROVED" }],
+            nextCursor: null,
+          },
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Instyle Nepal")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resend invite" })).not.toBeInTheDocument();
+  });
+
   it("approves a pending application", async () => {
     let approveCalled = false;
     mswServer.use(
@@ -148,7 +225,7 @@ describe("BrandApplicationsPage", () => {
       ),
       http.post(`${API_BASE}/brand-applications/app-1/approve`, () => {
         approveCalled = true;
-        return HttpResponse.json({ success: true, message: "ok", data: null });
+        return HttpResponse.json({ success: true, message: "ok", data: inviteDelivered });
       }),
     );
 
@@ -157,7 +234,7 @@ describe("BrandApplicationsPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
 
     await waitFor(() => expect(approveCalled).toBe(true));
-    expect(await screen.findByText("Application approved.")).toBeInTheDocument();
+    expect(await screen.findByText("Application approved. Invite sent.")).toBeInTheDocument();
   });
 
   it("shows a loading spinner on the Approve button while the approval is under way", async () => {
@@ -171,7 +248,7 @@ describe("BrandApplicationsPage", () => {
       ),
       http.post(`${API_BASE}/brand-applications/app-1/approve`, async () => {
         await delay(150);
-        return HttpResponse.json({ success: true, message: "ok", data: null });
+        return HttpResponse.json({ success: true, message: "ok", data: inviteDelivered });
       }),
     );
 
@@ -182,7 +259,9 @@ describe("BrandApplicationsPage", () => {
 
     await waitFor(() => expect(approveButton).toHaveAttribute("aria-busy", "true"));
     expect(approveButton).toBeDisabled();
-    await waitFor(() => expect(screen.queryByText("Application approved.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText("Application approved. Invite sent.")).toBeInTheDocument(),
+    );
   });
 
   it("does not show a success toast when the approval fails", async () => {
@@ -204,7 +283,7 @@ describe("BrandApplicationsPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
 
     expect(await screen.findByText("Nope.")).toBeInTheDocument();
-    expect(screen.queryByText("Application approved.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Application approved. Invite sent.")).not.toBeInTheDocument();
   });
 
   it("rejects an application with a reason through the prompt modal", async () => {

@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { setAccessToken } from "@/lib/apiClient";
 import { useHideBootLoader } from "@/lib/bootLoader";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { authApi } from "../api/authApi";
 import type { AdminInviteInfo } from "../api/authSchemas";
@@ -49,7 +50,7 @@ export const RegisterInvitePage = () => {
   const form = useForm<AdminRegisterFormValues>({
     resolver: zodResolver(adminRegisterFormSchema),
     defaultValues: EMPTY_ADMIN_REGISTER_FORM,
-    mode: "onTouched",
+    mode: FORM_VALIDATION_MODE,
   });
 
   const register = useApiMutation({

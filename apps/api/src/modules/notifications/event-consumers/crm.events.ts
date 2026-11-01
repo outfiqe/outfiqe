@@ -17,7 +17,7 @@ const LAPSED_SUBSCRIPTION_NOTIFICATION_TYPES = {
   [SubscriptionStatus.CANCELED]: NotificationType.CRM_SUBSCRIPTION_CANCELED,
 } as const satisfies Record<CrmLapsedSubscriptionStatus, NotificationType>;
 
-export const registerCrmNotificationConsumers = (): void => {
+const subscribeToCrmItemAssigned = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_ITEM_ASSIGNED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -49,7 +49,9 @@ export const registerCrmNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCrmTicketCreated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_TICKET_CREATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -69,7 +71,9 @@ export const registerCrmNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCrmMemberJoined = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_MEMBER_JOINED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -87,7 +91,9 @@ export const registerCrmNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCrmMembershipEnded = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_MEMBERSHIP_ENDED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -95,7 +101,9 @@ export const registerCrmNotificationConsumers = (): void => {
       await notificationService.clearOrganizationNotificationsFor(userId, organizationId);
     },
   });
+};
 
+const subscribeToCrmInvoiceOpened = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_INVOICE_OPENED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -109,7 +117,9 @@ export const registerCrmNotificationConsumers = (): void => {
       });
     },
   });
+};
 
+const subscribeToCrmSubscriptionLapsed = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.CRM_SUBSCRIPTION_LAPSED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
@@ -123,4 +133,13 @@ export const registerCrmNotificationConsumers = (): void => {
       });
     },
   });
+};
+
+export const registerCrmNotificationConsumers = (): void => {
+  subscribeToCrmItemAssigned();
+  subscribeToCrmTicketCreated();
+  subscribeToCrmMemberJoined();
+  subscribeToCrmMembershipEnded();
+  subscribeToCrmInvoiceOpened();
+  subscribeToCrmSubscriptionLapsed();
 };

@@ -1,3 +1,4 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { act, renderHook, waitFor } from "@testing-library/react";
@@ -10,6 +11,12 @@ import { useAuth } from "@/features/auth";
 import { useTastePreferences } from "./useTastePreferences";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+
+const trackEvent = vi.fn();
+
+vi.mock("@/features/analytics/utils/analyticsClient", () => ({
+  trackEvent: (...trackedEvent: unknown[]) => trackEvent(...trackedEvent),
+}));
 
 const STORAGE_KEY = "outfiqe:taste-categories";
 const COOKIE_NAME = "outfiqe_taste_categories";
@@ -58,6 +65,19 @@ describe("useTastePreferences — anonymous", () => {
     act(() => result.current.reset());
     expect(result.current.storedSlugs).toBeNull();
     expect(readTasteCookie()).toBeNull();
+  });
+
+  it("records how many categories the shopper picked, and not a reset", () => {
+    trackEvent.mockClear();
+    const { result } = renderHook(() => useTastePreferences(), { wrapper });
+
+    act(() => result.current.save(["dresses", "kurtas", "jackets"]));
+    act(() => result.current.reset());
+
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.TASTE_CATEGORY_SELECT, {
+      category_count: 3,
+    });
   });
 
   it("ignores a malformed stored value", () => {

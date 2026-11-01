@@ -14,6 +14,9 @@ import type { DbClient } from "#types/db.types.js";
 
 import type { PricedRefundLine } from "./refund.types.js";
 
+const COUPON_RELEASE_SKIPPED = false;
+const COUPON_RELEASE_APPLIED = true;
+
 const OPEN_REFUND_STATUSES = [OrderRefundStatus.PENDING, OrderRefundStatus.NEEDS_MANUAL];
 const UNWITHDRAWN_PAYOUT_STATUSES = [BrandPayoutStatus.PENDING, BrandPayoutStatus.AVAILABLE];
 const UNPAID_COMMISSION_STATUSES = [
@@ -347,12 +350,12 @@ export const orderRefundRepository = {
       where: { id: release.redemptionId, releasedAmount: release.releasedBefore },
       data: { releasedAmount: release.releasedAfter },
     });
-    if (count === 0) return false;
+    if (count === 0) return COUPON_RELEASE_SKIPPED;
     await client.coupon.update({
       where: { id: release.couponId },
       data: { spentAmount: { decrement: release.releasedAfter - release.releasedBefore } },
     });
-    return true;
+    return COUPON_RELEASE_APPLIED;
   },
 
   async releaseCouponRedemption(

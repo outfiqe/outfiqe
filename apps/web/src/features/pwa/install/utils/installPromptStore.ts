@@ -1,3 +1,7 @@
+import { ANALYTICS_EVENTS } from "@outfiqe/utils";
+
+import { trackEvent } from "@/features/analytics/utils/analyticsClient";
+
 import { recordAppVisit } from "../constants/installPrompt";
 
 export type InstallChoice = "accepted" | "dismissed";
@@ -24,10 +28,15 @@ const forgetBrowserInstallPrompt = (): void => {
   notifyListeners();
 };
 
+const recordAppInstalled = (): void => {
+  trackEvent(ANALYTICS_EVENTS.PWA_INSTALL, {});
+};
+
 if (typeof window !== "undefined") {
   recordAppVisit();
   window.addEventListener("beforeinstallprompt", captureBrowserInstallPrompt);
   window.addEventListener("appinstalled", forgetBrowserInstallPrompt);
+  window.addEventListener("appinstalled", recordAppInstalled);
 }
 
 export const subscribeToInstallPrompt = (listener: () => void): (() => void) => {

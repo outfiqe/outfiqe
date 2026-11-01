@@ -1,4 +1,5 @@
 import { Badge, Button, Skeleton } from "@outfiqe/design-system";
+import { formatDateTime } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -121,8 +122,7 @@ export const UnavailableItemsPage = () => {
                     {brandName}: {productName} · {sizeLabel} × {qty}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Rs. {(unitPrice * qty).toLocaleString()} ·{" "}
-                    {new Date(createdAt).toLocaleString()}
+                    Rs. {(unitPrice * qty).toLocaleString()} · {formatDateTime(createdAt)}
                   </p>
                   <p className="text-sm text-foreground">{reason}</p>
                   {decisionNote && (

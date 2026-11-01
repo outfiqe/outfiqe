@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 
+import { millisecondsInMinute } from "date-fns/constants";
+
 import { env } from "#config/env.config.js";
 
 import type {
@@ -13,7 +15,7 @@ import { PaymentVerifyStatus } from "../payment.types.js";
 
 const SIGNED_FIELD_NAMES = "total_amount,transaction_uuid,product_code";
 
-const NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS = 3 * 60 * 1000;
+const NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS = 3 * millisecondsInMinute;
 
 const isBeyondNotFoundGrace = (initiatedAt: Date): boolean =>
   Date.now() - initiatedAt.getTime() > NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS;

@@ -344,6 +344,28 @@ describe("GET /api/crm/search", () => {
     );
   });
 
+  it("finds a contact by name, company or email", async () => {
+    const { organization, owner } = await seedSearchable();
+    const contact = await prisma.contact.create({
+      data: { organizationId: organization.id, name: "Ram Thapa", company: "Springfield Traders" },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/search")
+      .query({ q: "springfield" })
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.body.data.contacts).toEqual([
+      {
+        id: contact.id,
+        name: "Ram Thapa",
+        company: "Springfield Traders",
+        lifecycleStage: "LEAD",
+      },
+    ]);
+  });
+
   it("omits entity groups the caller has no permission to read", async () => {
     const { organization } = await seedSearchable();
     const limitedRole = await crmAccessRepository.createRole({
@@ -372,6 +394,7 @@ describe("GET /api/crm/search", () => {
     expect(response.body.data.deals).toEqual([]);
     expect(response.body.data.partners).toEqual([]);
     expect(response.body.data.customers).toEqual([]);
+    expect(response.body.data.contacts).toEqual([]);
   });
 
   it("never leaks another tenant's rows", async () => {
@@ -395,6 +418,216 @@ describe("GET /api/crm/search", () => {
     const response = await request(testApp)
       .get("/api/crm/search")
       .query({ q: "a" })
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(422);
+  });
+});
+
+describe("GET /api/crm/reports/summary", () => {
+  const inPeriod = new Date("2026-08-15T10:00:00.000Z");
+  const beforePeriod = new Date("2026-06-15T10:00:00.000Z");
+  const period = { from: "2026-08-01T00:00:00.000Z", to: "2026-08-31T23:59:59.999Z" };
+
+  it("counts sales, support and team work inside the period only", async () => {
+    const { organization, owner, partnerCreator, leadStage, wonStage } =
+      await seedReportingTenant();
+    const membership = await prisma.membership.findFirstOrThrow({
+      where: { organizationId: organization.id, userId: owner.id },
+    });
+    const dealBase = {
+      organizationId: organization.id,
+      partnerCreatorId: partnerCreator.id,
+      ownerMembershipId: membership.id,
+    };
+    await prisma.deal.createMany({
+      data: [
+        { ...dealBase, title: "New", stageId: leadStage.id, value: 100, createdAt: inPeriod },
+        {
+          ...dealBase,
+          title: "Won now",
+          stageId: wonStage.id,
+          value: 5000,
+          status: DealStatus.WON,
+          closedAt: inPeriod,
+          createdAt: beforePeriod,
+        },
+        {
+          ...dealBase,
+          title: "Won earlier",
+          stageId: wonStage.id,
+          value: 9000,
+          status: DealStatus.WON,
+          closedAt: beforePeriod,
+          createdAt: beforePeriod,
+        },
+      ],
+    });
+    await prisma.crmTicket.create({
+      data: {
+        organizationId: organization.id,
+        type: CrmTicketType.COMPLAINT,
+        status: CrmTicketStatus.RESOLVED,
+        title: "Solved",
+        description: "x",
+        assigneeMembershipId: membership.id,
+        createdAt: subHours(inPeriod, 2),
+        resolvedAt: inPeriod,
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query(period)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.sales).toEqual({
+      newDealCount: 1,
+      wonDealCount: 1,
+      wonValue: 5000,
+      lostDealCount: 0,
+    });
+    expect(response.body.data.support).toEqual({
+      openedCount: 1,
+      resolvedCount: 1,
+      meanResolutionSeconds: 7200,
+    });
+    expect(response.body.data.team).toEqual([
+      expect.objectContaining({
+        membershipId: membership.id,
+        avatarUrl: null,
+        roleName: expect.any(String),
+        joinedAt: expect.any(String),
+        wonDealCount: 1,
+        wonValue: 5000,
+        resolvedTicketCount: 1,
+      }),
+    ]);
+  });
+
+  it("returns zeroes and no average for an empty period", async () => {
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query(period)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.body.data.sales.wonDealCount).toBe(0);
+    expect(response.body.data.support.meanResolutionSeconds).toBeNull();
+  });
+
+  it("rejects a period that ends before it starts", async () => {
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/summary")
+      .query({ from: period.to, to: period.from })
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(422);
+  });
+});
+
+describe("GET /api/crm/reports/attention", () => {
+  const today = {
+    dayStart: subHours(new Date(), 1).toISOString(),
+    dayEnd: addHours(new Date(), 2).toISOString(),
+  };
+
+  const seedAttention = async () => {
+    const tenant = await seedReportingTenant();
+    const { organization, owner, partnerCreator, leadStage } = tenant;
+    const membership = await prisma.membership.findFirstOrThrow({
+      where: { organizationId: organization.id, userId: owner.id },
+    });
+    await prisma.crmTask.createMany({
+      data: [
+        { dueAt: addDays(new Date(), -3), title: "Late" },
+        { dueAt: addHours(new Date(), 1), title: "Today" },
+        { dueAt: addDays(new Date(), 5), title: "Later" },
+      ].map((task) => ({
+        ...task,
+        organizationId: organization.id,
+        assigneeMembershipId: membership.id,
+      })),
+    });
+    await prisma.crmTicket.createMany({
+      data: [
+        { status: CrmTicketStatus.OPEN, assigneeMembershipId: null },
+        { status: CrmTicketStatus.IN_PROGRESS, assigneeMembershipId: null },
+        { status: CrmTicketStatus.OPEN, assigneeMembershipId: membership.id },
+        { status: CrmTicketStatus.CLOSED, assigneeMembershipId: null },
+      ].map((ticket) => ({
+        ...ticket,
+        organizationId: organization.id,
+        type: CrmTicketType.COMPLAINT,
+        title: "Ticket",
+        description: "x",
+      })),
+    });
+    await prisma.deal.createMany({
+      data: [
+        { title: "Stuck", stageEnteredAt: addDays(new Date(), -20), status: DealStatus.OPEN },
+        { title: "Fresh", stageEnteredAt: new Date(), status: DealStatus.OPEN },
+        { title: "Old but won", stageEnteredAt: addDays(new Date(), -20), status: DealStatus.WON },
+      ].map((deal) => ({
+        ...deal,
+        organizationId: organization.id,
+        stageId: leadStage.id,
+        partnerCreatorId: partnerCreator.id,
+      })),
+    });
+    return tenant;
+  };
+
+  it("counts only what still needs someone to act", async () => {
+    const { organization, owner } = await seedAttention();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/attention")
+      .query(today)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({
+      overdueTaskCount: 1,
+      tasksDueTodayCount: 1,
+      unassignedTicketCount: 2,
+      stuckDealCount: 1,
+    });
+  });
+
+  it("shows zeroes for a brand new tenant and nothing from another tenant", async () => {
+    await seedAttention();
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/attention")
+      .query(today)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.body.data).toEqual({
+      overdueTaskCount: 0,
+      tasksDueTodayCount: 0,
+      unassignedTicketCount: 0,
+      stuckDealCount: 0,
+    });
+  });
+
+  it("rejects a day that ends before it starts", async () => {
+    const { organization, owner } = await seedReportingTenant();
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/attention")
+      .query({ dayStart: today.dayEnd, dayEnd: today.dayStart })
       .set("Authorization", authHeaderFor(owner.id))
       .set("Host", host(organization.subdomain));
 

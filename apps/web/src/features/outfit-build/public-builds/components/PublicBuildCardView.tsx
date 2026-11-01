@@ -10,16 +10,19 @@ import { BuildCoverGrid } from "../../components/BuildCoverGrid";
 import type { PublicBuildCard } from "../../social/api/outfitSocialSchemas";
 
 const NO_CONTRIBUTORS = 0;
+const GRID_COVER_IMAGE_SIZES = "(min-width: 1024px) 160px, 50vw";
 
 export const contributorNames = (card: PublicBuildCard): string =>
   card.contributors.map(({ name }) => name).join(", ");
 
 export const PublicBuildCardView = ({
   card,
+  coverImageSizes = GRID_COVER_IMAGE_SIZES,
   onOpen,
 }: {
   card: PublicBuildCard;
-  onOpen: (outfitId: string) => void;
+  coverImageSizes?: string;
+  onOpen: (card: PublicBuildCard) => void;
 }) => {
   const t = useTranslations("outfitBuild.public");
   const tBudget = useTranslations("outfitBuild.budget");
@@ -31,7 +34,7 @@ export const PublicBuildCardView = ({
     <article className="overflow-hidden rounded-xl border border-border bg-card">
       <button
         type="button"
-        onClick={() => onOpen(card.id)}
+        onClick={() => onOpen(card)}
         aria-label={t("openBuild", { title })}
         className="block w-full cursor-pointer text-left"
       >
@@ -40,7 +43,7 @@ export const PublicBuildCardView = ({
           previewImageUrls={card.previewImageUrls}
           itemCount={card.itemCount}
           emptyLabel={t("noPreview")}
-          sizes="(min-width: 1024px) 160px, 50vw"
+          sizes={coverImageSizes}
           className="aspect-[4/3]"
         />
         <div className="space-y-1 p-3">

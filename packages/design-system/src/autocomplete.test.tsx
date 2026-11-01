@@ -150,6 +150,15 @@ describe("Autocomplete", () => {
     );
   });
 
+  it("stays open when the user presses on its own input", () => {
+    render(<CityHarness onSelect={vi.fn()} />);
+
+    const input = typeQuery("la");
+    fireEvent.pointerDown(input);
+
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+
   it("closes on Escape without selecting anything", () => {
     const onSelect = vi.fn();
     render(<CityHarness onSelect={onSelect} />);

@@ -6,6 +6,7 @@ Public reads for brand profiles — the browse-brands list, a single brand's pub
 
 ## Structure
 
+- `brand.errors.ts` — `brandErrors`, the errors this module raises from more than one place.
 - `brand.routes.ts` — `GET /` (public list, optional auth), `GET /me` / `PATCH /me` (brand owner only), `GET /:id` (public profile), `GET /:id/products` (public).
 - `brand.controller.ts` — thin request/response glue.
 - `brand.service.ts` — `listPublic` (paginated browse), `getPublicProfile`, `getMyBrand`/`updateMyBrand`.

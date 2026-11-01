@@ -24,6 +24,12 @@ describe("StatCardSkeleton", () => {
 });
 
 describe("StatCard", () => {
+  it("renders a footer below the value", () => {
+    render(<StatCard label="Live tags" value={9} footer={<a href="/tags">All time</a>} />);
+
+    expect(screen.getByRole("link", { name: "All time" })).toBeInTheDocument();
+  });
+
   it("renders the label and value", () => {
     render(<StatCard label="Total earnings" value="Rs 12,400" />);
 

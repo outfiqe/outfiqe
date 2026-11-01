@@ -14,6 +14,7 @@ import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.co
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
+import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsRiderRepository } from "./rider.repository.js";
 import type {
   InviteRiderBody,
@@ -34,7 +35,7 @@ const STATUSES_THAT_END_ACCESS: ReadonlySet<RiderStatus> = new Set([
 
 const requireRider = async (riderId: string) => {
   const rider = await logisticsRiderRepository.findRiderById(riderId);
-  if (!rider) throw new AppError("RIDER_NOT_FOUND", "Rider not found.", HTTP_STATUS.NOT_FOUND);
+  if (!rider) throw logisticsErrors.riderNotFound();
   return rider;
 };
 
@@ -61,7 +62,7 @@ export const logisticsRiderService = {
       );
     }
     if (!(await logisticsRiderRepository.findActiveHub(hubId))) {
-      throw new AppError("HUB_NOT_FOUND", "That hub isn't open.", HTTP_STATUS.NOT_FOUND);
+      throw logisticsErrors.hubNotOpen();
     }
 
     const rawToken = generateOpaqueToken();

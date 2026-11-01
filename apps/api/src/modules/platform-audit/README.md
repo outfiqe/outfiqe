@@ -24,6 +24,8 @@ own staff's actions and is visible to that tenant.
 - `platform-audit.integration.test.ts` — record + list, action filter, and the three ways the
   gate says no.
 
+Filter choices come from `GET /platform/audit/filters`, which lists the actions, item types and staff that really appear in the log, capped at `MAX_PLATFORM_AUDIT_FILTER_OPTIONS`.
+
 ## Funnel
 
 **User-facing:** a platform admin with `platform:audit:read` opens the platform audit view and

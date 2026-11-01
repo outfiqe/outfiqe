@@ -5,6 +5,8 @@ import type { OrderTrackingStageSummary } from "#modules/logistics/tracking/trac
 
 import type { OrderDeliveryPromise } from "./order.types.js";
 
+const NO_FULFILMENT_GROUPS = 0;
+
 type GroupForTracking = {
   fulfilmentMode: FulfilmentMode;
   pickupStatus: PickupStatus | null;
@@ -20,7 +22,7 @@ type OrderPromiseDates = {
 export const toOrderTrackingStage = (
   groups: readonly GroupForTracking[] | undefined,
 ): OrderTrackingStageSummary | null =>
-  groups
+  groups && groups.length > NO_FULFILMENT_GROUPS
     ? describeOrderTrackingStage(
         groups.map(({ fulfilmentMode, pickupStatus, shipmentId, shipment }) => ({
           fulfilmentMode,

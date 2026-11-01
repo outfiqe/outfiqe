@@ -1,2 +1,3 @@
+import { millisecondsInMinute } from "date-fns/constants";
 export const SUSPENSION_REDIS_TTL_PADDING_SECONDS = 300;
-export const SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+export const SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS = 5 * millisecondsInMinute;

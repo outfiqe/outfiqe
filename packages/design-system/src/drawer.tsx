@@ -10,6 +10,8 @@ import { useMediaQuery } from "./use-media-query";
 
 const MOBILE_SHEET_MEDIA_QUERY = "(max-width: 639.98px)";
 const KEYBOARD_CONSIDERED_OPEN_PX = 120;
+const DRAWER_SCROLL_AREA_CLASSES =
+  "h-full overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]";
 
 const getVisualViewport = (): VisualViewport | null =>
   typeof window !== "undefined" ? window.visualViewport : null;
@@ -47,6 +49,14 @@ interface DrawerProps {
   className?: string;
   snapPoints?: (number | string)[];
 }
+
+export const DrawerScrollArea = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) => <div className={cn(DRAWER_SCROLL_AREA_CLASSES, className)}>{children}</div>;
 
 export const Drawer = ({
   open,

@@ -9,6 +9,8 @@ import type {
   PartnerSummary,
 } from "../crm-relationships.types.js";
 
+const NO_RECORDED_ACTIVITY = 0;
+
 type PartnerListRow = {
   creator_id: string;
   name: string;
@@ -20,6 +22,17 @@ type PartnerListRow = {
   last_activity_at: Date | null;
   total_count: bigint;
 };
+
+const toPartnerSummary = (row: PartnerListRow): PartnerSummary => ({
+  creatorId: row.creator_id,
+  name: row.name,
+  handle: row.handle,
+  avatarUrl: row.avatar_url,
+  tagClickCount: row.tag_click_count,
+  attributedOrderCount: row.attributed_order_count,
+  attributedRevenue: row.attributed_revenue,
+  lastActivityAt: toIso(row.last_activity_at),
+});
 
 export const crmPartnerRepository = {
   async listPartners(
@@ -80,19 +93,7 @@ export const crmPartnerRepository = {
         LIMIT ${params.limit} OFFSET ${params.offset}
     `);
 
-    return {
-      items: rows.map((row) => ({
-        creatorId: row.creator_id,
-        name: row.name,
-        handle: row.handle,
-        avatarUrl: row.avatar_url,
-        tagClickCount: row.tag_click_count,
-        attributedOrderCount: row.attributed_order_count,
-        attributedRevenue: row.attributed_revenue,
-        lastActivityAt: toIso(row.last_activity_at),
-      })),
-      total: readTotalCount(rows),
-    };
+    return { items: rows.map(toPartnerSummary), total: readTotalCount(rows) };
   },
 
   async isBrandPartner(brandId: string, creatorId: string): Promise<boolean> {
@@ -154,7 +155,14 @@ export const crmPartnerRepository = {
     `);
 
     const row = rows[0];
-    if (!row || (row.tag_click_count === 0 && row.attributed_order_count === 0)) return null;
+    if (!row) return null;
+
+    const hasRecordedActivity =
+      row.tag_click_count > NO_RECORDED_ACTIVITY ||
+      row.attributed_order_count > NO_RECORDED_ACTIVITY;
+    const isPartner =
+      hasRecordedActivity || (await crmPartnerRepository.isBrandPartner(brandId, creatorId));
+    if (!isPartner) return null;
 
     return {
       creatorId: row.creator_id,
@@ -176,13 +184,19 @@ export const crmPartnerRepository = {
       {
         product_id: string;
         product_name: string;
+        image_url: string | null;
+        price: number;
+        is_thrift: boolean;
+        is_live: boolean;
         tag_click_count: number;
         attributed_order_count: number;
         attributed_revenue: number;
       }[]
     >(Prisma.sql`
       WITH brand_products AS (
-        SELECT id, name FROM products WHERE brand_id = ${brandId}::uuid
+        SELECT id, name, image_url, price, is_thrift, status
+          FROM products
+         WHERE brand_id = ${brandId}::uuid
       ),
       clicks AS (
         SELECT tc.product_id, COUNT(*)::int AS cnt
@@ -204,6 +218,8 @@ export const crmPartnerRepository = {
           GROUP BY oi.product_id
       )
       SELECT bp.id AS product_id, bp.name AS product_name,
+             bp.image_url, bp.price, bp.is_thrift,
+             bp.status = 'APPROVED' AS is_live,
              COALESCE(c.cnt, 0) AS tag_click_count,
              COALESCE(s.order_cnt, 0) AS attributed_order_count,
              COALESCE(s.revenue, 0) AS attributed_revenue
@@ -217,6 +233,10 @@ export const crmPartnerRepository = {
     return rows.map((row) => ({
       productId: row.product_id,
       productName: row.product_name,
+      imageUrl: row.image_url,
+      price: row.price,
+      isThrift: row.is_thrift,
+      isLive: row.is_live,
       tagClickCount: row.tag_click_count,
       attributedOrderCount: row.attributed_order_count,
       attributedRevenue: row.attributed_revenue,

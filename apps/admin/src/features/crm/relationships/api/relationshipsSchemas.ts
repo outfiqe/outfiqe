@@ -48,6 +48,10 @@ export const partnerDetailSchema = partnerSummarySchema.extend({
     z.object({
       productId: z.string(),
       productName: z.string(),
+      imageUrl: z.string().nullable(),
+      price: z.number(),
+      isThrift: z.boolean(),
+      isLive: z.boolean(),
       tagClickCount: z.number(),
       attributedOrderCount: z.number(),
       attributedRevenue: z.number(),

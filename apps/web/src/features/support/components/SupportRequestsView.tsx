@@ -1,6 +1,8 @@
 "use client";
 
+import { BACK_LINK_CLASS_NAME, BackLinkLabel, SearchInput } from "@outfiqe/design-system";
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { useDebouncedSearch } from "@outfiqe/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -15,8 +17,9 @@ export const SupportRequestsView = () => {
   const activeTicketId = searchParams.get("ticket");
 
   const [isCreating, setIsCreating] = useState(false);
+  const { searchText, setSearchText, search } = useDebouncedSearch();
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useMySupportRequests();
+    useMySupportRequests(search);
   const tickets = data?.pages.flatMap((page) => page.tickets) ?? [];
 
   const openTicket = (id: string) => router.push(`/support?ticket=${id}`);
@@ -29,12 +32,8 @@ export const SupportRequestsView = () => {
   if (isCreating) {
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => setIsCreating(false)}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          &larr; Your requests
+        <button type="button" onClick={() => setIsCreating(false)} className={BACK_LINK_CLASS_NAME}>
+          <BackLinkLabel>Your requests</BackLinkLabel>
         </button>
         <div className="mt-3">
           <SupportRequestForm onSubmitted={(result) => openTicket(result.id)} />
@@ -52,6 +51,13 @@ export const SupportRequestsView = () => {
         </Button>
       </div>
 
+      <SearchInput
+        value={searchText}
+        onValueChange={setSearchText}
+        placeholder="Search by subject or reference"
+        className="mt-4"
+      />
+
       <div className="mt-4 space-y-2.5">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
@@ -59,7 +65,9 @@ export const SupportRequestsView = () => {
           ))}
         {!isLoading && tickets.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            You haven&apos;t raised any support requests yet.
+            {search
+              ? "No requests match this search."
+              : "You haven't raised any support requests yet."}
           </p>
         )}
 

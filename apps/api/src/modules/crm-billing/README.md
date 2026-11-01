@@ -9,6 +9,7 @@ CRM is gated here; only the advanced feature set is.
 
 ## Structure
 
+- `crm-billing.errors.ts` — `crmBillingErrors`, the errors this module raises from more than one place.
 - `crm-billing.constants.ts` — `CRM_PLAN_CATALOG` (enum-keyed plan definitions: per-seat price,
   seat bounds), trial/period/renewal windows, reconciliation timings, checkout rate-limit config.
 - `crm-billing.types.ts` — `Subscription`/`SubscriptionInvoice` record shapes, the checkout-redirect

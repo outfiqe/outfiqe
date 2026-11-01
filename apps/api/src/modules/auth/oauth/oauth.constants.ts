@@ -1,3 +1,5 @@
+import { millisecondsInMinute } from "date-fns/constants";
+
 import { OAuthProvider } from "#generated/prisma/enums.js";
 
 export enum OAuthProviderParam {
@@ -16,11 +18,11 @@ export enum OAuthCallbackStatus {
   LINK_COMPLETED = "link_completed",
 }
 
-export const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+export const OAUTH_STATE_TTL_MS = 10 * millisecondsInMinute;
 
 export const GOOGLE_OAUTH_PROMPT = "select_account";
 
-const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const FIFTEEN_MINUTES_MS = 15 * millisecondsInMinute;
 export const OAUTH_START_IP_RATE_LIMIT_WINDOW_MS = FIFTEEN_MINUTES_MS;
 export const OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS = 20;
 
