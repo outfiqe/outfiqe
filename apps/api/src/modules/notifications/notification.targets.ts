@@ -110,10 +110,16 @@ const organizationAdminTarget = (
   );
 };
 
-const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarget =>
+const crmTicketPath = (ticketId: string | null): string =>
+  ticketId ? `${ADMIN_ROUTES.crmSupport}/${ticketId}` : ADMIN_ROUTES.crmSupport;
+
+const crmItemAssignedTarget = (
+  metadata: NotificationMetadata,
+  entityId: string | null,
+): NotificationTarget =>
   organizationAdminTarget(
     metadata,
-    metadata.crmItemKind === CRM_TASK_ITEM_KIND ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport,
+    metadata.crmItemKind === CRM_TASK_ITEM_KIND ? ADMIN_ROUTES.crmTasks : crmTicketPath(entityId),
   );
 
 const supportTicketTarget = (
@@ -178,9 +184,9 @@ export const resolveNotificationTarget = ({
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return admin(ADMIN_ROUTES.brandApplications);
     case NotificationType.CRM_ITEM_ASSIGNED:
-      return crmItemAssignedTarget(metadata);
+      return crmItemAssignedTarget(metadata, entityId);
     case NotificationType.CRM_TICKET_UNASSIGNED:
-      return organizationAdminTarget(metadata, ADMIN_ROUTES.crmSupport);
+      return organizationAdminTarget(metadata, crmTicketPath(entityId));
     case NotificationType.CRM_MEMBER_JOINED:
       return organizationAdminTarget(metadata, ADMIN_ROUTES.crmHome);
     case NotificationType.CRM_INVOICE_DUE:

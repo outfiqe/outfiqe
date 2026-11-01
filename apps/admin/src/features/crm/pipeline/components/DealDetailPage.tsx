@@ -12,9 +12,11 @@ import { TimelineSection } from "../../activities/components/TimelineSection";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RecordDetailSkeleton } from "../../components/CrmSkeletons";
+import { CrmTermHint } from "../../components/CrmTermHint";
 import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
 import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
@@ -101,8 +103,14 @@ export const DealDetailPage = () => {
               title="About this opportunity"
               description="Where this sale stands and who is looking after it."
             >
-              <MetricRow label="Stage" value={deal.stageName} />
-              <MetricRow label="Result so far" value={toPlainWords(deal.status)} />
+              <MetricRow
+                label={<CrmTermHint term="Stage" tip={CRM_TERMS.dealStage} />}
+                value={deal.stageName}
+              />
+              <MetricRow
+                label={<CrmTermHint term="Result so far" tip={CRM_TERMS.dealResult} />}
+                value={toPlainWords(deal.status)}
+              />
               <MetricRow label="Expected value" value={formatRupees(deal.value)} />
               <MetricRow
                 label="Expected to close"

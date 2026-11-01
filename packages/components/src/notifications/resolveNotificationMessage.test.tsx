@@ -213,9 +213,9 @@ describe("resolveNotificationMessage", () => {
           metadata: { crmItemTitle: "Wrong size sent" },
         }),
       ),
-    ).toBe('New ticket with no one assigned: "Wrong size sent"');
+    ).toBe('New ticket needs someone: "Wrong size sent"');
     expect(resolveNotificationMessage(buildNotification({ type: "CRM_TICKET_UNASSIGNED" }))).toBe(
-      "A new ticket has no one assigned",
+      "A new ticket needs someone to look after it",
     );
   });
 
@@ -244,10 +244,10 @@ describe("resolveNotificationMessage", () => {
     );
     expect(
       resolveNotificationMessage(buildNotification({ type: "CRM_SUBSCRIPTION_PAST_DUE" })),
-    ).toBe("Your subscription payment is overdue. Pay now to keep advanced features");
+    ).toBe("Your CRM payment is overdue. Pay now to keep your sales board, tickets and reports");
     expect(
       resolveNotificationMessage(buildNotification({ type: "CRM_SUBSCRIPTION_CANCELED" })),
-    ).toBe("Your subscription was canceled because it wasn't renewed");
+    ).toBe("Your CRM plan ended because it wasn't renewed");
   });
 });
 

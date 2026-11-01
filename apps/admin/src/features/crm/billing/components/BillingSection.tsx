@@ -15,6 +15,8 @@ import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { BillingSkeleton } from "../../components/CrmSkeletons";
+import { CrmTermHint } from "../../components/CrmTermHint";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { toTrialLabel } from "../../utils/trial.utils";
@@ -113,7 +115,11 @@ const SubscriptionCard = ({
                   {toPlanStatusSentence(subscription)}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {toSeatUsage(activeSeatCount, subscription.seats)} ·{" "}
+                  <CrmTermHint
+                    term={toSeatUsage(activeSeatCount, subscription.seats)}
+                    tip={CRM_TERMS.seat}
+                  />{" "}
+                  ·{" "}
                   <Link to="/crm" className="font-medium text-foreground underline">
                     Manage your team
                   </Link>

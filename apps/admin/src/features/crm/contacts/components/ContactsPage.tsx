@@ -19,8 +19,10 @@ import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 import { CrmMemberFilter } from "../../components/CrmMemberFilter";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CrmPagination } from "../../components/CrmPagination";
+import { CrmTermHint } from "../../components/CrmTermHint";
 import { CsvExportButton } from "../../components/CsvExportButton";
 import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
 import { useCrmListFilters } from "../../hooks/useCrmListFilters";
 import { useNewRecordModal } from "../../hooks/useNewRecordModal";
@@ -55,7 +57,7 @@ const toContactColumns = (askToDelete: (contact: Contact) => void): TableColumn<
   { key: "company", header: "Company", render: ({ company }) => company ?? "—" },
   {
     key: "stage",
-    header: "Stage",
+    header: <CrmTermHint term="Stage" tip={CRM_TERMS.contactStage} />,
     render: ({ lifecycleStage }) => STAGE_LABELS[lifecycleStage],
   },
   { key: "owner", header: "Owner", render: ({ ownerName }) => ownerName ?? "Unassigned" },

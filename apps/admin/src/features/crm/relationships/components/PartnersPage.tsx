@@ -7,7 +7,9 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CrmPagination } from "../../components/CrmPagination";
+import { CrmTermHint } from "../../components/CrmTermHint";
 import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "../../constants/crmPageContent";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { useCrmListFilters } from "../../hooks/useCrmListFilters";
 import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
@@ -34,12 +36,12 @@ const PARTNER_COLUMNS: TableColumn<PartnerSummary>[] = [
   },
   {
     key: "clicks",
-    header: "Tag clicks",
+    header: <CrmTermHint term="Tag clicks" tip={CRM_TERMS.tagClicks} />,
     render: ({ tagClickCount }) => tagClickCount.toLocaleString(),
   },
   {
     key: "orders",
-    header: "Orders they brought",
+    header: <CrmTermHint term="Orders they brought" tip={CRM_TERMS.ordersBrought} />,
     render: ({ attributedOrderCount }) => attributedOrderCount.toLocaleString(),
   },
   {

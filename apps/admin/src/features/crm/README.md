@@ -202,18 +202,6 @@ support reports, and review the organization's audit log — against the `/api/c
 - `utils/format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
   (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 
-## Deferred follow-ups
-
-- **`CRM_ITEM_ASSIGNED` in the notification bell.** The backend emits the event and writes a
-  `Notification` (`crm-tickets` / `crm-activities` → `notifications`), but `packages/types`'
-  hand-maintained `NotificationType` / `NotificationEntityType` unions — shared by `apps/web` and
-  `apps/admin` — don't yet carry the CRM values, so the shared `NotificationRow` has no link rule
-  for them. Widening those unions and adding the `/crm/support` / `/crm/tasks` link mapping is a
-  cross-package change that also touches `apps/web`'s notification rendering; tracked separately.
-- **Per-list status / owner / date-range filters** on Partners / Customers / Deals. Tickets
-  already has a server-side status filter demonstrating the query-string → `where` pattern;
-  extending it to the other lists is a follow-up.
-
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
 `_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
@@ -444,3 +432,9 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **Billing's payment flow is unchanged.** `PlanCheckoutModal` still does all the paying. Only the summary, plan comparison, invoice panel and cancel warning are new. The panel shows only what the invoice stores: amount, dates, plan, seats and payment provider, with no card or account details.
 
 **Cancelling keeps the plan until the period ends.** The warning says so because the API only stops renewal; it does not end the plan straight away.
+
+## Notifications and tips
+
+**The bell opens the exact record.** A ticket notification opens that ticket's page. Tasks have no page of their own, so they open the Tasks list. The link is stored when the notification is created (`apps/api/src/modules/notifications/notification.targets.ts`), so older notifications still open the Support list.
+
+**Tips explain a term where it appears.** `components/CrmTermHint.tsx` adds a small info icon, and the wording lives in `constants/crmTerms.ts`. Add a tip only for a word a new person might not know.
