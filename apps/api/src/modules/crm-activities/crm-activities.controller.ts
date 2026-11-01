@@ -24,7 +24,7 @@ import { crmActivitiesService } from "./crm-activities.service.js";
 import type { SubjectRef } from "./crm-activities.types.js";
 
 const readSubject = (body: {
-  subjectType?: "partner" | "customer" | "deal";
+  subjectType?: SubjectRef["subjectType"];
   subjectId?: string;
 }): SubjectRef | null =>
   body.subjectType && body.subjectId

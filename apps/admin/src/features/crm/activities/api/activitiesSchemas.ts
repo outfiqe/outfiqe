@@ -3,7 +3,7 @@ import { z } from "zod";
 export const CRM_ACTIVITY_TYPES = ["NOTE", "CALL", "MESSAGE", "EMAIL"] as const;
 export type CrmActivityTypeValue = (typeof CRM_ACTIVITY_TYPES)[number];
 
-export const crmSubjectTypeSchema = z.enum(["partner", "customer", "deal"]);
+export const crmSubjectTypeSchema = z.enum(["partner", "customer", "deal", "contact"]);
 export type CrmSubjectTypeValue = z.infer<typeof crmSubjectTypeSchema>;
 
 export const taskStatusSchema = z.enum(["OPEN", "DONE"]);

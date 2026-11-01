@@ -8,8 +8,11 @@ import { BackLink } from "@/components/BackLink";
 import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { TimelineSection } from "../../activities/components/TimelineSection";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RecordDetailSkeleton } from "../../components/CrmSkeletons";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate } from "../../utils/format.utils";
@@ -106,6 +109,7 @@ export const ContactDetailPage = () => {
   const { contactId } = routeApi.useParams();
   const navigate = useNavigate();
   const { hasPermission } = useCrmPermissions();
+  const contactSubject = { subjectType: "contact", subjectId: contactId } as const;
 
   const {
     data: contact,
@@ -166,6 +170,9 @@ export const ContactDetailPage = () => {
             <ContactRelationshipSection contact={contact} />
           </div>
           <ContactNotesSection contact={contact} />
+          <ConnectedPeopleSection subject={contactSubject} />
+          <ConnectedWorkSection subject={contactSubject} />
+          <TimelineSection {...contactSubject} />
 
           {isEditing && (
             <ContactFormModal
@@ -180,7 +187,7 @@ export const ContactDetailPage = () => {
       <ConfirmModal
         open={isConfirmingDelete}
         title="Delete this contact?"
-        description={`${contact?.name ?? "This contact"} will be removed for your whole team. This can't be undone.`}
+        description={`${contact?.name ?? "This contact"}, their notes and their tasks will be removed for your whole team. This can't be undone.`}
         confirmLabel="Delete"
         pendingLabel="Deleting…"
         destructive

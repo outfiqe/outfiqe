@@ -397,4 +397,14 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 
 **`hooks/useCrmPermissions.ts` hides actions the viewer can't use.** The API still enforces every permission; this only keeps people from clicking a button that would fail.
 
-**Contacts have no timeline yet.** `CrmActivity` has no contact column, so a timeline needs a migration. That comes with connected records.
+## Connected records
+
+`connections/` shows everything tied to the record on screen, so no one has to search for it: `ConnectedPeopleSection.tsx` (partner, customer and contact links) and `ConnectedWorkSection.tsx` (opportunities, tickets and open tasks, plus "Add a task"). Both read `hooks/useConnectedRecords.ts`, which calls `GET /api/crm/connections`.
+
+**Records connect through the person.** A contact links to an Outfiqe account, an opportunity has a partner, and a ticket has a customer or partner, so the same person ties them all together in both directions.
+
+**The API leaves out what the viewer can't read.** A group comes back as `null` and its card is hidden; an empty list shows a short message instead. So `null` and `[]` mean different things.
+
+**Contacts have their own timeline.** Notes logged on a contact stay on the contact. If the contact is linked to an account, their orders with this brand appear there too. Deleting a contact also deletes its notes and tasks, the same as deleting an opportunity, and the warning says so.
+
+`activities/components/NewTaskModal.tsx` is shared by the Tasks page and the detail pages; the optional `subject` ties the new task to that record.

@@ -74,10 +74,18 @@ export const ticketSearchResultSchema = z.object({
   status: z.string(),
 });
 
+export const contactSearchResultSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  company: z.string().nullable(),
+  lifecycleStage: z.string(),
+});
+
 export const crmSearchResultsSchema = z.object({
   partners: z.array(partnerSearchResultSchema),
   customers: z.array(customerSearchResultSchema),
   deals: z.array(dealSearchResultSchema),
   tickets: z.array(ticketSearchResultSchema),
+  contacts: z.array(contactSearchResultSchema),
 });
 export type CrmSearchResults = z.infer<typeof crmSearchResultsSchema>;

@@ -9,6 +9,8 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CustomerDetailSkeleton } from "../../components/CrmSkeletons";
+import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
+import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
@@ -21,6 +23,7 @@ const toItemCountLabel = (itemCount: number) =>
 
 export const CustomerDetailPage = () => {
   const { userId } = routeApi.useParams();
+  const customerSubject = { subjectType: "customer", subjectId: userId } as const;
   const {
     data: customer,
     isLoading,
@@ -66,7 +69,9 @@ export const CustomerDetailPage = () => {
             )}
           </MetricSection>
 
-          <TimelineSection subjectType="customer" subjectId={userId} />
+          <ConnectedPeopleSection subject={customerSubject} />
+          <ConnectedWorkSection subject={customerSubject} />
+          <TimelineSection {...customerSubject} />
         </div>
       )}
     </div>

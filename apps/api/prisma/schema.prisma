@@ -3743,12 +3743,15 @@ model CrmActivity {
   customerUser       User?           @relation("CrmActivityCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
   dealId             String?         @map("deal_id") @db.Uuid
   deal               Deal?           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId          String?         @map("contact_id") @db.Uuid
+  contact            Contact?        @relation("CrmActivityContact", fields: [contactId], references: [id], onDelete: Cascade)
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
 
   @@index([organizationId, partnerCreatorId, occurredAt])
   @@index([organizationId, customerUserId, occurredAt])
   @@index([organizationId, dealId, occurredAt])
+  @@index([organizationId, contactId, occurredAt])
   @@map("crm_activities")
 }
 
@@ -3770,12 +3773,15 @@ model CrmTask {
   customerUser          User?         @relation("CrmTaskCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
   dealId                String?       @map("deal_id") @db.Uuid
   deal                  Deal?         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId             String?       @map("contact_id") @db.Uuid
+  contact               Contact?      @relation("CrmTaskContact", fields: [contactId], references: [id], onDelete: Cascade)
   completedAt           DateTime?     @map("completed_at")
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 
   @@index([organizationId, assigneeMembershipId, dueAt])
   @@index([organizationId, status, dueAt])
+  @@index([organizationId, contactId, status])
   @@map("crm_tasks")
 }
 
@@ -3987,6 +3993,9 @@ model Contact {
   ownerMembership   Membership?           @relation("ContactOwnerMembership", fields: [ownerMembershipId], references: [id], onDelete: SetNull)
   createdAt         DateTime              @default(now()) @map("created_at")
   updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  activities CrmActivity[] @relation("CrmActivityContact")
+  tasks      CrmTask[]     @relation("CrmTaskContact")
 
   @@unique([organizationId, email])
   @@index([organizationId, createdAt])

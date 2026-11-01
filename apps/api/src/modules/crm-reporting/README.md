@@ -87,3 +87,19 @@ ticket dashboard (open / resolved counts, mean time to resolve, status breakdown
   indexed, so the `ILIKE '%q%'` scan stays index-backed as tenants accumulate rows. The
   `organization_id` equality in every search query is the primary narrowing; the trigram index
   handles the substring match on top of it.
+
+## Connected records
+
+`connections/connections.service.ts` and `connections/connections.repository.ts` serve `GET /api/crm/connections?subjectType=&subjectId=`, which lists the people, contacts, opportunities, tickets and open tasks tied to one record. The service is spread into `crmReportingService`.
+
+**Why here:** like CRM search, this reads across several modules and filters each group by the viewer's own permissions, so it reuses search's permission map.
+
+**Rules that matter:**
+
+- The subject is checked inside the tenant first, so another tenant's id returns 404.
+- The viewer must be able to read the subject type itself, otherwise 403.
+- A group the viewer can't read comes back as `null`, not an empty list.
+- A linked account's name is only returned once they are confirmed as this brand's partner or customer, so a contact linked to an unrelated user reveals nothing.
+- If one group's query fails it is logged and returns an empty list, so the rest of the page still works.
+
+CRM search also covers contacts (name, email, company), gated on `contacts:read`.

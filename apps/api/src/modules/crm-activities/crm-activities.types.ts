@@ -15,6 +15,7 @@ export type ActivityRecord = {
   partnerCreatorId: string | null;
   customerUserId: string | null;
   dealId: string | null;
+  contactId: string | null;
   createdAt: string;
 };
 
@@ -31,6 +32,7 @@ export type TaskRecord = {
   partnerCreatorId: string | null;
   customerUserId: string | null;
   dealId: string | null;
+  contactId: string | null;
   completedAt: string | null;
   createdAt: string;
 };

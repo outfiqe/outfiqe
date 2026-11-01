@@ -181,7 +181,7 @@ export const ContactsPage = () => {
       <ConfirmModal
         open={contactToDelete !== null}
         title="Delete this contact?"
-        description={`${contactToDelete?.name ?? "This contact"} will be removed for your whole team. This can't be undone.`}
+        description={`${contactToDelete?.name ?? "This contact"}, their notes and their tasks will be removed for your whole team. This can't be undone.`}
         confirmLabel="Delete"
         pendingLabel="Deleting…"
         destructive
