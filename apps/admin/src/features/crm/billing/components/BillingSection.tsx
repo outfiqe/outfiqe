@@ -6,7 +6,7 @@ import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { BillingSkeleton } from "../../components/CrmSkeletons";
-import { formatDate, formatRupees } from "../../utils/format.utils";
+import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmBillingApi } from "../api/billingApi";
 import {
   type BillingOverview,
@@ -84,7 +84,7 @@ const SubscriptionCard = ({
                 </p>
               </div>
               <Badge tone={SUBSCRIPTION_STATUS_TONE[subscription.status]}>
-                {subscription.status.replace("_", " ").toLowerCase()}
+                {toPlainWords(subscription.status)}
               </Badge>
             </div>
 
@@ -116,7 +116,7 @@ const SubscriptionCard = ({
             <p className="mt-1 text-sm text-muted-foreground">
               {overview.advancedFeaturesEnabled
                 ? "Advanced CRM features are available during your trial. Subscribe to keep them."
-                : "Your trial has ended. Subscribe to use pipeline, deals, tickets and reporting."}
+                : "Your trial has ended. Subscribe to use the sales board, opportunities, tickets and reports."}
             </p>
             <Button size="sm" className="mt-4" onClick={onManagePlan}>
               Subscribe
@@ -194,7 +194,7 @@ const InvoiceHistory = ({ invoices }: { invoices: SubscriptionInvoice[] }) => {
               <td className="py-2 pr-4">{formatRupees(invoice.amount)}</td>
               <td className="py-2 pr-4">
                 <Badge tone={INVOICE_STATUS_TONE[invoice.status]}>
-                  {invoice.status.toLowerCase()}
+                  {toPlainWords(invoice.status)}
                 </Badge>
               </td>
               <td className="py-2">{invoice.paidAt ? formatDate(invoice.paidAt) : "—"}</td>

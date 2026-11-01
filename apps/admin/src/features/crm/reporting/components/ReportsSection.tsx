@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ReportSkeleton } from "../../components/CrmSkeletons";
-import { formatDuration, formatRupees } from "../../utils/format.utils";
+import { formatDuration, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmReportingApi } from "../api/reportingApi";
 import type { PipelineReport, TicketReport } from "../api/reportingSchemas";
 
@@ -26,7 +26,7 @@ const PipelineValueChart = ({ report }: { report: PipelineReport }) => {
   if (report.totals.openValue === 0 && report.totals.wonValue === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Not enough data yet — add deals to the pipeline to see value by stage.
+        Not enough data yet. Add opportunities to the sales board to see their value by stage.
       </p>
     );
   }
@@ -37,7 +37,7 @@ const PipelineValueChart = ({ report }: { report: PipelineReport }) => {
         <StatTile label="Open value" value={formatRupees(report.totals.openValue)} />
         <StatTile label="Won value" value={formatRupees(report.totals.wonValue)} />
         <StatTile
-          label="Won / lost deals"
+          label="Won / lost opportunities"
           value={`${report.totals.wonDealCount} / ${report.totals.lostDealCount}`}
         />
       </div>
@@ -49,9 +49,7 @@ const PipelineValueChart = ({ report }: { report: PipelineReport }) => {
             <li
               key={stage.stageId}
               className="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm"
-              title={`${stage.stageName}: ${formatRupees(stage.openValue)} across ${stage.openDealCount} open deal${
-                stage.openDealCount === 1 ? "" : "s"
-              }`}
+              title={`${stage.stageName}: ${formatRupees(stage.openValue)} across ${stage.openDealCount} open ${stage.openDealCount === 1 ? "opportunity" : "opportunities"}`}
             >
               <span className="truncate text-muted-foreground">{stage.stageName}</span>
               <span className="h-6 rounded bg-muted">
@@ -86,7 +84,7 @@ const TicketDashboard = ({ report }: { report: TicketReport }) => {
         <StatTile label="Open + in progress" value={String(report.openCount)} />
         <StatTile label="Resolved" value={String(report.resolvedCount)} />
         <StatTile
-          label="Mean time to resolve"
+          label="Average time to solve"
           value={formatDuration(report.meanResolutionSeconds)}
         />
       </div>
@@ -99,12 +97,12 @@ const TicketDashboard = ({ report }: { report: TicketReport }) => {
             <li
               key={row.status}
               className="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm"
-              title={`${row.status.replace("_", " ").toLowerCase()}: ${row.count} ticket${
+              title={`${toPlainWords(row.status)}: ${row.count} ticket${
                 row.count === 1 ? "" : "s"
               }`}
             >
               <span className="truncate capitalize text-muted-foreground">
-                {row.status.replace("_", " ").toLowerCase()}
+                {toPlainWords(row.status)}
               </span>
               <span className="h-6 rounded bg-muted">
                 <span
@@ -140,7 +138,7 @@ export const ReportsSection = () => {
 
   return (
     <div className="space-y-6">
-      <ReportCard title="Pipeline value by stage">
+      <ReportCard title="Sales value by stage">
         {pipeline.isLoading && <ReportSkeleton />}
         {pipeline.error && <FormBanner>{getErrorMessage(pipeline.error)}</FormBanner>}
         {pipeline.data && <PipelineValueChart report={pipeline.data} />}

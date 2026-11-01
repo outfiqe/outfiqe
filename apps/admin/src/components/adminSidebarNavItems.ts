@@ -93,7 +93,7 @@ export const CRM_SUB_ITEMS: CrmSubItem[] = [
   {
     id: "crm-pipeline",
     href: "/crm/pipeline",
-    label: "Pipeline",
+    label: "Sales board",
     icon: KanbanSquare,
     permissionKey: "pipeline:read",
   },

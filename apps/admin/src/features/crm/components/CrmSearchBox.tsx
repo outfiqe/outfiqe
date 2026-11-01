@@ -15,6 +15,7 @@ import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 import { crmApi } from "../api/crmApi";
 import { crmReportingApi } from "../reporting/api/reportingApi";
 import type { CrmSearchResults } from "../reporting/api/reportingSchemas";
+import { toPlainWords } from "../utils/format.utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -56,16 +57,16 @@ const buildRows = (
   })),
   ...results.deals.map((deal) => ({
     key: `deal:${deal.id}`,
-    groupLabel: "Deals",
+    groupLabel: "Opportunities",
     primary: deal.title,
-    secondary: `${deal.stageName} · ${deal.status.toLowerCase()}`,
+    secondary: `${deal.stageName} · ${toPlainWords(deal.status)}`,
     navigate: goToPipeline,
   })),
   ...results.tickets.map((ticket) => ({
     key: `ticket:${ticket.id}`,
     groupLabel: "Tickets",
     primary: ticket.title,
-    secondary: `${ticket.type.toLowerCase()} · ${ticket.status.replace("_", " ").toLowerCase()}`,
+    secondary: `${toPlainWords(ticket.type)} · ${toPlainWords(ticket.status)}`,
     navigate: goToSupport,
   })),
 ];
@@ -115,7 +116,7 @@ export const CrmSearchBox = () => {
     <Autocomplete>
       <AutocompleteInput
         aria-label="Search the CRM"
-        placeholder="Search partners, customers, deals, tickets…"
+        placeholder="Search people, sales and tickets…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         className="w-72"

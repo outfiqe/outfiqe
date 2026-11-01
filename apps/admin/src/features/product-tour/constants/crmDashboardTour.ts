@@ -20,7 +20,7 @@ const WELCOME_STEP: CrmTourStep = {
   id: "welcome",
   permissionKey: null,
   title: "Welcome to the CRM",
-  body: "This is Outfiqe's internal tool for running this organization: your muses and shoppers, your deals, your support queue and your team. It's separate from anything a customer or muse sees. This walkthrough takes about a minute, and you can skip it at any time.",
+  body: "This is Outfiqe's internal tool for running this organization: your muses and shoppers, your sales opportunities, your support queue and your team. It's separate from anything a customer or muse sees. This walkthrough takes about a minute, and you can skip it at any time.",
 };
 
 const SEARCH_STEP: CrmTourStep = {
@@ -28,7 +28,7 @@ const SEARCH_STEP: CrmTourStep = {
   permissionKey: null,
   anchorSelector: `[data-tour-anchor="${CRM_SEARCH_TOUR_ANCHOR}"]`,
   title: "Search across everything",
-  body: "One box searches every CRM entity at once — Partners, Customers, Deals and Tickets. Pick a result and it takes you straight to that record.",
+  body: "One box searches every CRM entity at once — Partners, Customers, Opportunities and Tickets. Pick a result and it takes you straight to that record.",
 };
 
 const FINISH_STEP: CrmTourStep = {
@@ -66,8 +66,8 @@ const SIDEBAR_ITEM_STEPS: CrmTourStep[] = [
     id: "pipeline",
     anchorSelector: sidebarItemSelector("crm-pipeline"),
     permissionKey: "pipeline:read",
-    title: "Pipeline",
-    body: "A board of deals moving through the stages you define. Drag a deal to a new stage to update it, or open it to see the full detail.",
+    title: "Sales board",
+    body: "A board of sales opportunities moving through the stages you define. Drag a card to a new stage to update it, or open it to see the full detail.",
   },
   {
     id: "tasks",
@@ -88,7 +88,7 @@ const SIDEBAR_ITEM_STEPS: CrmTourStep[] = [
     anchorSelector: sidebarItemSelector("crm-reports"),
     permissionKey: "reports:read",
     title: "Reports",
-    body: "How the pipeline and the support queue are performing: open and won deal value, ticket volume, and how quickly tickets get resolved.",
+    body: "How your sales and support are doing: open and won opportunity value, ticket volume, and how quickly tickets get resolved.",
   },
   {
     id: "roles",

@@ -130,7 +130,7 @@ describe("TicketsPage", () => {
 
     expect(await screen.findByText("Arrived torn")).toBeInTheDocument();
     expect(screen.getByText("No comments yet.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "in progress" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "In progress" })).toBeEnabled();
   });
 
   it("drops an internal comment from the detail view", async () => {
@@ -184,7 +184,7 @@ describe("TicketsPage", () => {
     const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
-    await user.click(await screen.findByRole("button", { name: "in progress" }));
+    await user.click(await screen.findByRole("button", { name: "In progress" }));
     await waitFor(() => expect(statusBody).toEqual({ status: "IN_PROGRESS" }));
 
     await user.selectOptions(await screen.findByLabelText("Assignee"), "mem-1");
@@ -259,7 +259,7 @@ describe("TicketsPage", () => {
 
     await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
 
-    expect(await screen.findByRole("button", { name: "in progress" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "In progress" })).toBeDisabled();
     expect(screen.getByLabelText("Assignee")).toBeDisabled();
     expect(screen.queryByLabelText("New comment")).not.toBeInTheDocument();
   });

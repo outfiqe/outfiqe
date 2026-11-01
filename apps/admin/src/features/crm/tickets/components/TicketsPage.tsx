@@ -25,12 +25,13 @@ import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import {
   CustomerSearchField,
   type SelectedCustomer,
 } from "../../relationships/components/CustomerSearchField";
-import { formatDate } from "../../utils/format.utils";
+import { formatDate, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
@@ -85,7 +86,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
                   <Select {...field}>
                     {TICKET_TYPES.map((value) => (
                       <option key={value} value={value}>
-                        {value.toLowerCase()}
+                        {toPlainWords(value)}
                       </option>
                     ))}
                   </Select>
@@ -197,34 +198,31 @@ export const TicketsPage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.tickets.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tickets.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select
-            aria-label="Filter by status"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as TicketStatusValue | "")}
-            className="w-40"
-          >
-            <option value="">All statuses</option>
-            {TICKET_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status.replace("_", " ").toLowerCase()}
-              </option>
-            ))}
-          </Select>
-          {canWriteTickets && (
-            <Button size="sm" onClick={() => setModalOpen(true)}>
-              New ticket
-            </Button>
-          )}
-        </div>
-      </div>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.tickets}
+        actions={
+          <div className="flex items-center gap-2">
+            <Select
+              aria-label="Filter by status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as TicketStatusValue | "")}
+              className="w-40"
+            >
+              <option value="">All statuses</option>
+              {TICKET_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {toPlainWords(status)}
+                </option>
+              ))}
+            </Select>
+            {canWriteTickets && (
+              <Button size="sm" onClick={() => setModalOpen(true)}>
+                New ticket
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <div className="mt-6 space-y-4">
         {isLoading && <CompactRowSkeleton hasTrailingBadge />}
@@ -247,11 +245,11 @@ export const TicketsPage = () => {
                 >
                   <span>
                     {ticket.title}
-                    <span className="ml-2 text-muted-foreground">{ticket.type.toLowerCase()}</span>
+                    <span className="ml-2 text-muted-foreground">{toPlainWords(ticket.type)}</span>
                   </span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {ticket.assigneeName ?? "unassigned"} · {formatDate(ticket.createdAt)}
-                    <Badge>{ticket.status.replace("_", " ").toLowerCase()}</Badge>
+                    <Badge>{toPlainWords(ticket.status)}</Badge>
                   </span>
                 </button>
 

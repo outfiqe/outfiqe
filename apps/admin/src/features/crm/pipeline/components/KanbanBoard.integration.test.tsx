@@ -20,13 +20,13 @@ describe("KanbanBoard", () => {
         cards={cards}
         renderCard={(card) => <span>{card.label}</span>}
         onCardMove={vi.fn()}
-        emptyColumnLabel="No deals"
+        emptyColumnLabel="No opportunities"
       />,
     );
 
     expect(screen.getByRole("region", { name: "Lead" })).toBeInTheDocument();
     expect(screen.getByText("Spring collab")).toBeInTheDocument();
-    expect(screen.getByText("No deals")).toBeInTheDocument();
+    expect(screen.getByText("No opportunities")).toBeInTheDocument();
   });
 
   it("moves a card via the keyboard-accessible Move to select", async () => {

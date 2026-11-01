@@ -1,47 +1,53 @@
 export const CRM_PAGE_TEXT = {
   contacts: {
     title: "Contacts",
-    description: "People your team tracks by hand — leads, prospects, and other contacts.",
+    description:
+      "People you are talking to who haven't bought yet, like leads and possible partners. Add someone, note where they stand, and give them an owner on your team.",
   },
   customers: {
     title: "Customers",
-    description: "Shoppers who have bought your brand's products.",
+    description:
+      "Shoppers who have bought from your brand, with what they ordered and how much they spent. Click a shopper to see their details.",
   },
   partners: {
     title: "Partners",
-    description: "Muses who have linked, tagged, or driven a sale of your brand's products.",
+    description:
+      "Muses who promote your brand by tagging your products, sharing links or bringing in sales. Click a muse to see how each product is doing.",
   },
   audit: {
     title: "Audit log",
-    description: "Every membership, role, ownership and billing change on this organization.",
+    description:
+      "A record of important changes to your CRM: team members, roles, ownership and billing. It can't be edited, so you can always check who did what.",
   },
   roles: {
     title: "Roles & settings",
-    description: "Build custom roles from the permission catalog and rename this organization.",
+    description:
+      "Decide what each person on your team can see and do, and change your organization's name.",
   },
   reports: {
     title: "Reports",
-    description: "Pipeline value and support-ticket health for this organization.",
+    description:
+      "See how your sales and customer support are doing: what is in progress, what you have won, and how quickly your team solves tickets.",
   },
   billing: {
     title: "Billing",
     description:
-      "Manage the plan, seats and payment history for this organization's CRM subscription.",
+      "See your plan and seats, pay invoices, and change or cancel your CRM subscription.",
   },
   pipeline: {
-    title: "Pipeline",
+    title: "Sales board",
     description:
-      "Follow every deal from first contact to won or lost. Drag a deal card to the next stage as the sale moves forward.",
+      "Every sales opportunity, from first contact to won or lost. Drag a card to the next column as the conversation moves forward.",
   },
   tasks: {
     title: "Tasks",
     description:
-      "Your team’s to-do list. Add a task, give it an owner and a due date, and tick it off when it is done.",
+      "Your team's to-do list. Add a task, give it an owner and a due date, and tick it off when it is done.",
   },
   tickets: {
     title: "Support",
     description:
-      "Requests and problems raised by your customers. Work each ticket through to resolved, and filter by status to see what still needs attention.",
+      "Problems and requests from your customers, all in one place. Assign each one to someone, update its status, and filter to see what still needs attention.",
   },
 } as const;
 
@@ -50,8 +56,8 @@ export const CUSTOMER_TABLE_HEADERS = ["Shopper", "Orders", "Items", "Total paid
 export const PARTNER_TABLE_HEADERS = [
   "Muse",
   "Tag clicks",
-  "Attributed orders",
-  "Attributed revenue",
+  "Orders they brought",
+  "Sales they brought",
   "Last activity",
 ];
 export const AUDIT_TABLE_HEADERS = ["When", "Who", "Action", "Details"];

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "../../constants/crmPageContent";
 import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
@@ -31,23 +32,21 @@ export const PartnersPage = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">
-          {CRM_PAGE_TEXT.partners.title}
-        </h1>
-        <Input
-          type="search"
-          placeholder="Search muses"
-          value={searchTerm}
-          onChange={(event) => {
-            setSearchTerm(event.target.value);
-            setPage(1);
-          }}
-          className="w-64"
-        />
-      </div>
-
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.partners.description}</p>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.partners}
+        actions={
+          <Input
+            type="search"
+            placeholder="Search muses"
+            value={searchTerm}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              setPage(1);
+            }}
+            className="w-64"
+          />
+        }
+      />
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={PARTNER_TABLE_HEADERS} />}
@@ -72,8 +71,8 @@ export const PartnersPage = () => {
                 <tr>
                   <th className="py-2 pr-4">Muse</th>
                   <th className="py-2 pr-4">Tag clicks</th>
-                  <th className="py-2 pr-4">Attributed orders</th>
-                  <th className="py-2 pr-4">Attributed revenue</th>
+                  <th className="py-2 pr-4">Orders they brought</th>
+                  <th className="py-2 pr-4">Sales they brought</th>
                   <th className="py-2">Last activity</th>
                 </tr>
               </thead>

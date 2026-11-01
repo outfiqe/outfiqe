@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, formatRupees } from "./format.utils";
+import { formatDuration, formatRupees, toPlainWords } from "./format.utils";
+
+describe("toPlainWords", () => {
+  it("turns system values into plain words", () => {
+    expect(toPlainWords("IN_PROGRESS")).toBe("In progress");
+    expect(toPlainWords("PAST_DUE")).toBe("Past due");
+    expect(toPlainWords("NOTE")).toBe("Note");
+  });
+});
 
 describe("formatRupees", () => {
   it("prefixes an amount with the currency and groups thousands", () => {

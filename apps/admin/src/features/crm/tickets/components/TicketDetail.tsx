@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { formatDateTime } from "../../utils/format.utils";
+import { formatDateTime, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, type TicketStatusValue } from "../api/ticketsSchemas";
 
@@ -69,11 +69,9 @@ export const TicketDetail = ({
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-bold text-foreground">{ticket.title}</h2>
-        <Badge tone={STATUS_TONE[ticket.status]}>
-          {ticket.status.replace("_", " ").toLowerCase()}
-        </Badge>
+        <Badge tone={STATUS_TONE[ticket.status]}>{toPlainWords(ticket.status)}</Badge>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">{ticket.type.toLowerCase()}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{toPlainWords(ticket.type)}</p>
       <p className="mt-3 text-sm">{ticket.description}</p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
@@ -86,7 +84,7 @@ export const TicketDetail = ({
             disabled={!canWrite || status === ticket.status || changeStatus.isPending}
             onClick={() => changeStatus.mutate(status)}
           >
-            {status.replace("_", " ").toLowerCase()}
+            {toPlainWords(status)}
           </Button>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Select } from "@outfiqe/design-system";
+import { Button, ConfirmModal, FormBanner, Input, Select } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -6,6 +6,7 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
@@ -48,9 +49,12 @@ export const ContactsPage = () => {
       }),
   });
 
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const remove = useApiMutation({
     mutationFn: (contactId: string) => crmContactsApi.deleteContact(contactId),
     invalidateKeys: [CONTACTS_QUERY_KEY],
+    successMessage: "Contact deleted.",
+    onSuccess: () => setContactToDelete(null),
   });
 
   const openCreate = () => {
@@ -65,44 +69,42 @@ export const ContactsPage = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">
-          {CRM_PAGE_TEXT.contacts.title}
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            value={stageFilter}
-            onChange={(event) => {
-              setStageFilter(event.target.value);
-              setPage(1);
-            }}
-            className="w-40"
-            aria-label="Filter by lifecycle stage"
-          >
-            <option value="">All stages</option>
-            {contactLifecycleStageSchema.options.map((stage) => (
-              <option key={stage} value={stage}>
-                {STAGE_LABELS[stage]}
-              </option>
-            ))}
-          </Select>
-          <Input
-            type="search"
-            placeholder="Search contacts"
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setPage(1);
-            }}
-            className="w-56"
-          />
-          <Button size="sm" onClick={openCreate}>
-            New contact
-          </Button>
-        </div>
-      </div>
-
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.contacts.description}</p>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.contacts}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={stageFilter}
+              onChange={(event) => {
+                setStageFilter(event.target.value);
+                setPage(1);
+              }}
+              className="w-40"
+              aria-label="Filter by lifecycle stage"
+            >
+              <option value="">All stages</option>
+              {contactLifecycleStageSchema.options.map((stage) => (
+                <option key={stage} value={stage}>
+                  {STAGE_LABELS[stage]}
+                </option>
+              ))}
+            </Select>
+            <Input
+              type="search"
+              placeholder="Search contacts"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setPage(1);
+              }}
+              className="w-56"
+            />
+            <Button size="sm" onClick={openCreate}>
+              New contact
+            </Button>
+          </div>
+        }
+      />
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={CONTACT_TABLE_HEADERS} />}
@@ -153,8 +155,8 @@ export const ContactsPage = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        disabled={remove.isPending}
-                        onClick={() => remove.mutate(contact.id)}
+                        className="text-destructive"
+                        onClick={() => setContactToDelete(contact)}
                       >
                         Delete
                       </Button>
@@ -194,6 +196,20 @@ export const ContactsPage = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         contact={editing}
+      />
+
+      <ConfirmModal
+        open={contactToDelete !== null}
+        title="Delete this contact?"
+        description={`${contactToDelete?.name ?? "This contact"} will be removed for your whole team. This can't be undone.`}
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        destructive
+        isPending={remove.isPending}
+        onConfirm={() => {
+          if (contactToDelete) remove.mutate(contactToDelete.id);
+        }}
+        onCancel={() => setContactToDelete(null)}
       />
     </div>
   );

@@ -27,6 +27,7 @@ import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { formatDate } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
@@ -175,19 +176,17 @@ export const TasksPage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.tasks.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tasks.description}</p>
-        </div>
-        {members && members.length > 0 && (
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            New task
-          </Button>
-        )}
-      </div>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.tasks}
+        actions={
+          members &&
+          members.length > 0 && (
+            <Button size="sm" onClick={() => setModalOpen(true)}>
+              New task
+            </Button>
+          )
+        }
+      />
 
       <div className="mt-6">
         {isLoading && <CompactRowSkeleton hasCheckbox />}

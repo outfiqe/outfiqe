@@ -17,6 +17,7 @@ import {
   PRODUCT_BREAKDOWN_HEADERS,
 } from "../constants/crmPageContent";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
+import { CrmPageHeader } from "./CrmPageHeader";
 
 const INVOICE_SKELETON_ROW_COUNT = 3;
 const RECENT_ORDER_SKELETON_COUNT = 3;
@@ -24,10 +25,6 @@ const PRODUCT_BREAKDOWN_SKELETON_ROW_COUNT = 4;
 const ROLE_SKELETON_COUNT = 3;
 const REPORT_TILE_COUNT = 3;
 const REPORT_BAR_ROW_COUNT = 4;
-
-const HEADING_CLASS = "font-display text-2xl font-bold text-foreground";
-const DESCRIPTION_CLASS = "mt-1 text-sm text-muted-foreground";
-const SPLIT_HEADER_CLASS = "flex flex-wrap items-center justify-between gap-3";
 
 export const BillingSkeleton = () => (
   <div className="space-y-6">
@@ -121,39 +118,10 @@ export const RoleListSkeleton = () => (
 
 type PageTextProps = { title: string; description: string };
 
-const StackedHeading = ({ title, description }: PageTextProps) => (
-  <>
-    <h1 className={HEADING_CLASS}>{title}</h1>
-    <p className={DESCRIPTION_CLASS}>{description}</p>
-  </>
-);
+const StackedHeading = (pageText: PageTextProps) => <CrmPageHeader {...pageText} />;
 
-const SplitHeading = ({
-  title,
-  description,
-  controls,
-}: PageTextProps & { controls: ReactNode }) => (
-  <div className={SPLIT_HEADER_CLASS}>
-    <div>
-      <h1 className={HEADING_CLASS}>{title}</h1>
-      <p className={DESCRIPTION_CLASS}>{description}</p>
-    </div>
-    {controls}
-  </div>
-);
-
-const SearchHeading = ({
-  title,
-  description,
-  controls,
-}: PageTextProps & { controls: ReactNode }) => (
-  <>
-    <div className={SPLIT_HEADER_CLASS}>
-      <h1 className={HEADING_CLASS}>{title}</h1>
-      {controls}
-    </div>
-    <p className={DESCRIPTION_CLASS}>{description}</p>
-  </>
+const SplitHeading = ({ controls, ...pageText }: PageTextProps & { controls: ReactNode }) => (
+  <CrmPageHeader {...pageText} actions={controls} />
 );
 
 const DisabledSearchInput = ({
@@ -181,7 +149,7 @@ const DisabledFilter = ({ allLabel }: { allLabel: string }) => (
 
 export const ContactsRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.contacts}
       controls={
         <div className="flex flex-wrap items-center gap-2">
@@ -199,7 +167,7 @@ export const ContactsRouteSkeleton = () => (
 
 export const CustomersRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.customers}
       controls={<DisabledSearchInput placeholder="Search shoppers" widthClass="w-64" />}
     />
@@ -211,7 +179,7 @@ export const CustomersRouteSkeleton = () => (
 
 export const PartnersRouteSkeleton = () => (
   <div>
-    <SearchHeading
+    <SplitHeading
       {...CRM_PAGE_TEXT.partners}
       controls={<DisabledSearchInput placeholder="Search muses" widthClass="w-64" />}
     />
@@ -244,7 +212,7 @@ export const ReportsRouteSkeleton = () => (
     <StackedHeading {...CRM_PAGE_TEXT.reports} />
     <div className="mt-6 space-y-6">
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-display text-lg font-bold text-foreground">Pipeline value by stage</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Sales value by stage</h2>
         <div className="mt-4">
           <ReportSkeleton />
         </div>
@@ -274,8 +242,8 @@ export const PipelineRouteSkeleton = () => (
       {...CRM_PAGE_TEXT.pipeline}
       controls={
         <div className="flex gap-2">
-          <SkeletonButton size="sm" label="Configure stages" />
-          <SkeletonButton size="sm" variant="default" label="New deal" />
+          <SkeletonButton size="sm" label="Edit stages" />
+          <SkeletonButton size="sm" variant="default" label="New opportunity" />
         </div>
       }
     />

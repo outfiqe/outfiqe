@@ -100,7 +100,7 @@ describe("ReportsSection", () => {
 
     render(<ReportsSection />, { wrapper });
 
-    expect(await screen.findByText("Pipeline value by stage")).toBeInTheDocument();
+    expect(await screen.findByText("Sales value by stage")).toBeInTheDocument();
     expect(await screen.findByText("Rs. 5,000")).toBeInTheDocument();
     expect(screen.getAllByText("Rs. 3,000").length).toBeGreaterThan(0);
     expect(screen.getByText("Lead")).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe("ReportsSection", () => {
     render(<ReportsSection />, { wrapper });
 
     expect(
-      await screen.findByText(/add deals to the pipeline to see value by stage/i),
+      await screen.findByText(/add opportunities to the sales board to see their value by stage/i),
     ).toBeInTheDocument();
     expect(await screen.findByText(/no support tickets have been opened/i)).toBeInTheDocument();
   });

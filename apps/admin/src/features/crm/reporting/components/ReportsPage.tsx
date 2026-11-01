@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { ReportsSection } from "./ReportsSection";
 
@@ -17,10 +18,7 @@ export const ReportsPage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <h1 className="font-display text-2xl font-bold text-foreground">
-        {CRM_PAGE_TEXT.reports.title}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.reports.description}</p>
+      <CrmPageHeader {...CRM_PAGE_TEXT.reports} />
 
       <div className="mt-6">
         <ReportsSection />

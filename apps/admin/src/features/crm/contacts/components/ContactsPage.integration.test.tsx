@@ -227,6 +227,9 @@ describe("ContactsPage", () => {
     await screen.findByText("Anisha Gurung");
 
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(attempts).toBe(0);
+    const warning = await screen.findByRole("dialog", { name: "Delete this contact?" });
+    await userEvent.click(within(warning).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByText("Cannot delete this contact.")).toBeInTheDocument();
     expect(attempts).toBe(1);

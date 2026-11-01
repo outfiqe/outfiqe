@@ -19,3 +19,11 @@ export const formatDuration = (seconds: number | null): string => {
   }
   return `${Math.round(seconds / SECONDS_PER_MINUTE)}m`;
 };
+
+const FIRST_LETTER_INDEX = 0;
+const AFTER_FIRST_LETTER = 1;
+
+export const toPlainWords = (systemValue: string): string => {
+  const words = systemValue.replaceAll("_", " ").toLowerCase();
+  return words.charAt(FIRST_LETTER_INDEX).toUpperCase() + words.slice(AFTER_FIRST_LETTER);
+};

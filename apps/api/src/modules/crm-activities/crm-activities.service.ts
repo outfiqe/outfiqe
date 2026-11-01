@@ -49,7 +49,11 @@ const requireValidSubject = async (
   }
   const deal = await crmPipelineRepository.findDeal(organization.id, subject.subjectId);
   if (!deal) {
-    throw new AppError("SUBJECT_NOT_FOUND", "That deal isn't in this CRM.", HTTP_STATUS.NOT_FOUND);
+    throw new AppError(
+      "SUBJECT_NOT_FOUND",
+      "That opportunity isn't in this CRM.",
+      HTTP_STATUS.NOT_FOUND,
+    );
   }
 };
 

@@ -32,7 +32,7 @@ describe("RoutePendingSkeleton", () => {
     render(<RoutePendingSkeleton />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Pipeline" })).toBeInTheDocument();
-    expect(screen.getByText(/follow every deal from first contact/i)).toBeInTheDocument();
+    expect(screen.getByText(/every sales opportunity, from first contact/i)).toBeInTheDocument();
   });
 
   it.each([

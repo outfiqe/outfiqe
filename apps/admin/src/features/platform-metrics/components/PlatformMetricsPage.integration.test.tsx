@@ -130,7 +130,7 @@ describe("PlatformMetricsPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Starter (2)" }));
     await user.click(
-      within(screen.getByRole("columnheader", { name: "Deals" })).getByRole("button"),
+      within(screen.getByRole("columnheader", { name: "Opportunities" })).getByRole("button"),
     );
 
     await waitFor(() => {

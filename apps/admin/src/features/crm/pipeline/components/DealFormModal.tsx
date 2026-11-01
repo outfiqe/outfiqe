@@ -71,14 +71,14 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             partnerCreatorId: values.partnerCreatorId,
           }),
     invalidateKeys: [DEALS_QUERY_KEY],
-    successMessage: isEditing ? "Deal saved." : "Deal created.",
+    successMessage: isEditing ? "Opportunity saved." : "Opportunity created.",
     onSuccess: () => onClose(),
   });
 
   const submitDeal = form.handleSubmit((values) => save.mutate(values));
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditing ? "Edit deal" : "New deal"}>
+    <Modal open={open} onClose={onClose} title={isEditing ? "Edit opportunity" : "New opportunity"}>
       <Form {...form}>
         <form onSubmit={submitDeal} noValidate className="space-y-4">
           <FormField
@@ -159,7 +159,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
               Cancel
             </Button>
             <Button type="submit" isLoading={save.isPending}>
-              {isEditing ? "Save deal" : "Create deal"}
+              {isEditing ? "Save opportunity" : "Create opportunity"}
             </Button>
           </div>
         </form>

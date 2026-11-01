@@ -68,7 +68,7 @@ export const StageConfigModal = ({
   const anyError = addStage.error ?? removeStage.error ?? reorder.error;
 
   return (
-    <Modal open={open} onClose={onClose} title="Configure pipeline stages">
+    <Modal open={open} onClose={onClose} title="Edit sales stages">
       <div className="space-y-3">
         {anyError && <FormBanner>{getErrorMessage(anyError)}</FormBanner>}
 
