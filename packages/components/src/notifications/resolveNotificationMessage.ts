@@ -80,8 +80,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.CRM_ITEM_ASSIGNED: {
       const itemKind = metadata.crmItemKind === CrmItemKind.TICKET ? "ticket" : "task";
       return metadata.crmItemTitle
-        ? `You were assigned the ${itemKind} "${metadata.crmItemTitle}"`
-        : `You were assigned a ${itemKind}`;
+        ? `New ${itemKind} for you: "${metadata.crmItemTitle}"`
+        : `You have a new ${itemKind}`;
     }
     case NotificationType.SUPPORT_TICKET_CREATED:
       return `New support request: ${metadata.supportSubject ?? "Untitled request"}`;
@@ -123,8 +123,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return metadata.announcementTitle ?? "New announcement";
     case NotificationType.CRM_TICKET_UNASSIGNED:
       return metadata.crmItemTitle
-        ? `New ticket with no one assigned: "${metadata.crmItemTitle}"`
-        : "A new ticket has no one assigned";
+        ? `New ticket needs someone: "${metadata.crmItemTitle}"`
+        : "A new ticket needs someone to look after it";
     case NotificationType.CRM_MEMBER_JOINED:
       return `${metadata.crmMemberName ?? "Someone"} joined ${metadata.crmOrganizationName ?? "your team"}`;
     case NotificationType.CRM_INVOICE_DUE:
@@ -132,9 +132,9 @@ export const resolveNotificationMessage = (notification: Notification): string =
         ? `Your subscription renewal of Rs. ${metadata.crmInvoiceAmount} is due`
         : "Your subscription renewal is due";
     case NotificationType.CRM_SUBSCRIPTION_PAST_DUE:
-      return "Your subscription payment is overdue. Pay now to keep advanced features";
+      return "Your CRM payment is overdue. Pay now to keep your sales board, tickets and reports";
     case NotificationType.CRM_SUBSCRIPTION_CANCELED:
-      return "Your subscription was canceled because it wasn't renewed";
+      return "Your CRM plan ended because it wasn't renewed";
     case NotificationType.OUTFIT_BOARD_ACTIVITY:
       return `${actorList(notification)} changed ${outfitName(notification)}`;
     case NotificationType.OUTFIT_READY_TO_LOCK:

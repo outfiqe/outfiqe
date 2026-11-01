@@ -12,6 +12,7 @@ import { PartnerDetailSkeleton } from "../../components/CrmSkeletons";
 import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
 import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
@@ -48,10 +49,15 @@ export const PartnerDetailPage = () => {
           />
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Tag clicks" value={partner.tagClickCount.toLocaleString()} />
+            <StatCard
+              label="Tag clicks"
+              value={partner.tagClickCount.toLocaleString()}
+              hint={CRM_TERMS.tagClicks}
+            />
             <StatCard
               label="Orders they brought"
               value={partner.attributedOrderCount.toLocaleString()}
+              hint={CRM_TERMS.ordersBrought}
             />
             <StatCard label="Sales they brought" value={formatRupees(partner.attributedRevenue)} />
           </div>

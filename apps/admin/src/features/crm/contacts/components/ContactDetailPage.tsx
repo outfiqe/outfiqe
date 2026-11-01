@@ -11,9 +11,11 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { RecordDetailSkeleton } from "../../components/CrmSkeletons";
+import { CrmTermHint } from "../../components/CrmTermHint";
 import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
 import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
+import { CRM_TERMS } from "../../constants/crmTerms";
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
@@ -75,7 +77,10 @@ const ContactRelationshipSection = ({ contact }: { contact: Contact }) => (
     title="Your relationship"
     description="How far along they are and who on your team knows them."
   >
-    <MetricRow label="Stage" value={STAGE_LABELS[contact.lifecycleStage]} />
+    <MetricRow
+      label={<CrmTermHint term="Stage" tip={CRM_TERMS.contactStage} />}
+      value={STAGE_LABELS[contact.lifecycleStage]}
+    />
     <MetricRow label="Looked after by" hasLongValue value={contact.ownerName ?? "Unassigned"} />
     <MetricRow
       label="Where they came from"

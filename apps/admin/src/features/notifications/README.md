@@ -34,7 +34,7 @@ packages.
 **User-facing:** any signed-in admin sees the bell in the app header. A brand-application
 notification opens `/platform/brand-applications`; a support-ticket notification opens
 `/support/{ticketId}` (or the `/support` inbox with no ticket id); a CRM assignment opens
-`/crm/support` or `/crm/tasks` by `metadata.crmItemKind`; a coupon alert opens `/coupons`, and a
+the exact `/crm/support/$ticketId`, or `/crm/tasks`, by `metadata.crmItemKind`; a coupon alert opens `/coupons`, and a
 flagged redemption opens the order it came from. All of those paths are resolved and stored by the
 API when the notification is written (`apps/api/src/modules/notifications/notification.targets.ts`).
 On a tenant subdomain the bell lists only that tenant's CRM notifications. Storefront activity

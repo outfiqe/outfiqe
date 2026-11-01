@@ -3,10 +3,14 @@ import { Badge, Button, Drawer, DrawerScrollArea } from "@outfiqe/design-system"
 import { MetricRow } from "@/components/MetricParts";
 
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
-import type { SubscriptionInvoice } from "../api/billingSchemas";
+import type { CrmBillingProviderValue, SubscriptionInvoice } from "../api/billingSchemas";
 import { INVOICE_STATUS_TONE } from "../constants/invoiceStatusTone";
 
 const OPEN_INVOICE_STATUS = "OPEN";
+const PROVIDER_LABELS: Record<CrmBillingProviderValue, string> = {
+  ESEWA: "eSewa",
+  KHALTI: "Khalti",
+};
 
 export const InvoicePanel = ({
   invoice,
@@ -44,7 +48,7 @@ export const InvoicePanel = ({
         <MetricRow label="Plan" value={planName} />
         <MetricRow label="Seats" value={seats.toLocaleString()} />
         <MetricRow label="Covers" value={`${formatDate(periodStart)} – ${formatDate(periodEnd)}`} />
-        {provider && <MetricRow label="Paid through" value={toPlainWords(provider)} />}
+        {provider && <MetricRow label="Paid through" value={PROVIDER_LABELS[provider]} />}
         {paidAt && <MetricRow label="Paid on" value={formatDate(paidAt)} />}
         {voidedAt && <MetricRow label="Cancelled on" value={formatDate(voidedAt)} />}
       </DrawerScrollArea>
