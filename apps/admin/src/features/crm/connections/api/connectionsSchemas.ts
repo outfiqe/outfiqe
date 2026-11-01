@@ -34,6 +34,7 @@ export const crmConnectionsSchema = z.object({
       userId: z.string(),
       name: z.string(),
       handle: z.string(),
+      avatarUrl: z.string().nullable(),
       role: z.enum(["partner", "customer"]),
     }),
   ),

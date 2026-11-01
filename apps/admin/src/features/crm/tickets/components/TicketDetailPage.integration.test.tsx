@@ -40,7 +40,9 @@ const TICKET = {
 };
 
 const CONNECTIONS = {
-  people: [{ userId: "c-1", name: "Sita Shopper", handle: "sita", role: "customer" }],
+  people: [
+    { userId: "c-1", name: "Sita Shopper", handle: "sita", avatarUrl: null, role: "customer" },
+  ],
   contacts: null,
   deals: null,
   tickets: [],

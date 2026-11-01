@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import { MetricRow } from "@/components/MetricParts";
 
+import { PROVIDER_LABELS } from "../../billing/constants/providerLabels";
 import { formatDateTime, toPlainWords } from "../../utils/format.utils";
 import { AUDIT_TARGET_LINKS } from "../constants/auditLabels";
 import { type AuditLogRow, toAuditActionLabel, toAuditSummary } from "../utils/auditEntries.utils";
@@ -10,6 +11,14 @@ import { type AuditLogRow, toAuditActionLabel, toAuditSummary } from "../utils/a
 const SINGLE_OCCURRENCE = 1;
 
 const toWords = (metadataKey: string) => toPlainWords(metadataKey.replace(/([A-Z])/g, "_$1"));
+
+const PROVIDER_NAMES: Record<string, string> = PROVIDER_LABELS;
+
+const toDetailValue = (detailKey: string, detailValue: string | number): string => {
+  const text = String(detailValue);
+  if (detailKey === "provider") return PROVIDER_NAMES[text] ?? text;
+  return detailKey === "plan" ? toPlainWords(text) : text;
+};
 
 const toSimpleDetails = (metadata: Record<string, unknown>) =>
   Object.entries(metadata).filter(
@@ -24,7 +33,7 @@ export const AuditEntryPanel = ({
   entry: AuditLogRow;
   onClose: () => void;
 }) => {
-  const { action, summary, actorName, createdAt, outcome, ipAddress, metadata } = entry;
+  const { action, summary, actorName, createdAt, outcome, metadata } = entry;
   const targetLink = entry.targetType ? AUDIT_TARGET_LINKS[entry.targetType] : undefined;
 
   return (
@@ -54,13 +63,12 @@ export const AuditEntryPanel = ({
           {entry.occurrenceCount > SINGLE_OCCURRENCE && (
             <MetricRow label="Happened" value={`${entry.occurrenceCount} times in a row`} />
           )}
-          {ipAddress && <MetricRow label="From address" value={ipAddress} />}
           {toSimpleDetails(metadata).map(([detailKey, detailValue]) => (
             <MetricRow
               key={detailKey}
               label={toWords(detailKey)}
               hasLongValue
-              value={String(detailValue)}
+              value={toDetailValue(detailKey, detailValue)}
             />
           ))}
         </div>

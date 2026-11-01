@@ -1,4 +1,5 @@
 import {
+  Avatar,
   CLICKABLE_STAT_CARD_CLASS_NAME,
   DateInput,
   FilterChip,
@@ -9,6 +10,7 @@ import {
   type TableColumn,
 } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { MetricEmptyState, MetricSection, StatCardFooterLink } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -17,6 +19,7 @@ import { formatDuration, formatRupees } from "../../utils/format.utils";
 import { crmReportingApi } from "../api/reportingApi";
 import type { CrmPeriodSummary } from "../api/reportingSchemas";
 import { REPORT_RANGES, useReportPeriod } from "../hooks/useReportPeriod";
+import { TeamMemberPanel } from "./TeamMemberPanel";
 
 const STAT_GRID_CLASS_NAME = "grid gap-3 sm:grid-cols-2 lg:grid-cols-4";
 const STAT_SKELETON_COUNT = 4;
@@ -31,7 +34,16 @@ const toWinRate = ({ wonDealCount, lostDealCount }: CrmPeriodSummary["sales"]) =
 };
 
 const TEAM_COLUMNS: TableColumn<CrmPeriodSummary["team"][number]>[] = [
-  { key: "name", header: "Team member", render: ({ name }) => name },
+  {
+    key: "name",
+    header: "Team member",
+    render: ({ name, avatarUrl }) => (
+      <span className="flex items-center gap-2 font-medium">
+        <Avatar name={name} imageUrl={avatarUrl} size="sm" />
+        {name}
+      </span>
+    ),
+  },
   { key: "won", header: "Sales won", render: ({ wonDealCount }) => wonDealCount.toLocaleString() },
   { key: "value", header: "Value won", render: ({ wonValue }) => formatRupees(wonValue) },
   {
@@ -138,20 +150,33 @@ const SupportStats = ({
   </MetricSection>
 );
 
-const TeamStats = ({ team }: { team: CrmPeriodSummary["team"] }) => (
-  <MetricSection title="Team" description="What each person finished in this period.">
-    {team.length === 0 ? (
-      <MetricEmptyState>No team members to show yet.</MetricEmptyState>
-    ) : (
-      <Table
-        caption="What each team member finished"
-        columns={TEAM_COLUMNS}
-        rows={team}
-        rowKey={({ membershipId }) => membershipId}
-      />
-    )}
-  </MetricSection>
-);
+const TeamStats = ({ team }: { team: CrmPeriodSummary["team"] }) => {
+  const [selectedMember, setSelectedMember] = useState<CrmPeriodSummary["team"][number] | null>(
+    null,
+  );
+
+  return (
+    <MetricSection
+      title="Team"
+      description="What each person finished in this period. Click someone for details."
+    >
+      {team.length === 0 ? (
+        <MetricEmptyState>No team members to show yet.</MetricEmptyState>
+      ) : (
+        <Table
+          caption="What each team member finished"
+          columns={TEAM_COLUMNS}
+          rows={team}
+          rowKey={({ membershipId }) => membershipId}
+          onRowClick={setSelectedMember}
+        />
+      )}
+      {selectedMember && (
+        <TeamMemberPanel member={selectedMember} onClose={() => setSelectedMember(null)} />
+      )}
+    </MetricSection>
+  );
+};
 
 export const ReportPeriodSummary = () => {
   const reportPeriod = useReportPeriod();

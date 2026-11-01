@@ -46,7 +46,7 @@ const CONTACT = {
 };
 
 const CONNECTIONS = {
-  people: [{ userId: "u-1", name: "Anisha", handle: "anisha", role: "customer" }],
+  people: [{ userId: "u-1", name: "Anisha", handle: "anisha", avatarUrl: null, role: "customer" }],
   contacts: [],
   deals: [{ id: "d-1", title: "Spring collab", value: 5000, status: "OPEN", stageName: "Lead" }],
   tickets: [],

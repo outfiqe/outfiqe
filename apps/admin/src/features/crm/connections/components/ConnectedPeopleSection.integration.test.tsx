@@ -20,7 +20,9 @@ const mockPeople = (people: unknown[]) =>
 
 describe("ConnectedPeopleSection", () => {
   it("says a customer who is also a partner is the same person", async () => {
-    mockPeople([{ userId: "u-1", name: "Anjesh Ghimire", handle: "anjesh", role: "partner" }]);
+    mockPeople([
+      { userId: "u-1", name: "Anjesh Ghimire", handle: "anjesh", avatarUrl: null, role: "partner" },
+    ]);
     renderWithRouter(
       <ConnectedPeopleSection subject={{ subjectType: "customer", subjectId: "u-1" }} />,
     );
@@ -34,7 +36,9 @@ describe("ConnectedPeopleSection", () => {
   });
 
   it("names someone else connected to the record", async () => {
-    mockPeople([{ userId: "u-2", name: "Aasha Muse", handle: "aasha", role: "partner" }]);
+    mockPeople([
+      { userId: "u-2", name: "Aasha Muse", handle: "aasha", avatarUrl: null, role: "partner" },
+    ]);
     renderWithRouter(
       <ConnectedPeopleSection subject={{ subjectType: "deal", subjectId: "d-1" }} />,
     );

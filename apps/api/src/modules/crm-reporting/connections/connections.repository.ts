@@ -20,7 +20,7 @@ export const crmConnectionsRepository = {
   findPeople(userIds: string[]) {
     return prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, name: true, handle: true },
+      select: { id: true, name: true, handle: true, avatarUrl: true },
     });
   },
 

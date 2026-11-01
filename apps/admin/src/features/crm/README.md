@@ -438,3 +438,15 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **The bell opens the exact record.** A ticket notification opens that ticket's page. Tasks have no page of their own, so they open the Tasks list. The link is stored when the notification is created (`apps/api/src/modules/notifications/notification.targets.ts`), so older notifications still open the Support list.
 
 **Tips explain a term where it appears.** `components/CrmTermHint.tsx` adds a small info icon, and the wording lives in `constants/crmTerms.ts`. Add a tip only for a word a new person might not know.
+
+## Partner products
+
+`relationships/components/PartnerProductsSection.tsx` shows each product with its picture. A click opens a side panel, the same pattern as the invoice and audit panels. "See it on Outfiqe" only appears when the product is approved and on sale, because the public page doesn't exist for anything else. Tenant staff may not have the platform's product admin, so the panel links to the public page.
+
+## People pictures and details
+
+The design system's `Avatar` shows someone's picture, or their first letter if they have none or it can't load. Partner and customer tables, their detail pages, People cards and the Reports team table all use it.
+
+Clicking a team row on Reports opens `reporting/components/TeamMemberPanel.tsx`: role, join date and what they finished in the period. The email only shows for viewers with `members:read`.
+
+The audit panel doesn't show IP addresses. They stay stored, but they mean little to a business owner and older entries can hold a server's address rather than a person's.
