@@ -16,19 +16,13 @@ import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent"
 import { useCrmPermissions } from "../../hooks/useCrmPermissions";
 import { formatDate, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
-import type { TicketStatusValue, TicketWithComments } from "../api/ticketsSchemas";
+import type { TicketWithComments } from "../api/ticketsSchemas";
 import { toTicketQueryKey } from "../constants/ticketQueryKeys";
+import { TICKET_STATUS_TONE } from "../constants/ticketStatusTone";
 import { TicketCommentsSection } from "./TicketCommentsSection";
 import { TicketHandlingSection } from "./TicketHandlingSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/support/$ticketId");
-
-const STATUS_TONE: Record<TicketStatusValue, "neutral" | "positive" | "negative"> = {
-  OPEN: "negative",
-  IN_PROGRESS: "neutral",
-  RESOLVED: "positive",
-  CLOSED: "positive",
-};
 
 const TicketReportSection = ({ ticket }: { ticket: TicketWithComments }) => {
   const { description, type, createdAt, resolvedAt } = ticket;
@@ -78,7 +72,9 @@ export const TicketDetailPage = () => {
           <CrmPageHeader
             title={ticket.title}
             description={`${toPlainWords(ticket.type)} · looked after by ${ticket.assigneeName ?? "no one yet"}`}
-            actions={<Badge tone={STATUS_TONE[ticket.status]}>{toPlainWords(ticket.status)}</Badge>}
+            actions={
+              <Badge tone={TICKET_STATUS_TONE[ticket.status]}>{toPlainWords(ticket.status)}</Badge>
+            }
           />
 
           <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>

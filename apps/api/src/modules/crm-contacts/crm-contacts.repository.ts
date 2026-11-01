@@ -2,6 +2,7 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 
 import type {
+  ContactExportFilters,
   ContactListFilters,
   ContactListPage,
   ContactWithRelations,
@@ -54,10 +55,11 @@ const toContactWithRelations = (row: ContactJoinRow): ContactWithRelations => ({
 
 const buildWhere = (
   organizationId: string,
-  filters: ContactListFilters,
+  filters: ContactExportFilters,
 ): Prisma.ContactWhereInput => {
   const where: Prisma.ContactWhereInput = { organizationId };
   if (filters.lifecycleStage) where.lifecycleStage = filters.lifecycleStage;
+  if (filters.ownerMembershipId) where.ownerMembershipId = filters.ownerMembershipId;
   if (filters.q) {
     where.OR = [
       { name: { contains: filters.q, mode: "insensitive" } },
@@ -89,6 +91,20 @@ export const crmContactsRepository = {
       total,
       hasMore: skip + rows.length < total,
     };
+  },
+
+  async listForExport(
+    organizationId: string,
+    filters: ContactExportFilters,
+    rowLimit: number,
+  ): Promise<ContactWithRelations[]> {
+    const rows = await prisma.contact.findMany({
+      where: buildWhere(organizationId, filters),
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: rowLimit,
+      select: contactWithRelationsSelect,
+    });
+    return rows.map(toContactWithRelations);
   },
 
   async findById(organizationId: string, contactId: string): Promise<ContactWithRelations | null> {

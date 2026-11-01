@@ -11,7 +11,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { PipelinePage } from "./PipelinePage";
 
@@ -37,6 +37,7 @@ const DEALS = [
     partnerCreatorId: "c-1",
     partnerName: "Aasha Muse",
     partnerHandle: "aasha",
+    stageEnteredAt: "2026-08-20T00:00:00.000Z",
     status: "OPEN",
     closedAt: null,
     createdAt: "2026-08-20T00:00:00.000Z",
@@ -128,6 +129,37 @@ describe("PipelinePage", () => {
     const opportunityLink = await screen.findByRole("link", { name: /Spring collab/ });
     expect(opportunityLink).toHaveAttribute("href", "/crm/pipeline/d-1");
     expect(opportunityLink).toHaveAttribute("draggable", "false");
+  });
+
+  it("shows the value, partner, owner and time in stage on each card", async () => {
+    mockPipeline();
+    renderPipelinePage();
+
+    expect(await screen.findByText("Rs. 50,000")).toBeInTheDocument();
+    expect(screen.getByText("with Aasha Muse")).toBeInTheDocument();
+    expect(screen.getByText(/Unassigned · \d+ days in this stage/)).toBeInTheDocument();
+  });
+
+  it("downloads the opportunities on the board", async () => {
+    mockPipeline();
+    const exportRequested = vi.fn();
+    URL.createObjectURL = vi.fn(() => "blob:opportunities");
+    URL.revokeObjectURL = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/deals/export`, () => {
+        exportRequested();
+        return new HttpResponse("Opportunity\r\nSpring collab", {
+          headers: { "Content-Type": "text/csv" },
+        });
+      }),
+    );
+
+    renderPipelinePage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Export CSV" }));
+
+    await waitFor(() => expect(exportRequested).toHaveBeenCalled());
   });
 
   it("moves a deal to another stage from the card control", async () => {

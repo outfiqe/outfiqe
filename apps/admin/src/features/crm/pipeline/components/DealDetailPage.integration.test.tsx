@@ -40,6 +40,7 @@ const DEAL = {
   partnerCreatorId: "c-1",
   partnerName: "Aasha Muse",
   partnerHandle: "aasha",
+  stageEnteredAt: "2026-08-20T00:00:00.000Z",
   status: "OPEN",
   closedAt: null,
   createdAt: "2026-08-20T00:00:00.000Z",

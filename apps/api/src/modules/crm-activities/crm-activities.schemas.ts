@@ -30,6 +30,8 @@ export const listTasksQuerySchema = z.object({
   status: z.enum(CrmTaskStatus).optional(),
   subjectType: z.enum(CRM_SUBJECT_TYPES).optional(),
   subjectId: z.uuid().optional(),
+  dueFrom: z.coerce.date().optional(),
+  dueTo: z.coerce.date().optional(),
 });
 
 export const createTaskSchema = z

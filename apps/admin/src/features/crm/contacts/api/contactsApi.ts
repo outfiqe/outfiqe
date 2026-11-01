@@ -11,6 +11,7 @@ import {
 type ListParams = {
   q?: string;
   lifecycleStage?: ContactLifecycleStage;
+  ownerMembershipId?: string;
   page?: number;
   pageSize?: number;
 };
@@ -28,12 +29,26 @@ export type ContactInput = {
   ownerMembershipId: string | null;
 };
 
-const listParams = ({ q, lifecycleStage, page, pageSize }: ListParams) => ({
+const listParams = ({ q, lifecycleStage, ownerMembershipId, page, pageSize }: ListParams) => ({
   ...(q ? { q } : {}),
   ...(lifecycleStage ? { lifecycleStage } : {}),
+  ...(ownerMembershipId ? { ownerMembershipId } : {}),
   ...(page ? { page } : {}),
   ...(pageSize ? { pageSize } : {}),
 });
+
+type ContactExportFilters = {
+  q?: string;
+  lifecycleStage?: string;
+  ownerMembershipId?: string;
+};
+
+const toExportParams = ({ q, lifecycleStage, ownerMembershipId }: ContactExportFilters) =>
+  new URLSearchParams({
+    ...(q ? { q } : {}),
+    ...(lifecycleStage ? { lifecycleStage } : {}),
+    ...(ownerMembershipId ? { ownerMembershipId } : {}),
+  });
 
 export const crmContactsApi = {
   async listContacts(params: ListParams = {}): Promise<ContactListPage> {
@@ -41,6 +56,10 @@ export const crmContactsApi = {
       params: listParams(params),
     });
     return contactListPageSchema.parse(res.data);
+  },
+
+  exportContacts(filters: ContactExportFilters): Promise<Blob> {
+    return apiClient.getBlob(`/crm/contacts/export?${toExportParams(filters)}`);
   },
 
   async getContact(contactId: string): Promise<Contact> {

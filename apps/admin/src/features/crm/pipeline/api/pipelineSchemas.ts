@@ -28,6 +28,7 @@ export const dealSchema = z.object({
   partnerName: z.string(),
   partnerHandle: z.string(),
   status: dealStatusSchema,
+  stageEnteredAt: z.string(),
   closedAt: z.string().nullable(),
   createdAt: z.string(),
 });

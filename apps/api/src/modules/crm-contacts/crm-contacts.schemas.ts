@@ -42,15 +42,19 @@ export const updateContactSchema = z
   });
 
 export const contactListQuerySchema = z.object({
+  ownerMembershipId: z.uuid().optional(),
   q: z.string().trim().max(120).optional(),
   lifecycleStage: lifecycleStageSchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(MAX_CONTACTS_PAGE_SIZE).optional(),
 });
 
+export const contactExportQuerySchema = contactListQuerySchema.omit({ page: true, pageSize: true });
+
 export const contactIdParamsSchema = z.object({ contactId: z.uuid() });
 
 export type CreateContactBody = z.infer<typeof createContactSchema>;
 export type UpdateContactBody = z.infer<typeof updateContactSchema>;
 export type ContactListQuery = z.infer<typeof contactListQuerySchema>;
+export type ContactExportQuery = z.infer<typeof contactExportQuerySchema>;
 export type ContactIdParams = z.infer<typeof contactIdParamsSchema>;

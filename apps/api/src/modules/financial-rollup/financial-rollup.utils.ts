@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "#generated/prisma/enums.js";
+import { toCsv } from "#lib/csv-writer.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
@@ -91,46 +92,26 @@ const LEDGER_CSV_HEADERS = [
   "Muse",
 ];
 
-const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
-const FORMULA_NEUTRALIZING_PREFIX = "'";
-
-const neutralizeSpreadsheetFormula = (text: string): string =>
-  SPREADSHEET_FORMULA_START.test(text) ? `${FORMULA_NEUTRALIZING_PREFIX}${text}` : text;
-
-const csvField = (value: string | number | null): string => {
-  if (typeof value === "number") return String(value);
-  const text = neutralizeSpreadsheetFormula(value ?? "");
-  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
-
-export const toLedgerCsv = (rows: LedgerRow[]): string => {
-  const lines = [LEDGER_CSV_HEADERS.map(csvField).join(",")];
-
-  for (const row of rows) {
-    lines.push(
-      [
-        row.orderId,
-        row.orderItemId,
-        row.createdAt.toISOString(),
-        row.paymentMethod,
-        row.grossAmount,
-        row.platformFee,
-        row.gatewayFee,
-        row.creatorCommissionAmount,
-        row.brandNetAmount,
-        row.brandPayoutStatus,
-        row.productName,
-        row.brandName,
-        row.buyerName,
-        row.museHandle,
-      ]
-        .map(csvField)
-        .join(","),
-    );
-  }
-
-  return lines.join("\r\n");
-};
+export const toLedgerCsv = (rows: LedgerRow[]): string =>
+  toCsv(
+    LEDGER_CSV_HEADERS,
+    rows.map((row) => [
+      row.orderId,
+      row.orderItemId,
+      row.createdAt.toISOString(),
+      row.paymentMethod,
+      row.grossAmount,
+      row.platformFee,
+      row.gatewayFee,
+      row.creatorCommissionAmount,
+      row.brandNetAmount,
+      row.brandPayoutStatus,
+      row.productName,
+      row.brandName,
+      row.buyerName,
+      row.museHandle,
+    ]),
+  );
 
 export const buildPaymentMethodBreakdown = (
   orderTotals: PaymentMethodOrderTotals[],

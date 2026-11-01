@@ -1,14 +1,28 @@
-import { Button, ConfirmModal, FormBanner, Input, Select } from "@outfiqe/design-system";
-import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import {
+  Button,
+  ConfirmModal,
+  FormBanner,
+  SearchInput,
+  Select,
+  Table,
+  type TableColumn,
+} from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
+import { CrmMemberFilter } from "../../components/CrmMemberFilter";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
+import { CrmPagination } from "../../components/CrmPagination";
+import { CsvExportButton } from "../../components/CsvExportButton";
 import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
+import { useCrmListFilters } from "../../hooks/useCrmListFilters";
 import { formatDate } from "../../utils/format.utils";
 import { crmContactsApi } from "../api/contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "../api/contactsSchemas";
@@ -17,38 +31,90 @@ import { CONTACTS_QUERY_KEY } from "../constants/contactQueryKeys";
 import { ContactFormModal } from "./ContactFormModal";
 
 const PAGE_SIZE = 25;
-const SEARCH_DEBOUNCE_MS = 300;
+const EXPORT_FILE_NAME = "contacts.csv";
+const EXPORT_FAILURE_MESSAGE = "Couldn't export your contacts. Try narrowing your filters.";
+
+const toContactColumns = (askToDelete: (contact: Contact) => void): TableColumn<Contact>[] => [
+  {
+    key: "name",
+    header: "Name",
+    render: ({ id, name, email }) => (
+      <>
+        <Link
+          to="/crm/contacts/$contactId"
+          params={{ contactId: id }}
+          className="cursor-pointer font-semibold text-primary-strong underline"
+        >
+          {name}
+        </Link>
+        {email && <span className="ml-2 text-muted-foreground">{email}</span>}
+      </>
+    ),
+  },
+  { key: "company", header: "Company", render: ({ company }) => company ?? "—" },
+  {
+    key: "stage",
+    header: "Stage",
+    render: ({ lifecycleStage }) => STAGE_LABELS[lifecycleStage],
+  },
+  { key: "owner", header: "Owner", render: ({ ownerName }) => ownerName ?? "Unassigned" },
+  { key: "added", header: "Added", render: ({ createdAt }) => formatDate(createdAt) },
+  {
+    key: "actions",
+    header: "",
+    align: "right",
+    render: (contact) => (
+      <Button
+        size="sm"
+        variant="ghost"
+        className="text-destructive"
+        onClick={(event) => {
+          event.stopPropagation();
+          askToDelete(contact);
+        }}
+      >
+        Delete
+      </Button>
+    ),
+  },
+];
 
 export const ContactsPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [stageFilter, setStageFilter] = useState("");
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
+  const { searchText, changeSearchText, search, page, goToPage, changeFilter } =
+    useCrmListFilters();
+  const [stageFilter] = useSearchFilter("stage", rawTextFilter);
+  const [ownerFilter] = useSearchFilter("owner", rawTextFilter);
   const [modalOpen, setModalOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
 
-  const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const contactFilters = {
+    q: search,
+    lifecycleStage: contactLifecycleStageSchema.safeParse(stageFilter).data,
+    ownerMembershipId: ownerFilter || undefined,
+  };
 
   const {
     data: contactPage,
     isLoading,
     error,
   } = useQuery({
-    queryKey: [...CONTACTS_QUERY_KEY, debounced, stageFilter, page],
-    queryFn: () =>
-      crmContactsApi.listContacts({
-        q: debounced || undefined,
-        lifecycleStage: contactLifecycleStageSchema.safeParse(stageFilter).data,
-        page,
-        pageSize: PAGE_SIZE,
-      }),
+    queryKey: [...CONTACTS_QUERY_KEY, contactFilters, page],
+    queryFn: () => crmContactsApi.listContacts({ ...contactFilters, page, pageSize: PAGE_SIZE }),
   });
 
-  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const remove = useApiMutation({
     mutationFn: (contactId: string) => crmContactsApi.deleteContact(contactId),
     invalidateKeys: [CONTACTS_QUERY_KEY],
     successMessage: "Contact deleted.",
     onSuccess: () => setContactToDelete(null),
   });
+
+  const { exportCsv, isExporting } = useCrmCsvExport(
+    () => crmContactsApi.exportContacts(contactFilters),
+    EXPORT_FILE_NAME,
+    EXPORT_FAILURE_MESSAGE,
+  );
 
   return (
     <div>
@@ -58,10 +124,7 @@ export const ContactsPage = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Select
               value={stageFilter}
-              onChange={(event) => {
-                setStageFilter(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => changeFilter({ stage: event.target.value || undefined })}
               className="w-40"
               aria-label="Filter by lifecycle stage"
             >
@@ -72,16 +135,19 @@ export const ContactsPage = () => {
                 </option>
               ))}
             </Select>
-            <Input
-              type="search"
+            <CrmMemberFilter
+              label="Filter by owner"
+              allLabel="All owners"
+              value={ownerFilter}
+              onChange={(owner) => changeFilter({ owner: owner || undefined })}
+            />
+            <SearchInput
               placeholder="Search contacts"
-              value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setPage(1);
-              }}
+              value={searchText}
+              onValueChange={changeSearchText}
               className="w-56"
             />
+            <CsvExportButton isExporting={isExporting} onExport={() => void exportCsv()} />
             <Button size="sm" onClick={() => setModalOpen(true)}>
               New contact
             </Button>
@@ -96,81 +162,30 @@ export const ContactsPage = () => {
 
         {contactPage && contactPage.items.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {debounced || stageFilter
+            {search || stageFilter || ownerFilter
               ? "No contacts match your filters."
-              : "No contacts yet. Add the first one."}
+              : "No contacts yet. Add the first person you work with, like a buyer or a supplier."}
           </p>
         )}
 
         {contactPage && contactPage.items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Company</th>
-                  <th className="py-2 pr-4">Stage</th>
-                  <th className="py-2 pr-4">Owner</th>
-                  <th className="py-2 pr-4">Added</th>
-                  <th className="py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {contactPage.items.map((contact) => (
-                  <tr key={contact.id} className="border-t border-border">
-                    <td className="py-2 pr-4">
-                      <Link
-                        to="/crm/contacts/$contactId"
-                        params={{ contactId: contact.id }}
-                        className="cursor-pointer font-semibold text-primary-strong underline"
-                      >
-                        {contact.name}
-                      </Link>
-                      {contact.email && (
-                        <span className="ml-2 text-muted-foreground">{contact.email}</span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-4">{contact.company ?? "—"}</td>
-                    <td className="py-2 pr-4">{STAGE_LABELS[contact.lifecycleStage]}</td>
-                    <td className="py-2 pr-4">{contact.ownerName ?? "Unassigned"}</td>
-                    <td className="py-2 pr-4">{formatDate(contact.createdAt)}</td>
-                    <td className="py-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive"
-                        onClick={() => setContactToDelete(contact)}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{contactPage.total} total</span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!contactPage.hasMore}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
+          <>
+            <Table
+              caption="Contacts"
+              columns={toContactColumns(setContactToDelete)}
+              rows={contactPage.items}
+              rowKey={({ id }) => id}
+              onRowClick={({ id }) =>
+                void navigate({ to: "/crm/contacts/$contactId", params: { contactId: id } })
+              }
+            />
+            <CrmPagination
+              total={contactPage.total}
+              page={page}
+              hasMore={contactPage.hasMore}
+              onPageChange={goToPage}
+            />
+          </>
         )}
       </div>
 

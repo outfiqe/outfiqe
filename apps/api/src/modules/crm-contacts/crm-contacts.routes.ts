@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
+import { crmExportRateLimit, crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
@@ -9,6 +9,7 @@ import { requireFeature } from "#modules/platform-features/platform-features.mid
 
 import { crmContactsController } from "./crm-contacts.controller.js";
 import {
+  contactExportQuerySchema,
   contactIdParamsSchema,
   contactListQuerySchema,
   createContactSchema,
@@ -35,6 +36,15 @@ crmContactsRoutes.get(
   requirePermission(CONTACTS_READ),
   validate({ query: contactListQuerySchema }),
   crmContactsController.listContacts,
+);
+
+crmContactsRoutes.get(
+  "/contacts/export",
+  ...tenantChain,
+  requirePermission(CONTACTS_READ),
+  crmExportRateLimit,
+  validate({ query: contactExportQuerySchema }),
+  crmContactsController.exportContacts,
 );
 
 crmContactsRoutes.post(

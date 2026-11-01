@@ -80,3 +80,11 @@ export type CreateTaskInput = {
   createdByMembershipId: string | null;
   subject: SubjectRef | null;
 };
+
+export type TaskListFilters = {
+  assigneeMembershipId?: string;
+  status?: CrmTaskStatus;
+  subject?: SubjectRef;
+  dueFrom?: Date;
+  dueTo?: Date;
+};

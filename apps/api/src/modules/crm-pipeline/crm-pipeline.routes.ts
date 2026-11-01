@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
+import { crmExportRateLimit, crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
@@ -12,6 +12,7 @@ import {
   createDealSchema,
   createStageSchema,
   dealIdParamsSchema,
+  dealListQuerySchema,
   reorderStagesSchema,
   stageIdParamsSchema,
   updateDealSchema,
@@ -73,7 +74,16 @@ crmPipelineRoutes.get(
   "/deals",
   ...tenantChain,
   requirePermission(DEALS_READ),
+  validate({ query: dealListQuerySchema }),
   crmPipelineController.listDeals,
+);
+crmPipelineRoutes.get(
+  "/deals/export",
+  ...tenantChain,
+  requirePermission(DEALS_READ),
+  crmExportRateLimit,
+  validate({ query: dealListQuerySchema }),
+  crmPipelineController.exportDeals,
 );
 crmPipelineRoutes.get(
   "/deals/:dealId",

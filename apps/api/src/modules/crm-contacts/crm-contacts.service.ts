@@ -1,16 +1,32 @@
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
+import { toCsv } from "#lib/csv-writer.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
-import { DEFAULT_CONTACTS_PAGE_SIZE } from "./crm-contacts.constants.js";
+import { DEFAULT_CONTACTS_PAGE_SIZE, MAX_CONTACT_EXPORT_ROWS } from "./crm-contacts.constants.js";
 import { crmContactsRepository } from "./crm-contacts.repository.js";
 import type {
+  ContactExportQuery,
   ContactListQuery,
   CreateContactBody,
   UpdateContactBody,
 } from "./crm-contacts.schemas.js";
 import type { ContactListPage, ContactWithRelations } from "./crm-contacts.types.js";
+
+const NEXT_ROW = 1;
+const CONTACT_EXPORT_HEADERS = [
+  "Name",
+  "Email",
+  "Phone",
+  "Company",
+  "Job title",
+  "Stage",
+  "Source",
+  "Tags",
+  "Looked after by",
+  "Added",
+];
 
 const assertOwnerMembership = async (
   organizationId: string,
@@ -53,9 +69,46 @@ export const crmContactsService = {
     return crmContactsRepository.list(organizationId, {
       q: query.q,
       lifecycleStage: query.lifecycleStage,
+      ownerMembershipId: query.ownerMembershipId,
       page: query.page ?? 1,
       pageSize: query.pageSize ?? DEFAULT_CONTACTS_PAGE_SIZE,
     });
+  },
+
+  async exportContactsCsv(
+    organizationId: string,
+    filters: ContactExportQuery,
+  ): Promise<{ csv: string; rowCount: number }> {
+    const contacts = await crmContactsRepository.listForExport(
+      organizationId,
+      filters,
+      MAX_CONTACT_EXPORT_ROWS + NEXT_ROW,
+    );
+    if (contacts.length > MAX_CONTACT_EXPORT_ROWS) {
+      throw new AppError(
+        "CRM_EXPORT_TOO_LARGE",
+        `This list has more than ${MAX_CONTACT_EXPORT_ROWS} contacts. Narrow your filters first.`,
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    return {
+      csv: toCsv(
+        CONTACT_EXPORT_HEADERS,
+        contacts.map((contact) => [
+          contact.name,
+          contact.email,
+          contact.phone,
+          contact.company,
+          contact.jobTitle,
+          contact.lifecycleStage,
+          contact.source,
+          contact.tags.join("; "),
+          contact.ownerName,
+          contact.createdAt.toISOString(),
+        ]),
+      ),
+      rowCount: contacts.length,
+    };
   },
 
   async getContact(organizationId: string, contactId: string): Promise<ContactWithRelations> {

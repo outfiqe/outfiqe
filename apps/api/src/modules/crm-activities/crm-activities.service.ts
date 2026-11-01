@@ -18,6 +18,7 @@ import type {
   CreateActivityInput,
   CreateTaskInput,
   SubjectRef,
+  TaskListFilters,
   TaskRecord,
   Timeline,
 } from "./crm-activities.types.js";
@@ -203,14 +204,7 @@ export const crmActivitiesService = {
     return task;
   },
 
-  listTasks(
-    organizationId: string,
-    filters: {
-      assigneeMembershipId?: string;
-      status?: CrmTaskStatus;
-      subject?: SubjectRef;
-    },
-  ): Promise<TaskRecord[]> {
+  listTasks(organizationId: string, filters: TaskListFilters): Promise<TaskRecord[]> {
     return crmActivitiesRepository.listTasks(organizationId, filters);
   },
 

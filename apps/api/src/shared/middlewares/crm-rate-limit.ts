@@ -7,6 +7,16 @@ import { rateLimit } from "./rate-limit.js";
 const CRM_WRITE_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 const CRM_WRITE_RATE_LIMIT_MAX_REQUESTS = 120;
 
+const CRM_EXPORT_RATE_LIMIT_MAX_REQUESTS = 10;
+
+export const crmExportRateLimit = rateLimit({
+  namespace: "crm-export",
+  windowMs: CRM_WRITE_RATE_LIMIT_WINDOW_MS,
+  max: CRM_EXPORT_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many exports in a short time. Please wait a minute.",
+});
+
 export const crmWriteRateLimit = rateLimit({
   namespace: "crm-write",
   windowMs: CRM_WRITE_RATE_LIMIT_WINDOW_MS,

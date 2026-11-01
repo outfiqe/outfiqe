@@ -59,3 +59,9 @@ columns; `pipeline:configure` renames, reorders, adds, and removes stages.
   source: a migration backfills it for every organization that already existed,
   `crm-access`'s `createOrganization` transaction creates it for every new tenant, and
   `seed-crm.ts` creates it for the demo orgs (which bypass `createOrganization`).
+
+## Exports and time in stage
+
+`GET /api/crm/deals/export` returns the filtered opportunities as CSV through `#lib/csv-writer.utils`, which neutralizes spreadsheet formulas. It leaves muse details out on purpose and refuses more than `MAX_CRM_EXPORT_ROWS` rows. It has its own rate limit, and each export is logged.
+
+`stageEnteredAt` resets only when a deal really changes stage, so saving the same stage again keeps the count. Rows that existed before the column used `updated_at`, so their count is an estimate.

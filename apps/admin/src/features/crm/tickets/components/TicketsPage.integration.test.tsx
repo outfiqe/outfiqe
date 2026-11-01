@@ -205,6 +205,46 @@ describe("TicketsPage", () => {
     await waitFor(() => expect(router.state.location.search).toMatchObject({ status: "RESOLVED" }));
   });
 
+  it("filters by date range and keeps it in the URL", async () => {
+    mockCommon();
+    const seenQueries: URLSearchParams[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
+        seenQueries.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ success: true, data: { tickets: [], nextCursor: null } });
+      }),
+    );
+
+    renderTicketsPage("/crm/support?from=2026-08-01&to=2026-08-31");
+
+    expect(await screen.findByText("No tickets match your filters.")).toBeInTheDocument();
+    const latestQuery = seenQueries.at(-1);
+    expect(latestQuery?.get("createdFrom")).toBe(new Date(2026, 7, 1).toISOString());
+    expect(latestQuery?.get("createdTo")).toBe(
+      new Date(2026, 7, 31, 23, 59, 59, 999).toISOString(),
+    );
+    expect(screen.getByLabelText("From date")).toHaveValue("2026-08-01");
+  });
+
+  it("filters by the person looking after the ticket", async () => {
+    mockCommon();
+    let lastAssignee: string | null = "unset";
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
+        lastAssignee = new URL(request.url).searchParams.get("assigneeMembershipId");
+        return HttpResponse.json({ success: true, data: { tickets: [TICKET], nextCursor: null } });
+      }),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    await screen.findByRole("link", { name: /Damaged package/ });
+    await user.selectOptions(await screen.findByLabelText("Filter by assignee"), "mem-1");
+
+    await waitFor(() => expect(lastAssignee).toBe("mem-1"));
+  });
+
   it("reads the status filter from the URL on load", async () => {
     mockCommon();
     let lastStatusParam: string | null = "unset";

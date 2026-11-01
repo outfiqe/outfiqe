@@ -1,19 +1,12 @@
 import { toast } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { saveFile } from "@/lib/saveFile";
+
 import { financialRollupApi } from "../api/financialRollupApi";
 import type { LedgerFilters } from "../api/financialRollupSchemas";
 
 const EXPORT_FILE_NAME = "order-ledger.csv";
-
-const saveFile = (file: Blob, fileName: string) => {
-  const fileUrl = URL.createObjectURL(file);
-  const downloadLink = document.createElement("a");
-  downloadLink.href = fileUrl;
-  downloadLink.download = fileName;
-  downloadLink.click();
-  URL.revokeObjectURL(fileUrl);
-};
 
 export const useLedgerExport = (filters: LedgerFilters) => {
   const [isExporting, setIsExporting] = useState(false);
