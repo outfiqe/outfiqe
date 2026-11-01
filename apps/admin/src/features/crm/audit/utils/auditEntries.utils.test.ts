@@ -10,6 +10,8 @@ const toEntry = (overrides: Partial<CrmAuditEntry>): CrmAuditEntry => ({
   summary: "Started checkout",
   actorUserId: "u-1",
   actorName: "Bipin",
+  actorAvatarUrl: null,
+  actorMember: null,
   targetType: null,
   targetId: null,
   metadata: {},

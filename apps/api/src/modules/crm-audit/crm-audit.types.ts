@@ -23,6 +23,12 @@ export type RecordAuditInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type AuditActorMember = {
+  membershipId: string;
+  roleName: string;
+  joinedAt: Date;
+};
+
 export type CrmAuditLogRecord = {
   id: string;
   action: CrmAuditAction;
@@ -30,6 +36,8 @@ export type CrmAuditLogRecord = {
   summary: string;
   actorUserId: string | null;
   actorName: string | null;
+  actorAvatarUrl: string | null;
+  actorMember: AuditActorMember | null;
   targetType: string | null;
   targetId: string | null;
   metadata: Record<string, unknown>;

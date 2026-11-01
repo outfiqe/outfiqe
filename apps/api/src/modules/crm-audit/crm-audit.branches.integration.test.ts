@@ -8,6 +8,7 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
 import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
@@ -204,6 +205,25 @@ describe("audited controller branches", () => {
       .set("Host", host(organization.subdomain));
 
     expect(response.body.data.entries[0].actorName).toBeNull();
+    expect(response.body.data.entries[0].actorMember).toBeNull();
+  });
+
+  it("keeps a former member's name but no longer gives them a team role", async () => {
+    const { organization, owner } = await seedAuditTenant();
+    await request(testApp)
+      .patch("/api/crm/organization")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Former Member Co" })
+      .expect(200);
+
+    await prisma.membership.updateMany({
+      where: { organizationId: organization.id, userId: owner.id },
+      data: { status: "DEACTIVATED" },
+    });
+    const { entries } = await crmAudit.list(organization.id, { limit: 10 });
+
+    expect(entries[0]).toMatchObject({ actorName: owner.name, actorMember: null });
   });
 });
 

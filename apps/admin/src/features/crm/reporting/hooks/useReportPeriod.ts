@@ -20,7 +20,7 @@ const REPORT_RANGE_FILTER = oneOfFilter<ReportRange>(
 );
 const TODAY_COUNTS_AS_ONE_DAY = 1;
 
-const toPresetDates = (days: number, now: Date) => {
+export const toPresetDates = (days: number, now: Date) => {
   const firstDay = new Date(now);
   firstDay.setDate(firstDay.getDate() - days + TODAY_COUNTS_AS_ONE_DAY);
   return { dateFrom: toDateInputValue(firstDay), dateTo: toDateInputValue(now) };
