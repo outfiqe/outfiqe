@@ -265,6 +265,6 @@ describe("GET /api/crm/connections", () => {
 
     const { status } = await getConnections(tenant, "invoice", tenant.deal.id);
 
-    expect(status).toBe(400);
+    expect(status).toBe(422);
   });
 });
