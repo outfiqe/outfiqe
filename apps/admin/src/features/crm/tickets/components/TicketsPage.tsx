@@ -15,6 +15,7 @@ import {
 } from "@outfiqe/design-system";
 import { useApiMutation, useInfiniteCursorPage } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -34,10 +35,8 @@ import {
 import { formatDate, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
+import { TICKETS_QUERY_KEY } from "../constants/ticketQueryKeys";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
-import { TicketDetail } from "./TicketDetail";
-
-const TICKETS_QUERY_KEY = ["crm-tickets"];
 
 const NO_STATUS_FILTER = "";
 const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FILTER>(
@@ -168,19 +167,9 @@ export const TicketsPage = () => {
     queryFn: crmApi.getOrganization,
   });
 
-  const canReadMembers =
-    organization?.viewerIsSuperAdmin || organization?.viewerPermissionKeys.includes("members:read");
   const canWriteTickets =
     organization?.viewerIsSuperAdmin ||
     organization?.viewerPermissionKeys.includes("tickets:write");
-  const canManageTickets =
-    organization?.viewerIsSuperAdmin ||
-    organization?.viewerPermissionKeys.includes("tickets:manage");
-  const { data: members } = useQuery({
-    queryKey: ["crm-members"],
-    queryFn: crmApi.listMembers,
-    enabled: Boolean(canReadMembers),
-  });
 
   const [statusFilter, setStatusFilter] = useSearchFilter("status", TICKET_STATUS_FILTER);
   const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
@@ -190,7 +179,6 @@ export const TicketsPage = () => {
   const tickets = data?.pages.flatMap((page) => page.tickets);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   return (
     <div>
@@ -236,12 +224,10 @@ export const TicketsPage = () => {
           <ul className="space-y-2">
             {tickets.map((ticket) => (
               <li key={ticket.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedTicketId((current) => (current === ticket.id ? null : ticket.id))
-                  }
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3 text-left text-sm"
+                <Link
+                  to="/crm/support/$ticketId"
+                  params={{ ticketId: ticket.id }}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3 text-left text-sm transition-colors hover:bg-muted/60"
                 >
                   <span>
                     {ticket.title}
@@ -251,21 +237,7 @@ export const TicketsPage = () => {
                     {ticket.assigneeName ?? "unassigned"} · {formatDate(ticket.createdAt)}
                     <Badge>{toPlainWords(ticket.status)}</Badge>
                   </span>
-                </button>
-
-                {selectedTicketId === ticket.id && (
-                  <div className="mt-2">
-                    <TicketDetail
-                      ticketId={ticket.id}
-                      members={(members ?? []).map((member) => ({
-                        id: member.id,
-                        userName: member.userName,
-                      }))}
-                      canWrite={Boolean(canWriteTickets)}
-                      canManageAssignee={Boolean(canManageTickets)}
-                    />
-                  </div>
-                )}
+                </Link>
               </li>
             ))}
           </ul>

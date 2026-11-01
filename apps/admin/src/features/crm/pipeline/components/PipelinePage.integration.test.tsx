@@ -121,6 +121,15 @@ describe("PipelinePage", () => {
     expect(screen.getByText(/every sales opportunity, from first contact/i)).toBeInTheDocument();
   });
 
+  it("opens the opportunity's own page from its card", async () => {
+    mockPipeline();
+    renderPipelinePage();
+
+    const opportunityLink = await screen.findByRole("link", { name: /Spring collab/ });
+    expect(opportunityLink).toHaveAttribute("href", "/crm/pipeline/d-1");
+    expect(opportunityLink).toHaveAttribute("draggable", "false");
+  });
+
   it("moves a deal to another stage from the card control", async () => {
     let patchBody: unknown;
     mockPipeline({

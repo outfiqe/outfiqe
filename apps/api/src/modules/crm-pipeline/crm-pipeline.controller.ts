@@ -59,6 +59,12 @@ export const crmPipelineController = {
     sendSuccess(res, await crmPipelineService.listDeals(organization.id), "Deals.");
   },
 
+  async getDeal(_req: Request, res: Response) {
+    const { dealId } = validated.params<DealIdParams>(res);
+    const organization = getResolvedOrganization(res);
+    sendSuccess(res, await crmPipelineService.getDeal(organization.id, dealId), "Deal.");
+  },
+
   async createDeal(_req: Request, res: Response) {
     const body = validated.body<CreateDealBody>(res);
     const organization = getResolvedOrganization(res);

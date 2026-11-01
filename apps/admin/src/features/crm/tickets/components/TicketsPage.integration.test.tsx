@@ -111,84 +111,17 @@ const renderTicketsPage = (initialEntry = "/crm/support") => {
 };
 
 describe("TicketsPage", () => {
-  it("lists tickets and expands a detail view with a forward status control", async () => {
+  it("lists tickets and links each one to its own page", async () => {
     mockCommon();
-    mswServer.use(
-      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
-        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
-      ),
-    );
-
     renderTicketsPage();
 
     expect(
       await screen.findByText(/problems and requests from your customers/i),
     ).toBeInTheDocument();
-    const user = userEvent.setup({ delay: null });
-
-    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
-
-    expect(await screen.findByText("Arrived torn")).toBeInTheDocument();
-    expect(screen.getByText("No comments yet.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "In progress" })).toBeEnabled();
-  });
-
-  it("drops an internal comment from the detail view", async () => {
-    mockCommon();
-    let postedBody: unknown;
-    mswServer.use(
-      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
-        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
-      ),
-      http.post(`${API_BASE}/crm/tickets/tk-1/comments`, async ({ request }) => {
-        postedBody = await request.json();
-        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
-      }),
+    expect(await screen.findByRole("link", { name: /Damaged package/ })).toHaveAttribute(
+      "href",
+      "/crm/support/tk-1",
     );
-
-    renderTicketsPage();
-    const user = userEvent.setup({ delay: null });
-
-    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
-    await user.type(await screen.findByLabelText("New comment"), "Refund approved");
-    await user.click(screen.getByRole("button", { name: "Comment" }));
-
-    await waitFor(() => expect(postedBody).toEqual({ body: "Refund approved" }));
-  });
-
-  it("moves a ticket forward and reassigns it from the detail view", async () => {
-    mockCommon();
-    let statusBody: unknown;
-    let assigneeBody: unknown;
-    mswServer.use(
-      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
-        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
-      ),
-      http.patch(`${API_BASE}/crm/tickets/tk-1/status`, async ({ request }) => {
-        statusBody = await request.json();
-        return HttpResponse.json({
-          success: true,
-          data: { ...TICKET, status: "IN_PROGRESS", comments: [] },
-        });
-      }),
-      http.patch(`${API_BASE}/crm/tickets/tk-1/assignee`, async ({ request }) => {
-        assigneeBody = await request.json();
-        return HttpResponse.json({
-          success: true,
-          data: { ...TICKET, assigneeMembershipId: "mem-1" },
-        });
-      }),
-    );
-
-    renderTicketsPage();
-    const user = userEvent.setup({ delay: null });
-
-    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
-    await user.click(await screen.findByRole("button", { name: "In progress" }));
-    await waitFor(() => expect(statusBody).toEqual({ status: "IN_PROGRESS" }));
-
-    await user.selectOptions(await screen.findByLabelText("Assignee"), "mem-1");
-    await waitFor(() => expect(assigneeBody).toEqual({ assigneeMembershipId: "mem-1" }));
   });
 
   it("creates a ticket from the New ticket modal", async () => {
@@ -244,24 +177,12 @@ describe("TicketsPage", () => {
     expect(await screen.findByText("Ticket created.")).toBeInTheDocument();
   });
 
-  it("hides write controls for a viewer with only tickets:read", async () => {
+  it("hides the New ticket button for a viewer with only tickets:read", async () => {
     mockCommon({ viewerIsSuperAdmin: false, viewerPermissionKeys: ["tickets:read"] });
-    mswServer.use(
-      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
-        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
-      ),
-    );
-
     renderTicketsPage();
-    const user = userEvent.setup({ delay: null });
 
+    await screen.findByRole("link", { name: /Damaged package/ });
     expect(screen.queryByRole("button", { name: "New ticket" })).not.toBeInTheDocument();
-
-    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
-
-    expect(await screen.findByRole("button", { name: "In progress" })).toBeDisabled();
-    expect(screen.getByLabelText("Assignee")).toBeDisabled();
-    expect(screen.queryByLabelText("New comment")).not.toBeInTheDocument();
   });
 
   it("filters the ticket list by status and reflects it in the URL", async () => {
@@ -277,7 +198,7 @@ describe("TicketsPage", () => {
     const router = renderTicketsPage();
     const user = userEvent.setup({ delay: null });
 
-    await screen.findByRole("button", { name: /Damaged package/ });
+    await screen.findByRole("link", { name: /Damaged package/ });
     await user.selectOptions(screen.getByLabelText("Filter by status"), "RESOLVED");
 
     await waitFor(() => expect(lastStatusParam).toBe("RESOLVED"));
@@ -296,7 +217,7 @@ describe("TicketsPage", () => {
 
     renderTicketsPage("/crm/support?status=CLOSED");
 
-    await screen.findByRole("button", { name: /Damaged package/ });
+    await screen.findByRole("link", { name: /Damaged package/ });
     await waitFor(() => expect(lastStatusParam).toBe("CLOSED"));
   });
 

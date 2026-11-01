@@ -1,3 +1,5 @@
+export const RECORD_SECTIONS_GRID_CLASS_NAME = "grid items-start gap-4 lg:grid-cols-2";
+
 export const CRM_PAGE_TEXT = {
   contacts: {
     title: "Contacts",
@@ -62,4 +64,3 @@ export const PARTNER_TABLE_HEADERS = [
 ];
 export const AUDIT_TABLE_HEADERS = ["When", "Who", "Action", "Details"];
 export const INVOICE_TABLE_HEADERS = ["Period", "Amount", "Status", "Paid"];
-export const PRODUCT_BREAKDOWN_HEADERS = ["Product", "Tag clicks", "Orders", "Revenue"];

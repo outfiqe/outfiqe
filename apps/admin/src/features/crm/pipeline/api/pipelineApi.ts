@@ -45,6 +45,11 @@ export const crmPipelineApi = {
     return dealListSchema.parse(res.data);
   },
 
+  async getDeal(dealId: string): Promise<Deal> {
+    const res = await apiClient.get<Deal>(`/crm/deals/${dealId}`);
+    return dealSchema.parse(res.data);
+  },
+
   async createDeal(input: {
     stageId: string;
     title: string;

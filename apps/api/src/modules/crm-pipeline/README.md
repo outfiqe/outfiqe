@@ -22,7 +22,8 @@ can only ever be opened against a creator who actually has a relationship with t
   is validated against `crmRelationshipsService.isPartner`. Moving a deal into a won/lost stage
   sets `status` + `closedAt`; moving it back out clears them.
 - `crm-pipeline.controller.ts` / `crm-pipeline.routes.ts` — routes under `/api/crm/pipeline/stages`
-  and `/api/crm/deals`, mounted at `/api/crm` before `crm-access`. Each runs
+  and `/api/crm/deals` (plus `GET /api/crm/deals/:dealId` for one opportunity's page), mounted at
+  `/api/crm` before `crm-access`. Each runs
   `resolveTenant` → `requireAuth` → `requireAdvancedCrmFeatures` → `requirePermission`
   (`pipeline:read` / `pipeline:configure` / `deals:read|write|delete`).
 - `crm-pipeline.schemas.ts` — Zod validation.

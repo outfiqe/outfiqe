@@ -75,6 +75,13 @@ crmPipelineRoutes.get(
   requirePermission(DEALS_READ),
   crmPipelineController.listDeals,
 );
+crmPipelineRoutes.get(
+  "/deals/:dealId",
+  ...tenantChain,
+  requirePermission(DEALS_READ),
+  validate({ params: dealIdParamsSchema }),
+  crmPipelineController.getDeal,
+);
 crmPipelineRoutes.post(
   "/deals",
   ...writeChain,

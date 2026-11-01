@@ -2,6 +2,7 @@ import { KanbanBoard, KanbanBoardSkeleton } from "@outfiqe/components";
 import { Button, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
@@ -13,12 +14,10 @@ import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
-import type { Deal } from "../api/pipelineSchemas";
+import { DEALS_QUERY_KEY, STAGES_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
 import { DealFormModal } from "./DealFormModal";
 import { StageConfigModal } from "./StageConfigModal";
 
-const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
-const DEALS_QUERY_KEY = ["crm-deals"];
 const PIPELINE_CONFIGURE_PERMISSION = "pipeline:configure";
 const DEALS_WRITE_PERMISSION = "deals:write";
 
@@ -39,13 +38,12 @@ export const PipelinePage = () => {
   });
 
   const [dealModalOpen, setDealModalOpen] = useState(false);
-  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [stageModalOpen, setStageModalOpen] = useState(false);
 
   const moveDeal = useApiMutation({
     mutationFn: ({ dealId, stageId }: { dealId: string; stageId: string }) =>
       crmPipelineApi.updateDeal(dealId, { stageId }),
-    invalidateKeys: [DEALS_QUERY_KEY],
+    invalidateKeys: (_movedDeal, { dealId }) => [DEALS_QUERY_KEY, toDealQueryKey(dealId)],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -84,13 +82,7 @@ export const PipelinePage = () => {
             )}
             {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New opportunity" />}
             {canWriteDeals && stages && stages.length > 0 && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  setEditingDeal(null);
-                  setDealModalOpen(true);
-                }}
-              >
+              <Button size="sm" onClick={() => setDealModalOpen(true)}>
                 New opportunity
               </Button>
             )}
@@ -116,19 +108,17 @@ export const PipelinePage = () => {
             disabled={!canWriteDeals || moveDeal.isPending}
             emptyColumnLabel="No opportunities"
             renderCard={(card) => (
-              <button
-                type="button"
-                className="w-full cursor-pointer text-left"
-                onClick={() => {
-                  setEditingDeal(card.deal);
-                  setDealModalOpen(true);
-                }}
+              <Link
+                to="/crm/pipeline/$dealId"
+                params={{ dealId: card.deal.id }}
+                draggable={false}
+                className="block w-full cursor-pointer text-left"
               >
                 <span className="font-semibold text-foreground">{card.deal.title}</span>
                 <span className="mt-1 block text-xs text-muted-foreground">
                   {card.deal.partnerName} · {formatRupees(card.deal.value)}
                 </span>
-              </button>
+              </Link>
             )}
           />
         )}
@@ -139,7 +129,7 @@ export const PipelinePage = () => {
           open={dealModalOpen}
           onClose={() => setDealModalOpen(false)}
           stages={stages}
-          deal={editingDeal}
+          deal={null}
         />
       )}
 

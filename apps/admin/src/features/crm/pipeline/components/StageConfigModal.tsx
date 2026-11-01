@@ -21,9 +21,8 @@ import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
 
 import { crmPipelineApi } from "../api/pipelineApi";
 import type { PipelineStage } from "../api/pipelineSchemas";
+import { STAGES_QUERY_KEY } from "../constants/pipelineQueryKeys";
 import { stageFormSchema, type StageFormValues } from "../schemas/stageForm.schema";
-
-const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 
 export const StageConfigModal = ({
   open,
