@@ -13,9 +13,10 @@ const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;
 const KPI_HINT = {
   openPipelineValue:
-    "Total value of deals that are still being worked, across every pipeline stage. Won and lost deals are not counted.",
-  openDealCount: "Number of deals that are still being worked. Won and lost deals are not counted.",
-  wonDealValue: "Total value of deals you have moved to a won stage.",
+    "Total value of opportunities your team is still working on, across every stage. Won and lost ones are not counted.",
+  openDealCount:
+    "Number of opportunities your team is still working on. Won and lost ones are not counted.",
+  wonDealValue: "Total value of the opportunities you have won.",
   openTicketCount: "Support tickets that still need attention: tickets marked open or in progress.",
   meanTimeToResolve:
     "Average time between a ticket being created and being resolved, across all resolved tickets. Shows a dash until a ticket has been resolved.",
@@ -26,8 +27,8 @@ const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
 const CHART_GRID_CLASS = "grid gap-4 lg:grid-cols-2";
 const ACTIVITY_CHART_TITLE = "Activity";
 const ACTIVITY_CHART_DESCRIPTION = "CRM activities logged per day, last 30 days";
-const PIPELINE_CHART_TITLE = "Pipeline value by stage";
-const PIPELINE_CHART_DESCRIPTION = "Open deal value per stage";
+const PIPELINE_CHART_TITLE = "Sales value by stage";
+const PIPELINE_CHART_DESCRIPTION = "Value of open opportunities at each stage";
 
 const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   const { pipeline, tickets, openTasksDueTodayCount } = report;
@@ -35,12 +36,12 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   return (
     <div className={KPI_GRID_CLASS}>
       <StatCard
-        label="Open pipeline"
+        label="Sales in progress"
         value={formatRupees(pipeline.totals.openValue)}
         hint={KPI_HINT.openPipelineValue}
       />
       <StatCard
-        label="Open deals"
+        label="Open opportunities"
         value={String(pipeline.totals.openDealCount)}
         hint={KPI_HINT.openDealCount}
       />
@@ -55,7 +56,7 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
         hint={KPI_HINT.openTicketCount}
       />
       <StatCard
-        label="Mean time to resolve"
+        label="Average time to solve"
         value={formatDuration(tickets.meanResolutionSeconds)}
         hint={KPI_HINT.meanTimeToResolve}
       />
@@ -90,12 +91,12 @@ const ActivityTrendTable = ({ report }: { report: CrmOverviewReport }) => (
 
 const PipelineStageTable = ({ report }: { report: CrmOverviewReport }) => (
   <table>
-    <caption>Open deal value by pipeline stage</caption>
+    <caption>Value of open opportunities by stage</caption>
     <thead>
       <tr>
         <th scope="col">Stage</th>
         <th scope="col">Open value</th>
-        <th scope="col">Open deals</th>
+        <th scope="col">Open opportunities</th>
       </tr>
     </thead>
     <tbody>
@@ -142,9 +143,9 @@ const OverviewCharts = ({ report }: { report: CrmOverviewReport }) => {
       <ChartCard
         title={PIPELINE_CHART_TITLE}
         description={PIPELINE_CHART_DESCRIPTION}
-        ariaLabel="Open deal value by pipeline stage"
+        ariaLabel="Value of open opportunities by stage"
         isEmpty={!hasPipelineValue}
-        emptyMessage="Not enough data yet — add deals to the pipeline to see value by stage."
+        emptyMessage="Not enough data yet. Add opportunities to the sales board to see their value by stage."
         dataTable={<PipelineStageTable report={report} />}
       >
         <BarSeries
@@ -193,7 +194,7 @@ export const CrmOverviewSection = () => {
       <div>
         <h2 className="font-display text-lg font-bold text-foreground">Overview</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pipeline, support and activity for this organization at a glance.
+          Your sales, support and team activity at a glance.
         </p>
       </div>
 

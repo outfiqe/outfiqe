@@ -118,7 +118,7 @@ describe("PipelinePage", () => {
     expect(await screen.findByText("Spring collab")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Lead" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Won" })).toBeInTheDocument();
-    expect(screen.getByText(/follow every deal from first contact/i)).toBeInTheDocument();
+    expect(screen.getByText(/every sales opportunity, from first contact/i)).toBeInTheDocument();
   });
 
   it("moves a deal to another stage from the card control", async () => {
@@ -147,7 +147,7 @@ describe("PipelinePage", () => {
     renderPipelinePage();
 
     expect(await screen.findByLabelText("Move to")).toBeDisabled();
-    expect(screen.queryByRole("button", { name: "New deal" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New opportunity" })).not.toBeInTheDocument();
   });
 
   it("shows an error toast and doesn't invalidate the board when a move is rejected", async () => {
@@ -182,9 +182,9 @@ describe("PipelinePage", () => {
     renderPipelinePage();
     const user = userEvent.setup({ delay: null });
 
-    await user.click(await screen.findByRole("button", { name: "New deal" }));
+    await user.click(await screen.findByRole("button", { name: "New opportunity" }));
 
-    expect(await screen.findByRole("heading", { name: "New deal" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "New opportunity" })).toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toBeInTheDocument();
   });
 });

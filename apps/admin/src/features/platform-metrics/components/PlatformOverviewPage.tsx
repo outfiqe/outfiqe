@@ -54,9 +54,9 @@ const KPI_CARDS: {
     hint: "Contacts stored in the CRM, added up across every customer organization.",
   },
   {
-    label: "Deals",
+    label: "Opportunities",
     metricKey: "totalDeals",
-    hint: "Pipeline deals created, added up across every customer organization.",
+    hint: "Sales opportunities created, added up across every customer organization.",
   },
   {
     label: "Tickets",

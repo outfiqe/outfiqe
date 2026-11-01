@@ -4,6 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { formatDateTime } from "../../utils/format.utils";
 import { crmAuditApi } from "../api/auditApi";
@@ -61,10 +62,7 @@ export const AuditPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">
-        {CRM_PAGE_TEXT.audit.title}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.audit.description}</p>
+      <CrmPageHeader {...CRM_PAGE_TEXT.audit} />
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={AUDIT_TABLE_HEADERS} />}

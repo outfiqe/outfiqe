@@ -7,7 +7,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { PartnerDetailSkeleton } from "../../components/CrmSkeletons";
-import { formatDate, formatRupees } from "../../utils/format.utils";
+import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
@@ -24,7 +24,7 @@ export const PartnerDetailPage = () => {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <BackLink to="/crm/partners">All partners</BackLink>
 
       {isLoading && <PartnerDetailSkeleton />}
@@ -36,8 +36,8 @@ export const PartnerDetailPage = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">{partner.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               @{partner.handle} · {partner.tagClickCount.toLocaleString()} tag clicks ·{" "}
-              {partner.attributedOrderCount.toLocaleString()} attributed orders ·{" "}
-              {formatRupees(partner.attributedRevenue)} attributed revenue
+              {partner.attributedOrderCount.toLocaleString()} orders they brought ·{" "}
+              {formatRupees(partner.attributedRevenue)} in sales they brought
             </p>
           </div>
 
@@ -73,16 +73,16 @@ export const PartnerDetailPage = () => {
 
           <section>
             <h2 className="font-display text-base font-bold text-foreground">
-              Recent attributed orders
+              Recent orders they brought
             </h2>
             {partner.recentAttributedOrders.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No attributed orders yet.</p>
+              <p className="mt-2 text-sm text-muted-foreground">No orders from this muse yet.</p>
             ) : (
               <ul className="mt-2 space-y-2 text-sm">
                 {partner.recentAttributedOrders.map((order) => (
                   <li key={order.orderItemId} className="rounded-lg border border-border p-3">
                     {order.productName} × {order.qty} · {formatRupees(order.unitPrice * order.qty)}{" "}
-                    · {order.paymentStatus.toLowerCase()} / {order.fulfilmentStatus.toLowerCase()} ·{" "}
+                    · {toPlainWords(order.paymentStatus)} / {toPlainWords(order.fulfilmentStatus)} ·{" "}
                     {formatDate(order.createdAt)}
                   </li>
                 ))}

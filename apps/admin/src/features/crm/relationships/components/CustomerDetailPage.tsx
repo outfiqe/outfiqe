@@ -7,7 +7,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
 import { CustomerDetailSkeleton } from "../../components/CrmSkeletons";
-import { formatDate, formatRupees } from "../../utils/format.utils";
+import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
@@ -24,7 +24,7 @@ export const CustomerDetailPage = () => {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <BackLink to="/crm/customers">All customers</BackLink>
 
       {isLoading && <CustomerDetailSkeleton />}
@@ -50,8 +50,8 @@ export const CustomerDetailPage = () => {
                 {customer.recentOrders.map((order) => (
                   <li key={order.orderId} className="rounded-lg border border-border p-3">
                     {order.itemCount} item{order.itemCount === 1 ? "" : "s"} ·{" "}
-                    {formatRupees(order.brandSubtotal)} · {order.paymentStatus.toLowerCase()} /{" "}
-                    {order.fulfilmentStatus.toLowerCase()} · {formatDate(order.createdAt)}
+                    {formatRupees(order.brandSubtotal)} · {toPlainWords(order.paymentStatus)} /{" "}
+                    {toPlainWords(order.fulfilmentStatus)} · {formatDate(order.createdAt)}
                   </li>
                 ))}
               </ul>

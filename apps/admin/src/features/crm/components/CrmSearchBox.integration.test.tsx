@@ -102,7 +102,7 @@ describe("CrmSearchBox", () => {
     expect(screen.getByText("Spring Shopper")).toBeInTheDocument();
     expect(screen.getByText("Partners")).toBeInTheDocument();
     expect(screen.getByText("Customers")).toBeInTheDocument();
-    expect(screen.getByText("Deals")).toBeInTheDocument();
+    expect(screen.getByText("Opportunities")).toBeInTheDocument();
     expect(screen.getByText("Tickets")).toBeInTheDocument();
 
     await user.click(screen.getByText("Spring Muse"));

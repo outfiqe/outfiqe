@@ -80,7 +80,7 @@ describe("ReportsPage", () => {
     renderReportsPage();
 
     expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
-    expect(await screen.findByText("Pipeline value by stage")).toBeInTheDocument();
+    expect(await screen.findByText("Sales value by stage")).toBeInTheDocument();
     expect(screen.getByText("Support tickets")).toBeInTheDocument();
   });
 

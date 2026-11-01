@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
@@ -72,33 +73,30 @@ export const PipelinePage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.pipeline.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.pipeline.description}</p>
-        </div>
-        <div className="flex gap-2">
-          {canConfigure && (
-            <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>
-              Configure stages
-            </Button>
-          )}
-          {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New deal" />}
-          {canWriteDeals && stages && stages.length > 0 && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingDeal(null);
-                setDealModalOpen(true);
-              }}
-            >
-              New deal
-            </Button>
-          )}
-        </div>
-      </div>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.pipeline}
+        actions={
+          <div className="flex gap-2">
+            {canConfigure && (
+              <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>
+                Edit stages
+              </Button>
+            )}
+            {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New opportunity" />}
+            {canWriteDeals && stages && stages.length > 0 && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingDeal(null);
+                  setDealModalOpen(true);
+                }}
+              >
+                New opportunity
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <div className="mt-6">
         {stagesLoading && <KanbanBoardSkeleton />}
@@ -106,7 +104,7 @@ export const PipelinePage = () => {
 
         {stages && stages.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            This pipeline has no stages yet. Configure stages to get started.
+            This board has no stages yet. Add your stages to get started.
           </p>
         )}
 
@@ -116,7 +114,7 @@ export const PipelinePage = () => {
             cards={cards}
             onCardMove={(dealId, stageId) => moveDeal.mutate({ dealId, stageId })}
             disabled={!canWriteDeals || moveDeal.isPending}
-            emptyColumnLabel="No deals"
+            emptyColumnLabel="No opportunities"
             renderCard={(card) => (
               <button
                 type="button"

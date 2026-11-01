@@ -7,6 +7,7 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT, CUSTOMER_TABLE_HEADERS } from "../../constants/crmPageContent";
 import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
@@ -31,23 +32,21 @@ export const CustomersPage = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">
-          {CRM_PAGE_TEXT.customers.title}
-        </h1>
-        <Input
-          type="search"
-          placeholder="Search shoppers"
-          value={searchTerm}
-          onChange={(event) => {
-            setSearchTerm(event.target.value);
-            setPage(1);
-          }}
-          className="w-64"
-        />
-      </div>
-
-      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.customers.description}</p>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.customers}
+        actions={
+          <Input
+            type="search"
+            placeholder="Search shoppers"
+            value={searchTerm}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              setPage(1);
+            }}
+            className="w-64"
+          />
+        }
+      />
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={CUSTOMER_TABLE_HEADERS} />}

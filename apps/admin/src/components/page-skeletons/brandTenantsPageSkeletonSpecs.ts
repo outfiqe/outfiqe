@@ -61,17 +61,25 @@ export const brandTenantsPageSkeletonSpecs: Record<string, AdminPageSkeletonSpec
   "/platform/metrics": {
     title: "Tenant metrics",
     description:
-      "How each business is using the CRM. Counts only, so their private contacts and deals stay private. Click a business to see its account and activity.",
+      "How each business is using the CRM. Counts only, so their private contacts and sales stay private. Click a business to see its account and activity.",
     blocks: [
       {
         kind: "labeledStats",
         isWide: true,
-        labels: ["Members", "Contacts", "Deals", "Tickets", "Activities"],
+        labels: ["Members", "Contacts", "Opportunities", "Tickets", "Activities"],
       },
       { kind: "selectBar", options: ["All plans", "Recent activity"] },
       {
         kind: "table",
-        headers: ["Business", "Plan", "Members", "Contacts", "Deals", "Tickets", "Last used"],
+        headers: [
+          "Business",
+          "Plan",
+          "Members",
+          "Contacts",
+          "Opportunities",
+          "Tickets",
+          "Last used",
+        ],
       },
     ],
     sourceFiles: [

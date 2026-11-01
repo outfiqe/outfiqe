@@ -29,7 +29,7 @@ const KPI_STEP: PlatformTourStep = {
   groupKey: null,
   anchorSelector: `[data-tour-anchor="${PLATFORM_KPI_TOUR_ANCHOR}"]`,
   title: "Platform-wide totals",
-  body: "Tenants, members, contacts, deals, tickets and logged activity, added up across every customer organization. Hover the info marker on any card to see exactly what it counts. Further down, Settlement reconciliation compares what the payment gateways are holding against what the ledger says is owed.",
+  body: "Tenants, members, contacts, opportunities, tickets and logged activity, added up across every customer organization. Hover the info marker on any card to see exactly what it counts. Further down, Settlement reconciliation compares what the payment gateways are holding against what the ledger says is owed.",
 };
 
 const FINISH_STEP: PlatformTourStep = {

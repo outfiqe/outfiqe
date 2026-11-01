@@ -51,7 +51,7 @@ const requireStage = async (
 ): Promise<PipelineStageRecord> => {
   const stage = await crmPipelineRepository.findStage(organizationId, stageId);
   if (!stage)
-    throw new AppError("STAGE_NOT_FOUND", "Pipeline stage not found.", HTTP_STATUS.NOT_FOUND);
+    throw new AppError("STAGE_NOT_FOUND", "Sales stage not found.", HTTP_STATUS.NOT_FOUND);
   return stage;
 };
 
@@ -122,7 +122,7 @@ export const crmPipelineService = {
     if (dealCount > 0) {
       throw new AppError(
         "STAGE_NOT_EMPTY",
-        "Move or delete this stage's deals before removing it.",
+        "Move or delete this stage's opportunities before removing it.",
         HTTP_STATUS.CONFLICT,
       );
     }
@@ -156,7 +156,8 @@ export const crmPipelineService = {
 
   async getDeal(organizationId: string, dealId: string): Promise<DealWithRelations> {
     const deal = await crmPipelineRepository.findDeal(organizationId, dealId);
-    if (!deal) throw new AppError("DEAL_NOT_FOUND", "Deal not found.", HTTP_STATUS.NOT_FOUND);
+    if (!deal)
+      throw new AppError("DEAL_NOT_FOUND", "Opportunity not found.", HTTP_STATUS.NOT_FOUND);
     return deal;
   },
 
@@ -227,7 +228,7 @@ export const crmPipelineService = {
     if (!isPartner) {
       throw new AppError(
         "NOT_A_PARTNER",
-        "A deal can only be opened against a partner of this brand.",
+        "An opportunity can only be opened against a partner of this brand.",
         HTTP_STATUS.BAD_REQUEST,
       );
     }
@@ -245,7 +246,7 @@ export const crmPipelineService = {
     if (!membership) {
       throw new AppError(
         "OWNER_NOT_FOUND",
-        "The deal owner isn't a member of this organization.",
+        "The opportunity owner isn't a member of this organization.",
         HTTP_STATUS.NOT_FOUND,
       );
     }

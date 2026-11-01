@@ -53,7 +53,7 @@ export const AcceptInvitePage = () => {
         {state.status === "done" && (
           <>
             <p className="text-sm text-foreground">
-              You now have CRM access. You can manage members and pipeline from here on out.
+              You now have CRM access. You can now manage your team and sales board.
             </p>
             <Link to="/crm">
               <Button className="mt-4">Go to CRM</Button>

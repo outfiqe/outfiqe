@@ -369,3 +369,9 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   (`_authenticated.gamification.badges.tsx` deliberately reduced to `() => <Outlet />`). The
   `.index` suffix marks a route as "the exact leaf here, no children, no outlet required," which
   is what `/crm` actually is.
+
+## Wording and page headers
+
+**On screen, Pipeline is the "Sales board" and a deal is an "Opportunity".** Plain words help people who have never used a CRM. Only the words changed: code, routes, permissions and API fields still say pipeline and deal, so links and data keep working.
+
+**Every CRM page uses `components/CrmPageHeader.tsx`.** It keeps the title, description and actions in the same place on every page. Add a new page's words to `CRM_PAGE_TEXT`, and write the description for someone new to CRMs.

@@ -62,7 +62,7 @@ describe("CrmOverviewSection", () => {
 
     render(<CrmOverviewSection />, { wrapper });
 
-    expect(await screen.findByText("Open pipeline")).toBeInTheDocument();
+    expect(await screen.findByText("Sales in progress")).toBeInTheDocument();
     expect(screen.getByText("Rs. 9,000")).toBeInTheDocument();
     expect(screen.getByText("Tasks due today")).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
@@ -71,13 +71,13 @@ describe("CrmOverviewSection", () => {
       screen.getByRole("button", { name: "How Tasks due today is calculated" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "How Mean time to resolve is calculated" }),
+      screen.getByRole("button", { name: "How Average time to solve is calculated" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("figure", { name: /crm activities logged per day/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("figure", { name: /open deal value by pipeline stage/i }),
+      screen.getByRole("figure", { name: /value of open opportunities by stage/i }),
     ).toBeInTheDocument();
   });
 
@@ -112,7 +112,7 @@ describe("CrmOverviewSection", () => {
       await screen.findByText(/logged calls, notes and emails will show here/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/add deals to the pipeline to see value by stage/i),
+      screen.getByText(/add opportunities to the sales board to see their value by stage/i),
     ).toBeInTheDocument();
   });
 
