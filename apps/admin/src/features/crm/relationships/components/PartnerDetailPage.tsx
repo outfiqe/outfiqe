@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { BackLink } from "@/components/BackLink";
-import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
@@ -13,9 +12,10 @@ import { ConnectedPeopleSection } from "../../connections/components/ConnectedPe
 import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
 import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent";
 import { CRM_TERMS } from "../../constants/crmTerms";
-import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
+import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
 import { PartnerProductsSection } from "./PartnerProductsSection";
+import { RecentOrdersSection } from "./RecentOrdersSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
 
@@ -67,23 +67,13 @@ export const PartnerDetailPage = () => {
           <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>
             <PartnerProductsSection products={partner.productBreakdown} />
 
-            <MetricSection
+            <RecentOrdersSection
               title="Recent orders they brought"
-              description="The latest orders that came through this partner."
-            >
-              {partner.recentAttributedOrders.length === 0 ? (
-                <MetricEmptyState>No orders from this partner yet.</MetricEmptyState>
-              ) : (
-                partner.recentAttributedOrders.map((order) => (
-                  <MetricRow
-                    key={order.orderItemId}
-                    label={`${order.productName} × ${order.qty}`}
-                    detail={`${toPlainWords(order.paymentStatus)} · ${toPlainWords(order.fulfilmentStatus)} · ${formatDate(order.createdAt)}`}
-                    value={formatRupees(order.unitPrice * order.qty)}
-                  />
-                ))
-              )}
-            </MetricSection>
+              description="The latest orders that came through this partner. Click one for details."
+              emptyMessage="No orders from this partner yet."
+              scopeNote="Only the products this partner brought are shown."
+              orders={partner.recentAttributedOrders}
+            />
           </div>
 
           <ConnectedPeopleSection subject={partnerSubject} />

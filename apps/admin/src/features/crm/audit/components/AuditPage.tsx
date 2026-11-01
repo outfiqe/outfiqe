@@ -29,7 +29,9 @@ import {
   toAuditActionLabel,
   toAuditSummary,
 } from "../utils/auditEntries.utils";
+import { AuditActor } from "./AuditActor";
 import { AuditEntryPanel } from "./AuditEntryPanel";
+import { AuditPersonPanel } from "./AuditPersonPanel";
 
 const AUDIT_QUERY_KEY = ["crm-audit"];
 const AUDIT_FILTERS_QUERY_KEY = ["crm-audit-filters"];
@@ -41,9 +43,15 @@ const AUDIT_GROUP_FILTER = oneOfFilter(
   "",
 );
 
-const AUDIT_COLUMNS: TableColumn<AuditLogRow>[] = [
+const toAuditColumns = (
+  onSelectActor: (entry: AuditLogRow) => void,
+): TableColumn<AuditLogRow>[] => [
   { key: "when", header: "When", render: ({ createdAt }) => formatDateTime(createdAt) },
-  { key: "who", header: "Who", render: ({ actorName }) => actorName ?? "System" },
+  {
+    key: "who",
+    header: "Who",
+    render: (entry) => <AuditActor entry={entry} onSelect={onSelectActor} />,
+  },
   {
     key: "action",
     header: "Action",
@@ -65,6 +73,16 @@ export const AuditPage = () => {
   const [dateFrom, setDateFrom] = useSearchFilter("from", rawTextFilter);
   const [dateTo, setDateTo] = useSearchFilter("to", rawTextFilter);
   const [selectedEntry, setSelectedEntry] = useState<AuditLogRow | null>(null);
+  const [selectedActorEntry, setSelectedActorEntry] = useState<AuditLogRow | null>(null);
+
+  const openActorPanel = (entry: AuditLogRow) => {
+    setSelectedEntry(null);
+    setSelectedActorEntry(entry);
+  };
+  const showActorActivity = ({ actorUserId: chosenActorId }: AuditLogRow) => {
+    setActorUserId(chosenActorId ?? "");
+    setSelectedActorEntry(null);
+  };
 
   const auditFilters = {
     group: group || undefined,
@@ -162,7 +180,7 @@ export const AuditPage = () => {
         {rows.length > 0 && (
           <Table
             caption="Audit log"
-            columns={AUDIT_COLUMNS}
+            columns={toAuditColumns(openActorPanel)}
             rows={rows}
             rowKey={({ id }) => id}
             onRowClick={setSelectedEntry}
@@ -183,7 +201,18 @@ export const AuditPage = () => {
       </div>
 
       {selectedEntry && (
-        <AuditEntryPanel entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+        <AuditEntryPanel
+          entry={selectedEntry}
+          onSelectActor={openActorPanel}
+          onClose={() => setSelectedEntry(null)}
+        />
+      )}
+      {selectedActorEntry && (
+        <AuditPersonPanel
+          entry={selectedActorEntry}
+          onShowTheirActivity={() => showActorActivity(selectedActorEntry)}
+          onClose={() => setSelectedActorEntry(null)}
+        />
       )}
     </div>
   );

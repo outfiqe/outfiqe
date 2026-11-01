@@ -15,14 +15,15 @@ export const TransactionLedger = ({ transactions }: TransactionLedgerProps) => {
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Transactions
       </p>
-      {transactions.map(({ id, provider, type, status, transactionRef, createdAt }) => (
-        <div key={id} className="flex justify-between text-xs text-muted-foreground">
+      {transactions.map((transaction) => (
+        <div key={transaction.id} className="flex justify-between text-xs text-muted-foreground">
           <span>
-            {type === PaymentTransactionType.REFUND ? "Refund" : "Payment"} via {provider}
-            {transactionRef ? ` · ${transactionRef}` : ""}
+            {transaction.type === PaymentTransactionType.REFUND ? "Refund" : "Payment"} via{" "}
+            {transaction.provider}
+            {transaction.transactionRef ? ` · ${transaction.transactionRef}` : ""}
           </span>
           <span>
-            {status} · {formatDate(createdAt)}
+            {transaction.status} · {formatDate(transaction.createdAt)}
           </span>
         </div>
       ))}

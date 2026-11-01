@@ -449,7 +449,13 @@ The design system's `Avatar` shows someone's picture, or their first letter if t
 
 Clicking a team row on Reports opens `reporting/components/TeamMemberPanel.tsx`: role, join date and what they finished in the period. The email only shows for viewers with `members:read`.
 
+The Audit log's Who column shows each person's picture. Clicking them opens `audit/components/AuditPersonPanel.tsx`, built from the same `TeamMemberProfile` and `TeamMemberWork` parts as the Reports panel, without opening the entry behind it. Their last 30 days only appear for viewers with `reports:read`, and "See everything they did" uses the existing Who filter. Someone who has left keeps their name and shows as no longer on the team. Automatic entries stay as plain "System".
+
 The audit panel doesn't show IP addresses. They stay stored, but they mean little to a business owner and older entries can hold a server's address rather than a person's.
+
+## Recent orders
+
+`relationships/components/RecentOrdersSection.tsx` is used by both the customer and partner pages, and looks like the partner's product rows. A click opens `OrderPanel.tsx` with each product, its size and any refund. A tenant only ever sees its own products from an order, so a shopper's items from other brands don't appear and the total is this brand's share, not what the shopper paid. The delivery address and phone number are left out on purpose.
 
 ## Sales board limit
 

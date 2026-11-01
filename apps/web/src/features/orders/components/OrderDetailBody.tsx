@@ -22,6 +22,7 @@ import {
   hasNothingLeftToPay,
   NOTHING_TO_PAY_LABEL,
 } from "../utils/cancellationWording.utils";
+import { formatOrderReference } from "../utils/orderReference.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -136,7 +137,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           )}
         </div>
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
-          Order {id}
+          Order {formatOrderReference(id)}
         </h1>
         {!orderCancelled && !hasNothingToPay && (
           <p className="mt-4 text-sm text-muted-foreground">

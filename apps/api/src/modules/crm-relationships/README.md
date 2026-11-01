@@ -71,3 +71,7 @@ tenant's own brand.
 - **The advanced-feature gate is enforced here via `requireAdvancedCrmFeatures`** (from
   `crm-billing`) — a lapsed trial with no subscription gets a `402 ADVANCED_FEATURES_LOCKED` on
   these routes, matching the `PlanGateBanner` the admin already shows.
+
+## Recent orders
+
+`recentBrandOrders` in `crm-relationships.query-helpers.ts` serves both the customer and partner pages. Each order carries its lines, filtered to the tenant's own products, so items from other brands in the same order stay hidden. The partner page also filters to lines that partner brought.

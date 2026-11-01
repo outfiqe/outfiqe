@@ -48,31 +48,54 @@ const toAuditWhere = (
   ...(from || to ? { createdAt: { gte: from, lte: to } } : {}),
 });
 
-const withActorNames = async (rows: AuditRow[]): Promise<CrmAuditLogRecord[]> => {
+const withActorDetails = async (
+  organizationId: string,
+  rows: AuditRow[],
+): Promise<CrmAuditLogRecord[]> => {
   const actorIds = [
     ...new Set(rows.map((row) => row.actorUserId).filter((id): id is string => id !== null)),
   ];
   const actors = actorIds.length
     ? await prisma.user.findMany({
         where: { id: { in: actorIds } },
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          crmMemberships: {
+            where: { organizationId, status: "ACTIVE" },
+            select: { id: true, createdAt: true, role: { select: { name: true } } },
+          },
+        },
       })
     : [];
-  const actorNameById = new Map(actors.map((actor) => [actor.id, actor.name]));
+  const actorById = new Map(actors.map((actor) => [actor.id, actor]));
 
-  return rows.map((row) => ({
-    id: row.id,
-    action: row.action,
-    outcome: row.outcome,
-    summary: row.summary,
-    actorUserId: row.actorUserId,
-    actorName: row.actorUserId ? (actorNameById.get(row.actorUserId) ?? null) : null,
-    targetType: row.targetType,
-    targetId: row.targetId,
-    metadata: (row.metadata ?? {}) as Record<string, unknown>,
-    ipAddress: row.ipAddress,
-    createdAt: row.createdAt,
-  }));
+  return rows.map((row) => {
+    const actor = row.actorUserId ? actorById.get(row.actorUserId) : undefined;
+    const [membership] = actor?.crmMemberships ?? [];
+    return {
+      id: row.id,
+      action: row.action,
+      outcome: row.outcome,
+      summary: row.summary,
+      actorUserId: row.actorUserId,
+      actorName: actor?.name ?? null,
+      actorAvatarUrl: actor?.avatarUrl ?? null,
+      actorMember: membership
+        ? {
+            membershipId: membership.id,
+            roleName: membership.role.name,
+            joinedAt: membership.createdAt,
+          }
+        : null,
+      targetType: row.targetType,
+      targetId: row.targetId,
+      metadata: (row.metadata ?? {}) as Record<string, unknown>,
+      ipAddress: row.ipAddress,
+      createdAt: row.createdAt,
+    };
+  });
 };
 
 export const crmAuditRepository = {
@@ -104,7 +127,7 @@ export const crmAuditRepository = {
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       select: AUDIT_ROW_SELECT,
     });
-    return withActorNames(rows);
+    return withActorDetails(organizationId, rows);
   },
 
   async listForExport(
@@ -118,7 +141,7 @@ export const crmAuditRepository = {
       take: rowLimit,
       select: AUDIT_ROW_SELECT,
     });
-    return withActorNames(rows);
+    return withActorDetails(organizationId, rows);
   },
 
   async listFilterOptions(organizationId: string): Promise<AuditFilterOptions> {

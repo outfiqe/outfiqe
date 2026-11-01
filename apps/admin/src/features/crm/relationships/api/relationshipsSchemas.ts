@@ -43,6 +43,32 @@ export type PartnerListPage = z.infer<typeof partnerListPageSchema>;
 export const customerListPageSchema = listPage(customerSummarySchema);
 export type CustomerListPage = z.infer<typeof customerListPageSchema>;
 
+const relationshipOrderLineSchema = z.object({
+  orderItemId: z.string(),
+  productId: z.string(),
+  productName: z.string(),
+  imageUrl: z.string().nullable(),
+  sizeLabel: z.string(),
+  qty: z.number(),
+  unitPrice: z.number(),
+  refundedQty: z.number(),
+  isLive: z.boolean(),
+});
+export type RelationshipOrderLine = z.infer<typeof relationshipOrderLineSchema>;
+
+const relationshipOrderSchema = z.object({
+  orderId: z.string(),
+  itemCount: z.number(),
+  brandSubtotal: z.number(),
+  paymentMethod: z.string(),
+  paymentStatus: z.string(),
+  fulfilmentStatus: z.string(),
+  deliveredAt: z.string().nullable(),
+  createdAt: z.string(),
+  lines: z.tuple([relationshipOrderLineSchema]).rest(relationshipOrderLineSchema),
+});
+export type RelationshipOrder = z.infer<typeof relationshipOrderSchema>;
+
 export const partnerDetailSchema = partnerSummarySchema.extend({
   productBreakdown: z.array(
     z.object({
@@ -57,31 +83,11 @@ export const partnerDetailSchema = partnerSummarySchema.extend({
       attributedRevenue: z.number(),
     }),
   ),
-  recentAttributedOrders: z.array(
-    z.object({
-      orderItemId: z.string(),
-      orderId: z.string(),
-      productName: z.string(),
-      qty: z.number(),
-      unitPrice: z.number(),
-      paymentStatus: z.string(),
-      fulfilmentStatus: z.string(),
-      createdAt: z.string(),
-    }),
-  ),
+  recentAttributedOrders: z.array(relationshipOrderSchema),
 });
 export type PartnerDetail = z.infer<typeof partnerDetailSchema>;
 
 export const customerDetailSchema = customerSummarySchema.extend({
-  recentOrders: z.array(
-    z.object({
-      orderId: z.string(),
-      itemCount: z.number(),
-      brandSubtotal: z.number(),
-      paymentStatus: z.string(),
-      fulfilmentStatus: z.string(),
-      createdAt: z.string(),
-    }),
-  ),
+  recentOrders: z.array(relationshipOrderSchema),
 });
 export type CustomerDetail = z.infer<typeof customerDetailSchema>;

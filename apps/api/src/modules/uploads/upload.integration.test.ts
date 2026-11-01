@@ -69,6 +69,54 @@ describe("POST /api/uploads", () => {
     expect(response.status).toBe(422);
     expect(response.body.message).toBe("Only JPEG, PNG or WebP images are allowed.");
   });
+
+  it("rejects HTML content disguised with an image content type", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .post("/api/uploads")
+      .set("Authorization", authHeaderFor(user.id))
+      .attach("files", Buffer.from("<!doctype html><script>alert(1)</script>"), {
+        filename: "evil.html",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.code).toBe("INVALID_FILE");
+  });
+
+  it("rejects an SVG disguised with an image content type", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .post("/api/uploads")
+      .set("Authorization", authHeaderFor(user.id))
+      .attach("files", Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'></svg>"), {
+        filename: "evil.svg",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.code).toBe("INVALID_FILE");
+  });
+
+  it("stores a real image with an image extension even when the filename claims .html", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .post("/api/uploads")
+      .set("Authorization", authHeaderFor(user.id))
+      .attach("files", Buffer.from(TINY_PNG_BASE64, "base64"), {
+        filename: "pretends-to-be.html",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(200);
+    const [uploaded] = response.body.data.files;
+    expect(uploaded.key).toMatch(/\.png$/);
+    expect(uploaded.key).not.toMatch(/html/);
+    expect(uploaded.url).toMatch(/\.png$/);
+  });
 });
 
 describe("POST /api/uploads/pipeline", () => {

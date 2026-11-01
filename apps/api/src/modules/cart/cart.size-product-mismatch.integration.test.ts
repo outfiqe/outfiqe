@@ -1,7 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import { PaymentMethod, UserRole } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
@@ -57,37 +56,19 @@ describe("cart item whose size belongs to a different product", () => {
     expect(addToCart.status).toBeGreaterThanOrEqual(400);
   });
 
-  it("refuses to check out a mismatched row that already sits in a cart", async () => {
-    const { userId: adminId } = await createAdminSession();
-    await createActiveCommissionRule(adminId);
-    await createDefaultDeliveryZone();
+  it("cannot be persisted as a cart row because the database rejects the pairing", async () => {
     const cheap = await createPurchasableProduct(CHEAP_PRICE);
     const expensive = await createPurchasableProduct(EXPENSIVE_PRICE);
     const buyer = await createBuyer();
     const cart = await prisma.cart.create({ data: { userId: buyer.id } });
-    await prisma.cartItem.create({
-      data: { cartId: cart.id, productId: cheap.product.id, sizeId: expensive.size.id, qty: 1 },
-    });
-    const stockBeforeCheckout = (
-      await prisma.productSize.findUniqueOrThrow({ where: { id: expensive.size.id } })
-    ).stock;
 
-    const checkout = await request(testApp)
-      .post("/api/orders/checkout")
-      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
-      .send({
-        fullName: "Test Buyer",
-        phone: "9800000000",
-        address: "123 Test Street",
-        city: "Kathmandu",
-        paymentMethod: PaymentMethod.COD,
-      });
+    await expect(
+      prisma.cartItem.create({
+        data: { cartId: cart.id, productId: cheap.product.id, sizeId: expensive.size.id, qty: 1 },
+      }),
+    ).rejects.toThrow();
 
-    expect(checkout.status).toBe(HTTP_STATUS.CONFLICT);
-    expect(checkout.body.code).toBe("ITEMS_UNAVAILABLE");
-    const stockAfterCheckout = (
-      await prisma.productSize.findUniqueOrThrow({ where: { id: expensive.size.id } })
-    ).stock;
-    expect(stockAfterCheckout).toBe(stockBeforeCheckout);
+    const persistedMismatchedRows = await prisma.cartItem.count({ where: { cartId: cart.id } });
+    expect(persistedMismatchedRows).toBe(0);
   });
 });

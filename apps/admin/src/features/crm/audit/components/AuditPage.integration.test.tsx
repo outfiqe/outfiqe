@@ -7,7 +7,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -29,6 +29,29 @@ const ORGANIZATION = {
   advancedFeaturesEnabled: true,
 };
 
+const ACTOR_MEMBER = {
+  membershipId: "m-1",
+  roleName: "Admin",
+  joinedAt: "2026-01-05T00:00:00.000Z",
+};
+
+const PERIOD_SUMMARY = {
+  sales: { newDealCount: 0, wonDealCount: 0, wonValue: 0, lostDealCount: 0 },
+  support: { openedCount: 0, resolvedCount: 0, meanResolutionSeconds: null },
+  team: [
+    {
+      ...ACTOR_MEMBER,
+      name: "Bipin Karki",
+      avatarUrl: null,
+      wonDealCount: 2,
+      wonValue: 9000,
+      resolvedTicketCount: 1,
+      completedTaskCount: 3,
+      activityCount: 4,
+    },
+  ],
+};
+
 const entry = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: `e-${Math.random().toString(36).slice(2)}`,
   action: "ROLE_CREATED",
@@ -36,6 +59,8 @@ const entry = (overrides: Partial<Record<string, unknown>> = {}) => ({
   summary: 'Created role "Analyst"',
   actorUserId: "u-1",
   actorName: "Bipin Karki",
+  actorAvatarUrl: "https://img.test/bipin.jpg",
+  actorMember: ACTOR_MEMBER,
   targetType: "role",
   targetId: "r-9",
   metadata: {},
@@ -84,11 +109,53 @@ const CHECKOUT_ENTRY = {
   summary: "Started checkout for the starter plan (1 seats)",
   actorUserId: "u-1",
   actorName: "Bipin Karki",
+  actorAvatarUrl: "https://img.test/bipin.jpg",
+  actorMember: ACTOR_MEMBER,
   targetType: "subscription",
   targetId: null,
   metadata: { plan: "starter" },
   ipAddress: null,
   createdAt: "2026-11-01T00:00:00.000Z",
+};
+
+const mockActorEntries = (
+  seenActors: (string | null)[],
+  actorMember: typeof ACTOR_MEMBER | null,
+) => {
+  mockOrganization();
+  mswServer.use(
+    http.get(`${API_BASE}/crm/audit/filters`, () =>
+      HttpResponse.json({ success: true, data: { actions: [], actors: [] } }),
+    ),
+    http.get(`${API_BASE}/crm/audit`, ({ request }) => {
+      seenActors.push(new URL(request.url).searchParams.get("actorUserId"));
+      return HttpResponse.json({
+        success: true,
+        data: { entries: [entry({ actorMember })], nextCursor: null },
+      });
+    }),
+    http.get(`${API_BASE}/crm/members`, () =>
+      HttpResponse.json({
+        success: true,
+        data: [
+          {
+            id: "m-1",
+            userId: "u-1",
+            userName: "Bipin Karki",
+            userEmail: "bipin@meridian.test",
+            roleId: "r-1",
+            roleName: "Admin",
+            status: "ACTIVE",
+            isSuperAdmin: true,
+            createdAt: "2026-01-05T00:00:00.000Z",
+          },
+        ],
+      }),
+    ),
+    http.get(`${API_BASE}/crm/reports/summary`, () =>
+      HttpResponse.json({ success: true, data: PERIOD_SUMMARY }),
+    ),
+  );
 };
 
 const mockAuditEntries = (seenGroups: (string | null)[]) =>
@@ -156,6 +223,78 @@ describe("AuditPage", () => {
       "/crm/billing",
     );
     expect(within(panel).getByText("3 times in a row")).toBeInTheDocument();
+  });
+
+  it("opens the person, not the entry, from the Who column, then filters to them", async () => {
+    const seenActors: (string | null)[] = [];
+    mockActorEntries(seenActors, ACTOR_MEMBER);
+    const router = renderAuditPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Bipin Karki" }));
+
+    const panel = await screen.findByRole("dialog", { name: "Bipin Karki" });
+    expect(screen.queryByRole("dialog", { name: "Role created" })).not.toBeInTheDocument();
+    expect(await within(panel).findByText("bipin@meridian.test")).toBeInTheDocument();
+    expect(await within(panel).findByText("In the last 30 days")).toBeInTheDocument();
+    expect(within(panel).getByText("Admin")).toBeInTheDocument();
+
+    fireEvent.click(within(panel).getByRole("button", { name: "See everything they did" }));
+
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ who: "u-1" }));
+    await waitFor(() => expect(seenActors).toContain("u-1"));
+  });
+
+  it("moves from an entry's panel to the person", async () => {
+    mockActorEntries([], ACTOR_MEMBER);
+    renderAuditPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("cell", { name: /Created role/ }));
+    const entryPanel = await screen.findByRole("dialog", { name: "Role created" });
+    fireEvent.click(within(entryPanel).getByRole("button", { name: "Bipin Karki" }));
+
+    expect(await screen.findByRole("dialog", { name: "Bipin Karki" })).toBeInTheDocument();
+  });
+
+  it("says when someone has left the team", async () => {
+    mockActorEntries([], null);
+    renderAuditPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "Bipin Karki" }));
+
+    expect(await screen.findByText("No longer on your team.")).toBeInTheDocument();
+  });
+
+  it("shows automatic entries as System with nothing to click", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/audit/filters`, () =>
+        HttpResponse.json({ success: true, data: { actions: [], actors: [] } }),
+      ),
+      http.get(`${API_BASE}/crm/audit`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            entries: [
+              entry({
+                actorUserId: null,
+                actorName: null,
+                actorAvatarUrl: null,
+                actorMember: null,
+              }),
+            ],
+            nextCursor: null,
+          },
+        }),
+      ),
+    );
+
+    renderAuditPage();
+
+    expect(await screen.findByRole("cell", { name: "System" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "System" })).not.toBeInTheDocument();
   });
 
   it("shows an explicit empty state", async () => {
