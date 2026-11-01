@@ -16,9 +16,10 @@ export type AdvanceShipmentInput = {
 const BASE_PATH = "/orders/brand/fulfilment-groups";
 
 export const brandFulfilmentApi = {
-  async list(cursor?: string): Promise<BrandShipmentsPage> {
-    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await apiClient.get<BrandShipmentsPage>(`${BASE_PATH}${query}`);
+  async list(cursor?: string, search?: string): Promise<BrandShipmentsPage> {
+    const res = await apiClient.get<BrandShipmentsPage>(BASE_PATH, {
+      params: { cursor, search },
+    });
     return brandShipmentsPageSchema.parse(res.data);
   },
 

@@ -2,6 +2,7 @@
 
 import {
   Button,
+  SearchInput,
   Skeleton,
   Tabs,
   TabsContent,
@@ -9,6 +10,7 @@ import {
   TabsTrigger,
   toast,
 } from "@outfiqe/design-system";
+import { useDebouncedSearch } from "@outfiqe/hooks";
 import { ANALYTICS_EVENTS, generateUuid } from "@outfiqe/utils";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -95,8 +97,9 @@ const BuildGrid = ({ query, emptyText }: { query: BuildListQuery; emptyText: str
 export const MyBuildsPage = () => {
   const t = useTranslations("outfitBuild.myBuilds");
   const router = useRouter();
-  const myBuilds = useMyBuilds();
-  const sharedBuilds = useBuildsSharedWithMe();
+  const { searchText, setSearchText, search } = useDebouncedSearch();
+  const myBuilds = useMyBuilds(search);
+  const sharedBuilds = useBuildsSharedWithMe(search);
   const { selectedTab, selectTab } = useTabSearchParam(MY_BUILDS_TABS, MY_BUILDS_TAB.MINE);
   const [isStarting, setIsStarting] = useState(false);
 
@@ -133,16 +136,27 @@ export const MyBuildsPage = () => {
         </Button>
       </div>
 
+      <SearchInput
+        value={searchText}
+        onValueChange={setSearchText}
+        placeholder={t("searchPlaceholder")}
+        clearLabel={t("clearSearch")}
+        className="mb-4 max-w-md"
+      />
+
       <Tabs value={selectedTab} onValueChange={selectTab}>
         <TabsList>
           <TabsTrigger value={MY_BUILDS_TAB.MINE}>{t("tabs.mine")}</TabsTrigger>
           <TabsTrigger value={MY_BUILDS_TAB.SHARED}>{t("tabs.shared")}</TabsTrigger>
         </TabsList>
         <TabsContent value={MY_BUILDS_TAB.MINE} className="mt-4">
-          <BuildGrid query={myBuilds} emptyText={t("emptyMine")} />
+          <BuildGrid query={myBuilds} emptyText={search ? t("noSearchResults") : t("emptyMine")} />
         </TabsContent>
         <TabsContent value={MY_BUILDS_TAB.SHARED} className="mt-4">
-          <BuildGrid query={sharedBuilds} emptyText={t("emptyShared")} />
+          <BuildGrid
+            query={sharedBuilds}
+            emptyText={search ? t("noSearchResults") : t("emptyShared")}
+          />
         </TabsContent>
       </Tabs>
     </div>

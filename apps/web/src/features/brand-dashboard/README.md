@@ -148,3 +148,5 @@ screen is intentional: gross sales and net payout answer different questions. Se
 **Overview:** the period chips choose 7, 30 or 90 days. Revenue, the chart and best sellers follow the period. Payouts, stock and to-fulfil are always "right now". Every card opens the page behind it.
 
 **The overview period lives in the link.** `?range=7d`, `30d` or `90d` keeps the chosen period on refresh and when the link is shared, through `useOverviewPeriod`. A missing or unknown range means 30 days. `app/(dashboard)/overview/page.tsx` reads the same value, so the server loads the right period and the page doesn't flash the 30-day numbers first.
+
+**Orders search by product name or order number, never by customer.** Brands don't get customer details for Outfiqe-delivered orders, so searching by name or phone would leak them one guess at a time. An order number is the first 8 characters of the order id, so `toUuidPrefixRange` turns it into an id range that can use the index.

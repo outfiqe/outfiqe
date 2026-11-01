@@ -295,6 +295,21 @@ describe("Effective price on public and brand product reads", () => {
     expect(response.body.data.discountPercent).toBeNull();
   });
 
+  it("finds the brand's own product by name", async () => {
+    const { owner, product } = await setUpOwnedProduct(2_000);
+    const listMine = (search: string) =>
+      request(testApp)
+        .get("/api/products/mine")
+        .query({ search })
+        .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER));
+
+    const found = await listMine(product.name.toUpperCase());
+    const noMatch = await listMine("nothing like this");
+
+    expect(found.body.data.products.map(({ id }: { id: string }) => id)).toEqual([product.id]);
+    expect(noMatch.body.data.products).toEqual([]);
+  });
+
   it("shows the brand's own product list with the active discount and effective price", async () => {
     const { owner, product } = await setUpOwnedProduct(2_000);
     await request(testApp)

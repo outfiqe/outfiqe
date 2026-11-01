@@ -153,10 +153,14 @@ export const outfitRepository = {
 
   async listForMember(
     userId: string,
-    { cursor, limit }: { cursor?: string; limit: number },
+    { search, cursor, limit }: { search?: string; cursor?: string; limit: number },
   ): Promise<OutfitMemberSummaryRow[]> {
     return prisma.outfit.findMany({
-      where: { status: { in: activeBuildStatuses }, members: { some: { userId } } },
+      where: {
+        status: { in: activeBuildStatuses },
+        members: { some: { userId } },
+        ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
+      },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

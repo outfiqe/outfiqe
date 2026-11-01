@@ -1,6 +1,14 @@
 "use client";
 
-import { Badge, Button, ConfirmModal, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import {
+  Badge,
+  Button,
+  ConfirmModal,
+  Modal,
+  SearchInput,
+  Skeleton,
+  toast,
+} from "@outfiqe/design-system";
 import { Plus, Ruler } from "lucide-react";
 import { useState } from "react";
 
@@ -11,6 +19,8 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { BrandProduct } from "../api/brandProductsSchemas";
 
 const BRAND_PRODUCT_TILE_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw";
+import { useDebouncedSearch } from "@outfiqe/hooks";
+
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useDeleteProduct } from "../hooks/useDeleteProduct";
 import { DiscountModal } from "./DiscountModal";
@@ -48,7 +58,8 @@ export const ProductsSection = () => {
   const [stockProduct, setStockProduct] = useState<BrandProduct | null>(null);
   const [discountProduct, setDiscountProduct] = useState<BrandProduct | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<BrandProduct | null>(null);
-  const products = useBrandProducts();
+  const { searchText, setSearchText, search } = useDebouncedSearch();
+  const products = useBrandProducts(search);
   const deleteProduct = useDeleteProduct();
   const {
     data,
@@ -117,13 +128,24 @@ export const ProductsSection = () => {
       {!isPending && !isError && brandProducts.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Nothing listed yet — add your first piece.
+            {search
+              ? "No products match this search."
+              : "Nothing listed yet — add your first piece."}
           </p>
-          <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
-            Add a product
-          </Button>
+          {!search && (
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
+              Add a product
+            </Button>
+          )}
         </div>
       )}
+
+      <SearchInput
+        value={searchText}
+        onValueChange={setSearchText}
+        placeholder="Search your products"
+        className="mt-6 max-w-md"
+      />
 
       {brandProducts.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

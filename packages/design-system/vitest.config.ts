@@ -28,6 +28,7 @@ export default defineConfig({
         "src/scroll-row.tsx",
         "src/modal.tsx",
         "src/confirm-modal.tsx",
+        "src/search-input.tsx",
         "src/layers.ts",
         "src/table.tsx",
         "src/tour.tsx",

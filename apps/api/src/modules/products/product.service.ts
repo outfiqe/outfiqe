@@ -290,10 +290,10 @@ export const productService = {
 
   async listMine(
     userId: string,
-    { cursor, limit }: ListMineProductsQuery,
+    { search, cursor, limit }: ListMineProductsQuery,
   ): Promise<ProductBrandSummaryPage> {
     const brandId = await requireBrandId(userId);
-    const rows = await productRepository.listByBrandId(brandId, { cursor, limit });
+    const rows = await productRepository.listByBrandId(brandId, { search, cursor, limit });
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     return { products: pagedProducts.map(toBrandSummary), nextCursor };

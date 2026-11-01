@@ -16,8 +16,10 @@ export const useSubmitSupportRequest = () =>
     invalidateKeys: [MINE_KEY],
   });
 
-export const useMySupportRequests = () =>
-  useInfiniteCursorPage(MINE_KEY, (cursor) => supportApi.listMine(cursor));
+export const useMySupportRequests = (search?: string) =>
+  useInfiniteCursorPage(search ? [...MINE_KEY, search] : MINE_KEY, (cursor) =>
+    supportApi.listMine(cursor, search),
+  );
 
 export const useSupportRequestThread = (id: string | null) =>
   useQuery({

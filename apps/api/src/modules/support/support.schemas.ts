@@ -45,6 +45,7 @@ export const ticketIdParamsSchema = z.object({ id: z.uuid() });
 export const reopenTokenParamsSchema = z.object({ token: z.string().min(1).max(256) });
 
 export const mineListQuerySchema = z.object({
+  search: z.string().trim().min(1).max(120).optional(),
   cursor: z.string().min(1).optional(),
   limit: z.coerce
     .number()

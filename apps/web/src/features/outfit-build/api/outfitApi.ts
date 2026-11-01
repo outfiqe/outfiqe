@@ -77,14 +77,16 @@ export const outfitApi = {
     return outfitViewSchema.parse(res.data);
   },
 
-  async listMine(cursor?: string): Promise<OutfitSummaryPage> {
-    const res = await apiClient.get<OutfitSummaryPage>("/outfits", { params: { cursor } });
+  async listMine(cursor?: string, search?: string): Promise<OutfitSummaryPage> {
+    const res = await apiClient.get<OutfitSummaryPage>("/outfits", {
+      params: { cursor, search },
+    });
     return outfitSummaryPageSchema.parse(res.data);
   },
 
-  async listSharedWithMe(cursor?: string): Promise<OutfitSummaryPage> {
+  async listSharedWithMe(cursor?: string, search?: string): Promise<OutfitSummaryPage> {
     const res = await apiClient.get<OutfitSummaryPage>("/outfits/shared-with-me", {
-      params: { cursor },
+      params: { cursor, search },
     });
     return outfitSummaryPageSchema.parse(res.data);
   },

@@ -35,6 +35,7 @@ export * from "./progress-bar";
 export * from "./radio-group";
 export * from "./rating";
 export * from "./scroll-row";
+export * from "./search-input";
 export * from "./select";
 export * from "./skeleton";
 export * from "./stat-card";

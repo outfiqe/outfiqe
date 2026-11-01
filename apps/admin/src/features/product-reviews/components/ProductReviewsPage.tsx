@@ -1,7 +1,7 @@
-import { Badge, Button, ConfirmModal, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, ConfirmModal, SearchInput, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { ImageOff, Search, Star, X } from "lucide-react";
+import { ImageOff, Star, X } from "lucide-react";
 import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
@@ -125,15 +125,12 @@ export const ProductReviewsPage = () => {
         <SelectedProductBanner product={selectedProduct} onChangeProduct={clearSelection} />
       ) : (
         <div className="mt-5 space-y-3">
-          <div className="relative max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search products by name…"
-              className="pl-9"
-            />
-          </div>
+          <SearchInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder="Search products by name…"
+            className="max-w-md"
+          />
 
           {hasSearchToShow && (
             <div className="max-w-md space-y-2">

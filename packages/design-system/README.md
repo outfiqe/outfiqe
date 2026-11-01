@@ -107,3 +107,5 @@ The shared UI primitive library both `apps/web` and `apps/admin` build on — Ra
 **Opening a modal must not move the page.** A modal locks page scrolling, which removes the scrollbar and would widen the page. Web and admin keep the space with `scrollbar-gutter: stable` on `html`, and darken that strip while a modal is open so the overlay reaches the edge. Any new app needs the same two rules.
 
 **`Drawer` doesn't scroll on its own.** Its body hides overflow so the chat panel can manage its own scrolling. Anything else with content taller than the panel wraps it in `DrawerScrollArea`, or the bottom is cut off with no way to reach it.
+
+**`SearchInput` is the one search box.** It holds the icon and clear button, and pairs with `useDebouncedSearch` from `@outfiqe/hooks`, which waits for a pause and at least 2 letters. Paged lists must send the search to the server, because the browser only has the pages it has loaded.
