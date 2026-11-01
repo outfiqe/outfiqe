@@ -60,13 +60,25 @@ export const productInventoryService = {
     movement: StockMovement,
   ): Promise<string[]> {
     const insufficientSizeIds: string[] = [];
-    const committedDeltas: SizeStockDelta[] = [];
+    const committedLines: StockLine[] = [];
     for (const { sizeId, qty } of mergeStockLinesBySize(lines)) {
       const isDecremented = await productInventoryRepository.decrementStock(tx, sizeId, qty);
-      if (isDecremented) committedDeltas.push({ sizeId, delta: -qty });
+      if (isDecremented) committedLines.push({ sizeId, qty });
       else insufficientSizeIds.push(sizeId);
     }
-    await recordStockChanges(tx, movement, committedDeltas);
+
+    if (insufficientSizeIds.length > 0) {
+      for (const { sizeId, qty } of committedLines) {
+        await productInventoryRepository.restoreStock(tx, sizeId, qty);
+      }
+      return insufficientSizeIds;
+    }
+
+    await recordStockChanges(
+      tx,
+      movement,
+      committedLines.map(({ sizeId, qty }) => ({ sizeId, delta: -qty })),
+    );
     return insufficientSizeIds;
   },
 

@@ -35,6 +35,8 @@ Topic integration tests sit in their topic folder (`catalog/`, `discounts/`, `in
 
 `decrementStockForItems`/`restoreStockForItems` (in `inventory/inventory.service.ts`) process multi-item lines sorted by `sizeId`. This isn't cosmetic: two transactions that lock the same set of `ProductSize` rows in different orders can deadlock under Postgres; sorting first guarantees every caller acquires locks in the same order.
 
+`decrementStockForItems` is all-or-nothing: if any line is short, the lines it already decremented are restored inside the same transaction and no ledger movement is recorded, so the caller gets back the insufficient `sizeId`s with no stock left reserved. A caller that rolls its whole transaction back on an insufficient line (checkout does, via `ITEMS_UNAVAILABLE`) sees no difference, but a caller that commits the failure instead (online-payment settlement flags `needsManualRefund` rather than rolling back) must not leak the units from its other lines — see `payments/README.md`.
+
 ## Inventory ledger — every stock change is written down
 
 `InventoryLedgerEntry` is an append-only record of every change to `ProductSize.stock`: the size, the change (`delta`), what kind of change it was (`InventoryMovementKind`) and what caused it (`sourceType` + `sourceId`). Summing a size's entries always gives its current stock, so we can explain any stock number after the fact.
