@@ -14,6 +14,10 @@ vi.mock("../hooks/useBrandOverview", () => ({
   useBrandOverview: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("@outfiqe/design-system/charts", async (importOriginal) => {
   const actual = await importOriginal<typeof DesignSystemCharts>();
   return { ...actual, TrendChart: () => <div data-testid="trend-chart" /> };
@@ -87,6 +91,7 @@ const mockOverview = (value: Partial<ReturnType<typeof useBrandOverview>>) => {
 };
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/overview");
   mockOverview({ data: buildOverview(), isPending: false });
 });
 
@@ -116,6 +121,16 @@ describe("BrandOverview details", () => {
     fireEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
 
     expect(useBrandOverview).toHaveBeenLastCalledWith(7);
+    expect(window.location.search).toBe("?range=7d");
+  });
+
+  it("opens on the period in the link", () => {
+    window.history.replaceState(null, "", "/overview?range=90d");
+    mockOverview({ data: buildOverview() });
+
+    render(<BrandOverview />);
+
+    expect(useBrandOverview).toHaveBeenLastCalledWith(90);
   });
 
   it("says so when nothing sold and nothing is running low", () => {

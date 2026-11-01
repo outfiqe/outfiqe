@@ -119,6 +119,22 @@ describe("PublicBuildsFeed layout", () => {
     expect(await cardsLayoutClassName()).toContain("sm:grid-cols-2");
   });
 
+  it("shows the build's title once in the popup", async () => {
+    serveBuilds();
+    mswServer.use(
+      http.get("/api/outfits/outfit-1/public", () => ok(detail())),
+      http.get("/api/outfits/outfit-1/comments", () => ok({ items: [], nextCursor: null })),
+    );
+    const user = userEvent.setup();
+
+    renderFeed();
+    await user.click(await screen.findByRole("button", { name: "Open Dashain look" }));
+
+    const popup = await screen.findByRole("dialog", { name: "Dashain look" });
+    await within(popup).findByText("Maroon Kurta");
+    expect(within(popup).getAllByText("Dashain look")).toHaveLength(1);
+  });
+
   it("names the popup from the card straight away, while the build loads", async () => {
     serveBuilds();
     mswServer.use(http.get("/api/outfits/outfit-1/public", () => new Promise(() => undefined)));
