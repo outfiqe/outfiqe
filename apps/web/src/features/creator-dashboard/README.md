@@ -109,3 +109,5 @@ Files:
 **Deleting a link asks first.** The "Your links" list has a Delete button per link that opens `DeleteLinkModal`, laid out like the address delete confirmation (Cancel and Delete). On success the link is removed from the cached list at once, and if it was the profile link or the link just generated above the list, that panel resets. The API revokes the link rather than erasing it, so clicks and commission already earned stay (see `creator-links/README.md` in the API).
 
 **Overview:** the period chips choose 7, 30 or 90 days. The earnings change, chart, top looks and sources follow the period. Balances, followers and looks are always "right now". Every card opens the page behind it.
+
+**The overview period lives in the link.** `?range=7d`, `30d` or `90d` keeps the chosen period on refresh and when the link is shared, through `useOverviewPeriod`. A missing or unknown range means 30 days. `app/(dashboard)/overview/page.tsx` reads the same value, so the server loads the right period and the page doesn't flash the 30-day numbers first.
