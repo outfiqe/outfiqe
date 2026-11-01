@@ -183,12 +183,17 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
     const buyerTwo = await createUser(UserRole.CUSTOMER);
     await checkoutBuyNow(buyerTwo.id, theirs.product.id, theirs.size.id);
 
+    await prisma.product.update({
+      where: { id: theirs.product.id },
+      data: { name: "Another Brand Saree" },
+    });
+
     const all = await getGroups(owner.id);
     const { orderId } = all.body.data.items[0];
 
     const byName = await getGroups(owner.id, { search: mine.product.name.toUpperCase() });
     const byOrderNumber = await getGroups(owner.id, { search: orderId.slice(0, 8) });
-    const byOtherBrand = await getGroups(owner.id, { search: theirs.product.name });
+    const byOtherBrand = await getGroups(owner.id, { search: "Another Brand Saree" });
     const noMatch = await getGroups(owner.id, { search: "nothing like this" });
 
     expect(byName.body.data.items).toHaveLength(1);
