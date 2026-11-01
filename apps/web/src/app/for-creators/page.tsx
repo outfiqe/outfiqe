@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  ExampleCallout,
+  FaqAccordion,
   FeatureGrid,
   MarketingCta,
   MarketingHero,
@@ -58,6 +60,44 @@ const perks = [
   },
 ];
 
+const museRoles = [
+  {
+    title: "What you do",
+    body: "Wear pieces from Nepali brands, post looks, tag what you're wearing and share your links.",
+  },
+  {
+    title: "What the brand does",
+    body: "Sells the piece, checks your tags and can mark you as trusted so your tags go live straight away.",
+  },
+  {
+    title: "What Outfiqe does",
+    body: "Reviews your application, tracks every sale you bring in, and pays your earnings to your verified bank account.",
+  },
+];
+
+const faqs = [
+  {
+    question: "What is a look?",
+    answer:
+      "A look is your outfit photo, with tags on the pieces you're wearing. Shoppers tap a tag to see the price, sizes and brand.",
+  },
+  {
+    question: "Is a muse different from a shopper?",
+    answer:
+      "A muse is a shopper whose application has been approved. You keep your account and can still shop as normal.",
+  },
+  {
+    question: "Can I tag any clothes?",
+    answer:
+      "You can tag products listed on Outfiqe. Each brand checks its tags before they go live, unless it has marked you as trusted.",
+  },
+  {
+    question: "Where can shoppers find my looks?",
+    answer:
+      "In the Explore feed, on your public muse profile and on the page of every product you tag.",
+  },
+];
+
 const ForCreatorsPage = () => (
   <MarketingShell
     breadcrumbs={[
@@ -76,6 +116,34 @@ const ForCreatorsPage = () => (
       }
       lede="Outfiqe turns the outfits you already wear into income. Tag real pieces from Nepali brands, and earn a commission every time one of your looks leads to a sale."
     />
+
+    <MarketingSection heading="What is a muse?">
+      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p>
+          A muse is a real person on Outfiqe who wears clothes from Nepali brands and shares photos
+          of the outfits. Shoppers see how a piece looks on a real body, brands get seen, and the
+          muse earns a commission when a look leads to a sale.
+        </p>
+        <p>You don&apos;t buy stock, sell anything yourself or handle any delivery.</p>
+      </div>
+    </MarketingSection>
+    <MarketingSection heading="Who does what">
+      <FeatureGrid items={museRoles} />
+    </MarketingSection>
+    <MarketingSection heading="See it in action">
+      <ExampleCallout title="Sita's first sale">
+        <p>
+          Sita posts a look in a kurta and tags it. The brand approves the tag and the look goes
+          live. Maya taps the tag and buys the kurta 2 days later, within the 7-day window, so the
+          sale counts for Sita.
+        </p>
+        <p>
+          A pending commission appears in Sita&apos;s Earnings. Once the order is delivered and 7
+          more days pass, it becomes ready to withdraw, and she requests it to her verified bank
+          account.
+        </p>
+      </ExampleCallout>
+    </MarketingSection>
 
     <MarketingSection heading="How it works">
       <StepList steps={steps} />
@@ -98,6 +166,10 @@ const ForCreatorsPage = () => (
         </Link>{" "}
         page.
       </p>
+    </MarketingSection>
+
+    <MarketingSection heading="Common questions">
+      <FaqAccordion entries={faqs} />
     </MarketingSection>
 
     <MarketingCta

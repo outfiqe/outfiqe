@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { BrandApplicationForm } from "@/features/brand-application";
-import { FeatureGrid, MarketingHero, MarketingShell } from "@/features/marketing";
+import {
+  FeatureGrid,
+  MarketingHero,
+  MarketingSection,
+  MarketingShell,
+  StepList,
+} from "@/features/marketing";
 
 import { ApplyExpiredBanner } from "./ApplyExpiredBanner";
 
@@ -22,6 +29,21 @@ const brandPerks = [
   {
     title: "Muses wear your pieces",
     body: "Nepali muses post looks and tag your products, so shoppers see them on real people.",
+  },
+];
+
+const nextSteps = [
+  {
+    title: "We review your application",
+    body: "Our team looks at every brand. Have your Instagram or TikTok ready, because it's how we get to know your work.",
+  },
+  {
+    title: "We email you",
+    body: "If you're approved, we send a link to create your brand account.",
+  },
+  {
+    title: "You set up your shop",
+    body: "Add your brand profile, size scales, pickup address and products. We check each new product before it goes live.",
   },
 ];
 
@@ -52,6 +74,20 @@ const ApplyPage = () => {
       <div className="mt-12">
         <FeatureGrid items={brandPerks} />
       </div>
+
+      <MarketingSection heading="What happens after you apply">
+        <StepList steps={nextSteps} />
+        <p className="mt-6 max-w-2xl text-sm text-muted-foreground sm:text-base">
+          Want to know more first? Read about{" "}
+          <Link
+            href="/for-brands"
+            className="font-medium text-foreground underline underline-offset-2"
+          >
+            selling on Outfiqe
+          </Link>
+          .
+        </p>
+      </MarketingSection>
 
       <div className="mt-12">
         <BrandApplicationForm />

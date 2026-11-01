@@ -1,6 +1,8 @@
+export { ExampleCallout } from "./components/ExampleCallout";
 export { FaqAccordion } from "./components/FaqAccordion";
 export type { FeatureItem } from "./components/FeatureGrid";
 export { FeatureGrid } from "./components/FeatureGrid";
+export { GlossaryList } from "./components/GlossaryList";
 export { LegalDocument } from "./components/LegalDocument";
 export { MarketingCta } from "./components/MarketingCta";
 export { MarketingHero } from "./components/MarketingHero";
@@ -8,3 +10,5 @@ export { MarketingSection } from "./components/MarketingSection";
 export { MarketingShell } from "./components/MarketingShell";
 export type { Step } from "./components/StepList";
 export { StepList } from "./components/StepList";
+export type { GlossaryGroup, GlossaryTerm } from "./constants/glossaryTerms";
+export { GLOSSARY_GROUPS } from "./constants/glossaryTerms";
