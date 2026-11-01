@@ -20,6 +20,11 @@ import type {
 } from "./crm-billing.schemas.js";
 import { crmBillingService } from "./crm-billing.service.js";
 
+const SINGLE_SEAT = 1;
+
+const toSeatLabel = (seats: number): string =>
+  seats === SINGLE_SEAT ? "1 seat" : `${seats} seats`;
+
 export const crmBillingController = {
   async getOverview(_req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
@@ -52,7 +57,7 @@ export const crmBillingController = {
     await crmAudit.record({
       organizationId: organization.id,
       action: CrmAuditAction.SUBSCRIPTION_CHECKOUT_STARTED,
-      summary: `Started checkout for the ${plan} plan (${seats} seats)`,
+      summary: `Started checkout for the ${plan} plan (${toSeatLabel(seats)})`,
       actor: buildAuditActor(req, res),
       target: { type: AUDIT_TARGET_TYPE.SUBSCRIPTION, id: null },
       metadata: { plan, seats, provider },

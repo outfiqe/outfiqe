@@ -15,7 +15,7 @@ export const buildDealFormSchema = (isEditing: boolean) =>
     title: z
       .string()
       .trim()
-      .min(1, "Enter a title for the deal.")
+      .min(1, "Enter a title for this opportunity.")
       .max(TITLE_MAX_LENGTH, `Use at most ${TITLE_MAX_LENGTH} characters.`),
     stageId: z.string().min(1, "Choose a stage."),
     value: z
@@ -29,7 +29,7 @@ export const buildDealFormSchema = (isEditing: boolean) =>
       }),
     partnerCreatorId: isEditing
       ? z.string()
-      : z.string().min(1, "Choose the partner for this deal."),
+      : z.string().min(1, "Choose the partner for this opportunity."),
   });
 
 export const dealValueFrom = (raw: string): number => (raw.trim() === "" ? 0 : Number(raw));

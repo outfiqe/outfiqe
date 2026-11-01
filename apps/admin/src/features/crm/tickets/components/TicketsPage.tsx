@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -15,34 +16,51 @@ import {
 } from "@outfiqe/design-system";
 import { useApiMutation, useInfiniteCursorPage } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
-import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
+import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
+import { toDayRange } from "../../activities/utils/taskDue.utils";
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CrmMemberFilter, UNASSIGNED_FILTER } from "../../components/CrmMemberFilter";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import {
   CustomerSearchField,
   type SelectedCustomer,
 } from "../../relationships/components/CustomerSearchField";
-import { formatDate } from "../../utils/format.utils";
+import { formatDate, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
+import { TICKETS_QUERY_KEY } from "../constants/ticketQueryKeys";
+import { TICKET_STATUS_TONE } from "../constants/ticketStatusTone";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
-import { TicketDetail } from "./TicketDetail";
-
-const TICKETS_QUERY_KEY = ["crm-tickets"];
 
 const NO_STATUS_FILTER = "";
-const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FILTER>(
-  TICKET_STATUSES,
+const STILL_OPEN_FILTER = "ACTIVE";
+type TicketStatusFilter = TicketStatusValue | typeof NO_STATUS_FILTER | typeof STILL_OPEN_FILTER;
+
+const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusFilter>(
+  [...TICKET_STATUSES, STILL_OPEN_FILTER],
   NO_STATUS_FILTER,
 );
+
+const toStatusParams = (statusFilter: TicketStatusFilter) => {
+  if (statusFilter === STILL_OPEN_FILTER) return { activeOnly: "true" } as const;
+  return statusFilter ? { status: statusFilter } : {};
+};
+
+const toAssigneeParams = (assigneeFilter: string) => {
+  if (assigneeFilter === UNASSIGNED_FILTER) return { unassignedOnly: "true" } as const;
+  return assigneeFilter ? { assigneeMembershipId: assigneeFilter } : {};
+};
 
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
@@ -85,7 +103,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
                   <Select {...field}>
                     {TICKET_TYPES.map((value) => (
                       <option key={value} value={value}>
-                        {value.toLowerCase()}
+                        {toPlainWords(value)}
                       </option>
                     ))}
                   </Select>
@@ -167,29 +185,31 @@ export const TicketsPage = () => {
     queryFn: crmApi.getOrganization,
   });
 
-  const canReadMembers =
-    organization?.viewerIsSuperAdmin || organization?.viewerPermissionKeys.includes("members:read");
   const canWriteTickets =
     organization?.viewerIsSuperAdmin ||
     organization?.viewerPermissionKeys.includes("tickets:write");
-  const canManageTickets =
-    organization?.viewerIsSuperAdmin ||
-    organization?.viewerPermissionKeys.includes("tickets:manage");
-  const { data: members } = useQuery({
-    queryKey: ["crm-members"],
-    queryFn: crmApi.listMembers,
-    enabled: Boolean(canReadMembers),
-  });
 
   const [statusFilter, setStatusFilter] = useSearchFilter("status", TICKET_STATUS_FILTER);
+  const [assigneeFilter, setAssigneeFilter] = useSearchFilter("assignee", rawTextFilter);
+  const [dateFrom, setDateFrom] = useSearchFilter("from", rawTextFilter);
+  const [dateTo, setDateTo] = useSearchFilter("to", rawTextFilter);
+  const hasFilters = Boolean(statusFilter || assigneeFilter || dateFrom || dateTo);
+
   const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteCursorPage([...TICKETS_QUERY_KEY, statusFilter], (cursor) =>
-      crmTicketsApi.listTickets({ ...(statusFilter ? { status: statusFilter } : {}), cursor }),
+    useInfiniteCursorPage(
+      [...TICKETS_QUERY_KEY, statusFilter, assigneeFilter, dateFrom, dateTo],
+      (cursor) =>
+        crmTicketsApi.listTickets({
+          ...toStatusParams(statusFilter),
+          ...toAssigneeParams(assigneeFilter),
+          createdFrom: toDayRange(dateFrom, "start"),
+          createdTo: toDayRange(dateTo, "end"),
+          cursor,
+        }),
     );
   const tickets = data?.pages.flatMap((page) => page.tickets);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
 
   return (
     <div>
@@ -197,77 +217,86 @@ export const TicketsPage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.tickets.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tickets.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select
-            aria-label="Filter by status"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as TicketStatusValue | "")}
-            className="w-40"
-          >
-            <option value="">All statuses</option>
-            {TICKET_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status.replace("_", " ").toLowerCase()}
-              </option>
-            ))}
-          </Select>
-          {canWriteTickets && (
-            <Button size="sm" onClick={() => setModalOpen(true)}>
-              New ticket
-            </Button>
-          )}
-        </div>
-      </div>
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.tickets}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              aria-label="Filter by status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(TICKET_STATUS_FILTER.parse(event.target.value))}
+              className="w-40"
+            >
+              <option value="">All statuses</option>
+              <option value={STILL_OPEN_FILTER}>Still open</option>
+              {TICKET_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {toPlainWords(status)}
+                </option>
+              ))}
+            </Select>
+            <CrmMemberFilter
+              label="Filter by assignee"
+              allLabel="Everyone"
+              unassignedLabel="No one yet"
+              value={assigneeFilter}
+              onChange={setAssigneeFilter}
+            />
+            <DateInput
+              aria-label="From date"
+              max={dateTo}
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+              className="w-40"
+            />
+            <DateInput
+              aria-label="To date"
+              min={dateFrom}
+              value={dateTo}
+              onChange={(event) => setDateTo(event.target.value)}
+              className="w-40"
+            />
+            {canWriteTickets && (
+              <Button size="sm" onClick={openNewRecordModal}>
+                New ticket
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <div className="mt-6 space-y-4">
         {isLoading && <CompactRowSkeleton hasTrailingBadge />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tickets && tickets.length === 0 && (
-          <p className="text-sm text-muted-foreground">No tickets yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {hasFilters
+              ? "No tickets match your filters."
+              : "No tickets yet. When a customer has a problem, add it here so your team can follow it."}
+          </p>
         )}
 
         {tickets && tickets.length > 0 && (
           <ul className="space-y-2">
             {tickets.map((ticket) => (
               <li key={ticket.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedTicketId((current) => (current === ticket.id ? null : ticket.id))
-                  }
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3 text-left text-sm"
+                <Link
+                  to="/crm/support/$ticketId"
+                  params={{ ticketId: ticket.id }}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3 text-left text-sm transition-colors hover:bg-muted/60"
                 >
                   <span>
                     {ticket.title}
-                    <span className="ml-2 text-muted-foreground">{ticket.type.toLowerCase()}</span>
+                    <span className="ml-2 text-muted-foreground">{toPlainWords(ticket.type)}</span>
                   </span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {ticket.assigneeName ?? "unassigned"} · {formatDate(ticket.createdAt)}
-                    <Badge>{ticket.status.replace("_", " ").toLowerCase()}</Badge>
+                    <Badge tone={TICKET_STATUS_TONE[ticket.status]}>
+                      {toPlainWords(ticket.status)}
+                    </Badge>
                   </span>
-                </button>
-
-                {selectedTicketId === ticket.id && (
-                  <div className="mt-2">
-                    <TicketDetail
-                      ticketId={ticket.id}
-                      members={(members ?? []).map((member) => ({
-                        id: member.id,
-                        userName: member.userName,
-                      }))}
-                      canWrite={Boolean(canWriteTickets)}
-                      canManageAssignee={Boolean(canManageTickets)}
-                    />
-                  </div>
-                )}
+                </Link>
               </li>
             ))}
           </ul>
@@ -285,7 +314,7 @@ export const TicketsPage = () => {
         )}
       </div>
 
-      {modalOpen && <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} />}
+      {isNewRecordModalOpen && <NewTicketModal open onClose={closeNewRecordModal} />}
     </div>
   );
 };

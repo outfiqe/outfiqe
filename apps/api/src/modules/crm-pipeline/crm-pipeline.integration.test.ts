@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { addDays } from "date-fns/addDays";
+import { subDays } from "date-fns/subDays";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -252,6 +253,118 @@ describe("CRM deals", () => {
     expect(response.body.code).toBe("NOT_A_PARTNER");
   });
 
+  it("restarts the time in stage only when the stage really changes", async () => {
+    const tenant = await seedPipelineTenant();
+    const [firstStage, secondStage] = await prisma.pipelineStage.findMany({
+      where: { organizationId: tenant.organization.id },
+      orderBy: { sortOrder: "asc" },
+    });
+    const created = await request(testApp)
+      .post("/api/crm/deals")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth)
+      .send({ stageId: firstStage?.id, title: "A deal", partnerCreatorId: tenant.partner.id });
+    const dealId: string = created.body.data.id;
+    const startOfLastWeek = subDays(new Date(), 7);
+    await prisma.deal.update({ where: { id: dealId }, data: { stageEnteredAt: startOfLastWeek } });
+
+    const sameStage = await request(testApp)
+      .patch(`/api/crm/deals/${dealId}`)
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth)
+      .send({ stageId: firstStage?.id, title: "Renamed" });
+    expect(new Date(sameStage.body.data.stageEnteredAt)).toEqual(startOfLastWeek);
+
+    const nextStage = await request(testApp)
+      .patch(`/api/crm/deals/${dealId}`)
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth)
+      .send({ stageId: secondStage?.id });
+    expect(new Date(nextStage.body.data.stageEnteredAt).getTime()).toBeGreaterThan(
+      startOfLastWeek.getTime(),
+    );
+  });
+
+  it("exports only this tenant's opportunities, without muse details", async () => {
+    const tenant = await seedPipelineTenant();
+    const other = await seedPipelineTenant();
+    for (const seededTenant of [tenant, other]) {
+      const stage = await prisma.pipelineStage.findFirstOrThrow({
+        where: { organizationId: seededTenant.organization.id },
+      });
+      await request(testApp)
+        .post("/api/crm/deals")
+        .set("Host", seededTenant.host)
+        .set("Authorization", seededTenant.auth)
+        .send({
+          stageId: stage.id,
+          title: seededTenant === tenant ? "=Our deal" : "Their deal",
+          partnerCreatorId: seededTenant.partner.id,
+        });
+    }
+
+    const exported = await request(testApp)
+      .get("/api/crm/deals/export")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(exported.status).toBe(200);
+    expect(exported.headers["content-type"]).toContain("text/csv");
+    expect(exported.text).toContain("'=Our deal");
+    expect(exported.text).not.toContain("Their deal");
+    expect(exported.text).not.toContain(tenant.partner.name);
+  });
+
+  it("filters the board to open opportunities stuck in their stage", async () => {
+    const tenant = await seedPipelineTenant();
+    const stage = await prisma.pipelineStage.findFirstOrThrow({
+      where: { organizationId: tenant.organization.id },
+    });
+    const addDeal = (title: string, stageEnteredAt: Date, status: "OPEN" | "WON") =>
+      prisma.deal.create({
+        data: {
+          organizationId: tenant.organization.id,
+          stageId: stage.id,
+          partnerCreatorId: tenant.partner.id,
+          title,
+          stageEnteredAt,
+          status,
+        },
+      });
+    await addDeal("Stuck", subDays(new Date(), 20), "OPEN");
+    await addDeal("Fresh", new Date(), "OPEN");
+    await addDeal("Won long ago", subDays(new Date(), 20), "WON");
+
+    const filtered = await request(testApp)
+      .get("/api/crm/deals")
+      .query({ stageEnteredBefore: subDays(new Date(), 14).toISOString() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.body.data.map(({ title }: { title: string }) => title)).toEqual(["Stuck"]);
+  });
+
+  it("filters the board by owner", async () => {
+    const tenant = await seedPipelineTenant();
+    const stage = await prisma.pipelineStage.findFirstOrThrow({
+      where: { organizationId: tenant.organization.id },
+    });
+    await request(testApp)
+      .post("/api/crm/deals")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth)
+      .send({ stageId: stage.id, title: "Unowned", partnerCreatorId: tenant.partner.id });
+
+    const filtered = await request(testApp)
+      .get("/api/crm/deals")
+      .query({ ownerMembershipId: randomUUID() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data).toEqual([]);
+  });
+
   it("keeps deals isolated between tenants", async () => {
     const tenantA = await seedPipelineTenant();
     const tenantB = await seedPipelineTenant();
@@ -272,6 +385,23 @@ describe("CRM deals", () => {
       .send({ title: "hijacked" });
 
     expect(crossTenant.status).toBe(404);
+
+    const ownDeal = await request(testApp)
+      .get(`/api/crm/deals/${created.body.data.id}`)
+      .set("Host", tenantA.host)
+      .set("Authorization", tenantA.auth);
+    expect(ownDeal.status).toBe(200);
+    expect(ownDeal.body.data).toMatchObject({
+      id: created.body.data.id,
+      title: "A deal",
+      stageName: firstStageA.name,
+    });
+
+    const crossTenantRead = await request(testApp)
+      .get(`/api/crm/deals/${created.body.data.id}`)
+      .set("Host", tenantB.host)
+      .set("Authorization", tenantB.auth);
+    expect(crossTenantRead.status).toBe(404);
 
     const listB = await request(testApp)
       .get("/api/crm/deals")

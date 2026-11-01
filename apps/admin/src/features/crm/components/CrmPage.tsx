@@ -1,5 +1,4 @@
 import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { formatDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Compass } from "lucide-react";
@@ -17,6 +16,7 @@ import { crmApi } from "../api/crmApi";
 import type { Organization } from "../api/crmSchemas";
 import { PlanGateBanner } from "../billing/components/PlanGateBanner";
 import { CrmOverviewSection } from "../reporting/components/CrmOverviewSection";
+import { toTrialLabel } from "../utils/trial.utils";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
@@ -61,7 +61,7 @@ export const CrmPage = () => {
           {organization && (
             <p className="text-sm text-muted-foreground">
               {organization.name} · {organization.plan}
-              {organization.trialEndsAt && ` · trial ends ${formatDate(organization.trialEndsAt)}`}
+              {organization.trialEndsAt && ` · ${toTrialLabel(organization.trialEndsAt)}`}
             </p>
           )}
         </div>

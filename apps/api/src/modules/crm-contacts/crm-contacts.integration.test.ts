@@ -145,6 +145,46 @@ describe("CRM contacts", () => {
     expect(bySearch.body.data.items.map((c: { name: string }) => c.name)).toEqual(["Customer Two"]);
   });
 
+  it("exports the filtered list, neutralizes formulas and stays inside the tenant", async () => {
+    const tenant = await seedContactsTenant();
+    const other = await seedContactsTenant();
+    await createContact(tenant, {
+      name: "=HYPERLINK(1)",
+      lifecycleStage: "LEAD",
+      notes: "Private note",
+    });
+    await createContact(tenant, { name: "Skipped Customer", lifecycleStage: "CUSTOMER" });
+    await createContact(other, { name: "Other Tenant Lead", lifecycleStage: "LEAD" });
+
+    const exported = await request(testApp)
+      .get("/api/crm/contacts/export")
+      .query({ lifecycleStage: "LEAD" })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(exported.status).toBe(200);
+    expect(exported.headers["content-type"]).toContain("text/csv");
+    expect(exported.headers["content-disposition"]).toContain("attachment");
+    expect(exported.text).toContain("'=HYPERLINK(1)");
+    expect(exported.text).not.toContain("Skipped Customer");
+    expect(exported.text).not.toContain("Other Tenant Lead");
+    expect(exported.text).not.toContain("Private note");
+  });
+
+  it("filters by owner", async () => {
+    const tenant = await seedContactsTenant();
+    await createContact(tenant, { name: "No Owner" });
+
+    const filtered = await request(testApp)
+      .get("/api/crm/contacts")
+      .query({ ownerMembershipId: randomUUID() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data.items).toEqual([]);
+  });
+
   it("rejects a duplicate email inside the same organization", async () => {
     const tenant = await seedContactsTenant();
     await createContact(tenant, { name: "First", email: "dupe@x.test" });

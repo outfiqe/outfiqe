@@ -128,8 +128,8 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: () => "You have a new message",
   },
   [NotificationType.CRM_ITEM_ASSIGNED]: {
-    title: "Assigned to you",
-    body: () => "A task or ticket was assigned to you",
+    title: "New work for you",
+    body: () => "You have a new task or ticket",
   },
   [NotificationType.SUPPORT_TICKET_CREATED]: {
     title: "New support ticket",

@@ -5,7 +5,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import { CrmAuditAction, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { seedTenantOrganization } from "#test/integration/crm-fixtures.js";
@@ -144,6 +144,69 @@ describe("CRM audit log", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.entries).toEqual([]);
+  });
+
+  it("filters by group, person and date, and offers only choices from this log", async () => {
+    const { organization, owner } = await seedAuditTenant();
+    const addEntry = (action: CrmAuditAction, createdAt: Date) =>
+      prisma.crmAuditLog.create({
+        data: {
+          organizationId: organization.id,
+          action,
+          summary: action,
+          actorUserId: owner.id,
+          createdAt,
+        },
+      });
+    await addEntry(CrmAuditAction.ROLE_CREATED, new Date("2026-08-10T10:00:00.000Z"));
+    await addEntry(CrmAuditAction.SUBSCRIPTION_ACTIVATED, new Date("2026-08-11T10:00:00.000Z"));
+    await addEntry(CrmAuditAction.SUBSCRIPTION_CANCELED, new Date("2026-09-20T10:00:00.000Z"));
+    const auditGet = (path: string, query: Record<string, string>) =>
+      request(testApp)
+        .get(path)
+        .query(query)
+        .set("Authorization", authHeaderFor(owner.id))
+        .set("Host", host(organization.subdomain));
+
+    const billingInAugust = await auditGet("/api/crm/audit", {
+      group: "billing",
+      from: "2026-08-01T00:00:00.000Z",
+      to: "2026-08-31T23:59:59.999Z",
+    });
+    expect(
+      billingInAugust.body.data.entries.map(({ action }: { action: string }) => action),
+    ).toEqual(["SUBSCRIPTION_ACTIVATED"]);
+
+    const choices = await auditGet("/api/crm/audit/filters", {});
+    expect(choices.body.data.actions).toHaveLength(3);
+    expect(choices.body.data.actors).toEqual([expect.objectContaining({ id: owner.id })]);
+  });
+
+  it("exports the filtered log without addresses, and only this tenant's", async () => {
+    const tenant = await seedAuditTenant();
+    const other = await seedAuditTenant();
+    const addEntry = (organizationId: string, summary: string) =>
+      prisma.crmAuditLog.create({
+        data: {
+          organizationId,
+          action: CrmAuditAction.ROLE_CREATED,
+          summary,
+          ipAddress: "203.0.113.9",
+        },
+      });
+    await addEntry(tenant.organization.id, "=Our entry");
+    await addEntry(other.organization.id, "Their entry");
+
+    const exported = await request(testApp)
+      .get("/api/crm/audit/export")
+      .set("Authorization", authHeaderFor(tenant.owner.id))
+      .set("Host", host(tenant.organization.subdomain));
+
+    expect(exported.status).toBe(200);
+    expect(exported.headers["content-type"]).toContain("text/csv");
+    expect(exported.text).toContain("'=Our entry");
+    expect(exported.text).not.toContain("Their entry");
+    expect(exported.text).not.toContain("203.0.113.9");
   });
 
   it("paginates with a cursor", async () => {

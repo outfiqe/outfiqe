@@ -80,7 +80,8 @@ describe("PartnerDetailPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Aasha Muse" })).toBeInTheDocument();
     expect(screen.getByText("Graphic Tee")).toBeInTheDocument();
-    expect(screen.getByText(/PAID/i)).toBeInTheDocument();
+    expect(screen.getByText("Graphic Tee × 1")).toBeInTheDocument();
+    expect(screen.getByText(/Paid · Delivered/)).toBeInTheDocument();
   });
 
   it("surfaces a 404 as an error banner", async () => {

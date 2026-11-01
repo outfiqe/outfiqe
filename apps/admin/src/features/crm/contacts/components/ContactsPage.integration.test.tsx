@@ -72,6 +72,7 @@ const renderContactsPage = () => {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 };
 
 describe("ContactsPage", () => {
@@ -185,7 +186,47 @@ describe("ContactsPage", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("opens the edit modal when a contact name is clicked", async () => {
+  it("keeps the search and stage in the link", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    const router = renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.selectOptions(screen.getByLabelText("Filter by lifecycle stage"), "CUSTOMER");
+    await userEvent.type(screen.getByPlaceholderText("Search contacts"), "anisha");
+
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({ stage: "CUSTOMER", q: "anisha" }),
+    );
+  });
+
+  it("opens a contact when its row is clicked", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    const router = renderContactsPage();
+
+    await userEvent.click(await screen.findByRole("cell", { name: "Boutique KTM" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/crm/contacts/c-1"));
+  });
+
+  it("links each contact name to its own page", async () => {
     mockOrganization();
     mswServer.use(
       http.get(`${API_BASE}/crm/contacts`, () =>
@@ -198,10 +239,10 @@ describe("ContactsPage", () => {
 
     renderContactsPage();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Anisha Gurung" }));
-
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByDisplayValue("Anisha Gurung")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Anisha Gurung" })).toHaveAttribute(
+      "href",
+      "/crm/contacts/c-1",
+    );
   });
 
   it("deletes a contact and shows the error banner when the delete fails", async () => {
@@ -227,6 +268,9 @@ describe("ContactsPage", () => {
     await screen.findByText("Anisha Gurung");
 
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(attempts).toBe(0);
+    const warning = await screen.findByRole("dialog", { name: "Delete this contact?" });
+    await userEvent.click(within(warning).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByText("Cannot delete this contact.")).toBeInTheDocument();
     expect(attempts).toBe(1);

@@ -24,33 +24,30 @@ export const MetricSection = ({
   </section>
 );
 
-const MetricRowContent = ({
-  label,
-  detail,
-  value,
-}: {
-  label: ReactNode;
-  detail?: string;
-  value: ReactNode;
-}) => (
-  <>
-    <span className="min-w-0">
-      <span className="block font-medium text-foreground">{label}</span>
-      {detail && <span className="mt-0.5 block text-xs text-muted-foreground">{detail}</span>}
-    </span>
-    <span className="flex shrink-0 items-center gap-1 font-semibold text-foreground">{value}</span>
-  </>
-);
-
 type MetricRowProps = {
   label: ReactNode;
   detail?: string;
   value: ReactNode;
+  hasLongValue?: boolean;
 };
 
-export const MetricRow = ({ label, detail, value }: MetricRowProps) => (
+const MetricRowContent = ({ label, detail, value, hasLongValue }: MetricRowProps) => (
+  <>
+    <span className={hasLongValue ? "shrink-0" : "min-w-0"}>
+      <span className="block font-medium text-foreground">{label}</span>
+      {detail && <span className="mt-0.5 block text-xs text-muted-foreground">{detail}</span>}
+    </span>
+    <span
+      className={`${hasLongValue ? "min-w-0 break-words text-right" : "flex shrink-0 items-center gap-1"} font-semibold text-foreground`}
+    >
+      {value}
+    </span>
+  </>
+);
+
+export const MetricRow = ({ label, detail, value, hasLongValue }: MetricRowProps) => (
   <div className={METRIC_ROW_CLASS_NAME}>
-    <MetricRowContent label={label} detail={detail} value={value} />
+    <MetricRowContent label={label} detail={detail} value={value} hasLongValue={hasLongValue} />
   </div>
 );
 

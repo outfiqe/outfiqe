@@ -10,7 +10,7 @@ Read the platform audit log: every change platform staff made, newest first.
   exact item ID. A choice applies at once and stays in the URL. Each entry shows the summary, who did
   it (and on whose behalf, when impersonating), when, the action, the item and its details. Paged with
   "Load more"; loading, empty and error states.
-- `components/AuditFilterPicker.tsx` — a searchable pick list built on the design system's
+- `src/components/AuditFilterPicker.tsx` — a searchable pick list built on the design system's
   `Autocomplete`, with a clear button.
 - `utils/auditLabels.utils.ts` — turns stored codes like `support.ticket.status_changed` into plain words.
 - `api/platformAuditApi.ts`, `api/platformAuditSchemas.ts` — `GET /api/platform/audit`,

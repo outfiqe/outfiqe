@@ -79,12 +79,41 @@ describe("resolveNotificationHref", () => {
     ).toEqual({ to: "/orders/$orderId", params: { orderId: "order-7" } });
   });
 
-  it("routes a CRM ticket assignment to the CRM support tab", () => {
+  it("opens the exact CRM ticket that was assigned", () => {
     const notification = buildNotification({
       type: "CRM_ITEM_ASSIGNED",
+      entityId: "ticket-1",
       metadata: { crmItemKind: "ticket", crmItemTitle: "Billing question" },
     });
+    expect(resolveNotificationHref(notification)).toEqual({
+      to: "/crm/support/$ticketId",
+      params: { ticketId: "ticket-1" },
+    });
+  });
+
+  it("falls back to the CRM support list when the ticket id is missing", () => {
+    const notification = buildNotification({
+      type: "CRM_ITEM_ASSIGNED",
+      metadata: { crmItemKind: "ticket" },
+    });
     expect(resolveNotificationHref(notification)).toEqual({ to: "/crm/support" });
+  });
+
+  it("opens the exact ticket that has no one on it", () => {
+    const notification = buildNotification({ type: "CRM_TICKET_UNASSIGNED", entityId: "ticket-2" });
+    expect(resolveNotificationHref(notification)).toEqual({
+      to: "/crm/support/$ticketId",
+      params: { ticketId: "ticket-2" },
+    });
+  });
+
+  it("sends billing notices to billing and new members to the CRM home", () => {
+    expect(resolveNotificationHref(buildNotification({ type: "CRM_INVOICE_DUE" }))).toEqual({
+      to: "/crm/billing",
+    });
+    expect(resolveNotificationHref(buildNotification({ type: "CRM_MEMBER_JOINED" }))).toEqual({
+      to: "/crm",
+    });
   });
 
   it("routes a CRM task assignment to the CRM tasks tab", () => {

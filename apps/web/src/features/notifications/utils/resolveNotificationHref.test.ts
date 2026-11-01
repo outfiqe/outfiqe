@@ -268,6 +268,17 @@ describe("resolveNotificationHref", () => {
         OWN_HANDLE,
       ),
     ).toBe("/admin/crm/support");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({
+          type: "CRM_ITEM_ASSIGNED",
+          entityId: "ticket-1",
+          metadata: { crmItemKind: "ticket" },
+        }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/crm/support/ticket-1");
   });
 
   it("routes coupon alerts into the admin app", () => {

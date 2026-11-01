@@ -11,6 +11,7 @@ import { crmTicketsRepository } from "./crm-tickets.repository.js";
 import type {
   CreateTicketInput,
   TicketCommentRecord,
+  TicketListFilters,
   TicketPage,
   TicketRecord,
   TicketSubjectRef,
@@ -103,11 +104,7 @@ export const crmTicketsService = {
 
   async listTickets(
     organizationId: string,
-    filters: {
-      status?: CrmTicketStatus;
-      assigneeMembershipId?: string;
-      type?: TicketRecord["type"];
-    },
+    filters: TicketListFilters,
     page: { cursor?: string; limit: number },
   ): Promise<TicketPage> {
     const rows = await crmTicketsRepository.listTickets(organizationId, filters, page);

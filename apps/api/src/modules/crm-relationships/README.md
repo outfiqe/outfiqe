@@ -55,6 +55,8 @@ tenant's own brand.
   products, a `CreatorLookProduct` tagging one, or an `OrderItem` with `attributed_creator_id` set
   on one. The list's derived columns (tag-click count, attributed order count + revenue) are
   `LEFT JOIN`ed aggregates, so a creator who only ever made a link still appears, with zeroes.
+  The detail lookup follows the same rule, so anyone the list shows can be opened, even with no
+  clicks or orders yet.
 - **Detail lookups `404` when the id has no signal for _this_ brand**, rather than `403` — the
   same "don't reveal that a row exists in another tenant" reasoning `orders`' buyer lookup uses.
   `findPartnerCore`/`findCustomerCore` return `null` when every metric is zero / there are no

@@ -184,7 +184,11 @@ describe("resolveNotificationTarget", () => {
     });
     expect(
       resolve(NotificationType.CRM_ITEM_ASSIGNED, "ticket-1", { crmItemKind: "ticket" }),
-    ).toEqual({ surface: NotificationSurface.ADMIN, path: "/crm/support" });
+    ).toEqual({ surface: NotificationSurface.ADMIN, path: "/crm/support/ticket-1" });
+    expect(resolve(NotificationType.CRM_ITEM_ASSIGNED, null, { crmItemKind: "ticket" })).toEqual({
+      surface: NotificationSurface.ADMIN,
+      path: "/crm/support",
+    });
     expect(resolve(NotificationType.COUPON_APPROVAL_REQUESTED)).toEqual({
       surface: NotificationSurface.ADMIN,
       path: "/coupons",
@@ -228,7 +232,7 @@ describe("resolveNotificationTarget", () => {
 
     expect(resolve(NotificationType.CRM_TICKET_UNASSIGNED, "ticket-1", tenantMetadata)).toEqual({
       surface: NotificationSurface.ADMIN,
-      path: tenantAdminUrl("/crm/support"),
+      path: tenantAdminUrl("/crm/support/ticket-1"),
     });
     expect(resolve(NotificationType.CRM_MEMBER_JOINED, "user-1", tenantMetadata)).toEqual({
       surface: NotificationSurface.ADMIN,

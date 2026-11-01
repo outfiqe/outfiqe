@@ -13,8 +13,10 @@ import { useState } from "react";
 import { DEFAULT_SKELETON_ROW_COUNT } from "@/lib/skeletons";
 
 import { crmApi } from "../api/crmApi";
+import { STAGE_LABELS } from "../contacts/constants/contactLabels";
 import { crmReportingApi } from "../reporting/api/reportingApi";
 import type { CrmSearchResults } from "../reporting/api/reportingSchemas";
+import { toPlainWords } from "../utils/format.utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -23,6 +25,7 @@ const SEARCH_READ_PERMISSION_KEYS = [
   "customers:read",
   "deals:read",
   "tickets:read",
+  "contacts:read",
 ];
 
 type ResultRow = {
@@ -37,8 +40,9 @@ const buildRows = (
   results: CrmSearchResults,
   goToPartner: (creatorId: string) => void,
   goToCustomer: (userId: string) => void,
-  goToPipeline: () => void,
-  goToSupport: () => void,
+  goToDeal: (dealId: string) => void,
+  goToTicket: (ticketId: string) => void,
+  goToContact: (contactId: string) => void,
 ): ResultRow[] => [
   ...results.partners.map((partner) => ({
     key: `partner:${partner.creatorId}`,
@@ -56,17 +60,24 @@ const buildRows = (
   })),
   ...results.deals.map((deal) => ({
     key: `deal:${deal.id}`,
-    groupLabel: "Deals",
+    groupLabel: "Opportunities",
     primary: deal.title,
-    secondary: `${deal.stageName} · ${deal.status.toLowerCase()}`,
-    navigate: goToPipeline,
+    secondary: `${deal.stageName} · ${toPlainWords(deal.status)}`,
+    navigate: () => goToDeal(deal.id),
   })),
   ...results.tickets.map((ticket) => ({
     key: `ticket:${ticket.id}`,
     groupLabel: "Tickets",
     primary: ticket.title,
-    secondary: `${ticket.type.toLowerCase()} · ${ticket.status.replace("_", " ").toLowerCase()}`,
-    navigate: goToSupport,
+    secondary: `${toPlainWords(ticket.type)} · ${toPlainWords(ticket.status)}`,
+    navigate: () => goToTicket(ticket.id),
+  })),
+  ...results.contacts.map((contact) => ({
+    key: `contact:${contact.id}`,
+    groupLabel: "Contacts",
+    primary: contact.name,
+    secondary: contact.company ?? STAGE_LABELS[contact.lifecycleStage] ?? "",
+    navigate: () => goToContact(contact.id),
   })),
 ];
 
@@ -99,8 +110,9 @@ export const CrmSearchBox = () => {
         results,
         (creatorId) => navigate({ to: "/crm/partners/$creatorId", params: { creatorId } }),
         (userId) => navigate({ to: "/crm/customers/$userId", params: { userId } }),
-        () => navigate({ to: "/crm/pipeline" }),
-        () => navigate({ to: "/crm/support" }),
+        (dealId) => navigate({ to: "/crm/pipeline/$dealId", params: { dealId } }),
+        (ticketId) => navigate({ to: "/crm/support/$ticketId", params: { ticketId } }),
+        (contactId) => navigate({ to: "/crm/contacts/$contactId", params: { contactId } }),
       )
     : [];
 
@@ -115,7 +127,7 @@ export const CrmSearchBox = () => {
     <Autocomplete>
       <AutocompleteInput
         aria-label="Search the CRM"
-        placeholder="Search partners, customers, deals, tickets…"
+        placeholder="Search people, sales and tickets…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         className="w-72"

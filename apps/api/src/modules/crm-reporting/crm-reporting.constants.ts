@@ -10,6 +10,7 @@ export const CRM_SEARCH_ENTITY = {
   CUSTOMER: "customer",
   DEAL: "deal",
   TICKET: "ticket",
+  CONTACT: "contact",
 } as const;
 
 export const CRM_SEARCH_ENTITY_PERMISSION: Record<
@@ -20,9 +21,16 @@ export const CRM_SEARCH_ENTITY_PERMISSION: Record<
   [CRM_SEARCH_ENTITY.CUSTOMER]: "customers:read",
   [CRM_SEARCH_ENTITY.DEAL]: "deals:read",
   [CRM_SEARCH_ENTITY.TICKET]: "tickets:read",
+  [CRM_SEARCH_ENTITY.CONTACT]: "contacts:read",
 };
 
 export const CRM_SEARCH_READ_PERMISSION_KEYS = Object.values(CRM_SEARCH_ENTITY_PERMISSION);
+
+export const STUCK_DEAL_DAYS = 14;
+export const REPORT_TEAM_ROW_LIMIT = 50;
+
+export const TASKS_READ_PERMISSION = "tasks:read";
+export const CONNECTED_RECORDS_PER_TYPE = 5;
 
 export const CRM_REPORTING_RATE_LIMIT_WINDOW_MS = millisecondsInMinute;
 export const CRM_REPORTING_RATE_LIMIT_MAX_REQUESTS = 60;

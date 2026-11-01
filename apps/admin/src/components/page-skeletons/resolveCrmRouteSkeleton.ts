@@ -4,8 +4,10 @@ export const CRM_ROUTE_SKELETON_KEY = {
   AUDIT: "audit",
   BILLING: "billing",
   CONTACTS: "contacts",
+  CONTACT_DETAIL: "contact-detail",
   CUSTOMERS: "customers",
   CUSTOMER_DETAIL: "customer-detail",
+  DEAL_DETAIL: "deal-detail",
   PARTNERS: "partners",
   PARTNER_DETAIL: "partner-detail",
   PIPELINE: "pipeline",
@@ -13,6 +15,7 @@ export const CRM_ROUTE_SKELETON_KEY = {
   ROLES: "roles",
   SUPPORT: "support",
   TASKS: "tasks",
+  TICKET_DETAIL: "ticket-detail",
 } as const;
 
 export type CrmRouteSkeletonKey =
@@ -32,8 +35,11 @@ const KEY_BY_PATH: Record<string, CrmRouteSkeletonKey> = {
 };
 
 const KEY_BY_PATH_PATTERN: readonly { pattern: RegExp; key: CrmRouteSkeletonKey }[] = [
+  { pattern: /^\/crm\/contacts\/[^/]+$/, key: CRM_ROUTE_SKELETON_KEY.CONTACT_DETAIL },
   { pattern: /^\/crm\/customers\/[^/]+$/, key: CRM_ROUTE_SKELETON_KEY.CUSTOMER_DETAIL },
   { pattern: /^\/crm\/partners\/[^/]+$/, key: CRM_ROUTE_SKELETON_KEY.PARTNER_DETAIL },
+  { pattern: /^\/crm\/pipeline\/[^/]+$/, key: CRM_ROUTE_SKELETON_KEY.DEAL_DETAIL },
+  { pattern: /^\/crm\/support\/[^/]+$/, key: CRM_ROUTE_SKELETON_KEY.TICKET_DETAIL },
 ];
 
 export const resolveCrmRouteSkeletonKey = (pathname: string): CrmRouteSkeletonKey | null => {

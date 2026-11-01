@@ -78,6 +78,11 @@ describe("useSearchFilter", () => {
     expect(router.history.length).toBe(lengthBefore);
   });
 
+  it("reads a number from the URL as text", async () => {
+    renderWithRouter(<TextProbe />, { path: "/orders", initialEntry: "/orders?q=2" });
+    expect(await screen.findByTestId("value")).toHaveTextContent("2");
+  });
+
   it("round-trips free-text values and clears them on empty", async () => {
     const user = userEvent.setup({ delay: null });
     const { router } = renderWithRouter(<TextProbe />, { path: "/orders" });

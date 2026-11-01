@@ -1,166 +1,58 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Badge,
-  Button,
-  DateInput,
-  Form,
-  FormBanner,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Modal,
-  Select,
-  toast,
-} from "@outfiqe/design-system";
+import { Badge, Button, FilterChip, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { toDateInputValue } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
-import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
+import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
-import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CrmMemberFilter } from "../../components/CrmMemberFilter";
+import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useCrmMembers } from "../../hooks/useCrmMembers";
+import { useCrmPermissions } from "../../hooks/useCrmPermissions";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import { formatDate } from "../../utils/format.utils";
 import { crmActivitiesApi } from "../api/activitiesApi";
 import type { Task } from "../api/activitiesSchemas";
-import { taskFormSchema, type TaskFormValues } from "../schemas/taskForm.schema";
+import { TASKS_QUERY_KEY } from "../constants/tasksQueryKeys";
+import { TASK_DUE_FILTERS, type TaskDueFilter, toTaskDueRange } from "../utils/taskDue.utils";
+import { NewTaskModal } from "./NewTaskModal";
 
-const TASKS_QUERY_KEY = ["crm-tasks"];
+const OPEN_TASK_STATUS = "OPEN";
+const ALL_TASKS = "";
+const DUE_FILTER = oneOfFilter<TaskDueFilter | typeof ALL_TASKS>(TASK_DUE_FILTERS, ALL_TASKS);
+
+const DUE_CHIPS: { value: TaskDueFilter | typeof ALL_TASKS; label: string; empty: string }[] = [
+  { value: ALL_TASKS, label: "All", empty: "No tasks yet. Add one so nothing gets forgotten." },
+  { value: "overdue", label: "Overdue", empty: "Nothing is overdue. Nice work." },
+  { value: "today", label: "Today", empty: "Nothing is due today." },
+  { value: "upcoming", label: "Upcoming", empty: "Nothing is coming up yet." },
+];
 
 const isOverdue = (task: Task) => task.status === "OPEN" && new Date(task.dueAt) < new Date();
 
-const NewTaskModal = ({
-  open,
-  onClose,
-  members,
-}: {
-  open: boolean;
-  onClose: () => void;
-  members: { id: string; userName: string }[];
-}) => {
-  const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema),
-    defaultValues: { title: "", assigneeMembershipId: members[0]?.id ?? "", dueAt: "" },
-    mode: FORM_VALIDATION_MODE,
-  });
-
-  const create = useApiMutation({
-    mutationFn: (values: TaskFormValues) =>
-      crmActivitiesApi.createTask({
-        title: values.title.trim(),
-        assigneeMembershipId: values.assigneeMembershipId,
-        ...(values.dueAt ? { dueAt: new Date(values.dueAt).toISOString() } : {}),
-      }),
-    invalidateKeys: [TASKS_QUERY_KEY],
-    successMessage: "Task created.",
-    onSuccess: () => onClose(),
-  });
-
-  const submitTask = form.handleSubmit((values) => create.mutate(values));
-
-  return (
-    <Modal open={open} onClose={onClose} title="New task">
-      <Form {...form}>
-        <form onSubmit={submitTask} noValidate className="space-y-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="assigneeMembershipId"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  Assignee
-                </FormLabel>
-                <FormControl>
-                  <Select {...field}>
-                    {members.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.userName}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="dueAt"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  Due date (optional)
-                </FormLabel>
-                <FormControl>
-                  <DateInput min={toDateInputValue()} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={create.isPending}>
-              Create task
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </Modal>
-  );
-};
-
 export const TasksPage = () => {
-  const { data: organization } = useQuery({
-    queryKey: ["crm-organization"],
-    queryFn: crmApi.getOrganization,
-  });
-
-  const canReadMembers =
-    organization?.viewerIsSuperAdmin || organization?.viewerPermissionKeys.includes("members:read");
-
-  const { data: members } = useQuery({
-    queryKey: ["crm-members"],
-    queryFn: crmApi.listMembers,
-    enabled: Boolean(canReadMembers),
-  });
+  const { organization } = useCrmPermissions();
+  const members = useCrmMembers();
+  const [dueFilter, setDueFilter] = useSearchFilter("due", DUE_FILTER);
+  const [assigneeFilter, setAssigneeFilter] = useSearchFilter("assignee", rawTextFilter);
 
   const {
     data: tasks,
     isLoading,
     error,
   } = useQuery({
-    queryKey: TASKS_QUERY_KEY,
-    queryFn: () => crmActivitiesApi.listTasks(),
+    queryKey: [...TASKS_QUERY_KEY, dueFilter, assigneeFilter],
+    queryFn: () =>
+      crmActivitiesApi.listTasks({
+        assigneeMembershipId: assigneeFilter || undefined,
+        ...(dueFilter ? { status: OPEN_TASK_STATUS, ...toTaskDueRange(dueFilter) } : {}),
+      }),
   });
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
 
   const toggleTask = useApiMutation({
     mutationFn: (task: Task) =>
@@ -175,26 +67,46 @@ export const TasksPage = () => {
         <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">
-            {CRM_PAGE_TEXT.tasks.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tasks.description}</p>
-        </div>
-        {members && members.length > 0 && (
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            New task
-          </Button>
-        )}
+      <CrmPageHeader
+        {...CRM_PAGE_TEXT.tasks}
+        actions={
+          members &&
+          members.length > 0 && (
+            <Button size="sm" onClick={openNewRecordModal}>
+              New task
+            </Button>
+          )
+        }
+      />
+
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        {DUE_CHIPS.map(({ value, label }) => (
+          <FilterChip
+            key={label}
+            isSelected={dueFilter === value}
+            onClick={() => setDueFilter(value)}
+          >
+            {label}
+          </FilterChip>
+        ))}
+        <CrmMemberFilter
+          label="Filter by assignee"
+          allLabel="Everyone"
+          value={assigneeFilter}
+          onChange={setAssigneeFilter}
+        />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         {isLoading && <CompactRowSkeleton hasCheckbox />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tasks && tasks.length === 0 && (
-          <p className="text-sm text-muted-foreground">No tasks yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {assigneeFilter
+              ? "No tasks for this person here."
+              : DUE_CHIPS.find(({ value }) => value === dueFilter)?.empty}
+          </p>
         )}
 
         {tasks && tasks.length > 0 && (
@@ -228,10 +140,10 @@ export const TasksPage = () => {
         )}
       </div>
 
-      {modalOpen && members && (
+      {isNewRecordModalOpen && members && (
         <NewTaskModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
+          open
+          onClose={closeNewRecordModal}
           members={members.map((member) => ({ id: member.id, userName: member.userName }))}
         />
       )}

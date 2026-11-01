@@ -8,7 +8,7 @@ export const TENANT_SORT_OPTIONS: { value: TenantSort; label: string }[] = [
   { value: "created", label: "Newest" },
   { value: "members", label: "Most members" },
   { value: "contacts", label: "Most contacts" },
-  { value: "deals", label: "Most deals" },
+  { value: "deals", label: "Most opportunities" },
   { value: "tickets", label: "Most tickets" },
   { value: "activities", label: "Most activities" },
 ];
@@ -32,10 +32,10 @@ export const TENANT_TOTAL_CARDS: {
     hint: "Contacts saved in the CRM, added up across every business.",
   },
   {
-    label: "Deals",
+    label: "Opportunities",
     metricKey: "totalDeals",
     sort: "deals",
-    hint: "Sales deals created, added up across every business.",
+    hint: "Sales opportunities created, added up across every business.",
   },
   {
     label: "Tickets",
@@ -71,7 +71,11 @@ export const TENANT_COUNT_CARDS: {
     hint: "Members who did something recently, from the latest daily count.",
   },
   { label: "Contacts", metricKey: "contactCount", hint: "Contacts saved in this CRM." },
-  { label: "Deals", metricKey: "dealCount", hint: "Sales deals created in this CRM." },
+  {
+    label: "Opportunities",
+    metricKey: "dealCount",
+    hint: "Sales opportunities created in this CRM.",
+  },
   { label: "Tickets", metricKey: "ticketCount", hint: "Support tickets created in this CRM." },
   {
     label: "Activities",
@@ -93,7 +97,7 @@ export const TENANT_COUNT_CARDS: {
 export const TENANT_ACTIVITY_MEASURES = [
   { dataKey: "activityCount", label: "Activities" },
   { dataKey: "contactCount", label: "Contacts" },
-  { dataKey: "dealCount", label: "Deals" },
+  { dataKey: "dealCount", label: "Opportunities" },
   { dataKey: "ticketCount", label: "Tickets" },
   { dataKey: "activeMemberCount", label: "Active members" },
 ] as const;
@@ -105,7 +109,7 @@ export const TENANT_TABLE_HEADERS = [
   "Plan",
   "Members",
   "Contacts",
-  "Deals",
+  "Opportunities",
   "Tickets",
   "Last used",
 ];

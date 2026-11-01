@@ -59,3 +59,7 @@ elsewhere) → Postgres.
   `DomainEvents.CRM_ITEM_ASSIGNED` on the Redis Streams event bus with `itemKind: "task"`; the
   same `notifications` consumer that handles ticket assignment turns it into a `Notification` for
   the assignee. One event, one consumer, two callers (`crm-activities` and `crm-tickets`).
+
+## Contact subjects
+
+Activities and tasks can be tied to a contact through `contact_id`, as well as a partner, customer or opportunity. A contact's timeline shows its own notes plus the orders of its linked account with this brand; the brand filter in the timeline query keeps other brands' orders out. Deleting a contact cascades to its notes and tasks.

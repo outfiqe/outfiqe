@@ -9,6 +9,8 @@ import type {
   PartnerSummary,
 } from "../crm-relationships.types.js";
 
+const NO_RECORDED_ACTIVITY = 0;
+
 type PartnerListRow = {
   creator_id: string;
   name: string;
@@ -153,7 +155,14 @@ export const crmPartnerRepository = {
     `);
 
     const row = rows[0];
-    if (!row || (row.tag_click_count === 0 && row.attributed_order_count === 0)) return null;
+    if (!row) return null;
+
+    const hasRecordedActivity =
+      row.tag_click_count > NO_RECORDED_ACTIVITY ||
+      row.attributed_order_count > NO_RECORDED_ACTIVITY;
+    const isPartner =
+      hasRecordedActivity || (await crmPartnerRepository.isBrandPartner(brandId, creatorId));
+    if (!isPartner) return null;
 
     return {
       creatorId: row.creator_id,

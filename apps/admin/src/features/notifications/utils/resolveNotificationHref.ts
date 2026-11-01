@@ -5,13 +5,19 @@ export type AdminNotificationTarget =
   | { to: "/support" }
   | { to: "/support/$ticketId"; params: { ticketId: string } }
   | { to: "/crm/tasks" }
+  | { to: "/crm" }
+  | { to: "/crm/billing" }
   | { to: "/crm/support" }
+  | { to: "/crm/support/$ticketId"; params: { ticketId: string } }
   | { to: "/coupons" }
   | { to: "/logistics/alerts" }
   | { to: "/orders/$orderId"; params: { orderId: string } };
 
 const supportTicketTarget = (ticketId: string | null): AdminNotificationTarget =>
   ticketId ? { to: "/support/$ticketId", params: { ticketId } } : { to: "/support" };
+
+const crmTicketTarget = (ticketId: string | null): AdminNotificationTarget =>
+  ticketId ? { to: "/crm/support/$ticketId", params: { ticketId } } : { to: "/crm/support" };
 
 export const resolveNotificationHref = (
   notification: Notification,
@@ -29,7 +35,15 @@ export const resolveNotificationHref = (
     case NotificationType.CRM_ITEM_ASSIGNED:
       return metadata.crmItemKind === CrmItemKind.TASK
         ? { to: "/crm/tasks" }
-        : { to: "/crm/support" };
+        : crmTicketTarget(entityId);
+    case NotificationType.CRM_TICKET_UNASSIGNED:
+      return crmTicketTarget(entityId);
+    case NotificationType.CRM_MEMBER_JOINED:
+      return { to: "/crm" };
+    case NotificationType.CRM_INVOICE_DUE:
+    case NotificationType.CRM_SUBSCRIPTION_PAST_DUE:
+    case NotificationType.CRM_SUBSCRIPTION_CANCELED:
+      return { to: "/crm/billing" };
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:
       return { to: "/coupons" };

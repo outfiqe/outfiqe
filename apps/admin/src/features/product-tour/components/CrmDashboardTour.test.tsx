@@ -98,7 +98,7 @@ describe("CrmDashboardTour", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
-    expect(screen.getByRole("dialog", { name: "Pipeline" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Sales board" })).toBeInTheDocument();
     expect(screen.getByText("3 of 4")).toBeInTheDocument();
   });
 

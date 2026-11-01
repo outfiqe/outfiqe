@@ -94,7 +94,7 @@ export const resolveNotificationHref = (
       return adminAppPath(
         metadata.crmItemKind === CrmItemKind.TASK
           ? ADMIN_APP_ROUTES.crmTasks
-          : ADMIN_APP_ROUTES.crmSupport,
+          : `${ADMIN_APP_ROUTES.crmSupport}${entityId ? `/${entityId}` : ""}`,
       );
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:

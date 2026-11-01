@@ -89,7 +89,7 @@ const buildColumns = (
     },
     countColumn("members", "members", "Members", (row) => row.memberCount),
     countColumn("contacts", "contacts", "Contacts", (row) => row.contactCount),
-    countColumn("deals", "deals", "Deals", (row) => row.dealCount),
+    countColumn("deals", "deals", "Opportunities", (row) => row.dealCount),
     countColumn("tickets", "tickets", "Tickets", (row) => row.ticketCount),
     {
       key: "lastUsed",
