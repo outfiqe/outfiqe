@@ -4,6 +4,7 @@ import type { DealStatus } from "#generated/prisma/enums.js";
 import type {
   CreateDealInput,
   CreateStageInput,
+  DealListFilters,
   DealRecord,
   DealWithRelations,
   PipelineStageRecord,
@@ -22,6 +23,7 @@ const dealWithRelationsSelect = {
   ownerMembershipId: true,
   partnerCreatorId: true,
   status: true,
+  stageEnteredAt: true,
   closedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -47,6 +49,7 @@ const toDealWithRelations = (row: DealJoinRow): DealWithRelations => ({
   ownerMembershipId: row.ownerMembershipId,
   partnerCreatorId: row.partnerCreatorId,
   status: row.status,
+  stageEnteredAt: row.stageEnteredAt,
   closedAt: row.closedAt,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
@@ -116,10 +119,18 @@ export const crmPipelineRepository = {
     );
   },
 
-  async listDeals(organizationId: string): Promise<DealWithRelations[]> {
+  async listDeals(
+    organizationId: string,
+    filters: DealListFilters = {},
+    rowLimit?: number,
+  ): Promise<DealWithRelations[]> {
     const rows = await prisma.deal.findMany({
-      where: { organizationId },
+      where: {
+        organizationId,
+        ...(filters.ownerMembershipId ? { ownerMembershipId: filters.ownerMembershipId } : {}),
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      ...(rowLimit ? { take: rowLimit } : {}),
       select: dealWithRelationsSelect,
     });
     return rows.map(toDealWithRelations);
@@ -146,10 +157,11 @@ export const crmPipelineRepository = {
     dealId: string,
     data: UpdateDealInput,
     resolvedStatus: { status: DealStatus; closedAt: Date | null } | null,
+    stageEnteredAt?: Date,
   ): Promise<DealWithRelations> {
     const row = await prisma.deal.update({
       where: { id: dealId, organizationId },
-      data: { ...data, ...(resolvedStatus ?? {}) },
+      data: { ...data, ...(resolvedStatus ?? {}), ...(stageEnteredAt ? { stageEnteredAt } : {}) },
       select: dealWithRelationsSelect,
     });
     return toDealWithRelations(row);

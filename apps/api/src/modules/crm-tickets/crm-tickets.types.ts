@@ -48,3 +48,11 @@ export type CreateTicketInput = {
   assigneeMembershipId: string | null;
   createdByMembershipId: string | null;
 };
+
+export type TicketListFilters = {
+  status?: CrmTicketStatus;
+  assigneeMembershipId?: string;
+  type?: TicketRecord["type"];
+  createdFrom?: Date;
+  createdTo?: Date;
+};

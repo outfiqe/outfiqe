@@ -408,3 +408,15 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **Contacts have their own timeline.** Notes logged on a contact stay on the contact. If the contact is linked to an account, their orders with this brand appear there too. Deleting a contact also deletes its notes and tasks, the same as deleting an opportunity, and the warning says so.
 
 `activities/components/NewTaskModal.tsx` is shared by the Tasks page and the detail pages; the optional `subject` ties the new task to that record.
+
+## List pages
+
+**Filters live in the link.** `hooks/useCrmListFilters.ts` keeps the search and page in the URL, and each list keeps its other filters there too (`stage`, `owner`, `due`, `assignee`, `from`, `to`). So opening a record and pressing back returns to the same filtered list, and a filtered list can be shared.
+
+**Rows open the record.** Partners, customers and contacts use the shared `Table` with `onRowClick`. The name stays a real link so keyboard users and "open in new tab" still work.
+
+**CSV exports exist only on Contacts and the Sales board.** They run on the server, cover the whole filtered list and follow the viewer's read permission. Muse and shopper details are deliberately left out: the opportunities export has no partner column, and the contacts export has no linked account or notes.
+
+**Time in stage is an estimate for older opportunities.** `stageEnteredAt` starts from the migration, which used `updated_at` for existing rows because the real date was never stored. Moves after that are exact.
+
+**Task chips use the viewer's own day.** `activities/utils/taskDue.utils.ts` works out the day in the browser and sends exact times, so "Today" is correct for the person looking, whatever timezone the server is in. Support's date range works the same way.

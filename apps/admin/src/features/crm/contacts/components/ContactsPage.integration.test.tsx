@@ -72,6 +72,7 @@ const renderContactsPage = () => {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 };
 
 describe("ContactsPage", () => {
@@ -183,6 +184,46 @@ describe("ContactsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "New contact" }));
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("keeps the search and stage in the link", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    const router = renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.selectOptions(screen.getByLabelText("Filter by lifecycle stage"), "CUSTOMER");
+    await userEvent.type(screen.getByPlaceholderText("Search contacts"), "anisha");
+
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({ stage: "CUSTOMER", q: "anisha" }),
+    );
+  });
+
+  it("opens a contact when its row is clicked", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    const router = renderContactsPage();
+
+    await userEvent.click(await screen.findByRole("cell", { name: "Boutique KTM" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/crm/contacts/c-1"));
   });
 
   it("links each contact name to its own page", async () => {

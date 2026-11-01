@@ -40,9 +40,14 @@ export const crmPipelineApi = {
     await apiClient.post("/crm/pipeline/stages/reorder", { orderedStageIds });
   },
 
-  async listDeals(): Promise<Deal[]> {
-    const res = await apiClient.get<Deal[]>("/crm/deals");
+  async listDeals(ownerMembershipId?: string): Promise<Deal[]> {
+    const res = await apiClient.get<Deal[]>("/crm/deals", { params: { ownerMembershipId } });
     return dealListSchema.parse(res.data);
+  },
+
+  exportDeals(ownerMembershipId?: string): Promise<Blob> {
+    const exportParams = new URLSearchParams(ownerMembershipId ? { ownerMembershipId } : {});
+    return apiClient.getBlob(`/crm/deals/export?${exportParams}`);
   },
 
   async getDeal(dealId: string): Promise<Deal> {

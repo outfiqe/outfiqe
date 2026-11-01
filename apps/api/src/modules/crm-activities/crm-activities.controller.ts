@@ -82,6 +82,8 @@ export const crmActivitiesController = {
     const tasks = await crmActivitiesService.listTasks(organization.id, {
       assigneeMembershipId: query.assigneeMembershipId,
       status: query.status,
+      dueFrom: query.dueFrom,
+      dueTo: query.dueTo,
       subject: readSubject(query) ?? undefined,
     });
     sendSuccess(res, tasks, "CRM tasks.");

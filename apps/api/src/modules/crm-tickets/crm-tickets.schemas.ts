@@ -8,19 +8,25 @@ import {
   TICKET_SUBJECT_TYPES,
 } from "./crm-tickets.constants.js";
 
-export const listTicketsQuerySchema = z.object({
-  status: z.enum(CrmTicketStatus).optional(),
-  assigneeMembershipId: z.uuid().optional(),
-  type: z.enum(CrmTicketType).optional(),
-  cursor: z.uuid().optional(),
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(MAX_TICKET_PAGE_SIZE)
-    .optional()
-    .default(DEFAULT_TICKET_PAGE_SIZE),
-});
+export const listTicketsQuerySchema = z
+  .object({
+    status: z.enum(CrmTicketStatus).optional(),
+    assigneeMembershipId: z.uuid().optional(),
+    type: z.enum(CrmTicketType).optional(),
+    createdFrom: z.coerce.date().optional(),
+    createdTo: z.coerce.date().optional(),
+    cursor: z.uuid().optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_TICKET_PAGE_SIZE)
+      .optional()
+      .default(DEFAULT_TICKET_PAGE_SIZE),
+  })
+  .refine(({ createdFrom, createdTo }) => !createdFrom || !createdTo || createdFrom <= createdTo, {
+    message: "The start date must be on or before the end date.",
+  });
 
 export const createTicketSchema = z.object({
   type: z.enum(CrmTicketType),

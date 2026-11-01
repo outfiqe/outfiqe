@@ -379,6 +379,35 @@ describe("CRM tasks", () => {
     expect(openOnly.body.data).toEqual([]);
   });
 
+  it("filters tasks by due date for the overdue, today and upcoming chips", async () => {
+    const tenant = await seedActivitiesTenant();
+    const dueOn = (title: string, dueAt: Date) =>
+      prisma.crmTask.create({
+        data: {
+          organizationId: tenant.organization.id,
+          title,
+          dueAt,
+          assigneeMembershipId: tenant.membership.id,
+        },
+      });
+    await dueOn("Last week", addDays(new Date(), -7));
+    await dueOn("Next week", addDays(new Date(), 7));
+
+    const overdue = await request(testApp)
+      .get("/api/crm/tasks")
+      .query({ status: "OPEN", dueTo: new Date().toISOString() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    expect(overdue.body.data.map(({ title }: { title: string }) => title)).toEqual(["Last week"]);
+
+    const upcoming = await request(testApp)
+      .get("/api/crm/tasks")
+      .query({ status: "OPEN", dueFrom: new Date().toISOString() })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    expect(upcoming.body.data.map(({ title }: { title: string }) => title)).toEqual(["Next week"]);
+  });
+
   it("rejects a task assigned to someone outside the organization", async () => {
     const tenant = await seedActivitiesTenant();
     const otherOrg = await seedActivitiesTenant();

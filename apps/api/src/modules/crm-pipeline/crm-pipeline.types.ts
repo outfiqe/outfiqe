@@ -22,6 +22,7 @@ export type DealRecord = {
   ownerMembershipId: string | null;
   partnerCreatorId: string;
   status: DealStatus;
+  stageEnteredAt: Date;
   closedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -65,4 +66,8 @@ export type UpdateDealInput = {
   currency?: string;
   expectedCloseDate?: Date | null;
   ownerMembershipId?: string | null;
+};
+
+export type DealListFilters = {
+  ownerMembershipId?: string;
 };

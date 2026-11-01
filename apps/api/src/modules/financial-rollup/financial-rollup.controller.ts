@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { CSV_CONTENT_TYPE } from "#lib/csv-writer.utils.js";
 import logger from "#lib/winston.utils.js";
 import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -13,8 +14,6 @@ import type {
   LedgerItemParam,
 } from "./financial-rollup.schemas.js";
 import { financialRollupService } from "./financial-rollup.service.js";
-
-const CSV_CONTENT_TYPE = "text/csv; charset=utf-8";
 
 export const financialRollupController = {
   async get(_req: Request, res: Response) {

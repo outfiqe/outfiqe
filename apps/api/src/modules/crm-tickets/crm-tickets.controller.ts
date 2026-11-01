@@ -21,14 +21,9 @@ import { crmTicketsService } from "./crm-tickets.service.js";
 
 export const crmTicketsController = {
   async listTickets(_req: Request, res: Response) {
-    const { status, assigneeMembershipId, type, cursor, limit } =
-      validated.query<ListTicketsQuery>(res);
+    const { cursor, limit, ...filters } = validated.query<ListTicketsQuery>(res);
     const organization = getResolvedOrganization(res);
-    const page = await crmTicketsService.listTickets(
-      organization.id,
-      { status, assigneeMembershipId, type },
-      { cursor, limit },
-    );
+    const page = await crmTicketsService.listTickets(organization.id, filters, { cursor, limit });
     sendSuccess(res, page, "CRM tickets.");
   },
 

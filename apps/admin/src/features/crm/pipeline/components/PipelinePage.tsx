@@ -7,19 +7,26 @@ import { useState } from "react";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
+import { CrmMemberFilter } from "../../components/CrmMemberFilter";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
+import { CsvExportButton } from "../../components/CsvExportButton";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
 import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
 import { DEALS_QUERY_KEY, STAGES_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
+import { toDaysInStageLabel } from "../utils/dealCard.utils";
 import { DealFormModal } from "./DealFormModal";
 import { StageConfigModal } from "./StageConfigModal";
 
 const PIPELINE_CONFIGURE_PERMISSION = "pipeline:configure";
 const DEALS_WRITE_PERMISSION = "deals:write";
+const EXPORT_FILE_NAME = "opportunities.csv";
+const EXPORT_FAILURE_MESSAGE = "Couldn't export your opportunities. Try filtering by owner.";
 
 export const PipelinePage = () => {
   const { data: organization } = useQuery({
@@ -32,10 +39,17 @@ export const PipelinePage = () => {
     isLoading: stagesLoading,
     error: stagesError,
   } = useQuery({ queryKey: STAGES_QUERY_KEY, queryFn: crmPipelineApi.listStages });
+  const [ownerFilter, setOwnerFilter] = useSearchFilter("owner", rawTextFilter);
+  const ownerMembershipId = ownerFilter || undefined;
   const { data: deals } = useQuery({
-    queryKey: DEALS_QUERY_KEY,
-    queryFn: crmPipelineApi.listDeals,
+    queryKey: [...DEALS_QUERY_KEY, ownerFilter],
+    queryFn: () => crmPipelineApi.listDeals(ownerMembershipId),
   });
+  const { exportCsv, isExporting } = useCrmCsvExport(
+    () => crmPipelineApi.exportDeals(ownerMembershipId),
+    EXPORT_FILE_NAME,
+    EXPORT_FAILURE_MESSAGE,
+  );
 
   const [dealModalOpen, setDealModalOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
@@ -74,7 +88,14 @@ export const PipelinePage = () => {
       <CrmPageHeader
         {...CRM_PAGE_TEXT.pipeline}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <CrmMemberFilter
+              label="Filter by owner"
+              allLabel="All owners"
+              value={ownerFilter}
+              onChange={setOwnerFilter}
+            />
+            <CsvExportButton isExporting={isExporting} onExport={() => void exportCsv()} />
             {canConfigure && (
               <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>
                 Edit stages
@@ -115,8 +136,15 @@ export const PipelinePage = () => {
                 className="block w-full cursor-pointer text-left"
               >
                 <span className="font-semibold text-foreground">{card.deal.title}</span>
+                <span className="mt-1 block text-sm font-medium text-foreground">
+                  {formatRupees(card.deal.value)}
+                </span>
                 <span className="mt-1 block text-xs text-muted-foreground">
-                  {card.deal.partnerName} · {formatRupees(card.deal.value)}
+                  with {card.deal.partnerName}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {card.deal.ownerName ?? "Unassigned"}
+                  {toDaysInStageLabel(card.deal) && ` · ${toDaysInStageLabel(card.deal)}`}
                 </span>
               </Link>
             )}

@@ -5,6 +5,7 @@ import { RESOLVED_TICKET_STATUSES } from "./crm-tickets.constants.js";
 import type {
   CreateTicketInput,
   TicketCommentRecord,
+  TicketListFilters,
   TicketRecord,
   TicketWithComments,
 } from "./crm-tickets.types.js";
@@ -107,11 +108,7 @@ export const crmTicketsRepository = {
 
   async listTickets(
     organizationId: string,
-    filters: {
-      status?: CrmTicketStatus;
-      assigneeMembershipId?: string;
-      type?: TicketRecord["type"];
-    },
+    filters: TicketListFilters,
     page: { cursor?: string; limit: number },
   ): Promise<TicketRecord[]> {
     const rows = await prisma.crmTicket.findMany({
@@ -122,6 +119,9 @@ export const crmTicketsRepository = {
           ? { assigneeMembershipId: filters.assigneeMembershipId }
           : {}),
         ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.createdFrom || filters.createdTo
+          ? { createdAt: { gte: filters.createdFrom, lte: filters.createdTo } }
+          : {}),
       },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "desc" }],
       take: page.limit + 1,

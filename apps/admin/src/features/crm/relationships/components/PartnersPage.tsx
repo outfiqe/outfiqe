@@ -1,33 +1,70 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
+import { FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { CrmPageHeader } from "../../components/CrmPageHeader";
+import { CrmPagination } from "../../components/CrmPagination";
 import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "../../constants/crmPageContent";
+import { useCrmListFilters } from "../../hooks/useCrmListFilters";
 import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
+import type { PartnerSummary } from "../api/relationshipsSchemas";
 
 const PAGE_SIZE = 25;
-const SEARCH_DEBOUNCE_MS = 300;
+
+const PARTNER_COLUMNS: TableColumn<PartnerSummary>[] = [
+  {
+    key: "muse",
+    header: "Muse",
+    render: ({ creatorId, name, handle }) => (
+      <>
+        <Link
+          to="/crm/partners/$creatorId"
+          params={{ creatorId }}
+          className="font-semibold text-primary-strong underline"
+        >
+          {name}
+        </Link>
+        <span className="ml-2 text-muted-foreground">@{handle}</span>
+      </>
+    ),
+  },
+  {
+    key: "clicks",
+    header: "Tag clicks",
+    render: ({ tagClickCount }) => tagClickCount.toLocaleString(),
+  },
+  {
+    key: "orders",
+    header: "Orders they brought",
+    render: ({ attributedOrderCount }) => attributedOrderCount.toLocaleString(),
+  },
+  {
+    key: "sales",
+    header: "Sales they brought",
+    render: ({ attributedRevenue }) => formatRupees(attributedRevenue),
+  },
+  {
+    key: "activity",
+    header: "Last activity",
+    render: ({ lastActivityAt }) => formatDate(lastActivityAt),
+  },
+];
 
 export const PartnersPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const navigate = useNavigate();
+  const { searchText, changeSearchText, search, page, goToPage } = useCrmListFilters();
 
   const {
     data: partnerPage,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["crm-partners", debounced, page],
-    queryFn: () =>
-      crmRelationshipsApi.listPartners({ q: debounced || undefined, page, pageSize: PAGE_SIZE }),
+    queryKey: ["crm-partners", search, page],
+    queryFn: () => crmRelationshipsApi.listPartners({ q: search, page, pageSize: PAGE_SIZE }),
   });
 
   return (
@@ -35,14 +72,10 @@ export const PartnersPage = () => {
       <CrmPageHeader
         {...CRM_PAGE_TEXT.partners}
         actions={
-          <Input
-            type="search"
+          <SearchInput
             placeholder="Search muses"
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setPage(1);
-            }}
+            value={searchText}
+            onValueChange={changeSearchText}
             className="w-64"
           />
         }
@@ -60,66 +93,30 @@ export const PartnersPage = () => {
 
         {partnerPage && partnerPage.reason === null && partnerPage.items.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {debounced ? "No partners match your search." : "No partners yet."}
+            {search
+              ? "No partners match your search. Try a shorter name."
+              : "No partners yet. Muses appear here once they link or tag your products, or bring in an order."}
           </p>
         )}
 
         {partnerPage && partnerPage.items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 pr-4">Muse</th>
-                  <th className="py-2 pr-4">Tag clicks</th>
-                  <th className="py-2 pr-4">Orders they brought</th>
-                  <th className="py-2 pr-4">Sales they brought</th>
-                  <th className="py-2">Last activity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {partnerPage.items.map((partner) => (
-                  <tr key={partner.creatorId} className="border-t border-border">
-                    <td className="py-2 pr-4">
-                      <Link
-                        to="/crm/partners/$creatorId"
-                        params={{ creatorId: partner.creatorId }}
-                        className="font-semibold text-primary-strong underline"
-                      >
-                        {partner.name}
-                      </Link>
-                      <span className="ml-2 text-muted-foreground">@{partner.handle}</span>
-                    </td>
-                    <td className="py-2 pr-4">{partner.tagClickCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{partner.attributedOrderCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{formatRupees(partner.attributedRevenue)}</td>
-                    <td className="py-2">{formatDate(partner.lastActivityAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{partnerPage.total} total</span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!partnerPage.hasMore}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
+          <>
+            <Table
+              caption="Partners"
+              columns={PARTNER_COLUMNS}
+              rows={partnerPage.items}
+              rowKey={({ creatorId }) => creatorId}
+              onRowClick={({ creatorId }) =>
+                void navigate({ to: "/crm/partners/$creatorId", params: { creatorId } })
+              }
+            />
+            <CrmPagination
+              total={partnerPage.total}
+              page={page}
+              hasMore={partnerPage.hasMore}
+              onPageChange={goToPage}
+            />
+          </>
         )}
       </div>
     </div>

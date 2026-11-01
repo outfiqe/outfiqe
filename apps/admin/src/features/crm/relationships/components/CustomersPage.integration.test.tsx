@@ -121,12 +121,12 @@ describe("CustomersPage", () => {
 
     renderCustomersPage();
 
-    expect(await screen.findByText("No customers yet.")).toBeInTheDocument();
+    expect(await screen.findByText(/No customers yet/)).toBeInTheDocument();
 
     await userEvent.type(screen.getByPlaceholderText("Search shoppers"), "sita");
 
     await waitFor(() => expect(lastQuery).toBe("sita"));
-    expect(await screen.findByText("No customers match your search.")).toBeInTheDocument();
+    expect(await screen.findByText(/No customers match your search/)).toBeInTheDocument();
   });
 
   it("surfaces a load error", async () => {

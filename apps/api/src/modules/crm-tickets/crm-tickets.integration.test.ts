@@ -189,6 +189,46 @@ describe("CRM tickets", () => {
     expect(seenIds.size).toBe(3);
   });
 
+  it("filters the list by the day a ticket was opened", async () => {
+    const tenant = await seedTicketsTenant();
+    const openedOn = (title: string, createdAt: Date) =>
+      prisma.crmTicket.create({
+        data: {
+          organizationId: tenant.organization.id,
+          type: "COMPLAINT",
+          title,
+          description: "x",
+          createdAt,
+        },
+      });
+    await openedOn("Too early", new Date("2026-08-01T10:00:00.000Z"));
+    await openedOn("In range", new Date("2026-08-15T10:00:00.000Z"));
+    await openedOn("Too late", new Date("2026-08-31T10:00:00.000Z"));
+
+    const filtered = await request(testApp)
+      .get("/api/crm/tickets")
+      .query({ createdFrom: "2026-08-10T00:00:00.000Z", createdTo: "2026-08-20T23:59:59.999Z" })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data.tickets.map(({ title }: { title: string }) => title)).toEqual([
+      "In range",
+    ]);
+  });
+
+  it("rejects a date range that ends before it starts", async () => {
+    const tenant = await seedTicketsTenant();
+
+    const rejected = await request(testApp)
+      .get("/api/crm/tickets")
+      .query({ createdFrom: "2026-08-20T00:00:00.000Z", createdTo: "2026-08-10T00:00:00.000Z" })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(rejected.status).toBe(422);
+  });
+
   it("adds an internal comment thread", async () => {
     const tenant = await seedTicketsTenant();
     const created = await request(testApp)

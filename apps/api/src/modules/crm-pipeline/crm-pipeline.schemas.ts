@@ -22,6 +22,12 @@ export const reorderStagesSchema = z.object({
 
 export const stageIdParamsSchema = z.object({ stageId: z.uuid() });
 
+export const dealListQuerySchema = z.object({
+  ownerMembershipId: z.uuid().optional(),
+});
+
+export type DealListQuery = z.infer<typeof dealListQuerySchema>;
+
 export const dealIdParamsSchema = z.object({ dealId: z.uuid() });
 
 const dealCoreShape = {

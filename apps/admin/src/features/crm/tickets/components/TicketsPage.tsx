@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Badge,
   Button,
+  DateInput,
   Form,
   FormBanner,
   FormControl,
@@ -21,11 +22,13 @@ import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { FORM_VALIDATION_MODE } from "@/lib/formValidation";
-import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
+import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
+import { toDayRange } from "../../activities/utils/taskDue.utils";
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
+import { CrmMemberFilter } from "../../components/CrmMemberFilter";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import {
@@ -36,6 +39,7 @@ import { formatDate, toPlainWords } from "../../utils/format.utils";
 import { crmTicketsApi } from "../api/ticketsApi";
 import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "../api/ticketsSchemas";
 import { TICKETS_QUERY_KEY } from "../constants/ticketQueryKeys";
+import { TICKET_STATUS_TONE } from "../constants/ticketStatusTone";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
 
 const NO_STATUS_FILTER = "";
@@ -172,9 +176,22 @@ export const TicketsPage = () => {
     organization?.viewerPermissionKeys.includes("tickets:write");
 
   const [statusFilter, setStatusFilter] = useSearchFilter("status", TICKET_STATUS_FILTER);
+  const [assigneeFilter, setAssigneeFilter] = useSearchFilter("assignee", rawTextFilter);
+  const [dateFrom, setDateFrom] = useSearchFilter("from", rawTextFilter);
+  const [dateTo, setDateTo] = useSearchFilter("to", rawTextFilter);
+  const hasFilters = Boolean(statusFilter || assigneeFilter || dateFrom || dateTo);
+
   const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteCursorPage([...TICKETS_QUERY_KEY, statusFilter], (cursor) =>
-      crmTicketsApi.listTickets({ ...(statusFilter ? { status: statusFilter } : {}), cursor }),
+    useInfiniteCursorPage(
+      [...TICKETS_QUERY_KEY, statusFilter, assigneeFilter, dateFrom, dateTo],
+      (cursor) =>
+        crmTicketsApi.listTickets({
+          ...(statusFilter ? { status: statusFilter } : {}),
+          assigneeMembershipId: assigneeFilter || undefined,
+          createdFrom: toDayRange(dateFrom, "start"),
+          createdTo: toDayRange(dateTo, "end"),
+          cursor,
+        }),
     );
   const tickets = data?.pages.flatMap((page) => page.tickets);
 
@@ -189,7 +206,7 @@ export const TicketsPage = () => {
       <CrmPageHeader
         {...CRM_PAGE_TEXT.tickets}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
               aria-label="Filter by status"
               value={statusFilter}
@@ -203,6 +220,26 @@ export const TicketsPage = () => {
                 </option>
               ))}
             </Select>
+            <CrmMemberFilter
+              label="Filter by assignee"
+              allLabel="Everyone"
+              value={assigneeFilter}
+              onChange={setAssigneeFilter}
+            />
+            <DateInput
+              aria-label="From date"
+              max={dateTo}
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+              className="w-40"
+            />
+            <DateInput
+              aria-label="To date"
+              min={dateFrom}
+              value={dateTo}
+              onChange={(event) => setDateTo(event.target.value)}
+              className="w-40"
+            />
             {canWriteTickets && (
               <Button size="sm" onClick={() => setModalOpen(true)}>
                 New ticket
@@ -217,7 +254,11 @@ export const TicketsPage = () => {
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tickets && tickets.length === 0 && (
-          <p className="text-sm text-muted-foreground">No tickets yet.</p>
+          <p className="text-sm text-muted-foreground">
+            {hasFilters
+              ? "No tickets match your filters."
+              : "No tickets yet. When a customer has a problem, add it here so your team can follow it."}
+          </p>
         )}
 
         {tickets && tickets.length > 0 && (
@@ -235,7 +276,9 @@ export const TicketsPage = () => {
                   </span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {ticket.assigneeName ?? "unassigned"} · {formatDate(ticket.createdAt)}
-                    <Badge>{toPlainWords(ticket.status)}</Badge>
+                    <Badge tone={TICKET_STATUS_TONE[ticket.status]}>
+                      {toPlainWords(ticket.status)}
+                    </Badge>
                   </span>
                 </Link>
               </li>

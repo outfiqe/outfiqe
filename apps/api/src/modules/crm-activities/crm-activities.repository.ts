@@ -7,6 +7,7 @@ import type {
   CreateActivityInput,
   CreateTaskInput,
   SubjectRef,
+  TaskListFilters,
   TaskRecord,
   TimelineEntry,
 } from "./crm-activities.types.js";
@@ -173,10 +174,7 @@ export const crmActivitiesRepository = {
     return toTaskRecord(row);
   },
 
-  async listTasks(
-    organizationId: string,
-    filters: { assigneeMembershipId?: string; status?: CrmTaskStatus; subject?: SubjectRef },
-  ): Promise<TaskRecord[]> {
+  async listTasks(organizationId: string, filters: TaskListFilters): Promise<TaskRecord[]> {
     const rows = await prisma.crmTask.findMany({
       where: {
         organizationId,
@@ -185,6 +183,9 @@ export const crmActivitiesRepository = {
           : {}),
         ...(filters.status ? { status: filters.status } : {}),
         ...(filters.subject ? subjectToColumns(filters.subject) : {}),
+        ...(filters.dueFrom || filters.dueTo
+          ? { dueAt: { gte: filters.dueFrom, lte: filters.dueTo } }
+          : {}),
       },
       orderBy: [{ status: "asc" }, { dueAt: "asc" }],
       select: taskSelect,

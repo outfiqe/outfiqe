@@ -13,7 +13,13 @@ import {
 
 export const crmTicketsApi = {
   async listTickets(
-    filters: { status?: TicketStatusValue; cursor?: string } = {},
+    filters: {
+      status?: TicketStatusValue;
+      assigneeMembershipId?: string;
+      createdFrom?: string;
+      createdTo?: string;
+      cursor?: string;
+    } = {},
   ): Promise<TicketPage> {
     const res = await apiClient.get<TicketPage>("/crm/tickets", { params: filters });
     return ticketPageSchema.parse(res.data);

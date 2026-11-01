@@ -1,33 +1,54 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
+import { FormBanner, SearchInput, Table, type TableColumn } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { CrmPageHeader } from "../../components/CrmPageHeader";
+import { CrmPagination } from "../../components/CrmPagination";
 import { CRM_PAGE_TEXT, CUSTOMER_TABLE_HEADERS } from "../../constants/crmPageContent";
+import { useCrmListFilters } from "../../hooks/useCrmListFilters";
 import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
+import type { CustomerSummary } from "../api/relationshipsSchemas";
 
 const PAGE_SIZE = 25;
-const SEARCH_DEBOUNCE_MS = 300;
+
+const CUSTOMER_COLUMNS: TableColumn<CustomerSummary>[] = [
+  {
+    key: "shopper",
+    header: "Shopper",
+    render: ({ userId, name, handle }) => (
+      <>
+        <Link
+          to="/crm/customers/$userId"
+          params={{ userId }}
+          className="font-semibold text-primary-strong underline"
+        >
+          {name}
+        </Link>
+        <span className="ml-2 text-muted-foreground">@{handle}</span>
+      </>
+    ),
+  },
+  { key: "orders", header: "Orders", render: ({ orderCount }) => orderCount.toLocaleString() },
+  { key: "items", header: "Items", render: ({ itemCount }) => itemCount.toLocaleString() },
+  { key: "paid", header: "Total paid", render: ({ totalPaid }) => formatRupees(totalPaid) },
+  { key: "last", header: "Last order", render: ({ lastOrderAt }) => formatDate(lastOrderAt) },
+];
 
 export const CustomersPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const navigate = useNavigate();
+  const { searchText, changeSearchText, search, page, goToPage } = useCrmListFilters();
 
   const {
     data: customerPage,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["crm-customers", debounced, page],
-    queryFn: () =>
-      crmRelationshipsApi.listCustomers({ q: debounced || undefined, page, pageSize: PAGE_SIZE }),
+    queryKey: ["crm-customers", search, page],
+    queryFn: () => crmRelationshipsApi.listCustomers({ q: search, page, pageSize: PAGE_SIZE }),
   });
 
   return (
@@ -35,14 +56,10 @@ export const CustomersPage = () => {
       <CrmPageHeader
         {...CRM_PAGE_TEXT.customers}
         actions={
-          <Input
-            type="search"
+          <SearchInput
             placeholder="Search shoppers"
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setPage(1);
-            }}
+            value={searchText}
+            onValueChange={changeSearchText}
             className="w-64"
           />
         }
@@ -60,66 +77,30 @@ export const CustomersPage = () => {
 
         {customerPage && customerPage.reason === null && customerPage.items.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {debounced ? "No customers match your search." : "No customers yet."}
+            {search
+              ? "No customers match your search. Try a shorter name."
+              : "No customers yet. Shoppers appear here after their first order for your products."}
           </p>
         )}
 
         {customerPage && customerPage.items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 pr-4">Shopper</th>
-                  <th className="py-2 pr-4">Orders</th>
-                  <th className="py-2 pr-4">Items</th>
-                  <th className="py-2 pr-4">Total paid</th>
-                  <th className="py-2">Last order</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customerPage.items.map((customer) => (
-                  <tr key={customer.userId} className="border-t border-border">
-                    <td className="py-2 pr-4">
-                      <Link
-                        to="/crm/customers/$userId"
-                        params={{ userId: customer.userId }}
-                        className="font-semibold text-primary-strong underline"
-                      >
-                        {customer.name}
-                      </Link>
-                      <span className="ml-2 text-muted-foreground">@{customer.handle}</span>
-                    </td>
-                    <td className="py-2 pr-4">{customer.orderCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{customer.itemCount.toLocaleString()}</td>
-                    <td className="py-2 pr-4">{formatRupees(customer.totalPaid)}</td>
-                    <td className="py-2">{formatDate(customer.lastOrderAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{customerPage.total} total</span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!customerPage.hasMore}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
+          <>
+            <Table
+              caption="Customers"
+              columns={CUSTOMER_COLUMNS}
+              rows={customerPage.items}
+              rowKey={({ userId }) => userId}
+              onRowClick={({ userId }) =>
+                void navigate({ to: "/crm/customers/$userId", params: { userId } })
+              }
+            />
+            <CrmPagination
+              total={customerPage.total}
+              page={page}
+              hasMore={customerPage.hasMore}
+              onPageChange={goToPage}
+            />
+          </>
         )}
       </div>
     </div>
