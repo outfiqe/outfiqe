@@ -18,6 +18,7 @@ import type {
   PlatformActivityTrendPoint,
   PlatformAttentionCounts,
   PlatformOverview,
+  TenantAccount,
   TenantMetricListFilters,
   TenantMetricListPage,
   TenantMetricRow,
@@ -31,6 +32,8 @@ const tenantRowSelect = {
   plan: true,
   isPlatformOrg: true,
   linkedBrandId: true,
+  superAdminMembershipId: true,
+  linkedBrand: { select: { name: true } },
   contactCount: true,
   dealCount: true,
   ticketCount: true,
@@ -43,7 +46,7 @@ const tenantRowSelect = {
 
 type TenantSelectRow = Prisma.OrganizationGetPayload<{ select: typeof tenantRowSelect }>;
 
-const toTenantMetricRow = (row: TenantSelectRow): TenantMetricRow => ({
+const toTenantMetricRow = (row: TenantSelectRow, ownerName: string | null): TenantMetricRow => ({
   organizationId: row.id,
   name: row.name,
   subdomain: row.subdomain,
@@ -51,6 +54,8 @@ const toTenantMetricRow = (row: TenantSelectRow): TenantMetricRow => ({
   subscriptionStatus: row.subscription?.status ?? null,
   isPlatformOrg: row.isPlatformOrg,
   linkedBrandId: row.linkedBrandId,
+  linkedBrandName: row.linkedBrand?.name ?? null,
+  ownerName,
   memberCount: row._count.memberships,
   contactCount: row.contactCount,
   dealCount: row.dealCount,
@@ -60,11 +65,33 @@ const toTenantMetricRow = (row: TenantSelectRow): TenantMetricRow => ({
   createdAt: row.createdAt,
 });
 
+const findOwnersByMembershipId = async (rows: TenantSelectRow[]) => {
+  const membershipIds = rows.flatMap(({ superAdminMembershipId }) =>
+    superAdminMembershipId ? [superAdminMembershipId] : [],
+  );
+  const memberships = await prismaRead.membership.findMany({
+    where: { id: { in: membershipIds } },
+    select: { id: true, user: { select: { name: true, email: true } } },
+  });
+  return new Map(memberships.map(({ id, user }) => [id, user]));
+};
+
+const ownerNameFor = (
+  { superAdminMembershipId }: TenantSelectRow,
+  owners: Awaited<ReturnType<typeof findOwnersByMembershipId>>,
+): string | null =>
+  superAdminMembershipId ? (owners.get(superAdminMembershipId)?.name ?? null) : null;
+
 const orderByFor = (
   sort: TenantMetricListFilters["sort"],
 ): Prisma.OrganizationOrderByWithRelationInput[] => {
   if (sort === "name") return [{ name: "asc" }];
   if (sort === "created") return [{ createdAt: "desc" }];
+  if (sort === "members") return [{ memberships: { _count: "desc" } }, { name: "asc" }];
+  if (sort === "contacts") return [{ contactCount: "desc" }, { name: "asc" }];
+  if (sort === "deals") return [{ dealCount: "desc" }, { name: "asc" }];
+  if (sort === "tickets") return [{ ticketCount: "desc" }, { name: "asc" }];
+  if (sort === "activities") return [{ activityCount: "desc" }, { name: "asc" }];
   return [{ lastCrmActivityAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }];
 };
 
@@ -72,6 +99,12 @@ export const platformMetricsRepository = {
   async listTenants(filters: TenantMetricListFilters): Promise<TenantMetricListPage> {
     const where: Prisma.OrganizationWhereInput = { ...TENANT_ORGANIZATION_SCOPE };
     if (filters.plan) where.plan = filters.plan;
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { subdomain: { contains: filters.search, mode: "insensitive" } },
+      ];
+    }
     const skip = (filters.page - 1) * filters.pageSize;
 
     const [rows, total] = await Promise.all([
@@ -85,8 +118,10 @@ export const platformMetricsRepository = {
       prismaRead.organization.count({ where }),
     ]);
 
+    const owners = await findOwnersByMembershipId(rows);
+
     return {
-      items: rows.map(toTenantMetricRow),
+      items: rows.map((row) => toTenantMetricRow(row, ownerNameFor(row, owners))),
       total,
       hasMore: skip + rows.length < total,
     };
@@ -97,7 +132,48 @@ export const platformMetricsRepository = {
       where: { id: organizationId, ...TENANT_ORGANIZATION_SCOPE },
       select: tenantRowSelect,
     });
-    return row ? toTenantMetricRow(row) : null;
+    if (!row) return null;
+    const owners = await findOwnersByMembershipId([row]);
+    return toTenantMetricRow(row, ownerNameFor(row, owners));
+  },
+
+  async findTenantAccount(organizationId: string): Promise<TenantAccount> {
+    const [organization, pendingInviteCount] = await Promise.all([
+      prismaRead.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+          trialEndsAt: true,
+          superAdminMembershipId: true,
+          subscription: {
+            select: { seats: true, currentPeriodEnd: true, cancelAtPeriodEnd: true },
+          },
+        },
+      }),
+      prismaRead.organizationInvite.count({
+        where: {
+          organizationId,
+          acceptedAt: null,
+          revokedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      }),
+    ]);
+    const { trialEndsAt, superAdminMembershipId, subscription } = organization;
+    const ownerMembership = superAdminMembershipId
+      ? await prismaRead.membership.findUnique({
+          where: { id: superAdminMembershipId },
+          select: { user: { select: { email: true } } },
+        })
+      : null;
+
+    return {
+      ownerEmail: ownerMembership?.user.email ?? null,
+      trialEndsAt,
+      seats: subscription?.seats ?? null,
+      currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
+      cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+      pendingInviteCount,
+    };
   },
 
   async attentionCounts(): Promise<PlatformAttentionCounts> {

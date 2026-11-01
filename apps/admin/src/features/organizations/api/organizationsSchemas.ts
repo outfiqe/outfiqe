@@ -13,8 +13,16 @@ export const organizationSchema = z.object({
 });
 export type Organization = z.infer<typeof organizationSchema>;
 
+export const organizationListItemSchema = organizationSchema.extend({
+  memberCount: z.number(),
+  ownerName: z.string().nullable(),
+  subscriptionStatus: z.string().nullable(),
+  lastCrmActivityAt: z.string().nullable(),
+});
+export type OrganizationListItem = z.infer<typeof organizationListItemSchema>;
+
 export const organizationListPageSchema = z.object({
-  organizations: z.array(organizationSchema),
+  organizations: z.array(organizationListItemSchema),
   nextCursor: z.string().nullable(),
 });
 export type OrganizationListPage = z.infer<typeof organizationListPageSchema>;

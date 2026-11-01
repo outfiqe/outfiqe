@@ -7,7 +7,7 @@ const LOADING_ROW_COUNT = 5;
 
 export type TableColumn<Row> = {
   readonly key: string;
-  readonly header: string;
+  readonly header: ReactNode;
   readonly render: (row: Row) => ReactNode;
   readonly align?: "left" | "right";
 };

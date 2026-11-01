@@ -8,3 +8,4 @@ export const SPARKLINE_DAYS = 30;
 export const ACTIVE_MEMBER_WINDOW_DAYS = 30;
 
 export const PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS = 24 * millisecondsInHour;
+export const MAX_TENANT_SEARCH_LENGTH = 80;
