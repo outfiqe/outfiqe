@@ -16,7 +16,11 @@ import {
   CRM_SEARCH_READ_PERMISSION_KEYS,
 } from "./crm-reporting.constants.js";
 import { crmReportingController } from "./crm-reporting.controller.js";
-import { crmConnectionsQuerySchema, crmSearchQuerySchema } from "./crm-reporting.schemas.js";
+import {
+  crmAttentionQuerySchema,
+  crmConnectionsQuerySchema,
+  crmSearchQuerySchema,
+} from "./crm-reporting.schemas.js";
 
 const REPORTS_READ = "reports:read";
 
@@ -51,6 +55,14 @@ crmReportingRoutes.get(
   ...tenantChain,
   requirePermission(REPORTS_READ),
   crmReportingController.getOverviewReport,
+);
+
+crmReportingRoutes.get(
+  "/reports/attention",
+  ...tenantChain,
+  requirePermission(REPORTS_READ),
+  validate({ query: crmAttentionQuerySchema }),
+  crmReportingController.getAttentionReport,
 );
 
 crmReportingRoutes.get(

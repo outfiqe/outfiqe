@@ -70,4 +70,5 @@ export type UpdateDealInput = {
 
 export type DealListFilters = {
   ownerMembershipId?: string;
+  stageEnteredBefore?: Date;
 };

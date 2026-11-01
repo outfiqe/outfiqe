@@ -1,5 +1,5 @@
 import { prisma } from "#db/prisma.js";
-import type { DealStatus } from "#generated/prisma/enums.js";
+import { DealStatus } from "#generated/prisma/enums.js";
 
 import type {
   CreateDealInput,
@@ -128,6 +128,9 @@ export const crmPipelineRepository = {
       where: {
         organizationId,
         ...(filters.ownerMembershipId ? { ownerMembershipId: filters.ownerMembershipId } : {}),
+        ...(filters.stageEnteredBefore
+          ? { status: DealStatus.OPEN, stageEnteredAt: { lt: filters.stageEnteredBefore } }
+          : {}),
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       ...(rowLimit ? { take: rowLimit } : {}),

@@ -28,9 +28,10 @@ import { toDayRange } from "../../activities/utils/taskDue.utils";
 import { crmApi } from "../../api/crmApi";
 import { PlanGateBanner } from "../../billing/components/PlanGateBanner";
 import { CompactRowSkeleton } from "../../components/CompactRowSkeleton";
-import { CrmMemberFilter } from "../../components/CrmMemberFilter";
+import { CrmMemberFilter, UNASSIGNED_FILTER } from "../../components/CrmMemberFilter";
 import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import {
   CustomerSearchField,
   type SelectedCustomer,
@@ -43,10 +44,23 @@ import { TICKET_STATUS_TONE } from "../constants/ticketStatusTone";
 import { ticketFormSchema, type TicketFormValues } from "../schemas/ticketForm.schema";
 
 const NO_STATUS_FILTER = "";
-const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FILTER>(
-  TICKET_STATUSES,
+const STILL_OPEN_FILTER = "ACTIVE";
+type TicketStatusFilter = TicketStatusValue | typeof NO_STATUS_FILTER | typeof STILL_OPEN_FILTER;
+
+const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusFilter>(
+  [...TICKET_STATUSES, STILL_OPEN_FILTER],
   NO_STATUS_FILTER,
 );
+
+const toStatusParams = (statusFilter: TicketStatusFilter) => {
+  if (statusFilter === STILL_OPEN_FILTER) return { activeOnly: "true" } as const;
+  return statusFilter ? { status: statusFilter } : {};
+};
+
+const toAssigneeParams = (assigneeFilter: string) => {
+  if (assigneeFilter === UNASSIGNED_FILTER) return { unassignedOnly: "true" } as const;
+  return assigneeFilter ? { assigneeMembershipId: assigneeFilter } : {};
+};
 
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
@@ -186,8 +200,8 @@ export const TicketsPage = () => {
       [...TICKETS_QUERY_KEY, statusFilter, assigneeFilter, dateFrom, dateTo],
       (cursor) =>
         crmTicketsApi.listTickets({
-          ...(statusFilter ? { status: statusFilter } : {}),
-          assigneeMembershipId: assigneeFilter || undefined,
+          ...toStatusParams(statusFilter),
+          ...toAssigneeParams(assigneeFilter),
           createdFrom: toDayRange(dateFrom, "start"),
           createdTo: toDayRange(dateTo, "end"),
           cursor,
@@ -195,7 +209,7 @@ export const TicketsPage = () => {
     );
   const tickets = data?.pages.flatMap((page) => page.tickets);
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
 
   return (
     <div>
@@ -210,10 +224,11 @@ export const TicketsPage = () => {
             <Select
               aria-label="Filter by status"
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as TicketStatusValue | "")}
+              onChange={(event) => setStatusFilter(TICKET_STATUS_FILTER.parse(event.target.value))}
               className="w-40"
             >
               <option value="">All statuses</option>
+              <option value={STILL_OPEN_FILTER}>Still open</option>
               {TICKET_STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {toPlainWords(status)}
@@ -223,6 +238,7 @@ export const TicketsPage = () => {
             <CrmMemberFilter
               label="Filter by assignee"
               allLabel="Everyone"
+              unassignedLabel="No one yet"
               value={assigneeFilter}
               onChange={setAssigneeFilter}
             />
@@ -241,7 +257,7 @@ export const TicketsPage = () => {
               className="w-40"
             />
             {canWriteTickets && (
-              <Button size="sm" onClick={() => setModalOpen(true)}>
+              <Button size="sm" onClick={openNewRecordModal}>
                 New ticket
               </Button>
             )}
@@ -298,7 +314,7 @@ export const TicketsPage = () => {
         )}
       </div>
 
-      {modalOpen && <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} />}
+      {isNewRecordModalOpen && <NewTicketModal open onClose={closeNewRecordModal} />}
     </div>
   );
 };

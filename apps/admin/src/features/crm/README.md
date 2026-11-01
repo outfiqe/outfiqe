@@ -420,3 +420,15 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **Time in stage is an estimate for older opportunities.** `stageEnteredAt` starts from the migration, which used `updated_at` for existing rows because the real date was never stored. Moves after that are exact.
 
 **Task chips use the viewer's own day.** `activities/utils/taskDue.utils.ts` works out the day in the browser and sends exact times, so "Today" is correct for the person looking, whatever timezone the server is in. Support's date range works the same way.
+
+## CRM overview
+
+`reporting/components/CrmOverviewSection.tsx` is the first thing people see, so each part leads somewhere.
+
+**Every number card opens the list behind it.** A number should match the list it opens. That is why Support has a "Still open" filter (`?status=ACTIVE`): the "Open tickets" card counts open and in-progress tickets together, and neither single status would match.
+
+**"Needs attention today" shows only what's waiting.** `CrmAttentionSection.tsx` reads `GET /api/crm/reports/attention` and hides any row at zero, so an empty panel really means nothing is waiting. The browser sends the start and end of its own day, so "today" matches the person's clock.
+
+**An opportunity counts as stuck after 14 days in one stage.** The same number lives in `pipeline/constants/stuckDeals.ts` and in `STUCK_DEAL_DAYS` on the API; change both together.
+
+**`?new=1` opens a new-record form.** `hooks/useNewRecordModal.ts` keeps that form's open state in the link, which is how `CrmQuickActions.tsx` lands on a page with the form already open.

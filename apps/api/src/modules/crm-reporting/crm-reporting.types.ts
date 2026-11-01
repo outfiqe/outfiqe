@@ -51,6 +51,13 @@ export type CrmOverviewReport = {
   activityTrend: CrmActivityTrendPoint[];
 };
 
+export type CrmAttentionReport = {
+  overdueTaskCount: number;
+  tasksDueTodayCount: number;
+  unassignedTicketCount: number;
+  stuckDealCount: number;
+};
+
 export type DealSearchResult = {
   id: string;
   title: string;

@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/apiClient";
 
 import {
+  type CrmAttentionReport,
+  crmAttentionReportSchema,
   type CrmOverviewReport,
   crmOverviewReportSchema,
   type CrmSearchResults,
@@ -25,6 +27,16 @@ export const crmReportingApi = {
   async getOverviewReport(): Promise<CrmOverviewReport> {
     const res = await apiClient.get<CrmOverviewReport>("/crm/reports/overview");
     return crmOverviewReportSchema.parse(res.data);
+  },
+
+  async getAttentionReport(today: {
+    dayStart: string;
+    dayEnd: string;
+  }): Promise<CrmAttentionReport> {
+    const res = await apiClient.get<CrmAttentionReport>("/crm/reports/attention", {
+      params: today,
+    });
+    return crmAttentionReportSchema.parse(res.data);
   },
 
   async search(query: string): Promise<CrmSearchResults> {

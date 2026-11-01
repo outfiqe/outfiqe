@@ -13,6 +13,8 @@ export const listTicketsQuerySchema = z
     status: z.enum(CrmTicketStatus).optional(),
     assigneeMembershipId: z.uuid().optional(),
     type: z.enum(CrmTicketType).optional(),
+    activeOnly: z.literal("true").optional().transform(Boolean),
+    unassignedOnly: z.literal("true").optional().transform(Boolean),
     createdFrom: z.coerce.date().optional(),
     createdTo: z.coerce.date().optional(),
     cursor: z.uuid().optional(),

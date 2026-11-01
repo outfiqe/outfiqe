@@ -1,10 +1,12 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
+import { CrmTaskStatus, CrmTicketStatus, DealStatus } from "#generated/prisma/enums.js";
 
 import { ACTIVITY_TREND_WINDOW_DAYS } from "./crm-reporting.constants.js";
 import type {
   ContactSearchResult,
   CrmActivityTrendPoint,
+  CrmAttentionReport,
   DealSearchResult,
   PipelineStageReportRow,
   TicketReport,
@@ -154,6 +156,38 @@ export const crmReportingRepository = {
     `);
 
     return row?.count ?? 0;
+  },
+
+  async attentionCounts(
+    organizationId: string,
+    { dayStart, dayEnd }: { dayStart: Date; dayEnd: Date },
+    stuckBefore: Date,
+  ): Promise<CrmAttentionReport> {
+    const [overdueTaskCount, tasksDueTodayCount, unassignedTicketCount, stuckDealCount] =
+      await Promise.all([
+        prisma.crmTask.count({
+          where: { organizationId, status: CrmTaskStatus.OPEN, dueAt: { lt: new Date() } },
+        }),
+        prisma.crmTask.count({
+          where: {
+            organizationId,
+            status: CrmTaskStatus.OPEN,
+            dueAt: { gte: dayStart, lte: dayEnd },
+          },
+        }),
+        prisma.crmTicket.count({
+          where: {
+            organizationId,
+            assigneeMembershipId: null,
+            status: { in: [CrmTicketStatus.OPEN, CrmTicketStatus.IN_PROGRESS] },
+          },
+        }),
+        prisma.deal.count({
+          where: { organizationId, status: DealStatus.OPEN, stageEnteredAt: { lt: stuckBefore } },
+        }),
+      ]);
+
+    return { overdueTaskCount, tasksDueTodayCount, unassignedTicketCount, stuckDealCount };
   },
 
   async searchDeals(

@@ -47,7 +47,7 @@ export const useCrmListFilters = () => {
       to: ".",
       search: (previous: Record<string, unknown>): Record<string, unknown> => ({
         ...previous,
-        page: page === FIRST_PAGE ? undefined : String(page),
+        page: page === FIRST_PAGE ? undefined : page,
       }),
       replace: true,
     });

@@ -217,6 +217,35 @@ describe("CRM tickets", () => {
     ]);
   });
 
+  it("lists only tickets that are still open and have no one on them", async () => {
+    const tenant = await seedTicketsTenant();
+    const addTicket = (title: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED") =>
+      prisma.crmTicket.create({
+        data: {
+          organizationId: tenant.organization.id,
+          type: "COMPLAINT",
+          status,
+          title,
+          description: "x",
+        },
+      });
+    await addTicket("Open one", "OPEN");
+    await addTicket("Working one", "IN_PROGRESS");
+    await addTicket("Finished one", "RESOLVED");
+
+    const filtered = await request(testApp)
+      .get("/api/crm/tickets")
+      .query({ activeOnly: "true", unassignedOnly: "true" })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data.tickets.map(({ title }: { title: string }) => title).sort()).toEqual([
+      "Open one",
+      "Working one",
+    ]);
+  });
+
   it("rejects a date range that ends before it starts", async () => {
     const tenant = await seedTicketsTenant();
 

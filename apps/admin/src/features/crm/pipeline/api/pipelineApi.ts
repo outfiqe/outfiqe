@@ -9,6 +9,8 @@ import {
   pipelineStageSchema,
 } from "./pipelineSchemas";
 
+type DealFilters = { ownerMembershipId?: string; stageEnteredBefore?: string };
+
 export const crmPipelineApi = {
   async listStages(): Promise<PipelineStage[]> {
     const res = await apiClient.get<PipelineStage[]>("/crm/pipeline/stages");
@@ -40,13 +42,16 @@ export const crmPipelineApi = {
     await apiClient.post("/crm/pipeline/stages/reorder", { orderedStageIds });
   },
 
-  async listDeals(ownerMembershipId?: string): Promise<Deal[]> {
-    const res = await apiClient.get<Deal[]>("/crm/deals", { params: { ownerMembershipId } });
+  async listDeals(filters: DealFilters = {}): Promise<Deal[]> {
+    const res = await apiClient.get<Deal[]>("/crm/deals", { params: filters });
     return dealListSchema.parse(res.data);
   },
 
-  exportDeals(ownerMembershipId?: string): Promise<Blob> {
-    const exportParams = new URLSearchParams(ownerMembershipId ? { ownerMembershipId } : {});
+  exportDeals({ ownerMembershipId, stageEnteredBefore }: DealFilters): Promise<Blob> {
+    const exportParams = new URLSearchParams({
+      ...(ownerMembershipId ? { ownerMembershipId } : {}),
+      ...(stageEnteredBefore ? { stageEnteredBefore } : {}),
+    });
     return apiClient.getBlob(`/crm/deals/export?${exportParams}`);
   },
 

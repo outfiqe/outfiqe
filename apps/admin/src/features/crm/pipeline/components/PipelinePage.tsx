@@ -1,5 +1,5 @@
 import { KanbanBoard, KanbanBoardSkeleton } from "@outfiqe/components";
-import { Button, FormBanner, toast } from "@outfiqe/design-system";
+import { Button, FilterChip, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -16,9 +16,11 @@ import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CsvExportButton } from "../../components/CsvExportButton";
 import { CRM_PAGE_TEXT } from "../../constants/crmPageContent";
 import { useCrmCsvExport } from "../../hooks/useCrmCsvExport";
+import { useNewRecordModal } from "../../hooks/useNewRecordModal";
 import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
 import { DEALS_QUERY_KEY, STAGES_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
+import { STUCK_DEAL_DAYS, STUCK_FILTER_VALUE, toStuckBefore } from "../constants/stuckDeals";
 import { toDaysInStageLabel } from "../utils/dealCard.utils";
 import { DealFormModal } from "./DealFormModal";
 import { StageConfigModal } from "./StageConfigModal";
@@ -40,18 +42,23 @@ export const PipelinePage = () => {
     error: stagesError,
   } = useQuery({ queryKey: STAGES_QUERY_KEY, queryFn: crmPipelineApi.listStages });
   const [ownerFilter, setOwnerFilter] = useSearchFilter("owner", rawTextFilter);
-  const ownerMembershipId = ownerFilter || undefined;
+  const [stuckFilter, setStuckFilter] = useSearchFilter("stuck", rawTextFilter);
+  const isShowingStuckDeals = stuckFilter === STUCK_FILTER_VALUE;
+  const toDealFilters = () => ({
+    ownerMembershipId: ownerFilter || undefined,
+    stageEnteredBefore: isShowingStuckDeals ? toStuckBefore() : undefined,
+  });
   const { data: deals } = useQuery({
-    queryKey: [...DEALS_QUERY_KEY, ownerFilter],
-    queryFn: () => crmPipelineApi.listDeals(ownerMembershipId),
+    queryKey: [...DEALS_QUERY_KEY, ownerFilter, isShowingStuckDeals],
+    queryFn: () => crmPipelineApi.listDeals(toDealFilters()),
   });
   const { exportCsv, isExporting } = useCrmCsvExport(
-    () => crmPipelineApi.exportDeals(ownerMembershipId),
+    () => crmPipelineApi.exportDeals(toDealFilters()),
     EXPORT_FILE_NAME,
     EXPORT_FAILURE_MESSAGE,
   );
 
-  const [dealModalOpen, setDealModalOpen] = useState(false);
+  const { isNewRecordModalOpen, openNewRecordModal, closeNewRecordModal } = useNewRecordModal();
   const [stageModalOpen, setStageModalOpen] = useState(false);
 
   const moveDeal = useApiMutation({
@@ -89,6 +96,12 @@ export const PipelinePage = () => {
         {...CRM_PAGE_TEXT.pipeline}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <FilterChip
+              isSelected={isShowingStuckDeals}
+              onClick={() => setStuckFilter(isShowingStuckDeals ? "" : STUCK_FILTER_VALUE)}
+            >
+              Stuck for {STUCK_DEAL_DAYS}+ days
+            </FilterChip>
             <CrmMemberFilter
               label="Filter by owner"
               allLabel="All owners"
@@ -103,7 +116,7 @@ export const PipelinePage = () => {
             )}
             {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New opportunity" />}
             {canWriteDeals && stages && stages.length > 0 && (
-              <Button size="sm" onClick={() => setDealModalOpen(true)}>
+              <Button size="sm" onClick={openNewRecordModal}>
                 New opportunity
               </Button>
             )}
@@ -152,13 +165,8 @@ export const PipelinePage = () => {
         )}
       </div>
 
-      {stages && dealModalOpen && (
-        <DealFormModal
-          open={dealModalOpen}
-          onClose={() => setDealModalOpen(false)}
-          stages={stages}
-          deal={null}
-        />
+      {stages && isNewRecordModalOpen && (
+        <DealFormModal open onClose={closeNewRecordModal} stages={stages} deal={null} />
       )}
 
       {stages && stageModalOpen && (

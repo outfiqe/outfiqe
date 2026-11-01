@@ -53,6 +53,8 @@ export type TicketListFilters = {
   status?: CrmTicketStatus;
   assigneeMembershipId?: string;
   type?: TicketRecord["type"];
+  activeOnly?: boolean;
+  unassignedOnly?: boolean;
   createdFrom?: Date;
   createdTo?: Date;
 };

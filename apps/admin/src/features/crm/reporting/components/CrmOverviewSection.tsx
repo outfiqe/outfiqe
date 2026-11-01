@@ -1,13 +1,21 @@
-import { FormBanner, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import {
+  CLICKABLE_STAT_CARD_CLASS_NAME,
+  FormBanner,
+  StatCard,
+  StatCardSkeleton,
+} from "@outfiqe/design-system";
 import { BarSeries, ChartCard, TrendChart } from "@outfiqe/design-system/charts";
 import { formatShortDate } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 
+import { StatCardFooterLink } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CrmQuickActions } from "../../components/CrmQuickActions";
 import { formatDuration, formatRupees } from "../../utils/format.utils";
 import { crmReportingApi } from "../api/reportingApi";
 import type { CrmOverviewReport } from "../api/reportingSchemas";
+import { CrmAttentionSection } from "./CrmAttentionSection";
 
 const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;
@@ -23,7 +31,7 @@ const KPI_HINT = {
   tasksDueToday:
     "Open tasks due by the end of today. This includes open tasks that are already overdue.",
 } as const;
-const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
+const KPI_GRID_CLASS = "grid gap-3 sm:grid-cols-2 lg:grid-cols-3";
 const CHART_GRID_CLASS = "grid gap-4 lg:grid-cols-2";
 const ACTIVITY_CHART_TITLE = "Activity";
 const ACTIVITY_CHART_DESCRIPTION = "CRM activities logged per day, last 30 days";
@@ -39,31 +47,49 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
         label="Sales in progress"
         value={formatRupees(pipeline.totals.openValue)}
         hint={KPI_HINT.openPipelineValue}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/pipeline" period="Open the sales board" />}
       />
       <StatCard
         label="Open opportunities"
         value={String(pipeline.totals.openDealCount)}
         hint={KPI_HINT.openDealCount}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/pipeline" period="See each one" />}
       />
       <StatCard
         label="Won value"
         value={formatRupees(pipeline.totals.wonValue)}
         hint={KPI_HINT.wonDealValue}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/reports" period="See your reports" />}
       />
       <StatCard
         label="Open tickets"
         value={String(tickets.openCount)}
         hint={KPI_HINT.openTicketCount}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={
+          <StatCardFooterLink
+            to="/crm/support"
+            search={{ status: "ACTIVE" }}
+            period="See open tickets"
+          />
+        }
       />
       <StatCard
         label="Average time to solve"
         value={formatDuration(tickets.meanResolutionSeconds)}
         hint={KPI_HINT.meanTimeToResolve}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/reports" period="See your reports" />}
       />
       <StatCard
-        label="Tasks due today"
+        label="Tasks due or overdue"
         value={String(openTasksDueTodayCount)}
         hint={KPI_HINT.tasksDueToday}
+        className={CLICKABLE_STAT_CARD_CLASS_NAME}
+        footer={<StatCardFooterLink to="/crm/tasks" period="See your tasks" />}
       />
     </div>
   );
@@ -207,6 +233,10 @@ export const CrmOverviewSection = () => {
         </>
       ) : (
         <>
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <CrmAttentionSection />
+            <CrmQuickActions />
+          </div>
           <OverviewKpiRow report={report} />
           <OverviewCharts report={report} />
         </>
