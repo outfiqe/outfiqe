@@ -77,6 +77,7 @@ const requireTransferRecipient = async (
 const emailTransferRecipient = async (
   organization: OrganizationRecord,
   recipientEmail: string,
+  isNewSetup: boolean,
 ): Promise<void> => {
   const crmUrl = buildOrganizationAdminUrl(
     organization,
@@ -84,7 +85,11 @@ const emailTransferRecipient = async (
     env.ADMIN_URL,
     env.TENANT_BASE_DOMAIN,
   );
-  const { subject, html } = crmOwnershipTransferRequestTemplate(organization.name, crmUrl);
+  const { subject, html } = crmOwnershipTransferRequestTemplate(
+    organization.name,
+    crmUrl,
+    isNewSetup,
+  );
   await sendEmail({
     to: recipientEmail,
     subject,
@@ -125,7 +130,7 @@ export const crmOwnershipTransferService = {
     const recipientUser = await userRepository.findById(toMembership.userId);
     if (!recipientUser) return;
 
-    await emailTransferRecipient(organization, recipientUser.email);
+    await emailTransferRecipient(organization, recipientUser.email, removeSenderMembershipOnAccept);
 
     logger.info(`Ownership transfer requested for ${organization.id} to ${toMembershipId}`);
   },

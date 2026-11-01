@@ -196,8 +196,29 @@ describe("withdrawal, admin and crm templates", () => {
 
   it("crmOwnershipTransferRequestTemplate escapes the organization name", () => {
     expect(
-      crmOwnershipTransferRequestTemplate(XSS_PAYLOAD, "https://meridian.admin.outfiqe.com").html,
+      crmOwnershipTransferRequestTemplate(XSS_PAYLOAD, "https://meridian.admin.outfiqe.com", false)
+        .html,
     ).not.toContain(XSS_PAYLOAD);
+  });
+
+  it("crmOwnershipTransferRequestTemplate tells a new brand its CRM is ready", () => {
+    const { subject, html } = crmOwnershipTransferRequestTemplate(
+      "Aamo",
+      "https://aamo.outfiqe.com/admin/crm",
+      true,
+    );
+    expect(subject).toBe("Your Outfiqe CRM for Aamo is ready");
+    expect(html).toContain("Outfiqe has set up a CRM");
+    expect(html).not.toContain("current owner");
+  });
+
+  it("crmOwnershipTransferRequestTemplate names the current owner on a normal handover", () => {
+    const { html } = crmOwnershipTransferRequestTemplate(
+      "Aamo",
+      "https://aamo.outfiqe.com/admin/crm",
+      false,
+    );
+    expect(html).toContain("The current owner");
   });
 
   it("crmSubscriptionRenewalDueTemplate escapes the organization name and shows the amount", () => {
