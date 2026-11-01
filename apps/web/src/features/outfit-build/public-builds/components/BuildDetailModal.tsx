@@ -28,7 +28,7 @@ export const BuildDetailModal = ({
       {isError && <p className="text-sm text-destructive">{t("buildFailed")}</p>}
       {build && (
         <div className="space-y-3">
-          <PublicBuildDetailView build={build} headingLevel="h2" />
+          <PublicBuildDetailView build={build} showsTitle={false} />
           <Link
             href={`/builds/${outfitId}`}
             className="inline-block text-sm font-medium text-foreground underline underline-offset-4"
