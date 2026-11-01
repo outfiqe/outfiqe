@@ -1,9 +1,13 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 
-import { RECENT_ACTIVITY_LIMIT } from "../crm-relationships.constants.js";
-import { nameOrHandleSearch, readTotalCount, toIso } from "../crm-relationships.query-helpers.js";
-import type { CustomerOrderRow, CustomerSummary } from "../crm-relationships.types.js";
+import {
+  nameOrHandleSearch,
+  readTotalCount,
+  recentBrandOrders,
+  toIso,
+} from "../crm-relationships.query-helpers.js";
+import type { CustomerSummary, RelationshipOrderRow } from "../crm-relationships.types.js";
 
 type CustomerListRow = {
   user_id: string;
@@ -110,41 +114,7 @@ export const crmCustomerRepository = {
     };
   },
 
-  async recentCustomerOrders(brandId: string, userId: string): Promise<CustomerOrderRow[]> {
-    const rows = await prisma.$queryRaw<
-      {
-        order_id: string;
-        item_count: number;
-        brand_subtotal: number;
-        payment_status: string;
-        fulfilment_status: string;
-        created_at: Date;
-      }[]
-    >(Prisma.sql`
-      WITH brand_products AS (
-        SELECT id FROM products WHERE brand_id = ${brandId}::uuid
-      )
-      SELECT o.id AS order_id,
-             COALESCE(SUM(oi.qty), 0)::int AS item_count,
-             COALESCE(SUM(oi.qty * oi.unit_price), 0)::int AS brand_subtotal,
-             o.payment_status, o.fulfilment_status, o.created_at
-        FROM orders o
-        JOIN order_items oi ON oi.order_id = o.id
-        WHERE o.user_id = ${userId}::uuid
-          AND oi.product_id IN (SELECT id FROM brand_products)
-          AND o.fulfilment_status <> 'CANCELLED'
-        GROUP BY o.id, o.payment_status, o.fulfilment_status, o.created_at
-        ORDER BY o.created_at DESC
-        LIMIT ${RECENT_ACTIVITY_LIMIT}
-    `);
-
-    return rows.map((row) => ({
-      orderId: row.order_id,
-      itemCount: row.item_count,
-      brandSubtotal: row.brand_subtotal,
-      paymentStatus: row.payment_status,
-      fulfilmentStatus: row.fulfilment_status,
-      createdAt: row.created_at.toISOString(),
-    }));
+  recentCustomerOrders(brandId: string, userId: string): Promise<RelationshipOrderRow[]> {
+    return recentBrandOrders(brandId, Prisma.sql`AND o.user_id = ${userId}::uuid`);
   },
 };

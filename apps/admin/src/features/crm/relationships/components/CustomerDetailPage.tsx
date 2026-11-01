@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { BackLink } from "@/components/BackLink";
-import { MetricEmptyState, MetricRow, MetricSection } from "@/components/MetricParts";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { TimelineSection } from "../../activities/components/TimelineSection";
@@ -11,15 +10,11 @@ import { CrmPageHeader } from "../../components/CrmPageHeader";
 import { CustomerDetailSkeleton } from "../../components/CrmSkeletons";
 import { ConnectedPeopleSection } from "../../connections/components/ConnectedPeopleSection";
 import { ConnectedWorkSection } from "../../connections/components/ConnectedWorkSection";
-import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
+import { formatDate, formatRupees } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
+import { RecentOrdersSection } from "./RecentOrdersSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
-
-const SINGLE_ITEM_COUNT = 1;
-
-const toItemCountLabel = (itemCount: number) =>
-  `${itemCount} ${itemCount === SINGLE_ITEM_COUNT ? "item" : "items"}`;
 
 export const CustomerDetailPage = () => {
   const { userId } = routeApi.useParams();
@@ -55,20 +50,13 @@ export const CustomerDetailPage = () => {
             <StatCard label="Last order" value={formatDate(customer.lastOrderAt)} />
           </div>
 
-          <MetricSection title="Recent orders" description="The latest orders from this customer.">
-            {customer.recentOrders.length === 0 ? (
-              <MetricEmptyState>No orders yet.</MetricEmptyState>
-            ) : (
-              customer.recentOrders.map((order) => (
-                <MetricRow
-                  key={order.orderId}
-                  label={toItemCountLabel(order.itemCount)}
-                  detail={`${toPlainWords(order.paymentStatus)} · ${toPlainWords(order.fulfilmentStatus)} · ${formatDate(order.createdAt)}`}
-                  value={formatRupees(order.brandSubtotal)}
-                />
-              ))
-            )}
-          </MetricSection>
+          <RecentOrdersSection
+            title="Recent orders"
+            description="The latest orders from this customer. Click one for details."
+            emptyMessage="No orders yet."
+            scopeNote="Only your products from this order are shown."
+            orders={customer.recentOrders}
+          />
 
           <ConnectedPeopleSection subject={customerSubject} />
           <ConnectedWorkSection subject={customerSubject} />

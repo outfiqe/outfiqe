@@ -451,6 +451,10 @@ Clicking a team row on Reports opens `reporting/components/TeamMemberPanel.tsx`:
 
 The audit panel doesn't show IP addresses. They stay stored, but they mean little to a business owner and older entries can hold a server's address rather than a person's.
 
+## Recent orders
+
+`relationships/components/RecentOrdersSection.tsx` is used by both the customer and partner pages, and looks like the partner's product rows. A click opens `OrderPanel.tsx` with each product, its size and any refund. A tenant only ever sees its own products from an order, so a shopper's items from other brands don't appear and the total is this brand's share, not what the shopper paid. The delivery address and phone number are left out on purpose.
+
 ## Sales board limit
 
 Each column loads its latest 100 opportunities, so a busy brand's board stays quick. The limit lives in `MAX_BOARD_DEALS_PER_STAGE` on the API and `pipeline/utils/boardLimit.utils.ts` here; change both together. A note appears once a column reaches it, and the CSV export still covers every opportunity.

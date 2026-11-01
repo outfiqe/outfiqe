@@ -42,31 +42,35 @@ export type PartnerProductBreakdownRow = {
   attributedRevenue: number;
 };
 
-export type PartnerAttributedOrderRow = {
+export type RelationshipOrderLine = {
   orderItemId: string;
-  orderId: string;
+  productId: string;
   productName: string;
+  imageUrl: string | null;
+  sizeLabel: string;
   qty: number;
   unitPrice: number;
+  refundedQty: number;
+  isLive: boolean;
+};
+
+export type RelationshipOrderRow = {
+  orderId: string;
+  itemCount: number;
+  brandSubtotal: number;
+  paymentMethod: string;
   paymentStatus: string;
   fulfilmentStatus: string;
+  deliveredAt: string | null;
   createdAt: string;
+  lines: RelationshipOrderLine[];
 };
 
 export type PartnerDetail = PartnerSummary & {
   productBreakdown: PartnerProductBreakdownRow[];
-  recentAttributedOrders: PartnerAttributedOrderRow[];
-};
-
-export type CustomerOrderRow = {
-  orderId: string;
-  itemCount: number;
-  brandSubtotal: number;
-  paymentStatus: string;
-  fulfilmentStatus: string;
-  createdAt: string;
+  recentAttributedOrders: RelationshipOrderRow[];
 };
 
 export type CustomerDetail = CustomerSummary & {
-  recentOrders: CustomerOrderRow[];
+  recentOrders: RelationshipOrderRow[];
 };
