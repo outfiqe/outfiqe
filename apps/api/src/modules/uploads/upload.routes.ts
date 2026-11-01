@@ -3,6 +3,7 @@ import { Router } from "express";
 import multer from "multer";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
+import { ALLOWED_IMAGE_MIME_TYPES } from "#lib/image-type.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
@@ -17,7 +18,6 @@ import { uploadController } from "./upload.controller.js";
 const MAX_FILES = 6;
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const INVALID_FILE_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 const messageForMulterError = (code: multer.MulterError["code"]): string => {
@@ -36,7 +36,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE_BYTES, files: MAX_FILES },
   fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
       cb(
         new AppError(
           "INVALID_FILE",

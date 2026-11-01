@@ -135,6 +135,8 @@ export default defineConfig({
         "src/modules/bank-accounts/**/*.ts",
         "src/modules/bank-qr-verification/**/*.ts",
         "src/shared/storage/providers/local-disk.provider.ts",
+        "src/shared/utils/image-type.utils.ts",
+        "src/modules/uploads/**/*.ts",
         "src/modules/addresses/**/*.ts",
         "src/shared/utils/shipping-address.schemas.ts",
         "src/shared/utils/account-number-encryption.utils.ts",

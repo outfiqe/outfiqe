@@ -82,7 +82,7 @@ export const ReviewCard = ({
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-4">
+          <div className="mt-3 -mx-1 flex items-center gap-3">
             {canVoteHelpful ? (
               <button
                 type="button"
@@ -90,7 +90,7 @@ export const ReviewCard = ({
                 disabled={isOwn || isTogglingHelpful}
                 aria-pressed={hasVotedHelpful}
                 className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                  "inline-flex min-h-6 cursor-pointer items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                   hasVotedHelpful && "text-primary-strong",
                 )}
               >
@@ -110,7 +110,7 @@ export const ReviewCard = ({
               <button
                 type="button"
                 onClick={onEdit}
-                className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex min-h-6 cursor-pointer items-center px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 Edit
               </button>
@@ -119,7 +119,7 @@ export const ReviewCard = ({
               <button
                 type="button"
                 onClick={onDelete}
-                className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+                className="inline-flex min-h-6 cursor-pointer items-center px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
               >
                 Delete
               </button>

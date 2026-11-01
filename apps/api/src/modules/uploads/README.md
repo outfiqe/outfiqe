@@ -20,9 +20,13 @@ link to the eventual multi-format variants.
   the upload.
 - `upload.controller.ts` — guards against an empty `req.files`, then calls the matching service
   method (`upload` → `uploadFiles`, `uploadThroughPipeline` → `uploadFilesThroughPipeline`).
-- `upload.service.ts` — `uploadFiles` maps each `Express.Multer.File` to a `storage.upload` call;
-  `uploadFilesThroughPipeline` additionally writes the buffer to the pipeline's temp store and
-  calls `imageProcessingService.submitUploadForOwner`, returning `{ url, key, assetId }` per file.
+- `upload.service.ts` — both methods first re-check each buffer's real type with
+  `detectImageMimeType` (`#lib/image-type.utils.js`) and reject anything that is not a genuine
+  JPEG/PNG/WebP (`INVALID_FILE`, `422`). `uploadFiles` then maps each `Express.Multer.File` to a
+  `storage.upload` call, passing the **detected** mime type; `uploadFilesThroughPipeline`
+  additionally writes the buffer to the pipeline's temp store (its key extension also comes from the
+  detected type) and calls `imageProcessingService.submitUploadForOwner`, returning
+  `{ url, key, assetId }` per file.
 
 ## Funnel
 
@@ -44,7 +48,16 @@ persists the returned `assetId` on its `ProductImage` / `CreatorLookImage` row.
   restates them ("Each image must be 5 MB or smaller.", "You can upload at most 6 images at
   once.") so the web layer, which surfaces `AppError.message` verbatim via `getErrorMessage`, has
   something actionable to show.
-- **HEIC never reaches this endpoint.** `ALLOWED_MIME_TYPES` is JPEG/PNG/WebP only — `sharp`'s
+- **The client-supplied content type and filename are never trusted for what the file _is_.** The
+  multer `fileFilter` checks the declared mime type (`ALLOWED_IMAGE_MIME_TYPES`) only as a cheap
+  early gate; the real decision is made in `upload.service.ts` from the file's magic bytes, and both
+  the stored key's extension and the served `Content-Type` are derived from that detected type (via
+  `imageExtensionForMimeType`), not from the original filename. Without this, a request could send
+  `content-type: image/png` with a `.html` filename and HTML bytes and have it stored as `*.html`
+  and served inline as `text/html` from the API origin — stored XSS on a trusted domain (QA-014).
+  Deriving the extension from the detected type also defuses image/HTML polyglots: a real-PNG-plus-
+  HTML file is stored and served as a `.png` image, not as a page.
+- **HEIC never reaches this endpoint.** `ALLOWED_IMAGE_MIME_TYPES` is JPEG/PNG/WebP only — `sharp`'s
   prebuilt libvips can't decode HEIC (no HEVC codec). iPhone photos are converted to JPEG in the
   browser before upload (`apps/web/src/shared/lib/heicImage.ts`), so the server only ever sees a
   format it can serve.

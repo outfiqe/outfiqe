@@ -7,6 +7,7 @@ import { AppImage } from "@/shared/components/AppImage";
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
 import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
+import { formatOrderReference } from "../utils/orderReference.utils";
 import { StatusBadge } from "./StatusBadge";
 
 const ORDER_THUMBNAIL_SIZE = "56px";
@@ -49,7 +50,7 @@ export const OrderRow = ({ order }: OrderRowProps) => {
 
       <div className="min-w-0 flex-1">
         <p className="font-display text-xs font-extrabold uppercase tracking-wide text-foreground">
-          {id}
+          {formatOrderReference(id)}
         </p>
         <p className="mt-1 truncate text-sm text-foreground">
           {firstItemProductName}

@@ -120,7 +120,6 @@ const TRUSTED_PROXY_HOPS = 1;
 const LOCAL_STORAGE_DRIVER = "local";
 const CROSS_ORIGIN_RESOURCE_POLICY_HEADER = "Cross-Origin-Resource-Policy";
 const CROSS_ORIGIN_RESOURCE_POLICY = "cross-origin";
-const CORS_REJECTED_MESSAGE = "Not allowed by CORS";
 
 const staticAssetOptions = {
   setHeaders: (res: Response) =>
@@ -147,8 +146,7 @@ const applySecurityMiddleware = (app: Express): void => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        const isAllowed = isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN);
-        callback(isAllowed ? null : new Error(CORS_REJECTED_MESSAGE), isAllowed);
+        callback(null, isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN));
       },
       credentials: true,
     }),
