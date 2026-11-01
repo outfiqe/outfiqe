@@ -2,14 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { imageExtensionForMimeType } from "#lib/image-type.utils.js";
 import type { StorageProvider, UploadableFile, UploadedFile } from "#storage/storage.types.js";
 
 const SINGLE_SEGMENT_STORAGE_KEY_PATTERN = /^[a-z0-9][a-z0-9_-]*(\.[a-z0-9]{1,5})?$/i;
-
-const safeExtension = (originalName: string): string => {
-  const ext = path.extname(originalName).toLowerCase();
-  return /^\.[a-z0-9]{1,5}$/.test(ext) ? ext : "";
-};
 
 const isSafeStorageKey = (key: string): boolean => SINGLE_SEGMENT_STORAGE_KEY_PATTERN.test(key);
 
@@ -23,7 +19,7 @@ export const createLocalDiskStorageProvider = (
     async upload(file: UploadableFile): Promise<UploadedFile> {
       await mkdir(uploadsDir, { recursive: true });
 
-      const key = `${randomUUID()}${safeExtension(file.originalName)}`;
+      const key = `${randomUUID()}${imageExtensionForMimeType(file.mimeType)}`;
       await writeFile(path.join(uploadsDir, key), file.buffer);
 
       return { key, url: `${publicUploadsPrefix}${key}` };
