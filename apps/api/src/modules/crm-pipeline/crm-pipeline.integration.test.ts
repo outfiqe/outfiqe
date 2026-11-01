@@ -13,7 +13,7 @@ import { ensureProductType } from "#test/integration/product-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
-import { DEFAULT_PIPELINE_STAGES } from "./crm-pipeline.constants.js";
+import { DEFAULT_PIPELINE_STAGES, MAX_BOARD_DEALS_PER_STAGE } from "./crm-pipeline.constants.js";
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.ADMIN });
@@ -342,6 +342,47 @@ describe("CRM deals", () => {
       .set("Authorization", tenant.auth);
 
     expect(filtered.body.data.map(({ title }: { title: string }) => title)).toEqual(["Stuck"]);
+  });
+
+  it("loads only each column's latest opportunities, but exports them all", async () => {
+    const tenant = await seedPipelineTenant();
+    const [busyStage, quietStage] = await prisma.pipelineStage.findMany({
+      where: { organizationId: tenant.organization.id },
+      orderBy: { sortOrder: "asc" },
+    });
+    if (!busyStage || !quietStage) throw new Error("default pipeline stages were not seeded");
+    const dealFor = (stageId: string, title: string, createdAt: Date) => ({
+      organizationId: tenant.organization.id,
+      stageId,
+      partnerCreatorId: tenant.partner.id,
+      title,
+      createdAt,
+    });
+    await prisma.deal.createMany({
+      data: [
+        dealFor(busyStage.id, "Oldest", subDays(new Date(), 30)),
+        ...Array.from({ length: MAX_BOARD_DEALS_PER_STAGE }, (_unused, dealIndex) =>
+          dealFor(busyStage.id, `Recent ${dealIndex}`, subDays(new Date(), 1)),
+        ),
+        dealFor(quietStage.id, "Quiet", subDays(new Date(), 60)),
+      ],
+    });
+
+    const board = await request(testApp)
+      .get("/api/crm/deals")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    const boardTitles: string[] = board.body.data.map(({ title }: { title: string }) => title);
+
+    expect(boardTitles).toHaveLength(MAX_BOARD_DEALS_PER_STAGE + 1);
+    expect(boardTitles).toContain("Quiet");
+    expect(boardTitles).not.toContain("Oldest");
+
+    const exported = await request(testApp)
+      .get("/api/crm/deals/export")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    expect(exported.text).toContain("Oldest");
   });
 
   it("filters the board by owner", async () => {

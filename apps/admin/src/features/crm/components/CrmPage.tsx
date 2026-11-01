@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Compass } from "lucide-react";
 
+import { useAuth } from "@/features/auth/components/AuthContext";
 import {
   CRM_TOUR_REPLAY_SEARCH,
   CRM_TOUR_REPLAY_TO,
@@ -43,7 +44,14 @@ const canViewReports = (organization: Organization) =>
   organization.viewerIsSuperAdmin ||
   organization.viewerPermissionKeys.includes(REPORTS_READ_PERMISSION_KEY);
 
+const isWaitingForViewerToAccept = (
+  { pendingOwnershipTransfer }: Organization,
+  viewerUserId?: string,
+) => Boolean(pendingOwnershipTransfer) && pendingOwnershipTransfer?.toUserId === viewerUserId;
+
 export const CrmPage = () => {
+  const { state } = useAuth();
+  const viewerUserId = state.status === "signed-in" ? state.user.id : undefined;
   const {
     data: organization,
     isLoading,
@@ -115,7 +123,9 @@ export const CrmPage = () => {
             </p>
           )}
 
-          <CrmDashboardTour organization={organization} />
+          {!isWaitingForViewerToAccept(organization, viewerUserId) && (
+            <CrmDashboardTour organization={organization} />
+          )}
         </div>
       )}
     </div>

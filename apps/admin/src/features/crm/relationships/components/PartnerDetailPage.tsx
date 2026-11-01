@@ -1,4 +1,4 @@
-import { FormBanner, StatCard } from "@outfiqe/design-system";
+import { Avatar, FormBanner, StatCard } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
@@ -15,6 +15,7 @@ import { RECORD_SECTIONS_GRID_CLASS_NAME } from "../../constants/crmPageContent"
 import { CRM_TERMS } from "../../constants/crmTerms";
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
 import { crmRelationshipsApi } from "../api/relationshipsApi";
+import { PartnerProductsSection } from "./PartnerProductsSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
 
@@ -41,6 +42,7 @@ export const PartnerDetailPage = () => {
         <div className="mt-4 space-y-6">
           <CrmPageHeader
             title={partner.name}
+            leading={<Avatar name={partner.name} imageUrl={partner.avatarUrl} size="lg" />}
             description={
               partner.lastActivityAt
                 ? `@${partner.handle} · last active ${formatDate(partner.lastActivityAt)}`
@@ -63,23 +65,7 @@ export const PartnerDetailPage = () => {
           </div>
 
           <div className={RECORD_SECTIONS_GRID_CLASS_NAME}>
-            <MetricSection
-              title="Per product"
-              description="Which of your products this partner helps sell."
-            >
-              {partner.productBreakdown.length === 0 ? (
-                <MetricEmptyState>No product activity yet.</MetricEmptyState>
-              ) : (
-                partner.productBreakdown.map((product) => (
-                  <MetricRow
-                    key={product.productId}
-                    label={product.productName}
-                    detail={`${product.tagClickCount.toLocaleString()} tag clicks · ${product.attributedOrderCount.toLocaleString()} orders`}
-                    value={formatRupees(product.attributedRevenue)}
-                  />
-                ))
-              )}
-            </MetricSection>
+            <PartnerProductsSection products={partner.productBreakdown} />
 
             <MetricSection
               title="Recent orders they brought"

@@ -40,9 +40,9 @@ export const OwnershipTransferBanner = ({ organization }: { organization: Organi
       <FormBanner tone="positive">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span>
-            You&apos;ve been asked to become the owner of {organization.name}.
-            {pendingTransfer.removeSenderMembershipOnAccept &&
-              " The current owner will be removed from this organization once you accept."}
+            {pendingTransfer.removeSenderMembershipOnAccept
+              ? `Outfiqe has set up this CRM for ${organization.name}. Accept to become its owner.`
+              : `You've been asked to become the owner of ${organization.name}.`}
           </span>
           <div className="flex gap-2">
             <Button

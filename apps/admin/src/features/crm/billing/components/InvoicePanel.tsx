@@ -3,14 +3,11 @@ import { Badge, Button, Drawer, DrawerScrollArea } from "@outfiqe/design-system"
 import { MetricRow } from "@/components/MetricParts";
 
 import { formatDate, formatRupees, toPlainWords } from "../../utils/format.utils";
-import type { CrmBillingProviderValue, SubscriptionInvoice } from "../api/billingSchemas";
+import type { SubscriptionInvoice } from "../api/billingSchemas";
 import { INVOICE_STATUS_TONE } from "../constants/invoiceStatusTone";
+import { PROVIDER_LABELS } from "../constants/providerLabels";
 
 const OPEN_INVOICE_STATUS = "OPEN";
-const PROVIDER_LABELS: Record<CrmBillingProviderValue, string> = {
-  ESEWA: "eSewa",
-  KHALTI: "Khalti",
-};
 
 export const InvoicePanel = ({
   invoice,

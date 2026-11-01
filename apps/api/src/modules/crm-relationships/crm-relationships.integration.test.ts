@@ -263,7 +263,15 @@ describe("GET /api/crm/partners/:creatorId", () => {
       .set("Host", tenant.host)
       .set("Authorization", authHeaderFor(tenant.staff.id));
     expect(found.status).toBe(200);
-    expect(found.body.data.productBreakdown).toHaveLength(1);
+    expect(found.body.data.productBreakdown).toEqual([
+      expect.objectContaining({
+        productId: product.id,
+        imageUrl: null,
+        price: 1500,
+        isThrift: false,
+        isLive: true,
+      }),
+    ]);
     expect(found.body.data.recentAttributedOrders).toHaveLength(1);
 
     const stranger = await createUser("Unrelated Muse", UserRole.CUSTOMER);

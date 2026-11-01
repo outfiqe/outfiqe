@@ -111,9 +111,9 @@ const loadConnectedPeople = async (
 ): Promise<ConnectedPerson[]> => {
   const people = await crmConnectionsRepository.findPeople(userIds);
   const peopleWithRoles = await Promise.all(
-    people.map(async ({ id, name, handle }) => {
+    people.map(async ({ id, name, handle, avatarUrl }) => {
       const roles = await loadPersonRoles(organization, viewer, subject, id);
-      return roles.map((role) => ({ userId: id, name, handle, role }));
+      return roles.map((role) => ({ userId: id, name, handle, avatarUrl, role }));
     }),
   );
   return peopleWithRoles.flat();

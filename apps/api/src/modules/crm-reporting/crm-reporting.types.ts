@@ -54,6 +54,9 @@ export type CrmOverviewReport = {
 export type CrmTeamMemberSummary = {
   membershipId: string;
   name: string;
+  avatarUrl: string | null;
+  roleName: string;
+  joinedAt: string;
   wonDealCount: number;
   wonValue: number;
   resolvedTicketCount: number;
@@ -117,6 +120,7 @@ export type ConnectedPerson = {
   userId: string;
   name: string;
   handle: string;
+  avatarUrl: string | null;
   role: "partner" | "customer";
 };
 

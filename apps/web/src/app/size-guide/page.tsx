@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { MarketingHero, MarketingSection, MarketingShell } from "@/features/marketing";
+import {
+  ExampleCallout,
+  MarketingHero,
+  MarketingSection,
+  MarketingShell,
+} from "@/features/marketing";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -53,6 +58,16 @@ const SizeGuidePage = () => (
           it fits.
         </p>
       </div>
+    </MarketingSection>
+
+    <MarketingSection heading="See it in action">
+      <ExampleCallout title="Maya picks a size">
+        <p>
+          Maya is 160 cm and likes a kurta. On the product page, she opens Seen on muses and finds a
+          muse her height wearing a size S, then reads a review that says it runs a little small.
+          She picks an M.
+        </p>
+      </ExampleCallout>
     </MarketingSection>
 
     <MarketingSection heading="Still unsure?">

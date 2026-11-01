@@ -20,7 +20,7 @@ const WELCOME_STEP: CrmTourStep = {
   id: "welcome",
   permissionKey: null,
   title: "Welcome to the CRM",
-  body: "This is Outfiqe's internal tool for running this organization: your muses and shoppers, your sales opportunities, your support queue and your team. It's separate from anything a customer or muse sees. This walkthrough takes about a minute, and you can skip it at any time.",
+  body: "This is where you run your business: your muses and shoppers, your sales opportunities, your support queue and your team. Customers and muses can't see any of it. This walkthrough takes about a minute, and you can skip it at any time.",
 };
 
 const SEARCH_STEP: CrmTourStep = {

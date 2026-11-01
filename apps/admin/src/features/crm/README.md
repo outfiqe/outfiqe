@@ -333,7 +333,7 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   unchecked.** The sender decides per-transfer whether they should be removed from the org
   entirely once it's accepted, rather than the system guessing based on account type — see
   `crm-access`'s README for the full reasoning. When set, `OwnershipTransferBanner` shows the
-  recipient an explicit note ("The current owner will be removed...") before they accept, since it
+  recipient an explicit note ("Outfiqe has set up this CRM...", with the welcome tour held back until they answer) before they accept, since it
   materially changes what accepting does to the org's member list.
 - **Text split across a `<strong>` tag can't be matched by a single `screen.findByText(/regex/)`
   in tests** — Testing Library matches one text node at a time by default, so
@@ -438,3 +438,19 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 **The bell opens the exact record.** A ticket notification opens that ticket's page. Tasks have no page of their own, so they open the Tasks list. The link is stored when the notification is created (`apps/api/src/modules/notifications/notification.targets.ts`), so older notifications still open the Support list.
 
 **Tips explain a term where it appears.** `components/CrmTermHint.tsx` adds a small info icon, and the wording lives in `constants/crmTerms.ts`. Add a tip only for a word a new person might not know.
+
+## Partner products
+
+`relationships/components/PartnerProductsSection.tsx` shows each product with its picture. A click opens a side panel, the same pattern as the invoice and audit panels. "See it on Outfiqe" only appears when the product is approved and on sale, because the public page doesn't exist for anything else. Tenant staff may not have the platform's product admin, so the panel links to the public page.
+
+## People pictures and details
+
+The design system's `Avatar` shows someone's picture, or their first letter if they have none or it can't load. Partner and customer tables, their detail pages, People cards and the Reports team table all use it.
+
+Clicking a team row on Reports opens `reporting/components/TeamMemberPanel.tsx`: role, join date and what they finished in the period. The email only shows for viewers with `members:read`.
+
+The audit panel doesn't show IP addresses. They stay stored, but they mean little to a business owner and older entries can hold a server's address rather than a person's.
+
+## Sales board limit
+
+Each column loads its latest 100 opportunities, so a busy brand's board stays quick. The limit lives in `MAX_BOARD_DEALS_PER_STAGE` on the API and `pipeline/utils/boardLimit.utils.ts` here; change both together. A note appears once a column reaches it, and the CSV export still covers every opportunity.

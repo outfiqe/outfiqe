@@ -21,6 +21,7 @@ import { formatRupees } from "../../utils/format.utils";
 import { crmPipelineApi } from "../api/pipelineApi";
 import { DEALS_QUERY_KEY, STAGES_QUERY_KEY, toDealQueryKey } from "../constants/pipelineQueryKeys";
 import { STUCK_DEAL_DAYS, STUCK_FILTER_VALUE, toStuckBefore } from "../constants/stuckDeals";
+import { BOARD_DEALS_PER_STAGE, isAnyColumnFull } from "../utils/boardLimit.utils";
 import { toDaysInStageLabel } from "../utils/dealCard.utils";
 import { DealFormModal } from "./DealFormModal";
 import { StageConfigModal } from "./StageConfigModal";
@@ -132,6 +133,13 @@ export const PipelinePage = () => {
           <p className="text-sm text-muted-foreground">
             This board has no stages yet. Add your stages to get started.
           </p>
+        )}
+
+        {isAnyColumnFull(cards) && (
+          <FormBanner tone="neutral" className="mb-4">
+            Each column shows its latest {BOARD_DEALS_PER_STAGE} opportunities. Use Export CSV to
+            see them all.
+          </FormBanner>
         )}
 
         {stages && stages.length > 0 && (

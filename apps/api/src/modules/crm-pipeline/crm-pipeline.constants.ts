@@ -18,3 +18,4 @@ export const MAX_PIPELINE_STAGES = 20;
 export const MAX_DEALS_PAGE_SIZE = 200;
 
 export const MAX_CRM_EXPORT_ROWS = 5000;
+export const MAX_BOARD_DEALS_PER_STAGE = 100;

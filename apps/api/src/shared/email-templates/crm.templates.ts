@@ -24,17 +24,26 @@ export const crmOrganizationInviteTemplate = (
   }),
 });
 
+const toNewSetupLede = (organizationName: string): string =>
+  `Outfiqe has set up a CRM for "${organizationName}". Open it and accept to become its owner.`;
+
+const toTransferLede = (organizationName: string): string =>
+  `The current owner of "${organizationName}" wants to make you its owner on the Outfiqe CRM. Sign in and open the CRM to accept or decline.`;
+
 export const crmOwnershipTransferRequestTemplate = (
   organizationName: string,
   crmUrl: string,
+  isNewSetup: boolean,
 ): { subject: string; html: string } => ({
-  subject: `You've been asked to become the owner of ${organizationName}`,
+  subject: isNewSetup
+    ? `Your Outfiqe CRM for ${organizationName} is ready`
+    : `You've been asked to become the owner of ${organizationName}`,
   html: renderEmailLayout({
     preheader: `You've been asked to become the owner of ${organizationName} on the Outfiqe CRM.`,
     bodyHtml: `
       ${emailEyebrow("CRM")}
-      ${emailHeading("Ownership transfer requested")}
-      ${emailLede(`The current owner of "${organizationName}" wants to make you its owner on the Outfiqe CRM. Sign in and open the CRM to accept or decline.`)}
+      ${emailHeading(isNewSetup ? "Your CRM is ready" : "Ownership transfer requested")}
+      ${emailLede(isNewSetup ? toNewSetupLede(organizationName) : toTransferLede(organizationName))}
       ${emailButtonHtml("Open CRM", crmUrl)}
     `,
   }),

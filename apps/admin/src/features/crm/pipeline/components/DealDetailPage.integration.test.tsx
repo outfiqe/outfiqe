@@ -47,7 +47,9 @@ const DEAL = {
 };
 
 const CONNECTIONS = {
-  people: [{ userId: "c-1", name: "Aasha Muse", handle: "aasha", role: "partner" }],
+  people: [
+    { userId: "c-1", name: "Aasha Muse", handle: "aasha", avatarUrl: null, role: "partner" },
+  ],
   contacts: [{ id: "ct-1", name: "Muse Manager", company: null, lifecycleStage: "LEAD" }],
   deals: [],
   tickets: [{ id: "tk-1", title: "Late payout", type: "COMPLAINT", status: "OPEN" }],

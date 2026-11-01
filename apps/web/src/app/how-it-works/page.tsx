@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  ExampleCallout,
   FaqAccordion,
+  FeatureGrid,
   MarketingCta,
   MarketingHero,
   MarketingSection,
@@ -76,6 +78,21 @@ const faqs = [
   },
 ];
 
+const roleGuides = [
+  {
+    title: "I want to shop",
+    body: "Find a look you like and buy the exact pieces, from any brand, in one cart. The steps below show how.",
+  },
+  {
+    title: "I want to earn as a muse",
+    body: "A muse shares outfit photos, tags the pieces and earns when a look leads to a sale. See Become a muse.",
+  },
+  {
+    title: "I run a clothing brand",
+    body: "List your pieces for free, and we collect and deliver your orders. See Sell on Outfiqe.",
+  },
+];
+
 const HowItWorksPage = () => (
   <MarketingShell
     breadcrumbs={[
@@ -94,6 +111,20 @@ const HowItWorksPage = () => (
       }
       lede="Outfiqe is built around looks, not listings. You see a piece on a real person first, buy it from the Nepali brand that made it, and follow it all the way to your door."
     />
+
+    <MarketingSection heading="Who are you?">
+      <FeatureGrid items={roleGuides} />
+      <p className="mt-6 max-w-2xl text-sm text-muted-foreground sm:text-base">
+        New to words like muse, look or hub? See{" "}
+        <Link
+          href="/help/glossary"
+          className="font-medium text-foreground underline underline-offset-2"
+        >
+          what our words mean
+        </Link>
+        .
+      </p>
+    </MarketingSection>
 
     <MarketingSection heading="For shoppers">
       <StepList steps={shopperSteps} />
@@ -134,6 +165,20 @@ const HowItWorksPage = () => (
           </p>
         </div>
       </div>
+    </MarketingSection>
+
+    <MarketingSection heading="See it in action">
+      <ExampleCallout title="Maya buys her first outfit">
+        <p>
+          Maya sees a look in Explore and taps the tag on a kurta. She picks her size, adds a bag
+          from another brand, enters her city and sees the delivery fee. She pays by cash on
+          delivery.
+        </p>
+        <p>
+          She follows the order on her order page. Her pieces arrive in one parcel, and she pays the
+          delivery partner at the door.
+        </p>
+      </ExampleCallout>
     </MarketingSection>
 
     <MarketingSection heading="Common questions">
