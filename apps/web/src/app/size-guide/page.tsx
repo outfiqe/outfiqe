@@ -36,7 +36,7 @@ const SizeGuidePage = () => (
         <p>
           There is no single size chart on Outfiqe. Each brand uses its own sizes, so an M from one
           brand may fit differently from an M from another. Every product shows the sizes it comes
-          in and which ones are in stock. A sold-out size can&apos;t be added to your cart.
+          in and which ones are in stock. A sold-out size can&apos;t be added to your bag.
         </p>
         <p>
           Thrift pieces are usually one of a kind, so they come in a single size. Read the condition

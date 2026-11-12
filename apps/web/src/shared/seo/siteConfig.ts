@@ -7,7 +7,7 @@ export const siteName = "Outfiqe";
 export const siteTagline = "Nepali fashion, worn by real muses";
 
 export const siteDescription =
-  "Outfiqe is a Nepali fashion marketplace. It pairs every brand with real muse looks so you can see the fit before you buy, then lets you shop across brands in one cart with delivery anywhere in Nepal.";
+  "Outfiqe is a Nepali fashion marketplace. It pairs every brand with real muse looks so you can see the fit before you buy, then lets you shop across brands in one bag with delivery anywhere in Nepal.";
 
 export const organization = {
   legalName: "Outfiqe",

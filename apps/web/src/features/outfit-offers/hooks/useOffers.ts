@@ -1,6 +1,7 @@
 "use client";
 
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+import { generateUuid } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { redirectToPaymentGateway } from "@/features/payments";
@@ -27,7 +28,7 @@ export const useSentOffers = (isEnabled: boolean) =>
 
 export const useSendOffer = (outfitId: string) =>
   useMutation({
-    mutationFn: (input: SendOfferInput) => offerApi.send(outfitId, input, crypto.randomUUID()),
+    mutationFn: (input: SendOfferInput) => offerApi.send(outfitId, input, generateUuid()),
     onSuccess: ({ payment }) => redirectToPaymentGateway(payment),
   });
 

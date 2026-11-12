@@ -15,6 +15,7 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostTagPill } from "./PostTagPill";
 import { ReportContentModal } from "./ReportContentModal";
+import { ReportTagModal } from "./ReportTagModal";
 
 interface PostCardProps {
   post: FeedPost;
@@ -56,13 +57,18 @@ export const PostCard = ({ post, onImageClick, onOpenComments, trendingRank }: P
     reportOpen,
     setReportOpen,
     reportMutation,
+    hasTaggedProducts,
+    tagReportOpen,
+    setTagReportOpen,
+    tagReportMutation,
   } = usePostCardState(post);
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const { mutate: submitReport, isPending: isReporting } = reportMutation;
+  const { mutate: submitTagReport, isPending: isReportingTag } = tagReportMutation;
   const cardRef = useRecordLookView(id, !isOwnPost);
-  const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
+  const hasCaptionContent = hasTaggedProducts || Boolean(caption);
 
   return (
     <article
@@ -81,6 +87,7 @@ export const PostCard = ({ post, onImageClick, onOpenComments, trendingRank }: P
         }
         isFollowToggling={isFollowToggling}
         onReport={() => setReportOpen(true)}
+        onReportTag={hasTaggedProducts ? () => setTagReportOpen(true) : undefined}
         className="px-3 py-2.5"
       />
 
@@ -105,7 +112,7 @@ export const PostCard = ({ post, onImageClick, onOpenComments, trendingRank }: P
       </div>
 
       <div className="px-3 py-2.5">
-        {taggedProducts.length > 0 && (
+        {hasTaggedProducts && (
           <div className="mb-2 flex flex-wrap gap-1.5">
             {taggedProducts.map((tag) => (
               <PostTagPill key={tag.id} lookId={id} tag={tag} creatorHeightCm={creatorHeightCm} />
@@ -144,6 +151,15 @@ export const PostCard = ({ post, onImageClick, onOpenComments, trendingRank }: P
             submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })
           }
           onCancel={() => setReportOpen(false)}
+        />
+      )}
+
+      {tagReportOpen && (
+        <ReportTagModal
+          taggedProducts={taggedProducts}
+          isPending={isReportingTag}
+          onConfirm={(input) => submitTagReport({ lookId: id, ...input })}
+          onCancel={() => setTagReportOpen(false)}
         />
       )}
     </article>

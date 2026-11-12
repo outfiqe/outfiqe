@@ -17,6 +17,7 @@ type PostCardHeaderProps = {
   onFollowToggle: () => void;
   isFollowToggling?: boolean;
   onReport?: () => void;
+  onReportTag?: () => void;
   className?: string;
 };
 
@@ -30,6 +31,7 @@ export const PostCardHeader = ({
   onFollowToggle,
   isFollowToggling,
   onReport,
+  onReportTag,
   className,
 }: PostCardHeaderProps) => {
   return (
@@ -64,7 +66,7 @@ export const PostCardHeader = ({
           >
             {isFollowingCreator ? "Following" : "Follow"}
           </button>
-          {onReport && <PostReportMenu onReport={onReport} />}
+          {onReport && <PostReportMenu onReport={onReport} onReportTag={onReportTag} />}
         </div>
       )}
     </div>

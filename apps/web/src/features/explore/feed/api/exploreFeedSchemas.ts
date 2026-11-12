@@ -1,4 +1,4 @@
-import type { ContentReportReason, ContentReportTarget } from "@outfiqe/types";
+import type { ContentReportReason, ContentReportTarget, TagReportReason } from "@outfiqe/types";
 import { POST_LAYOUT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
@@ -33,6 +33,25 @@ export const submitContentReportSchema = z.object({
   note: z.string().trim().min(1).max(500).optional(),
 });
 export type SubmitContentReportInput = z.infer<typeof submitContentReportSchema>;
+
+const tagReportReasonValues = [
+  "COUNTERFEIT",
+  "NOT_GENUINELY_WORN",
+  "MISLEADING",
+  "OFFENSIVE",
+  "OTHER",
+] satisfies TagReportReason[];
+
+export const tagReportReasonSchema = z.enum(tagReportReasonValues);
+export type TagReportReasonValue = z.infer<typeof tagReportReasonSchema>;
+
+export const submitTagReportSchema = z.object({
+  lookId: z.string(),
+  productId: z.string(),
+  reason: tagReportReasonSchema,
+  note: z.string().trim().min(1).max(500).optional(),
+});
+export type SubmitTagReportInput = z.infer<typeof submitTagReportSchema>;
 
 export const feedTaggedProductSchema = z.object({
   id: z.string(),

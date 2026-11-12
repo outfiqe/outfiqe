@@ -66,7 +66,7 @@ export const generateMetadata = async ({ searchParams }: ShopPageProps): Promise
 
   const description = categoryName
     ? `Shop ${categoryName.toLowerCase()} pieces from Nepali brands on Outfiqe, with muse looks that show the fit. One cart, delivered across Nepal.`
-    : `Browse ${subject.toLowerCase()} across every Nepali brand on Outfiqe. See pieces worn in muse looks, add from any brand to one cart, and get it delivered across Nepal.`;
+    : `Browse ${subject.toLowerCase()} across every Nepali brand on Outfiqe. See pieces worn in muse looks, add from any brand to one bag, and get it delivered across Nepal.`;
 
   return buildPageMetadata({
     title,
@@ -91,8 +91,8 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
   const visibleHeading =
     params.thrift === "true" ? (categoryName ? `Thrift ${categoryName}` : "Thrift") : heading;
   const schemaDescription = categoryName
-    ? `Every ${categoryName.toLowerCase()} piece from a Nepali brand on Outfiqe, in one cart.`
-    : "Every piece from every Nepali brand on Outfiqe, in one cart.";
+    ? `Every ${categoryName.toLowerCase()} piece from a Nepali brand on Outfiqe, in one bag.`
+    : "Every piece from every Nepali brand on Outfiqe, in one bag.";
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

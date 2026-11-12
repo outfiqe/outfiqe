@@ -127,7 +127,7 @@ export const SiteHeader = () => {
         {isShopper && (
           <Link
             href="/cart"
-            aria-label="Cart"
+            aria-label="Bag"
             className="relative hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
           >
             <ShoppingBag className="size-[18px]" />
