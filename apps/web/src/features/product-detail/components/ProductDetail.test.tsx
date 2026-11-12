@@ -142,7 +142,7 @@ describe("ProductDetail out-of-stock handling", () => {
 
     expect(screen.getByText("Out of stock")).toBeInTheDocument();
     expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
-    expect(cta(/add to cart/i)).toBeDisabled();
+    expect(cta(/add to bag/i)).toBeDisabled();
     expect(cta(/buy now/i)).toBeDisabled();
     expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Decrease quantity" })).toBeDisabled();
@@ -154,7 +154,7 @@ describe("ProductDetail out-of-stock handling", () => {
     );
 
     expect(screen.getByText("Out of stock")).toBeInTheDocument();
-    expect(cta(/add to cart/i)).toBeDisabled();
+    expect(cta(/add to bag/i)).toBeDisabled();
   });
 
   it("shows a one-of-a-kind sold message instead of Out of stock for a sold-out thrift piece", () => {
@@ -168,7 +168,7 @@ describe("ProductDetail out-of-stock handling", () => {
 
     expect(screen.queryByText("Out of stock")).not.toBeInTheDocument();
     expect(screen.getByText(/sold — this one-of-a-kind piece is gone/i)).toBeInTheDocument();
-    expect(cta(/add to cart/i)).toBeDisabled();
+    expect(cta(/add to bag/i)).toBeDisabled();
   });
 
   it("shows the thrift tag, condition rating and notes for a thrift listing", () => {
@@ -199,10 +199,10 @@ describe("ProductDetail out-of-stock handling", () => {
 
     expect(screen.queryByText("Out of stock")).not.toBeInTheDocument();
     expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
-    expect(cta(/add to cart/i)).toBeEnabled();
+    expect(cta(/add to bag/i)).toBeEnabled();
     expect(screen.getByRole("button", { name: "Increase quantity" })).toBeEnabled();
 
-    cta(/add to cart/i).click();
+    cta(/add to bag/i).click();
     expect(addToCart).toHaveBeenCalledWith(
       expect.objectContaining({ productId: "product-1", sizeId: "m", qty: 1 }),
       expect.anything(),
@@ -215,7 +215,7 @@ describe("ProductDetail thrift purchase consent", () => {
     addToCart.mockClear();
   });
 
-  it("shows a consent modal before adding a thrift item to the cart", () => {
+  it("shows a consent modal before adding a thrift item to the bag", () => {
     render(
       <ProductDetail
         product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
@@ -226,7 +226,7 @@ describe("ProductDetail thrift purchase consent", () => {
       />,
     );
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
 
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("You're buying a secondhand piece")).toBeInTheDocument();
@@ -234,7 +234,7 @@ describe("ProductDetail thrift purchase consent", () => {
     expect(addToCart).not.toHaveBeenCalled();
   });
 
-  it("adds to cart only after the shopper confirms", () => {
+  it("adds to the bag only after the shopper confirms", () => {
     render(
       <ProductDetail
         product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
@@ -243,14 +243,14 @@ describe("ProductDetail thrift purchase consent", () => {
       />,
     );
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
     fireEvent.click(screen.getByRole("button", { name: /i understand, continue/i }));
 
     expect(addToCart).toHaveBeenCalledOnce();
     expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
   });
 
-  it("doesn't add to cart when the shopper cancels", () => {
+  it("doesn't add to the bag when the shopper cancels", () => {
     render(
       <ProductDetail
         product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
@@ -259,7 +259,7 @@ describe("ProductDetail thrift purchase consent", () => {
       />,
     );
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(addToCart).not.toHaveBeenCalled();
@@ -275,11 +275,11 @@ describe("ProductDetail thrift purchase consent", () => {
       />,
     );
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
     fireEvent.click(screen.getByRole("button", { name: /i understand, continue/i }));
     addToCart.mockClear();
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
 
     expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
     expect(addToCart).toHaveBeenCalledOnce();
@@ -288,7 +288,7 @@ describe("ProductDetail thrift purchase consent", () => {
   it("never shows the consent modal for a non-thrift item", () => {
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
-    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(cta(/add to bag/i));
 
     expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
     expect(addToCart).toHaveBeenCalledOnce();
@@ -301,11 +301,11 @@ describe("ProductDetail buy controls by account type", () => {
     authState.isStaff = false;
   });
 
-  it("hides Add to cart and Buy now from a brand owner and explains why", () => {
+  it("hides Add to bag and Buy now from a brand owner and explains why", () => {
     authState.isBrandOwner = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
-    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to bag/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
     expect(screen.getByText("Shopping is available on customer accounts.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Stash" })).toBeInTheDocument();
@@ -331,7 +331,7 @@ describe("ProductDetail buy controls by account type", () => {
     authState.isStaff = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
-    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to bag/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Stash" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "M" })).toBeDisabled();
@@ -341,7 +341,7 @@ describe("ProductDetail buy controls by account type", () => {
   it("keeps the buy controls for a shopper", () => {
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
-    expect(screen.getByRole("button", { name: /add to cart/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to bag/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /buy now/i })).toBeInTheDocument();
   });
 });

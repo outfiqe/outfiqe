@@ -19,8 +19,9 @@ it can act across every brand.
 
 ## Funnel
 
-**User-facing:** a shopper on a product page or a look sees a tag that looks fake, hits "Report",
-picks a reason, optionally adds a note. Nothing changes on the post — the tag stays live — but a
+**User-facing:** a viewer of a drop (in the feed or the drop's detail view) sees a tag that looks
+fake, opens the drop's options menu, chooses **Report a tag**, picks which tagged product and a
+reason, and optionally adds a note (`apps/web/src/features/explore`, `ReportTagModal`). Nothing changes on the post — the tag stays live — but a
 row lands in the admin **Tag reports** queue. Separately, when a brand rejects a tag as a
 suspected counterfeit, the same queue gets an entry and the creator's counterfeit-flag counter
 ticks up. Platform staff review each report and either dismiss it or action it, optionally

@@ -3,6 +3,7 @@
 import { Button, FormBanner, Input, Label, Modal } from "@outfiqe/design-system";
 import { useCreateGroup } from "@outfiqe/hooks";
 import type { ChatContact } from "@outfiqe/types";
+import { generateUuid } from "@outfiqe/utils";
 import { type FormEvent, useId, useState } from "react";
 
 import { conversationsApi } from "@/shared/lib/conversationsApi";
@@ -24,7 +25,7 @@ export const NewGroupModal = ({ open, onClose, onCreated }: NewGroupModalProps) 
   const nameInputId = useId();
   const [groupName, setGroupName] = useState("");
   const [selectedContacts, setSelectedContacts] = useState<ChatContact[]>([]);
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => generateUuid());
   const createGroup = useCreateGroup(conversationsApi);
 
   const trimmedName = groupName.trim();
@@ -33,7 +34,7 @@ export const NewGroupModal = ({ open, onClose, onCreated }: NewGroupModalProps) 
   const resetForm = (): void => {
     setGroupName("");
     setSelectedContacts([]);
-    setIdempotencyKey(crypto.randomUUID());
+    setIdempotencyKey(generateUuid());
     createGroup.reset();
   };
 

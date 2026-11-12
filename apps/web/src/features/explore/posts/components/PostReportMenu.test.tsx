@@ -23,6 +23,29 @@ describe("PostReportMenu", () => {
     expect(screen.queryByRole("menuitem", { name: "Report" })).not.toBeInTheDocument();
   });
 
+  it("doesn't offer Report a tag when the drop has no tags", async () => {
+    const user = userEvent.setup();
+    render(<PostReportMenu onReport={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
+
+    expect(screen.queryByRole("menuitem", { name: "Report a tag" })).not.toBeInTheDocument();
+  });
+
+  it("calls onReportTag and closes the menu when Report a tag is clicked", async () => {
+    const user = userEvent.setup();
+    const onReport = vi.fn();
+    const onReportTag = vi.fn();
+    render(<PostReportMenu onReport={onReport} onReportTag={onReportTag} />);
+
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Report a tag" }));
+
+    expect(onReportTag).toHaveBeenCalledTimes(1);
+    expect(onReport).not.toHaveBeenCalled();
+    expect(screen.queryByRole("menuitem", { name: "Report a tag" })).not.toBeInTheDocument();
+  });
+
   it("closes the menu when clicking outside", async () => {
     const user = userEvent.setup();
     render(

@@ -108,6 +108,28 @@ export default tseslint.config(
   },
 
   {
+    files: [
+      "apps/web/src/**/*.{ts,tsx}",
+      "apps/admin/src/**/*.{ts,tsx}",
+      "packages/components/**/*.{ts,tsx}",
+      "packages/design-system/**/*.{ts,tsx}",
+      "packages/hooks/**/*.{ts,tsx}",
+    ],
+    ignores: ["apps/web/src/proxy.ts", "**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "crypto",
+          property: "randomUUID",
+          message:
+            "crypto.randomUUID is missing on older browsers and non-HTTPS pages. Use generateUuid from @outfiqe/utils.",
+        },
+      ],
+    },
+  },
+
+  {
     files: ["apps/admin/**/*.{ts,tsx}"],
     plugins: {
       "react-refresh": reactRefresh,

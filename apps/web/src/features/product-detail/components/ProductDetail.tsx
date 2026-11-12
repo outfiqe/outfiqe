@@ -279,7 +279,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                   isLoading={addToCartMutation.isPending}
                   onClick={() => gated(() => requestPurchase("cart"))}
                 >
-                  Add to cart
+                  Add to bag
                 </Button>
                 <Button
                   className="flex-1"

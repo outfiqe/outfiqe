@@ -1,16 +1,38 @@
 "use client";
 
-import { Flag, MoreVertical } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Flag, MoreVertical, Tag } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 
 type PostReportMenuProps = {
   onReport: () => void;
+  onReportTag?: () => void;
   className?: string;
 };
 
-export const PostReportMenu = ({ onReport, className }: PostReportMenuProps) => {
+type ReportMenuItemProps = {
+  icon: ReactNode;
+  label: string;
+  onSelect: () => void;
+};
+
+const ReportMenuItem = ({ icon, label, onSelect }: ReportMenuItemProps) => (
+  <button
+    type="button"
+    role="menuitem"
+    onClick={(event) => {
+      event.stopPropagation();
+      onSelect();
+    }}
+    className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+  >
+    {icon}
+    {label}
+  </button>
+);
+
+export const PostReportMenu = ({ onReport, onReportTag, className }: PostReportMenuProps) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -43,21 +65,26 @@ export const PostReportMenu = ({ onReport, className }: PostReportMenuProps) => 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-10 mt-1.5 w-32 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
+          className="absolute right-0 top-full z-10 mt-1.5 w-40 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
         >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={(event) => {
-              event.stopPropagation();
+          <ReportMenuItem
+            icon={<Flag className="size-3.5" />}
+            label="Report"
+            onSelect={() => {
               setOpen(false);
               onReport();
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-          >
-            <Flag className="size-3.5" />
-            Report
-          </button>
+          />
+          {onReportTag && (
+            <ReportMenuItem
+              icon={<Tag className="size-3.5" />}
+              label="Report a tag"
+              onSelect={() => {
+                setOpen(false);
+                onReportTag();
+              }}
+            />
+          )}
         </div>
       )}
     </div>

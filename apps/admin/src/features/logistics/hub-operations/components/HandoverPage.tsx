@@ -1,6 +1,6 @@
 import { QR_CAMERA_START_MODE, QrScanner } from "@outfiqe/components";
 import { Skeleton } from "@outfiqe/design-system";
-import { formatParcelCode } from "@outfiqe/utils";
+import { formatParcelCode, generateUuid } from "@outfiqe/utils";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -21,7 +21,7 @@ export const HandoverPage = () => {
 
   const addToScanLog = (entry: Omit<ScanLogEntry, "id">) =>
     setScanLog((current) =>
-      [{ ...entry, id: crypto.randomUUID() }, ...current].slice(0, MAX_SCAN_RESULTS_SHOWN),
+      [{ ...entry, id: generateUuid() }, ...current].slice(0, MAX_SCAN_RESULTS_SHOWN),
     );
 
   const handOverScannedCode = (code: string) => {

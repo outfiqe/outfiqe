@@ -1,5 +1,6 @@
 "use client";
 
+import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
@@ -121,7 +122,7 @@ export const PendingScansProvider = ({ riderUserId, children }: PendingScansProv
     async (scan: NewCollectScan): Promise<ScanOutcome> => {
       const scanRequest = {
         ...scan,
-        scanId: crypto.randomUUID(),
+        scanId: generateUuid(),
         scannedAt: new Date().toISOString(),
       };
       const storedScans = await addPendingScan(riderUserId, scanRequest);

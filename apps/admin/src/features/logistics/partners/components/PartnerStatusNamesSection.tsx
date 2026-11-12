@@ -1,4 +1,5 @@
 import { Button, Input, Select } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -18,7 +19,7 @@ type StatusNameRow = { rowId: string; rawStatus: string; canonicalCode: PartnerS
 
 const toRows = (partner: DeliveryPartner): StatusNameRow[] =>
   partner.statusMappings.map(({ rawStatus, canonicalCode }) => ({
-    rowId: crypto.randomUUID(),
+    rowId: generateUuid(),
     rawStatus,
     canonicalCode,
   }));
@@ -38,7 +39,7 @@ export const PartnerStatusNamesSection = ({
   const addRow = () =>
     setRows((current) => [
       ...current,
-      { rowId: crypto.randomUUID(), rawStatus: "", canonicalCode: DEFAULT_STATUS_CODE },
+      { rowId: generateUuid(), rawStatus: "", canonicalCode: DEFAULT_STATUS_CODE },
     ]);
 
   const saveRows = () =>

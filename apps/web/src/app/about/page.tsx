@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "About Outfiqe",
   description:
-    "Outfiqe is a Nepali fashion marketplace. Local brands and thrift pieces, shown on real muses, in one cart, delivered as one parcel. What we are building, and why.",
+    "Outfiqe is a Nepali fashion marketplace. Local brands and thrift pieces, shown on real muses, in one bag, delivered as one parcel. What we are building, and why.",
   path: "/about",
   keywords: ["about Outfiqe", "Nepali fashion marketplace", "Outfiqe company"],
 });
@@ -41,7 +41,7 @@ const principles = [
 const roles = [
   {
     title: "Shoppers",
-    body: "People looking for clothes. They find pieces through looks and the shop, then buy from many brands in one cart.",
+    body: "People looking for clothes. They find pieces through looks and the shop, then buy from many brands in one bag.",
   },
   {
     title: "Brands",

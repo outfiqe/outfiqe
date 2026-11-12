@@ -22,6 +22,9 @@ vi.mock("../../hooks/useExploreAuthGate", () => ({
 
 vi.mock("./useLikeLook", () => ({ useLikeLook: () => ({ mutate: vi.fn(), isPending: false }) }));
 vi.mock("./useSaveLook", () => ({ useSaveLook: () => ({ mutate: vi.fn(), isPending: false }) }));
+vi.mock("./useReportTag", () => ({
+  useReportTag: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock("./useReportContent", () => ({
   useReportContent: () => ({ mutate: vi.fn(), isPending: false }),
 }));

@@ -71,6 +71,18 @@ beforeEach(() => {
 });
 
 describe("returns on a rider visit", () => {
+  it("shows the brand's landmark exactly as they wrote it", async () => {
+    const visitWithLandmark = {
+      ...returnVisit,
+      pickupLocation: { ...returnVisit.pickupLocation, landmark: "Next to the blue bakery" },
+    };
+    mswServer.use(http.get(TASK_URL, () => okJson(visitWithLandmark)));
+    render(<RiderVisitPage taskId="task-1" />, { wrapper: createQueryClientWrapper() });
+
+    expect(await screen.findByText("Landmark: Next to the blue bakery")).toBeInTheDocument();
+    expect(screen.queryByText(/Near Next to/)).not.toBeInTheDocument();
+  });
+
   it("lists what to hand back and records the hand-over", async () => {
     let dropOffBody: unknown;
     mswServer.use(

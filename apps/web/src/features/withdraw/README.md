@@ -22,6 +22,9 @@ balance formula and admin-review rules this UI reflects.
 - `components/WithdrawRequestForm.tsx` — amount + bank account, gated behind whichever
   ineligibility reason currently applies (no verified account, window closed, cooldown, attempts
   exhausted) rather than a raw disabled button with no explanation.
+- `utils/preselectedBankAccountId.ts` — which account the form starts on: the default verified
+  account, or the only one if there's just one. With several and no default it starts empty, so
+  the earner picks on purpose.
 - `components/WithdrawRequestRow.tsx` / `WithdrawRequestStatusBadge.tsx` — one history entry.
 - `components/WithdrawSectionSkeleton.tsx` — a presentational skeleton mirroring
   `WithdrawSection`'s block layout, rendered by the `withdraw` and `wallet` route `loading.tsx`
