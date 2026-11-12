@@ -16,7 +16,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe works",
   description:
-    "How to shop on Outfiqe. See pieces on real muses, add from any Nepali brand to one cart, pay by cash on delivery or eSewa, and follow your parcel to your door.",
+    "How to shop on Outfiqe. See pieces on real muses, add from any Nepali brand to one bag, pay by cash on delivery or eSewa, and follow your parcel to your door.",
   path: "/how-it-works",
   keywords: [
     "how Outfiqe works",
@@ -32,7 +32,7 @@ const shopperSteps = [
     body: "Browse muse looks, the shop, Thrift and the brand leaderboard, or search by brand, style or piece. Every look links to the exact products worn.",
   },
   {
-    title: "Add to one cart",
+    title: "Add to one bag",
     body: "Pick your size and add pieces from any brand to a single cart. Enter your city to see the delivery fee before you check out.",
   },
   {
@@ -54,12 +54,12 @@ const faqs = [
   {
     question: "Can I buy from more than one brand in a single order?",
     answer:
-      "Yes. Add pieces from different Nepali brands to one cart and check out once. Where the brands are collected by Outfiqe, everything arrives together in one parcel.",
+      "Yes. Add pieces from different Nepali brands to one bag and check out once. Where the brands are collected by Outfiqe, everything arrives together in one parcel.",
   },
   {
     question: "How is delivery charged?",
     answer:
-      "Each delivery zone has its own delivery fee and a free-delivery threshold. Both show in your cart and at checkout before you pay. Cash on delivery adds a small handling fee for your zone.",
+      "Each delivery zone has its own delivery fee and a free-delivery threshold. Both show in your bag and at checkout before you pay. Cash on delivery adds a small handling fee for your zone.",
   },
   {
     question: "Can I cancel?",
@@ -81,7 +81,7 @@ const faqs = [
 const roleGuides = [
   {
     title: "I want to shop",
-    body: "Find a look you like and buy the exact pieces, from any brand, in one cart. The steps below show how.",
+    body: "Find a look you like and buy the exact pieces, from any brand, in one bag. The steps below show how.",
   },
   {
     title: "I want to earn as a muse",

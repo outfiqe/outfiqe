@@ -76,7 +76,7 @@ export const RiderVisitPage = ({ taskId }: RiderVisitPageProps) => {
         </h1>
         <p className="mt-1 text-sm text-foreground">{pickupLocation.address}</p>
         {pickupLocation.landmark && (
-          <p className="text-sm text-muted-foreground">Near {pickupLocation.landmark}</p>
+          <p className="text-sm text-muted-foreground">Landmark: {pickupLocation.landmark}</p>
         )}
         {pickupLocation.openingNote && (
           <p className="mt-1 text-sm text-muted-foreground">{pickupLocation.openingNote}</p>

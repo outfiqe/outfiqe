@@ -1,5 +1,6 @@
 import { QR_CAMERA_START_MODE, QrScanner } from "@outfiqe/components";
 import { Input, Label, Skeleton } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -26,7 +27,7 @@ export const CheckInPage = () => {
 
   const addToScanLog = (entry: Omit<ScanLogEntry, "id">) =>
     setScanLog((current) =>
-      [{ ...entry, id: crypto.randomUUID() }, ...current].slice(0, MAX_SCAN_RESULTS_SHOWN),
+      [{ ...entry, id: generateUuid() }, ...current].slice(0, MAX_SCAN_RESULTS_SHOWN),
     );
 
   const checkInScannedCode = (code: string) => {

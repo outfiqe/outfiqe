@@ -20,6 +20,7 @@ import {
   likeResultSchema,
   saveResultSchema,
   type SubmitContentReportInput,
+  type SubmitTagReportInput,
   type SuggestedCreatorsPage,
   suggestedCreatorsResponseSchema,
   trendingTagsResponseSchema,
@@ -127,6 +128,10 @@ export const exploreFeedApi = {
 
   async submitContentReport(input: SubmitContentReportInput): Promise<void> {
     await apiClient.post("/content-reports", input);
+  },
+
+  async submitTagReport(input: SubmitTagReportInput): Promise<void> {
+    await apiClient.post("/tag-reports", input);
   },
 
   async recordTagClick(

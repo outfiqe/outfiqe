@@ -54,6 +54,23 @@ const renderForm = (
 };
 
 describe("WithdrawRequestForm", () => {
+  it("starts with the default verified bank account already chosen", () => {
+    renderForm();
+
+    expect(screen.getByLabelText("Bank account")).toHaveValue("bank-account-1");
+  });
+
+  it("asks the person to choose when several accounts have no default", () => {
+    renderForm({
+      verifiedBankAccounts: [
+        { ...bankAccount, isDefault: false },
+        { ...bankAccount, id: "bank-account-2", isDefault: false },
+      ],
+    });
+
+    expect(screen.getByLabelText("Bank account")).toHaveValue("");
+  });
+
   it("asks for a verified bank account when none exist", () => {
     renderForm({ verifiedBankAccounts: [] });
 

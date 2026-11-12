@@ -98,7 +98,7 @@ const ShippingGuidePage = () => (
     <MarketingSection heading="See it in action">
       <ExampleCallout title="Maya orders from two brands">
         <p>
-          Maya adds a kurta from one brand and a bag from another to the same cart. She enters her
+          Maya adds a kurta from one brand and a tote from another to the same bag. She enters her
           city, sees the delivery fee and dates, and pays once.
         </p>
         <p>

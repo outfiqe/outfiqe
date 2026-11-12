@@ -15,6 +15,7 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostTagPill } from "./PostTagPill";
 import { ReportContentModal } from "./ReportContentModal";
+import { ReportTagModal } from "./ReportTagModal";
 
 const MODAL_IMAGE_SIZES = "(min-width: 640px) 60vw, 100vw";
 
@@ -68,13 +69,18 @@ export const PostDetailModal = ({
     reportOpen,
     setReportOpen,
     reportMutation,
+    hasTaggedProducts,
+    tagReportOpen,
+    setTagReportOpen,
+    tagReportMutation,
   } = usePostCardState(post);
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const { mutate: submitReport, isPending: isReporting } = reportMutation;
-  const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
+  const { mutate: submitTagReport, isPending: isReportingTag } = tagReportMutation;
+  const hasCaptionContent = hasTaggedProducts || Boolean(caption);
   useTrackView(ANALYTICS_EVENTS.LOOK_DETAIL_VIEW, { look_id: id, creator_id: creatorId }, id);
 
   useEffect(() => {
@@ -126,12 +132,13 @@ export const PostDetailModal = ({
               }
               isFollowToggling={isFollowToggling}
               onReport={() => setReportOpen(true)}
+              onReportTag={hasTaggedProducts ? () => setTagReportOpen(true) : undefined}
               className="shrink-0 border-b border-border py-3 pl-4 pr-14"
             />
           )}
 
           <div className="flex min-h-0 flex-1 flex-col px-4 pt-3.5 sm:overflow-y-auto">
-            {taggedProducts.length > 0 && (
+            {hasTaggedProducts && (
               <div className="mb-2 flex flex-wrap gap-1.5">
                 {taggedProducts.map((tag) => (
                   <PostTagPill
@@ -183,6 +190,15 @@ export const PostDetailModal = ({
             submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })
           }
           onCancel={() => setReportOpen(false)}
+        />
+      )}
+
+      {tagReportOpen && (
+        <ReportTagModal
+          taggedProducts={taggedProducts}
+          isPending={isReportingTag}
+          onConfirm={(input) => submitTagReport({ lookId: id, ...input })}
+          onCancel={() => setTagReportOpen(false)}
         />
       )}
     </Modal>

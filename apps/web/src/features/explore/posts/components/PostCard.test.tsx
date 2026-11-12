@@ -22,6 +22,9 @@ vi.mock("../hooks/useSaveLook", () => ({
 vi.mock("../hooks/useReportContent", () => ({
   useReportContent: () => ({ mutate: vi.fn(), isPending: false }),
 }));
+vi.mock("../hooks/useReportTag", () => ({
+  useReportTag: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 const { followMutationState } = vi.hoisted(() => ({
   followMutationState: { isPending: false },
 }));

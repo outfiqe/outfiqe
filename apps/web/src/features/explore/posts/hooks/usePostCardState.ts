@@ -13,6 +13,7 @@ import { useFollowCreator } from "../../suggestions/hooks/useFollowCreator";
 import { lookPermalinkPath } from "../utils/lookPermalink";
 import { useLikeLook } from "./useLikeLook";
 import { useReportContent } from "./useReportContent";
+import { useReportTag } from "./useReportTag";
 import { useSaveLook } from "./useSaveLook";
 
 const STAFF_CANNOT_LIKE_MESSAGE =
@@ -27,6 +28,9 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const reportMutation = useReportContent(() => setReportOpen(false));
+  const [tagReportOpen, setTagReportOpen] = useState(false);
+  const tagReportMutation = useReportTag(() => setTagReportOpen(false));
+  const hasTaggedProducts = taggedProducts.length > 0;
 
   const isOwnPost = state.user?.id === creator.id;
   const likeDisabledReason = isStaff ? STAFF_CANNOT_LIKE_MESSAGE : undefined;
@@ -63,5 +67,9 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
     reportOpen,
     setReportOpen,
     reportMutation,
+    hasTaggedProducts,
+    tagReportOpen,
+    setTagReportOpen,
+    tagReportMutation,
   };
 };

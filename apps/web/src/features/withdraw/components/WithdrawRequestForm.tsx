@@ -27,6 +27,7 @@ import {
   type WithdrawEligibility,
 } from "../api/withdrawSchemas";
 import { useCreateWithdrawRequest } from "../hooks/useCreateWithdrawRequest";
+import { pickPreselectedBankAccountId } from "../utils/preselectedBankAccountId";
 
 type WithdrawRequestFormProps = {
   ownerType: OwnerTypeValue;
@@ -43,7 +44,10 @@ export const WithdrawRequestForm = ({
 
   const form = useForm<CreateWithdrawRequestInput>({
     resolver: zodResolver(createWithdrawRequestSchema),
-    defaultValues: { bankAccountId: "", amount: eligibility.minAmount },
+    defaultValues: {
+      bankAccountId: pickPreselectedBankAccountId(verifiedBankAccounts),
+      amount: eligibility.minAmount,
+    },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {

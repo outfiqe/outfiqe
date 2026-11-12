@@ -30,8 +30,8 @@ const ShippingPolicyPage = () => (
       <h2>Where we deliver</h2>
       <p>
         Outfiqe delivers within Nepal. Our delivery area is split into zones, and each city belongs
-        to a zone. When you enter your city in your cart or at checkout, we show the delivery fee
-        and expected delivery dates for your zone.
+        to a zone. When you enter your city in your bag or at checkout, we show the delivery fee and
+        expected delivery dates for your zone.
       </p>
 
       <h2>Delivery fees</h2>

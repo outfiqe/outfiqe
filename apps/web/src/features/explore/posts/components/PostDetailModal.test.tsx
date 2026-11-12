@@ -29,6 +29,9 @@ vi.mock("../hooks/useLikeLook", () => ({
 vi.mock("../hooks/useSaveLook", () => ({
   useSaveLook: () => ({ mutate: vi.fn(), isPending: false }),
 }));
+vi.mock("../hooks/useReportTag", () => ({
+  useReportTag: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock("../hooks/useReportContent", () => ({
   useReportContent: () => ({ mutate: vi.fn(), isPending: false }),
 }));
