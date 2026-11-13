@@ -80,7 +80,7 @@ export const PickupLocationCard = ({ pickupLocation }: PickupLocationCardProps) 
           href={googleMapsLinkFor({ latitude, longitude })}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 inline-block text-[13px] font-medium text-primary underline-offset-4 hover:underline"
+          className="mt-1 inline-block text-[13px] font-medium text-primary-strong underline-offset-4 hover:underline"
         >
           Open the map pin
         </a>

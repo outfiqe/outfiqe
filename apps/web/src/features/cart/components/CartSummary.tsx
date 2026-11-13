@@ -29,7 +29,7 @@ export const CartSummary = ({ cart }: CartSummaryProps) => {
         <span>Rs. {subtotal.toLocaleString()}</span>
       </div>
       {appliedCoupon && (
-        <div className="flex justify-between py-2 text-sm text-primary">
+        <div className="flex justify-between py-2 text-sm text-primary-strong">
           <span>{appliedCoupon.code}</span>
           <span>-Rs. {platformDiscountTotal.toLocaleString()}</span>
         </div>
