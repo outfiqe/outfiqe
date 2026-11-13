@@ -2,6 +2,7 @@
 
 import "@/features/explore/utils/offlineActionHandlers";
 
+import { shouldRetryRequest } from "@outfiqe/client";
 import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -44,6 +45,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
             staleTime: DEFAULT_STALE_TIME_MS,
             gcTime: INACTIVE_CACHE_RETENTION_MS,
             refetchOnWindowFocus: false,
+            retry: shouldRetryRequest,
           },
         },
       }),

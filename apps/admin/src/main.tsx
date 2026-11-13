@@ -1,5 +1,6 @@
 import "./index.css";
 
+import { shouldRetryRequest } from "@outfiqe/client";
 import { Toaster } from "@outfiqe/design-system";
 import * as Sentry from "@sentry/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: ADMIN_QUERY_STALE_TIME_MS,
+      retry: shouldRetryRequest,
     },
   },
 });
