@@ -72,7 +72,7 @@ export const BankAccountsListSection = () => {
           <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Account type
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {OWNER_TABS.map((tab) => (
               <button
                 key={tab}

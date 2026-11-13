@@ -66,7 +66,7 @@ export const CreatorsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Muses</h1>
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-5 flex flex-wrap gap-2">
         {TABS.map((status) => (
           <button
             key={status}
