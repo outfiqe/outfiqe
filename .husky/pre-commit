@@ -11,3 +11,18 @@ if ! echo "$branch" | grep -Eq '^(feat|fix|docs|refactor|test|chore|build|ci|per
 fi
 
 pnpm exec lint-staged
+
+api_docs_inputs=$(git diff --cached --name-only --diff-filter=ACMRD \
+  | grep -E '^apps/api/src/(app\.ts|.*\.(routes|schemas|controller|middleware|guards)\.ts|shared/middlewares/.*\.ts|modules/.*README\.md|testing/openapi/.*\.ts)$' \
+  | grep -v '\.test\.ts$' \
+  || true)
+
+if [ -n "$api_docs_inputs" ]; then
+  echo "API routes changed. Regenerating apps/api/openapi/openapi.json..."
+  if pnpm --filter @outfiqe/api docs:openapi > /dev/null 2>&1; then
+    git add apps/api/openapi/openapi.json
+    echo "✅ API docs are up to date and staged."
+  else
+    echo "⚠️  Couldn't regenerate the API docs (is Docker running?). Run 'pnpm --filter @outfiqe/api docs:openapi' and commit openapi.json, or CI will fail." >&2
+  fi
+fi
