@@ -1,0 +1,27 @@
+name: Publish API docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/openapi/openapi.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Rebuild the API tab on ops.outfiqe.com
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the team guides repo to redeploy with the new spec
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_SYNC_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::DOCS_SYNC_TOKEN isn't set, so ops.outfiqe.com wasn't updated. See .github/workflows/README.md."
+            exit 0
+          fi
+          gh api repos/outfiqe/internal-docs/dispatches -f event_type=api-spec-updated
+          echo "Asked outfiqe/internal-docs to redeploy. Progress: https://github.com/outfiqe/internal-docs/actions"

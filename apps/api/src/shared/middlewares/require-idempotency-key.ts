@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 
 import { AppError } from "./error-handler.js";
 
@@ -27,3 +28,5 @@ export const requireIdempotencyKey = (req: Request, _res: Response, next: NextFu
     next(error);
   }
 };
+
+describeRouteHandler(requireIdempotencyKey, { kind: "idempotency" });

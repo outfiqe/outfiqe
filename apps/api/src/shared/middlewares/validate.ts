@@ -1,16 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
-import type { z, ZodType } from "zod";
+import type { z } from "zod";
+
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
+import type { RouteValidationSchemas } from "#types/route-docs.types.js";
 
 import { AppError } from "./error-handler.js";
 
-type Schemas = {
-  body?: ZodType;
-  params?: ZodType;
-  query?: ZodType;
-};
-
-export const validate = <S extends Schemas>(schemas: S) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const validate = <S extends RouteValidationSchemas>(schemas: S) => {
+  const validateRequest = (req: Request, res: Response, next: NextFunction) => {
     const validatedFields: Record<string, unknown> = {};
     const issues: z.core.$ZodIssue[] = [];
 
@@ -34,6 +31,8 @@ export const validate = <S extends Schemas>(schemas: S) => {
     res.locals.validated = validatedFields;
     next();
   };
+
+  return describeRouteHandler(validateRequest, { kind: "validation", schemas });
 };
 
 export const validated = {

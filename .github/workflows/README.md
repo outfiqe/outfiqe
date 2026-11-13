@@ -7,15 +7,16 @@ is the release branch and the only thing that deploys to production.
 
 ## Structure
 
-| File                  | Trigger                                                      | What it owns                                                                                                                                                                                                                                                       |
-| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ci.yml`              | `pull_request` (any base), excluding docs-only diffs         | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
-| `ci-docs.yml`         | `pull_request` (any base), docs-only diffs                   | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
-| `commit-messages.yml` | `pull_request` (any base)                                    | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
-| `coverage.yml`        | `pull_request` -> `main`, excluding docs-only diffs          | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
-| `validate-branch.yml` | `pull_request` (any base)                                    | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
-| `deploy.yml`          | `push` -> `main` touching backend paths, `workflow_dispatch` | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
-| `keepalive.yml`       | `schedule`, `workflow_dispatch`                              | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
+| File                   | Trigger                                                                        | What it owns                                                                                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci.yml`               | `pull_request` (any base), excluding docs-only diffs                           | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
+| `ci-docs.yml`          | `pull_request` (any base), docs-only diffs                                     | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
+| `commit-messages.yml`  | `pull_request` (any base)                                                      | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
+| `coverage.yml`         | `pull_request` -> `main`, excluding docs-only diffs                            | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
+| `validate-branch.yml`  | `pull_request` (any base)                                                      | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
+| `deploy.yml`           | `push` -> `main` touching backend paths, `workflow_dispatch`                   | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
+| `keepalive.yml`        | `schedule`, `workflow_dispatch`                                                | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
+| `publish-api-docs.yml` | `push` -> `main` touching `apps/api/openapi/openapi.json`, `workflow_dispatch` | Tells `outfiqe/internal-docs` to rebuild and deploy ops.outfiqe.com, so the API tab always matches production. Needs the `DOCS_SYNC_TOKEN` secret (see below); without it the job only warns.                                                                      |
 
 "Docs-only diffs" means every changed file matches `**/*.md`, `docs/**`, `LICENSE`, `.gitignore`,
 or `.gitattributes`. A PR that touches one of those _and_ a code file runs the real `ci.yml`.
@@ -83,6 +84,17 @@ or cancelled:
   `apps/api` (or to one of those three packages), add its `packages/<name>/**` to this list**, or
   a backend-affecting release can merge to `main` without deploying. `workflow_dispatch` on
   `deploy.yml` is the escape hatch for any deploy the filter misses.
+
+**API docs publish across two repos.** ops.outfiqe.com is built from the separate, private
+`outfiqe/internal-docs` repo, which pulls `apps/api/openapi/openapi.json` from this repo's `main`
+at build time. `publish-api-docs.yml` only sends it a `repository_dispatch`
+(`api-spec-updated`); the build and the Cloudflare Pages deploy happen in that repo's own
+`deploy.yml`. The default `GITHUB_TOKEN` can't reach another repo, so both sides use one
+fine-grained token, `DOCS_SYNC_TOKEN`, stored as a secret in both repos. It's scoped to the
+`outfiqe` org with access to only `outfiqe/outfiqe` (Contents: read) and `outfiqe/internal-docs`
+(Contents: read and write, which `repository_dispatch` requires). When it expires, make a new one
+with the same scopes and update the secret in both repos. It triggers on `main` only, so the
+reference always describes what's running in production.
 
 **One `CI` status check, not one per job.** The `outfiqe` ruleset requires exactly two contexts:
 `CI` and `Branch Naming`. `CI` is a fan-in job at the end of `ci.yml` -- it `needs` `lint`,

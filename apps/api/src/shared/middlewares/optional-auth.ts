@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
 import type { AuthPrincipal } from "#types/token.types.js";
 
@@ -25,3 +26,5 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
 
   next();
 };
+
+describeRouteHandler(optionalAuth, { kind: "auth", isRequired: false });

@@ -84,4 +84,6 @@ The rules that keep this the same everywhere:
 
 **User-facing:** every screen in the web and admin apps that reads or changes data calls this API.
 
+**API reference:** `openapi/openapi.json` describes every `/api` endpoint and is generated from the code. Run `pnpm --filter @outfiqe/api docs:openapi` after changing a route, guard or request schema (CI fails until you do), and `docs:record` to refresh the example responses from the integration tests. How it works is in `src/testing/openapi/README.md`.
+
 **Technical:** `src/app.ts` mounts each module's routes → `<module>.routes.ts` → `<module>.controller.ts` → `<module>.service.ts` (or a topic service spread into it) → `<module>.repository.ts` (or a topic repository) → Postgres through Prisma, with Redis for caching, locks and domain-event streams. Scheduled work starts in `src/jobs/` and calls into the owning module's service.

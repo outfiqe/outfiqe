@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuth, requireAuthPrincipal } from "#middlewares/require-auth.js";
@@ -40,6 +41,7 @@ export const requirePlatformRole = (...acceptedKeys: PlatformPermissionKey[]) =>
     next();
   };
 
+  describeRouteHandler(enforceKey, { kind: "platform-permission", acceptedKeys });
   return [requireAuth, requirePlatformAccess, enforceKey] as const;
 };
 
