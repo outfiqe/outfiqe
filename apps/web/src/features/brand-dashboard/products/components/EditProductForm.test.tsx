@@ -110,6 +110,14 @@ beforeEach(() => {
 });
 
 describe("EditProductForm", () => {
+  it("links every field to its visible label", () => {
+    render(<EditProductForm product={buildProduct()} onClose={vi.fn()} />);
+
+    expect(screen.getByLabelText("Product name")).toHaveAttribute("name", "name");
+    expect(screen.getByLabelText("Price (Rs.)")).toHaveAttribute("name", "price");
+    expect(screen.getByLabelText("Categories")).toBeInTheDocument();
+  });
+
   it("drops the previous type's size picks when the type changes again", async () => {
     render(<EditProductForm product={buildProduct()} onClose={vi.fn()} />);
 

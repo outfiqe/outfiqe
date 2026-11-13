@@ -47,6 +47,13 @@ const renderBox = () =>
   render(<ExploreSearchBox placeholder="Search muses & drops" formClassName="" />);
 
 describe("ExploreSearchBox", () => {
+  it("is a named search landmark with a labelled field", () => {
+    renderBox();
+
+    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Search muses and drops" })).toBeInTheDocument();
+  });
+
   it("renders muses and drops as two labeled groups", async () => {
     mockSuggestions({
       creators: [
