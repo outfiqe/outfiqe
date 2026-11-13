@@ -59,6 +59,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   subtotal: 2500,
   deliveryFee: 260,
   codFee: 0,
+  platformDiscountTotal: 0,
   total: 2760,
   refundedAmount: 0,
   trackingStage: null,
