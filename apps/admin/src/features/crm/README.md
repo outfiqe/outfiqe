@@ -93,12 +93,12 @@ support reports, and review the organization's audit log — against the `/api/c
   `POST /crm/organization/end-impersonation`. Renders nothing when no session is active.
 - **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
   (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
-  Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by
+  Pipeline / Tasks / Customer tickets / Reports / Roles / Audit / Billing — filtered by
   `isCrmSubItemVisible` (`components/AdminSidebar.utils.ts`): the viewer's permission keys (or org
   SUPERADMIN), and, for the brand-scoped items (Partners, Customers, Billing), whether the resolved
   organization has a `linkedBrandId` at all. **The whole CRM section is hidden when the resolved org
   is the platform org** (`shouldShowCrmSection` — `crmOrganization.isPlatformOrg`): the platform org
-  isn't a tenant, so Contacts/Pipeline/Tasks/Support/Reports have nothing behind them, and platform
+  isn't a tenant, so Contacts/Pipeline/Tasks/Customer tickets/Reports have nothing behind them, and platform
   team/role management is a seed-time concern (`bootstrap-platform-crm.ts`). The `/crm/*` routes
   still resolve by URL for the rare case of granting a new platform admin. Mirror-image on the
   other side: the **"Platform" section shows only in the platform context** (`shouldShowPlatformSection`
@@ -188,7 +188,9 @@ support reports, and review the organization's audit log — against the `/api/c
 - `tickets/components/TicketDetailPage.tsx` — one ticket's page (`/crm/support/$ticketId`): what was
   reported with links to the customer or partner, `TicketHandlingSection.tsx` (forward-only status
   buttons, assignee `<Select>`) and `TicketCommentsSection.tsx` (internal comment thread).
-- `tickets/components/TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a
+- `tickets/components/TicketsPage.tsx` — the Customer tickets page (route `/crm/support`, titled
+  "Customer tickets" so it isn't confused with the support requests brands send to Outfiqe): a
+  status-filtered ticket list; clicking a
   row opens that ticket's page. "New ticket" modal collects type / title / description / a customer
   picked via `CustomerSearchField` (the same debounced-search pattern as `PartnerSearchField`, over
   `crmRelationshipsApi.listCustomers`). "New ticket", the status buttons, and the comment form are
