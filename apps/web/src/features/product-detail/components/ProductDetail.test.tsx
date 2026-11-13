@@ -346,6 +346,24 @@ describe("ProductDetail buy controls by account type", () => {
   });
 });
 
+describe("ProductDetail phone layout", () => {
+  it("lets the page column shrink and the icon buttons wrap below the buy buttons", () => {
+    const { container } = render(
+      <ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />,
+    );
+
+    const pageGrid = container.querySelector(".lg\\:grid-cols-2");
+    expect(pageGrid).toHaveClass("grid-cols-1");
+
+    const buyButtons = cta(/add to bag/i).parentElement;
+    const iconButtons = screen.getByRole("button", { name: "Share" }).parentElement;
+    expect(buyButtons).toContainElement(cta(/buy now/i));
+    expect(iconButtons).toContainElement(screen.getByRole("button", { name: "Stash" }));
+    expect(buyButtons).not.toBe(iconButtons);
+    expect(buyButtons?.parentElement).toHaveClass("flex-wrap");
+  });
+});
+
 describe("ProductDetail save button", () => {
   beforeEach(() => {
     wishlistMutationState.isPending = false;

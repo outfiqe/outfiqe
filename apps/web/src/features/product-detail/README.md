@@ -26,4 +26,6 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
 
 ## Non-obvious rationale
 
+**The page grid has an explicit `grid-cols-1` and the action row wraps.** Without a column template on phones, the single grid column grows to fit its widest row; the buy row (Add to bag, Buy now, Stash, Share) needs about 357px, so the page was 378px wide on a 360px phone. The buy buttons and the icon buttons are separate groups, so on narrow screens the icons drop to their own line instead of pushing the page wider.
+
 **The server fetch sends the viewer's access token.** The product carries a per-viewer `isSaved`, so the first render has to be fetched as that viewer, or the heart would show the wrong state until the browser refetched.
