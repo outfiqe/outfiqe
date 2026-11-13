@@ -34,6 +34,8 @@
     "test:integration": "pnpm test:db:up && vitest run --project integration",
     "test:watch": "vitest",
     "test:db:up": "docker compose -f ../../docker-compose.yml --profile test up -d --wait postgres-test redis-test",
+    "docs:openapi": "pnpm test:db:up && tsx src/testing/openapi/openapi.docs-task.ts write",
+    "docs:record": "pnpm test:db:up && tsx src/testing/openapi/openapi.docs-task.ts record",
     "test:db:down": "docker compose -f ../../docker-compose.yml --profile test down",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

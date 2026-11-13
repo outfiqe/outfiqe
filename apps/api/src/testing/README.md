@@ -8,7 +8,10 @@ any one module, so they live here instead of being duplicated into every integra
 ## Structure
 
 - `integration/test-app.ts` — a `createApp()` Express instance for `supertest` to send requests
-  against directly (no real server/port needed).
+  against directly (no real server/port needed). When `API_DOCS_TASK=record` it also records each
+  JSON response as an API docs example (see `openapi/README.md`).
+- `openapi/` — the generator for `apps/api/openapi/openapi.json`, the API reference. It has its
+  own `README.md`.
 - `integration/auth-helpers.ts` — `createAdminSession()`: creates a real admin `User` row and a real
   JWT, for tests that need to hit an admin-only route.
 - `integration/worker-pool.ts` — the single source of truth for how many parallel integration
