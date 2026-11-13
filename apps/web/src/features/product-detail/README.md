@@ -26,4 +26,6 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
 
 ## Non-obvious rationale
 
+**No size is chosen for the shopper unless only one is in stock.** Pre-selecting the first in-stock size (usually the smallest) let a shopper tap Buy now without ever choosing, and get XS. Add to bag and Buy now stay enabled so the buttons never look broken; tapping one without a size shows "Select a size to continue." (announced as an alert), outlines the sizes and moves focus to the first one in stock.
+
 **The server fetch sends the viewer's access token.** The product carries a per-viewer `isSaved`, so the first render has to be fetched as that viewer, or the heart would show the wrong state until the browser refetched.
