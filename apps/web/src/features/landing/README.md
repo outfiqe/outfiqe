@@ -7,7 +7,8 @@ The sections of the public homepage (`/`): the hero carousel, the taste picker a
 ## Structure
 
 - `components/HeroSlideTitle.tsx` — a slide title. Only the first slide is the page `h1`, so the homepage keeps a single top-level heading; the others are `h2`.
-- `components/Hero.tsx`, `components/HeroCarousel.tsx` — the hero slides set in the admin (`getHeroSlidesServer`); `Hero` renders nothing when there are no slides.
+- `components/Hero.tsx`, `components/HeroCarousel.tsx` — the hero slides set in the admin (`getHeroSlidesServer`); `Hero` renders nothing when there are no slides. With more than one slide it advances every 4 seconds, but only when the visitor doesn't prefer reduced motion (`useReducedMotion`); it stops when keyboard focus moves into it, and a Pause/Play button in the top corner is shown at every screen size (WCAG 2.2.2 "Pause, Stop, Hide").
+- `hooks/useHeroAutoplay.ts` — starts or holds the carousel's autoplay plugin and keeps "is it playing" in step with the plugin's `autoplay:play` / `autoplay:stop` events, so the button label stays right when the slideshow stops on its own.
 - `components/TasteCategories.tsx` — the taste picker: the visitor's chosen categories, with `CustomizeTasteModal` to pick and reorder them.
 - `components/CustomizeTasteModal.tsx` — choose which categories show and drag them into order.
 - `components/CategoryResults.tsx` — the product grid for the picked category and product type, loading more on scroll.
