@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { getFeaturedCreatorLooksServer } from "@/features/products/api/getProductsServer";
+import { SECTION_VIEW_ALL_LINK_CLASS_NAME } from "@/shared/lib/tapTarget";
 
 import { LookCard } from "./LookCard";
 
@@ -24,10 +25,7 @@ export const CreatorLooks = async () => {
         </div>
 
         {hasLooks && (
-          <Link
-            href="/explore"
-            className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
-          >
+          <Link href="/explore" className={SECTION_VIEW_ALL_LINK_CLASS_NAME}>
             Explore more
             <ArrowRight className="size-4" />
           </Link>

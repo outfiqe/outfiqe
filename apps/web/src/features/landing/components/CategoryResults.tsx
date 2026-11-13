@@ -13,7 +13,9 @@ import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProduc
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
+import { cn } from "@/shared/lib/cn";
 import { formatResultCount } from "@/shared/lib/formatCount";
+import { EXPANDED_TAP_AREA_CLASS_NAME } from "@/shared/lib/tapTarget";
 
 import { useCategorySelection } from "../context/CategorySelectionContext";
 import { resolveDisplayCategories } from "../utils/resolveTasteCategories";
@@ -116,7 +118,7 @@ export const CategoryResults = () => {
               if (effectiveActiveType !== ALL_TYPE_ID) params.set("type", effectiveActiveType);
               router.push(`/shop?${params.toString()}`);
             }}
-            className="h-auto gap-1 p-0"
+            className={cn("h-auto gap-1 p-0", EXPANDED_TAP_AREA_CLASS_NAME)}
           >
             View all
             <ArrowRight className="size-4" />
