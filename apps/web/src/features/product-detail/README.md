@@ -12,7 +12,7 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
   information, next to the "Shopping is available on customer accounts" note.
 - `components/ThriftPurchaseConfirmModal.tsx` — "You're buying a secondhand piece": asked once before the first Add to bag or Buy now on a thrift piece.
 - `components/SeenOnCreators.tsx` — the looks that tagged this product; opening one records the click (`useRecordSeenOnClick`).
-- `components/ShippingInfo.tsx`, `components/TrustLine.tsx` — delivery and trust notes.
+- `components/ShippingInfo.tsx`, `components/TrustLine.tsx` — delivery and trust notes. The delivery line reads "Delivery from Rs. X" (the cheapest zone, via `utils/summarizeDeliveryFees.ts`) plus "Free above Rs. Y" only when every zone shares that threshold. It never names a zone: the product page doesn't know the shopper's city, and the default zone's name ("Default zone") is an admin label for "everywhere else", not a place. Checkout shows the exact fee once a city is chosen.
 - `api/getProductDetailServer.ts` — the server fetch for the page's first render and metadata; returns `null` on failure so the route can show "not found".
 - `api/productDetailApi.ts`, `api/productDetailSchemas.ts` — the client calls (the product, and recording a "seen on" click) and the `ProductDetail` shape.
 - `hooks/useRecordSeenOnClick.ts` — fire-and-forget record of a click on a creator look that tagged this product.
