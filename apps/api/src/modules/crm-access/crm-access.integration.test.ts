@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { eventBus } from "#events/event-bus.js";
+import { PLATFORM_PERMISSION_CATALOG } from "#modules/platform-access/platform-access.constants.js";
 import {
   addMembership,
   authHeaderFor,
@@ -14,6 +15,12 @@ import {
 } from "#test/integration/crm-access-fixtures.js";
 import { seedPlatformOrganization } from "#test/integration/crm-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
+
+import {
+  PLATFORM_ACCESS_PERMISSION_KEY,
+  SELECTABLE_ROLE_PERMISSION_KEYS,
+  SUPERADMIN_ONLY_PERMISSION_KEYS,
+} from "./crm-access.constants.js";
 
 describe("PATCH /api/crm/members/:membershipId", () => {
   it("blocks an admin from changing their own role", async () => {
@@ -360,6 +367,30 @@ describe("Permission escalation guards", () => {
         permissions: { create: permissionKeys.map((permissionKey) => ({ permissionKey })) },
       },
     });
+
+  it("offers a brand's role builder only the permissions a custom role can be given", async () => {
+    await prisma.permission.createMany({
+      data: PLATFORM_PERMISSION_CATALOG.map((permission) => ({ ...permission })),
+      skipDuplicates: true,
+    });
+    const { organization, owner } = await seedSuperAdminOrganization("Permission List");
+
+    const response = await request(testApp)
+      .get("/api/crm/permissions")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    const listedKeys: string[] = response.body.data.map(({ key }: { key: string }) => key);
+    expect([...listedKeys].sort()).toEqual([...SELECTABLE_ROLE_PERMISSION_KEYS].sort());
+    expect(listedKeys).not.toContain(PLATFORM_ACCESS_PERMISSION_KEY);
+    for (const superAdminOnlyKey of SUPERADMIN_ONLY_PERMISSION_KEYS) {
+      expect(listedKeys).not.toContain(superAdminOnlyKey);
+    }
+    for (const { key: platformKey } of PLATFORM_PERMISSION_CATALOG) {
+      expect(listedKeys).not.toContain(platformKey);
+    }
+  });
 
   it("blocks a roles:manage holder from creating a role with a permission they don't hold themselves", async () => {
     const { organization } = await seedSuperAdminOrganization("Create Escalation");

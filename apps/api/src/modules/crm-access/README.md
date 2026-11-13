@@ -38,7 +38,10 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
 - `organizations/` — `organization.service.ts` (create, suggest-from-brand with a unique subdomain,
   list, rename) and `organization.repository.ts`.
 - `roles/` — `role.service.ts` (custom roles: create/update/delete and the permission catalog) and
-  `role.repository.ts`.
+  `role.repository.ts`. `GET /crm/permissions` lists only `SELECTABLE_ROLE_PERMISSION_KEYS`, filtered
+  in the query: the `permissions` table also holds the platform catalog (`seed-crm.ts` writes both),
+  and a brand's role builder must never offer a permission `assertPermissionKeysSelectable` would
+  then refuse on save.
 - `invites/` — `invite.service.ts` (invite, revoke, accept, and the registration-page lookup used by
   `../auth`) and `invite.repository.ts`. `invite.errors.ts` holds the errors for sending an invite.
 - `ownership-transfer/` — `ownership-transfer.service.ts` (create/accept/decline/revoke one pending
