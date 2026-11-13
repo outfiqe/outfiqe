@@ -43,7 +43,10 @@ wasted. Scans made without signal are kept on the phone and sent later.
   - `RiderInviteUnavailable` — the sign-up page's message for a bad invite link.
   - `RiderEarningsPage` — totals (`RiderEarningsSummary`: ready to withdraw, on hold, paid), each
     visit's earning (`RiderEarningRow`), and the shared `WithdrawSection` on the person side for
-    bank accounts and withdrawals.
+    bank accounts and withdrawals. An employee rider (`employmentType: "EMPLOYEE"`) is paid a
+    salary outside Outfiqe and gets no earning rows, so they see a short "Your pay" note instead
+    and no withdraw section (the withdraw API refuses them). The schema defaults a missing
+    `employmentType` to `CONTRACTOR`, so the page keeps working if the web deploys before the API.
 - `api/riderEarningsApi.ts`, `api/riderEarningsSchemas.ts`, `hooks/useInfiniteRiderEarnings.ts`
   and `constants/riderEarningLabels.ts` — `GET /api/logistics/rider/earnings`, cursor-paged.
 - Routes: `app/(rider)/rider/page.tsx` (visits), `app/(rider)/rider/earnings/page.tsx`

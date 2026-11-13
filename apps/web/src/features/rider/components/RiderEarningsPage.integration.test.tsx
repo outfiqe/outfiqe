@@ -90,6 +90,40 @@ describe("RiderEarningsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("tells an employee rider their pay is their salary, with no earnings or withdrawals", async () => {
+    respondWithEarnings({
+      employmentType: "EMPLOYEE",
+      summary: emptySummary,
+      items: [],
+      nextCursor: null,
+    });
+
+    renderEarningsPage();
+
+    expect(await screen.findByRole("heading", { name: "Your pay" })).toBeInTheDocument();
+    expect(screen.getByText(/your pay is your salary/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Withdraw your earnings" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/No earnings yet/)).not.toBeInTheDocument();
+  });
+
+  it("keeps earnings and withdrawals for a contractor rider", async () => {
+    respondWithEarnings({
+      employmentType: "CONTRACTOR",
+      summary: emptySummary,
+      items: [],
+      nextCursor: null,
+    });
+
+    renderEarningsPage();
+
+    expect(
+      await screen.findByRole("region", { name: "Withdraw your earnings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your earnings" })).toBeInTheDocument();
+  });
+
   it("offers to try again when the earnings can't load", async () => {
     mswServer.use(http.get(RIDER_EARNINGS_URL, () => HttpResponse.json({}, { status: 500 })));
 

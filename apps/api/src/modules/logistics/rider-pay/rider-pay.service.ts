@@ -237,6 +237,7 @@ export const logisticsRiderPayService = {
     userId: string,
     { cursor, limit }: ListMyRiderEarningsQuery,
   ): Promise<{
+    employmentType: RiderEmploymentType;
     summary: RiderEarningsSummaryView;
     items: RiderEarningView[];
     nextCursor: string | null;
@@ -253,6 +254,7 @@ export const logisticsRiderPayService = {
     ]);
     const { items, nextCursor } = buildCursorPage(earnings, limit, ({ id }) => id);
     return {
+      employmentType: rider.employmentType,
       summary: toEarningsSummary(settingsForCountry(hubCountryCode).currency, sums),
       items: items.map(toRiderEarningView),
       nextCursor,

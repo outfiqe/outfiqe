@@ -91,7 +91,7 @@ export const logisticsRiderRepository = {
   async findRiderByUserId(userId: string) {
     return prisma.rider.findUnique({
       where: { userId },
-      select: { id: true, hubId: true, status: true },
+      select: { id: true, hubId: true, status: true, employmentType: true },
     });
   },
 
