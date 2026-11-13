@@ -9,6 +9,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "The terms for Outfiqe muses: content standards, product tags, which sales earn a commission, when commissions are paid, and what isn't allowed.",
   path: "/legal/creator-terms",
+  noIndex: true,
 });
 
 const CreatorTermsPage = () => (

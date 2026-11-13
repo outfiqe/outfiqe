@@ -44,7 +44,7 @@ describe("RoutePendingSkeleton", () => {
     ["/admin/crm/reports", "Reports"],
     ["/admin/crm/billing", "Billing"],
     ["/admin/crm/tasks", "Tasks"],
-    ["/admin/crm/support", "Support"],
+    ["/admin/crm/support", "Customer tickets"],
   ])("shows the real heading of the CRM page at %s", (pathname, heading) => {
     routerState.pathname = pathname;
 

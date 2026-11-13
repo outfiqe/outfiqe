@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { crawlerDisallowedPaths, legalRoutes, staticSeoRoutes } from "./routes";
+import { crawlerDisallowedPaths, legalRoutes, sitemapSeoRoutes, staticSeoRoutes } from "./routes";
 
 describe("staticSeoRoutes", () => {
   it("every route has an absolute app path and a sane priority", () => {
@@ -54,6 +54,28 @@ describe("legalRoutes", () => {
   it("all sit under /legal", () => {
     for (const route of legalRoutes) {
       expect(route.path.startsWith("/legal/")).toBe(true);
+    }
+  });
+});
+
+describe("sitemapSeoRoutes", () => {
+  it("leaves out legal pages that are still drafts", () => {
+    const sitemapPaths = new Set(sitemapSeoRoutes.map((route) => route.path));
+    const draftPaths = legalRoutes.filter((route) => route.isDraft).map((route) => route.path);
+
+    expect(draftPaths).toContain("/legal/returns-policy");
+    for (const draftPath of draftPaths) {
+      expect(sitemapPaths.has(draftPath), `${draftPath} is a draft`).toBe(false);
+    }
+  });
+
+  it("keeps the published legal pages and every other page", () => {
+    const sitemapPaths = new Set(sitemapSeoRoutes.map((route) => route.path));
+
+    expect(sitemapPaths.has("/legal/privacy")).toBe(true);
+    expect(sitemapPaths.has("/legal/terms")).toBe(true);
+    for (const route of staticSeoRoutes.filter((candidate) => !candidate.isDraft)) {
+      expect(sitemapPaths.has(route.path)).toBe(true);
     }
   });
 });

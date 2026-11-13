@@ -42,7 +42,7 @@ describe("ShippingInfo", () => {
     render(<ShippingInfo />);
 
     expect(screen.getByRole("status", { name: "Loading delivery estimate" })).toBeInTheDocument();
-    expect(screen.getByText("Returns within 7 days if unworn")).toBeInTheDocument();
+    expect(screen.getByText("Damaged or wrong item? Tell us within 7 days")).toBeInTheDocument();
   });
 
   it("shows the default-zone delivery estimate once loaded", () => {
@@ -73,6 +73,6 @@ describe("ShippingInfo", () => {
     render(<ShippingInfo />);
 
     expect(screen.queryByText(/delivery to/)).not.toBeInTheDocument();
-    expect(screen.getByText("Returns within 7 days if unworn")).toBeInTheDocument();
+    expect(screen.getByText("Damaged or wrong item? Tell us within 7 days")).toBeInTheDocument();
   });
 });

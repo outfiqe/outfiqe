@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { absoluteUrl } from "@/shared/seo";
-import { staticSeoRoutes } from "@/shared/seo/routes";
+import { sitemapSeoRoutes } from "@/shared/seo/routes";
 import {
   getSitemapBrands,
   getSitemapCategories,
@@ -15,7 +15,7 @@ export const revalidate = 21600;
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   const now = new Date();
 
-  const staticEntries: MetadataRoute.Sitemap = staticSeoRoutes.map((route) => ({
+  const staticEntries: MetadataRoute.Sitemap = sitemapSeoRoutes.map((route) => ({
     url: absoluteUrl(route.path),
     lastModified: now,
     changeFrequency: route.changeFrequency,

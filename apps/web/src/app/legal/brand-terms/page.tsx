@@ -9,6 +9,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "The terms for brands selling on Outfiqe: listings, commission, order pickup and delivery, returns, payouts, and when we may suspend a brand.",
   path: "/legal/brand-terms",
+  noIndex: true,
 });
 
 const BrandTermsPage = () => (

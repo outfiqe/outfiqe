@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 
+import { SELECTABLE_ROLE_PERMISSION_KEYS } from "../crm-access.constants.js";
 import { roleWithPermissionsInclude, toRoleWithPermissions } from "../crm-access.query-helpers.js";
 import type {
   CreateRoleInput,
@@ -10,7 +11,10 @@ import type {
 
 export const crmRoleRepository = {
   async listPermissions(): Promise<PermissionRecord[]> {
-    return prisma.permission.findMany({ orderBy: [{ group: "asc" }, { key: "asc" }] });
+    return prisma.permission.findMany({
+      where: { key: { in: SELECTABLE_ROLE_PERMISSION_KEYS } },
+      orderBy: [{ group: "asc" }, { key: "asc" }],
+    });
   },
 
   async createRole(input: CreateRoleInput): Promise<RoleWithPermissions> {

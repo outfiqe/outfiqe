@@ -5,6 +5,8 @@ import { RotateCcw, Truck } from "lucide-react";
 
 import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
 
+const DAMAGED_OR_WRONG_ITEM_NOTE = "Damaged or wrong item? Tell us within 7 days";
+
 export const ShippingInfo = () => {
   const { data: zones, isLoading: isZonesLoading } = useDeliveryZones();
   const defaultZone = resolveZonePreview(zones ?? [], "");
@@ -30,7 +32,7 @@ export const ShippingInfo = () => {
       )}
       <div className="flex items-center gap-2.5">
         <RotateCcw className="size-4 shrink-0 text-foreground" />
-        <span>Returns within 7 days if unworn</span>
+        <span>{DAMAGED_OR_WRONG_ITEM_NOTE}</span>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "The cookies and similar technologies Outfiqe uses, what each is for, and how to control them.",
   path: "/legal/cookies",
+  noIndex: true,
 });
 
 const CookiesPage = () => (

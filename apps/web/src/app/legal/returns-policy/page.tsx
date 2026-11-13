@@ -9,6 +9,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "When you can cancel, return or get a refund on an Outfiqe order, and how the money comes back to you for cash on delivery, eSewa and Khalti.",
   path: "/legal/returns-policy",
+  noIndex: true,
   keywords: ["Outfiqe returns", "fashion refund policy Nepal", "cancel order Outfiqe"],
 });
 
@@ -60,12 +61,8 @@ const ReturnsPolicyPage = () => (
       </p>
       <ul>
         <li>
-          Change of mind:{" "}
-          <strong>
-            [NEEDS INPUT: whether change-of-mind returns are accepted, the condition items must be
-            in (unworn, tags attached), any items that can&apos;t be returned, and who pays for
-            return delivery.]
-          </strong>
+          Change of mind: we don&apos;t accept returns because you changed your mind. If an item
+          arrives damaged, faulty, wrong or missing, tell us within 7 days, as explained above.
         </li>
         <li>
           Thrift pieces are secondhand. Their condition is described on the product page, and you
