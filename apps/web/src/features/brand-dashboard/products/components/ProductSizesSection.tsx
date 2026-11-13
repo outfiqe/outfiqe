@@ -108,7 +108,9 @@ export const ProductSizesSection = ({
           </div>
         )}
         {sizeStandardError && !isEditorShown && (
-          <p className="mt-1.5 text-xs text-destructive">{sizeStandardError}</p>
+          <p role="alert" className="mt-1.5 text-xs text-destructive">
+            {sizeStandardError}
+          </p>
         )}
       </div>
 
@@ -123,7 +125,11 @@ export const ProductSizesSection = ({
             value={sizes}
             onChange={onSizesChange}
           />
-          {sizesError && <p className="mt-1.5 text-xs text-destructive">{sizesError}</p>}
+          {sizesError && (
+            <p role="alert" className="mt-1.5 text-xs text-destructive">
+              {sizesError}
+            </p>
+          )}
         </div>
       )}
 
