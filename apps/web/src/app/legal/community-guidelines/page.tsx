@@ -8,6 +8,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "The standards for content and behaviour on Outfiqe, for muses dropping looks, shoppers writing reviews, and everyone using chat.",
   path: "/legal/community-guidelines",
+  noIndex: true,
 });
 
 const CommunityGuidelinesPage = () => (

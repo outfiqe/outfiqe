@@ -9,6 +9,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "How Outfiqe delivers orders across Nepal: delivery zones and fees, free delivery, cash on delivery, tracking, one-parcel delivery, and what happens if a delivery goes wrong.",
   path: "/legal/shipping-policy",
+  noIndex: true,
   keywords: ["Outfiqe delivery", "shipping fashion Nepal", "cash on delivery Nepal"],
 });
 
