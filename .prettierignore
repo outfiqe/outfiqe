@@ -6,3 +6,4 @@ apps/api/src/generated
 
 *.example
 Caddyfile
+apps/api/openapi

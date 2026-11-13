@@ -1,6 +1,8 @@
 import { millisecondsInDay } from "date-fns/constants";
 import type { NextFunction, Request, Response } from "express";
 
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
+
 import { rateLimit } from "./rate-limit.js";
 import { getAuthPrincipal } from "./require-auth.js";
 
@@ -21,3 +23,9 @@ export const rateLimitHandleChangesOnly = (req: Request, res: Response, next: Ne
   }
   return handleChangeRateLimit(req, res, next);
 };
+
+describeRouteHandler(rateLimitHandleChangesOnly, {
+  kind: "rate-limit",
+  windowMs: HANDLE_CHANGE_WINDOW_MS,
+  max: HANDLE_CHANGE_MAX_REQUESTS,
+});
