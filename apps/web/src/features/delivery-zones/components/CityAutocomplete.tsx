@@ -13,8 +13,11 @@ import { forwardRef, useState } from "react";
 
 import { useCitySearch } from "../hooks/useCitySearch";
 import { groupCitiesByZone } from "../utils/groupCitiesByZone";
+import { normalizeCityName } from "../utils/resolveZonePreview";
 
 const CITY_SEARCH_DEBOUNCE_MS = 300;
+const MIN_TYPED_CITY_LENGTH = 2;
+const TYPED_CITY_OPTION_PREFIX = "typed-city:";
 
 type CityAutocompleteProps = Omit<
   React.ComponentPropsWithoutRef<typeof AutocompleteInput>,
@@ -40,6 +43,13 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
     const cities = results ?? [];
 
     const zoneGroups = groupCitiesByZone(cities);
+
+    const typedCity = debouncedQuery.trim();
+    const hasExactMatch = cities.some(
+      (match) => normalizeCityName(match.city) === normalizeCityName(typedCity),
+    );
+    const canUseTypedCity =
+      isSearching && !isLoading && !hasExactMatch && typedCity.length >= MIN_TYPED_CITY_LENGTH;
 
     const selectCity = (city: string) => {
       setQuery(city);
@@ -67,12 +77,6 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
                 <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
               ))}
 
-            {!isLoading && cities.length === 0 && (
-              <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                No cities found for &ldquo;{debouncedQuery}&rdquo;
-              </p>
-            )}
-
             {zoneGroups.map((group) => (
               <AutocompleteGroup key={group.zoneId} label={group.zoneName}>
                 {group.cities.map((match) => (
@@ -86,6 +90,25 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
                 ))}
               </AutocompleteGroup>
             ))}
+
+            {!isLoading && cities.length === 0 && !canUseTypedCity && (
+              <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+                Keep typing your city
+              </p>
+            )}
+
+            {canUseTypedCity && (
+              <AutocompleteGroup label="Not in the list">
+                <AutocompleteItem
+                  value={`${TYPED_CITY_OPTION_PREFIX}${typedCity}`}
+                  onSelect={() => selectCity(typedCity)}
+                >
+                  <span className="truncate text-[13px] text-foreground">
+                    Use &ldquo;{typedCity}&rdquo;
+                  </span>
+                </AutocompleteItem>
+              </AutocompleteGroup>
+            )}
           </AutocompleteContent>
         )}
       </Autocomplete>

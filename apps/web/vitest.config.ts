@@ -247,6 +247,7 @@ export default defineConfig({
         "src/features/bank-accounts/utils/bankQrPrefill.utils.ts",
         "src/features/brand-dashboard/pickups/**/*.{ts,tsx}",
         "src/features/brand-dashboard/shipments/utils/shipmentStatus.ts",
+        "src/features/delivery-zones/components/CityAutocomplete.tsx",
         "src/features/delivery-zones/utils/formatDeliveryWindow.ts",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
