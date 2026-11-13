@@ -2,6 +2,7 @@ import { millisecondsInSecond } from "date-fns/constants";
 import type { NextFunction, Request, Response } from "express";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
@@ -26,7 +27,7 @@ export const rateLimit = ({
   keyGenerator,
   message,
 }: RateLimitOptions) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  const enforceRateLimit = async (req: Request, res: Response, next: NextFunction) => {
     const identifier = keyGenerator(req, res);
     if (!identifier) return next();
 
@@ -53,4 +54,6 @@ export const rateLimit = ({
       next();
     }
   };
+
+  return describeRouteHandler(enforceRateLimit, { kind: "rate-limit", windowMs, max });
 };

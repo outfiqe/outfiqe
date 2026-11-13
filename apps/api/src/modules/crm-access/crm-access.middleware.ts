@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { UserRole } from "#generated/prisma/enums.js";
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
@@ -36,6 +37,8 @@ export const resolveTenant = async (req: Request, res: Response, next: NextFunct
   next();
 };
 
+describeRouteHandler(resolveTenant, { kind: "tenant" });
+
 export const getResolvedOrganization = (res: Response): OrganizationRecord => {
   const organization = res.locals.crmOrganization as OrganizationRecord | undefined;
   if (!organization) throw new Error("reached without a resolved CRM organization");
@@ -43,7 +46,7 @@ export const getResolvedOrganization = (res: Response): OrganizationRecord => {
 };
 
 export const requirePermission = (permissionKey: string) => {
-  return async (_req: Request, res: Response, next: NextFunction) => {
+  const enforcePermission = async (_req: Request, res: Response, next: NextFunction) => {
     const principal = requireAuthPrincipal(res);
     const organization = getResolvedOrganization(res);
 
@@ -64,10 +67,15 @@ export const requirePermission = (permissionKey: string) => {
     res.locals.crmMembership = membership;
     next();
   };
+
+  return describeRouteHandler(enforcePermission, {
+    kind: "crm-permission",
+    acceptedKeys: [permissionKey],
+  });
 };
 
 export const requireAnyPermission = (permissionKeys: string[]) => {
-  return async (_req: Request, res: Response, next: NextFunction) => {
+  const enforceAnyPermission = async (_req: Request, res: Response, next: NextFunction) => {
     const principal = requireAuthPrincipal(res);
     const organization = getResolvedOrganization(res);
 
@@ -89,6 +97,11 @@ export const requireAnyPermission = (permissionKeys: string[]) => {
     res.locals.crmMembership = membership;
     next();
   };
+
+  return describeRouteHandler(enforceAnyPermission, {
+    kind: "crm-permission",
+    acceptedKeys: permissionKeys,
+  });
 };
 
 export const requirePlatformAccess = async (_req: Request, res: Response, next: NextFunction) => {
@@ -105,6 +118,8 @@ export const requirePlatformAccess = async (_req: Request, res: Response, next: 
   res.locals.platformAccess = platformAccess;
   next();
 };
+
+describeRouteHandler(requirePlatformAccess, { kind: "platform-permission", acceptedKeys: [] });
 
 export const getCrmMembership = (res: Response): MembershipWithRole => {
   const membership = res.locals.crmMembership as MembershipWithRole | undefined;

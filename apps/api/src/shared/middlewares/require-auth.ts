@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import { describeRouteHandler } from "#lib/route-docs.utils.js";
 import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
 import type {
   AuthPrincipal,
@@ -101,6 +102,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   res.locals.auth = principal;
   next();
 };
+
+describeRouteHandler(requireAuth, { kind: "auth", isRequired: true });
 
 export const getAuthPrincipal = (res: Response): AuthPrincipal | undefined => res.locals.auth;
 
