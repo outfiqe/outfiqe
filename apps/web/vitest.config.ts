@@ -18,6 +18,8 @@ export default defineConfig({
         "src/features/auth/utils/safeRedirect.ts",
         "src/features/auth/utils/getDefaultRoute.ts",
         "src/features/auth/registration/hooks/useRiderRegister.ts",
+        "src/features/auth/registration/components/RegisterSuccess.tsx",
+        "src/features/brand-dashboard/components/ProfileDetail.tsx",
         "src/features/rider/utils/*.ts",
         "src/features/rider/context/PendingScansContext.tsx",
         "src/features/rider/components/CollectScanFlow.tsx",

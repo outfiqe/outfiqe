@@ -92,6 +92,7 @@ describe("MessagesPageLayout", () => {
     renderLayout();
 
     expect(await screen.findByText("Select a conversation")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Messages" })).toBeInTheDocument();
   });
 
   it("opens a conversation by updating the URL in place instead of navigating", async () => {

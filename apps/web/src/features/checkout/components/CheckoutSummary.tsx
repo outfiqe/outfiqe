@@ -57,9 +57,9 @@ export const CheckoutSummary = ({
         <span>{deliveryFee === 0 ? "Free" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
       </div>
       {deliveryWindowLabel && (
-        <div className="flex justify-between py-2 text-sm text-muted-foreground">
+        <div className="flex justify-between gap-3 py-2 text-sm text-muted-foreground">
           <span>Estimated delivery</span>
-          <span className="text-foreground">{deliveryWindowLabel}</span>
+          <span className="text-right text-foreground">{deliveryWindowLabel}</span>
         </div>
       )}
       {codFee > 0 && (

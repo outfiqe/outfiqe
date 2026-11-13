@@ -120,6 +120,18 @@ describe("BrandProfileView", () => {
     expect(screen.getByText("@studionine")).toBeInTheDocument();
   });
 
+  it("lays the contact details out as a valid definition list", () => {
+    const { container } = renderProfile();
+
+    const detailList = container.querySelector("dl");
+    const groups = Array.from(detailList?.children ?? []);
+    expect(groups).toHaveLength(4);
+    for (const group of groups) {
+      expect(Array.from(group.children).map((child) => child.tagName)).toEqual(["DT", "DD"]);
+    }
+    expect(screen.getByText("Contact").tagName).toBe("DT");
+  });
+
   it("associates every edit field with its label", async () => {
     const user = userEvent.setup();
     renderProfile();
