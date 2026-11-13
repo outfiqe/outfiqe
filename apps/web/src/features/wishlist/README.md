@@ -9,7 +9,9 @@ The `/wishlist` page and the save/unsave toggle used from product cards and the 
 - `api/wishlistApi.ts`, `wishlistSchemas.ts` — `save`/`unsave`/`list` calls and the response shapes.
 - `hooks/useToggleWishlist.ts` — the save/unsave mutation. On success it invalidates every cached product list that carries `isSaved` (`STASH_STATE_PRODUCT_QUERY_ROOTS`), so no list keeps showing the old state. See "Non-obvious rationale".
 - `hooks/useInfiniteWishlist.ts` — cursor-paginated `["wishlist"]` query backing `WishlistGrid`.
-- `components/WishlistGrid.tsx` — the `/wishlist` page's product grid.
+- `components/WishlistGrid.tsx` — the `/wishlist` page's product grid. If the first page fails it
+  shows `LoadErrorNotice` ("We couldn't load your stash" + Try again) rather than "Nothing stashed
+  yet".
 - `wishlist.constants.ts` — the page size and any other shared constants, including `STASH_STATE_PRODUCT_QUERY_ROOTS` (`products`, `brand-products`, `collection-products`, `wishlist`): the query roots whose data includes a product's `isSaved`. A new product list that shows the stash button needs its root added here.
 - `index.ts` — barrel export; other features (`landing`'s `ProductCard`, `product-detail`) only ever import from here.
 

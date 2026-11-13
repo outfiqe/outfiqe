@@ -80,7 +80,7 @@ export const OrdersPage = () => {
             <OrderRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load orders.</p>}
-        {!isLoading && orders.length === 0 && (
+        {!isLoading && !error && orders.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

@@ -146,7 +146,7 @@ export const WithdrawRequestsListSection = () => {
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load requests.</p>}
-        {!isLoading && requests.length === 0 && (
+        {!isLoading && !error && requests.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
