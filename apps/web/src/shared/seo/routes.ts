@@ -3,6 +3,7 @@ export interface MarketingRoute {
   label: string;
   changeFrequency: "daily" | "weekly" | "monthly" | "yearly";
   priority: number;
+  isDraft?: boolean;
 }
 
 export const primaryCommerceRoutes: MarketingRoute[] = [
@@ -64,31 +65,47 @@ export const supportRoutes: MarketingRoute[] = [
 export const legalRoutes: MarketingRoute[] = [
   { path: "/legal/privacy", label: "Privacy policy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/legal/terms", label: "Terms of service", changeFrequency: "yearly", priority: 0.3 },
-  { path: "/legal/cookies", label: "Cookie policy", changeFrequency: "yearly", priority: 0.2 },
+  {
+    path: "/legal/cookies",
+    label: "Cookie policy",
+    changeFrequency: "yearly",
+    priority: 0.2,
+    isDraft: true,
+  },
   {
     path: "/legal/returns-policy",
     label: "Return & refund policy",
     changeFrequency: "yearly",
     priority: 0.3,
+    isDraft: true,
   },
   {
     path: "/legal/shipping-policy",
     label: "Shipping & delivery policy",
     changeFrequency: "yearly",
     priority: 0.3,
+    isDraft: true,
   },
   {
     path: "/legal/creator-terms",
     label: "Muse & affiliate terms",
     changeFrequency: "yearly",
     priority: 0.3,
+    isDraft: true,
   },
-  { path: "/legal/brand-terms", label: "Seller terms", changeFrequency: "yearly", priority: 0.3 },
+  {
+    path: "/legal/brand-terms",
+    label: "Seller terms",
+    changeFrequency: "yearly",
+    priority: 0.3,
+    isDraft: true,
+  },
   {
     path: "/legal/community-guidelines",
     label: "Community guidelines",
     changeFrequency: "yearly",
     priority: 0.3,
+    isDraft: true,
   },
 ];
 
@@ -99,6 +116,8 @@ export const staticSeoRoutes: MarketingRoute[] = [
   ...supportRoutes,
   ...legalRoutes,
 ];
+
+export const sitemapSeoRoutes: MarketingRoute[] = staticSeoRoutes.filter((route) => !route.isDraft);
 
 export const crawlerDisallowedPaths = [
   "/login",

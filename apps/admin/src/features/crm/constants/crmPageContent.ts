@@ -47,7 +47,7 @@ export const CRM_PAGE_TEXT = {
       "Your team's to-do list. Add a task, give it an owner and a due date, and tick it off when it is done.",
   },
   tickets: {
-    title: "Support",
+    title: "Customer tickets",
     description:
       "Problems and requests from your customers, all in one place. Assign each one to someone, update its status, and filter to see what still needs attention.",
   },

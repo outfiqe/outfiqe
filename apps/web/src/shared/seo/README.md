@@ -30,7 +30,9 @@ produces consistent, valid metadata instead of hand-rolling a `Metadata` object 
   component.
 - `routes.ts` — the registry of static marketing/legal routes (used by `sitemap.ts` and available
   for footer/nav wiring) and `crawlerDisallowedPaths` (used by `robots.ts`). Adding a marketing
-  page means adding one line here so it lands in the sitemap.
+  page means adding one line here so it lands in the sitemap. A route marked `isDraft: true` (a
+  legal page still showing `[NEEDS INPUT]` markers) stays out of `sitemapSeoRoutes`, the list
+  `sitemap.ts` uses, and its page sets `noIndex: true`. Remove both when the page is published.
 - `sitemapSources.ts` — `server-only` fetchers that page through the public API for product, brand,
   collection, category and top-creator URLs. Each fails soft (returns `[]`) so one slow or broken
   endpoint never 500s the whole sitemap. Cached via `fetch`'s `next.revalidate` (6 hours).

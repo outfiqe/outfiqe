@@ -107,7 +107,7 @@ export const CRM_SUB_ITEMS: CrmSubItem[] = [
   {
     id: "crm-support",
     href: "/crm/support",
-    label: "Support",
+    label: "Customer tickets",
     icon: LifeBuoy,
     permissionKey: "tickets:read",
   },

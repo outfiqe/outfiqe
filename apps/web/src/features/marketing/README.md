@@ -57,6 +57,13 @@ FAQ-bearing pages pass `withSchema` to `FaqAccordion`. The routes are registered
   verified-purchase reviews, hashed passwords, encrypted bank accounts), and the cross-linking are
   real; the parts a lawyer and the founders must sign off are flagged, not invented. Do not remove
   the draft banner or the `[NEEDS INPUT]` markers until the corresponding content is confirmed.
+  While a page is a draft it also sets `noIndex: true` in its metadata and `isDraft: true` in
+  `@/shared/seo/routes.ts`, so search engines don't index unfinished wording. Published pages
+  (privacy, terms) are indexed as normal.
+- **No change-of-mind returns.** The founders decided returns are only for damaged, faulty, wrong
+  or missing items, reported within 7 days. The returns policy says so, and product pages say
+  "Damaged or wrong item? Tell us within 7 days" (`product-detail`'s `ShippingInfo`) instead of a
+  general returns promise.
 - **FAQ uses `<details>`, not a design-system component.** There is no accordion primitive in
   `@outfiqe/design-system`, and a native `<details>` is the correct semantic element for a
   disclosure — accessible by default, works without JS, and pairs cleanly with `FAQPage` schema.
