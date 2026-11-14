@@ -29,6 +29,8 @@ Two search results pages, one per `ShopExploreToggle` mode: `/search` (products,
 
 ## Non-obvious rationale
 
+**Both header search boxes are `role="search"` forms with an `aria-label` on the field.** The visible text is only a placeholder, which screen readers don't treat as a name. The input strips its own outline to sit inside the rounded pill, so `SiteHeader`'s pill draws the keyboard focus ring (`has-[:focus-visible]:outline-ring`), matching the design system's button focus.
+
 - **No server prefetch, deliberately, on either results page.** Both page components are `"use client"` from the top with no `queryClient.prefetchQuery`/`HydrationBoundary`, unlike `/shop`/`/explore`/`(home)`. There's nothing to prefetch before a query exists, and the query itself is inherently client-driven, so the usual SSR-then-hydrate shape other pages use would add complexity for no payoff here.
 - **No input box on either results page itself.** An earlier version of `/search` put a second input on the page (desktop: none, since the navbar's is always visible; mobile: one, since the navbar had only an icon). That duplicated the mobile hamburger menu's own search box for no reason once it was wired up properly — one input per surface (nav, not results page) is simpler and matches how `/shop`/`/explore` also have no on-page filters box, just URL-driven state. `/explore/search` follows the same rule from the start.
 - **No frontend LRU cache for autocomplete**, only a backend one (api module README). TanStack Query's query cache already memoizes each autocomplete hook's results per query key for the configured `staleTime` — a separate client-side LRU library would just duplicate that for no benefit, since it's a single-session, single-tab cache either way.

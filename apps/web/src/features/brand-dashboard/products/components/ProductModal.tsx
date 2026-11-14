@@ -69,6 +69,9 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
     productTypes.data?.find((productType) => productType.slug === type)?.supportsFitRanges ?? false;
   const typeField = form.register("type");
   const typeSelectId = useId();
+  const nameInputId = useId();
+  const priceInputId = useId();
+  const categoriesSelectId = useId();
 
   const close = () => {
     form.reset();
@@ -156,8 +159,17 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           />
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Product name</label>
-            <Input placeholder="Linen band-collar shirt" {...form.register("name")} />
+            <label
+              htmlFor={nameInputId}
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Product name
+            </label>
+            <Input
+              placeholder="Linen band-collar shirt"
+              id={nameInputId}
+              {...form.register("name")}
+            />
             {form.formState.errors.name && (
               <p role="alert" className="mt-1.5 text-xs text-destructive">
                 {form.formState.errors.name.message}
@@ -167,10 +179,18 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor={priceInputId}
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
                 Price (Rs.)
               </label>
-              <Input type="number" min={1} {...form.register("price", { valueAsNumber: true })} />
+              <Input
+                type="number"
+                min={1}
+                id={priceInputId}
+                {...form.register("price", { valueAsNumber: true })}
+              />
               {form.formState.errors.price && (
                 <p role="alert" className="mt-1.5 text-xs text-destructive">
                   {form.formState.errors.price.message}
@@ -248,8 +268,14 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           />
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Categories</label>
+            <label
+              htmlFor={categoriesSelectId}
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Categories
+            </label>
             <MultiSelect
+              id={categoriesSelectId}
               options={
                 categories.data?.map((category) => ({
                   value: category.slug,

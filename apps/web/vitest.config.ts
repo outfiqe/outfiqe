@@ -154,6 +154,7 @@ export default defineConfig({
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",
         "src/features/brand-profile/api/brandProfileApi.ts",
         "src/features/search/components/ExploreSearchBox.tsx",
+        "src/features/search/components/ProductSearchBox.tsx",
         "src/features/search/components/SearchResults.tsx",
         "src/features/search/components/ExploreSearchResults.tsx",
         "src/features/creator-profile/components/CreatorProfile.tsx",
