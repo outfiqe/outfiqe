@@ -130,11 +130,11 @@ export const CrmSearchBox = () => {
         placeholder="Search people, sales and tickets…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        className="w-72"
+        className="w-full min-w-0 max-w-72"
       />
 
       {isSearching && (
-        <AutocompleteContent className="mt-2 w-80">
+        <AutocompleteContent className="mt-2 w-[min(20rem,calc(100vw-2rem))]">
           {isLoading &&
             Array.from({ length: DEFAULT_SKELETON_ROW_COUNT }).map((_, index) => (
               <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />

@@ -39,7 +39,7 @@ export const CityListInput = ({ cities, onChange }: CityListInputProps) => {
                 type="button"
                 onClick={() => removeCity(city)}
                 aria-label={`Remove ${city}`}
-                className="text-muted-foreground hover:text-foreground"
+                className="cursor-pointer text-muted-foreground hover:text-foreground"
               >
                 <X className="size-3" />
               </button>
@@ -54,7 +54,7 @@ export const CityListInput = ({ cities, onChange }: CityListInputProps) => {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a city and press Enter"
-          className="w-56"
+          className="min-w-0 flex-1 sm:w-56 sm:flex-none"
         />
         <Button type="button" variant="outline" size="sm" onClick={addCity}>
           Add
