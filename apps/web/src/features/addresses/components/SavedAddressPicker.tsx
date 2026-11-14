@@ -28,7 +28,7 @@ export const SavedAddressPicker = ({
     <div
       role="radiogroup"
       aria-label="Choose a delivery address"
-      className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "grid gap-2 sm:grid-cols-2")}
+      className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "grid grid-cols-1 gap-2 sm:grid-cols-2")}
     >
       {addresses.map((address) => {
         const isSelected = selectedId === address.id;
@@ -46,7 +46,7 @@ export const SavedAddressPicker = ({
                 {address.label ? `${address.label} · ` : ""}
                 {address.fullName}
               </span>
-              <span className="block truncate text-muted-foreground">
+              <span className="block break-words text-muted-foreground">
                 {address.address}, {address.city}
               </span>
               <span className="block text-muted-foreground">{address.phone}</span>
