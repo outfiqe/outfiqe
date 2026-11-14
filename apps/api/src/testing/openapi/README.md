@@ -84,6 +84,14 @@ responses and errors, then tries it against a local or production API with their
   customer data. Keys like `accessToken`, `password`, `secret` and `hash`, JWTs and password hashes
   are replaced with `<redacted>` before anything is written. Endpoints no test calls still show
   their request schema and the response envelope, just without a recorded example.
+- **A refresh only changes examples that really changed.** Test data uses random suffixes so tests
+  don't clash (`Coupon Brand 39cf82`, `group-38c19a39`, `TESTC94B81`), so two runs never record
+  exactly the same text. Without help, every refresh rewrote about 1,500 lines with only a handful
+  of real changes. `toComparableExample` (in `openapi.examples.ts`) replaces any run of four or
+  more hex characters that contains a digit with `#`, for comparing only. The saved example keeps
+  its real-looking values. That comparison picks the same example on every run, whatever order the
+  tests ran in, and `keepUnchangedExamples` keeps the saved example when the new one differs only
+  in those values. A changed message, field or status still comes through.
 - **`openapi.json` and `examples.json` are generated. Never edit them by hand.** They are also in
   `.prettierignore`, so the commit formatter never rewrites them. Run `docs:openapi`
   after changing routes. Examples are refreshed by the `refresh-api-examples.yml` PR after the

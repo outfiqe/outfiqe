@@ -10,9 +10,9 @@ import {
   OPENAPI_RECORDINGS_DIR,
   OPENAPI_SPEC_FILE,
 } from "./openapi.constants.js";
-import { mergeRecordedExamples } from "./openapi.examples.js";
+import { keepUnchangedExamples, mergeRecordedExamples } from "./openapi.examples.js";
 import { listOperationKeys, readRecordedExchanges } from "./openapi.recordings.js";
-import { serializeJsonFile } from "./openapi.spec-file.js";
+import { readSavedExamples, serializeJsonFile } from "./openapi.spec-file.js";
 
 const SPEC_TEST_FILE = "src/testing/openapi/openapi.spec.integration.test.ts";
 const SUCCESS_EXIT_CODE = 0;
@@ -37,10 +37,11 @@ const writeSpec = (): void => {
 };
 
 const mergeRecordingsIntoExamples = (): void => {
-  const examplesByOperation = mergeRecordedExamples(
+  const freshExamplesByOperation = mergeRecordedExamples(
     listOperationKeys(OPENAPI_SPEC_FILE),
     readRecordedExchanges(OPENAPI_RECORDINGS_DIR),
   );
+  const examplesByOperation = keepUnchangedExamples(readSavedExamples(), freshExamplesByOperation);
   writeFileSync(OPENAPI_EXAMPLES_FILE, serializeJsonFile(examplesByOperation));
   rmSync(OPENAPI_RECORDINGS_DIR, { recursive: true, force: true });
   writeSpec();
