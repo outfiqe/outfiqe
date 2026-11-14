@@ -93,7 +93,7 @@ const PinnedSlot = ({
       onNavigate={onNavigate}
       className={cn(
         "relative flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1 transition-colors",
-        active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+        active ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
       )}
     >
       {Icon && <Icon className="size-[18px]" />}

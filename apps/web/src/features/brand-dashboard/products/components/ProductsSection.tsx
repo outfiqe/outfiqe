@@ -177,7 +177,7 @@ export const ProductsSection = () => {
                   <p className="truncate text-sm font-semibold text-foreground">{name}</p>
                   {product.activeDiscount ? (
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <p className="text-xs font-semibold text-primary">
+                      <p className="text-xs font-semibold text-primary-strong">
                         Rs. {product.effectivePrice.toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground line-through">

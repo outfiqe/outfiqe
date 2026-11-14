@@ -46,7 +46,7 @@ export const CheckoutSummary = ({
         <div className="py-2">{couponSlot}</div>
       ) : (
         appliedCoupon && (
-          <div className="flex justify-between py-2 text-sm text-primary">
+          <div className="flex justify-between py-2 text-sm text-primary-strong">
             <span>{appliedCoupon.code}</span>
             <span>-Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
           </div>

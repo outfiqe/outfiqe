@@ -32,7 +32,7 @@ export const TrackedParcelCard = ({ orderId, parcel }: TrackedParcelCardProps) =
           href={partnerTrackingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary-strong hover:underline"
         >
           {t("trackWithPartner", { partner: partnerName })}
           <ExternalLink className="size-3.5" aria-hidden="true" />
