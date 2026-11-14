@@ -34,6 +34,12 @@ import {
 import { LayoutPicker } from "./LayoutPicker";
 import { ProductTagPicker } from "./ProductTagPicker";
 
+const FIELDS_CHECKED_BEFORE_UPLOAD: (keyof LookFormInput)[] = [
+  "caption",
+  "layout",
+  "taggedProducts",
+];
+
 type PostModalProps = {
   open: boolean;
   onClose: () => void;
@@ -107,6 +113,8 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
 
   const handlePostLook = async () => {
     if (pending.photos.length === 0) return;
+    const areDetailsValid = await form.trigger(FIELDS_CHECKED_BEFORE_UPLOAD);
+    if (!areDetailsValid) return;
     setIsProcessingPhotos(true);
     setPhotoError(null);
 

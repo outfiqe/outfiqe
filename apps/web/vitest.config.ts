@@ -185,6 +185,7 @@ export default defineConfig({
         "src/features/creator-dashboard/earnings/components/EarningsSection.tsx",
         "src/features/creator-dashboard/earnings/components/EarningsSummaryTiles.tsx",
         "src/features/creator-dashboard/looks/components/EditPostForm.tsx",
+        "src/features/creator-dashboard/looks/components/TaggedProductSizeField.tsx",
         "src/features/creator-dashboard/looks/components/EditPostPhotoStrip.tsx",
         "src/features/creator-dashboard/looks/components/StagingPhotoCropper.tsx",
         "src/features/creator-dashboard/looks/hooks/useEditLookPhotos.ts",

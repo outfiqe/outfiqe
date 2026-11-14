@@ -347,6 +347,28 @@ describe("PostModal", () => {
     isSaved: false,
   };
 
+  it("asks for the worn size before uploading any photo", async () => {
+    mswServer.use(
+      http.get("/api/products", () =>
+        HttpResponse.json({
+          success: true,
+          message: "Products.",
+          data: { products: [denimProduct], nextCursor: null, total: 1, brandCount: 1 },
+        }),
+      ),
+    );
+    mockPending([buildExistingPhoto("p1")]);
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByRole("button", { name: "Tag a product" }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
+
+    expect(await screen.findByText(/size you.re wearing/i)).toBeInTheDocument();
+    expect(resolvePendingPhotoAssets).not.toHaveBeenCalled();
+  });
+
   it("closes the results and clears the search after tagging a product", async () => {
     mswServer.use(
       http.get("/api/products", () =>

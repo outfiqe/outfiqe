@@ -1,8 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
+
+const sizeLabelsState = vi.hoisted(() => ({ sizeLabels: [] as string[], isLoading: false }));
+
+vi.mock("../hooks/useProductSizeLabels", () => ({
+  useProductSizeLabels: () => sizeLabelsState,
+}));
+
+beforeEach(() => {
+  sizeLabelsState.sizeLabels = [];
+  sizeLabelsState.isLoading = false;
+});
 
 import { ProductTagPicker } from "./ProductTagPicker";
 
@@ -118,6 +129,55 @@ describe("ProductTagPicker", () => {
     await user.type(screen.getByPlaceholderText("Size (e.g. M)"), "L");
 
     expect(onSizeChange).toHaveBeenCalledWith("product-1", "L");
+  });
+
+  it("offers the product's own sizes to pick from once they load", async () => {
+    sizeLabelsState.sizeLabels = ["S", "M", "L"];
+    const onSizeChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        initialExpanded
+        taggedProducts={[{ productId: "product-1", sizeWorn: "" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+        onSizeChange={onSizeChange}
+      />,
+    );
+
+    const sizeField = screen.getByRole("combobox", { name: "Size worn for Denim Jacket" });
+    expect(screen.queryByPlaceholderText("Size (e.g. M)")).not.toBeInTheDocument();
+    await user.selectOptions(sizeField, "M");
+
+    expect(onSizeChange).toHaveBeenCalledWith("product-1", "M");
+  });
+
+  it("keeps an older free-text size selectable alongside the product's sizes", () => {
+    sizeLabelsState.sizeLabels = ["S", "M"];
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        initialExpanded
+        taggedProducts={[{ productId: "product-1", sizeWorn: "38" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+      />,
+    );
+
+    expect(screen.getByRole("combobox", { name: "Size worn for Denim Jacket" })).toHaveValue("38");
+  });
+
+  it("stays open while a tagged product is missing its size, so the problem is visible", () => {
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        taggedProducts={[{ productId: "product-1", sizeWorn: "" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+        sizeErrors={{ "product-1": "Add the size you're wearing." }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Size worn for Denim Jacket")).toBeInTheDocument();
+    expect(screen.getByText("Add the size you're wearing.")).toBeInTheDocument();
   });
 
   it("calls onRemoveTag when a tagged product's remove control is clicked", async () => {
