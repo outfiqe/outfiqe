@@ -16,7 +16,7 @@ const rejectStaffAndBrandAccounts = (user: GuardedUser): void => {
   if (user && user.role !== UserRole.CUSTOMER) {
     throw new AppError(
       "STAFF_CANNOT_BE_CREATOR",
-      "Staff and brand accounts can't drop as a muse.",
+      "Muse features are for shopper accounts. Staff, brand and rider accounts can't use them.",
       HTTP_STATUS.FORBIDDEN,
     );
   }

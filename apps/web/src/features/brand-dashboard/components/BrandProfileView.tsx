@@ -23,6 +23,7 @@ import { toUploadableImage } from "@/shared/lib/heicImage";
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
 import { BrandTagPolicyCard } from "../tag-reviews/components/BrandTagPolicyCard";
+import { ProfileDetail } from "./ProfileDetail";
 
 type EditableFields = {
   contactName: string;
@@ -133,34 +134,10 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
           </div>
 
           <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
-            <div className="flex items-start gap-2.5">
-              <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <dt className="text-muted-foreground">Contact</dt>
-                <dd className="mt-0.5 text-foreground">{contactName}</dd>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="mt-0.5 text-foreground">{brand.email}</dd>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <dt className="text-muted-foreground">Phone</dt>
-                <dd className="mt-0.5 text-foreground">{phone}</dd>
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <AtSign className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <dt className="text-muted-foreground">Instagram</dt>
-                <dd className="mt-0.5 text-foreground">{instagram}</dd>
-              </div>
-            </div>
+            <ProfileDetail icon={User} label="Contact" value={contactName} />
+            <ProfileDetail icon={Mail} label="Email" value={brand.email} />
+            <ProfileDetail icon={Phone} label="Phone" value={phone} />
+            <ProfileDetail icon={AtSign} label="Instagram" value={instagram} />
           </dl>
         </div>
       </div>

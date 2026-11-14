@@ -21,7 +21,6 @@ export const PaymentMethodField = ({
 
   return (
     <div>
-      <p className="mb-2 text-xs text-muted-foreground">Payment method</p>
       <div className="space-y-2">
         {listCheckoutPaymentMethods(isKhaltiOn).map((method) => {
           const isCodUnavailable =

@@ -1,6 +1,11 @@
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 
-export const RegisterSuccess = ({ onGoBack }: { onGoBack: () => void }) => {
+type RegisterSuccessProps = {
+  email: string;
+  onGoBack: () => void;
+};
+
+export const RegisterSuccess = ({ email, onGoBack }: RegisterSuccessProps) => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();
 
   return (
@@ -13,7 +18,9 @@ export const RegisterSuccess = ({ onGoBack }: { onGoBack: () => void }) => {
         Check your email
       </h1>
       <p className="mt-2.5 text-sm text-muted-foreground">
-        Check your email — we&apos;ve sent you a confirmation link.
+        We&apos;ve sent a confirmation link to{" "}
+        <span className="break-all font-semibold text-foreground">{email}</span>. Open it to finish
+        creating your account.
       </p>
       <p className="mt-4 text-sm text-muted-foreground">
         Wrong email?{" "}
