@@ -169,7 +169,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
         <BackLinkLabel>Back</BackLinkLabel>
       </button>
 
-      <div className="grid gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
+      <div className="grid grid-cols-1 gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
         {/* Zone 1: official product photography — the brand's, never mixed with creator photos. */}
         <div>
           <div className="relative flex aspect-4/5 items-center justify-center overflow-hidden rounded-2xl bg-muted">
@@ -285,9 +285,9 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             isDisabled={isSoldOut || !canShop}
           />
 
-          <div className="mt-5 flex gap-2.5">
+          <div className="mt-5 flex flex-wrap gap-2.5">
             {canShop && (
-              <>
+              <div className="flex min-w-0 flex-[1_1_15rem] gap-2.5">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -305,42 +305,44 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                   <Zap className="size-4" />
                   Buy now
                 </Button>
-              </>
+              </div>
             )}
-            {isStaff ? (
-              <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
+            <div className="flex shrink-0 gap-2.5">
+              {isStaff ? (
+                <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Stash"
+                    disabled
+                    className="size-11 shrink-0"
+                  >
+                    <CheriqIcon className="size-[18px]" />
+                  </Button>
+                </Tooltip>
+              ) : (
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-pressed={isSaved}
                   aria-label="Stash"
-                  disabled
-                  className="size-11 shrink-0"
+                  onClick={() => gated(toggleSaved)}
+                  disabled={wishlistMutation.isPending}
+                  className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
                 >
-                  <CheriqIcon className="size-[18px]" />
+                  <CheriqIcon className="size-[18px]" isCheriqed={isSaved} />
                 </Button>
-              </Tooltip>
-            ) : (
+              )}
               <Button
                 variant="outline"
                 size="icon"
-                aria-pressed={isSaved}
-                aria-label="Stash"
-                onClick={() => gated(toggleSaved)}
-                disabled={wishlistMutation.isPending}
-                className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
+                aria-label="Share"
+                onClick={() => void shareProduct()}
+                className="size-11 shrink-0"
               >
-                <CheriqIcon className="size-[18px]" isCheriqed={isSaved} />
+                <Share2 className="size-[18px]" />
               </Button>
-            )}
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Share"
-              onClick={() => void shareProduct()}
-              className="size-11 shrink-0"
-            >
-              <Share2 className="size-[18px]" />
-            </Button>
+            </div>
           </div>
           {!canShop ? (
             <p className="mt-2 text-xs text-muted-foreground">
