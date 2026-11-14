@@ -784,7 +784,7 @@
                 "user": {
                   "id": "00000000-0000-4000-8000-000000000003",
                   "name": "Sita",
-                  "handle": "outfit-1bedaf3f",
+                  "handle": "outfit-9567b6e6",
                   "avatarUrl": null
                 },
                 "role": "OWNER",
@@ -795,8 +795,8 @@
               {
                 "user": {
                   "id": "00000000-0000-4000-8000-000000000004",
-                  "name": "Ram",
-                  "handle": "outfit-c14f4fdc",
+                  "name": "Gita",
+                  "handle": "outfit-af51755d",
                   "avatarUrl": null
                 },
                 "role": "EDITOR",
@@ -1826,35 +1826,37 @@
         "data": {
           "range": "all",
           "gateway": {
-            "grossCollected": 2150,
-            "refunded": 0,
-            "netHeld": 2150
+            "grossCollected": 1500,
+            "refunded": 300,
+            "netHeld": 1200
           },
           "ledger": {
-            "owedToBrands": 0,
-            "owedToCreators": 0,
+            "owedToBrands": 400,
+            "owedToCreators": 300,
             "brandPayoutsByStatus": {
-              "WITHDRAWN": 2000
+              "AVAILABLE": 400,
+              "VOIDED": 900,
+              "WITHDRAWN": 800
             },
-            "creatorCommissionsByStatus": {},
-            "platformRevenueRealized": 150,
+            "creatorCommissionsByStatus": {
+              "AVAILABLE": 200,
+              "PENDING": 100,
+              "PAID": 5000,
+              "VOIDED": 700
+            },
+            "platformRevenueRealized": 120,
             "couponSpend": 0,
-            "netPlatformRevenue": 150
+            "netPlatformRevenue": 120
           },
           "byPaymentMethod": {
-            "COD": {
-              "gmv": 1050,
-              "orderCount": 1,
-              "realizedTakeRate": 0.047619047619047616
-            },
-            "ESEWA": {
-              "gmv": 1100,
-              "orderCount": 1,
-              "realizedTakeRate": 0.06363636363636363
+            "KHALTI": {
+              "gmv": 1500,
+              "orderCount": 2,
+              "realizedTakeRate": 0
             }
           },
           "attribution": {
-            "totalItems": 2,
+            "totalItems": 0,
             "attributedItems": 0,
             "attributedShare": 0
           }
@@ -1904,7 +1906,7 @@
               "quantity": 1,
               "productName": "Item",
               "productImageUrl": null,
-              "brandName": "Ledger Brand e415fe",
+              "brandName": "Ledger Brand 48fae1",
               "buyerName": "Rollup Tester",
               "museHandle": null,
               "grossAmount": null,
@@ -1925,7 +1927,7 @@
               "quantity": 1,
               "productName": "Item",
               "productImageUrl": null,
-              "brandName": "Ledger Brand 9d22c6",
+              "brandName": "Ledger Brand 2fd90f",
               "buyerName": "Rollup Tester",
               "museHandle": null,
               "grossAmount": null,
@@ -1937,7 +1939,7 @@
               "creatorCommissionStatus": null
             }
           ],
-          "nextCursor": "<redacted>",
+          "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjAxOjU1Ljg1MFoiLCJvcmRlckl0ZW1JZCI6IjJhMjU2MDU1LTYzNzYtNGViZS1iNDliLTFjZTcyZTczZGIwNSJ9",
           "totals": {
             "rowCount": 3,
             "grossAmount": 0,
@@ -2197,8 +2199,8 @@
             }
           ],
           "viewerPermissionKeys": [
-            "platform:analytics:read",
-            "platform:announcements:manage"
+            "platform:metrics:read",
+            "platform:analytics:read"
           ]
         }
       }
@@ -2458,9 +2460,9 @@
         "data": {
           "id": "00000000-0000-4000-8000-000000000001",
           "name": "Limited Staff",
-          "handle": "limited-staff-7e45d349",
+          "handle": "limited-staff-731d9222",
           "email": "person1@example.com",
-          "phone": "9846322779",
+          "phone": "9893773837",
           "avatarUrl": null,
           "role": "ADMIN",
           "isCreator": false,
@@ -2474,8 +2476,8 @@
             "platform-metrics"
           ],
           "platformPermissionKeys": [
-            "platform:support:read",
-            "platform:support:respond"
+            "platform:finance:read",
+            "platform:withdraw:manage"
           ],
           "crmHomeSubdomain": null
         }
@@ -2699,30 +2701,7 @@
         "data": [
           {
             "id": "00000000-0000-4000-8000-000000000001",
-            "name": "Test Badge 1ca980c0-3f28-4357-aba3-5c4d0c494de3",
-            "description": "A badge created for integration testing.",
-            "category": "SPECIAL",
-            "rarity": "EXCLUSIVE",
-            "icon": "🏅",
-            "designConfig": {
-              "shape": "hexagon",
-              "primaryColor": "#000000"
-            },
-            "isPermanent": true,
-            "isCollected": true,
-            "unlockedAt": "2026-01-15T09:30:00.000Z",
-            "isDisplayed": true,
-            "isFeatured": false,
-            "isTitle": false,
-            "isTitleEligible": false,
-            "displayOrder": 0,
-            "isDynamicallyActive": null,
-            "progress": null,
-            "sponsorBrand": null
-          },
-          {
-            "id": "00000000-0000-4000-8000-000000000002",
-            "name": "Test Badge c464c312-3cde-4051-964e-a2123d86a340",
+            "name": "Test Badge 50a8109d-4ced-4954-80b8-264b4765209d",
             "description": "A badge created for integration testing.",
             "category": "SPECIAL",
             "rarity": "EXCLUSIVE",
@@ -2738,6 +2717,29 @@
             "isFeatured": false,
             "isTitle": true,
             "isTitleEligible": true,
+            "displayOrder": 0,
+            "isDynamicallyActive": null,
+            "progress": null,
+            "sponsorBrand": null
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "name": "Test Badge 7a3cfc0c-913e-4026-afad-c0c938b9c087",
+            "description": "A badge created for integration testing.",
+            "category": "SPECIAL",
+            "rarity": "EXCLUSIVE",
+            "icon": "🏅",
+            "designConfig": {
+              "shape": "hexagon",
+              "primaryColor": "#000000"
+            },
+            "isPermanent": true,
+            "isCollected": true,
+            "unlockedAt": "2026-01-15T09:30:00.000Z",
+            "isDisplayed": true,
+            "isFeatured": false,
+            "isTitle": false,
+            "isTitleEligible": false,
             "displayOrder": 0,
             "isDynamicallyActive": null,
             "progress": null,
@@ -3668,12 +3670,12 @@
           },
           "trend": [
             {
-              "date": "2026-10-15",
+              "date": "2026-10-16",
               "revenue": 0,
               "orderCount": 0
             },
             {
-              "date": "2026-10-16",
+              "date": "2026-10-17",
               "revenue": 0,
               "orderCount": 0
             }
@@ -4254,9 +4256,9 @@
         "success": true,
         "message": "Your earnings.",
         "data": {
-          "totalEarnings": 5000,
-          "pending": 0,
-          "available": 5000,
+          "totalEarnings": 90,
+          "pending": 90,
+          "available": 0,
           "paid": 0
         }
       }
@@ -4781,7 +4783,7 @@
       "status": 200,
       "query": {
         "limit": "1",
-        "cursor": "<redacted>"
+        "cursor": "eyJlIjoyLCJpIjoiOWI2MWVkNTUtZGE4Zi00ZTAzLThjYzYtYTU5ODY0ODZmODkzIn0"
       },
       "requestBody": null,
       "responseBody": {
@@ -4794,16 +4796,16 @@
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000002",
                 "name": "Featured Page Muse",
-                "handle": "featured-page-creator-e5c2d6",
+                "handle": "featured-page-creator-aab7e9",
                 "isApproved": true,
                 "heightCm": null
               },
-              "imageUrl": "https://cdn.outfiqe.test/c5b6e2e2-1d72-4e2b-85fd-c588babd938a.jpg",
+              "imageUrl": "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg",
               "images": [
-                "https://cdn.outfiqe.test/c5b6e2e2-1d72-4e2b-85fd-c588babd938a.jpg"
+                "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg"
               ],
               "image": {
-                "url": "https://cdn.outfiqe.test/c5b6e2e2-1d72-4e2b-85fd-c588babd938a.jpg",
+                "url": "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg",
                 "lqip": null,
                 "sources": []
               },
@@ -4821,7 +4823,7 @@
                   "name": "Featured Page Product Two",
                   "brand": "Featured Page Product Two Brand",
                   "price": 1000,
-                  "imageUrl": "https://cdn.outfiqe.test/bad31f31-ebf7-4fb7-ae78-abece9c44e63.jpg",
+                  "imageUrl": "https://cdn.outfiqe.test/778e28e9-b5c0-4085-a5d5-b4d44074b312.jpg",
                   "sizeWorn": "M"
                 }
               ],
@@ -4846,7 +4848,7 @@
         "data": {
           "id": "00000000-0000-4000-8000-000000000001",
           "imageUrls": [
-            "https://cdn.outfiqe.test/6e4a62db-9514-4341-a284-068de30d23f8.jpg"
+            "https://cdn.outfiqe.test/332b97c9-9fae-450f-8da0-e0c638e3a437.jpg"
           ],
           "layout": "PORTRAIT",
           "caption": "Still up, tag under review",
@@ -4863,7 +4865,7 @@
                 "name": "Contested Coat",
                 "brand": "Contested Coat Brand",
                 "price": 1000,
-                "imageUrl": "https://cdn.outfiqe.test/1b016c78-5b37-4fb8-aba8-360d3dd1537f.jpg"
+                "imageUrl": "https://cdn.outfiqe.test/22fb379a-bea2-42ea-bbbc-83bb7d1ac3a4.jpg"
               }
             }
           ]
@@ -4944,7 +4946,7 @@
       "status": 200,
       "query": {
         "limit": "1",
-        "cursor": "<redacted>"
+        "cursor": "eyJjIjoiMjAyNi0xMS0xNFQwOTowMjo0MC44OTlaIiwiaSI6ImQyYzIzYTY5LTRiNGYtNGQyZS04ZWVhLTIyODE3ZDdkMjIzNiJ9"
       },
       "requestBody": null,
       "responseBody": {
@@ -4957,7 +4959,7 @@
               "parentCommentId": "00000000-0000-4000-8000-000000000002",
               "userId": "00000000-0000-4000-8000-000000000003",
               "userName": "Reply List Replier",
-              "userHandle": "reply-list-replier-96eebd",
+              "userHandle": "reply-list-replier-9ca310",
               "userAvatarUrl": null,
               "body": "Second reply",
               "createdAt": "2026-01-15T09:30:00.000Z"
@@ -5161,7 +5163,7 @@
       "query": {
         "tab": "for_you",
         "limit": "30",
-        "cursor": "<redacted>"
+        "cursor": "eyJzZXNzaW9uSWQiOiI5ZWQyZDU0Ni1jMWUyLTRjNmYtYTRlOS05NjViMGZhMTA2OGYiLCJvZmZzZXQiOjF9"
       },
       "requestBody": null,
       "responseBody": {
@@ -5174,21 +5176,21 @@
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000002",
                 "name": "Boosted Followed Muse",
-                "handle": "boosted-followed-creator-4b27f8",
+                "handle": "boosted-followed-creator-c1aea3",
                 "isApproved": true,
                 "heightCm": null
               },
-              "imageUrl": "https://cdn.outfiqe.test/5df7b461-92d0-495b-b5ed-958d4450c9b9.jpg",
+              "imageUrl": "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg",
               "images": [
-                "https://cdn.outfiqe.test/5df7b461-92d0-495b-b5ed-958d4450c9b9.jpg"
+                "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg"
               ],
               "image": {
-                "url": "https://cdn.outfiqe.test/5df7b461-92d0-495b-b5ed-958d4450c9b9.jpg",
+                "url": "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg",
                 "lqip": null,
                 "sources": []
               },
               "layout": "PORTRAIT",
-              "caption": "Followed drop #sharedf96a0e",
+              "caption": "Followed drop #shared278451",
               "likeCount": 0,
               "commentCount": 0,
               "saveCount": 0,
@@ -5197,7 +5199,7 @@
               "isFollowingCreator": true,
               "taggedProducts": [],
               "hashtags": [
-                "sharedf96a0e"
+                "shared278451"
               ],
               "createdAt": "2026-01-15T09:30:00.000Z",
               "isTrending": true
@@ -5207,21 +5209,21 @@
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000004",
                 "name": "Busy Muse",
-                "handle": "busy-creator-3623ab",
+                "handle": "busy-creator-b21e46",
                 "isApproved": true,
                 "heightCm": null
               },
-              "imageUrl": "https://cdn.outfiqe.test/38cb47e4-b7e3-4776-864b-c9b981ca07b6.jpg",
+              "imageUrl": "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg",
               "images": [
-                "https://cdn.outfiqe.test/38cb47e4-b7e3-4776-864b-c9b981ca07b6.jpg"
+                "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg"
               ],
               "image": {
-                "url": "https://cdn.outfiqe.test/38cb47e4-b7e3-4776-864b-c9b981ca07b6.jpg",
+                "url": "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg",
                 "lqip": null,
                 "sources": []
               },
               "layout": "PORTRAIT",
-              "caption": "Busy muse drop 2 #sharedf96a0e",
+              "caption": "Busy muse drop 1 #shared278451",
               "likeCount": 0,
               "commentCount": 0,
               "saveCount": 0,
@@ -5230,7 +5232,7 @@
               "isFollowingCreator": false,
               "taggedProducts": [],
               "hashtags": [
-                "sharedf96a0e"
+                "shared278451"
               ],
               "createdAt": "2026-01-15T09:30:00.000Z",
               "isTrending": true
@@ -5272,7 +5274,7 @@
       "status": 200,
       "query": {
         "limit": "1",
-        "cursor": "<redacted>"
+        "cursor": "eyJjIjoiMjAyNi0xMS0xNFQwOTowNDowOC43NjBaIiwiaSI6IjgwYjU2M2NlLWRjYTktNDI2NC1hNzBlLTRhMmZhNmUwNzdjNiJ9"
       },
       "requestBody": null,
       "responseBody": {
@@ -5285,16 +5287,16 @@
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000002",
                 "name": "Saved List Muse",
-                "handle": "saved-list-creator-09e6f9",
+                "handle": "saved-list-creator-b103df",
                 "isApproved": true,
                 "heightCm": null
               },
-              "imageUrl": "https://cdn.outfiqe.test/955a9b46-469d-4e5b-8698-8195870af299.jpg",
+              "imageUrl": "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg",
               "images": [
-                "https://cdn.outfiqe.test/955a9b46-469d-4e5b-8698-8195870af299.jpg"
+                "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg"
               ],
               "image": {
-                "url": "https://cdn.outfiqe.test/955a9b46-469d-4e5b-8698-8195870af299.jpg",
+                "url": "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg",
                 "lqip": null,
                 "sources": []
               },
@@ -5733,19 +5735,19 @@
           },
           "trend": [
             {
-              "date": "2026-10-15",
+              "date": "2026-10-16",
               "earnings": 0,
               "cumulativeEarnings": 0,
               "looks": 0
             },
             {
-              "date": "2026-10-16",
+              "date": "2026-10-17",
               "earnings": 0,
               "cumulativeEarnings": 0,
               "looks": 0
             }
           ],
-          "handle": "overview-a77f87ac",
+          "handle": "overview-63156831",
           "nextAvailableAt": null,
           "topLooks": [
             {
@@ -5780,7 +5782,7 @@
               "amount": 400,
               "createdAt": "2026-01-15T09:30:00.000Z",
               "productName": "Item",
-              "brandName": "Overview Brand 02b548",
+              "brandName": "Overview Brand 3d093a",
               "imageUrl": null
             },
             {
@@ -5790,7 +5792,7 @@
               "amount": 999,
               "createdAt": "2026-01-15T09:30:00.000Z",
               "productName": "Item",
-              "brandName": "Overview Brand 986c97",
+              "brandName": "Overview Brand 45ec70",
               "imageUrl": null
             }
           ]
@@ -5855,9 +5857,9 @@
     {
       "status": 200,
       "query": {
-        "q": "Pager e4b8207e",
+        "q": "Pager 124239a7",
         "limit": "1",
-        "cursor": "<redacted>"
+        "cursor": "eyJvZmZzZXQiOjF9"
       },
       "requestBody": null,
       "responseBody": {
@@ -5867,8 +5869,8 @@
           "creators": [
             {
               "userId": "00000000-0000-4000-8000-000000000001",
-              "name": "Pager e4b8207e A",
-              "handle": "pager-e4b8207e-a-769c3e",
+              "name": "Pager 124239a7 A",
+              "handle": "pager-124239a7-a-a94f06",
               "avatarUrl": null,
               "followerCount": 0
             }
@@ -6040,7 +6042,7 @@
     {
       "status": 200,
       "query": {
-        "limit": "2"
+        "includeVoided": "true"
       },
       "requestBody": null,
       "responseBody": {
@@ -6052,9 +6054,9 @@
               "id": "00000000-0000-4000-8000-000000000001",
               "subscriptionId": "00000000-0000-4000-8000-000000000002",
               "plan": "starter",
-              "seats": 1,
-              "amount": 900,
-              "status": "PAID",
+              "seats": 2,
+              "amount": 1800,
+              "status": "OPEN",
               "periodStart": "2026-01-15T09:30:00.000Z",
               "periodEnd": "2026-01-15T09:30:00.000Z",
               "provider": null,
@@ -6068,9 +6070,9 @@
               "id": "00000000-0000-4000-8000-000000000003",
               "subscriptionId": "00000000-0000-4000-8000-000000000002",
               "plan": "starter",
-              "seats": 1,
-              "amount": 900,
-              "status": "PAID",
+              "seats": 2,
+              "amount": 1800,
+              "status": "VOID",
               "periodStart": "2026-01-15T09:30:00.000Z",
               "periodEnd": "2026-01-15T09:30:00.000Z",
               "provider": null,
@@ -6081,7 +6083,7 @@
               "createdAt": "2026-01-15T09:30:00.000Z"
             }
           ],
-          "nextCursor": "00000000-0000-4000-8000-000000000003"
+          "nextCursor": null
         }
       }
     },
@@ -6396,7 +6398,7 @@
             "id": "00000000-0000-4000-8000-000000000001",
             "organizationId": "00000000-0000-4000-8000-000000000002",
             "stageId": "00000000-0000-4000-8000-000000000003",
-            "title": "Recent 53",
+            "title": "Recent 19",
             "value": 0,
             "currency": "NPR",
             "expectedCloseDate": null,
@@ -6409,14 +6411,14 @@
             "updatedAt": "2026-01-15T09:30:00.000Z",
             "stageName": "Lead",
             "partnerName": "Partner Muse",
-            "partnerHandle": "partner-muse-9131ae44",
+            "partnerHandle": "partner-muse-cd4ef409",
             "ownerName": null
           },
           {
             "id": "00000000-0000-4000-8000-000000000005",
             "organizationId": "00000000-0000-4000-8000-000000000002",
             "stageId": "00000000-0000-4000-8000-000000000003",
-            "title": "Recent 20",
+            "title": "Recent 11",
             "value": 0,
             "currency": "NPR",
             "expectedCloseDate": null,
@@ -6429,7 +6431,7 @@
             "updatedAt": "2026-01-15T09:30:00.000Z",
             "stageName": "Lead",
             "partnerName": "Partner Muse",
-            "partnerHandle": "partner-muse-9131ae44",
+            "partnerHandle": "partner-muse-cd4ef409",
             "ownerName": null
           }
         ]
@@ -6487,8 +6489,8 @@
         "message": "CRM organization.",
         "data": {
           "id": "00000000-0000-4000-8000-000000000001",
-          "name": "Tenant Org 4a1227cf-5913-45ee-a748-a66f7de40735",
-          "subdomain": "tenant-bbff3b57",
+          "name": "Tenant Org 568b7cfc-0610-4522-9c92-23c6639a74af",
+          "subdomain": "tenant-42215249",
           "isPlatformOrg": false,
           "plan": "trial",
           "trialEndsAt": "2026-01-15T09:30:00.000Z",
@@ -6504,8 +6506,8 @@
           "viewerIsSuperAdmin": true,
           "viewerRoleName": "Admin",
           "viewerPermissionKeys": [
-            "accounts:delete",
-            "accounts:read"
+            "org:read",
+            "org:update"
           ],
           "pendingOwnershipTransfer": null,
           "advancedFeaturesEnabled": true,
@@ -6667,17 +6669,15 @@
         "message": "Organization creation suggestion.",
         "data": {
           "brandId": "00000000-0000-4000-8000-000000000001",
-          "brandName": "Solu Textiles",
+          "brandName": "Twice Onboarded Co",
           "ownerUserId": "00000000-0000-4000-8000-000000000002",
           "ownerName": "Brand Owner",
-          "suggestedSubdomain": "solutextiles",
-          "ownerExistingOrganizations": [
-            {
-              "id": "00000000-0000-4000-8000-000000000003",
-              "name": "Test Org 2f265c51-1f9d-40cf-81ce-d5ca81414f5f"
-            }
-          ],
-          "existingOrganizationForBrand": null
+          "suggestedSubdomain": "twiceonboardedco",
+          "ownerExistingOrganizations": [],
+          "existingOrganizationForBrand": {
+            "id": "00000000-0000-4000-8000-000000000003",
+            "name": "Twice Onboarded Co"
+          }
         }
       }
     },
@@ -6745,8 +6745,8 @@
           "items": [
             {
               "creatorId": "00000000-0000-4000-8000-000000000001",
-              "name": "Findable Muse",
-              "handle": "findable-muse-b1db5850",
+              "name": "Hidden Maker",
+              "handle": "hidden-maker-1c5bc837",
               "avatarUrl": null,
               "tagClickCount": 1,
               "attributedOrderCount": 0,
@@ -6993,11 +6993,11 @@
           },
           "activityTrend": [
             {
-              "date": "2026-10-15",
+              "date": "2026-10-16",
               "count": 0
             },
             {
-              "date": "2026-10-16",
+              "date": "2026-10-17",
               "count": 0
             }
           ],
@@ -7032,8 +7032,8 @@
               "sortOrder": 0,
               "isWon": false,
               "isLost": false,
-              "openDealCount": 2,
-              "openValue": 3000,
+              "openDealCount": 0,
+              "openValue": 0,
               "wonDealCount": 0,
               "wonValue": 0,
               "lostDealCount": 0
@@ -7052,11 +7052,11 @@
             }
           ],
           "totals": {
-            "openDealCount": 2,
-            "openValue": 3000,
-            "wonDealCount": 1,
-            "wonValue": 5000,
-            "lostDealCount": 1
+            "openDealCount": 0,
+            "openValue": 0,
+            "wonDealCount": 0,
+            "wonValue": 0,
+            "lostDealCount": 0
           }
         }
       }
@@ -7085,15 +7085,15 @@
         "message": "CRM summary for the period.",
         "data": {
           "sales": {
-            "newDealCount": 1,
-            "wonDealCount": 1,
-            "wonValue": 5000,
+            "newDealCount": 0,
+            "wonDealCount": 0,
+            "wonValue": 0,
             "lostDealCount": 0
           },
           "support": {
-            "openedCount": 1,
-            "resolvedCount": 1,
-            "meanResolutionSeconds": 7200
+            "openedCount": 0,
+            "resolvedCount": 0,
+            "meanResolutionSeconds": null
           },
           "team": [
             {
@@ -7102,9 +7102,9 @@
               "avatarUrl": null,
               "roleName": "Admin",
               "joinedAt": "2026-01-15T09:30:00.000Z",
-              "wonDealCount": 1,
-              "wonValue": 5000,
-              "resolvedTicketCount": 1,
+              "wonDealCount": 0,
+              "wonValue": 0,
+              "resolvedTicketCount": 0,
               "completedTaskCount": 0,
               "activityCount": 0
             }
@@ -7281,7 +7281,8 @@
     {
       "status": 200,
       "query": {
-        "assigneeMembershipId": "00000000-0000-4000-8000-000000000001"
+        "status": "OPEN",
+        "dueFrom": "2026-01-15T09:30:00.000Z"
       },
       "requestBody": null,
       "responseBody": {
@@ -7289,15 +7290,15 @@
         "message": "CRM tasks.",
         "data": [
           {
-            "id": "00000000-0000-4000-8000-000000000002",
-            "organizationId": "00000000-0000-4000-8000-000000000003",
-            "title": "Internal cleanup",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "organizationId": "00000000-0000-4000-8000-000000000002",
+            "title": "Next week",
             "description": null,
             "dueAt": "2026-01-15T09:30:00.000Z",
             "status": "OPEN",
-            "assigneeMembershipId": "00000000-0000-4000-8000-000000000001",
+            "assigneeMembershipId": "00000000-0000-4000-8000-000000000003",
             "assigneeName": "Activity Staff",
-            "createdByMembershipId": "00000000-0000-4000-8000-000000000001",
+            "createdByMembershipId": null,
             "partnerCreatorId": null,
             "customerUserId": null,
             "dealId": null,
@@ -7313,7 +7314,8 @@
     {
       "status": 200,
       "query": {
-        "limit": "2"
+        "activeOnly": "true",
+        "unassignedOnly": "true"
       },
       "requestBody": null,
       "responseBody": {
@@ -7324,37 +7326,37 @@
             {
               "id": "00000000-0000-4000-8000-000000000001",
               "organizationId": "00000000-0000-4000-8000-000000000002",
-              "type": "REQUEST",
+              "type": "COMPLAINT",
               "status": "OPEN",
-              "title": "Third",
-              "description": "d",
+              "title": "Open one",
+              "description": "x",
               "partnerCreatorId": null,
-              "customerUserId": "00000000-0000-4000-8000-000000000003",
+              "customerUserId": null,
               "assigneeMembershipId": null,
               "assigneeName": null,
-              "createdByMembershipId": "00000000-0000-4000-8000-000000000004",
+              "createdByMembershipId": null,
               "resolvedAt": null,
               "createdAt": "2026-01-15T09:30:00.000Z",
               "updatedAt": "2026-01-15T09:30:00.000Z"
             },
             {
-              "id": "00000000-0000-4000-8000-000000000005",
+              "id": "00000000-0000-4000-8000-000000000003",
               "organizationId": "00000000-0000-4000-8000-000000000002",
-              "type": "REQUEST",
-              "status": "OPEN",
-              "title": "Second",
-              "description": "d",
+              "type": "COMPLAINT",
+              "status": "IN_PROGRESS",
+              "title": "Working one",
+              "description": "x",
               "partnerCreatorId": null,
-              "customerUserId": "00000000-0000-4000-8000-000000000003",
+              "customerUserId": null,
               "assigneeMembershipId": null,
               "assigneeName": null,
-              "createdByMembershipId": "00000000-0000-4000-8000-000000000004",
+              "createdByMembershipId": null,
               "resolvedAt": null,
               "createdAt": "2026-01-15T09:30:00.000Z",
               "updatedAt": "2026-01-15T09:30:00.000Z"
             }
           ],
-          "nextCursor": "00000000-0000-4000-8000-000000000005"
+          "nextCursor": null
         }
       }
     },
@@ -7613,7 +7615,7 @@
       "status": 200,
       "query": {
         "limit": "10",
-        "cursor": "<redacted>"
+        "cursor": "eyJzZXNzaW9uSWQiOiJmODUxN2QwNy05Y2MxLTRkM2ItOGY4MC0zOTg0MDQ3NTRiNzgiLCJvZmZzZXQiOjJ9"
       },
       "requestBody": null,
       "responseBody": {
@@ -7625,7 +7627,7 @@
               "kind": "user",
               "id": "00000000-0000-4000-8000-000000000001",
               "name": "Pagination Candidate 2",
-              "handle": "pagination-candidate-2-a734fa",
+              "handle": "pagination-candidate-2-cf6b8e",
               "isCreator": true,
               "creatorStatus": "APPROVED",
               "followerCount": 2
@@ -7634,7 +7636,7 @@
               "kind": "user",
               "id": "00000000-0000-4000-8000-000000000002",
               "name": "Pagination Candidate 1",
-              "handle": "pagination-candidate-1-7c458f",
+              "handle": "pagination-candidate-1-abd52f",
               "isCreator": true,
               "creatorStatus": "APPROVED",
               "followerCount": 1
@@ -7849,7 +7851,7 @@
               "detail": "PARKED AT DEPOT",
               "isAutoResolved": false,
               "resolutionNote": null,
-              "trackingCode": "OFQ-NMMRT07M",
+              "trackingCode": "OFQ-718X9FQH",
               "brandName": null,
               "hubName": null,
               "raisedAt": "2026-01-15T09:30:00.000Z",
@@ -7905,17 +7907,17 @@
         "data": {
           "id": "00000000-0000-4000-8000-000000000001",
           "hubId": "00000000-0000-4000-8000-000000000002",
-          "hubName": "Test Hub f97e60",
+          "hubName": "Test Hub 517ed2",
           "tagCount": 12,
           "usedTagCount": 0,
           "createdAt": "2026-01-15T09:30:00.000Z",
           "tags": [
             {
-              "code": "1SDC77DBC8",
+              "code": "17V1BB5AS1",
               "isUsed": false
             },
             {
-              "code": "5HM5A2NNM4",
+              "code": "2KK0HFKXPB",
               "isUsed": false
             }
           ]
@@ -7972,10 +7974,10 @@
           "items": [
             {
               "shipmentId": "00000000-0000-4000-8000-000000000002",
-              "trackingCode": "OFQ-PHQRH39S",
+              "trackingCode": "OFQ-YDADQ6DR",
               "orderId": "00000000-0000-4000-8000-000000000003",
               "currency": "NPR",
-              "partnerReference": "PX-626e36dd",
+              "partnerReference": "PX-5affea91",
               "quotedPartnerFee": 120,
               "expectedAmount": 1100,
               "collectedAmount": 1100,
@@ -8258,7 +8260,7 @@
             {
               "rowNumber": 3,
               "partnerReference": null,
-              "merchantReference": "OFQAHJZR8ET",
+              "merchantReference": "OFQAM9T3RHC",
               "rawStatus": "In transit",
               "outcome": "DUPLICATE",
               "message": "This update was already recorded."
@@ -8647,8 +8649,8 @@
             {
               "shipmentId": "00000000-0000-4000-8000-000000000002",
               "orderId": "00000000-0000-4000-8000-000000000003",
-              "trackingCode": "OFQQTMRCK8B",
-              "displayTrackingCode": "OFQ-QTMR-CK8B",
+              "trackingCode": "OFQCNS9N0EG",
+              "displayTrackingCode": "OFQ-CNS9-N0EG",
               "status": "PACKED",
               "codAmountToCollect": 0,
               "isLabelUpToDate": false,
@@ -8659,10 +8661,10 @@
               "booking": {
                 "bookingId": "00000000-0000-4000-8000-000000000004",
                 "partnerId": "00000000-0000-4000-8000-000000000005",
-                "partnerName": "Courier 87099535",
+                "partnerName": "Courier df249299",
                 "status": "REQUESTED",
                 "connection": "MANUAL",
-                "merchantReference": "OFQQTMRCK8B",
+                "merchantReference": "OFQCNS9N0EG",
                 "partnerReference": null,
                 "partnerTrackingUrl": null,
                 "failureReason": null
@@ -8685,8 +8687,8 @@
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000001",
           "orderId": "00000000-0000-4000-8000-000000000002",
-          "trackingCode": "OFQQTMRCK8B",
-          "displayTrackingCode": "OFQ-QTMR-CK8B",
+          "trackingCode": "OFQCNS9N0EG",
+          "displayTrackingCode": "OFQ-CNS9-N0EG",
           "status": "PACKED",
           "codAmountToCollect": 0,
           "isLabelUpToDate": false,
@@ -8697,10 +8699,10 @@
           "booking": {
             "bookingId": "00000000-0000-4000-8000-000000000003",
             "partnerId": "00000000-0000-4000-8000-000000000004",
-            "partnerName": "Courier 87099535",
+            "partnerName": "Courier df249299",
             "status": "REQUESTED",
             "connection": "MANUAL",
-            "merchantReference": "OFQQTMRCK8B",
+            "merchantReference": "OFQCNS9N0EG",
             "partnerReference": null,
             "partnerTrackingUrl": null,
             "failureReason": null
@@ -8721,7 +8723,7 @@
           "pickups": [
             {
               "fulfilmentGroupId": "00000000-0000-4000-8000-000000000006",
-              "brandName": "Checkout Brand bf0700",
+              "brandName": "Checkout Brand c85324",
               "items": [
                 {
                   "orderItemId": "00000000-0000-4000-8000-000000000007",
@@ -8742,7 +8744,7 @@
               "note": null,
               "appliedToStatus": false,
               "occurredAt": "2026-01-15T09:30:00.000Z",
-              "partnerName": "Courier 87099535",
+              "partnerName": "Courier df249299",
               "actorName": "Limited Staff"
             },
             {
@@ -8779,9 +8781,9 @@
           "parcels": [
             {
               "shipmentId": "00000000-0000-4000-8000-000000000001",
-              "trackingCode": "OFQ-V1PA-NMQH",
+              "trackingCode": "OFQ-13KH-53PS",
               "status": "DELIVERED",
-              "partnerName": "Courier ef650d9a",
+              "partnerName": "Courier 2f1722e8",
               "partnerTrackingUrl": null,
               "deliveredAt": "2026-01-15T09:30:00.000Z",
               "canReportNotReceived": true,
@@ -8831,6 +8833,7 @@
         "success": true,
         "message": "Your earnings.",
         "data": {
+          "employmentType": "CONTRACTOR",
           "summary": {
             "currency": "NPR",
             "pendingAmount": 0,
@@ -8849,7 +8852,7 @@
               "voidReason": null,
               "riderId": "00000000-0000-4000-8000-000000000003",
               "riderName": "Test Rider",
-              "brandName": "Checkout Brand 41385f",
+              "brandName": "Checkout Brand 42fd7c",
               "pickupLocationLabel": "Studio",
               "earnedAt": "2026-01-15T09:30:00.000Z",
               "releasesAt": "2026-01-15T09:30:00.000Z",
@@ -8975,7 +8978,9 @@
   "GET /api/notifications": [
     {
       "status": 200,
-      "query": {},
+      "query": {
+        "limit": "2"
+      },
       "requestBody": null,
       "responseBody": {
         "success": true,
@@ -9011,7 +9016,7 @@
               "entityId": null,
               "targetSurface": null,
               "targetPath": null,
-              "organizationId": "00000000-0000-4000-8000-000000000004",
+              "organizationId": null,
               "metadata": {
                 "levelName": "Rising Star"
               },
@@ -9023,7 +9028,7 @@
               "updatedAt": "2026-01-15T09:30:00.000Z"
             }
           ],
-          "nextCursor": null
+          "nextCursor": "eyJ1cGRhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjAyOjA1LjI3NloiLCJpZCI6ImQ0MTg4MTcyLWFjNjAtNDlhZC05NzdmLWE1MTIyM2I3MmZhYSJ9"
         }
       }
     },
@@ -10183,14 +10188,14 @@
           "items": [
             {
               "id": "00000000-0000-4000-8000-000000000001",
-              "name": "Hari",
-              "handle": "outfit-0369b17f",
+              "name": "Gita",
+              "handle": "outfit-e8338e7d",
               "avatarUrl": null
             },
             {
               "id": "00000000-0000-4000-8000-000000000002",
               "name": "Ram",
-              "handle": "outfit-a8adbbfc",
+              "handle": "outfit-ea7e2372",
               "avatarUrl": null
             }
           ],
@@ -10281,7 +10286,7 @@
       "status": 200,
       "query": {
         "limit": "2",
-        "cursor": "<redacted>"
+        "cursor": "eyJzb3J0IjoicHJpY2UtbG93IiwidmFsdWUiOiI1MjAwIiwiaWQiOiI1OTFlN2Q3OC1mZmEzLTQyNzctYTg2OC1mNzExYzhmYjUzYmIifQ"
       },
       "requestBody": null,
       "responseBody": {
@@ -10301,7 +10306,7 @@
                 {
                   "id": "00000000-0000-4000-8000-000000000002",
                   "name": "Sita",
-                  "handle": "outfit-c03d44d4",
+                  "handle": "outfit-d537db0c",
                   "avatarUrl": null
                 }
               ],
@@ -10324,7 +10329,7 @@
                 {
                   "id": "00000000-0000-4000-8000-000000000002",
                   "name": "Sita",
-                  "handle": "outfit-c03d44d4",
+                  "handle": "outfit-d537db0c",
                   "avatarUrl": null
                 }
               ],
@@ -10336,7 +10341,7 @@
               "madePublicAt": "2026-01-15T09:30:00.000Z"
             }
           ],
-          "nextCursor": "<redacted>"
+          "nextCursor": "eyJzb3J0IjoibmV3ZXN0IiwidmFsdWUiOiIyMDI2LTExLTE0VDA5OjAyOjA3LjY2NVoiLCJpZCI6IjkxMDdiOTc3LWI2MWItNDM3Ny1hMjFhLTk5NjNkOTIyOWFiMiJ9"
         }
       }
     },
@@ -11545,7 +11550,7 @@
         "message": "Platform activity trend.",
         "data": [
           {
-            "date": "2026-11-12",
+            "date": "2026-11-14",
             "activityCount": 10,
             "dealCount": 3,
             "ticketCount": 1,
@@ -11724,8 +11729,8 @@
         "message": "Tenant metric detail.",
         "data": {
           "organizationId": "00000000-0000-4000-8000-000000000001",
-          "name": "Tenant Org fbc023fe-887e-4d32-86f5-174bda9f1e64",
-          "subdomain": "tenant-4d12cb94",
+          "name": "Tenant Org 1c22d7ca-585e-43ff-aa89-bf724ac27db8",
+          "subdomain": "tenant-e2781ef3",
           "plan": "starter",
           "subscriptionStatus": null,
           "isPlatformOrg": false,
@@ -11750,7 +11755,7 @@
           "activeMemberCount": 0,
           "series": [
             {
-              "day": "2026-11-12",
+              "day": "2026-11-14",
               "contactCount": 4,
               "dealCount": 2,
               "ticketCount": 1,
@@ -12546,19 +12551,19 @@
             {
               "id": "00000000-0000-4000-8000-000000000001",
               "brandId": "00000000-0000-4000-8000-000000000002",
-              "name": "Secondhand Trench Coat",
+              "name": "Discountable Jacket",
               "imageUrl": null,
-              "status": "PENDING",
+              "status": "APPROVED",
               "reviewedAt": null,
               "reviewedById": null,
               "createdAt": "2026-01-15T09:30:00.000Z",
               "updatedAt": "2026-01-15T09:30:00.000Z",
               "wornByCount": 0,
               "deletedAt": null,
-              "sizeStandardId": "00000000-0000-4000-8000-000000000003",
+              "sizeStandardId": null,
               "isStretchable": null,
-              "thriftConditionRating": "LIKE_NEW",
-              "thriftConditionNotes": "Worn once.",
+              "thriftConditionRating": null,
+              "thriftConditionNotes": null,
               "avgRating": null,
               "reviewCount": 0,
               "rating1Count": 0,
@@ -12566,28 +12571,24 @@
               "rating3Count": 0,
               "rating4Count": 0,
               "rating5Count": 0,
-              "sizes": [
-                {
-                  "id": "00000000-0000-4000-8000-000000000004",
-                  "label": "M",
-                  "stock": 0,
-                  "fitRange": null
-                }
-              ],
-              "isThrift": true,
-              "price": 3500,
-              "effectivePrice": 3500,
-              "activeDiscount": null,
+              "sizes": [],
+              "isThrift": false,
+              "price": 2000,
+              "effectivePrice": 1500,
+              "activeDiscount": {
+                "id": "00000000-0000-4000-8000-000000000003",
+                "discountType": "FIXED",
+                "percentBasisPoints": null,
+                "fixedAmount": 500,
+                "startsAt": "2026-01-15T09:30:00.000Z",
+                "endsAt": null
+              },
               "type": "tops",
-              "categories": [
-                "Thrift Test Category"
-              ],
-              "categorySlugs": [
-                "thrift-cat-4d255d47"
-              ],
+              "categories": [],
+              "categorySlugs": [],
               "imageUrls": [],
               "lowStock": false,
-              "isSoldOut": true
+              "isSoldOut": false
             }
           ],
           "nextCursor": null
@@ -12865,9 +12866,9 @@
             "discountPercent": null,
             "type": "tops",
             "categorySlugs": [],
-            "imageUrl": "https://cdn.outfiqe.test/cffd1c41-d2f2-4667-aebe-7ed37e93bd24.jpg",
+            "imageUrl": "https://cdn.outfiqe.test/04074e9e-06fc-46a1-88a2-602b6e083caa.jpg",
             "image": {
-              "url": "https://cdn.outfiqe.test/cffd1c41-d2f2-4667-aebe-7ed37e93bd24.jpg",
+              "url": "https://cdn.outfiqe.test/04074e9e-06fc-46a1-88a2-602b6e083caa.jpg",
               "lqip": null,
               "sources": []
             },
@@ -13531,23 +13532,23 @@
               "hoursToGoLive": 0,
               "look": {
                 "id": "00000000-0000-4000-8000-000000000002",
-                "imageUrl": "https://cdn.outfiqe.test/3c5e25cf-e39e-433a-982e-ccf37d72cba0.jpg",
+                "imageUrl": "https://cdn.outfiqe.test/4da25622-7be1-48f5-8622-a2ba2cd2eda2.jpg",
                 "caption": "look",
                 "postedAt": "2026-01-15T09:30:00.000Z"
               },
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000003",
                 "name": "Muse",
-                "handle": "cr-bb4d7385"
+                "handle": "cr-7cf7d1dc"
               },
               "product": {
                 "id": "00000000-0000-4000-8000-000000000004",
                 "name": "Tagged Item",
-                "imageUrl": "https://cdn.outfiqe.test/e678469f-c84a-4fff-a40c-3802afe26151.jpg"
+                "imageUrl": "https://cdn.outfiqe.test/4e063c0b-f5ca-4955-b49a-98cce312e390.jpg"
               },
               "brand": {
                 "id": "00000000-0000-4000-8000-000000000005",
-                "name": "Brand 86e03f62",
+                "name": "Brand d641ae42",
                 "policy": "TRUSTED_ONLY"
               }
             },
@@ -13567,28 +13568,28 @@
               "hoursToGoLive": 0,
               "look": {
                 "id": "00000000-0000-4000-8000-000000000007",
-                "imageUrl": "https://cdn.outfiqe.test/6c900c39-04d6-4fcb-8984-7d0cf7b6afab.jpg",
+                "imageUrl": "https://cdn.outfiqe.test/0f04b7c0-aa79-4e9c-a7ef-524ca267e2a0.jpg",
                 "caption": "look",
                 "postedAt": "2026-01-15T09:30:00.000Z"
               },
               "creator": {
                 "id": "00000000-0000-4000-8000-000000000003",
                 "name": "Muse",
-                "handle": "cr-bb4d7385"
+                "handle": "cr-7cf7d1dc"
               },
               "product": {
                 "id": "00000000-0000-4000-8000-000000000008",
                 "name": "Tagged Item",
-                "imageUrl": "https://cdn.outfiqe.test/6e438f86-68db-4a1a-b6ab-8b069df7c473.jpg"
+                "imageUrl": "https://cdn.outfiqe.test/ed3f1b4b-6385-4549-9a38-4bcfa42ed8f7.jpg"
               },
               "brand": {
                 "id": "00000000-0000-4000-8000-000000000005",
-                "name": "Brand 86e03f62",
+                "name": "Brand d641ae42",
                 "policy": "TRUSTED_ONLY"
               }
             }
           ],
-          "nextCursor": "<redacted>",
+          "nextCursor": "eyJ2IjoxNzk0NjQ2OTQ0LjE5NiwiaSI6ImQ0OWQyZmZjLWEzNzctNDc1Ny1hYjc3LTJkMzJhYmUzMGQxNiJ9",
           "totalCount": 3
         }
       }
@@ -13882,14 +13883,14 @@
     {
       "status": 200,
       "query": {
-        "handle": "testuser2fafff58"
+        "handle": "FreeHandle66b0df"
       },
       "requestBody": null,
       "responseBody": {
         "success": true,
         "message": "Username availability.",
         "data": {
-          "available": false
+          "available": true
         }
       }
     },
@@ -14090,13 +14091,13 @@
         "success": true,
         "message": "Withdraw eligibility.",
         "data": {
-          "windowOpen": true,
+          "windowOpen": false,
           "nextWindowOpensAt": "2026-01-15T09:30:00.000Z",
           "attemptsUsed": 0,
           "attemptsRemaining": 1,
           "minAmount": 500,
           "maxAmount": 100000,
-          "availableBalance": 5000,
+          "availableBalance": 0,
           "hasVerifiedBankAccount": false,
           "cooldownActive": false,
           "cooldownEndsAt": null
@@ -14808,7 +14809,7 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "name": "Admin-created badge d9f614a0-397e-4c05-8e94-aef97325ace4",
+        "name": "Admin-created badge d510b6ba-8b0b-4839-86b6-b31b786443bd",
         "description": "A badge created via the admin API integration test.",
         "category": "ENGAGEMENT",
         "rarity": "COMMON",
@@ -14824,7 +14825,7 @@
         "isTitleEligible": false,
         "showProfileRing": false,
         "assignmentLimit": null,
-        "sponsorBrandId": "00000000-0000-4000-8000-000000000001",
+        "sponsorBrandId": null,
         "requirementType": "ENGAGEMENT",
         "conditions": [
           {
@@ -14833,8 +14834,8 @@
             "value": 5
           }
         ],
-        "activeFrom": null,
-        "activeUntil": null,
+        "activeFrom": "2026-01-15T09:30:00.000Z",
+        "activeUntil": "2026-01-15T09:30:00.000Z",
         "isActive": true,
         "achievementIsActive": true
       },
@@ -14842,8 +14843,8 @@
         "success": true,
         "message": "Badge updated.",
         "data": {
-          "id": "00000000-0000-4000-8000-000000000002",
-          "name": "Admin-created badge d9f614a0-397e-4c05-8e94-aef97325ace4",
+          "id": "00000000-0000-4000-8000-000000000001",
+          "name": "Admin-created badge d510b6ba-8b0b-4839-86b6-b31b786443bd",
           "description": "A badge created via the admin API integration test.",
           "category": "ENGAGEMENT",
           "rarity": "COMMON",
@@ -14861,13 +14862,13 @@
           "assignmentCount": 0,
           "isTitleEligible": false,
           "showProfileRing": false,
-          "sponsorBrandId": "00000000-0000-4000-8000-000000000001",
+          "sponsorBrandId": null,
           "createdAt": "2026-01-15T09:30:00.000Z",
           "updatedAt": "2026-01-15T09:30:00.000Z",
           "achievement": {
-            "id": "00000000-0000-4000-8000-000000000003",
-            "badgeId": "00000000-0000-4000-8000-000000000002",
-            "name": "Admin-created badge d9f614a0-397e-4c05-8e94-aef97325ace4",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "badgeId": "00000000-0000-4000-8000-000000000001",
+            "name": "Admin-created badge d510b6ba-8b0b-4839-86b6-b31b786443bd",
             "description": "A badge created via the admin API integration test.",
             "requirementType": "ENGAGEMENT",
             "requirementConfig": {
@@ -14880,16 +14881,12 @@
               ]
             },
             "isActive": true,
-            "activeFrom": null,
-            "activeUntil": null,
+            "activeFrom": "2026-01-15T09:30:00.000Z",
+            "activeUntil": "2026-01-15T09:30:00.000Z",
             "createdAt": "2026-01-15T09:30:00.000Z",
             "updatedAt": "2026-01-15T09:30:00.000Z"
           },
-          "sponsorBrand": {
-            "id": "00000000-0000-4000-8000-000000000001",
-            "name": "Adidas 5ac2e366-4923-479a-abb6-bfe5327724d0",
-            "avatarUrl": null
-          }
+          "sponsorBrand": null
         }
       }
     },
@@ -16110,11 +16107,11 @@
       "status": 409,
       "query": {},
       "requestBody": {
-        "handle": "nexthandlef76205"
+        "handle": "nexthandle44fe49"
       },
       "responseBody": {
         "success": false,
-        "message": "You can change your username again on 2026-11-27.",
+        "message": "You can change your username again on 2026-11-28.",
         "code": "HANDLE_CHANGE_COOLING_DOWN"
       }
     },
@@ -16227,17 +16224,17 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "roleId": "00000000-0000-4000-8000-000000000001"
+        "status": "DEACTIVATED"
       },
       "responseBody": {
         "success": true,
         "message": "Member updated.",
         "data": {
-          "id": "00000000-0000-4000-8000-000000000002",
-          "userId": "00000000-0000-4000-8000-000000000003",
-          "organizationId": "00000000-0000-4000-8000-000000000004",
-          "roleId": "00000000-0000-4000-8000-000000000001",
-          "status": "ACTIVE",
+          "id": "00000000-0000-4000-8000-000000000001",
+          "userId": "00000000-0000-4000-8000-000000000002",
+          "organizationId": "00000000-0000-4000-8000-000000000003",
+          "roleId": "00000000-0000-4000-8000-000000000004",
+          "status": "DEACTIVATED",
           "isPlatformSuperAdmin": false,
           "createdAt": "2026-01-15T09:30:00.000Z",
           "updatedAt": "2026-01-15T09:30:00.000Z"
@@ -16248,7 +16245,7 @@
       "status": 403,
       "query": {},
       "requestBody": {
-        "roleId": "00000000-0000-4000-8000-000000000001"
+        "status": "DEACTIVATED"
       },
       "responseBody": {
         "success": false,
@@ -16753,8 +16750,8 @@
       "query": {},
       "requestBody": {
         "status": "SHIPPED",
-        "carrier": "Pathao",
-        "trackingNumber": "PA-99881"
+        "carrier": "Valley Express",
+        "trackingNumber": "VE-1"
       },
       "responseBody": {
         "success": true,
@@ -16769,8 +16766,8 @@
           "pickupCode": null,
           "readyForPickupAt": null,
           "pickedUpAt": null,
-          "carrier": "Pathao",
-          "trackingNumber": "PA-99881",
+          "carrier": "Valley Express",
+          "trackingNumber": "VE-1",
           "packedAt": "2026-01-15T09:30:00.000Z",
           "shippedAt": "2026-01-15T09:30:00.000Z",
           "deliveredAt": null,
@@ -16781,39 +16778,39 @@
             {
               "id": "00000000-0000-4000-8000-000000000003",
               "productId": "00000000-0000-4000-8000-000000000004",
-              "productName": "Fulfilment Jacket",
+              "productName": "Checkout Jacket",
               "imageUrl": null,
               "sizeLabel": "M",
-              "qty": 2,
+              "qty": 1,
               "refundedQty": 0,
-              "unitPrice": 1000,
-              "listUnitPrice": 1000,
+              "unitPrice": 600,
+              "listUnitPrice": 600,
               "brandDiscountAmount": 0,
               "platformDiscountAmount": 0
             }
           ],
           "shipTo": {
-            "fullName": "Buyer Person",
-            "phone": "9812345678",
-            "address": "42 Delivery Road",
+            "fullName": "Refund Buyer",
+            "phone": "9800000000",
+            "address": "Baneshwor",
             "city": "Kathmandu",
-            "landmark": "Near the temple"
+            "landmark": null
           },
           "payout": {
             "lines": [
               {
                 "orderItemId": "00000000-0000-4000-8000-000000000003",
-                "grossAmount": 2000,
-                "platformFee": 200,
+                "grossAmount": 600,
+                "platformFee": 60,
                 "gatewayFee": 0,
-                "netAmount": 1800,
+                "netAmount": 540,
                 "status": "PENDING"
               }
             ],
-            "grossAmount": 2000,
-            "platformFee": 200,
+            "grossAmount": 600,
+            "platformFee": 60,
             "gatewayFee": 0,
-            "netAmount": 1800
+            "netAmount": 540
           },
           "shipToCity": "Kathmandu",
           "orderPaymentStatus": "DUE",
@@ -17928,11 +17925,11 @@
       "status": 409,
       "query": {},
       "requestBody": {
-        "handle": "nexthandle7693e9"
+        "handle": "nexthandled9d644"
       },
       "responseBody": {
         "success": false,
-        "message": "You can change your username again on 2026-11-27.",
+        "message": "You can change your username again on 2026-11-28.",
         "code": "HANDLE_CHANGE_COOLING_DOWN"
       }
     },
@@ -19195,7 +19192,7 @@
       "query": {},
       "requestBody": {
         "inviteToken": "<redacted>",
-        "phone": "9831132316",
+        "phone": "9825470357",
         "password": "<redacted>",
         "confirmPassword": "<redacted>"
       },
@@ -19206,10 +19203,10 @@
           "accessToken": "<redacted>",
           "user": {
             "id": "00000000-0000-4000-8000-000000000001",
-            "name": "Taken Handle 5bfe7d",
-            "handle": "takenhandle5bfe7d965",
+            "name": "Taken Handle bc46d9",
+            "handle": "takenhandlebc46d96243",
             "email": "person1@example.com",
-            "phone": "9831132316",
+            "phone": "9825470357",
             "avatarUrl": null,
             "role": "ADMIN",
             "isCreator": false,
@@ -19222,8 +19219,8 @@
               "platform-nav-access"
             ],
             "platformPermissionKeys": [
-              "platform:analytics:read",
-              "platform:announcements:manage"
+              "platform:metrics:read",
+              "platform:analytics:read"
             ],
             "crmHomeSubdomain": null
           }
@@ -19430,15 +19427,15 @@
           "accessToken": "<redacted>",
           "user": {
             "id": "00000000-0000-4000-8000-000000000001",
-            "name": "Test User",
-            "handle": "test-user-5a128e6a",
+            "name": "OAuth Test User",
+            "handle": "oauthtestuser",
             "email": "person1@example.com",
-            "phone": "9890818941",
+            "phone": null,
             "avatarUrl": null,
             "role": "CUSTOMER",
             "isCreator": false,
             "creatorStatus": "NONE",
-            "hasPassword": true,
+            "hasPassword": false,
             "hasCrmAccess": false,
             "hasPlatformAccess": false,
             "isCoFounder": false,
@@ -20586,7 +20583,7 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "code": "TESTC94B81"
+        "code": "TEST6E5B3E"
       },
       "responseBody": {
         "success": true,
@@ -20598,7 +20595,7 @@
               "productId": "00000000-0000-4000-8000-000000000002",
               "sizeId": "00000000-0000-4000-8000-000000000003",
               "productName": "Coupon Jacket",
-              "brandName": "Coupon Brand 3b7a38",
+              "brandName": "Coupon Brand ce06cf",
               "imageUrl": null,
               "sizeLabel": "M",
               "unitPrice": 2000,
@@ -20615,7 +20612,7 @@
               "productId": "00000000-0000-4000-8000-000000000005",
               "sizeId": "00000000-0000-4000-8000-000000000006",
               "productName": "Coupon Jacket",
-              "brandName": "Coupon Brand 73228f",
+              "brandName": "Coupon Brand c0a6e3",
               "imageUrl": null,
               "sizeLabel": "M",
               "unitPrice": 2000,
@@ -20631,12 +20628,12 @@
           "itemCount": 2,
           "subtotal": 4000,
           "deliveryFee": 100,
-          "platformDiscountTotal": 2000,
-          "total": 2100,
+          "platformDiscountTotal": 300,
+          "total": 3800,
           "city": null,
           "appliedCoupon": {
-            "code": "TESTC94B81",
-            "discountAmount": 2000,
+            "code": "TEST6E5B3E",
+            "discountAmount": 300,
             "prepaidOnly": false
           }
         }
@@ -20658,7 +20655,7 @@
       "status": 404,
       "query": {},
       "requestBody": {
-        "code": "NOPE1234"
+        "code": "UNUSED"
       },
       "responseBody": {
         "success": false,
@@ -20914,16 +20911,21 @@
     {
       "status": 422,
       "query": {},
-      "requestBody": {
-        "orderedIds": [
-          "00000000-0000-4000-8000-000000000001",
-          "00000000-0000-4000-8000-000000000001"
-        ]
-      },
+      "requestBody": {},
       "responseBody": {
         "success": false,
-        "message": "The reorder request must list each category id once, and only known categories.",
-        "code": "INVALID_ORDER"
+        "message": "Invalid request",
+        "code": "VALIDATION_ERROR",
+        "details": [
+          {
+            "expected": "array",
+            "code": "invalid_type",
+            "path": [
+              "orderedIds"
+            ],
+            "message": "Invalid input: expected array, received undefined"
+          }
+        ]
       }
     }
   ],
@@ -21015,7 +21017,7 @@
       "status": 403,
       "query": {},
       "requestBody": {
-        "name": "Sprint Star 0862304d-3d09-47bd-9a40-eed439181886",
+        "name": "Sprint Star 5e901b92-0ec8-44f6-bee2-076e21de3b54",
         "description": "Earned by finishing the sprint.",
         "category": "ENGAGEMENT",
         "rarity": "RARE",
@@ -21038,7 +21040,7 @@
         ],
         "activeFrom": "2026-01-15T09:30:00.000Z",
         "activeUntil": "2026-01-15T09:30:00.000Z",
-        "challengeName": "August Sprint d8d1cf14-571e-4436-9eea-cbd2715eabaf",
+        "challengeName": "August Sprint 3edf0e72-df28-4620-afaa-ca0f68731dcc",
         "challengeDescription": "Drop looks and rack up likes before the week ends.",
         "bannerImageUrl": null
       },
@@ -21727,39 +21729,38 @@
       "status": 201,
       "query": {},
       "requestBody": {
-        "name": "Removal",
+        "name": "Self removal",
         "memberIds": [
-          "00000000-0000-4000-8000-000000000001",
-          "00000000-0000-4000-8000-000000000002"
+          "00000000-0000-4000-8000-000000000001"
         ]
       },
       "responseBody": {
         "success": true,
         "message": "Group created.",
         "data": {
-          "id": "00000000-0000-4000-8000-000000000003",
+          "id": "00000000-0000-4000-8000-000000000002",
           "type": "GROUP",
           "otherParticipant": null,
           "group": {
-            "name": "Removal",
-            "memberCount": 3,
+            "name": "Self removal",
+            "memberCount": 2,
             "members": [
               {
-                "id": "00000000-0000-4000-8000-000000000004",
-                "name": "Remover",
-                "handle": "group-38c19a39",
+                "id": "00000000-0000-4000-8000-000000000003",
+                "name": "Self Remover",
+                "handle": "group-8cccbbd6",
                 "avatarUrl": null
               },
               {
                 "id": "00000000-0000-4000-8000-000000000001",
-                "name": "Removed Person",
-                "handle": "group-0359dd57",
+                "name": "Self Remover Friend",
+                "handle": "group-5e884a7b",
                 "avatarUrl": null
               }
             ],
             "myRole": "ADMIN"
           },
-          "lastMessagePreview": "Remover created the group",
+          "lastMessagePreview": "Self Remover created the group",
           "lastMessageAt": "2026-01-15T09:30:00.000Z",
           "unreadCount": 0,
           "updatedAt": "2026-01-15T09:30:00.000Z"
@@ -22074,7 +22075,7 @@
       },
       "responseBody": {
         "success": false,
-        "message": "Staff and brand accounts can't drop as a muse.",
+        "message": "Muse features are for shopper accounts. Staff, brand and rider accounts can't use them.",
         "code": "STAFF_CANNOT_BE_CREATOR"
       }
     },
@@ -23762,7 +23763,7 @@
           "detail": "PARKED AT DEPOT",
           "isAutoResolved": false,
           "resolutionNote": "Mapped the status",
-          "trackingCode": "OFQ-NMMRT07M",
+          "trackingCode": "OFQ-718X9FQH",
           "brandName": null,
           "hubName": null,
           "raisedAt": "2026-01-15T09:30:00.000Z",
@@ -23810,17 +23811,17 @@
         "data": {
           "id": "00000000-0000-4000-8000-000000000002",
           "hubId": "00000000-0000-4000-8000-000000000001",
-          "hubName": "Test Hub f97e60",
+          "hubName": "Test Hub 517ed2",
           "tagCount": 12,
           "usedTagCount": 0,
           "createdAt": "2026-01-15T09:30:00.000Z",
           "tags": [
             {
-              "code": "1SDC77DBC8",
+              "code": "17V1BB5AS1",
               "isUsed": false
             },
             {
-              "code": "5HM5A2NNM4",
+              "code": "2KK0HFKXPB",
               "isUsed": false
             }
           ]
@@ -23872,7 +23873,7 @@
           "collectedAmount": 2200,
           "partnerFeeAmount": 200,
           "receivedAmount": 2000,
-          "partnerName": "Courier 1a9fe738",
+          "partnerName": "Courier d13cf73e",
           "receivedAt": "2026-01-15T09:30:00.000Z",
           "parcelCount": 2,
           "recordedByName": "Test Admin",
@@ -23883,14 +23884,14 @@
               "shipmentId": "00000000-0000-4000-8000-000000000003",
               "collectedAmount": 1100,
               "partnerFeeAmount": 100,
-              "trackingCode": "OFQ-PHQRH39S",
+              "trackingCode": "OFQ-YDADQ6DR",
               "orderId": "00000000-0000-4000-8000-000000000005"
             },
             {
               "shipmentId": "00000000-0000-4000-8000-000000000002",
               "collectedAmount": 1100,
               "partnerFeeAmount": 100,
-              "trackingCode": "OFQ-FQE7AN8N",
+              "trackingCode": "OFQ-8S68Z1N8",
               "orderId": "00000000-0000-4000-8000-000000000006"
             }
           ]
@@ -24222,7 +24223,7 @@
       "query": {},
       "requestBody": {
         "fileName": "statuses.csv",
-        "csv": "partnerReference,merchantReference,status,time,reason\nPX-100,,In transit,2026-11-13T05:04:27.823Z,\n,OFQAHJZR8ET,In transit,2026-11-13T05:04:27.823Z,\nPX-999,,Delivered,2026-11-13T05:04:27.823Z,\nPX-100,,Held at depot,2026-11-13T05:04:27.823Z,Waiting for customer\nPX-100,,Delivered,not-a-time,\nPX-100,,Out for delivery,2026-11-11T23:04:27.823Z,"
+        "csv": "partnerReference,merchantReference,status,time,reason\nPX-100,,In transit,2026-11-14T09:03:15.809Z,\n,OFQAM9T3RHC,In transit,2026-11-14T09:03:15.809Z,\nPX-999,,Delivered,2026-11-14T09:03:15.809Z,\nPX-100,,Held at depot,2026-11-14T09:03:15.809Z,Waiting for customer\nPX-100,,Delivered,not-a-time,\nPX-100,,Out for delivery,2026-11-13T03:03:15.809Z,"
       },
       "responseBody": {
         "success": true,
@@ -24246,7 +24247,7 @@
             {
               "rowNumber": 3,
               "partnerReference": null,
-              "merchantReference": "OFQAHJZR8ET",
+              "merchantReference": "OFQAM9T3RHC",
               "rawStatus": "In transit",
               "outcome": "DUPLICATE",
               "message": "This update was already recorded."
@@ -24697,7 +24698,7 @@
         "data": {
           "fulfilmentGroupId": "00000000-0000-4000-8000-000000000001",
           "pickupStatus": "READY_FOR_PICKUP",
-          "pickupCode": "20D74185",
+          "pickupCode": "CDW45H9T",
           "readyForPickupAt": "2026-01-15T09:30:00.000Z"
         }
       }
@@ -24778,7 +24779,7 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "0ZPV1ZKVY3",
+        "code": "1FFY5VXN3F",
         "countedUnits": 1
       },
       "responseBody": {
@@ -24787,7 +24788,7 @@
         "data": {
           "fulfilmentGroupId": "00000000-0000-4000-8000-000000000002",
           "orderId": "00000000-0000-4000-8000-000000000003",
-          "brandName": "Checkout Brand 34c725",
+          "brandName": "Checkout Brand 7b6598",
           "pickupStatus": "AT_HUB",
           "expectedUnits": 1,
           "countedUnits": 1,
@@ -24800,7 +24801,7 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "Z8ZB7P03NF",
+        "code": "YEXNB7K5YN",
         "countedUnits": 1
       },
       "responseBody": {
@@ -24814,7 +24815,7 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "ZD48B985EV",
+        "code": "6DETTSN2GJ",
         "countedUnits": 1
       },
       "responseBody": {
@@ -24828,7 +24829,7 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "Z8ZB7P03NF",
+        "code": "YEXNB7K5YN",
         "countedUnits": 1
       },
       "responseBody": {
@@ -24844,14 +24845,14 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "OFQ4AG6WZT5"
+        "code": "OFQ0KS17KD4"
       },
       "responseBody": {
         "success": true,
         "message": "Parcel handed over.",
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000002",
-          "trackingCode": "OFQ4AG6WZT5",
+          "trackingCode": "OFQ0KS17KD4",
           "status": "HANDED_TO_PARTNER"
         }
       }
@@ -24861,7 +24862,7 @@
       "query": {},
       "requestBody": {
         "hubId": "00000000-0000-4000-8000-000000000001",
-        "code": "OFQGHGZMR0J"
+        "code": "OFQ0KS17KD4"
       },
       "responseBody": {
         "success": false,
@@ -24876,27 +24877,27 @@
       "query": {},
       "requestBody": {
         "weightGrams": 900,
-        "parcelCount": 1
+        "parcelCount": 1,
+        "packsOnlyPickupsAtHub": true
       },
       "responseBody": {
         "success": true,
         "message": "Parcel packed.",
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000001",
-          "trackingCode": "OFQV1PANMQH",
+          "trackingCode": "OFQ8P7P38JB",
           "status": "PACKED",
-          "codAmountToCollect": 2600,
+          "codAmountToCollect": 0,
           "fulfilmentGroupIds": [
-            "00000000-0000-4000-8000-000000000002",
-            "00000000-0000-4000-8000-000000000003"
+            "00000000-0000-4000-8000-000000000002"
           ],
           "booking": {
-            "bookingId": "00000000-0000-4000-8000-000000000004",
-            "partnerId": "00000000-0000-4000-8000-000000000005",
-            "partnerName": "Courier ef650d9a",
+            "bookingId": "00000000-0000-4000-8000-000000000003",
+            "partnerId": "00000000-0000-4000-8000-000000000004",
+            "partnerName": "Courier 2387708d",
             "status": "REQUESTED",
             "connection": "MANUAL",
-            "merchantReference": "OFQV1PANMQH",
+            "merchantReference": "OFQ8P7P38JB",
             "partnerReference": null,
             "partnerTrackingUrl": null,
             "failureReason": null
@@ -24949,7 +24950,7 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "partnerReference": "PX-55821"
+        "partnerReference": "PX-100"
       },
       "responseBody": {
         "success": true,
@@ -24957,11 +24958,11 @@
         "data": {
           "bookingId": "00000000-0000-4000-8000-000000000001",
           "partnerId": "00000000-0000-4000-8000-000000000002",
-          "partnerName": "Courier 0f12aaf5",
+          "partnerName": "Courier 4cb17756",
           "status": "BOOKED",
           "connection": "MANUAL",
-          "merchantReference": "OFQV57QR3S9",
-          "partnerReference": "PX-55821",
+          "merchantReference": "OFQ23M5D9VV",
+          "partnerReference": "PX-100",
           "partnerTrackingUrl": null,
           "failureReason": null
         }
@@ -25003,10 +25004,10 @@
         "data": {
           "bookingId": "00000000-0000-4000-8000-000000000001",
           "partnerId": "00000000-0000-4000-8000-000000000002",
-          "partnerName": "Courier 31c871a2",
+          "partnerName": "Courier 337beb64",
           "status": "REQUESTED",
           "connection": "API",
-          "merchantReference": "OFQ-29E8BKSM",
+          "merchantReference": "OFQ-EQ9YJ98A",
           "partnerReference": null,
           "partnerTrackingUrl": null,
           "failureReason": null
@@ -25038,8 +25039,8 @@
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000001",
           "orderId": "00000000-0000-4000-8000-000000000002",
-          "trackingCode": "OFQNMA95JCF",
-          "displayTrackingCode": "OFQ-NMA9-5JCF",
+          "trackingCode": "OFQ59VE3W2V",
+          "displayTrackingCode": "OFQ-59VE-3W2V",
           "status": "LOST",
           "codAmountToCollect": 1600,
           "isLabelUpToDate": true,
@@ -25050,10 +25051,10 @@
           "booking": {
             "bookingId": "00000000-0000-4000-8000-000000000003",
             "partnerId": "00000000-0000-4000-8000-000000000004",
-            "partnerName": "Courier dc4b354e",
+            "partnerName": "Courier 470c0e62",
             "status": "BOOKED",
             "connection": "MANUAL",
-            "merchantReference": "OFQNMA95JCF",
+            "merchantReference": "OFQ59VE3W2V",
             "partnerReference": "PX-J5",
             "partnerTrackingUrl": null,
             "failureReason": null
@@ -25074,7 +25075,7 @@
           "pickups": [
             {
               "fulfilmentGroupId": "00000000-0000-4000-8000-000000000006",
-              "brandName": "Checkout Brand 5fcd5c",
+              "brandName": "Checkout Brand 114c73",
               "items": [
                 {
                   "orderItemId": "00000000-0000-4000-8000-000000000007",
@@ -25107,7 +25108,7 @@
               "note": null,
               "appliedToStatus": true,
               "occurredAt": "2026-01-15T09:30:00.000Z",
-              "partnerName": "Courier dc4b354e",
+              "partnerName": "Courier 470c0e62",
               "actorName": "Limited Staff"
             }
           ]
@@ -25148,8 +25149,8 @@
         "message": "Label marked as printed.",
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000001",
-          "trackingCode": "OFQRQNZJSFX",
-          "displayTrackingCode": "OFQ-RQNZ-JSFX",
+          "trackingCode": "OFQZY9FGNFB",
+          "displayTrackingCode": "OFQ-ZY9F-GNFB",
           "orderId": "00000000-0000-4000-8000-000000000002",
           "status": "PACKED",
           "currency": "NPR",
@@ -25167,13 +25168,13 @@
             "landmark": null
           },
           "sender": {
-            "name": "Test Hub 12dede",
+            "name": "Test Hub f6cf5e",
             "address": "Teku, Kathmandu",
             "city": "Kathmandu",
             "phone": "+9779800000001"
           },
           "partner": {
-            "name": "Courier 269c147b",
+            "name": "Courier a4e2770b",
             "partnerReference": "PX-API-1",
             "partnerLabelUrl": null,
             "status": "BOOKED"
@@ -25196,10 +25197,10 @@
         "data": {
           "bookingId": "00000000-0000-4000-8000-000000000002",
           "partnerId": "00000000-0000-4000-8000-000000000001",
-          "partnerName": "Courier 2444e1ea",
+          "partnerName": "Courier d6cda064",
           "status": "REQUESTED",
           "connection": "MANUAL",
-          "merchantReference": "OFQ8SKSJ1JB-2",
+          "merchantReference": "OFQGPRAEXZF-2",
           "partnerReference": null,
           "partnerTrackingUrl": null,
           "failureReason": null
@@ -25299,9 +25300,9 @@
         "message": "Thanks for telling us. Our team will be in touch.",
         "data": {
           "shipmentId": "00000000-0000-4000-8000-000000000001",
-          "trackingCode": "OFQ--E76-8QNBE",
+          "trackingCode": "OFQ--0V9-M15T4",
           "status": "DELIVERED",
-          "partnerName": "Courier 59f59b2b",
+          "partnerName": "Courier 4a42c757",
           "partnerTrackingUrl": null,
           "deliveredAt": "2026-01-15T09:30:00.000Z",
           "canReportNotReceived": false,
@@ -25366,8 +25367,8 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "pickupCode": "F6ESYH8J",
-        "bagTagCode": "JQCKT4GSTS",
+        "pickupCode": "290P9WS3",
+        "bagTagCode": "91HKPNZE6G",
         "scannedAt": "2026-01-15T09:30:00.000Z"
       },
       "responseBody": {
@@ -25377,7 +25378,7 @@
           "id": "00000000-0000-4000-8000-000000000001",
           "status": "IN_PROGRESS",
           "roundStartsAt": "2026-01-15T09:30:00.000Z",
-          "brandName": "Checkout Brand e820fa",
+          "brandName": "Checkout Brand a94f86",
           "pickupLocation": {
             "label": "Studio",
             "contactName": "Studio Manager",
@@ -25397,8 +25398,8 @@
               "fulfilmentGroupId": "00000000-0000-4000-8000-000000000003",
               "orderId": "00000000-0000-4000-8000-000000000004",
               "itemCount": 0,
-              "isCollected": true,
-              "bagTagCode": "JQCKT4GSTS"
+              "isCollected": false,
+              "bagTagCode": null
             },
             {
               "id": "00000000-0000-4000-8000-000000000005",
@@ -25408,7 +25409,7 @@
               "orderId": "00000000-0000-4000-8000-000000000007",
               "itemCount": 0,
               "isCollected": true,
-              "bagTagCode": "6PNDAPDSZW"
+              "bagTagCode": "91HKPNZE6G"
             }
           ]
         }
@@ -25418,7 +25419,7 @@
       "status": 400,
       "query": {},
       "requestBody": {
-        "pickupCode": "KHM8F41F",
+        "pickupCode": "XEQ1KCB7",
         "bagTagCode": "ABCDEFGHJK",
         "scannedAt": "2026-01-15T09:30:00.000Z"
       },
@@ -25434,7 +25435,7 @@
       "requestBody": {
         "scannedAt": "2026-01-15T09:30:00.000Z",
         "pickupCode": "ZZZZZZZZ",
-        "bagTagCode": "KAD1ATN553"
+        "bagTagCode": "M5MVFJD7T4"
       },
       "responseBody": {
         "success": false,
@@ -25447,8 +25448,8 @@
       "query": {},
       "requestBody": {
         "scannedAt": "2026-01-15T09:30:00.000Z",
-        "pickupCode": "D5P8CEBG",
-        "bagTagCode": "7E0WRKPWGH"
+        "pickupCode": "0XDYY58F",
+        "bagTagCode": "YBHTWV85S4"
       },
       "responseBody": {
         "success": false,
@@ -25461,8 +25462,8 @@
       "query": {},
       "requestBody": {
         "scannedAt": "2026-01-15T09:30:00.000Z",
-        "pickupCode": "4JWSG9R0",
-        "bagTagCode": "B2M4HGREED"
+        "pickupCode": "S2H6D6ZQ",
+        "bagTagCode": "66Z0EJ1DG2"
       },
       "responseBody": {
         "success": false,
@@ -25483,7 +25484,7 @@
           "id": "00000000-0000-4000-8000-000000000001",
           "status": "COMPLETED",
           "roundStartsAt": "2026-01-15T09:30:00.000Z",
-          "brandName": "Checkout Brand fa1d3f",
+          "brandName": "Checkout Brand a94f86",
           "pickupLocation": {
             "label": "Studio",
             "contactName": "Studio Manager",
@@ -25504,7 +25505,7 @@
               "orderId": "00000000-0000-4000-8000-000000000004",
               "itemCount": 0,
               "isCollected": true,
-              "bagTagCode": "TDCMEANQB2"
+              "bagTagCode": "91HKPNZE6G"
             },
             {
               "id": "00000000-0000-4000-8000-000000000005",
@@ -25514,7 +25515,7 @@
               "orderId": "00000000-0000-4000-8000-000000000007",
               "itemCount": 0,
               "isCollected": true,
-              "bagTagCode": "RJ2FCY3BW9"
+              "bagTagCode": "T2XECG7W0N"
             }
           ]
         }
@@ -25535,7 +25536,7 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "status": "COMPLETED",
           "roundStartsAt": "2026-01-15T09:30:00.000Z",
-          "brandName": "Checkout Brand 3c841f",
+          "brandName": "Checkout Brand 4a9eb9",
           "pickupLocation": {
             "label": "Studio",
             "contactName": "Studio Manager",
@@ -25561,7 +25562,7 @@
               "orderId": "00000000-0000-4000-8000-000000000004",
               "itemCount": 1,
               "isCollected": true,
-              "bagTagCode": "B57EG9D8DA"
+              "bagTagCode": "BHZMMYK60S"
             }
           ]
         }
@@ -26258,22 +26259,29 @@
     {
       "status": 422,
       "query": {},
-      "requestBody": {
-        "fullName": "Test Buyer",
-        "phone": "9822222222",
-        "address": "Baneshwor",
-        "city": "Kathmandu",
-        "paymentMethod": "COD",
-        "buyNow": {
-          "productId": "00000000-0000-4000-8000-000000000001",
-          "sizeId": "00000000-0000-4000-8000-000000000002",
-          "qty": 1
-        }
-      },
+      "requestBody": {},
       "responseBody": {
         "success": false,
-        "message": "Cash on delivery isn't available for this account after refused deliveries. Please pay online.",
-        "code": "COD_UNAVAILABLE_REFUSALS"
+        "message": "Invalid request",
+        "code": "VALIDATION_ERROR",
+        "details": [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "fullName"
+            ],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "phone"
+            ],
+            "message": "Invalid input: expected string, received undefined"
+          }
+        ]
       }
     },
     {
@@ -26803,20 +26811,20 @@
     {
       "status": 422,
       "query": {},
-      "requestBody": {
-        "key": "scarf-6139cce4",
-        "label": "Scarf",
-        "icon": "rocket",
-        "maxItems": 1,
-        "productTypeIds": [
-          "00000000-0000-4000-8000-000000000001"
-        ]
-      },
+      "requestBody": {},
       "responseBody": {
         "success": false,
         "message": "Invalid request",
         "code": "VALIDATION_ERROR",
         "details": [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": [
+              "label"
+            ],
+            "message": "Invalid input: expected string, received undefined"
+          },
           {
             "code": "invalid_value",
             "values": [
@@ -27189,8 +27197,8 @@
                 "id": "00000000-0000-4000-8000-000000000003",
                 "productId": "00000000-0000-4000-8000-000000000001",
                 "sizeId": "00000000-0000-4000-8000-000000000004",
-                "productName": "tops cdbe",
-                "brandName": "Build Brand 6729a1",
+                "productName": "tops 8dcc",
+                "brandName": "Build Brand 6b3a74",
                 "imageUrl": null,
                 "sizeLabel": "M",
                 "unitPrice": 3200,
@@ -27206,8 +27214,8 @@
                 "id": "00000000-0000-4000-8000-000000000005",
                 "productId": "00000000-0000-4000-8000-000000000002",
                 "sizeId": "00000000-0000-4000-8000-000000000006",
-                "productName": "bottoms 1601",
-                "brandName": "Build Brand 53ffd2",
+                "productName": "bottoms 93fe",
+                "brandName": "Build Brand 126a23",
                 "imageUrl": null,
                 "sizeLabel": "M",
                 "unitPrice": 1200,
@@ -27566,12 +27574,12 @@
           "taggedProducts": [
             {
               "id": "00000000-0000-4000-8000-000000000001",
-              "name": "tops 0647",
+              "name": "tops ffbb",
               "imageUrl": null
             },
             {
               "id": "00000000-0000-4000-8000-000000000002",
-              "name": "bottoms 5cc7",
+              "name": "bottoms f174",
               "imageUrl": null
             }
           ]
@@ -27610,12 +27618,12 @@
           "taggedProducts": [
             {
               "id": "00000000-0000-4000-8000-000000000001",
-              "name": "tops 00c3",
+              "name": "tops ffbb",
               "imageUrl": null
             },
             {
               "id": "00000000-0000-4000-8000-000000000002",
-              "name": "bottoms 2fea",
+              "name": "bottoms f174",
               "imageUrl": null
             }
           ]
@@ -27929,11 +27937,11 @@
         "photos": [
           {
             "imageAssetId": "00000000-0000-4000-8000-000000000001",
-            "imageUrl": "https://cdn.outfiqe.test/uploads/5cf04973-eeea-4849-8000-6354081dca78.jpg"
+            "imageUrl": "https://cdn.outfiqe.test/uploads/925d9310-f99a-4ce9-b6cc-ab03724fd7d4.jpg"
           },
           {
             "imageAssetId": "00000000-0000-4000-8000-000000000002",
-            "imageUrl": "https://cdn.outfiqe.test/uploads/e70faf52-50b7-4a72-8562-2936d988f8ab.jpg"
+            "imageUrl": "https://cdn.outfiqe.test/uploads/f49da941-9313-41c4-9610-521ee2bae529.jpg"
           }
         ]
       },
@@ -27964,7 +27972,7 @@
                 "user": {
                   "id": "00000000-0000-4000-8000-000000000005",
                   "name": "Sita",
-                  "handle": "outfit-c707369a",
+                  "handle": "outfit-4d177dc3",
                   "avatarUrl": null
                 },
                 "role": "OWNER",
@@ -27976,7 +27984,7 @@
                 "user": {
                   "id": "00000000-0000-4000-8000-000000000006",
                   "name": "Ram",
-                  "handle": "outfit-658729bf",
+                  "handle": "outfit-63172ba1",
                   "avatarUrl": null
                 },
                 "role": "EDITOR",
@@ -28032,14 +28040,14 @@
                 "kind": "COVER",
                 "status": "PROCESSING",
                 "image": {
-                  "url": "https://cdn.outfiqe.test/uploads/52e40b1c-5c4e-4c21-895b-9275298e71b6.jpg",
+                  "url": "https://cdn.outfiqe.test/uploads/f49da941-9313-41c4-9610-521ee2bae529.jpg",
                   "lqip": null,
                   "sources": []
                 },
                 "uploadedBy": {
                   "id": "00000000-0000-4000-8000-000000000005",
                   "name": "Sita",
-                  "handle": "outfit-c707369a",
+                  "handle": "outfit-4d177dc3",
                   "avatarUrl": null
                 },
                 "coverPosition": null,
@@ -28050,14 +28058,14 @@
                 "kind": "COVER",
                 "status": "PROCESSING",
                 "image": {
-                  "url": "https://cdn.outfiqe.test/uploads/5cf04973-eeea-4849-8000-6354081dca78.jpg",
+                  "url": "https://cdn.outfiqe.test/uploads/925d9310-f99a-4ce9-b6cc-ab03724fd7d4.jpg",
                   "lqip": null,
                   "sources": []
                 },
                 "uploadedBy": {
                   "id": "00000000-0000-4000-8000-000000000005",
                   "name": "Sita",
-                  "handle": "outfit-c707369a",
+                  "handle": "outfit-4d177dc3",
                   "avatarUrl": null
                 },
                 "coverPosition": null,
@@ -28859,7 +28867,7 @@
       "status": 410,
       "query": {},
       "requestBody": {
-        "code": "4ae087366ba528b514753aee89e8dba0e9b35492664280f9b056bfdf844a1afc1d96222b1458047ca28a5211cc4b9934cba0846c1af8a6058ec17a144ec8b3ac"
+        "code": "never-issued"
       },
       "responseBody": {
         "success": false,
@@ -29433,16 +29441,21 @@
     {
       "status": 422,
       "query": {},
-      "requestBody": {
-        "orderedIds": [
-          "00000000-0000-4000-8000-000000000001",
-          "00000000-0000-4000-8000-000000000001"
-        ]
-      },
+      "requestBody": {},
       "responseBody": {
         "success": false,
-        "message": "The reorder request must list each garment type id once, and only known types.",
-        "code": "INVALID_ORDER"
+        "message": "Invalid request",
+        "code": "VALIDATION_ERROR",
+        "details": [
+          {
+            "expected": "array",
+            "code": "invalid_type",
+            "path": [
+              "orderedIds"
+            ],
+            "message": "Invalid input: expected array, received undefined"
+          }
+        ]
       }
     }
   ],
@@ -29844,10 +29857,10 @@
       "status": 200,
       "query": {},
       "requestBody": {
-        "endpoint": "https://push.example.com/0147a1ab-d37e-41fb-8bd3-caef915869e5",
+        "endpoint": "https://push.example.com/e6f250f9-f301-441a-bccc-692d234f8464",
         "keys": {
-          "p256dh": "p256dh-9c1bec6d-5451-49b7-9c08-ab5dc0ec6d35",
-          "auth": "auth-19f8d00c-3b20-4a41-8065-8adb3cb527d0"
+          "p256dh": "p256dh-bc4f4f84-3dbd-4e7d-82b7-bacc1124ed2e",
+          "auth": "auth-a58625cc-deed-4a8a-9186-6a645bac0458"
         },
         "platform": "ANDROID",
         "userAgent": "Mozilla/5.0 (Linux; Android 14)"
@@ -30859,21 +30872,21 @@
       "query": {},
       "requestBody": {
         "userId": "00000000-0000-4000-8000-000000000001",
-        "amount": -10,
-        "reason": "Correction that demotes"
+        "amount": 50,
+        "reason": "Integration test grant"
       },
       "responseBody": {
         "success": true,
         "message": "XP adjusted.",
         "data": {
           "awarded": true,
-          "amount": -10,
-          "totalXp": 500040,
+          "amount": 50,
+          "totalXp": 50,
           "previousLevel": {
             "id": "00000000-0000-4000-8000-000000000002",
-            "level": 55252,
-            "name": "Adjust Test Tier",
-            "requiredXp": 500000,
+            "level": 1,
+            "name": "Integration Test Floor",
+            "requiredXp": 0,
             "icon": null,
             "isActive": true,
             "createdAt": "2026-01-15T09:30:00.000Z",
@@ -30881,9 +30894,9 @@
           },
           "currentLevel": {
             "id": "00000000-0000-4000-8000-000000000002",
-            "level": 55252,
-            "name": "Adjust Test Tier",
-            "requiredXp": 500000,
+            "level": 1,
+            "name": "Integration Test Floor",
+            "requiredXp": 0,
             "icon": null,
             "isActive": true,
             "createdAt": "2026-01-15T09:30:00.000Z",
