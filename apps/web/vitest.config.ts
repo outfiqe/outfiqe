@@ -93,6 +93,7 @@ export default defineConfig({
         "src/features/product-detail/components/SizeSelector.tsx",
         "src/features/product-detail/components/ThriftPurchaseConfirmModal.tsx",
         "src/features/product-detail/components/ShippingInfo.tsx",
+        "src/features/product-detail/utils/summarizeDeliveryFees.ts",
         "src/features/users/components/UserList.tsx",
         "src/features/users/components/EditOwnProfileCard.tsx",
         "src/features/users/hooks/useHandleAvailability.ts",
