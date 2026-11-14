@@ -26,7 +26,10 @@ Addresses, and pick one at checkout instead of retyping. Backed by the API `addr
   `CityAutocomplete` from `delivery-zones`. Editing the current default keeps the "default"
   checkbox checked and disabled — there is always exactly one default.
 - `components/SavedAddressPicker.tsx` — the checkout radiogroup (saved addresses + "Use a new
-  address"); consumed by `checkout`'s `CheckoutForm`, not by the settings page.
+  address"); consumed by `checkout`'s `CheckoutForm`, not by the settings page. It keeps an
+  explicit `grid-cols-1` on phones: without it the single grid column grows to fit the longest
+  address and checkout scrolls sideways on a 360px screen. The address line wraps rather than
+  truncates, because this is where the shopper confirms where the order goes.
 
 ## Funnel
 

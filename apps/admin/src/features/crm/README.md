@@ -114,7 +114,7 @@ support reports, and review the organization's audit log — against the `/api/c
 - `audit/api/auditApi.ts` / `audit/api/auditSchemas.ts` / `audit/components/AuditPage.tsx` — the Audit tab (`audit:read`): a
   reverse-chronological table (when / who / action / details) of the organization's security
   changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
-- `components/CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
+- `components/CrmSearchBox.tsx` — the always-present global search (it fills the header's free space on phones and caps at 18rem, so the header never widens a 360px page; the results list is capped to the screen width) (`Autocomplete`, `useDebouncedValue`),
   hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers /
   Opportunities / Tickets); selecting one opens that exact record (`/crm/partners/$creatorId`,
   `/crm/customers/$userId`, `/crm/pipeline/$dealId`, `/crm/support/$ticketId`). Renders nothing

@@ -26,7 +26,7 @@ The feature is split into topic folders, each with the usual layer folders insid
 Files:
 
 - `components/BrandOverview.tsx` — the `/overview` landing. Three bands: a `StatCard` KPI row (revenue last-30-days with a delta / lifetime, available & pending payout, product count, low-stock count, unfulfilled-item count), an `<ChartCard>`+`<TrendChart>` area chart of revenue per day over 30 days, and the five most recent fulfilment groups via `BrandShipmentRow` (with a "View all" link to `/manage-orders`). Each KPI card passes a `hint` string (the `KPI_HINT` map) into `StatCard`, so a brand owner can hover/focus the info marker to read exactly how that figure is calculated — gross vs. net, which order states count, why out-of-stock isn't "low stock", etc. `api/brandOverviewApi.ts`/`brandOverviewSchemas.ts` (reusing `brandShipmentSummarySchema`) and `hooks/useBrandOverview.ts` mirror the other API/hook pairs; the page is one `GET /brands/me/overview` call. Once the overview has loaded it also mounts `features/product-tour`'s `BrandDashboardTour` (inside a `Suspense`, since it reads the URL), puts `data-tour-anchor="brand-kpis"` on the KPI row so the tour can point at it, and shows a "Take the tour" link in the header that replays it.
-- `components/BrandProfileView.tsx` — the profile page: banner/avatar/contact info and its edit modal, plus `BrandTagPolicyCard` below it.
+- `components/BrandProfileView.tsx` — the profile page: banner/avatar/contact info and its edit modal, plus `BrandTagPolicyCard` below it. Each contact line is a `components/ProfileDetail.tsx` (`<div><dt>icon + label</dt><dd>value</dd></div>`), so the `<dl>` holds only valid term/value groups for screen readers.
 - `tag-reviews/components/BrandTagPolicyCard.tsx` — inline (no modal) controls for who can tag the brand's products: a `Select` for the base rule (`tagReviewPolicy`, 3 options from `tagReview.constants.ts`, each with a helper line) and a `Switch` for `autoApproveVerifiedBuyers`, saved together through `useUpdateBrandProfile` → `PATCH /brands/me`. Tracks its own "saved" baseline so Save re-disables after a successful write. `useUpdateBrandProfile` doesn't touch any React Query cache (there is none for this page — `/profile` is Server Component-rendered, see below) but does call `router.refresh()` on success, so a later revisit of `/profile` can't fall back to a stale, pre-edit cached render — see the rationale entry below for the bug this closes.
 - `tag-reviews/components/TagReviewsSection.tsx` — the `/tag-reviews` page. `Tabs` for Waiting / Approved / Declined (`useTagReviewQueue` per status, keyset-paginated), `useTagReviewPendingCount` drives the header sentence and the "Waiting (N)" tab label. The active tab is local state, mirrored to `?status=` with `window.history.replaceState` (no router navigation); hovering or focusing a tab, and the end of the first load, prefetch the other queues. Renders `TagReviewCard` per item; owns the `RejectTagModal` state and the approve/reject toasts.
 - `tag-reviews/hooks/usePrefetchTagReviewQueues.ts` — `usePrefetchTagReviewQueue` (prefetch one tab's queue under the same key `useTagReviewQueue` reads) and `usePrefetchOtherTagReviewQueues` (once the active tab has loaded, prefetch the other two).
@@ -87,6 +87,8 @@ Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empt
 
 ## Non-obvious rationale
 
+**Add a product checks the form before it uploads photos, then scrolls to the first problem.** The form sits in a short scroll area beside the photo pane (its height follows the photo shape), so an error such as "Add at least one size" was often below the fold and Submit looked like it did nothing; photos were also uploaded again on every failed attempt. `ProductModal` now runs `form.trigger()` first, and on failure `utils/revealFirstFormError.ts` scrolls the first `role="alert"` message (or `aria-invalid` field) into the middle of the form and focuses the field when it is one. Form error messages carry `role="alert"` so screen readers announce them too.
+
 **Outfiqe delivery stays out of sight until the `order_logistics` switch is on for the brand.**
 Every part of the Orders page that belongs to Outfiqe delivery checks
 `useFeatureFlag("order_logistics")` first, and so does the "Pickup locations" sidebar item
@@ -95,6 +97,11 @@ Every part of the Orders page that belongs to Outfiqe delivery checks
 returns right now" and a nudge to add a pickup location, all for a feature that isn't live for
 them. The `/pickup-locations` page still works if opened directly, like the other switched
 features; the API decides what actually happens.
+
+While the switches are still loading, the Orders page shows the returns panel anyway
+(`useFeatureFlagState`, "may be on" until it is known), because the switch is on for most brands.
+Treating "not loaded yet" as "off" made the panel appear a moment later and push the order list
+down. If the switch turns out to be off and there are no returns, the panel goes away again.
 
 The returns panel still shows when the switch is off but it has a return in it, and the problems
 panel shows whenever there are problems. Turning the switch off only stops new orders from using

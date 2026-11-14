@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: "v8",
-      include: ["src/client/sessionRefresh.ts"],
+      include: ["src/client/sessionRefresh.ts", "src/errors/retryPolicy.ts"],
       thresholds: {
         lines: COVERAGE_THRESHOLD,
         functions: COVERAGE_THRESHOLD,

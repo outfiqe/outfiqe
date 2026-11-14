@@ -27,7 +27,8 @@ const SHOP_LINKS = [
 
 const SEARCH_FORM_CLASS =
   "flex min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground " +
-  "transition-all duration-300 lg:max-w-md";
+  "transition-all duration-300 lg:max-w-md " +
+  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring";
 
 export const SiteHeader = () => {
   const pathname = usePathname();

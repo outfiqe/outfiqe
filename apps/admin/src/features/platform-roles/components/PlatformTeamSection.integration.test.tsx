@@ -76,7 +76,7 @@ describe("PlatformTeamSection", () => {
 
     expect(await screen.findByText("Current Admin")).toBeInTheDocument();
     expect(screen.getByText(/change your own role or access/i)).toBeInTheDocument();
-    expect(screen.getByRole("combobox")).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Role for Current Admin" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Deactivate" })).toBeDisabled();
   });
 

@@ -6,7 +6,7 @@ import { ANALYTICS_EVENTS, THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -22,6 +22,7 @@ import { cn } from "@/shared/lib/cn";
 
 const PRODUCT_IMAGE_SIZES = "(min-width: 1024px) 40vw, 100vw";
 const PRODUCT_THUMBNAIL_SIZE = "64px";
+const ONLY_ONE_SIZE = 1;
 
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 import { QuantitySelector } from "./QuantitySelector";
@@ -68,9 +69,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const availableSizes = product.sizes.filter((size) => size.inStock);
   const isSoldOut = availableSizes.length === 0;
 
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
-    availableSizes[0]?.id ?? null,
-  );
+  const [firstAvailableSize] = availableSizes;
+  const onlyAvailableSizeId =
+    availableSizes.length === ONLY_ONE_SIZE && firstAvailableSize ? firstAvailableSize.id : null;
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(onlyAvailableSizeId);
+  const [hasTriedWithoutSize, setHasTriedWithoutSize] = useState(false);
+  const sizeOptionsRef = useRef<HTMLDivElement>(null);
   const [quantity, setQuantity] = useState(1);
 
   const galleryImages =
@@ -79,7 +83,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const activeImage = galleryImages[selectedImageIndex] ?? galleryImages[0];
 
   const needsSizeChoice = !isSoldOut && !selectedSizeId;
-  const canPurchase = !isSoldOut && Boolean(selectedSizeId);
+  const shouldShowSizePrompt = needsSizeChoice && hasTriedWithoutSize;
+  const canPurchase = !isSoldOut;
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
@@ -128,7 +133,16 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
     router.push("/checkout?buyNow=1");
   };
 
+  const promptForSize = () => {
+    setHasTriedWithoutSize(true);
+    sizeOptionsRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  };
+
   const requestPurchase = (action: "cart" | "buy") => {
+    if (!selectedSizeId) {
+      promptForSize();
+      return;
+    }
     if (product.isThrift && !hasConfirmedThriftPurchase) {
       setPendingThriftAction(action);
       return;
@@ -155,7 +169,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
         <BackLinkLabel>Back</BackLinkLabel>
       </button>
 
-      <div className="grid gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
+      <div className="grid grid-cols-1 gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
         {/* Zone 1: official product photography — the brand's, never mixed with creator photos. */}
         <div>
           <div className="relative flex aspect-4/5 items-center justify-center overflow-hidden rounded-2xl bg-muted">
@@ -248,10 +262,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
           />
 
           <SizeSelector
+            ref={sizeOptionsRef}
             sizes={product.sizes}
             selected={selectedSizeId}
             onSelect={setSelectedSizeId}
             isDisabled={!canShop}
+            isMissingChoice={shouldShowSizePrompt}
           />
           {isSizeFitOn && product.hasSizeChart && (
             <ProductFitSection
@@ -269,9 +285,9 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             isDisabled={isSoldOut || !canShop}
           />
 
-          <div className="mt-5 flex gap-2.5">
+          <div className="mt-5 flex flex-wrap gap-2.5">
             {canShop && (
-              <>
+              <div className="flex min-w-0 flex-[1_1_15rem] gap-2.5">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -289,42 +305,44 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                   <Zap className="size-4" />
                   Buy now
                 </Button>
-              </>
+              </div>
             )}
-            {isStaff ? (
-              <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
+            <div className="flex shrink-0 gap-2.5">
+              {isStaff ? (
+                <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Stash"
+                    disabled
+                    className="size-11 shrink-0"
+                  >
+                    <CheriqIcon className="size-[18px]" />
+                  </Button>
+                </Tooltip>
+              ) : (
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-pressed={isSaved}
                   aria-label="Stash"
-                  disabled
-                  className="size-11 shrink-0"
+                  onClick={() => gated(toggleSaved)}
+                  disabled={wishlistMutation.isPending}
+                  className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
                 >
-                  <CheriqIcon className="size-[18px]" />
+                  <CheriqIcon className="size-[18px]" isCheriqed={isSaved} />
                 </Button>
-              </Tooltip>
-            ) : (
+              )}
               <Button
                 variant="outline"
                 size="icon"
-                aria-pressed={isSaved}
-                aria-label="Stash"
-                onClick={() => gated(toggleSaved)}
-                disabled={wishlistMutation.isPending}
-                className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
+                aria-label="Share"
+                onClick={() => void shareProduct()}
+                className="size-11 shrink-0"
               >
-                <CheriqIcon className="size-[18px]" isCheriqed={isSaved} />
+                <Share2 className="size-[18px]" />
               </Button>
-            )}
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Share"
-              onClick={() => void shareProduct()}
-              className="size-11 shrink-0"
-            >
-              <Share2 className="size-[18px]" />
-            </Button>
+            </div>
           </div>
           {!canShop ? (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -334,8 +352,10 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             <p className="mt-2 text-sm font-semibold text-foreground">
               {product.isThrift ? "Sold — this one-of-a-kind piece is gone" : "Out of stock"}
             </p>
-          ) : needsSizeChoice ? (
-            <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>
+          ) : shouldShowSizePrompt ? (
+            <p role="alert" className="mt-2 text-xs text-destructive">
+              Select a size to continue.
+            </p>
           ) : null}
 
           <ShippingInfo />

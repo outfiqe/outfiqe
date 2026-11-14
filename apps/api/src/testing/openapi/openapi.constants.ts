@@ -13,6 +13,7 @@ export const OPENAPI_RECORDINGS_DIR = path.join(OPENAPI_OUTPUT_DIR, "recordings"
 
 export const API_DOCS_TASK_WRITE = "write";
 export const API_DOCS_TASK_RECORD = "record";
+export const API_DOCS_TASK_MERGE = "merge";
 
 export const REGENERATE_SPEC_COMMAND = "pnpm --filter @outfiqe/api docs:openapi";
 

@@ -128,6 +128,7 @@ export const PlatformTeamSection = () => {
 
             <div className="flex items-center gap-2">
               <Select
+                aria-label={`Role for ${member.userName}`}
                 value={member.roleId}
                 disabled={member.isSuperAdmin || isViewersOwnRow(member) || isActing}
                 onChange={(e) => requestRoleChange(member, e.target.value)}

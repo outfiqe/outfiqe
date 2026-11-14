@@ -1,6 +1,8 @@
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { cn } from "@/shared/lib/cn";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 import type { Breadcrumb } from "@/shared/seo";
 import { Breadcrumbs } from "@/shared/seo";
 
@@ -14,9 +16,11 @@ export const MarketingShell = ({ breadcrumbs, children, width = "wide" }: Market
   <div className="pb-20 lg:pb-0">
     <SiteHeader />
     <main
-      className={`mx-auto px-6 pb-24 pt-10 sm:pt-16 lg:px-10 ${
-        width === "prose" ? "max-w-3xl" : "max-w-5xl"
-      }`}
+      className={cn(
+        MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME,
+        "mx-auto px-6 pb-24 pt-10 sm:pt-16 lg:px-10",
+        width === "prose" ? "max-w-3xl" : "max-w-5xl",
+      )}
     >
       <Breadcrumbs crumbs={breadcrumbs} className="mb-6" />
       {children}

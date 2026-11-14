@@ -45,34 +45,38 @@ describe("ShippingInfo", () => {
     expect(screen.getByText("Damaged or wrong item? Tell us within 7 days")).toBeInTheDocument();
   });
 
-  it("shows the default-zone delivery estimate once loaded", () => {
-    mockZonesQuery({ data: [buildZone()] });
+  it("quotes the cheapest delivery fee without naming any internal zone", () => {
+    mockZonesQuery({
+      data: [
+        buildZone({ name: "Default zone", standardDeliveryFee: 150, cities: [] }),
+        buildZone({ id: "z2", isDefault: false, standardDeliveryFee: 120 }),
+      ],
+    });
 
     render(<ShippingInfo />);
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByText(/delivery to/)).toHaveTextContent(
-      "Rs. 120 delivery to Kathmandu Valley · Free above Rs. 5,000",
+    expect(screen.getByText(/Delivery from/)).toHaveTextContent(
+      "Delivery from Rs. 120 · Free above Rs. 5,000",
     );
+    expect(screen.queryByText(/Default zone|Kathmandu Valley/)).not.toBeInTheDocument();
   });
 
-  it("hides the free-delivery note when the zone has no threshold", () => {
+  it("hides the free-delivery note when there is no threshold", () => {
     mockZonesQuery({ data: [buildZone({ freeDeliveryThreshold: 0 })] });
 
     render(<ShippingInfo />);
 
-    expect(screen.getByText(/delivery to/)).toHaveTextContent(
-      "Rs. 120 delivery to Kathmandu Valley",
-    );
+    expect(screen.getByText(/Delivery from/)).toHaveTextContent("Delivery from Rs. 120");
     expect(screen.queryByText(/Free above/)).not.toBeInTheDocument();
   });
 
-  it("omits the delivery line when there is no default zone", () => {
-    mockZonesQuery({ data: [buildZone({ isDefault: false })] });
+  it("omits the delivery line when no delivery zones are set up", () => {
+    mockZonesQuery({ data: [] });
 
     render(<ShippingInfo />);
 
-    expect(screen.queryByText(/delivery to/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Delivery from/)).not.toBeInTheDocument();
     expect(screen.getByText("Damaged or wrong item? Tell us within 7 days")).toBeInTheDocument();
   });
 });

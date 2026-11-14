@@ -74,9 +74,10 @@ export const ExploreSearchBox = ({
 
   return (
     <Autocomplete autoHighlightFirst={false}>
-      <form onSubmit={submitSearch} className={formClassName}>
-        <Search className="size-4 shrink-0 text-muted-foreground" />
+      <form role="search" onSubmit={submitSearch} className={formClassName}>
+        <Search aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
         <AutocompleteInput
+          aria-label="Search muses and drops"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={placeholder}

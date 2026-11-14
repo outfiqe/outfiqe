@@ -57,6 +57,7 @@ export const RegisterForm = () => {
   if (register.isSuccess) {
     return (
       <RegisterSuccess
+        email={form.getValues("email")}
         onGoBack={() => {
           register.reset();
           form.reset();

@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -62,7 +62,12 @@ export const ExploreSearchResults = () => {
 
   if (!hasQuery) {
     return (
-      <p className="mt-12 text-sm text-muted-foreground">Search for a muse, drop, or hashtag.</p>
+      <div>
+        <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+          Search looks
+        </h1>
+        <p className="mt-12 text-sm text-muted-foreground">Search for a muse, drop, or hashtag.</p>
+      </div>
     );
   }
 
@@ -74,7 +79,7 @@ export const ExploreSearchResults = () => {
   return (
     <div>
       <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-        {query}
+        Results for &ldquo;{query}&rdquo;
       </h1>
 
       {isLoading ? (
@@ -84,9 +89,14 @@ export const ExploreSearchResults = () => {
           ))}
         </div>
       ) : creators.length === 0 && posts.length === 0 ? (
-        <p className="mt-12 text-sm text-muted-foreground">
-          No muses or drops matched. Try a different search.
-        </p>
+        <div className="mt-12 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            No muses or drops matched. Try a different search, or see what muses are wearing now.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/explore">Explore looks</Link>
+          </Button>
+        </div>
       ) : (
         <>
           {creators.length > 0 && (

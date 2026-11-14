@@ -74,7 +74,14 @@ describe("SearchResults", () => {
     render(<SearchResults />);
 
     expect(screen.getByText("Search for a product, brand, or category.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Search" })).toBeInTheDocument();
     expect(useInfiniteProducts).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
+  });
+
+  it("titles the page with what was searched for", () => {
+    render(<SearchResults />);
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Results for “tee”");
   });
 
   it("shows the loading skeleton instead of stale anonymous data while auth is still resolving", () => {
@@ -100,7 +107,11 @@ describe("SearchResults", () => {
 
     render(<SearchResults />);
 
-    expect(screen.getByText("No pieces matched. Try a different search.")).toBeInTheDocument();
+    expect(screen.getByText(/No pieces matched\. Try a different search/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse all pieces" })).toHaveAttribute(
+      "href",
+      "/shop",
+    );
   });
 
   it("does not print a zero count when the search comes back empty", () => {

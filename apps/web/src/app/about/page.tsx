@@ -2,60 +2,35 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
-  ExampleCallout,
+  ABOUT_ONE_JACKET_STORY,
+  ABOUT_SHOPPING_BEFORE_OUTFIQE,
+  ABOUT_TRUST_CHECKS,
+  ABOUT_WHAT_EACH_SIDE_GETS,
+  ABOUT_WHAT_MAKES_IT_DIFFERENT,
+  ABOUT_WHAT_WE_LOOK_AFTER,
+  ABOUT_WHO_IT_IS_FOR,
   FeatureGrid,
   MarketingCta,
   MarketingHero,
   MarketingSection,
   MarketingShell,
+  StepList,
 } from "@/features/marketing";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "About Outfiqe",
   description:
-    "Outfiqe is a Nepali fashion marketplace. Local brands and thrift pieces, shown on real muses, in one bag, delivered as one parcel. What we are building, and why.",
+    "Outfiqe is a fashion discovery platform. See what real people wear, get ideas for your next outfit, and buy the exact pieces from the brands that made them.",
   path: "/about",
-  keywords: ["about Outfiqe", "Nepali fashion marketplace", "Outfiqe company"],
+  keywords: ["about Outfiqe", "fashion discovery platform", "shop the look", "Outfiqe muses"],
 });
 
-const principles = [
-  {
-    title: "Local brands first",
-    body: "Every brand on Outfiqe is a Nepali label, alongside secondhand pieces in Thrift. We help small studios reach shoppers they couldn't reach alone, and we only earn when they sell.",
-  },
-  {
-    title: "See the fit before you buy",
-    body: "A photo on a hanger tells you very little. Muse looks show each piece on a real person, and reviews come only from people who actually received the item.",
-  },
-  {
-    title: "One cart, one parcel",
-    body: "Shop across brands in one checkout. We collect from each brand, check every piece at our hub and send your order as one parcel you can follow step by step.",
-  },
-  {
-    title: "Muses earn for taste",
-    body: "When someone buys a piece because of a muse's look, that muse earns a commission. We track it for them and pay it into their bank account.",
-  },
-];
-
-const roles = [
-  {
-    title: "Shoppers",
-    body: "People looking for clothes. They find pieces through looks and the shop, then buy from many brands in one bag.",
-  },
-  {
-    title: "Brands",
-    body: "Nepali clothing labels. They make or source the pieces, set the prices and keep their stock up to date.",
-  },
-  {
-    title: "Muses",
-    body: "Real people who wear those pieces, share photos called looks, and earn a commission when a look leads to a sale.",
-  },
-  {
-    title: "Outfiqe",
-    body: "The place that connects them. We run the store, take payment, collect orders from brands, check them at our hub, arrange delivery and handle refunds.",
-  },
-];
+const PARAGRAPH_CLASS_NAME =
+  "max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base";
+const BULLET_LIST_CLASS_NAME =
+  "max-w-2xl list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground sm:text-base";
+const INLINE_LINK_CLASS_NAME = "font-medium text-foreground underline underline-offset-2";
 
 const AboutPage = () => (
   <MarketingShell
@@ -66,84 +41,109 @@ const AboutPage = () => (
   >
     <MarketingHero
       eyebrow="About"
-      title={
-        <>
-          The one place Nepali
-          <br />
-          shoppers go for fashion.
-        </>
-      }
-      lede="Outfiqe brings Nepal's clothing brands together in one storefront and shows every piece on real muses. Shopping starts with an outfit you like, not a search box."
+      title="Why we built Outfiqe"
+      lede="Finding clothes you love shouldn't take ten social media pages, three DMs and a guess about your size. That's why we built Outfiqe."
     />
 
-    <MarketingSection heading="What Outfiqe is">
-      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+    <MarketingSection heading="The problem">
+      <div className={PARAGRAPH_CLASS_NAME}>
         <p>
-          Outfiqe is an online fashion marketplace for Nepal. We don&apos;t make the clothes.
-          Independent Nepali brands sell them here, and we handle the shopping, payment, delivery
-          and support around each order.
+          There are a lot of good independent clothing brands out there. Some are small studios run
+          by two or three people. Some are home businesses that started with one sewing machine.
+          Most of them sell the same way: one drop at a time, on Instagram or Facebook.
+        </p>
+        <p>
+          That works for the brand&apos;s existing followers. For everyone else, shopping looked
+          something like this:
+        </p>
+      </div>
+      <ul className={`mt-4 ${BULLET_LIST_CLASS_NAME}`}>
+        {ABOUT_SHOPPING_BEFORE_OUTFIQE.map((frustration) => (
+          <li key={frustration}>{frustration}</li>
+        ))}
+      </ul>
+      <p className={`mt-4 ${PARAGRAPH_CLASS_NAME}`}>
+        Shoppers were spread out. Brands were spread out. And it wasn&apos;t easy for brands either.
+        Many of them were running sales, customer service, delivery and refunds from a phone, on top
+        of actually making clothes.
+      </p>
+    </MarketingSection>
+
+    <MarketingSection heading="What Outfiqe is">
+      <div className={PARAGRAPH_CLASS_NAME}>
+        <p>
+          Outfiqe is a fashion discovery platform. It&apos;s one place where you can see what people
+          are really wearing, get ideas for your next outfit, and buy the exact pieces from the
+          brands that made them.
+        </p>
+        <p>
+          We don&apos;t make the clothes, and we don&apos;t hold stock. Brands sell their own pieces
+          at their own prices. We look after everything around the sale:
+        </p>
+      </div>
+      <ul className={`mt-4 ${BULLET_LIST_CLASS_NAME}`}>
+        {ABOUT_WHAT_WE_LOOK_AFTER.map((responsibility) => (
+          <li key={responsibility}>{responsibility}</li>
+        ))}
+      </ul>
+    </MarketingSection>
+
+    <MarketingSection heading="Look first, then shop">
+      <div className={PARAGRAPH_CLASS_NAME}>
+        <p>
+          Most online stores start with a search box. You have to know what you want before you can
+          find it. Outfiqe starts with people instead.
+        </p>
+        <p>
+          Real people, who we call muses, post photos of what they actually wear and tag every piece
+          in the photo. You scroll through those looks, spot an outfit you like, tap the tag on the
+          jacket, and you&apos;re on that exact jacket with its price, sizes and brand.
+        </p>
+        <p>
+          You don&apos;t have to buy anything. Plenty of people open Outfiqe just to see what&apos;s
+          trending this week and save a few ideas. When you&apos;re ready to buy, everything you
+          saved is waiting for you.
+        </p>
+        <p>
+          New to words like muse, look or hub? See{" "}
+          <Link href="/help/glossary" className={INLINE_LINK_CLASS_NAME}>
+            what our words mean
+          </Link>
+          .
         </p>
       </div>
     </MarketingSection>
 
-    <MarketingSection heading="Who does what">
-      <FeatureGrid items={roles} columns={2} />
-      <p className="mt-6 max-w-2xl text-sm text-muted-foreground sm:text-base">
-        New words? See{" "}
-        <Link
-          href="/help/glossary"
-          className="font-medium text-foreground underline underline-offset-2"
-        >
-          what our words mean
+    <MarketingSection heading="Who it's for">
+      <FeatureGrid items={ABOUT_WHO_IT_IS_FOR} columns={3} />
+    </MarketingSection>
+
+    <MarketingSection heading="What makes it different">
+      <FeatureGrid items={ABOUT_WHAT_MAKES_IT_DIFFERENT} columns={2} />
+    </MarketingSection>
+
+    <MarketingSection heading="What each side gets">
+      <FeatureGrid items={ABOUT_WHAT_EACH_SIDE_GETS} columns={3} />
+    </MarketingSection>
+
+    <MarketingSection heading="How we keep it trustworthy">
+      <p className={`mb-6 ${PARAGRAPH_CLASS_NAME}`}>
+        A marketplace only works if people can trust what they see. So a few things always happen,
+        no matter who you are.
+      </p>
+      <FeatureGrid items={ABOUT_TRUST_CHECKS} columns={3} />
+    </MarketingSection>
+
+    <MarketingSection heading="One jacket, three people">
+      <p className={`mb-6 ${PARAGRAPH_CLASS_NAME}`}>
+        The easiest way to understand Outfiqe is to follow a single piece of clothing. For each
+        person&apos;s steps in more detail, see{" "}
+        <Link href="/how-it-works" className={INLINE_LINK_CLASS_NAME}>
+          how Outfiqe works
         </Link>
         .
       </p>
-    </MarketingSection>
-
-    <MarketingSection heading="How it fits together">
-      <ExampleCallout title="One kurta, three people">
-        <p>
-          A Kathmandu brand lists a kurta. Sita, a muse, wears it, posts a look and tags it. Maya
-          sees the look, taps the tag and buys the kurta.
-        </p>
-        <p>
-          Our rider collects it from the brand, we check it at our hub, and a delivery partner
-          brings it to Maya. The brand earns from the sale, and Sita earns a commission.
-        </p>
-      </ExampleCallout>
-    </MarketingSection>
-
-    <MarketingSection heading="Why we started">
-      <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-        <p>
-          Good clothes from Nepali brands were sold one Instagram drop at a time. Shoppers had no
-          single place to browse them, no way to see how a piece fits before paying, and no reliable
-          checkout or delivery. Brands ran customer service and couriers out of their DMs.
-        </p>
-        <p>
-          Outfiqe fixes that end to end. Brands list once and hand ready orders to our riders. Muses
-          drop the looks that show those clothes on real people. Shoppers add across brands to one
-          cart, pay by cash on delivery or eSewa, and track one parcel to their door, with refunds
-          handled for them if something goes wrong.
-        </p>
-      </div>
-    </MarketingSection>
-
-    <MarketingSection heading="What we believe">
-      <FeatureGrid items={principles} columns={2} />
-    </MarketingSection>
-
-    <MarketingSection heading="How it works">
-      <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-        A short walk through the shopper, muse and brand journeys lives on our{" "}
-        <Link
-          href="/how-it-works"
-          className="font-medium text-foreground underline underline-offset-2"
-        >
-          How Outfiqe works
-        </Link>{" "}
-        page.
-      </p>
+      <StepList steps={ABOUT_ONE_JACKET_STORY} />
     </MarketingSection>
 
     <MarketingCta

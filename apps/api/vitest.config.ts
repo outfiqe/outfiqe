@@ -54,6 +54,7 @@ export default defineConfig({
         "src/testing/openapi/openapi.examples.ts",
         "src/testing/openapi/openapi.naming.ts",
         "src/testing/openapi/openapi.operation.ts",
+        "src/testing/openapi/openapi.recordings.ts",
         "src/testing/openapi/openapi.responses.ts",
         "src/testing/openapi/openapi.route-recorder.ts",
         "src/testing/openapi/openapi.schemas.ts",

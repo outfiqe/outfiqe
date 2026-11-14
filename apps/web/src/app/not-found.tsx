@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { cn } from "@/shared/lib/cn";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -23,7 +25,12 @@ const popularDestinations = [
 const NotFound = () => (
   <div className="pb-20 lg:pb-0">
     <SiteHeader />
-    <main className="mx-auto max-w-2xl px-6 py-20 text-center lg:px-10">
+    <main
+      className={cn(
+        MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME,
+        "mx-auto max-w-2xl px-6 py-20 text-center lg:px-10",
+      )}
+    >
       <p className="text-xs font-bold uppercase tracking-widest text-primary-strong">404</p>
       <h1 className="mt-3 font-display text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl">
         We can&apos;t find that page

@@ -3,12 +3,13 @@ import { Skeleton } from "@outfiqe/design-system";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 const ProductLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
           <Skeleton className="my-3 h-4 w-16" />
 

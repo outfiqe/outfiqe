@@ -6,13 +6,13 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlagState } from "@/shared/hooks/useFeatureFlag";
 
 import { MISSING_PICKUP_LOCATION_MESSAGE } from "../../pickups/constants/pickupLocationMessages";
 import { OrdersSection } from "./OrdersSection";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
-vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlag: vi.fn() }));
+vi.mock("@/shared/hooks/useFeatureFlag", () => ({ useFeatureFlagState: vi.fn() }));
 vi.mock("next/link", () => ({
   __esModule: true,
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -33,6 +33,10 @@ const quietReliability = {
   nextCursor: null,
 };
 
+const ORDER_LOGISTICS_OFF = { isEnabled: false, isResolved: true };
+const ORDER_LOGISTICS_ON = { isEnabled: true, isResolved: true };
+const ORDER_LOGISTICS_LOADING = { isEnabled: false, isResolved: false };
+
 const renderOrders = () => render(<OrdersSection />, { wrapper: createQueryClientWrapper() });
 
 beforeEach(() => {
@@ -50,18 +54,18 @@ beforeEach(() => {
 
 describe("OrdersSection", () => {
   it("shows no Outfiqe delivery panels to a brand while the switch is off", async () => {
-    vi.mocked(useFeatureFlag).mockReturnValue(false);
+    vi.mocked(useFeatureFlagState).mockReturnValue(ORDER_LOGISTICS_OFF);
     renderOrders();
 
     expect(await screen.findByText(/No sales yet/)).toBeInTheDocument();
-    expect(useFeatureFlag).toHaveBeenCalledWith("order_logistics");
+    expect(useFeatureFlagState).toHaveBeenCalledWith("order_logistics");
     expect(screen.queryByText(MISSING_PICKUP_LOCATION_MESSAGE)).not.toBeInTheDocument();
     expect(screen.queryByText("Delivery problems")).not.toBeInTheDocument();
     expect(screen.queryByText("Returns coming back to you")).not.toBeInTheDocument();
   });
 
   it("shows the pickup banner and the returns panel once the switch is on for the brand", async () => {
-    vi.mocked(useFeatureFlag).mockReturnValue(true);
+    vi.mocked(useFeatureFlagState).mockReturnValue(ORDER_LOGISTICS_ON);
     renderOrders();
 
     expect(await screen.findByText(MISSING_PICKUP_LOCATION_MESSAGE)).toBeInTheDocument();
@@ -69,8 +73,17 @@ describe("OrdersSection", () => {
     expect(screen.queryByText("Delivery problems")).not.toBeInTheDocument();
   });
 
+  it("keeps the returns panel in place while the switches load, so the list below does not jump", async () => {
+    vi.mocked(useFeatureFlagState).mockReturnValue(ORDER_LOGISTICS_LOADING);
+    renderOrders();
+
+    expect(screen.getByText("Returns coming back to you")).toBeInTheDocument();
+    expect(await screen.findByText(/No sales yet/)).toBeInTheDocument();
+    expect(screen.queryByText(MISSING_PICKUP_LOCATION_MESSAGE)).not.toBeInTheDocument();
+  });
+
   it("shows delivery problems once the brand has had one", async () => {
-    vi.mocked(useFeatureFlag).mockReturnValue(true);
+    vi.mocked(useFeatureFlagState).mockReturnValue(ORDER_LOGISTICS_ON);
     mswServer.use(
       http.get("/api/logistics/brand/reliability", () =>
         okJson({

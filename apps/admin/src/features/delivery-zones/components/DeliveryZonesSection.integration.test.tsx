@@ -63,6 +63,10 @@ describe("DeliveryZonesSection", () => {
     expect(screen.getByText("Enter a free delivery threshold.")).toBeInTheDocument();
     expect(screen.getByText("Enter a COD handling fee.")).toBeInTheDocument();
     expect(createRequested).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText("Type a city and press Enter")).toHaveClass(
+      "min-w-0",
+      "flex-1",
+    );
   });
 
   it("explains a fee with decimals and does not send it", async () => {

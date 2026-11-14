@@ -72,6 +72,9 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
     productTypes.data?.find((productType) => productType.slug === type)?.supportsFitRanges ?? false;
   const typeField = form.register("type");
   const typeSelectId = useId();
+  const nameInputId = useId();
+  const priceInputId = useId();
+  const categoriesSelectId = useId();
 
   const submitEdit = form.handleSubmit(async (values) => {
     try {
@@ -141,8 +144,14 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
         />
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Product name</label>
-          <Input placeholder="Linen band-collar shirt" {...form.register("name")} />
+          <label htmlFor={nameInputId} className="mb-1.5 block text-sm font-medium text-foreground">
+            Product name
+          </label>
+          <Input
+            placeholder="Linen band-collar shirt"
+            id={nameInputId}
+            {...form.register("name")}
+          />
           {form.formState.errors.name && (
             <p className="mt-1.5 text-xs text-destructive">{form.formState.errors.name.message}</p>
           )}
@@ -150,8 +159,18 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Price (Rs.)</label>
-            <Input type="number" min={1} {...form.register("price", { valueAsNumber: true })} />
+            <label
+              htmlFor={priceInputId}
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Price (Rs.)
+            </label>
+            <Input
+              type="number"
+              min={1}
+              id={priceInputId}
+              {...form.register("price", { valueAsNumber: true })}
+            />
             {form.formState.errors.price && (
               <p className="mt-1.5 text-xs text-destructive">
                 {form.formState.errors.price.message}
@@ -236,8 +255,14 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
         />
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Categories</label>
+          <label
+            htmlFor={categoriesSelectId}
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
+            Categories
+          </label>
           <MultiSelect
+            id={categoriesSelectId}
             options={
               categories.data?.map((category) => ({
                 value: category.slug,

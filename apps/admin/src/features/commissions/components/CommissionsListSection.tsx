@@ -108,7 +108,7 @@ export const CommissionsListSection = () => {
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load commissions.</p>}
-        {!isLoading && commissions.length === 0 && (
+        {!isLoading && !error && commissions.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

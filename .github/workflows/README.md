@@ -7,16 +7,17 @@ is the release branch and the only thing that deploys to production.
 
 ## Structure
 
-| File                   | Trigger                                                                        | What it owns                                                                                                                                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ci.yml`               | `pull_request` (any base), excluding docs-only diffs                           | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
-| `ci-docs.yml`          | `pull_request` (any base), docs-only diffs                                     | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
-| `commit-messages.yml`  | `pull_request` (any base)                                                      | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
-| `coverage.yml`         | `pull_request` -> `main`, excluding docs-only diffs                            | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
-| `validate-branch.yml`  | `pull_request` (any base)                                                      | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
-| `deploy.yml`           | `push` -> `main` touching backend paths, `workflow_dispatch`                   | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
-| `keepalive.yml`        | `schedule`, `workflow_dispatch`                                                | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
-| `publish-api-docs.yml` | `push` -> `main` touching `apps/api/openapi/openapi.json`, `workflow_dispatch` | Tells `outfiqe/internal-docs` to rebuild and deploy ops.outfiqe.com, so the API tab always matches production. Needs the `DOCS_SYNC_TOKEN` secret (see below); without it the job only warns.                                                                      |
+| File                       | Trigger                                                                                            | What it owns                                                                                                                                                                                                                                                       |
+| -------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci.yml`                   | `pull_request` (any base), excluding docs-only diffs                                               | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
+| `ci-docs.yml`              | `pull_request` (any base), docs-only diffs                                                         | Instantly passing jobs named like every required `ci.yml` check (`CI`, `Lint & Format`, `Typecheck`, `Build`, `Unit tests`, `Integration tests`), so a documentation-only PR is mergeable without running the real gate.                                           |
+| `commit-messages.yml`      | `pull_request` (any base)                                                                          | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
+| `coverage.yml`             | `pull_request` -> `main`, excluding docs-only diffs                                                | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
+| `validate-branch.yml`      | `pull_request` (any base)                                                                          | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
+| `deploy.yml`               | `push` -> `main` touching backend paths, `workflow_dispatch`                                       | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
+| `keepalive.yml`            | `schedule`, `workflow_dispatch`                                                                    | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
+| `publish-api-docs.yml`     | `push` -> `main` touching `apps/api/openapi/openapi.json`, `workflow_dispatch`                     | Tells `outfiqe/internal-docs` to rebuild and deploy ops.outfiqe.com, so the API tab always matches production. Needs the `DOCS_SYNC_TOKEN` secret (see below); without it the job only warns.                                                                      |
+| `refresh-api-examples.yml` | `push` -> `dev` touching `apps/api/**` (not `apps/api/openapi/**` or READMEs), `workflow_dispatch` | Records fresh example responses from the API integration tests and opens or updates one PR, `chore/refresh-api-examples`, with the new `examples.json` and `openapi.json`. Needs the `API_EXAMPLES_PR_TOKENS` secret (see below).                                  |
 
 "Docs-only diffs" means every changed file matches `**/*.md`, `docs/**`, `LICENSE`, `.gitignore`,
 or `.gitattributes`. A PR that touches one of those _and_ a code file runs the real `ci.yml`.
@@ -28,7 +29,10 @@ Feature work:
 1. Branch off `dev` as `<type>/<kebab-description>`, open a PR into `dev`.
 2. `ci.yml` (or `ci-docs.yml` for a docs-only diff), `commit-messages.yml`, and
    `validate-branch.yml` run against the PR. `coverage.yml` does not (it is `main`-only).
-3. Merge to `dev`. Nothing runs on the push to `dev` -- the PR already proved the merge result.
+3. Merge to `dev`. The PR already proved the merge result, so no checks run on the push to `dev`.
+   The one exception is `refresh-api-examples.yml`: when the merge changed the API, it records new
+   example responses and opens a `chore(api): refresh api examples` PR. Check its diff and merge
+   it like any other PR.
 
 Stacked work (a large feature split into PRs that each target the branch below):
 
@@ -96,14 +100,38 @@ fine-grained token, `DOCS_SYNC_TOKEN`, stored as a secret in both repos. It's sc
 with the same scopes and update the secret in both repos. It triggers on `main` only, so the
 reference always describes what's running in production.
 
-**One `CI` status check, not one per job.** The `outfiqe` ruleset requires exactly two contexts:
-`CI` and `Branch Naming`. `CI` is a fan-in job at the end of `ci.yml` -- it `needs` `lint`,
-`typecheck`, `build`, `unit`, and `integration`, runs `if: always()`, and fails unless every one
-of them reported `success` (a `skipped` or `cancelled` upstream job fails it too, so a skipped
-lint can't sneak a merge through). `browser` and `lighthouse` still run on every code PR but are
-not part of the fan-in, same as when they were never in the required list; `lighthouse` is
-`continue-on-error` regardless. Adding or renaming a job inside `ci.yml` no longer means touching
-branch protection -- only the `CI` job's `needs` list.
+**API examples are refreshed by a PR, not by hand.** The example responses on the API tab come from
+`apps/api/openapi/examples.json`, which only a full run of the API integration tests can rebuild
+(see `apps/api/src/testing/openapi/README.md`). That is too slow to run on a laptop for every API
+change, so `refresh-api-examples.yml` does it after the change reaches `dev`:
+
+- Four `record` jobs run the integration tests split the same way as `ci.yml`, with
+  `API_DOCS_TASK=record`, and each uploads its `recordings/*.jsonl`. A failing test only means
+  fewer examples, so it warns instead of failing the job.
+- One `merge` job downloads them into one folder (one subfolder per job, so file names can't
+  collide), runs `openapi.docs-task.ts merge`, and stops if a full JWT or a bcrypt/argon2 hash
+  appears in the diff. Redaction should already have removed them; this is a second check.
+- It commits to the `chore/refresh-api-examples` branch and opens or updates the PR into `dev`.
+  The rules block direct pushes to `dev`, so it has to be a PR. Merging that PR doesn't start the
+  workflow again, because it only changes `apps/api/openapi/**`.
+- A PR opened with the default `GITHUB_TOKEN` never starts other workflows, so the required checks
+  would never report and the PR could never merge. The workflow therefore uses
+  `API_EXAMPLES_PR_TOKENS`, a fine-grained token for the `outfiqe` org with access to only
+  `outfiqe/outfiqe` (Contents and Pull requests: read and write). It is kept separate from
+  `DOCS_SYNC_TOKEN` so the docs repo never holds a token that can write to this one. When it
+  expires, make a new one with the same settings and replace the secret's value.
+- It duplicates `ci.yml`'s top-level `env:` block for the same reason `coverage.yml` does (see
+  below). Keep it in sync too.
+
+**Required checks.** The `outfiqe` ruleset on `dev` and `main` requires seven checks by name:
+`CI`, `Branch Naming`, `Lint & Format`, `Typecheck`, `Build`, `Unit tests` and `Integration
+tests`. `CI` is a fan-in job at the end of `ci.yml` -- it `needs` `lint`, `typecheck`, `build`,
+`unit`, `integration` and `api-boot`, runs `if: always()`, and fails unless every one of them
+reported `success` (a `skipped` or `cancelled` upstream job fails it too, so a skipped lint can't
+sneak a merge through). `browser` and `lighthouse` still run on every code PR but are not
+required; `lighthouse` is `continue-on-error` regardless. If you rename a required job in
+`ci.yml`, rename its match in `ci-docs.yml` and in the ruleset at the same time, or PRs stop being
+mergeable.
 
 **`api-boot` starts the real API before anything merges.** It applies the migrations to an empty
 Postgres, starts the API with the exact command the production image runs (`node --import tsx
@@ -117,15 +145,18 @@ final `CI` job requires `api-boot`, so a PR that breaks startup cannot merge.
 checks, and a required check that never reports blocks the PR from merging forever. So `ci.yml`
 can't just `paths-ignore` the docs globs on its own -- a docs-only PR would be unmergeable.
 `ci-docs.yml` is the documented workaround: it triggers on exactly the globs `ci.yml` ignores and
-defines a single job **named `CI`, matching the required context**, that does nothing but echo.
-Between the two files the `CI` context always reports -- from the real fan-in on a code PR, from
-the echo on a docs-only PR. A mixed docs+code PR triggers both (`ci.yml` because a code file
-changed, `ci-docs.yml` because a doc changed); GitHub then requires _both_ `CI` runs to be green,
-so the real gate is still what blocks the merge and the echo is a harmless duplicate. If you
-rename the `CI` job in either file, keep the other and the ruleset in lockstep or PRs stop being
-mergeable.
+defines **one job for each required `ci.yml` check, with the same name** (`CI`, `Lint & Format`,
+`Typecheck`, `Build`, `Unit tests`, `Integration tests`), each of which only echoes. Between the
+two files every required check always reports -- from the real jobs on a code PR, from the echoes
+on a docs-only PR. `Branch Naming` comes from `validate-branch.yml`, which runs on every PR. Until
+November 2026 `ci-docs.yml` only had the `CI` job, so docs-only PRs waited forever on the other
+five checks and could not merge.
 
-**`coverage.yml` duplicates `ci.yml`'s top-level `env:` block.** Actions has no supported way to
+A mixed docs+code PR triggers both files (`ci.yml` because a code file changed, `ci-docs.yml`
+because a doc changed); GitHub then requires _both_ runs of each check to be green, so the real
+gate is still what blocks the merge and the echoes are harmless duplicates.
+
+**`coverage.yml` and `refresh-api-examples.yml` duplicate `ci.yml`'s top-level `env:` block.** Actions has no supported way to
 share an `env:` map across workflow files (no YAML anchors, no `env` in composite actions that
 survives into later job steps). The coverage run exercises the same integration + web/admin
 suites as `ci.yml`, so it needs the same `CI_*` vars and secrets. Keep the two blocks in sync

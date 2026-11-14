@@ -38,6 +38,12 @@ A feature only has the folders it needs. `index.ts` (when other features import 
 
 **Large features are split into topic folders**, each with the same layer folders inside. `creator-dashboard/` has `badges/`, `challenges/`, `earnings/`, `share-links/`, `looks/` and `progress/`; `brand-dashboard/` has `products/`, `shipments/`, `tag-reviews/` and `wallet/`; `explore/` has `feed/`, `posts/`, `comments/` and `suggestions/`; `outfit-build/` has `board/`, `my-builds/`, `publishing/`, `public-builds/` and `social/`; `auth/` has `login/`, `registration/`, `password/`, `oauth/`, `suspension/` and `phone-number/`; `pwa/` has `install/`, `app-manifest/`, `offline/`, `push/` and `service-worker/`. Code shared by several topics stays in the feature root's own layer folders. Topic folders are kebab-case; files keep React naming (PascalCase components, camelCase everything else).
 
+## Every page's main area is at least one screen tall
+
+Most pages load their lists in the browser: the bag, the wishlist, orders, search results and the leaderboards. Before they arrive, the page's `<main>` is nearly empty, so the footer used to sit halfway up the screen and then get pushed down when the list landed. That jump was the largest layout shift on the site (up to 0.86 on a phone).
+
+Every page that shows `SiteFooter` gives its `<main>` `MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME` (`src/shared/lib/pageMain.ts`), which makes it at least one screen tall. The footer then always starts below the fold, so nothing a shopper is looking at moves when content arrives. A new page with the footer should use it too. On a short page, such as an empty bag, the footer is one scroll away, which is the usual trade-off for this layout.
+
 ## The dashboard sidebar has a staff menu
 
 Most dashboard pages send staff to the admin panel, but build pages and account settings do not, so staff can still land on the sidebar. `components/useDashboardNav.ts` gives them a short menu with a link back to the admin panel instead of the shopper menu. Staff who are also creators keep the muse menu.

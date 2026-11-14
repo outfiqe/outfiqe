@@ -6,7 +6,6 @@ import {
   AutocompleteInput,
   AutocompleteItem,
   Button,
-  Input,
   Skeleton,
 } from "@outfiqe/design-system";
 import { Check, Clock, ImageOff, Search, Tags, X } from "lucide-react";
@@ -23,6 +22,9 @@ import {
   TAG_REJECTION_REASON_LABELS,
   TAG_REVIEW_STATUS_LABELS,
 } from "../utils/tagReviewLabels";
+import { TaggedProductSizeField } from "./TaggedProductSizeField";
+
+const NO_SIZE_ERRORS = 0;
 
 const ProductThumb = ({ url, className }: { url: string | null; className?: string }) => (
   <div
@@ -154,6 +156,8 @@ export const ProductTagPicker = ({
   error,
 }: ProductTagPickerProps) => {
   const [showPicker, setShowPicker] = useState(initialExpanded);
+  const hasMissingSize = Object.keys(sizeErrors ?? {}).length > NO_SIZE_ERRORS;
+  const isPickerOpen = showPicker || hasMissingSize;
 
   return (
     <div className="border-t border-border pt-4">
@@ -168,7 +172,7 @@ export const ProductTagPicker = ({
           : "Tag a product"}
       </button>
 
-      {showPicker && (
+      {isPickerOpen && (
         <div className="mt-3">
           <p className="mb-2 text-xs text-muted-foreground">
             {taggedProducts.length}/{maxTaggedProducts} selected
@@ -192,13 +196,12 @@ export const ProductTagPicker = ({
                         {product?.name ?? "Product"}
                       </span>
                       {review && <TagReviewStatusChip reviewStatus={review.reviewStatus} />}
-                      <Input
-                        placeholder="Size (e.g. M)"
-                        className="h-8 w-24 shrink-0"
-                        value={tag.sizeWorn}
-                        aria-invalid={sizeError ? true : undefined}
-                        aria-label={`Size worn for ${product?.name ?? "product"}`}
-                        onChange={(event) => onSizeChange(tag.productId, event.target.value)}
+                      <TaggedProductSizeField
+                        productId={tag.productId}
+                        productName={product?.name ?? "product"}
+                        sizeWorn={tag.sizeWorn}
+                        hasError={Boolean(sizeError)}
+                        onSizeChange={(sizeWorn) => onSizeChange(tag.productId, sizeWorn)}
                       />
                       <button
                         type="button"
@@ -228,6 +231,7 @@ export const ProductTagPicker = ({
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
               <AutocompleteInput
+                aria-label="Search products to tag"
                 placeholder="Search products to tag…"
                 value={productFilter}
                 onChange={(event) => onFilterChange(event.target.value)}

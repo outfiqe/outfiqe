@@ -28,7 +28,7 @@ export const CouponForm = ({ appliedCoupon }: CouponFormProps) => {
   if (appliedCoupon) {
     return (
       <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
-        <span className="font-semibold text-primary">{appliedCoupon.code} applied</span>
+        <span className="font-semibold text-primary-strong">{appliedCoupon.code} applied</span>
         <button
           type="button"
           aria-label="Remove coupon"

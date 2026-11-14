@@ -4,6 +4,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 const STAT_COUNT = 3;
 const CATEGORY_PILL_COUNT = 4;
@@ -12,7 +13,7 @@ const BrandLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-3xl border border-border bg-card">
             <Skeleton className="h-36 w-full rounded-none sm:h-52" />

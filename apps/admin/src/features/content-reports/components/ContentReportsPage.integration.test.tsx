@@ -60,6 +60,7 @@ describe("ContentReportsPage", () => {
     expect(screen.getByText(/This is a bot drop\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open (1)" })).toBeInTheDocument();
     expect(screen.getByText(/1 open\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open (1)" }).parentElement).toHaveClass("flex-wrap");
   });
 
   it("labels a reported build and links to its page on the storefront", async () => {

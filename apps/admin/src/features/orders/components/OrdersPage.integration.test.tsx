@@ -45,6 +45,30 @@ const stubOrders = () => {
 };
 
 describe("OrdersPage", () => {
+  it("says the orders could not load without also claiming there are none", async () => {
+    mswServer.use(
+      http.get(ORDERS_URL, () =>
+        HttpResponse.json({ success: false, message: "Something went wrong." }, { status: 500 }),
+      ),
+    );
+    renderWithRouter(<OrdersPage />, { path: "/orders" });
+
+    expect(await screen.findByText("Couldn't load orders.")).toBeInTheDocument();
+    expect(screen.queryByText("Nothing here right now.")).not.toBeInTheDocument();
+  });
+
+  it("shows the empty line when the list really is empty", async () => {
+    mswServer.use(
+      http.get(ORDERS_URL, () =>
+        HttpResponse.json({ success: true, data: { orders: [], nextCursor: null } }),
+      ),
+    );
+    renderWithRouter(<OrdersPage />, { path: "/orders" });
+
+    expect(await screen.findByText("Nothing here right now.")).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't load orders.")).not.toBeInTheDocument();
+  });
+
   it("requests all orders and marks the All tab active with no status param", async () => {
     const requestedStatuses = stubOrders();
     renderWithRouter(<OrdersPage />, { path: "/orders" });
