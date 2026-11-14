@@ -1,0 +1,177 @@
+name: Refresh API examples
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "apps/api/**"
+      - "!apps/api/openapi/**"
+      - "!apps/api/**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-api-examples
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  API_URL: ${{ vars.CI_API_URL }}
+  SITE_URL: ${{ vars.CI_SITE_URL }}
+  APP_ENV: ${{ vars.CI_APP_ENV }}
+  PROCESS_ROLE: ${{ vars.CI_PROCESS_ROLE }}
+  PORT: ${{ vars.CI_PORT }}
+  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+  JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+  JWT_ACCESS_TTL: ${{ vars.CI_JWT_ACCESS_TTL }}
+  JWT_REFRESH_TTL: ${{ vars.CI_JWT_REFRESH_TTL }}
+  MAIL_FROM: ${{ vars.CI_MAIL_FROM }}
+  OPS_NOTIFICATION_EMAIL: ${{ vars.CI_OPS_NOTIFICATION_EMAIL }}
+  FRONTEND_URL: ${{ vars.CI_FRONTEND_URL }}
+  ADMIN_URL: ${{ vars.CI_API_ADMIN_URL }}
+  ALLOWED_ORIGINS: ${{ vars.CI_ALLOWED_ORIGINS }}
+  TENANT_BASE_DOMAIN: ${{ vars.CI_TENANT_BASE_DOMAIN }}
+  API_PUBLIC_URL: ${{ vars.CI_API_PUBLIC_URL }}
+  OAUTH_REDIRECT_BASE_URL: ${{ vars.CI_OAUTH_REDIRECT_BASE_URL }}
+  STORAGE_DRIVER: ${{ vars.CI_STORAGE_DRIVER }}
+  UPLOADS_DIR: ${{ vars.CI_UPLOADS_DIR }}
+  ESEWA_PRODUCT_CODE: ${{ vars.CI_ESEWA_PRODUCT_CODE }}
+  ESEWA_SECRET_KEY: ${{ secrets.CI_ESEWA_SECRET_KEY }}
+  ESEWA_BASE_URL: ${{ vars.CI_ESEWA_BASE_URL }}
+  ESEWA_STATUS_URL: ${{ vars.CI_ESEWA_STATUS_URL }}
+  KHALTI_BASE_URL: ${{ vars.CI_KHALTI_BASE_URL }}
+  KHALTI_SECRET_KEY: ${{ secrets.CI_KHALTI_SECRET_KEY }}
+  PASSWORD_BREACH_CHECK_ENABLED: ${{ vars.CI_PASSWORD_BREACH_CHECK_ENABLED }}
+  CAPTCHA_ENABLED: ${{ vars.CI_CAPTCHA_ENABLED }}
+  TURNSTILE_SECRET_KEY: ${{ secrets.CI_TURNSTILE_SECRET_KEY }}
+  GOOGLE_CLIENT_ID: ${{ vars.CI_GOOGLE_CLIENT_ID }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.CI_GOOGLE_CLIENT_SECRET }}
+  FACEBOOK_APP_ID: ${{ vars.CI_FACEBOOK_APP_ID }}
+  FACEBOOK_APP_SECRET: ${{ secrets.CI_FACEBOOK_APP_SECRET }}
+  BANK_ACCOUNT_ENCRYPTION_KEY: ${{ secrets.CI_BANK_ACCOUNT_ENCRYPTION_KEY }}
+  TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
+  REDIS_URL: redis://localhost:6379
+  INTEGRATION_WORKERS: "2"
+  DATABASE_POOL_MAX: "5"
+
+jobs:
+  record:
+    name: Record examples (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --tmpfs /var/lib/postgresql/data:rw
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Generate the Prisma client
+        run: pnpm --filter @outfiqe/api db:generate
+      - name: Run this shard of the API integration tests with the example recorder on
+        env:
+          API_DOCS_TASK: record
+        run: pnpm --filter @outfiqe/api exec vitest run --project integration --shard=${{ matrix.shard }}/4 || echo "::warning::Some tests failed in this shard. Examples from the passing ones are kept."
+      - name: Upload this shard's recordings
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-recordings-${{ matrix.shard }}
+          path: apps/api/openapi/recordings/
+          if-no-files-found: warn
+          retention-days: 1
+
+  merge:
+    name: Merge examples and open a PR
+    needs: record
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --tmpfs /var/lib/postgresql/data:rw
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Generate the Prisma client
+        run: pnpm --filter @outfiqe/api db:generate
+      - name: Download every shard's recordings
+        uses: actions/download-artifact@v4
+        with:
+          pattern: api-recordings-*
+          path: apps/api/openapi/recordings/
+      - name: Merge the recordings into examples.json and rebuild openapi.json
+        run: pnpm --filter @outfiqe/api exec tsx src/testing/openapi/openapi.docs-task.ts merge
+      - name: Stop if a token or password hash got past redaction
+        run: |
+          leak_pattern='eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|\$2[aby]\$[0-9]{2}\$|\$argon2'
+          if git diff -- apps/api/openapi | grep -E -- "$leak_pattern"; then
+            echo "::error::A token or password hash is in the new examples. Fix the redaction in openapi.example-normalizer.ts before refreshing."
+            exit 1
+          fi
+      - name: Open or update the refresh PR
+        uses: peter-evans/create-pull-request@v7
+        env:
+          HUSKY: "0"
+        with:
+          token: ${{ secrets.API_EXAMPLES_PR_TOKENS }}
+          base: dev
+          branch: chore/refresh-api-examples
+          delete-branch: true
+          add-paths: |
+            apps/api/openapi/examples.json
+            apps/api/openapi/openapi.json
+          commit-message: "chore(api): refresh api examples"
+          title: "chore(api): refresh api examples"
+          body: |
+            Example responses recorded from the API integration tests after the latest API changes on `dev`.
+
+            Made by `.github/workflows/refresh-api-examples.yml`. Tokens, passwords and hashes are redacted before anything is written, and the workflow stops if one gets through. Check the diff, then merge.

@@ -32,7 +32,10 @@ from that file, so nobody writes endpoint docs by hand.
 - `openapi.generate.ts`: installs the recorder, builds the real app and returns the spec text.
 - `openapi.spec.integration.test.ts`: fails when `openapi.json` no longer matches the code. With
   `API_DOCS_TASK=write` it writes the file instead.
-- `openapi.docs-task.ts`: the script behind `docs:openapi` and `docs:record`.
+- `openapi.recordings.ts`: reads every `*.jsonl` recording under a folder, including subfolders,
+  and lists the operations in a saved `openapi.json`.
+- `openapi.docs-task.ts`: the script behind `docs:openapi` and `docs:record`, plus the `merge` task
+  CI uses to combine recordings made in separate jobs.
 
 ## Funnel
 
@@ -58,6 +61,10 @@ responses and errors, then tries it against a local or production API with their
    JSON, so formatting and line endings don't matter), so CI fails when anything slipped past the
    hook.
 5. The internal docs repo copies `openapi.json` into its API tab (see that repo's README).
+6. After an API change reaches `dev`, `.github/workflows/refresh-api-examples.yml` records
+   examples in four parallel jobs with `API_DOCS_TASK=record`, then runs
+   `openapi.docs-task.ts merge` (merge `recordings/` into `examples.json`, write the spec) and opens
+   a PR with the result. See `.github/workflows/README.md`.
 
 ## Non-obvious rationale
 
@@ -79,5 +86,6 @@ responses and errors, then tries it against a local or production API with their
   their request schema and the response envelope, just without a recorded example.
 - **`openapi.json` and `examples.json` are generated. Never edit them by hand.** They are also in
   `.prettierignore`, so the commit formatter never rewrites them. Run `docs:openapi`
-  after changing routes, and `docs:record` when examples should be refreshed. `recordings/` is
-  git-ignored.
+  after changing routes. Examples are refreshed by the `refresh-api-examples.yml` PR after the
+  change reaches `dev`, so `docs:record` is only needed to check examples locally. It runs the
+  whole integration suite on one machine, which is slow. `recordings/` is git-ignored.
