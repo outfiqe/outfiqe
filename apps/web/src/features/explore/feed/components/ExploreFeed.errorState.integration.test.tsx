@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createAuthQueryClientWrapper } from "@/features/auth/context/authTestWrapper";
 
-import { FOR_YOU_HINT_DISMISSED_STORAGE_KEY } from "../utils/forYouHint";
+import { rememberForYouHintDismissed } from "../utils/forYouHint";
 import { ExploreFeed } from "./ExploreFeed";
 
 vi.mock("@/shared/lib/socketClient", () => ({
@@ -38,7 +38,7 @@ const emptyFeed = () =>
   HttpResponse.json({ success: true, message: "Feed.", data: { posts: [], nextCursor: null } });
 
 beforeEach(() => {
-  window.localStorage.setItem(FOR_YOU_HINT_DISMISSED_STORAGE_KEY, "1");
+  rememberForYouHintDismissed();
   mockNextRouter();
   vi.mocked(useSearchParams).mockReturnValue(
     new URLSearchParams() as ReturnType<typeof useSearchParams>,

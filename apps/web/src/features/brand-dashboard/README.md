@@ -98,6 +98,11 @@ returns right now" and a nudge to add a pickup location, all for a feature that 
 them. The `/pickup-locations` page still works if opened directly, like the other switched
 features; the API decides what actually happens.
 
+While the switches are still loading, the Orders page shows the returns panel anyway
+(`useFeatureFlagState`, "may be on" until it is known), because the switch is on for most brands.
+Treating "not loaded yet" as "off" made the panel appear a moment later and push the order list
+down. If the switch turns out to be off and there are no returns, the panel goes away again.
+
 The returns panel still shows when the switch is off but it has a return in it, and the problems
 panel shows whenever there are problems. Turning the switch off only stops new orders from using
 the hub: orders already in it carry on, so a brand can still have a return to confirm, or

@@ -66,7 +66,7 @@ export const BrandReturnsPanel = ({ isOrderLogisticsOn }: BrandReturnsPanelProps
           <FormBanner>We couldn&apos;t load your returns. Please try again.</FormBanner>
         </div>
       )}
-      {isPending && !isError && <Skeleton className="mt-3 h-16 w-full rounded-xl" />}
+      {isPending && !isError && <Skeleton className="mt-3 h-5 w-full max-w-xs rounded-md" />}
       {!isPending && !isError && brandReturns.length === NO_RETURNS && (
         <p className="mt-3 text-sm text-muted-foreground">No returns right now.</p>
       )}

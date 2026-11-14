@@ -4,6 +4,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BrandCallout } from "@/features/landing";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 interface HomeLayoutProps {
   children: ReactNode;
@@ -29,7 +30,7 @@ const HomeLayout = ({
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         {hero}
         {taste}
         {trending}

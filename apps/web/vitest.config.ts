@@ -352,6 +352,7 @@ export default defineConfig({
         "src/features/explore/utils/offlineActionHandlers.ts",
         "src/features/explore/posts/utils/lookPermalink.ts",
         "src/features/explore/feed/utils/forYouHint.ts",
+        "src/features/explore/feed/utils/initialGridColumnCount.ts",
         "src/features/explore/posts/hooks/usePostCardState.ts",
         "src/features/explore/posts/components/PostActionsRow.tsx",
         "src/shared/hooks/usePendingPhotos.ts",

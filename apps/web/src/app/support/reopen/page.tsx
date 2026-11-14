@@ -4,6 +4,8 @@ import { Suspense } from "react";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { cn } from "@/shared/lib/cn";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 import { ReopenSupportRequest } from "./ReopenSupportRequest";
 
@@ -17,7 +19,7 @@ export const dynamic = "force-dynamic";
 const ReopenSupportPage = () => (
   <div>
     <SiteHeader />
-    <main className="mx-auto max-w-md px-6 py-16">
+    <main className={cn(MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME, "mx-auto max-w-md px-6 py-16")}>
       <h1 className="font-display text-2xl font-bold text-foreground">Reopen your request</h1>
       <Suspense fallback={<Skeleton className="mt-3 h-32 w-full rounded-xl" />}>
         <ReopenSupportRequest />
