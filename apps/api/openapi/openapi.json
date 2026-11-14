@@ -5526,7 +5526,7 @@
                         "quantity": 1,
                         "productName": "Item",
                         "productImageUrl": null,
-                        "brandName": "Ledger Brand 48fae1",
+                        "brandName": "Ledger Brand 8b60af",
                         "buyerName": "Rollup Tester",
                         "museHandle": null,
                         "grossAmount": null,
@@ -5547,7 +5547,7 @@
                         "quantity": 1,
                         "productName": "Item",
                         "productImageUrl": null,
-                        "brandName": "Ledger Brand 2fd90f",
+                        "brandName": "Ledger Brand e1945c",
                         "buyerName": "Rollup Tester",
                         "museHandle": null,
                         "grossAmount": null,
@@ -5559,7 +5559,7 @@
                         "creatorCommissionStatus": null
                       }
                     ],
-                    "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjAxOjU1Ljg1MFoiLCJvcmRlckl0ZW1JZCI6IjJhMjU2MDU1LTYzNzYtNGViZS1iNDliLTFjZTcyZTczZGIwNSJ9",
+                    "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjE5OjE1LjczNloiLCJvcmRlckl0ZW1JZCI6ImQ2MzZhNzBiLWFmMDctNDRmOS04Zjg2LTc4NDRhYmU1OTkyZSJ9",
                     "totals": {
                       "rowCount": 3,
                       "grossAmount": 0,
@@ -15003,30 +15003,7 @@
                   "data": [
                     {
                       "id": "00000000-0000-4000-8000-000000000001",
-                      "name": "Test Badge 50a8109d-4ced-4954-80b8-264b4765209d",
-                      "description": "A badge created for integration testing.",
-                      "category": "SPECIAL",
-                      "rarity": "EXCLUSIVE",
-                      "icon": "🏅",
-                      "designConfig": {
-                        "shape": "hexagon",
-                        "primaryColor": "#000000"
-                      },
-                      "isPermanent": true,
-                      "isCollected": true,
-                      "unlockedAt": "2026-01-15T09:30:00.000Z",
-                      "isDisplayed": true,
-                      "isFeatured": false,
-                      "isTitle": true,
-                      "isTitleEligible": true,
-                      "displayOrder": 0,
-                      "isDynamicallyActive": null,
-                      "progress": null,
-                      "sponsorBrand": null
-                    },
-                    {
-                      "id": "00000000-0000-4000-8000-000000000002",
-                      "name": "Test Badge 7a3cfc0c-913e-4026-afad-c0c938b9c087",
+                      "name": "Test Badge 31f75eb1-e633-4676-9ce4-013568dd28e3",
                       "description": "A badge created for integration testing.",
                       "category": "SPECIAL",
                       "rarity": "EXCLUSIVE",
@@ -15042,6 +15019,29 @@
                       "isFeatured": false,
                       "isTitle": false,
                       "isTitleEligible": false,
+                      "displayOrder": 0,
+                      "isDynamicallyActive": null,
+                      "progress": null,
+                      "sponsorBrand": null
+                    },
+                    {
+                      "id": "00000000-0000-4000-8000-000000000002",
+                      "name": "Test Badge f6aab64c-e9d4-43de-86bd-6c97cfbfec3b",
+                      "description": "A badge created for integration testing.",
+                      "category": "SPECIAL",
+                      "rarity": "EXCLUSIVE",
+                      "icon": "🏅",
+                      "designConfig": {
+                        "shape": "hexagon",
+                        "primaryColor": "#000000"
+                      },
+                      "isPermanent": true,
+                      "isCollected": true,
+                      "unlockedAt": "2026-01-15T09:30:00.000Z",
+                      "isDisplayed": true,
+                      "isFeatured": false,
+                      "isTitle": true,
+                      "isTitleEligible": true,
                       "displayOrder": 0,
                       "isDynamicallyActive": null,
                       "progress": null,
@@ -18096,10 +18096,10 @@
               "example": {
                 "bankId": "00000000-0000-4000-8000-000000000001",
                 "accountName": "Kastha Contact",
-                "accountNumber": "2222222222",
-                "confirmAccountNumber": "2222222222",
+                "accountNumber": "1234567890",
+                "confirmAccountNumber": "1234567890",
                 "branchName": "Kamaladi",
-                "qrCodeImageUrl": "http://localhost:4000/uploads/3ce25d39-70a5-4b8b-b33c-d80053525b47.png"
+                "qrCodeImageUrl": "http://localhost:4000/uploads/16734e11-eaee-422c-ba0e-71f198bfa231.png"
               }
             }
           }
@@ -18173,12 +18173,12 @@
                     "bankAccount": {
                       "id": "00000000-0000-4000-8000-000000000002",
                       "bankId": "00000000-0000-4000-8000-000000000001",
-                      "bankName": "Test Bank 00e075",
+                      "bankName": "Test Bank 7d222a",
                       "accountName": "Kastha Contact",
-                      "accountNumberLast4": "2222",
+                      "accountNumberLast4": "7890",
                       "branchName": "Kamaladi",
-                      "qrCodeImageUrl": "http://localhost:4000/uploads/3ce25d39-70a5-4b8b-b33c-d80053525b47.png",
-                      "isDefault": false,
+                      "qrCodeImageUrl": "http://localhost:4000/uploads/16734e11-eaee-422c-ba0e-71f198bfa231.png",
+                      "isDefault": true,
                       "isVerified": false
                     },
                     "nameMismatch": false
@@ -21102,22 +21102,22 @@
                     "products": [
                       {
                         "id": "00000000-0000-4000-8000-000000000001",
-                        "brand": "Brand Listing Saved Status",
-                        "name": "Brand Listing Jacket",
+                        "brand": "Product Listing Brand",
+                        "name": "Listed Approved Piece",
                         "price": 1000,
                         "effectivePrice": 1000,
                         "discountPercent": null,
                         "type": "tops",
                         "categorySlugs": [],
-                        "imageUrl": "https://cdn.outfiqe.test/f91716ad-d3ff-41a1-8ae3-94ecfa473e68.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/b977ecb8-764f-4328-bbdc-3ba8f5938787.jpg",
                         "image": {
-                          "url": "https://cdn.outfiqe.test/f91716ad-d3ff-41a1-8ae3-94ecfa473e68.jpg",
+                          "url": "https://cdn.outfiqe.test/b977ecb8-764f-4328-bbdc-3ba8f5938787.jpg",
                           "lqip": null,
                           "sources": []
                         },
                         "lowStock": false,
                         "isNew": true,
-                        "isSaved": true,
+                        "isSaved": false,
                         "isThrift": false,
                         "thriftConditionRating": null,
                         "thriftConditionNotes": null,
@@ -22038,7 +22038,7 @@
                         "id": "00000000-0000-4000-8000-000000000005",
                         "orderId": "00000000-0000-4000-8000-000000000006",
                         "orderCreatedAt": "2026-01-15T09:30:00.000Z",
-                        "status": "DELIVERED",
+                        "status": "PLACED",
                         "fulfilmentMode": "BRAND_SHIPS",
                         "pickupStatus": null,
                         "carrier": null,
@@ -22047,11 +22047,11 @@
                         "deliveredAt": null,
                         "cancellationRequestedAt": null,
                         "itemCount": 1,
-                        "totalQty": 1,
+                        "totalQty": 5,
                         "firstItemImageUrl": null,
                         "firstItemProductName": "Item",
                         "shipToCity": "Kathmandu",
-                        "orderPaymentStatus": "DUE",
+                        "orderPaymentStatus": "FAILED",
                         "orderFulfilmentSummary": "UNFULFILLED"
                       }
                     ]
@@ -33012,16 +33012,16 @@
                     "members": [
                       {
                         "id": "00000000-0000-4000-8000-000000000003",
-                        "name": "Race Co-admin",
-                        "handle": "group-a04b087e",
+                        "name": "Race Owner",
+                        "handle": "group-203bb07f",
                         "avatarUrl": null,
                         "role": "ADMIN",
                         "joinedAt": "2026-01-15T09:30:00.000Z"
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000004",
-                        "name": "Race Owner",
-                        "handle": "group-519fb4bc",
+                        "name": "Race Co-admin",
+                        "handle": "group-4fae5a05",
                         "avatarUrl": null,
                         "role": "ADMIN",
                         "joinedAt": "2026-01-15T09:30:00.000Z"
@@ -37818,16 +37818,16 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000002",
                           "name": "Featured Page Muse",
-                          "handle": "featured-page-creator-aab7e9",
+                          "handle": "featured-page-creator-4366b0",
                           "isApproved": true,
                           "heightCm": null
                         },
-                        "imageUrl": "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/a10c6a54-666c-420c-8737-55f21bc4efb6.jpg",
                         "images": [
-                          "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg"
+                          "https://cdn.outfiqe.test/a10c6a54-666c-420c-8737-55f21bc4efb6.jpg"
                         ],
                         "image": {
-                          "url": "https://cdn.outfiqe.test/538d8154-cbfd-4fc6-96db-7297b0709d7e.jpg",
+                          "url": "https://cdn.outfiqe.test/a10c6a54-666c-420c-8737-55f21bc4efb6.jpg",
                           "lqip": null,
                           "sources": []
                         },
@@ -37845,7 +37845,7 @@
                             "name": "Featured Page Product Two",
                             "brand": "Featured Page Product Two Brand",
                             "price": 1000,
-                            "imageUrl": "https://cdn.outfiqe.test/778e28e9-b5c0-4085-a5d5-b4d44074b312.jpg",
+                            "imageUrl": "https://cdn.outfiqe.test/6590bdc4-f375-4edb-98c8-5fbe49b26300.jpg",
                             "sizeWorn": "M"
                           }
                         ],
@@ -38298,7 +38298,7 @@
                   "data": {
                     "id": "00000000-0000-4000-8000-000000000001",
                     "imageUrls": [
-                      "https://cdn.outfiqe.test/332b97c9-9fae-450f-8da0-e0c638e3a437.jpg"
+                      "https://cdn.outfiqe.test/fb306839-66c8-4def-b439-be6208ef8a82.jpg"
                     ],
                     "layout": "PORTRAIT",
                     "caption": "Still up, tag under review",
@@ -38315,7 +38315,7 @@
                           "name": "Contested Coat",
                           "brand": "Contested Coat Brand",
                           "price": 1000,
-                          "imageUrl": "https://cdn.outfiqe.test/22fb379a-bea2-42ea-bbbc-83bb7d1ac3a4.jpg"
+                          "imageUrl": "https://cdn.outfiqe.test/f355935b-7181-4fa9-8814-bd2cf0349993.jpg"
                         }
                       }
                     ]
@@ -39532,7 +39532,7 @@
                         "parentCommentId": "00000000-0000-4000-8000-000000000002",
                         "userId": "00000000-0000-4000-8000-000000000003",
                         "userName": "Reply List Replier",
-                        "userHandle": "reply-list-replier-9ca310",
+                        "userHandle": "reply-list-replier-bc7b2b",
                         "userAvatarUrl": null,
                         "body": "Second reply",
                         "createdAt": "2026-01-15T09:30:00.000Z"
@@ -41476,21 +41476,21 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000002",
                           "name": "Boosted Followed Muse",
-                          "handle": "boosted-followed-creator-c1aea3",
+                          "handle": "boosted-followed-creator-26b6c3",
                           "isApproved": true,
                           "heightCm": null
                         },
-                        "imageUrl": "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/20326800-69bb-40ec-b692-692bcb8c9eac.jpg",
                         "images": [
-                          "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg"
+                          "https://cdn.outfiqe.test/20326800-69bb-40ec-b692-692bcb8c9eac.jpg"
                         ],
                         "image": {
-                          "url": "https://cdn.outfiqe.test/bcae0439-0501-4601-b555-65a9a9634110.jpg",
+                          "url": "https://cdn.outfiqe.test/20326800-69bb-40ec-b692-692bcb8c9eac.jpg",
                           "lqip": null,
                           "sources": []
                         },
                         "layout": "PORTRAIT",
-                        "caption": "Followed drop #shared278451",
+                        "caption": "Followed drop #shared20b064",
                         "likeCount": 0,
                         "commentCount": 0,
                         "saveCount": 0,
@@ -41499,7 +41499,7 @@
                         "isFollowingCreator": true,
                         "taggedProducts": [],
                         "hashtags": [
-                          "shared278451"
+                          "shared20b064"
                         ],
                         "createdAt": "2026-01-15T09:30:00.000Z",
                         "isTrending": true
@@ -41509,21 +41509,21 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000004",
                           "name": "Busy Muse",
-                          "handle": "busy-creator-b21e46",
+                          "handle": "busy-creator-0f3d01",
                           "isApproved": true,
                           "heightCm": null
                         },
-                        "imageUrl": "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/d306ab01-520c-4718-bf18-d0cb213360c1.jpg",
                         "images": [
-                          "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg"
+                          "https://cdn.outfiqe.test/d306ab01-520c-4718-bf18-d0cb213360c1.jpg"
                         ],
                         "image": {
-                          "url": "https://cdn.outfiqe.test/cbec3b86-b98b-48b6-a6f7-c28d56d12f9e.jpg",
+                          "url": "https://cdn.outfiqe.test/d306ab01-520c-4718-bf18-d0cb213360c1.jpg",
                           "lqip": null,
                           "sources": []
                         },
                         "layout": "PORTRAIT",
-                        "caption": "Busy muse drop 1 #shared278451",
+                        "caption": "Busy muse drop 3 #shared20b064",
                         "likeCount": 0,
                         "commentCount": 0,
                         "saveCount": 0,
@@ -41532,7 +41532,7 @@
                         "isFollowingCreator": false,
                         "taggedProducts": [],
                         "hashtags": [
-                          "shared278451"
+                          "shared20b064"
                         ],
                         "createdAt": "2026-01-15T09:30:00.000Z",
                         "isTrending": true
@@ -41818,16 +41818,16 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000002",
                           "name": "Saved List Muse",
-                          "handle": "saved-list-creator-b103df",
+                          "handle": "saved-list-creator-f04d56",
                           "isApproved": true,
                           "heightCm": null
                         },
-                        "imageUrl": "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/2cf9e4d6-03ca-467f-85ac-63e96f602dd4.jpg",
                         "images": [
-                          "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg"
+                          "https://cdn.outfiqe.test/2cf9e4d6-03ca-467f-85ac-63e96f602dd4.jpg"
                         ],
                         "image": {
-                          "url": "https://cdn.outfiqe.test/176aa22d-1229-4ca9-a92c-ed22dcb954c6.jpg",
+                          "url": "https://cdn.outfiqe.test/2cf9e4d6-03ca-467f-85ac-63e96f602dd4.jpg",
                           "lqip": null,
                           "sources": []
                         },
@@ -43572,16 +43572,16 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000002",
                           "name": "Handle Feed Muse",
-                          "handle": "handle-feed-creator-9e43d1",
+                          "handle": "handle-feed-creator-a76863",
                           "isApproved": true,
                           "heightCm": null
                         },
-                        "imageUrl": "https://cdn.outfiqe.test/8f0d93ab-1472-4ad0-9d99-a99aec618960.jpg",
+                        "imageUrl": "https://cdn.outfiqe.test/887b87a0-fbfd-496a-9af3-c14897aa4c18.jpg",
                         "images": [
-                          "https://cdn.outfiqe.test/8f0d93ab-1472-4ad0-9d99-a99aec618960.jpg"
+                          "https://cdn.outfiqe.test/887b87a0-fbfd-496a-9af3-c14897aa4c18.jpg"
                         ],
                         "image": {
-                          "url": "https://cdn.outfiqe.test/8f0d93ab-1472-4ad0-9d99-a99aec618960.jpg",
+                          "url": "https://cdn.outfiqe.test/887b87a0-fbfd-496a-9af3-c14897aa4c18.jpg",
                           "lqip": null,
                           "sources": []
                         },
@@ -43599,7 +43599,7 @@
                             "name": "Handle Feed Product",
                             "brand": "Handle Feed Product Brand",
                             "price": 1000,
-                            "imageUrl": "https://cdn.outfiqe.test/0eadbc04-15cd-4a39-a9d2-f92896c82602.jpg",
+                            "imageUrl": "https://cdn.outfiqe.test/7a405e23-e578-43df-9fee-58f8953cf943.jpg",
                             "sizeWorn": "M"
                           }
                         ],
@@ -44519,8 +44519,8 @@
                     "creators": [
                       {
                         "userId": "00000000-0000-4000-8000-000000000001",
-                        "name": "Pager 124239a7 A",
-                        "handle": "pager-124239a7-a-a94f06",
+                        "name": "Pager c871c5f5 B",
+                        "handle": "pager-c871c5f5-b-fe0b50",
                         "avatarUrl": null,
                         "followerCount": 0
                       }
@@ -50265,7 +50265,7 @@
                       "id": "00000000-0000-4000-8000-000000000001",
                       "organizationId": "00000000-0000-4000-8000-000000000002",
                       "stageId": "00000000-0000-4000-8000-000000000003",
-                      "title": "Recent 19",
+                      "title": "Recent 86",
                       "value": 0,
                       "currency": "NPR",
                       "expectedCloseDate": null,
@@ -50278,14 +50278,14 @@
                       "updatedAt": "2026-01-15T09:30:00.000Z",
                       "stageName": "Lead",
                       "partnerName": "Partner Muse",
-                      "partnerHandle": "partner-muse-cd4ef409",
+                      "partnerHandle": "partner-muse-afcbbd5c",
                       "ownerName": null
                     },
                     {
                       "id": "00000000-0000-4000-8000-000000000005",
                       "organizationId": "00000000-0000-4000-8000-000000000002",
                       "stageId": "00000000-0000-4000-8000-000000000003",
-                      "title": "Recent 11",
+                      "title": "Recent 7",
                       "value": 0,
                       "currency": "NPR",
                       "expectedCloseDate": null,
@@ -50298,7 +50298,7 @@
                       "updatedAt": "2026-01-15T09:30:00.000Z",
                       "stageName": "Lead",
                       "partnerName": "Partner Muse",
-                      "partnerHandle": "partner-muse-cd4ef409",
+                      "partnerHandle": "partner-muse-afcbbd5c",
                       "ownerName": null
                     }
                   ]
@@ -55315,8 +55315,8 @@
                     "items": [
                       {
                         "creatorId": "00000000-0000-4000-8000-000000000001",
-                        "name": "Hidden Maker",
-                        "handle": "hidden-maker-1c5bc837",
+                        "name": "Findable Muse",
+                        "handle": "findable-muse-d3e40441",
                         "avatarUrl": null,
                         "tagClickCount": 1,
                         "attributedOrderCount": 0,
@@ -58382,8 +58382,8 @@
                       "createdAt": "2026-01-15T09:30:00.000Z",
                       "updatedAt": "2026-01-15T09:30:00.000Z",
                       "permissionKeys": [
-                        "accounts:delete",
-                        "accounts:read"
+                        "org:read",
+                        "org:update"
                       ]
                     },
                     {
@@ -58394,8 +58394,8 @@
                       "createdAt": "2026-01-15T09:30:00.000Z",
                       "updatedAt": "2026-01-15T09:30:00.000Z",
                       "permissionKeys": [
-                        "accounts:read",
-                        "accounts:write"
+                        "org:read",
+                        "billing:read"
                       ]
                     }
                   ]
@@ -64938,7 +64938,7 @@
                         "kind": "user",
                         "id": "00000000-0000-4000-8000-000000000001",
                         "name": "Pagination Candidate 2",
-                        "handle": "pagination-candidate-2-cf6b8e",
+                        "handle": "pagination-candidate-2-f83660",
                         "isCreator": true,
                         "creatorStatus": "APPROVED",
                         "followerCount": 2
@@ -64947,7 +64947,7 @@
                         "kind": "user",
                         "id": "00000000-0000-4000-8000-000000000002",
                         "name": "Pagination Candidate 1",
-                        "handle": "pagination-candidate-1-abd52f",
+                        "handle": "pagination-candidate-1-15b36d",
                         "isCreator": true,
                         "creatorStatus": "APPROVED",
                         "followerCount": 1
@@ -66438,7 +66438,7 @@
                         "detail": "PARKED AT DEPOT",
                         "isAutoResolved": false,
                         "resolutionNote": null,
-                        "trackingCode": "OFQ-718X9FQH",
+                        "trackingCode": "OFQ-X9RD09RY",
                         "brandName": null,
                         "hubName": null,
                         "raisedAt": "2026-01-15T09:30:00.000Z",
@@ -66662,7 +66662,7 @@
                     "detail": "PARKED AT DEPOT",
                     "isAutoResolved": false,
                     "resolutionNote": "Mapped the status",
-                    "trackingCode": "OFQ-718X9FQH",
+                    "trackingCode": "OFQ-X9RD09RY",
                     "brandName": null,
                     "hubName": null,
                     "raisedAt": "2026-01-15T09:30:00.000Z",
@@ -67090,17 +67090,17 @@
                   "data": {
                     "id": "00000000-0000-4000-8000-000000000002",
                     "hubId": "00000000-0000-4000-8000-000000000001",
-                    "hubName": "Test Hub 517ed2",
+                    "hubName": "Test Hub 32f08c",
                     "tagCount": 12,
                     "usedTagCount": 0,
                     "createdAt": "2026-01-15T09:30:00.000Z",
                     "tags": [
                       {
-                        "code": "17V1BB5AS1",
+                        "code": "00J87S527N",
                         "isUsed": false
                       },
                       {
-                        "code": "2KK0HFKXPB",
+                        "code": "2Q8TYW9T4K",
                         "isUsed": false
                       }
                     ]
@@ -67313,17 +67313,17 @@
                   "data": {
                     "id": "00000000-0000-4000-8000-000000000001",
                     "hubId": "00000000-0000-4000-8000-000000000002",
-                    "hubName": "Test Hub 517ed2",
+                    "hubName": "Test Hub 32f08c",
                     "tagCount": 12,
                     "usedTagCount": 0,
                     "createdAt": "2026-01-15T09:30:00.000Z",
                     "tags": [
                       {
-                        "code": "17V1BB5AS1",
+                        "code": "00J87S527N",
                         "isUsed": false
                       },
                       {
-                        "code": "2KK0HFKXPB",
+                        "code": "2Q8TYW9T4K",
                         "isUsed": false
                       }
                     ]
@@ -67679,10 +67679,10 @@
                     "items": [
                       {
                         "shipmentId": "00000000-0000-4000-8000-000000000002",
-                        "trackingCode": "OFQ-YDADQ6DR",
+                        "trackingCode": "OFQ-88YJYZYP",
                         "orderId": "00000000-0000-4000-8000-000000000003",
                         "currency": "NPR",
-                        "partnerReference": "PX-5affea91",
+                        "partnerReference": "PX-4e840366",
                         "quotedPartnerFee": 120,
                         "expectedAmount": 1100,
                         "collectedAmount": 1100,
@@ -68186,7 +68186,7 @@
                     "collectedAmount": 2200,
                     "partnerFeeAmount": 200,
                     "receivedAmount": 2000,
-                    "partnerName": "Courier d13cf73e",
+                    "partnerName": "Courier 20da4c84",
                     "receivedAt": "2026-01-15T09:30:00.000Z",
                     "parcelCount": 2,
                     "recordedByName": "Test Admin",
@@ -68197,14 +68197,14 @@
                         "shipmentId": "00000000-0000-4000-8000-000000000003",
                         "collectedAmount": 1100,
                         "partnerFeeAmount": 100,
-                        "trackingCode": "OFQ-YDADQ6DR",
+                        "trackingCode": "OFQ-88YJYZYP",
                         "orderId": "00000000-0000-4000-8000-000000000005"
                       },
                       {
                         "shipmentId": "00000000-0000-4000-8000-000000000002",
                         "collectedAmount": 1100,
                         "partnerFeeAmount": 100,
-                        "trackingCode": "OFQ-8S68Z1N8",
+                        "trackingCode": "OFQ-392P0S85",
                         "orderId": "00000000-0000-4000-8000-000000000006"
                       }
                     ]
@@ -71625,7 +71625,7 @@
               },
               "example": {
                 "fileName": "statuses.csv",
-                "csv": "partnerReference,merchantReference,status,time,reason\nPX-100,,In transit,2026-11-14T09:03:15.809Z,\n,OFQAM9T3RHC,In transit,2026-11-14T09:03:15.809Z,\nPX-999,,Delivered,2026-11-14T09:03:15.809Z,\nPX-100,,Held at depot,2026-11-14T09:03:15.809Z,Waiting for customer\nPX-100,,Delivered,not-a-time,\nPX-100,,Out for delivery,2026-11-13T03:03:15.809Z,"
+                "csv": "partnerReference,merchantReference,status,time,reason\nPX-100,,In transit,2026-11-14T09:20:14.880Z,\n,OFQCFJ8K2HQ,In transit,2026-11-14T09:20:14.880Z,\nPX-999,,Delivered,2026-11-14T09:20:14.880Z,\nPX-100,,Held at depot,2026-11-14T09:20:14.880Z,Waiting for customer\nPX-100,,Delivered,not-a-time,\nPX-100,,Out for delivery,2026-11-13T03:20:14.880Z,"
               }
             }
           }
@@ -71724,7 +71724,7 @@
                       {
                         "rowNumber": 3,
                         "partnerReference": null,
-                        "merchantReference": "OFQAM9T3RHC",
+                        "merchantReference": "OFQCFJ8K2HQ",
                         "rawStatus": "In transit",
                         "outcome": "DUPLICATE",
                         "message": "This update was already recorded."
@@ -71965,7 +71965,7 @@
                       {
                         "rowNumber": 3,
                         "partnerReference": null,
-                        "merchantReference": "OFQAM9T3RHC",
+                        "merchantReference": "OFQCFJ8K2HQ",
                         "rawStatus": "In transit",
                         "outcome": "DUPLICATE",
                         "message": "This update was already recorded."
@@ -77782,7 +77782,7 @@
                   "data": {
                     "fulfilmentGroupId": "00000000-0000-4000-8000-000000000001",
                     "pickupStatus": "READY_FOR_PICKUP",
-                    "pickupCode": "CDW45H9T",
+                    "pickupCode": "GK94Z7S2",
                     "readyForPickupAt": "2026-01-15T09:30:00.000Z"
                   }
                 }
@@ -78891,7 +78891,7 @@
               },
               "example": {
                 "hubId": "00000000-0000-4000-8000-000000000001",
-                "code": "1FFY5VXN3F",
+                "code": "6KWM5JVG9J",
                 "countedUnits": 1
               }
             }
@@ -78951,7 +78951,7 @@
                   "data": {
                     "fulfilmentGroupId": "00000000-0000-4000-8000-000000000002",
                     "orderId": "00000000-0000-4000-8000-000000000003",
-                    "brandName": "Checkout Brand 7b6598",
+                    "brandName": "Checkout Brand ab2ce3",
                     "pickupStatus": "AT_HUB",
                     "expectedUnits": 1,
                     "countedUnits": 1,
@@ -79164,7 +79164,7 @@
               },
               "example": {
                 "hubId": "00000000-0000-4000-8000-000000000001",
-                "code": "OFQ0KS17KD4"
+                "code": "OFQ75VK2GFP"
               }
             }
           }
@@ -79210,7 +79210,7 @@
                   "message": "Parcel handed over.",
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000002",
-                    "trackingCode": "OFQ0KS17KD4",
+                    "trackingCode": "OFQ75VK2GFP",
                     "status": "HANDED_TO_PARTNER"
                   }
                 }
@@ -79766,7 +79766,7 @@
                   "message": "Parcel packed.",
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000001",
-                    "trackingCode": "OFQ8P7P38JB",
+                    "trackingCode": "OFQ49NKYQ8Y",
                     "status": "PACKED",
                     "codAmountToCollect": 0,
                     "fulfilmentGroupIds": [
@@ -79775,10 +79775,10 @@
                     "booking": {
                       "bookingId": "00000000-0000-4000-8000-000000000003",
                       "partnerId": "00000000-0000-4000-8000-000000000004",
-                      "partnerName": "Courier 2387708d",
+                      "partnerName": "Courier a58ba025",
                       "status": "REQUESTED",
                       "connection": "MANUAL",
-                      "merchantReference": "OFQ8P7P38JB",
+                      "merchantReference": "OFQ49NKYQ8Y",
                       "partnerReference": null,
                       "partnerTrackingUrl": null,
                       "failureReason": null
@@ -80301,8 +80301,8 @@
                       {
                         "shipmentId": "00000000-0000-4000-8000-000000000002",
                         "orderId": "00000000-0000-4000-8000-000000000003",
-                        "trackingCode": "OFQCNS9N0EG",
-                        "displayTrackingCode": "OFQ-CNS9-N0EG",
+                        "trackingCode": "OFQF1G4YNEP",
+                        "displayTrackingCode": "OFQ-F1G4-YNEP",
                         "status": "PACKED",
                         "codAmountToCollect": 0,
                         "isLabelUpToDate": false,
@@ -80313,10 +80313,10 @@
                         "booking": {
                           "bookingId": "00000000-0000-4000-8000-000000000004",
                           "partnerId": "00000000-0000-4000-8000-000000000005",
-                          "partnerName": "Courier df249299",
+                          "partnerName": "Courier d73bc7cc",
                           "status": "REQUESTED",
                           "connection": "MANUAL",
-                          "merchantReference": "OFQCNS9N0EG",
+                          "merchantReference": "OFQF1G4YNEP",
                           "partnerReference": null,
                           "partnerTrackingUrl": null,
                           "failureReason": null
@@ -80639,8 +80639,8 @@
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000001",
                     "orderId": "00000000-0000-4000-8000-000000000002",
-                    "trackingCode": "OFQCNS9N0EG",
-                    "displayTrackingCode": "OFQ-CNS9-N0EG",
+                    "trackingCode": "OFQF1G4YNEP",
+                    "displayTrackingCode": "OFQ-F1G4-YNEP",
                     "status": "PACKED",
                     "codAmountToCollect": 0,
                     "isLabelUpToDate": false,
@@ -80651,10 +80651,10 @@
                     "booking": {
                       "bookingId": "00000000-0000-4000-8000-000000000003",
                       "partnerId": "00000000-0000-4000-8000-000000000004",
-                      "partnerName": "Courier df249299",
+                      "partnerName": "Courier d73bc7cc",
                       "status": "REQUESTED",
                       "connection": "MANUAL",
-                      "merchantReference": "OFQCNS9N0EG",
+                      "merchantReference": "OFQF1G4YNEP",
                       "partnerReference": null,
                       "partnerTrackingUrl": null,
                       "failureReason": null
@@ -80675,7 +80675,7 @@
                     "pickups": [
                       {
                         "fulfilmentGroupId": "00000000-0000-4000-8000-000000000006",
-                        "brandName": "Checkout Brand c85324",
+                        "brandName": "Checkout Brand 9cec64",
                         "items": [
                           {
                             "orderItemId": "00000000-0000-4000-8000-000000000007",
@@ -80696,7 +80696,7 @@
                         "note": null,
                         "appliedToStatus": false,
                         "occurredAt": "2026-01-15T09:30:00.000Z",
-                        "partnerName": "Courier df249299",
+                        "partnerName": "Courier d73bc7cc",
                         "actorName": "Limited Staff"
                       },
                       {
@@ -80898,10 +80898,10 @@
                   "data": {
                     "bookingId": "00000000-0000-4000-8000-000000000001",
                     "partnerId": "00000000-0000-4000-8000-000000000002",
-                    "partnerName": "Courier 4cb17756",
+                    "partnerName": "Courier 0d6d43d3",
                     "status": "BOOKED",
                     "connection": "MANUAL",
-                    "merchantReference": "OFQ23M5D9VV",
+                    "merchantReference": "OFQCFJ8K2HQ",
                     "partnerReference": "PX-100",
                     "partnerTrackingUrl": null,
                     "failureReason": null
@@ -81116,10 +81116,10 @@
                   "data": {
                     "bookingId": "00000000-0000-4000-8000-000000000001",
                     "partnerId": "00000000-0000-4000-8000-000000000002",
-                    "partnerName": "Courier 337beb64",
+                    "partnerName": "Courier 5ef065c9",
                     "status": "REQUESTED",
                     "connection": "API",
-                    "merchantReference": "OFQ-EQ9YJ98A",
+                    "merchantReference": "OFQ-MV54QX00",
                     "partnerReference": null,
                     "partnerTrackingUrl": null,
                     "failureReason": null
@@ -81546,8 +81546,8 @@
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000001",
                     "orderId": "00000000-0000-4000-8000-000000000002",
-                    "trackingCode": "OFQ59VE3W2V",
-                    "displayTrackingCode": "OFQ-59VE-3W2V",
+                    "trackingCode": "OFQZ4P2MW4D",
+                    "displayTrackingCode": "OFQ-Z4P2-MW4D",
                     "status": "LOST",
                     "codAmountToCollect": 1600,
                     "isLabelUpToDate": true,
@@ -81558,10 +81558,10 @@
                     "booking": {
                       "bookingId": "00000000-0000-4000-8000-000000000003",
                       "partnerId": "00000000-0000-4000-8000-000000000004",
-                      "partnerName": "Courier 470c0e62",
+                      "partnerName": "Courier 0996d5c2",
                       "status": "BOOKED",
                       "connection": "MANUAL",
-                      "merchantReference": "OFQ59VE3W2V",
+                      "merchantReference": "OFQZ4P2MW4D",
                       "partnerReference": "PX-J5",
                       "partnerTrackingUrl": null,
                       "failureReason": null
@@ -81582,7 +81582,7 @@
                     "pickups": [
                       {
                         "fulfilmentGroupId": "00000000-0000-4000-8000-000000000006",
-                        "brandName": "Checkout Brand 114c73",
+                        "brandName": "Checkout Brand 6f534a",
                         "items": [
                           {
                             "orderItemId": "00000000-0000-4000-8000-000000000007",
@@ -81615,7 +81615,7 @@
                         "note": null,
                         "appliedToStatus": true,
                         "occurredAt": "2026-01-15T09:30:00.000Z",
-                        "partnerName": "Courier 470c0e62",
+                        "partnerName": "Courier 0996d5c2",
                         "actorName": "Limited Staff"
                       }
                     ]
@@ -81991,8 +81991,8 @@
                   "message": "Label marked as printed.",
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000001",
-                    "trackingCode": "OFQZY9FGNFB",
-                    "displayTrackingCode": "OFQ-ZY9F-GNFB",
+                    "trackingCode": "OFQP2VV10HY",
+                    "displayTrackingCode": "OFQ-P2VV-10HY",
                     "orderId": "00000000-0000-4000-8000-000000000002",
                     "status": "PACKED",
                     "currency": "NPR",
@@ -82010,13 +82010,13 @@
                       "landmark": null
                     },
                     "sender": {
-                      "name": "Test Hub f6cf5e",
+                      "name": "Test Hub acfb2a",
                       "address": "Teku, Kathmandu",
                       "city": "Kathmandu",
                       "phone": "+9779800000001"
                     },
                     "partner": {
-                      "name": "Courier a4e2770b",
+                      "name": "Courier 0f274147",
                       "partnerReference": "PX-API-1",
                       "partnerLabelUrl": null,
                       "status": "BOOKED"
@@ -82234,10 +82234,10 @@
                   "data": {
                     "bookingId": "00000000-0000-4000-8000-000000000002",
                     "partnerId": "00000000-0000-4000-8000-000000000001",
-                    "partnerName": "Courier d6cda064",
+                    "partnerName": "Courier dcd6ebc4",
                     "status": "REQUESTED",
                     "connection": "MANUAL",
-                    "merchantReference": "OFQGPRAEXZF-2",
+                    "merchantReference": "OFQ6YTPYBXX-2",
                     "partnerReference": null,
                     "partnerTrackingUrl": null,
                     "failureReason": null
@@ -82749,9 +82749,9 @@
                   "message": "Thanks for telling us. Our team will be in touch.",
                   "data": {
                     "shipmentId": "00000000-0000-4000-8000-000000000001",
-                    "trackingCode": "OFQ--0V9-M15T4",
+                    "trackingCode": "OFQ--D2H-CR9VA",
                     "status": "DELIVERED",
-                    "partnerName": "Courier 4a42c757",
+                    "partnerName": "Courier ba28f2a0",
                     "partnerTrackingUrl": null,
                     "deliveredAt": "2026-01-15T09:30:00.000Z",
                     "canReportNotReceived": false,
@@ -83045,9 +83045,9 @@
                     "parcels": [
                       {
                         "shipmentId": "00000000-0000-4000-8000-000000000001",
-                        "trackingCode": "OFQ-13KH-53PS",
+                        "trackingCode": "OFQ-RNK7-FXKY",
                         "status": "DELIVERED",
-                        "partnerName": "Courier 2f1722e8",
+                        "partnerName": "Courier 34592fda",
                         "partnerTrackingUrl": null,
                         "deliveredAt": "2026-01-15T09:30:00.000Z",
                         "canReportNotReceived": true,
@@ -84010,8 +84010,8 @@
                 ]
               },
               "example": {
-                "pickupCode": "290P9WS3",
-                "bagTagCode": "91HKPNZE6G",
+                "pickupCode": "9EZRVAZ3",
+                "bagTagCode": "V1VVJBWNNB",
                 "scannedAt": "2026-01-15T09:30:00.000Z"
               }
             }
@@ -84112,7 +84112,7 @@
                                 "type": "boolean"
                               },
                               "bagTagCode": {
-                                "type": "null"
+                                "type": "string"
                               }
                             }
                           }
@@ -84128,7 +84128,7 @@
                     "id": "00000000-0000-4000-8000-000000000001",
                     "status": "IN_PROGRESS",
                     "roundStartsAt": "2026-01-15T09:30:00.000Z",
-                    "brandName": "Checkout Brand a94f86",
+                    "brandName": "Checkout Brand f8b60f",
                     "pickupLocation": {
                       "label": "Studio",
                       "contactName": "Studio Manager",
@@ -84148,8 +84148,8 @@
                         "fulfilmentGroupId": "00000000-0000-4000-8000-000000000003",
                         "orderId": "00000000-0000-4000-8000-000000000004",
                         "itemCount": 0,
-                        "isCollected": false,
-                        "bagTagCode": null
+                        "isCollected": true,
+                        "bagTagCode": "V1VVJBWNNB"
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000005",
@@ -84159,7 +84159,7 @@
                         "orderId": "00000000-0000-4000-8000-000000000007",
                         "itemCount": 0,
                         "isCollected": true,
-                        "bagTagCode": "91HKPNZE6G"
+                        "bagTagCode": "KH6ZNW96ET"
                       }
                     ]
                   }
@@ -84472,7 +84472,7 @@
                     "id": "00000000-0000-4000-8000-000000000001",
                     "status": "COMPLETED",
                     "roundStartsAt": "2026-01-15T09:30:00.000Z",
-                    "brandName": "Checkout Brand a94f86",
+                    "brandName": "Checkout Brand f8b60f",
                     "pickupLocation": {
                       "label": "Studio",
                       "contactName": "Studio Manager",
@@ -84493,7 +84493,7 @@
                         "orderId": "00000000-0000-4000-8000-000000000004",
                         "itemCount": 0,
                         "isCollected": true,
-                        "bagTagCode": "91HKPNZE6G"
+                        "bagTagCode": "V1VVJBWNNB"
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000005",
@@ -84503,7 +84503,7 @@
                         "orderId": "00000000-0000-4000-8000-000000000007",
                         "itemCount": 0,
                         "isCollected": true,
-                        "bagTagCode": "T2XECG7W0N"
+                        "bagTagCode": "KH6ZNW96ET"
                       }
                     ]
                   }
@@ -84785,7 +84785,7 @@
                     "id": "00000000-0000-4000-8000-000000000002",
                     "status": "COMPLETED",
                     "roundStartsAt": "2026-01-15T09:30:00.000Z",
-                    "brandName": "Checkout Brand 4a9eb9",
+                    "brandName": "Checkout Brand 50355d",
                     "pickupLocation": {
                       "label": "Studio",
                       "contactName": "Studio Manager",
@@ -84811,7 +84811,7 @@
                         "orderId": "00000000-0000-4000-8000-000000000004",
                         "itemCount": 1,
                         "isCollected": true,
-                        "bagTagCode": "BHZMMYK60S"
+                        "bagTagCode": "RCWVJMFNGJ"
                       }
                     ]
                   }
@@ -85376,7 +85376,7 @@
                         "updatedAt": "2026-01-15T09:30:00.000Z"
                       }
                     ],
-                    "nextCursor": "eyJ1cGRhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjAyOjA1LjI3NloiLCJpZCI6ImQ0MTg4MTcyLWFjNjAtNDlhZC05NzdmLWE1MTIyM2I3MmZhYSJ9"
+                    "nextCursor": "eyJ1cGRhdGVkQXQiOiIyMDI2LTExLTE0VDA5OjE5OjE4LjY4MloiLCJpZCI6ImI4YjJmYzg4LTljM2YtNDNjZi05ZjZhLTAxNzQzYzM3NWY2YiJ9"
                   }
                 }
               }
@@ -102190,13 +102190,13 @@
                   "success": true,
                   "message": "Saved.",
                   "data": {
-                    "version": 4,
+                    "version": 5,
                     "board": {
                       "id": "00000000-0000-4000-8000-000000000001",
                       "title": null,
                       "status": "DRAFT",
                       "visibility": "PRIVATE",
-                      "version": 4,
+                      "version": 5,
                       "budget": null,
                       "maxItemsPerMember": null,
                       "publishedVersion": null,
@@ -102207,13 +102207,13 @@
                       "archivedAt": null,
                       "createdAt": "2026-01-15T09:30:00.000Z",
                       "updatedAt": "2026-01-15T09:30:00.000Z",
-                      "myRole": "OWNER",
+                      "myRole": "EDITOR",
                       "members": [
                         {
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000003",
                             "name": "Bikash",
-                            "handle": "outfit-1b92c7ed",
+                            "handle": "outfit-971f2f32",
                             "avatarUrl": null
                           },
                           "role": "OWNER",
@@ -102224,14 +102224,14 @@
                         {
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000004",
-                            "name": "Sita",
-                            "handle": "outfit-66b064c8",
+                            "name": "Hari",
+                            "handle": "outfit-1c02be0d",
                             "avatarUrl": null
                           },
                           "role": "EDITOR",
                           "isHappy": false,
                           "joinedAt": "2026-01-15T09:30:00.000Z",
-                          "canReceiveOffers": true
+                          "canReceiveOffers": false
                         }
                       ],
                       "slots": [
@@ -102251,14 +102251,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000006",
-                                "name": "tops c6be",
+                                "name": "tops 70f8",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000005",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000007",
-                                  "name": "Build Brand c14ca4"
+                                  "name": "Build Brand 321017"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -102273,7 +102273,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000003",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -102296,14 +102296,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000009",
-                                "name": "bottoms f866",
+                                "name": "bottoms c638",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000008",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000010",
-                                  "name": "Build Brand a0ec1b"
+                                  "name": "Build Brand fe1d7a"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -102318,7 +102318,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000003",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -103383,17 +103383,17 @@
                   "success": true,
                   "message": "Build locked.",
                   "data": {
-                    "version": 6,
+                    "version": 7,
                     "board": {
                       "id": "00000000-0000-4000-8000-000000000001",
                       "title": null,
                       "status": "LOCKED",
                       "visibility": "PRIVATE",
-                      "version": 6,
+                      "version": 7,
                       "budget": null,
                       "maxItemsPerMember": null,
                       "publishedVersion": null,
-                      "lastLockedVersion": 6,
+                      "lastLockedVersion": 7,
                       "conversationId": "00000000-0000-4000-8000-000000000002",
                       "sourceConversationId": null,
                       "lockedAt": "2026-01-15T09:30:00.000Z",
@@ -103406,7 +103406,7 @@
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000003",
                             "name": "Bikash",
-                            "handle": "outfit-1b92c7ed",
+                            "handle": "outfit-971f2f32",
                             "avatarUrl": null
                           },
                           "role": "OWNER",
@@ -103417,14 +103417,14 @@
                         {
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000004",
-                            "name": "Sita",
-                            "handle": "outfit-66b064c8",
+                            "name": "Hari",
+                            "handle": "outfit-1c02be0d",
                             "avatarUrl": null
                           },
                           "role": "EDITOR",
                           "isHappy": true,
                           "joinedAt": "2026-01-15T09:30:00.000Z",
-                          "canReceiveOffers": true
+                          "canReceiveOffers": false
                         }
                       ],
                       "slots": [
@@ -103444,14 +103444,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000006",
-                                "name": "tops c6be",
+                                "name": "tops 70f8",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000005",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000007",
-                                  "name": "Build Brand c14ca4"
+                                  "name": "Build Brand 321017"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -103466,7 +103466,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000003",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -103489,14 +103489,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000009",
-                                "name": "bottoms f866",
+                                "name": "bottoms c638",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000008",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000010",
-                                  "name": "Build Brand a0ec1b"
+                                  "name": "Build Brand fe1d7a"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -103511,7 +103511,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000003",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -104049,12 +104049,12 @@
                     "taggedProducts": [
                       {
                         "id": "00000000-0000-4000-8000-000000000001",
-                        "name": "tops ffbb",
+                        "name": "tops 53a8",
                         "imageUrl": null
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000002",
-                        "name": "bottoms f174",
+                        "name": "bottoms 04d2",
                         "imageUrl": null
                       }
                     ]
@@ -104138,12 +104138,12 @@
                     "taggedProducts": [
                       {
                         "id": "00000000-0000-4000-8000-000000000001",
-                        "name": "tops ffbb",
+                        "name": "tops 53a8",
                         "imageUrl": null
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000002",
-                        "name": "bottoms f174",
+                        "name": "bottoms 04d2",
                         "imageUrl": null
                       }
                     ]
@@ -107638,14 +107638,14 @@
                     "items": [
                       {
                         "id": "00000000-0000-4000-8000-000000000001",
-                        "name": "Gita",
-                        "handle": "outfit-e8338e7d",
+                        "name": "Ram",
+                        "handle": "outfit-5db5e4b6",
                         "avatarUrl": null
                       },
                       {
                         "id": "00000000-0000-4000-8000-000000000002",
-                        "name": "Ram",
-                        "handle": "outfit-ea7e2372",
+                        "name": "Hari",
+                        "handle": "outfit-a6bcf7b7",
                         "avatarUrl": null
                       }
                     ],
@@ -109285,7 +109285,7 @@
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000004",
                             "name": "Bikash",
-                            "handle": "outfit-1b92c7ed",
+                            "handle": "outfit-971f2f32",
                             "avatarUrl": null
                           },
                           "role": "OWNER",
@@ -109296,14 +109296,14 @@
                         {
                           "user": {
                             "id": "00000000-0000-4000-8000-000000000005",
-                            "name": "Sita",
-                            "handle": "outfit-66b064c8",
+                            "name": "Hari",
+                            "handle": "outfit-1c02be0d",
                             "avatarUrl": null
                           },
                           "role": "EDITOR",
                           "isHappy": false,
                           "joinedAt": "2026-01-15T09:30:00.000Z",
-                          "canReceiveOffers": true
+                          "canReceiveOffers": false
                         }
                       ],
                       "slots": [
@@ -109323,14 +109323,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000007",
-                                "name": "tops c6be",
+                                "name": "tops 70f8",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000006",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000008",
-                                  "name": "Build Brand c14ca4"
+                                  "name": "Build Brand 321017"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -109345,7 +109345,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000004",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -109368,14 +109368,14 @@
                               "position": 0,
                               "product": {
                                 "id": "00000000-0000-4000-8000-000000000001",
-                                "name": "bottoms f866",
+                                "name": "bottoms c638",
                                 "imageUrl": null,
                                 "price": 1000,
                                 "listPrice": 1000,
                                 "productTypeId": "00000000-0000-4000-8000-000000000009",
                                 "brand": {
                                   "id": "00000000-0000-4000-8000-000000000010",
-                                  "name": "Build Brand a0ec1b"
+                                  "name": "Build Brand fe1d7a"
                                 },
                                 "availability": "IN_STOCK",
                                 "isStretchable": null,
@@ -109390,7 +109390,7 @@
                               "addedBy": {
                                 "id": "00000000-0000-4000-8000-000000000004",
                                 "name": "Bikash",
-                                "handle": "outfit-1b92c7ed",
+                                "handle": "outfit-971f2f32",
                                 "avatarUrl": null
                               },
                               "addedAt": "2026-01-15T09:30:00.000Z"
@@ -112407,7 +112407,7 @@
                           {
                             "id": "00000000-0000-4000-8000-000000000002",
                             "name": "Sita",
-                            "handle": "outfit-d537db0c",
+                            "handle": "outfit-ba3c5897",
                             "avatarUrl": null
                           }
                         ],
@@ -112430,7 +112430,7 @@
                           {
                             "id": "00000000-0000-4000-8000-000000000002",
                             "name": "Sita",
-                            "handle": "outfit-d537db0c",
+                            "handle": "outfit-ba3c5897",
                             "avatarUrl": null
                           }
                         ],
@@ -112442,7 +112442,7 @@
                         "madePublicAt": "2026-01-15T09:30:00.000Z"
                       }
                     ],
-                    "nextCursor": "eyJzb3J0IjoibmV3ZXN0IiwidmFsdWUiOiIyMDI2LTExLTE0VDA5OjAyOjA3LjY2NVoiLCJpZCI6IjkxMDdiOTc3LWI2MWItNDM3Ny1hMjFhLTk5NjNkOTIyOWFiMiJ9"
+                    "nextCursor": "eyJzb3J0IjoibmV3ZXN0IiwidmFsdWUiOiIyMDI2LTExLTE0VDA5OjE5OjIwLjg5NloiLCJpZCI6Ijc3NjM4ZTk4LTBjOTgtNDYzOS1iNmY4LWNjZmViYzQwYTUxNyJ9"
                   }
                 }
               }
@@ -113068,9 +113068,9 @@
                     "mode": "FORM_POST",
                     "formUrl": "https://pay.example/esewa/form",
                     "fields": {
-                      "transaction_uuid": "esewa-3c024a56-3f96-40ea-9096-a484d133c230"
+                      "transaction_uuid": "esewa-dd292c75-4147-4b9e-acdc-142ad0b83252"
                     },
-                    "providerRef": "esewa-787ba262-ca51-44eb-9ed6-3f87cec498dd"
+                    "providerRef": "esewa-46dc6d38-3ec3-4775-9823-109eee22926c"
                   }
                 }
               }
@@ -121718,12 +121718,12 @@
                     {
                       "id": "00000000-0000-4000-8000-000000000003",
                       "organizationId": "00000000-0000-4000-8000-000000000002",
-                      "name": "Limited role 01284c1a",
+                      "name": "Limited role 2f7fe734",
                       "isBuiltIn": false,
                       "createdAt": "2026-01-15T09:30:00.000Z",
                       "updatedAt": "2026-01-15T09:30:00.000Z",
                       "permissionKeys": [
-                        "platform:team:manage"
+                        "platform:impersonate"
                       ]
                     }
                   ]
@@ -131326,9 +131326,9 @@
                       "discountPercent": null,
                       "type": "tops",
                       "categorySlugs": [],
-                      "imageUrl": "https://cdn.outfiqe.test/04074e9e-06fc-46a1-88a2-602b6e083caa.jpg",
+                      "imageUrl": "https://cdn.outfiqe.test/817fdaea-2ac6-4187-abae-cb78ac3dd454.jpg",
                       "image": {
-                        "url": "https://cdn.outfiqe.test/04074e9e-06fc-46a1-88a2-602b6e083caa.jpg",
+                        "url": "https://cdn.outfiqe.test/817fdaea-2ac6-4187-abae-cb78ac3dd454.jpg",
                         "lqip": null,
                         "sources": []
                       },
@@ -131475,10 +131475,10 @@
                 ]
               },
               "example": {
-                "endpoint": "https://push.example.com/e6f250f9-f301-441a-bccc-692d234f8464",
+                "endpoint": "https://push.example.com/76d429a9-1613-4f77-8a3a-49b750e68ce5",
                 "keys": {
-                  "p256dh": "p256dh-bc4f4f84-3dbd-4e7d-82b7-bacc1124ed2e",
-                  "auth": "auth-a58625cc-deed-4a8a-9186-6a645bac0458"
+                  "p256dh": "p256dh-d0db63f5-022c-4c8b-aaee-71c2ac18f7a5",
+                  "auth": "auth-3390cdf8-109a-470b-aa04-8818a85988fd"
                 },
                 "platform": "ANDROID",
                 "userAgent": "Mozilla/5.0 (Linux; Android 14)"
@@ -136132,19 +136132,19 @@
                         "tag": {
                           "id": "00000000-0000-4000-8000-000000000002",
                           "lookId": "00000000-0000-4000-8000-000000000003",
-                          "lookImageUrl": "https://cdn.outfiqe.test/6d5b493e-f180-4eb0-956b-fe2c992e8448.jpg",
+                          "lookImageUrl": "https://cdn.outfiqe.test/d99bf8fa-9dce-4fc9-afbd-e875965a5e93.jpg",
                           "reviewStatus": "APPROVED",
                           "sizeWorn": "M",
                           "product": {
                             "id": "00000000-0000-4000-8000-000000000004",
                             "name": "Contested Coat",
                             "brandId": "00000000-0000-4000-8000-000000000005",
-                            "brandName": "Brand f8eb9e6f"
+                            "brandName": "Brand 41dd5e49"
                           },
                           "creator": {
                             "id": "00000000-0000-4000-8000-000000000006",
                             "name": "Muse",
-                            "handle": "cr-a046960f",
+                            "handle": "cr-3282a725",
                             "counterfeitFlagCount": 2
                           }
                         }
@@ -136854,7 +136854,7 @@
                       {
                         "id": "00000000-0000-4000-8000-000000000001",
                         "lookId": "00000000-0000-4000-8000-000000000002",
-                        "lookImageUrl": "https://cdn.outfiqe.test/4de68a44-d49a-4283-abd9-aab202f1f405.jpg",
+                        "lookImageUrl": "https://cdn.outfiqe.test/26d9f7f6-2467-4dff-baaf-3cdb43a4df91.jpg",
                         "submittedAt": "2026-01-15T09:30:00.000Z",
                         "reviewedAt": null,
                         "reviewStatus": "PENDING",
@@ -136868,12 +136868,12 @@
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000003",
                           "name": "Muse",
-                          "handle": "cr-c7e43ed6"
+                          "handle": "cr-d8a3c02f"
                         },
                         "product": {
                           "id": "00000000-0000-4000-8000-000000000004",
                           "name": "Tagged Item",
-                          "imageUrl": "https://cdn.outfiqe.test/ebab4fbe-caa9-4891-8dc5-2b6ed5a5104d.jpg",
+                          "imageUrl": "https://cdn.outfiqe.test/6947bb9c-249e-4a9c-91e2-feebd3ffbf4f.jpg",
                           "brandId": "00000000-0000-4000-8000-000000000005"
                         }
                       }
@@ -137920,23 +137920,23 @@
                         "hoursToGoLive": 0,
                         "look": {
                           "id": "00000000-0000-4000-8000-000000000002",
-                          "imageUrl": "https://cdn.outfiqe.test/4da25622-7be1-48f5-8622-a2ba2cd2eda2.jpg",
+                          "imageUrl": "https://cdn.outfiqe.test/fdf8dbb8-b1fe-4686-b4a9-b5325159608b.jpg",
                           "caption": "look",
                           "postedAt": "2026-01-15T09:30:00.000Z"
                         },
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000003",
                           "name": "Muse",
-                          "handle": "cr-7cf7d1dc"
+                          "handle": "cr-935d225f"
                         },
                         "product": {
                           "id": "00000000-0000-4000-8000-000000000004",
                           "name": "Tagged Item",
-                          "imageUrl": "https://cdn.outfiqe.test/4e063c0b-f5ca-4955-b49a-98cce312e390.jpg"
+                          "imageUrl": "https://cdn.outfiqe.test/bb7f32c0-342d-46b5-b839-4abcb23c1e0d.jpg"
                         },
                         "brand": {
                           "id": "00000000-0000-4000-8000-000000000005",
-                          "name": "Brand d641ae42",
+                          "name": "Brand f68d82d8",
                           "policy": "TRUSTED_ONLY"
                         }
                       },
@@ -137956,28 +137956,28 @@
                         "hoursToGoLive": 0,
                         "look": {
                           "id": "00000000-0000-4000-8000-000000000007",
-                          "imageUrl": "https://cdn.outfiqe.test/0f04b7c0-aa79-4e9c-a7ef-524ca267e2a0.jpg",
+                          "imageUrl": "https://cdn.outfiqe.test/400f5c28-258b-48fb-90dc-264d557e2950.jpg",
                           "caption": "look",
                           "postedAt": "2026-01-15T09:30:00.000Z"
                         },
                         "creator": {
                           "id": "00000000-0000-4000-8000-000000000003",
                           "name": "Muse",
-                          "handle": "cr-7cf7d1dc"
+                          "handle": "cr-935d225f"
                         },
                         "product": {
                           "id": "00000000-0000-4000-8000-000000000008",
                           "name": "Tagged Item",
-                          "imageUrl": "https://cdn.outfiqe.test/ed3f1b4b-6385-4549-9a38-4bcfa42ed8f7.jpg"
+                          "imageUrl": "https://cdn.outfiqe.test/7e143d65-4910-45f5-a033-cbe3dc608de0.jpg"
                         },
                         "brand": {
                           "id": "00000000-0000-4000-8000-000000000005",
-                          "name": "Brand d641ae42",
+                          "name": "Brand f68d82d8",
                           "policy": "TRUSTED_ONLY"
                         }
                       }
                     ],
-                    "nextCursor": "eyJ2IjoxNzk0NjQ2OTQ0LjE5NiwiaSI6ImQ0OWQyZmZjLWEzNzctNDc1Ny1hYjc3LTJkMzJhYmUzMGQxNiJ9",
+                    "nextCursor": "eyJ2IjoxNzk0NjQ3OTkwLjQyNiwiaSI6Ijg3ZDczMzZlLTdmYWYtNGY0Mi1iN2U5LWZmMGY4NDk3NGRjMSJ9",
                     "totalCount": 3
                   }
                 }
