@@ -29,6 +29,7 @@ to answer the questions a shopper, creator or brand has before they commit.
   Tailwind selectors so legal pages don't each restyle `h2`/`ul`/`a`.
 - `components/ExampleCallout.tsx` — the labelled "Example" block used to show a rule as a short story.
 - `components/GlossaryList.tsx` and `constants/glossaryTerms.ts` — the terms on `/help/glossary`. Each term has an id, so any page can link to `/help/glossary#muse`.
+- `constants/aboutPage.constants.ts` — the lists and cards on `/about` (who it's for, what makes it different, what each side gets, trust checks, the one-jacket story).
 - `index.ts` — barrel.
 
 The route files live under `app/` directly (`app/about/page.tsx`, `app/legal/privacy/page.tsx`,
@@ -48,6 +49,12 @@ FAQ-bearing pages pass `withSchema` to `FaqAccordion`. The routes are registered
 `@/shared/seo/routes.ts` so they appear in `sitemap.ts`.
 
 ## Non-obvious rationale
+
+- **`/about` follows docs.outfiqe.com, not the other way round.** The "Why Outfiqe" page in the
+  `outfiqe/docs` repo is the source of truth for how Outfiqe describes itself. `/about` uses the
+  same sections and wording, the same Sara (muse), Maya (shopper) and jacket example, and the same
+  rule of not naming a country, city or payment provider. When that docs page changes, update
+  `app/about/page.tsx` and `constants/aboutPage.constants.ts` to match.
 
 - **Legal pages ship as drafts, not fabricated final copy.** Every legal page renders with
   `status="draft"` — a visible banner — and every fact that needs a confirmed company detail
