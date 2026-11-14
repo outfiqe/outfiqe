@@ -1,12 +1,6 @@
 name: Refresh API examples
 
 on:
-  push:
-    branches: [dev]
-    paths:
-      - "apps/api/**"
-      - "!apps/api/openapi/**"
-      - "!apps/api/**/*.md"
   workflow_dispatch:
 
 concurrency:
