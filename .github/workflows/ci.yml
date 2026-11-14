@@ -2,12 +2,6 @@ name: CI
 
 on:
   pull_request:
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "LICENSE"
-      - ".gitignore"
-      - ".gitattributes"
 
 # Cancel superseded runs on the same branch/PR instead of letting them queue.
 concurrency:
@@ -60,8 +54,37 @@ env:
   BANK_ACCOUNT_ENCRYPTION_KEY: ${{ secrets.CI_BANK_ACCOUNT_ENCRYPTION_KEY }}
 
 jobs:
+  changes:
+    name: Detect changed files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - name: Decide whether anything besides documentation changed
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          changed_files=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')
+          code_files=$(printf '%s\n' "$changed_files" | grep -Ev '\.md$|^docs/|^LICENSE$|^\.gitignore$|^\.gitattributes$' || true)
+          if [ -z "$changed_files" ] || [ -n "$code_files" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "Code changed, so the full gate runs:"
+            printf '%s\n' "$code_files"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Only documentation changed, so the build and tests are skipped."
+          fi
+
   lint:
     name: Lint & Format
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -75,6 +98,8 @@ jobs:
 
   typecheck:
     name: Typecheck
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -86,6 +111,8 @@ jobs:
 
   build:
     name: Build
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -97,6 +124,8 @@ jobs:
 
   unit:
     name: Unit tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -108,6 +137,8 @@ jobs:
 
   browser:
     name: Browser tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_PWA_ENABLED: "true"
@@ -132,6 +163,8 @@ jobs:
 
   integration-api:
     name: Integration tests (API ${{ matrix.shard }}/4)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -179,6 +212,8 @@ jobs:
 
   integration-other:
     name: Integration tests (web, admin, packages)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -220,8 +255,8 @@ jobs:
 
   integration:
     name: Integration tests
-    if: always()
-    needs: [integration-api, integration-other]
+    if: always() && needs.changes.outputs.code == 'true'
+    needs: [changes, integration-api, integration-other]
     runs-on: ubuntu-latest
     steps:
       - name: Fail unless every integration shard succeeded
@@ -237,6 +272,8 @@ jobs:
 
   api-boot:
     name: API starts
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -303,6 +340,8 @@ jobs:
 
   lighthouse:
     name: Lighthouse
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -332,14 +371,26 @@ jobs:
   ci:
     name: CI
     if: always()
-    needs: [lint, typecheck, build, unit, integration, api-boot]
+    needs: [changes, lint, typecheck, build, unit, integration, api-boot]
     runs-on: ubuntu-latest
     steps:
       - name: Fail unless every required job succeeded
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          CODE_CHANGED: ${{ needs.changes.outputs.code }}
+          UPSTREAM_RESULTS: ${{ join(needs.*.result, ',') }}
         run: |
-          results="${{ join(needs.*.result, ',') }}"
-          echo "upstream results: $results"
-          case ",$results," in
+          echo "changed-files check: $CHANGES_RESULT, code changed: $CODE_CHANGED"
+          echo "upstream results: $UPSTREAM_RESULTS"
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "::error::could not tell which files changed, so nothing can be skipped"
+            exit 1
+          fi
+          if [ "$CODE_CHANGED" = "false" ]; then
+            echo "documentation-only pull request: build and tests were not needed"
+            exit 0
+          fi
+          case ",$UPSTREAM_RESULTS," in
             *,failure,* | *,cancelled,* | *,skipped,*)
               echo "::error::a required CI job did not succeed"
               exit 1 ;;
