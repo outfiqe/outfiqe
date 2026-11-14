@@ -10,7 +10,7 @@ is the release branch and the only thing that deploys to production.
 | File                       | Trigger                                                                                            | What it owns                                                                                                                                                                                                                                                       |
 | -------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ci.yml`                   | `pull_request` (any base), excluding docs-only diffs                                               | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
-| `ci-docs.yml`              | `pull_request` (any base), docs-only diffs                                                         | Instantly passing jobs named like every required `ci.yml` check (`CI`, `Lint & Format`, `Typecheck`, `Build`, `Unit tests`, `Integration tests`), so a documentation-only PR is mergeable without running the real gate.                                           |
+| `ci-docs.yml`              | `pull_request` (any base), docs-only diffs                                                         | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
 | `commit-messages.yml`      | `pull_request` (any base)                                                                          | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
 | `coverage.yml`             | `pull_request` -> `main`, excluding docs-only diffs                                                | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
 | `validate-branch.yml`      | `pull_request` (any base)                                                                          | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
@@ -123,15 +123,17 @@ change, so `refresh-api-examples.yml` does it after the change reaches `dev`:
 - It duplicates `ci.yml`'s top-level `env:` block for the same reason `coverage.yml` does (see
   below). Keep it in sync too.
 
-**Required checks.** The `outfiqe` ruleset on `dev` and `main` requires seven checks by name:
-`CI`, `Branch Naming`, `Lint & Format`, `Typecheck`, `Build`, `Unit tests` and `Integration
-tests`. `CI` is a fan-in job at the end of `ci.yml` -- it `needs` `lint`, `typecheck`, `build`,
-`unit`, `integration` and `api-boot`, runs `if: always()`, and fails unless every one of them
-reported `success` (a `skipped` or `cancelled` upstream job fails it too, so a skipped lint can't
-sneak a merge through). `browser` and `lighthouse` still run on every code PR but are not
-required; `lighthouse` is `continue-on-error` regardless. If you rename a required job in
-`ci.yml`, rename its match in `ci-docs.yml` and in the ruleset at the same time, or PRs stop being
-mergeable.
+**Two required checks: `CI` and `Branch Naming`.** The `outfiqe` ruleset on `dev` and `main`
+requires only these two. `CI` is a fan-in job at the end of `ci.yml` -- it `needs` `lint`,
+`typecheck`, `build`, `unit`, `integration` and `api-boot`, runs `if: always()`, and fails unless
+every one of them reported `success` (a `skipped` or `cancelled` upstream job fails it too, so a
+skipped lint can't sneak a merge through). So requiring `CI` already requires all of them, and
+listing them separately in the ruleset adds nothing but a duplicate line per check on every PR.
+The ruleset listed all seven until November 2026, which forced `ci-docs.yml` to echo five extra
+checks. `browser` and `lighthouse` still run on every code PR but are not required;
+`lighthouse` is `continue-on-error` regardless. To make a new job required, add it to the `CI`
+job's `needs` list, not to the ruleset. If you rename the `CI` job in either file, update the
+ruleset at the same time, or PRs stop being mergeable.
 
 **`api-boot` starts the real API before anything merges.** It applies the migrations to an empty
 Postgres, starts the API with the exact command the production image runs (`node --import tsx
@@ -145,16 +147,13 @@ final `CI` job requires `api-boot`, so a PR that breaks startup cannot merge.
 checks, and a required check that never reports blocks the PR from merging forever. So `ci.yml`
 can't just `paths-ignore` the docs globs on its own -- a docs-only PR would be unmergeable.
 `ci-docs.yml` is the documented workaround: it triggers on exactly the globs `ci.yml` ignores and
-defines **one job for each required `ci.yml` check, with the same name** (`CI`, `Lint & Format`,
-`Typecheck`, `Build`, `Unit tests`, `Integration tests`), each of which only echoes. Between the
-two files every required check always reports -- from the real jobs on a code PR, from the echoes
-on a docs-only PR. `Branch Naming` comes from `validate-branch.yml`, which runs on every PR. Until
-November 2026 `ci-docs.yml` only had the `CI` job, so docs-only PRs waited forever on the other
-five checks and could not merge.
+defines a single job **named `CI`, matching the required check**, that only echoes. Between the
+two files `CI` always reports -- from the real fan-in on a code PR, from the echo on a docs-only
+PR. `Branch Naming` comes from `validate-branch.yml`, which runs on every PR.
 
 A mixed docs+code PR triggers both files (`ci.yml` because a code file changed, `ci-docs.yml`
-because a doc changed); GitHub then requires _both_ runs of each check to be green, so the real
-gate is still what blocks the merge and the echoes are harmless duplicates.
+because a doc changed), so `CI` appears twice. The real one finishes last, after every real job,
+so it is what decides the merge; the echo is a harmless duplicate.
 
 **`coverage.yml` and `refresh-api-examples.yml` duplicate `ci.yml`'s top-level `env:` block.** Actions has no supported way to
 share an `env:` map across workflow files (no YAML anchors, no `env` in composite actions that
