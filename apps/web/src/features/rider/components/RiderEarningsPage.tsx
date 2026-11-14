@@ -4,6 +4,7 @@ import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { OwnerType, WithdrawSection } from "@/features/withdraw";
 
+import { EMPLOYEE_RIDER } from "../constants/riderEmployment";
 import { useInfiniteRiderEarnings } from "../hooks/useInfiniteRiderEarnings";
 import { describeRiderLoadError } from "../utils/riderLoadError.utils";
 import { RiderEarningRow } from "./RiderEarningRow";
@@ -19,6 +20,20 @@ export const RiderEarningsPage = () => {
   const pages = earningsQuery.data?.pages ?? [];
   const [firstPage] = pages;
   const earnings = pages.flatMap((page) => page.items);
+
+  if (firstPage?.employmentType === EMPLOYEE_RIDER) {
+    return (
+      <section className="space-y-2" aria-labelledby="rider-earnings-heading">
+        <h1 id="rider-earnings-heading" className="font-display text-2xl font-bold text-foreground">
+          Your pay
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          You&apos;re employed by Outfiqe, so your pay is your salary. Visits don&apos;t add
+          earnings here and there&apos;s nothing to withdraw in the app.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -85,12 +100,14 @@ export const RiderEarningsPage = () => {
         )}
       </section>
 
-      <WithdrawSection
-        ownerType={OwnerType.CREATOR}
-        headingLevel="h2"
-        title="Withdraw your earnings"
-        description="Add and verify your bank account, then ask for a withdrawal when the window is open."
-      />
+      {firstPage && (
+        <WithdrawSection
+          ownerType={OwnerType.CREATOR}
+          headingLevel="h2"
+          title="Withdraw your earnings"
+          description="Add and verify your bank account, then ask for a withdrawal when the window is open."
+        />
+      )}
     </div>
   );
 };

@@ -112,6 +112,11 @@ describe("rider pay for visits", () => {
       amount: DEFAULT_WASTED_VISIT_PAY,
     });
     expect(await findEarningForTask(employeeVisit.taskId)).toBeNull();
+
+    const employeeEarnings = await request(testApp)
+      .get(MY_EARNINGS_PATH)
+      .set("Authorization", employeeVisit.rider.authHeader);
+    expect(employeeEarnings.body.data.employmentType).toBe(RiderEmploymentType.EMPLOYEE);
   });
 
   it("uses a new rate for later visits and keeps earlier earnings as they were", async () => {
@@ -183,6 +188,7 @@ describe("rider earnings and withdrawals", () => {
     const myEarnings = await request(testApp)
       .get(MY_EARNINGS_PATH)
       .set("Authorization", visit.rider.authHeader);
+    expect(myEarnings.body.data.employmentType).toBe(RiderEmploymentType.CONTRACTOR);
     expect(myEarnings.body.data.summary).toEqual({
       currency: "NPR",
       pendingAmount: 0,

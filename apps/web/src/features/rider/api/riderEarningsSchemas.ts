@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { CONTRACTOR_RIDER, RIDER_EMPLOYMENT_TYPES } from "../constants/riderEmployment";
+
 export const RIDER_EARNING_STATUSES = ["PENDING", "AVAILABLE", "WITHDRAWN", "VOIDED"] as const;
 export type RiderEarningStatus = (typeof RIDER_EARNING_STATUSES)[number];
 
@@ -30,6 +32,7 @@ export const riderEarningsSummarySchema = z.object({
 export type RiderEarningsSummary = z.infer<typeof riderEarningsSummarySchema>;
 
 export const riderEarningsPageSchema = z.object({
+  employmentType: z.enum(RIDER_EMPLOYMENT_TYPES).default(CONTRACTOR_RIDER),
   summary: riderEarningsSummarySchema,
   items: z.array(riderEarningSchema),
   nextCursor: z.string().nullable(),
