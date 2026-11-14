@@ -12,6 +12,17 @@ const PATH_PARAM_SEGMENT_PATTERN = /^\{\w+\}$/;
 const REGEX_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 const MAX_EXAMPLE_CHARACTERS = 6000;
 const OPERATION_KEY_SEPARATOR = " ";
+const HEX_RUN_PATTERN = /[0-9a-f]{4,}/gi;
+const DIGIT_PATTERN = /\d/;
+const RANDOM_TOKEN_MARKER = "#";
+
+const maskRandomTokens = (serializedExample: string): string =>
+  serializedExample.replace(HEX_RUN_PATTERN, (hexRun) =>
+    DIGIT_PATTERN.test(hexRun) ? RANDOM_TOKEN_MARKER : hexRun,
+  );
+
+export const toComparableExample = (example: EndpointExample): string =>
+  maskRandomTokens(JSON.stringify(example));
 
 const toPathPattern = (openApiPath: string): RegExp => {
   const segmentPatterns = openApiPath
@@ -68,16 +79,43 @@ const toNormalizedExample = ({ status, query, requestBody, responseBody }: Recor
 
 const pickRichestExample = (candidates: EndpointExample[]): EndpointExample | undefined => {
   const rankedCandidates = candidates
-    .map((candidate) => ({ candidate, serialized: JSON.stringify(candidate) }))
+    .map((candidate) => ({ candidate, comparable: toComparableExample(candidate) }))
     .sort(
       (first, second) =>
-        Number(second.serialized.length <= MAX_EXAMPLE_CHARACTERS) -
-          Number(first.serialized.length <= MAX_EXAMPLE_CHARACTERS) ||
-        second.serialized.length - first.serialized.length ||
-        first.serialized.localeCompare(second.serialized),
+        Number(second.comparable.length <= MAX_EXAMPLE_CHARACTERS) -
+          Number(first.comparable.length <= MAX_EXAMPLE_CHARACTERS) ||
+        second.comparable.length - first.comparable.length ||
+        first.comparable.localeCompare(second.comparable),
     );
   return rankedCandidates[0]?.candidate;
 };
+
+const keepSavedWhenOnlyRandomValuesDiffer = (
+  savedExamples: EndpointExample[],
+  freshExample: EndpointExample,
+): EndpointExample => {
+  const savedExample = savedExamples.find(({ status }) => status === freshExample.status);
+  const isSameApartFromRandomValues =
+    savedExample !== undefined &&
+    toComparableExample(savedExample) === toComparableExample(freshExample);
+  return isSameApartFromRandomValues ? savedExample : freshExample;
+};
+
+export const keepUnchangedExamples = (
+  savedExamplesByOperation: ExamplesByOperation,
+  freshExamplesByOperation: ExamplesByOperation,
+): ExamplesByOperation =>
+  Object.fromEntries(
+    Object.entries(freshExamplesByOperation).map(([operationKey, freshExamples]) => [
+      operationKey,
+      freshExamples.map((freshExample) =>
+        keepSavedWhenOnlyRandomValuesDiffer(
+          savedExamplesByOperation[operationKey] ?? [],
+          freshExample,
+        ),
+      ),
+    ]),
+  );
 
 export const mergeRecordedExamples = (
   operationKeys: string[],
