@@ -1,70 +1,127 @@
 # Outfiqe
 
-Node.js + React monorepo, structured as a modular monolith so it can move fast now and split into separate services later without a rewrite.
+Outfiqe is a fashion marketplace where shoppers buy from brands, muses (creators) post shoppable
+looks, and brands run their store, orders and customer relationships in one place. This repository
+holds the whole platform: the API, the shopper-facing web app, the internal admin panel, and the
+packages they share.
 
-## Stack
+## Contents
 
-- **Monorepo:** pnpm workspaces + Turborepo
-- **API:** Node 22, Express 5, Zod, Prisma 7 + PostgreSQL 16
-- **Web:** Next.js 16 (App Router, SSR/ISR), React 19, TanStack Query
-- **Admin:** React 19 + Vite, TanStack Query, axios — internal panel for reviewing brand
-  applications, approving creators, and managing admin access
-- **Language:** TypeScript
+- [Architecture](#architecture)
+- [Tech stack](#tech-stack)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+- [Everyday commands](#everyday-commands)
+- [Environment variables](#environment-variables)
+- [Testing](#testing)
+- [How we work](#how-we-work)
+- [Product vocabulary](#product-vocabulary)
+- [Admin access](#admin-access)
+- [SEO](#seo)
+- [Where to find documentation](#where-to-find-documentation)
+- [Engineering standards](#engineering-standards)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## Getting Started
+## Architecture
+
+Outfiqe is a **modular monolith**. There is one API, but every business area (orders, products,
+auth, logistics, CRM and so on) lives in its own module with its own routes, services, data access
+and README. Modules talk to each other through each other's public service, never through another
+module's database tables, so any of them can later move into a separate service without a rewrite.
+
+```
+            ┌──────────────┐        ┌──────────────┐
+ Shoppers → │  apps/web    │        │  apps/admin  │ ← Outfiqe staff
+ Brands   → │  Next.js     │        │  Vite+React  │
+ Muses    → └──────┬───────┘        └──────┬───────┘
+                   │      HTTPS + cookies  │
+                   └──────────┬────────────┘
+                       ┌──────▼───────┐
+                       │  apps/api    │  Express, one module per business area
+                       └──┬────────┬──┘
+                 ┌────────▼──┐  ┌──▼──────────────┐
+                 │ PostgreSQL │  │ Redis           │  cache, rate limits, Socket.IO,
+                 │ (Prisma)   │  │                 │  Redis Streams for domain events
+                 └────────────┘  └─────────────────┘
+```
+
+- **One sign-in for every app.** Users sign in on the web app. The admin panel has no login page of
+  its own and reuses the same session.
+- **Domain events** such as a new order, a like or a signup travel over Redis Streams, so a crash or
+  restart never silently drops one.
+- **One codebase, several process roles.** The same API code can run as the HTTP server, a
+  background worker or a scheduler, chosen with `PROCESS_ROLE`
+  (see [apps/api/src/processes/README.md](apps/api/src/processes/README.md)).
+- **Hosting.** The API runs as a Docker image behind Caddy (see
+  [deploy/README.md](deploy/README.md)). The web app and admin panel are deployed on Vercel.
+
+## Tech stack
+
+| Area     | Technology                                                               |
+| -------- | ------------------------------------------------------------------------ |
+| Language | TypeScript everywhere                                                    |
+| Monorepo | pnpm workspaces and Turborepo                                            |
+| API      | Node.js 22, Express 5, Zod, Prisma 7, PostgreSQL 16, Redis 7, Socket.IO  |
+| Web      | Next.js 16 (App Router, server rendering), React 19, TanStack Query      |
+| Admin    | React 19 with Vite, TanStack Router, TanStack Query                      |
+| UI       | Shared design system built on Radix UI and Tailwind CSS                  |
+| Testing  | Vitest (unit and integration), React Testing Library, Playwright         |
+| Quality  | ESLint, Prettier, Husky, lint-staged, commitlint                         |
+| Ops      | GitHub Actions, Docker, Sentry for errors, PostHog for product analytics |
+
+## Repository layout
+
+```
+apps/
+  api/              The backend. One folder per business area under src/modules/.
+  web/              The public site and the shopper, muse and brand dashboards.
+  admin/            The internal panel for Outfiqe staff.
+packages/
+  client/           API client used by web and admin (tokens, CSRF, session renewal).
+  components/       Shared layout pieces such as the header bar and sidebar.
+  design-system/    UI building blocks and theme tokens for web and admin.
+  error-boundary/   The shared error screen and retry behaviour for web and admin.
+  hooks/            Shared React hooks.
+  image-pipeline/   Background processing for uploaded images.
+  types/            TypeScript types shared by api, web and admin.
+  utils/            Small shared helpers and constants.
+deploy/             Production Docker Compose files, Caddy config and deploy notes.
+docs/               Product requirement documents and build plans.
+docker-compose.yml  Local Postgres and Redis (plus separate test instances).
+```
+
+Every app, package and module has its own `README.md` that explains its purpose, its files and how
+a request moves through it.
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 22
+- pnpm 11 (`corepack enable` picks up the version pinned in `package.json`)
+- Docker Desktop, or Docker Engine with Compose
+
+### 1. Install and configure
 
 ```bash
-# 1. Install dependencies
 pnpm install
 
-# 2. Copy env files
 cp .env.example .env
 cp apps/api/.env.local.example apps/api/.env.local
 cp apps/web/.env.local.example apps/web/.env.local
 cp apps/admin/.env.local.example apps/admin/.env.local
-
-# 3. Add outfiqe.local to your hosts file (see "Local domain setup" below) — required, the
-#    session cookie can't be shared across subdomains on a bare "localhost"
-
-# 4. Start Postgres
-docker compose up -d
-
-# 5. Set up the database
-pnpm --filter @outfiqe/api db:generate   # generate the Prisma client
-pnpm --filter @outfiqe/api db:migrate    # create/apply schema
-pnpm --filter @outfiqe/api db:seed       # optional demo user
-
-# 6. Run the app
-pnpm dev
 ```
 
-- API: [http://outfiqe.local:4000](http://outfiqe.local:4000)
-- Web: [http://outfiqe.local:3000](http://outfiqe.local:3000)
-- Admin: reached through Web at [http://outfiqe.local:3000/admin](http://outfiqe.local:3000/admin)
-  — no login form of its own, sign in via Web and it redirects you here if your account is
-  `ADMIN`; see "Admin access" below
-- Always use `outfiqe.local`, not `localhost` — see "Local domain setup"
-- Turborepo only hands each task the env vars `turbo.json` lists. `globalPassThroughEnv` keeps
-  `LOCALAPPDATA` (and the optional `SWC_NATIVE_BINDING_CACHE` override) because SWC's Windows binary,
-  loaded by the `next-intl` plugin in `apps/web/next.config.ts`, needs it to find its cache folder —
-  without it `next dev` fails with `ERR_SWC_NATIVE_CACHE` and takes all of `pnpm dev` down
+### 2. Add the local domain
 
-### Local domain setup
+The app must run on `outfiqe.local`, not `localhost`. The session cookie is shared across
+subdomains (for example `meridian.outfiqe.local` for a brand's CRM), and browsers refuse to share
+a cookie across subdomains of a single-word host like `localhost`.
 
-When filling in `apps/api/.env.local` and `apps/admin/.env.local` from their `.env.local.example` templates, set
-`TENANT_BASE_DOMAIN`, `FRONTEND_URL`, `ADMIN_URL`, `OAUTH_REDIRECT_BASE_URL`, and
-`VITE_WEB_URL` (`apps/admin`) to `outfiqe.local` (with the right port), not bare `localhost`. This
-isn't cosmetic — the session cookie is scoped to `TENANT_BASE_DOMAIN`
-(`domain: env.TENANT_BASE_DOMAIN` in `apps/api/src/shared/utils/cookie.utils.ts`) so one login is
-shared across every CRM tenant subdomain (`daraz.outfiqe.local`, `meridian.outfiqe.local`, …), the
-same way a real deployment shares a session across `daraz.outfiqe.com`/`meridian.outfiqe.com`.
-Browsers refuse to honor a `Domain=` cookie on a single-label host like `localhost` (the same
-supercookie-prevention rule that blocks scoping a cookie to bare `com`), so this genuinely can't be
-tested — or run day to day — on plain `localhost`.
-
-Add these lines to your hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows — open your
-editor **as Administrator** or the save will be rejected; `/etc/hosts` on macOS/Linux — use `sudo`)
-and add one more line per CRM tenant org you create locally, following the same pattern:
+Add these lines to your hosts file. On Windows it is
+`C:\Windows\System32\drivers\etc\hosts`; open your editor as Administrator. On macOS and Linux it is
+`/etc/hosts`; edit it with `sudo`. The change takes effect immediately.
 
 ```
 127.0.0.1 outfiqe.local
@@ -73,188 +130,241 @@ and add one more line per CRM tenant org you create locally, following the same 
 127.0.0.1 norday.outfiqe.local
 ```
 
-No service restart needed for the hosts file itself — it takes effect immediately. See
-`apps/api/src/modules/crm-access/README.md`'s "Non-obvious rationale" for how subdomain resolution
-itself works end to end.
+Add one more line for each brand CRM you create locally. In your `.env.local` files, set
+`TENANT_BASE_DOMAIN`, `FRONTEND_URL`, `ADMIN_URL`, `OAUTH_REDIRECT_BASE_URL` and the admin app's
+`VITE_WEB_URL` to `outfiqe.local` addresses. For how subdomains map to brands, see
+[apps/api/src/modules/crm-access/README.md](apps/api/src/modules/crm-access/README.md).
 
-## Project Structure
+### 3. Start the database and run the app
+
+```bash
+docker compose up -d                       # Postgres and Redis
+
+pnpm --filter @outfiqe/api db:generate     # generate the Prisma client
+pnpm --filter @outfiqe/api db:migrate      # create the schema
+pnpm --filter @outfiqe/api db:seed         # optional demo data
+
+pnpm dev
+```
+
+| App   | Address                         | Notes                                                            |
+| ----- | ------------------------------- | ---------------------------------------------------------------- |
+| API   | http://outfiqe.local:4000       |                                                                  |
+| Web   | http://outfiqe.local:3000       |                                                                  |
+| Admin | http://outfiqe.local:3000/admin | Opened through the web app. Sign in there with an admin account. |
+
+## Everyday commands
+
+Run these from the repository root. Turborepo runs each task in every app and package that has it.
+
+| Command                 | What it does                                         |
+| ----------------------- | ---------------------------------------------------- |
+| `pnpm dev`              | Start every app in development mode                  |
+| `pnpm build`            | Build every app and package                          |
+| `pnpm typecheck`        | Type-check the whole repository                      |
+| `pnpm lint`             | Run ESLint everywhere                                |
+| `pnpm format`           | Format every file with Prettier                      |
+| `pnpm test`             | Run unit and integration tests                       |
+| `pnpm test:unit`        | Run unit tests only                                  |
+| `pnpm test:integration` | Run integration tests only (needs the test database) |
+
+To work on one app, add a filter, for example `pnpm --filter @outfiqe/web test`.
+
+### Database
+
+Run these with `pnpm --filter @outfiqe/api <script>`.
+
+| Script        | What it does                                  |
+| ------------- | --------------------------------------------- |
+| `db:migrate`  | Create and apply a migration (development)    |
+| `db:deploy`   | Apply existing migrations (CI and production) |
+| `db:generate` | Regenerate the Prisma client                  |
+| `db:seed`     | Load demo data                                |
+| `db:studio`   | Browse the database in Prisma Studio          |
+
+## Environment variables
+
+| File                    | Used by                  | What it holds                                                                                                     |
+| ----------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `.env`                  | `docker-compose.yml`     | Local Postgres credentials                                                                                        |
+| `apps/api/.env.local`   | API in development       | Everything in `apps/api/src/config/env.config.ts`. Every variable is required; there are no defaults in the code. |
+| `apps/api/.env.test`    | API integration tests    | Safe test values, pointing at the test database                                                                   |
+| `apps/web/.env.local`   | Web app in development   | App environment, API address, site address and admin address                                                      |
+| `apps/admin/.env.local` | Admin app in development | App environment and the web address used for sign-in                                                              |
+| `deploy/.env.prod`      | Production               | Lives only on the server. See [deploy/README.md](deploy/README.md).                                               |
+
+`.env` files are never committed. Only the `*.example` templates are.
+
+Three variables describe how the API runs:
+
+- `NODE_ENV` is the Node.js mode. Both staging and production builds run with `production`.
+- `APP_ENV` (`local`, `dev` or `prod`) says which environment this is. Logging, secure cookies, HSTS
+  and error-reporting tags depend on it.
+- `PROCESS_ROLE` (`all`, `api`, `worker` or `scheduler`) chooses which part of the API a process
+  runs.
+
+**CI configuration.** GitHub Actions gets the same variables from the repository's
+**Settings → Secrets and variables → Actions**. Plain values are stored as variables (`CI_*`) and
+anything that looks like a credential as a secret, even though CI only uses test values, so nothing
+sensitive appears in logs. Every name referenced in `.github/workflows/ci.yml` must exist, or the
+test jobs fail at start-up.
+
+## Testing
+
+Every change that adds or changes behaviour ships with its tests in the same pull request.
+
+- **Unit tests** cover functions, services, hooks and components in isolation. They sit next to
+  the file they test as `*.test.ts` or `*.test.tsx`.
+- **Integration tests** run against a real Postgres and Redis (`*.integration.test.ts`). Start the
+  test database with `pnpm --filter @outfiqe/api test:db:up`.
+- **Component tests** render web and admin components with React Testing Library.
+- **Browser tests** run the built web app in Playwright.
+
+In CI the API's integration tests are split across four machines that run at the same time, each
+with its own database. A coverage check (80% of lines, functions, branches and statements) runs on
+every release pull request.
+
+## How we work
+
+### Branches
+
+- `dev` is where work comes together. Open every pull request against `dev`.
+- `main` is the release branch. It only receives the `dev` → `main` release pull request, and a
+  merge to `main` deploys to production.
+- Name branches `<type>/<short-description>`, for example `feat/creator-onboarding` or
+  `fix/checkout-address-overflow`. The type is one of the commit types below.
+
+### Commits
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org). A hook checks every
+commit message.
 
 ```
-apps/
-  api/            Express API (modular monolith — one folder per domain)
-  web/            Next.js storefront (App Router) — features mirror the API's modules,
-                   routed via app/. SSR/ISR by default, for SEO.
-  admin/          Vite + React admin panel — brand application/product review, creator
-                   approval, admin team management. No login form — reuses web's session.
-packages/
-  client/         Typed HTTP client (axios) shared by web + admin
-  components/     Shared layout shells — HeaderBar, Sidebar — apps plug in their own router
-  design-system/  Design tokens + UI primitives (Button, Input, Modal, Form, ...), the single
-                  source of truth for web + admin styling
-  hooks/          Shared React hooks (e.g. useInfiniteCursorPage)
-  types/          Types shared across api/web/admin (enums, API response envelope)
-  utils/          Small runtime helpers shared across api/web/admin (e.g. phone regex)
-docker-compose.yml  Local Postgres
+<type>(<scope>): <lower-case subject, no full stop>
+
+feat(web): add the size guide to product pages
+fix(api): reject an expired password reset link
 ```
+
+- **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`,
+  `revert`.
+- **Scope** is optional. It is an app or package name (`api`, `web`, `admin`, `client`,
+  `design-system` and so on) or one of `deps`, `config`, `ci`, `release`.
+
+Staged files are linted and formatted automatically before each commit. The hooks are installed by
+`pnpm install`.
+
+### Pull requests and releases
+
+1. Open a pull request into `dev`. CI runs lint, type checks, the build, every test suite, an API
+   start-up check and Lighthouse.
+2. Merge when CI is green.
+3. To release, open a pull request from `dev` into `main` and merge it with **Create a merge
+   commit**. Never squash it: a squashed release copies `dev`'s commits under new ids, and the next
+   release then conflicts with itself.
+
+Full details of every workflow are in [.github/workflows/README.md](.github/workflows/README.md).
+
+### API reference
+
+`apps/api/openapi/openapi.json` describes every API endpoint: its fields, who can call it, its
+errors and example responses. It is generated from the running code, never written by hand.
+
+- When you change a route, request schema, guard or module README, the pre-commit hook regenerates
+  the file. You can also run `pnpm --filter @outfiqe/api docs:openapi`.
+- CI fails if the committed file does not match the code.
+- After an API change reaches `dev`, a workflow records fresh example responses and opens a pull
+  request with them.
+- When the file reaches `main`, the API tab on the team docs site rebuilds automatically.
+
+See [apps/api/src/testing/openapi/README.md](apps/api/src/testing/openapi/README.md) for how it
+works.
 
 ## Product vocabulary
 
-Every word a user reads uses Outfiqe's own terms, but code, routes, API shapes and the database keep the original names. That way the rename needed no migration and no API break. When you write copy, use the left column. When you write code, use the right.
+Everything a user reads uses Outfiqe's own words. Code, routes, API shapes and the database keep
+the original names. Use the left column in copy and the right column in code.
 
-| Users see         | Code, routes, DB and enums say                            |
+| Users see         | Code, routes, database and enums say                      |
 | ----------------- | --------------------------------------------------------- |
 | Muse              | creator (`/creator/[handle]`, `CreatorLook`, `isCreator`) |
-| Drop              | post / look (`CREATOR_LOOK`, `PostCard`)                  |
+| Drop              | post or look (`CREATOR_LOOK`, `PostCard`)                 |
 | Cheriq / cheriqed | like (`LOOK_LIKED`, `isLiked`, `likeCount`)               |
 | Chime / chimed on | comment (`LOOK_COMMENTED`, `CommentThread`)               |
 | Stash / stashed   | save and wishlist (`isSaved`, `/wishlist`)                |
 | Share             | share                                                     |
 
-This only covers the social actions. A form's "Save changes" button, saved addresses, CRM ticket comments and HTTP `POST` keep their ordinary meaning. The cheriq icon is `CheriqIcon` in `@outfiqe/design-system`.
+These words only apply to the social actions. A form's "Save changes" button, saved addresses, CRM
+ticket comments and HTTP `POST` keep their usual meaning.
 
 ## Admin access
 
-There's no self-serve signup for the admin panel, and no separate login form either — `apps/admin`
-has no `/login` page at all. Signing in always happens on `apps/web`'s `/login`; on success, an
-`ADMIN`-role account is sent straight to the admin panel instead of the regular dashboard (same
-shared cookie session, just a client-side redirect — see `getDefaultRouteForUser`/`getSafeRedirect`
-in `apps/web/src/features/auth`). Visiting the admin panel while signed out bounces you to
-`apps/web`'s login and back.
-
-The **first** admin in an environment is created by the API on boot from env vars
-(`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE` in `apps/api/.env.local`,
-see `apps/api/.env.local.example`) — set all three, start the API once, then unset or rotate the
-password. From there, sign in (via `apps/web`) and use **Team** to invite further admins (email +
-link, same pattern as brand invites).
-
-Brand applications are approved from the admin panel too — approving one creates a real `Brand`
-row and emails the applicant an invite link to set up their account at `apps/web`'s
-`/register/brand`. There is no manual CLI step anymore.
+- **Signing in.** The admin panel has no sign-up and no login page of its own. Staff sign in on the
+  web app, and an admin account is sent straight to the panel with the same session. Opening the
+  panel while signed out sends you to sign in first.
+- **The first admin** in a new environment is created by the API when it starts, from
+  `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` and `ADMIN_BOOTSTRAP_PHONE` in
+  `apps/api/.env.local`. Set all three, start the API once, then remove them or change the
+  password.
+- **More admins** are invited from the **Team** page in the panel.
+- **Brand applications** are approved in the panel. Approving one creates the brand and emails the
+  applicant a link to set up their account.
 
 ## SEO
 
-`apps/web` is a real SSR app, not a client-rendered SPA — search engines and
-social-share crawlers get fully-rendered HTML, not an empty `<div>`.
+The web app renders pages on the server, so search engines and link previews receive complete
+HTML.
 
-- Per-page `metadata` (title/description) — see `app/layout.tsx` (site-wide
-  default + template) and `app/login/page.tsx` (per-page override).
-- `app/sitemap.ts` / `app/robots.ts` — generated routes, not static files.
-  Extend `sitemap.ts` with product/category URLs once those exist.
-- New pages that need their own title/description just export a `metadata`
-  object (static) or `generateMetadata()` (dynamic, e.g. per-product) —
-  [Next's metadata docs](https://nextjs.org/docs/app/getting-started/metadata-and-og-images).
+- Each page sets its title and description with Next.js `metadata` or `generateMetadata()`.
+- `app/sitemap.ts` and `app/robots.ts` generate the sitemap and robots rules.
+- Public pages include structured data where it applies, such as products and brands.
 
-## Database Scripts
+## Where to find documentation
 
-Run from `apps/api` (or via `pnpm --filter @outfiqe/api <script>`):
+| You want to know                               | Look here                                                                  |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| How a module, app or package works and why     | The `README.md` in that folder                                             |
+| The rules every change follows                 | [CLAUDE.md](CLAUDE.md)                                                     |
+| How CI, deploys and releases work              | [.github/workflows/README.md](.github/workflows/README.md)                 |
+| Every API endpoint                             | The API tab on ops.outfiqe.com, built from `apps/api/openapi/openapi.json` |
+| How shoppers, muses and brands use the product | docs.outfiqe.com                                                           |
+| Guides for riders, the hub and Outfiqe staff   | ops.outfiqe.com (team sign-in required)                                    |
+| Product requirements and build plans           | [docs/](docs/)                                                             |
 
-| Script        | Purpose                                   |
-| ------------- | ----------------------------------------- |
-| `db:migrate`  | Create + apply a migration (dev)          |
-| `db:deploy`   | Apply existing migrations (CI/production) |
-| `db:generate` | Regenerate the Prisma client              |
-| `db:seed`     | Seed demo data                            |
-| `db:studio`   | Browse the database in Prisma Studio      |
+There are no code comments in this repository. Names and structure explain what code does, and the
+module README explains why.
 
-## Environment Variables
+## Engineering standards
 
-| File                    | Used by               | Notes                                                                                                                                                                                                                                                                              |
-| ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env`                  | `docker-compose.yml`  | Postgres credentials                                                                                                                                                                                                                                                               |
-| `apps/api/.env.local`   | API (local dev)       | Every var in `apps/api/src/config/env.config.ts` is required — there are no code defaults. `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `TENANT_BASE_DOMAIN` (see "Local domain setup"), `ADMIN_BOOTSTRAP_*` (see "Admin access") |
-| `apps/api/.env.test`    | API integration tests | Complete required set with test-safe values; `TEST_DATABASE_URL` points at the `docker compose --profile test` Postgres                                                                                                                                                            |
-| `apps/web/.env.local`   | Web (local dev)       | `NEXT_PUBLIC_APP_ENV`, `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)                                                                                                                                |
-| `apps/admin/.env.local` | Admin (local dev)     | `VITE_APP_ENV`, `VITE_WEB_URL` (where signed-out visitors get bounced to sign in). `VITE_API_URL` defaults to the same-origin `/api`, proxied by `vite.config.ts`'s dev server                                                                                                     |
-| `deploy/.env.prod`      | production compose    | Droplet-only, `chmod 600`. See `deploy/README.md`                                                                                                                                                                                                                                  |
+Outfiqe serves real customers and real money, so every change is held to production standards:
 
-`.env*` files are gitignored; only the `*.example` templates (`.env.example`, `.env.local.example`, `.env.test.example`, `deploy/.env.prod.example`, `deploy/.env.dev.example`) are committed.
+- **Security.** Passwords are hashed. Sessions use short-lived access tokens and a database-backed,
+  hashed, rotating refresh token, with reuse detection. Every protected route checks access on the
+  server. Inputs are validated, write endpoints are rate limited, and the auth rules follow OWASP
+  ASVS.
+- **Reliability.** Domain events go through Redis Streams with consumer groups. Anything stuck is
+  reclaimed, and after five failed attempts a message moves to a dead-letter stream instead of
+  retrying forever. Real-time connections reconnect with backoff. A failing optional dependency,
+  such as a cache read, degrades gracefully instead of failing the request.
+- **Data integrity.** Database constraints guard against races, and related writes share one
+  transaction.
+- **User experience.** Every list has loading, empty and error states. Pages are accessible
+  (keyboard use, labels, contrast, reduced motion) and checked at phone sizes.
+- **Tests and review.** Every pull request runs the full CI gate before it can merge.
 
-`NODE_ENV` is the Node/library mode. `APP_ENV` (`local` | `dev` | `prod`) is the deployment identity — a `dev` deploy and a `prod` deploy are both `NODE_ENV=production` builds, so structured logging, secure cookies, HSTS, and the Sentry environment tag key off `APP_ENV` instead. `PROCESS_ROLE` (`all` | `api` | `worker` | `scheduler`) picks which part of the API a container runs — see `apps/api/src/processes/README.md`.
+## Troubleshooting
 
-### GitHub Actions config (CI only)
-
-`env.config.ts` has no code defaults, so `.github/workflows/ci.yml` supplies the
-whole environment from repo **Settings → Secrets and variables → Actions**,
-with no inline fallbacks. Non-sensitive values are **Variables** (`vars.CI_*`),
-credential-shaped ones are **Secrets** (`secrets.CI_*`). Nothing points at a real
-service — the secrets are placeholder/test values — but they are stored as
-secrets so nothing credential-shaped is printed in workflow logs.
-
-- Variables (`CI_API_URL`, `CI_APP_ENV`, `CI_PROCESS_ROLE`, `CI_REDIS_URL`,
-  `CI_ALLOWED_ORIGINS`, `CI_ESEWA_*` URLs, `CI_KHALTI_BASE_URL`,
-  `CI_PASSWORD_BREACH_CHECK_ENABLED`, … — see `ci.yml` for the full list).
-- Secrets: `CI_DATABASE_URL`, `CI_JWT_SECRET`, `CI_BANK_ACCOUNT_ENCRYPTION_KEY`,
-  `CI_ESEWA_SECRET_KEY`, `CI_KHALTI_SECRET_KEY`, `CI_TURNSTILE_SECRET_KEY`,
-  `CI_GOOGLE_CLIENT_SECRET`, `CI_FACEBOOK_APP_SECRET`.
-
-Every name referenced in `ci.yml` must exist or the test jobs fail at env
-validation. Set them via the UI or `gh variable set` / `gh secret set`.
-
-The API's integration tests are split across four machines at once (`vitest --shard`), each
-with its own Postgres and Redis, because run one after another they took about 16 minutes. The
-other packages' integration tests run in a fifth job. A small job named **Integration tests**
-passes only when all five do, so the branch rules keep checking one name. The repo is public, so
-the extra machines cost nothing.
-
-## Code Quality & Commits
-
-- `pnpm lint` / `pnpm format` — ESLint (flat config, shared across all packages) and Prettier.
-- **Pre-commit:** staged files are auto-linted and formatted (Husky + lint-staged).
-- **Branch names:**
-
-  ```
-  <type>/<short-kebab-case-description>
-
-  feat/creator-onboarding
-  fix/dashboard-role-redirect-flash
-  refactor/brand-application-status
-  ```
-  - **Type** must be one of the same values as commit types below (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`, `revert`) — no personal/username branches.
-  - No spaces or uppercase; keep the description short.
-
-- **Branch flow.** `dev` is the integration branch — open every PR against `dev`. `main` is the
-  release branch and only ever receives the `dev → main` promotion PR; a merge to `main` deploys
-  production. `Validate Branch Name` (`.github/workflows/validate-branch.yml`) enforces this:
-  anything other than `dev` targeting `main` fails.
-  Merge the promotion PR with **"Create a merge commit"**, never squash. A squashed promotion gives
-  `main` copies of `dev`'s commits that git doesn't recognise as the same history, so the next
-  promotion conflicts with itself. Two early promotions (`chore(SYNC): promote dev to main`, #458
-  and #478) were squashed; `commitlint.config.js` ignores those two headers so they don't fail the
-  commit message check now that `dev` includes `main`'s history.
-
-- **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org), enforced by a commit-msg hook (commitlint, config in `commitlint.config.js`):
-
-  ```
-  <type>(<scope>): <subject, lower-case, no trailing period>
-
-  feat(web): add user profile page
-  fix(api): correct password hash comparison
-  docs: update setup instructions
-  ```
-  - **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`, `revert`.
-  - **Scope** is optional, but if given must match a real workspace folder or one of the cross-cutting scopes — currently `admin`, `api`, `web`, `client`, `components`, `design-system`, `hooks`, `types`, `utils`, `deps`, `config`, `ci`, `release`. These come from `apps/*` and `packages/*` in `commitlint.scopes.cjs`, so a new package becomes a valid scope with no config change.
-
-  Hooks run automatically via `pnpm install` (the `prepare` script sets them up) — no manual step needed.
-
-## Status
-
-This ships to real, public users — "MVP" here means a scoped feature set, not a lower engineering
-bar. Auth is production-grade: hashed passwords, short-lived JWT access tokens, and a DB-backed,
-hashed, TTL'd, rotating refresh-token store (`apps/api/src/modules/auth`), enforced server-side via
-`requireAuth`/`requireRole` middleware across every protected route. The real-time layer (Socket.IO,
-`apps/api/src/shared/socket`) uses exponential backoff with jitter on reconnect. Domain events
-(likes, follows, new looks, signups) travel over Redis Streams rather than an in-process event
-emitter (`apps/api/src/shared/redis`) — consumer groups ack on success, reclaim anything stuck via
-`XAUTOCLAIM`, and after 5 failed attempts a message falls into a dead-letter stream instead of
-retrying forever. So a crashed handler or a mid-delivery restart doesn't mean a silently dropped
-event. Test infra is in place — vitest `unit`/`integration` projects per app, 80% coverage
-thresholds, a handful of seeded example tests (`apps/api/src/shared/utils/*.test.ts`,
-`apps/web/src/components/ProductGridSkeleton.test.tsx`, `apps/admin/src/components/Logo.test.tsx`,
-among others) — but actual coverage is still thin across the codebase; new/changed code is expected
-to bring its own unit, integration, and (for web/admin) component tests as it lands.
+- **`next dev` fails with `ERR_SWC_NATIVE_CACHE` on Windows.** Turborepo only passes the
+  environment variables listed in `turbo.json`. `LOCALAPPDATA` is listed in `globalPassThroughEnv`
+  because Next.js's compiler needs it to find its cache folder. If you changed that list, add it
+  back.
+- **Signed out straight after signing in.** You are probably on `localhost`. Use
+  `http://outfiqe.local:3000` and check the hosts file entries above.
+- **Integration tests cannot connect to the database.** Start the test containers with
+  `pnpm --filter @outfiqe/api test:db:up`.
 
 ## License
 
-Proprietary. All rights reserved — see [LICENSE](./LICENSE). This is not open-source software;
-no permission is granted to use, copy, modify, or distribute any part of this repository outside
-of an explicit written agreement with Outfiqe.
+Proprietary. All rights reserved. See [LICENSE](./LICENSE). This is not open-source software. No
+permission is granted to use, copy, modify or distribute any part of this repository without an
+explicit written agreement with Outfiqe.
