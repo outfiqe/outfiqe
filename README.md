@@ -273,8 +273,8 @@ errors and example responses. It is generated from the running code, never writt
 - When you change a route, request schema, guard or module README, the pre-commit hook regenerates
   the file. You can also run `pnpm --filter @outfiqe/api docs:openapi`.
 - CI fails if the committed file does not match the code.
-- After an API change reaches `dev`, a workflow records fresh example responses and opens a pull
-  request with them.
+- To refresh the example responses after an endpoint's response changed, start **Refresh API
+  examples** from the Actions tab. It records fresh examples and opens a pull request with them.
 - When the file reaches `main`, the API tab on the team docs site rebuilds automatically.
 
 See [apps/api/src/testing/openapi/README.md](apps/api/src/testing/openapi/README.md) for how it
