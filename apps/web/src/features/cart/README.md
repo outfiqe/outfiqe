@@ -6,7 +6,7 @@ The shopper's bag: the `/cart` page, and the hooks other features use to add to 
 
 ## Structure
 
-- `components/CartBody.tsx` — the `/cart` page body. It shows a sign-in prompt to a signed-out visitor, `NotAShopperNotice` to a brand owner or staff member, a skeleton while loading, an empty state when the bag is empty or everything in it has sold out, and otherwise the items beside the city field and summary.
+- `components/CartBody.tsx` — the `/cart` page body. It shows a sign-in prompt to a signed-out visitor, `NotAShopperNotice` to a brand owner or staff member, a skeleton while loading, `LoadErrorNotice` ("We couldn't load your bag" + Try again) when the bag request fails, an empty state when the bag is empty or everything in it has sold out, and otherwise the items beside the city field and summary. A failed load is never shown as an empty bag.
 - `components/CartItemRow.tsx` — one item: image, name, size, quantity controls and remove. A sold-out item stays in the list, faded, without quantity controls.
 - `components/CartCityField.tsx` — "Delivering to": a `CityAutocomplete` that saves the bag's city and previews that city's delivery fee and free-delivery threshold (`resolveZonePreview` from `delivery-zones`).
 - `components/CartSummary.tsx` — subtotal, discounts, delivery fee and total, the coupon form, and the Checkout link.

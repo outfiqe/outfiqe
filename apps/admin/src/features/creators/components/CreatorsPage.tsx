@@ -89,7 +89,7 @@ export const CreatorsPage = () => {
             <CreatorRowSkeleton key={rowIndex} hasReviewActions={tab === "PENDING"} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load muses.</p>}
-        {!isLoading && creators.length === 0 && (
+        {!isLoading && !error && creators.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { NotAShopperNotice } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { LoadErrorNotice } from "@/shared/components/LoadErrorNotice";
 
 import { useInfiniteOrders } from "../hooks/useInfiniteOrders";
 import { OrderRow } from "./OrderRow";
@@ -47,6 +48,17 @@ export const OrdersListBody = () => {
   }
 
   const orders = ordersQuery.data?.pages.flatMap((page) => page.orders) ?? [];
+
+  if (orders.length === 0 && ordersQuery.isError) {
+    return (
+      <LoadErrorNotice
+        align="center"
+        className="py-14"
+        message="We couldn't load your orders. Check your connection and try again."
+        onRetry={() => void ordersQuery.refetch()}
+      />
+    );
+  }
 
   if (orders.length === 0) {
     return (

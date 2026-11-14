@@ -115,7 +115,7 @@ export const ProductsPage = () => {
             <ProductRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load products.</p>}
-        {!isLoading && products.length === 0 && (
+        {!isLoading && !error && products.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
