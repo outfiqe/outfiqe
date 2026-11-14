@@ -6,7 +6,7 @@ import { ANALYTICS_EVENTS, THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useTrackView } from "@/features/analytics/hooks/useTrackView";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -22,6 +22,7 @@ import { cn } from "@/shared/lib/cn";
 
 const PRODUCT_IMAGE_SIZES = "(min-width: 1024px) 40vw, 100vw";
 const PRODUCT_THUMBNAIL_SIZE = "64px";
+const ONLY_ONE_SIZE = 1;
 
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 import { QuantitySelector } from "./QuantitySelector";
@@ -68,9 +69,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const availableSizes = product.sizes.filter((size) => size.inStock);
   const isSoldOut = availableSizes.length === 0;
 
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
-    availableSizes[0]?.id ?? null,
-  );
+  const [firstAvailableSize] = availableSizes;
+  const onlyAvailableSizeId =
+    availableSizes.length === ONLY_ONE_SIZE && firstAvailableSize ? firstAvailableSize.id : null;
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(onlyAvailableSizeId);
+  const [hasTriedWithoutSize, setHasTriedWithoutSize] = useState(false);
+  const sizeOptionsRef = useRef<HTMLDivElement>(null);
   const [quantity, setQuantity] = useState(1);
 
   const galleryImages =
@@ -79,7 +83,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const activeImage = galleryImages[selectedImageIndex] ?? galleryImages[0];
 
   const needsSizeChoice = !isSoldOut && !selectedSizeId;
-  const canPurchase = !isSoldOut && Boolean(selectedSizeId);
+  const shouldShowSizePrompt = needsSizeChoice && hasTriedWithoutSize;
+  const canPurchase = !isSoldOut;
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
@@ -128,7 +133,16 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
     router.push("/checkout?buyNow=1");
   };
 
+  const promptForSize = () => {
+    setHasTriedWithoutSize(true);
+    sizeOptionsRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  };
+
   const requestPurchase = (action: "cart" | "buy") => {
+    if (!selectedSizeId) {
+      promptForSize();
+      return;
+    }
     if (product.isThrift && !hasConfirmedThriftPurchase) {
       setPendingThriftAction(action);
       return;
@@ -248,10 +262,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
           />
 
           <SizeSelector
+            ref={sizeOptionsRef}
             sizes={product.sizes}
             selected={selectedSizeId}
             onSelect={setSelectedSizeId}
             isDisabled={!canShop}
+            isMissingChoice={shouldShowSizePrompt}
           />
           {isSizeFitOn && product.hasSizeChart && (
             <ProductFitSection
@@ -334,8 +350,10 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             <p className="mt-2 text-sm font-semibold text-foreground">
               {product.isThrift ? "Sold — this one-of-a-kind piece is gone" : "Out of stock"}
             </p>
-          ) : needsSizeChoice ? (
-            <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>
+          ) : shouldShowSizePrompt ? (
+            <p role="alert" className="mt-2 text-xs text-destructive">
+              Select a size to continue.
+            </p>
           ) : null}
 
           <ShippingInfo />
