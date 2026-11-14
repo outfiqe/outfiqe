@@ -120,6 +120,7 @@ export const createApiClient = ({
         message ?? error.message ?? "Request failed",
         code ?? "UNKNOWN_ERROR",
         details,
+        error.response?.status,
       );
     },
   );
