@@ -8,7 +8,8 @@ import {
   CarouselItem,
 } from "@outfiqe/design-system";
 import Autoplay from "embla-carousel-autoplay";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -16,9 +17,11 @@ import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { PublicHeroSlide } from "../api/heroSlideSchemas";
+import { useHeroAutoplay } from "../hooks/useHeroAutoplay";
 import { HeroSlideTitle } from "./HeroSlideTitle";
 
 const FIRST_SLIDE_INDEX = 0;
+const AUTOPLAY_DELAY_MS = 4000;
 
 type HeroCarouselProps = {
   slides: PublicHeroSlide[];
@@ -28,6 +31,14 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const hasMultipleSlides = slides.length > 1;
+  const prefersReducedMotion = useReducedMotion();
+  const [autoplayPlugin] = useState(() =>
+    Autoplay({ delay: AUTOPLAY_DELAY_MS, playOnInit: false, stopOnFocusIn: true }),
+  );
+  const { isPlaying, toggleAutoplay } = useHeroAutoplay(
+    api,
+    hasMultipleSlides && prefersReducedMotion === false,
+  );
 
   useEffect(() => {
     if (!api) return;
@@ -43,7 +54,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
     <section className="pb-4 sm:px-6 lg:px-10">
       <Carousel
         opts={{ loop: hasMultipleSlides }}
-        plugins={[Autoplay({ delay: 4000 })]}
+        plugins={[autoplayPlugin]}
         setApi={setApi}
         className="overflow-hidden rounded-none sm:rounded-3xl"
       >
@@ -105,6 +116,15 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
             <Button
               variant="ghost"
               size="icon"
+              onClick={toggleAutoplay}
+              aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
+              className="absolute right-3 top-3 z-20 size-9 bg-white/15 text-white hover:bg-white/25 sm:right-6 sm:top-6"
+            >
+              {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => api?.scrollPrev()}
               aria-label="Previous slide"
               className="absolute left-4 top-1/2 hidden -translate-y-1/2 bg-white/15 text-white hover:bg-white/25 sm:flex"
@@ -129,7 +149,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
                   onClick={() => api?.scrollTo(i)}
                   aria-label={`Go to slide ${i + 1}`}
                   aria-current={i === selectedIndex}
-                  className="flex items-center gap-3"
+                  className="flex cursor-pointer items-center gap-3"
                 >
                   <span
                     className={cn(
