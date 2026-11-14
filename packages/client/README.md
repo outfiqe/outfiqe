@@ -6,7 +6,7 @@ The API client the web and admin apps use to talk to the backend. It adds the ac
 
 ## Structure
 
-- `src/client/index.ts` — `createApiClient`, the axios wrapper, its token storage and its retry after a 401.
+- `src/client/index.ts` — `createApiClient`, the axios wrapper, its token storage and its retry after a 401. `waitForSession(request)` registers the app's start-up session check: until it settles, requests sent without a token wait for it (except the session and refresh calls, set by `sessionPath`/`refreshPath`), so a page's first signed-in requests don't go out bare and trigger an extra refresh.
 - `src/client/sessionRefresh.ts` — decides whether a failed refresh means the session is really over.
 - `src/errors/` — `ApiClientError`, the one error type callers catch (`code`, `details`, and the HTTP `status` when the server answered), and `retryPolicy.ts`'s `shouldRetryRequest`, the React Query `retry` default for web and admin. It retries network failures and 5xx up to 3 times but never a 4xx (except 408 and 429): a 403 or 404 will not change on retry, and retrying only kept the page on skeletons for 7–10 seconds before its error or no-access state showed.
 - `src/chat/`, `src/conversations/`, `src/notifications/`, `src/uploads/` — typed calls shared by both apps.

@@ -30,13 +30,16 @@ const getCsrfTokenFromCookie = (): string | undefined => {
 export type CreateApiClientOptions = {
   baseURL: string;
   refreshPath?: string;
+  sessionPath?: string;
 };
 
 export const createApiClient = ({
   baseURL,
   refreshPath = "/auth/refresh",
+  sessionPath = "/auth/session",
 }: CreateApiClientOptions) => {
   let accessToken: string | null = null;
+  let pendingSession: Promise<void> | null = null;
   let unauthorizedHandler: (() => void) | null = null;
   let suspendedHandler: SuspendedHandler | null = null;
   let refreshPromise: Promise<string> | null = null;
@@ -57,7 +60,22 @@ export const createApiClient = ({
 
   const http = axios.create({ baseURL, withCredentials: true });
 
-  http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const waitForSession = (sessionRequest: Promise<unknown>): void => {
+    const trackedSession = sessionRequest.then(
+      () => undefined,
+      () => undefined,
+    );
+    pendingSession = trackedSession;
+    void trackedSession.then(() => {
+      if (pendingSession === trackedSession) pendingSession = null;
+    });
+  };
+
+  http.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+    const isSessionRequest = config.url === sessionPath || config.url === refreshPath;
+    if (!accessToken && pendingSession && !isSessionRequest) {
+      await pendingSession;
+    }
     if (accessToken) {
       config.headers.set("Authorization", `Bearer ${accessToken}`);
     }
@@ -178,6 +196,7 @@ export const createApiClient = ({
     getAccessToken,
     setUnauthorizedHandler,
     setSuspendedHandler,
+    waitForSession,
     refresh: refreshAccessToken,
   };
 };

@@ -55,6 +55,7 @@ Files:
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`. Derives the role booleans consumers gate
   on: `isBrandOwner` / `isStaff` (platform staff or tenant staff, from `isStaffUserRole`) / `isCreator` / `isShopper` (`role === CUSTOMER`) / `isRider` (`role === RIDER`). `isStaff` means "a staff account, not a shopper", so every consumer that blocks shopping, following or liking, or that sends someone to the admin app, covers both staff types; only checks that truly mean Outfiqe platform staff, like review moderation, compare against `UserRole.ADMIN` directly.
+  The session bootstrap runs in a **layout** effect and hands its request to the API client's `waitForSession`. React runs child effects before the parent's, so a page's first queries used to fire before `/auth/session` started, go out without a token, get 401, and set off an extra `/auth/refresh` (a refresh-token rotation) on every full page load. Layout effects run before any normal effect, and the client holds signed-in requests (all but the session and refresh calls themselves) until the session request settles; the token is set before the waiting requests resume.
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
   `createAuthQueryClientWrapper()` (a `renderHook`/`render` wrapper combining `AuthProvider` with
   the shared `createTestQueryClient()` from `apps/web/src/testing/integration/queryClientWrapper.tsx`),
