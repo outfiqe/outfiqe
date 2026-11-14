@@ -309,6 +309,7 @@ export default defineConfig({
         "src/features/payments/hooks/useInitiatePayment.ts",
         "src/features/payments/components/PaymentCallbackScreen.tsx",
         "src/features/orders/components/OrderDetailBody.tsx",
+        "src/features/orders/components/OrderPriceBreakdown.tsx",
         "src/features/orders/components/OrderRow.tsx",
         "src/features/orders/utils/orderReference.utils.ts",
         "src/features/orders/components/OrderTrackingTimeline.tsx",

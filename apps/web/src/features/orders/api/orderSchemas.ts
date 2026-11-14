@@ -126,6 +126,7 @@ export const orderSchema = z.object({
   subtotal: z.number(),
   deliveryFee: z.number(),
   codFee: z.number(),
+  platformDiscountTotal: z.number().default(0),
   total: z.number(),
   refundedAmount: z.number().default(0),
   trackingStage: orderTrackingStageSummarySchema.nullable().default(null),

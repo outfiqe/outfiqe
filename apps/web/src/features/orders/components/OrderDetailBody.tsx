@@ -24,6 +24,7 @@ import {
 } from "../utils/cancellationWording.utils";
 import { formatOrderReference } from "../utils/orderReference.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
+import { OrderPriceBreakdown } from "./OrderPriceBreakdown";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
 import { OrderTrackingTimeline } from "./OrderTrackingTimeline";
@@ -80,6 +81,10 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
 
   const {
     id,
+    subtotal,
+    platformDiscountTotal,
+    deliveryFee,
+    codFee,
     total,
     paymentMethod,
     paymentStatus,
@@ -194,23 +199,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
             {address}, {city}
           </span>
         </div>
-        <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-base font-extrabold text-foreground">
-          <span>Total</span>
-          <span>Rs. {total.toLocaleString()}</span>
-        </div>
+        <OrderPriceBreakdown
+          items={items}
+          subtotal={subtotal}
+          couponDiscount={platformDiscountTotal}
+          deliveryFee={deliveryFee}
+          codFee={codFee}
+          total={total}
+          isMoneyUntaken={isMoneyUntaken}
+        />
 
         {!isMoneyUntaken && <TransactionLedger transactions={transactions} />}
       </div>
-
-      <ul className="mt-4 space-y-1 text-left text-xs text-muted-foreground">
-        {items.map((orderItem) => (
-          <li key={orderItem.id}>
-            {orderItem.productName} · {orderItem.sizeLabel} × {orderItem.qty}
-            {orderItem.refundedQty > NOTHING_REFUNDED &&
-              ` (${orderItem.refundedQty} ${isMoneyUntaken ? "cancelled" : "refunded"})`}
-          </li>
-        ))}
-      </ul>
 
       {cancellableItems.length > NOTHING_REFUNDED && (
         <div className="mt-4 flex justify-center">

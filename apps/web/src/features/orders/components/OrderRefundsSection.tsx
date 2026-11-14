@@ -1,6 +1,7 @@
 "use client";
 
 import { Skeleton } from "@outfiqe/design-system";
+import { OrderRefundMethod } from "@outfiqe/types";
 
 import {
   REFUND_CAUSE_LABELS,
@@ -27,6 +28,10 @@ export const OrderRefundsSection = ({ orderId }: OrderRefundsSectionProps) => {
   }
   if (refunds.length === NO_REFUNDS) return null;
 
+  const isOnlyUncollectedCash = refunds.every(
+    ({ method }) => method === OrderRefundMethod.CASH_NOT_COLLECTED,
+  );
+
   return (
     <section
       aria-labelledby="order-refunds-heading"
@@ -36,7 +41,7 @@ export const OrderRefundsSection = ({ orderId }: OrderRefundsSectionProps) => {
         id="order-refunds-heading"
         className="font-display text-base font-extrabold text-foreground"
       >
-        Refunds
+        {isOnlyUncollectedCash ? "Cancelled items" : "Refunds"}
       </h2>
       <ul className="mt-3 space-y-3">
         {refunds.map(({ id, cause, status, method, totalAmount, feeAmount, lines }) => (
@@ -56,7 +61,9 @@ export const OrderRefundsSection = ({ orderId }: OrderRefundsSectionProps) => {
                   {line.productName} · {line.sizeLabel} × {line.qty}
                 </li>
               ))}
-              {feeAmount > NO_FEES && <li>Delivery fees · Rs. {feeAmount.toLocaleString()}</li>}
+              {feeAmount > NO_FEES && (
+                <li>Delivery and handling fees · Rs. {feeAmount.toLocaleString()}</li>
+              )}
             </ul>
           </li>
         ))}
