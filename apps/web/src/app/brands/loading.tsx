@@ -2,12 +2,13 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BrandGridSkeleton } from "@/features/brands";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 const BrandsLoading = () => {
   return (
     <div role="status" aria-label="Loading brands" className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         <div className="px-6 pb-16 pt-8 sm:pt-10 lg:px-10">
           <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
             Directory

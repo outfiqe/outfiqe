@@ -3,11 +3,17 @@ import { mswServer } from "@test/integration/msw/server";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { useSearchParams } from "next/navigation";
+import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createAuthQueryClientWrapper } from "@/features/auth/context/authTestWrapper";
 
-import { FOR_YOU_HINT_DISMISSED_STORAGE_KEY } from "../utils/forYouHint";
+import {
+  FOR_YOU_HINT_DISMISSED_COOKIE_NAME,
+  FOR_YOU_HINT_DISMISSED_VALUE,
+  LEGACY_FOR_YOU_HINT_DISMISSED_STORAGE_KEY,
+  rememberForYouHintDismissed,
+} from "../utils/forYouHint";
 import { ExploreFeed } from "./ExploreFeed";
 
 vi.mock("@/shared/lib/socketClient", () => ({
@@ -28,8 +34,11 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(),
 }));
 
+const DISMISSED_COOKIE = `${FOR_YOU_HINT_DISMISSED_COOKIE_NAME}=${FOR_YOU_HINT_DISMISSED_VALUE}`;
+
 beforeEach(() => {
   window.localStorage.clear();
+  document.cookie = `${FOR_YOU_HINT_DISMISSED_COOKIE_NAME}=; Path=/; Max-Age=0`;
   mockNextRouter();
   vi.mocked(useSearchParams).mockReturnValue(
     new URLSearchParams() as ReturnType<typeof useSearchParams>,
@@ -62,15 +71,47 @@ describe("ExploreFeed for_you personalization hint", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
 
     await waitFor(() => expect(screen.queryByText(HINT_TEXT)).not.toBeInTheDocument());
-    expect(window.localStorage.getItem(FOR_YOU_HINT_DISMISSED_STORAGE_KEY)).toBe("1");
+    expect(document.cookie).toContain(DISMISSED_COOKIE);
   });
 
   it("never shows the hint again once it was dismissed on a previous visit", async () => {
-    window.localStorage.setItem(FOR_YOU_HINT_DISMISSED_STORAGE_KEY, "1");
+    rememberForYouHintDismissed();
 
     render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
 
     expect(await screen.findByText("Nothing here yet — try a different tab.")).toBeInTheDocument();
     expect(screen.queryByText(HINT_TEXT)).not.toBeInTheDocument();
+  });
+
+  it("still hides the hint for someone who dismissed it before the cookie existed", async () => {
+    window.localStorage.setItem(
+      LEGACY_FOR_YOU_HINT_DISMISSED_STORAGE_KEY,
+      FOR_YOU_HINT_DISMISSED_VALUE,
+    );
+
+    render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
+
+    expect(await screen.findByText("Nothing here yet — try a different tab.")).toBeInTheDocument();
+    expect(screen.queryByText(HINT_TEXT)).not.toBeInTheDocument();
+    expect(document.cookie).toContain(DISMISSED_COOKIE);
+  });
+});
+
+describe("ExploreFeed for_you hint in the server-rendered page", () => {
+  const renderOnServer = (isForYouHintDismissedByCookie: boolean) => {
+    const Wrapper = createAuthQueryClientWrapper();
+    return renderToString(
+      <Wrapper>
+        <ExploreFeed isForYouHintDismissedByCookie={isForYouHintDismissedByCookie} />
+      </Wrapper>,
+    );
+  };
+
+  it("is already in the first paint for a visitor who has not dismissed it", () => {
+    expect(renderOnServer(false)).toContain(HINT_TEXT);
+  });
+
+  it("is left out of the first paint when the dismissal cookie is set", () => {
+    expect(renderOnServer(true)).not.toContain(HINT_TEXT);
   });
 });

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { cn } from "@/shared/lib/cn";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 import { noIndexMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = noIndexMetadata("Dashboard");
@@ -12,7 +14,12 @@ const DashboardComingSoonPage = () => {
   return (
     <div>
       <SiteHeader />
-      <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 text-center sm:px-6 lg:px-8">
+      <main
+        className={cn(
+          MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME,
+          "mx-auto flex max-w-2xl flex-col items-center px-4 py-24 text-center sm:px-6 lg:px-8",
+        )}
+      >
         <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Coming soon
         </h1>

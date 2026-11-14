@@ -6,12 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "@/features/auth";
 import { featureFlagsApi } from "@/shared/lib/featureFlagsApi";
 
-import { useFeatureFlag } from "./useFeatureFlag";
+import { useFeatureFlag, useFeatureFlagState } from "./useFeatureFlag";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 vi.mock("@/shared/lib/featureFlagsApi", () => ({ featureFlagsApi: { listMine: vi.fn() } }));
 
-const renderWithQueryClient = (hook: () => boolean) => {
+const renderWithQueryClient = <HookResult,>(hook: () => HookResult) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -50,5 +50,31 @@ describe("useFeatureFlag", () => {
 
     await waitFor(() => expect(featureFlagsApi.listMine).toHaveBeenCalled());
     expect(result.current).toBe(false);
+  });
+});
+
+describe("useFeatureFlagState", () => {
+  it("is not resolved while the flags are still loading, so callers can hold the space", () => {
+    vi.mocked(featureFlagsApi.listMine).mockReturnValue(new Promise(() => undefined));
+
+    const { result } = renderWithQueryClient(() => useFeatureFlagState("order_logistics"));
+
+    expect(result.current).toEqual({ isEnabled: false, isResolved: false });
+  });
+
+  it("is resolved and on once the API lists the flag", async () => {
+    vi.mocked(featureFlagsApi.listMine).mockResolvedValue(["order_logistics"]);
+
+    const { result } = renderWithQueryClient(() => useFeatureFlagState("order_logistics"));
+
+    await waitFor(() => expect(result.current).toEqual({ isEnabled: true, isResolved: true }));
+  });
+
+  it("is resolved and off when the flags can't be loaded", async () => {
+    vi.mocked(featureFlagsApi.listMine).mockRejectedValue(new Error("offline"));
+
+    const { result } = renderWithQueryClient(() => useFeatureFlagState("order_logistics"));
+
+    await waitFor(() => expect(result.current).toEqual({ isEnabled: false, isResolved: true }));
   });
 });

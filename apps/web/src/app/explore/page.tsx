@@ -10,8 +10,10 @@ import { ExploreFeed, ExploreFeedLoading } from "@/features/explore";
 import { EXPLORE_TAB } from "@/features/explore/constants/explore.constants";
 import { buildExploreFeedQueryKey } from "@/features/explore/feed/api/exploreFeedQueryKey";
 import { getExploreFeedFirstPageServer } from "@/features/explore/feed/api/serverExploreFeed";
+import { hasDismissedForYouHintOnServer } from "@/features/explore/feed/api/serverForYouHint";
 import { toFeedLayout } from "@/features/explore/utils/readFeedLayout";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 import { buildPageMetadata } from "@/shared/seo";
 
 const EXPLORE_PAGE_TITLE = "Explore muse looks";
@@ -42,7 +44,10 @@ type PrefetchedExploreFeedProps = {
 
 const PrefetchedExploreFeed = async ({ feedTab, loadingState }: PrefetchedExploreFeedProps) => {
   const queryClient = getQueryClient();
-  const mayBeSignedIn = await hasServerSessionCookie();
+  const [mayBeSignedIn, isForYouHintDismissedByCookie] = await Promise.all([
+    hasServerSessionCookie(),
+    hasDismissedForYouHintOnServer(),
+  ]);
   if (!mayBeSignedIn) {
     await queryClient
       .prefetchInfiniteQuery({
@@ -56,7 +61,7 @@ const PrefetchedExploreFeed = async ({ feedTab, loadingState }: PrefetchedExplor
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={loadingState}>
-        <ExploreFeed />
+        <ExploreFeed isForYouHintDismissedByCookie={isForYouHintDismissedByCookie} />
       </Suspense>
     </HydrationBoundary>
   );
@@ -73,7 +78,7 @@ const ExplorePage = async ({ searchParams }: ExplorePageProps) => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         <h1 className="sr-only">{EXPLORE_PAGE_TITLE}</h1>
         <Suspense fallback={loadingState}>
           <PrefetchedExploreFeed feedTab={feedTab} loadingState={loadingState} />

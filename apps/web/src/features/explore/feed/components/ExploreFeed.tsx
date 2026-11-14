@@ -34,7 +34,11 @@ import { PostGridCard } from "../../posts/components/PostGridCard";
 import { readFeedLayout } from "../../utils/readFeedLayout";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
-import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
+import {
+  carryOverLegacyForYouHintDismissal,
+  isForYouHintDismissed,
+  rememberForYouHintDismissed,
+} from "../utils/forYouHint";
 import { buildTrendingRankByPostId, findTrendingFallbackBoundary } from "../utils/trendingRank";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 
@@ -56,7 +60,11 @@ const Sidebar = dynamic(() => import("../../components/Sidebar").then((m) => m.S
   ssr: false,
 });
 
-export const ExploreFeed = () => {
+type ExploreFeedProps = {
+  isForYouHintDismissedByCookie?: boolean;
+};
+
+export const ExploreFeed = ({ isForYouHintDismissedByCookie = false }: ExploreFeedProps) => {
   const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
   const { isStaff } = useAuth();
   const isLastViewerStaff = useStaffViewerHint();
@@ -65,7 +73,14 @@ export const ExploreFeed = () => {
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const isHydrated = useIsHydrated();
   const [hasJustDismissedForYouHint, setHasJustDismissedForYouHint] = useState(false);
-  const isForYouHintVisible = isHydrated && !hasJustDismissedForYouHint && !isForYouHintDismissed();
+  const hasDismissedForYouHintBefore = isHydrated
+    ? isForYouHintDismissed()
+    : isForYouHintDismissedByCookie;
+  const isForYouHintVisible = !hasJustDismissedForYouHint && !hasDismissedForYouHintBefore;
+
+  useEffect(() => {
+    carryOverLegacyForYouHintDismissal();
+  }, []);
 
   const dismissForYouHint = () => {
     rememberForYouHintDismissed();

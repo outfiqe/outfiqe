@@ -3,7 +3,7 @@
 import { Button, FormBanner, SearchInput, Skeleton } from "@outfiqe/design-system";
 import { useDebouncedSearch } from "@outfiqe/hooks";
 
-import { useFeatureFlag } from "@/shared/hooks/useFeatureFlag";
+import { useFeatureFlagState } from "@/shared/hooks/useFeatureFlag";
 
 import { MissingPickupLocationBanner } from "../../pickups/components/MissingPickupLocationBanner";
 import { DeliveryReliabilityPanel } from "../../reliability/components/DeliveryReliabilityPanel";
@@ -17,7 +17,9 @@ export const OrdersSection = () => {
   const { searchText, setSearchText, search } = useDebouncedSearch();
   const { data, isPending, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useBrandShipments(search);
-  const isOrderLogisticsOn = useFeatureFlag("order_logistics");
+  const { isEnabled: isOrderLogisticsOn, isResolved: isOrderLogisticsKnown } =
+    useFeatureFlagState("order_logistics");
+  const mayOrderLogisticsBeOn = isOrderLogisticsOn || !isOrderLogisticsKnown;
   const shipments = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
@@ -30,7 +32,7 @@ export const OrdersSection = () => {
         </p>
       </div>
       <DeliveryReliabilityPanel />
-      <BrandReturnsPanel isOrderLogisticsOn={isOrderLogisticsOn} />
+      <BrandReturnsPanel isOrderLogisticsOn={mayOrderLogisticsBeOn} />
 
       <SearchInput
         value={searchText}
