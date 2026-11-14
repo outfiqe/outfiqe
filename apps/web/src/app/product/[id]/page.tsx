@@ -5,6 +5,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getProductDetailServer, ProductDetail } from "@/features/product-detail";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 import { Breadcrumbs, buildPageMetadata, JsonLd, productSchema } from "@/shared/seo";
 
 interface ProductPageProps {
@@ -57,7 +58,7 @@ const ProductPage = async ({ params }: ProductPageProps) => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main>
+      <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
         <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
           <Breadcrumbs
             crumbs={[

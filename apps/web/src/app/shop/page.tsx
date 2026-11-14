@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { getCategoriesServer } from "@/features/categories";
 import { ShopResults } from "@/features/shop";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 import { buildPageMetadata, collectionPageSchema, JsonLd } from "@/shared/seo";
 
 interface ShopPageProps {
@@ -98,7 +99,7 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="pb-20 lg:pb-0">
         <SiteHeader />
-        <main>
+        <main className={MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME}>
           <div className="px-6 pb-16 pt-8 sm:pt-10 lg:px-10">
             <header>
               <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">

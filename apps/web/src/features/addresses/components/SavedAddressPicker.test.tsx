@@ -47,6 +47,25 @@ describe("SavedAddressPicker", () => {
     expect(onSelect).toHaveBeenCalledWith("addr-1");
   });
 
+  it("shows the whole address and keeps phones to one shrinkable column", () => {
+    const longAddress = "Baneshwor, ward 10, near the temple behind the old bus park";
+    render(
+      <SavedAddressPicker
+        addresses={[anAddress({ address: longAddress, city: "Kathmandu" })]}
+        selectedId="addr-1"
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const addressLine = screen.getByText(`${longAddress}, Kathmandu`);
+    expect(addressLine).toHaveClass("break-words");
+    expect(addressLine).not.toHaveClass("truncate");
+    expect(screen.getByRole("radiogroup", { name: "Choose a delivery address" })).toHaveClass(
+      "grid-cols-1",
+      "sm:grid-cols-2",
+    );
+  });
+
   it("reports the new-address option", async () => {
     const onSelect = vi.fn();
     render(

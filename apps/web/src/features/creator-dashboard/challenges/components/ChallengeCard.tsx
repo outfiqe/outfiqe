@@ -70,7 +70,9 @@ export const ChallengeCard = ({ challenge }: { challenge: PublicChallenge }) => 
           </p>
 
           {isCompleted && (
-            <p className="mt-2 text-xs font-medium text-primary">You completed this challenge 🎉</p>
+            <p className="mt-2 text-xs font-medium text-primary-strong">
+              You completed this challenge 🎉
+            </p>
           )}
 
           {!isCompleted && conditions && conditions.length > 0 && (

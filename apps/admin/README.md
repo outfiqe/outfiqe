@@ -44,6 +44,8 @@ A feature only has the folders it needs. `index.ts` (when other features import 
 
 ## Non-obvious rationale
 
+**Admin pages must fit a 360px phone.** Hub and rider staff use admin on phones. Rows of status tabs (`rounded-full px-4 py-1.5` pills) always use `flex flex-wrap gap-2`, and a fixed-width field next to a button shrinks on phones (`min-w-0 flex-1 sm:w-56 sm:flex-none`), so no page scrolls sideways.
+
 **Queries have a default stale time.** `ADMIN_QUERY_STALE_TIME_MS` in `src/main.tsx` exists because the default `QueryClient` has a stale time of 0, so every route remount and window refocus refetched. That made pages like delivery zones hit the API repeatedly on normal navigation.
 
 **The logo links out on the platform host.** Admin is a separate origin from the marketing site, so `Logo` links to the marketing home page rather than an in-app route, the same as `apps/web`'s `Logo`. On a tenant's own subdomain the same bundle sits at `<tenant>.<baseDomain>/admin/*` with that tenant's storefront at the origin root, so the logo goes there instead.

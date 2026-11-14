@@ -3,13 +3,16 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { RotateCcw, Truck } from "lucide-react";
 
-import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
+import { useDeliveryZones } from "@/features/delivery-zones";
+import { formatRupees } from "@/shared/lib/formatRupees";
+
+import { summarizeDeliveryFees } from "../utils/summarizeDeliveryFees";
 
 const DAMAGED_OR_WRONG_ITEM_NOTE = "Damaged or wrong item? Tell us within 7 days";
 
 export const ShippingInfo = () => {
   const { data: zones, isLoading: isZonesLoading } = useDeliveryZones();
-  const defaultZone = resolveZonePreview(zones ?? [], "");
+  const deliveryFees = summarizeDeliveryFees(zones ?? []);
 
   return (
     <div className="mt-4 space-y-2.5 rounded-xl border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground">
@@ -17,16 +20,16 @@ export const ShippingInfo = () => {
         <Skeleton role="status" aria-label="Loading delivery estimate" className="h-4 w-3/4" />
       )}
 
-      {!isZonesLoading && defaultZone && (
+      {!isZonesLoading && deliveryFees && (
         <div className="flex items-center gap-2.5">
-          <Truck className="size-4 shrink-0 text-foreground" />
+          <Truck aria-hidden="true" className="size-4 shrink-0 text-foreground" />
           <span>
+            Delivery from{" "}
             <span className="font-semibold text-foreground">
-              Rs. {defaultZone.standardDeliveryFee}
-            </span>{" "}
-            delivery to {defaultZone.name}
-            {defaultZone.freeDeliveryThreshold > 0 &&
-              ` · Free above Rs. ${defaultZone.freeDeliveryThreshold.toLocaleString()}`}
+              {formatRupees(deliveryFees.lowestFee)}
+            </span>
+            {deliveryFees.sharedFreeDeliveryThreshold !== null &&
+              ` · Free above ${formatRupees(deliveryFees.sharedFreeDeliveryThreshold)}`}
           </span>
         </div>
       )}

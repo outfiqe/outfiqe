@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
+import { SECTION_VIEW_ALL_LINK_CLASS_NAME } from "@/shared/lib/tapTarget";
 
 import { type ExploreProduct, ProductCard } from "./ProductCard";
 
@@ -54,10 +55,7 @@ export const ProductRail = ({
         </div>
 
         {viewAllHref && hasProducts && (
-          <Link
-            href={viewAllHref}
-            className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
-          >
+          <Link href={viewAllHref} className={SECTION_VIEW_ALL_LINK_CLASS_NAME}>
             {viewAllLabel}
             <ArrowRight className="size-4" />
           </Link>

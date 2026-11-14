@@ -96,7 +96,7 @@ export const BrandApplicationsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Brand applications</h1>
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-5 flex flex-wrap gap-2">
         {TABS.map((status) => (
           <button
             key={status}
@@ -125,7 +125,7 @@ export const BrandApplicationsPage = () => {
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
-        {!isLoading && applications.length === 0 && (
+        {!isLoading && !error && applications.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

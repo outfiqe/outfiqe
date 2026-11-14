@@ -34,6 +34,22 @@ describe("ProductRail", () => {
     );
   });
 
+  it("gives the small View all link a finger-sized tap area without moving the layout", () => {
+    render(
+      <ProductRail
+        title="New arrivals"
+        viewAllHref="/shop?sort=newest"
+        products={[EVERYDAY_TEE]}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /View all/ })).toHaveClass(
+      "relative",
+      "after:absolute",
+      "after:-inset-y-3",
+    );
+  });
+
   it("shows only the empty message, with no link, when the rail is empty", () => {
     render(
       <ProductRail

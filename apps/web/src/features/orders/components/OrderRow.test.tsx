@@ -15,6 +15,7 @@ const buildOrderSummary = (overrides: Partial<OrderSummary> = {}): OrderSummary 
   subtotal: 2500,
   deliveryFee: 100,
   codFee: 0,
+  platformDiscountTotal: 0,
   total: 2600,
   refundedAmount: 0,
   promisedDelivery: null,

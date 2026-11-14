@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { NotAShopperNotice } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { LoadErrorNotice } from "@/shared/components/LoadErrorNotice";
 
 import { useCart } from "../hooks/useCart";
 import { CartCityField } from "./CartCityField";
@@ -58,6 +59,17 @@ export const CartBody = () => {
   if (cartQuery.isLoading) return <CartLoadingSkeleton />;
 
   const cart = cartQuery.data;
+  if (!cart && cartQuery.isError) {
+    return (
+      <LoadErrorNotice
+        align="center"
+        className="py-14"
+        message="We couldn't load your bag. Check your connection and try again."
+        onRetry={() => void cartQuery.refetch()}
+      />
+    );
+  }
+
   if (!cart || cart.items.length === 0) {
     return <EmptyBag message="Your bag is empty. Have a look at what's trending this week." />;
   }

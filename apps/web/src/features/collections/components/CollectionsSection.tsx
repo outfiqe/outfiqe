@@ -1,6 +1,8 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { SECTION_VIEW_ALL_LINK_CLASS_NAME } from "@/shared/lib/tapTarget";
+
 import { getHomepageCollectionsServer } from "../api/getCollectionsServer";
 import { CollectionCard } from "./CollectionCard";
 
@@ -22,10 +24,7 @@ export const CollectionsSection = async () => {
           </p>
         </div>
 
-        <Link
-          href="/collections"
-          className="flex items-center gap-1 text-sm font-semibold text-primary-strong"
-        >
+        <Link href="/collections" className={SECTION_VIEW_ALL_LINK_CLASS_NAME}>
           View all
           <ArrowRight className="size-4" />
         </Link>

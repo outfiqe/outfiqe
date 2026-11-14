@@ -97,6 +97,7 @@ describe("CrmSearchBox", () => {
     const user = userEvent.setup({ delay: null });
 
     const input = await screen.findByLabelText("Search the CRM");
+    expect(input).toHaveClass("w-full", "min-w-0", "max-w-72");
     await user.type(input, "spring");
 
     expect(await screen.findByText("Spring collab")).toBeInTheDocument();

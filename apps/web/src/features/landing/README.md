@@ -7,13 +7,14 @@ The sections of the public homepage (`/`): the hero carousel, the taste picker a
 ## Structure
 
 - `components/HeroSlideTitle.tsx` — a slide title. Only the first slide is the page `h1`, so the homepage keeps a single top-level heading; the others are `h2`.
-- `components/Hero.tsx`, `components/HeroCarousel.tsx` — the hero slides set in the admin (`getHeroSlidesServer`); `Hero` renders nothing when there are no slides.
+- `components/Hero.tsx`, `components/HeroCarousel.tsx` — the hero slides set in the admin (`getHeroSlidesServer`); `Hero` renders nothing when there are no slides. With more than one slide it advances every 4 seconds, but only when the visitor doesn't prefer reduced motion (`useReducedMotion`); it stops when keyboard focus moves into it, and a Pause/Play button in the top corner is shown at every screen size (WCAG 2.2.2 "Pause, Stop, Hide").
+- `hooks/useHeroAutoplay.ts` — starts or holds the carousel's autoplay plugin and keeps "is it playing" in step with the plugin's `autoplay:play` / `autoplay:stop` events, so the button label stays right when the slideshow stops on its own.
 - `components/TasteCategories.tsx` — the taste picker: the visitor's chosen categories, with `CustomizeTasteModal` to pick and reorder them.
 - `components/CustomizeTasteModal.tsx` — choose which categories show and drag them into order.
 - `components/CategoryResults.tsx` — the product grid for the picked category and product type, loading more on scroll.
 - `components/TrendingNow.tsx`, `components/SaleRail.tsx`, `components/NewArrivals.tsx` — product rails (server components) over `ProductRail`.
 - `components/CreatorLooks.tsx`, `components/LookCard.tsx` — featured creator looks.
-- `components/ProductRail.tsx` — a titled, horizontally scrolling row of `ProductCard`s with a "see more" link. The link only shows when the rail has products. An empty section shows just its "check back soon" message, because a "View all" next to nothing makes the page look broken. `CreatorLooks` ("Explore more") and `CategoryResults` ("View all", once the results have loaded and found something) follow the same rule.
+- `components/ProductRail.tsx` — a titled, horizontally scrolling row of `ProductCard`s with a "see more" link. The link only shows when the rail has products. An empty section shows just its "check back soon" message, because a "View all" next to nothing makes the page look broken. `CreatorLooks` ("Explore more") and `CategoryResults` ("View all", once the results have loaded and found something) follow the same rule. These section links use `SECTION_VIEW_ALL_LINK_CLASS_NAME` / `EXPANDED_TAP_AREA_CLASS_NAME` from `shared/lib/tapTarget.ts`: the visible link is 20px tall, so an absolutely positioned `::after` enlarges the tap area to at least 44px without changing the header's layout (WCAG 2.2 target size).
 - `components/ProductCard.tsx` — one product tile with its save (heart) button. Also used by `collections` and other product grids, through `products`' `toExploreProduct`.
 - `components/BrandCallout.tsx` — the static "list your brand" band at the bottom.
 - `context/CategorySelectionContext.tsx` — the picked taste categories, shared by `TasteCategories` and `CategoryResults`.

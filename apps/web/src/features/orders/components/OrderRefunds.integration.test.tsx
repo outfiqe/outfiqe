@@ -68,6 +68,36 @@ describe("OrderRefundsSection", () => {
     expect(screen.getByText("The brand couldn't supply it")).toBeInTheDocument();
     expect(screen.getByText("Linen Shirt · M × 1")).toBeInTheDocument();
   });
+
+  it("calls uncollected cash 'Cancelled items', not a refund, and names the fees plainly", async () => {
+    const cancelledCod = {
+      ...refund,
+      cause: "CUSTOMER_CANCELLED",
+      feeAmount: 50,
+      totalAmount: 650,
+    };
+    mswServer.use(
+      http.get(`/api/orders/${ORDER_ID}/refunds`, () => okJson({ refunds: [cancelledCod] })),
+    );
+    render(<OrderRefundsSection orderId={ORDER_ID} />, { wrapper: createQueryClientWrapper() });
+
+    expect(await screen.findByRole("heading", { name: "Cancelled items" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Refunds" })).not.toBeInTheDocument();
+    expect(screen.getByText("Delivery and handling fees · Rs. 50")).toBeInTheDocument();
+    expect(screen.queryByText(/^Delivery fees/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the Refunds heading once real money has gone back", async () => {
+    const gatewayRefund = { ...refund, id: "refund-2", method: "GATEWAY" };
+    mswServer.use(
+      http.get(`/api/orders/${ORDER_ID}/refunds`, () =>
+        okJson({ refunds: [refund, gatewayRefund] }),
+      ),
+    );
+    render(<OrderRefundsSection orderId={ORDER_ID} />, { wrapper: createQueryClientWrapper() });
+
+    expect(await screen.findByRole("heading", { name: "Refunds" })).toBeInTheDocument();
+  });
 });
 
 describe("CancelItemsModal", () => {

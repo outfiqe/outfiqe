@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@outfiqe/design-system";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
@@ -44,9 +46,14 @@ export const SearchResults = () => {
 
   if (!hasQuery) {
     return (
-      <p className="mt-12 text-sm text-muted-foreground">
-        Search for a product, brand, or category.
-      </p>
+      <div>
+        <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+          Search
+        </h1>
+        <p className="mt-12 text-sm text-muted-foreground">
+          Search for a product, brand, or category.
+        </p>
+      </div>
     );
   }
 
@@ -59,7 +66,7 @@ export const SearchResults = () => {
   return (
     <div>
       <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-        {query}
+        Results for &ldquo;{query}&rdquo;
       </h1>
       {resultCountLabel && <p className="mt-2 text-sm text-muted-foreground">{resultCountLabel}</p>}
 
@@ -68,9 +75,14 @@ export const SearchResults = () => {
       ) : hasProductsLoadFailed && products.length === 0 ? (
         <ProductsLoadError onRetry={() => void retryLoadingProducts()} />
       ) : products.length === 0 ? (
-        <p className="mt-12 text-sm text-muted-foreground">
-          No pieces matched. Try a different search.
-        </p>
+        <div className="mt-12 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            No pieces matched. Try a different search, or browse everything in the shop.
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/shop">Browse all pieces</Link>
+          </Button>
+        </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {products.map((product) => (

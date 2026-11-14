@@ -11,13 +11,21 @@ can't go back automatically.
 
 - `components/OrdersListBody.tsx` — the `/orders` page body: auth gate (plus a `<NotAShopperNotice>`
   bounce for `BRAND_OWNER`/`ADMIN` — buyer order history is `CUSTOMER`-only, matching the
-  `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s.
+  `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s. When the
+  first page fails it shows `LoadErrorNotice` ("We couldn't load your orders" + Try again), never
+  the empty state, so a buyer is not told they have no orders; a later page failing keeps the
+  orders already shown.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
   payment state and composes `OrderTrackingTimeline` (an order with `trackingStage`, delivered
   through the Outfiqe hub, plus `ShipmentTrackers` for any brand-shipped groups in it), otherwise
-  `OrderTracker` (or `ShipmentTrackers` for a multi-brand order), then `PendingPaymentPanel` /
-  `TransactionLedger`.
+  `OrderTracker` (or `ShipmentTrackers` for a multi-brand order), then `OrderPriceBreakdown`,
+  `PendingPaymentPanel` / `TransactionLedger`.
+- `components/OrderPriceBreakdown.tsx` — the receipt inside the order card: each line with its
+  price (`unitPrice × qty`, brand discounts already included), then Subtotal, Coupon discount
+  (`platformDiscountTotal`, only when used), Delivery ("Free" at 0), COD handling (only when
+  charged) and Total. It mirrors the API's checkout pricing:
+  `total = subtotal − platformDiscountTotal + deliveryFee + codFee`.
 - `components/OrderTrackingTimeline.tsx` — the hub-delivered order's tracking: `TrackingStageSummary`
   (the current stage, a progress bar along the forward stages, "collected from 1 of 2 brands"
   and the delivery promise), a `TrackedParcelCard` per parcel (our parcel code, the partner's
@@ -38,7 +46,9 @@ can't go back automatically.
   `POST /orders/:id/line-cancellations` with an `Idempotency-Key`.
 - `components/OrderRefundsSection.tsx` — every refund on the order: amount, why, how the money
   came back (`constants/refundLabels.ts`), and the lines it covered. Shown once
-  `order.refundedAmount > 0`.
+  `order.refundedAmount > 0`. When every entry is `CASH_NOT_COLLECTED` (a cancelled unpaid COD
+  order) the heading is "Cancelled items", not "Refunds", because no money moved. The fee line
+  reads "Delivery and handling fees" since `feeAmount` can be delivery, COD handling or both.
 - `components/RefundDetailsCard.tsx` — "Where should we send your refund?": Khalti ID, eSewa ID or
   a bank account (banks from `@/features/nepal-banks`), account holder name and a required "This
   account is mine" box. Prefilled from the order (`suggestedKind`/`suggestedWalletId`). Editable

@@ -5,6 +5,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { getServerSessionWithToken } from "@/features/auth/api/serverAuth";
 import { isBuildMemberServer } from "@/features/outfit-build/board/api/isBuildMemberServer";
 import { TranslationsProvider } from "@/i18n/TranslationsProvider";
+import { cn } from "@/shared/lib/cn";
+import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
 
 type BuildLayoutProps = {
   children: React.ReactNode;
@@ -27,7 +29,12 @@ const BuildLayout = async ({ children, params }: BuildLayoutProps) => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <main
+        className={cn(
+          MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME,
+          "mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8",
+        )}
+      >
         <TranslationsProvider>{children}</TranslationsProvider>
       </main>
       <SiteFooter />

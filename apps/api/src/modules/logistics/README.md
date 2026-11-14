@@ -366,8 +366,8 @@ BRAND_RETURN`, so each return restocks once), and a returned parcel's bag record
       (`logisticsManage`, staff write-limited, audit-logged);
     - `GET /admin/rider-earnings?riderId=&status=` (`logisticsRead`);
     - `POST /admin/rider-earnings/:earningId/void` (`logisticsManage`, a reason, audit-logged);
-    - `GET /rider/earnings` (the signed-in rider: totals by status and their earnings, newest
-      first).
+    - `GET /rider/earnings` (the signed-in rider: their `employmentType`, totals by status and
+      their earnings, newest first). The web hides earnings and withdrawals for `EMPLOYEE` riders.
 - `reliability/` — brand reliability.
   - `brand-incident.repository.ts` — `recordIncidents(tx, incidents)`, called inside the
     transaction of whatever went wrong: an approved unavailable item (`orders/unavailable-items`),

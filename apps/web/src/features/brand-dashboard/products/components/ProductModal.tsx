@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Input, Modal, MultiSelect, toast } from "@outfiqe/design-system";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
@@ -25,6 +25,7 @@ import {
   productFormSchema,
   toCreateProductPayload,
 } from "../schemas/productForm.schema";
+import { revealFirstFormError } from "../utils/revealFirstFormError";
 import { ProductSizesSection } from "./ProductSizesSection";
 import { ThriftListingFields } from "./ThriftListingFields";
 
@@ -43,6 +44,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   const pending = usePendingPhotos(MAX_IMAGES);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const formFieldsRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema),
@@ -89,6 +91,11 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   });
 
   const handleSubmitProduct = async () => {
+    const isFormValid = await form.trigger();
+    if (!isFormValid) {
+      requestAnimationFrame(() => revealFirstFormError(formFieldsRef.current));
+      return;
+    }
     setIsProcessingPhotos(true);
     setPhotoError(null);
     try {
@@ -143,139 +150,148 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           </>
         }
       >
-        <PendingPhotoThumbnailRail
-          photos={pending.photos}
-          activePhotoId={pending.activePhoto?.id}
-          onSelect={pending.setActiveId}
-          onRemove={pending.removePhoto}
-        />
-
-        <div>
-          <label htmlFor={nameInputId} className="mb-1.5 block text-sm font-medium text-foreground">
-            Product name
-          </label>
-          <Input
-            placeholder="Linen band-collar shirt"
-            id={nameInputId}
-            {...form.register("name")}
+        <div ref={formFieldsRef} className="space-y-5">
+          <PendingPhotoThumbnailRail
+            photos={pending.photos}
+            activePhotoId={pending.activePhoto?.id}
+            onSelect={pending.setActiveId}
+            onRemove={pending.removePhoto}
           />
-          {form.formState.errors.name && (
-            <p className="mt-1.5 text-xs text-destructive">{form.formState.errors.name.message}</p>
-          )}
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label
-              htmlFor={priceInputId}
+              htmlFor={nameInputId}
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Price (Rs.)
+              Product name
             </label>
             <Input
-              type="number"
-              min={1}
-              id={priceInputId}
-              {...form.register("price", { valueAsNumber: true })}
+              placeholder="Linen band-collar shirt"
+              id={nameInputId}
+              {...form.register("name")}
             />
-            {form.formState.errors.price && (
-              <p className="mt-1.5 text-xs text-destructive">
-                {form.formState.errors.price.message}
+            {form.formState.errors.name && (
+              <p role="alert" className="mt-1.5 text-xs text-destructive">
+                {form.formState.errors.name.message}
               </p>
             )}
           </div>
-          <div className="flex items-end pb-2.5">
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                className="size-4 rounded border-border"
-                checked={form.watch("lowStock") ?? false}
-                onChange={(event) => form.setValue("lowStock", event.target.checked)}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor={priceInputId}
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                Price (Rs.)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                id={priceInputId}
+                {...form.register("price", { valueAsNumber: true })}
               />
-              Mark as low stock
-            </label>
+              {form.formState.errors.price && (
+                <p role="alert" className="mt-1.5 text-xs text-destructive">
+                  {form.formState.errors.price.message}
+                </p>
+              )}
+            </div>
+            <div className="flex items-end pb-2.5">
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  className="size-4 rounded border-border"
+                  checked={form.watch("lowStock") ?? false}
+                  onChange={(event) => form.setValue("lowStock", event.target.checked)}
+                />
+                Mark as low stock
+              </label>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label
-            htmlFor={typeSelectId}
-            className="mb-1.5 block text-sm font-medium text-foreground"
-          >
-            Type
-          </label>
-          <select
-            id={typeSelectId}
-            className={selectClass}
-            {...typeField}
-            onChange={(event) => {
-              typeField.onChange(event);
-              form.setValue("sizes", []);
-            }}
-          >
-            <option value="" disabled>
-              Select a type
-            </option>
-            {productTypes.data?.map((productType) => (
-              <option key={productType.slug} value={productType.slug}>
-                {productType.label}
+          <div>
+            <label
+              htmlFor={typeSelectId}
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Type
+            </label>
+            <select
+              id={typeSelectId}
+              className={selectClass}
+              {...typeField}
+              onChange={(event) => {
+                typeField.onChange(event);
+                form.setValue("sizes", []);
+              }}
+            >
+              <option value="" disabled>
+                Select a type
               </option>
-            ))}
-          </select>
-        </div>
+              {productTypes.data?.map((productType) => (
+                <option key={productType.slug} value={productType.slug}>
+                  {productType.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <ProductSizesSection
-          sizeStandardId={form.watch("sizeStandardId")}
-          onSizeStandardChange={(nextStandardId) =>
-            form.setValue("sizeStandardId", nextStandardId, { shouldValidate: true })
-          }
-          sizes={sizes}
-          onSizesChange={(nextSizes) => form.setValue("sizes", nextSizes, { shouldValidate: true })}
-          isStretchable={form.watch("isStretchable")}
-          onStretchChange={(isStretchable) => form.setValue("isStretchable", isStretchable)}
-          supportsFitRanges={supportsFitRanges}
-          sizeStandardError={form.formState.errors.sizeStandardId?.message}
-          sizesError={form.formState.errors.sizes?.message}
-        />
-
-        <ThriftListingFields
-          isThrift={form.watch("isThrift") ?? false}
-          onIsThriftChange={(next) => form.setValue("isThrift", next, { shouldValidate: true })}
-          conditionRating={form.watch("thriftConditionRating")}
-          onConditionRatingChange={(next) =>
-            form.setValue("thriftConditionRating", next, { shouldValidate: true })
-          }
-          conditionNotes={form.watch("thriftConditionNotes") ?? ""}
-          onConditionNotesChange={(next) =>
-            form.setValue("thriftConditionNotes", next, { shouldValidate: true })
-          }
-          conditionError={form.formState.errors.thriftConditionRating?.message}
-        />
-
-        <div>
-          <label
-            htmlFor={categoriesSelectId}
-            className="mb-1.5 block text-sm font-medium text-foreground"
-          >
-            Categories
-          </label>
-          <MultiSelect
-            id={categoriesSelectId}
-            options={
-              categories.data?.map((category) => ({
-                value: category.slug,
-                label: category.name,
-              })) ?? []
+          <ProductSizesSection
+            sizeStandardId={form.watch("sizeStandardId")}
+            onSizeStandardChange={(nextStandardId) =>
+              form.setValue("sizeStandardId", nextStandardId, { shouldValidate: true })
             }
-            value={form.watch("categories") ?? []}
-            onChange={(next) => form.setValue("categories", next, { shouldValidate: true })}
-            placeholder="Add a category"
+            sizes={sizes}
+            onSizesChange={(nextSizes) =>
+              form.setValue("sizes", nextSizes, { shouldValidate: true })
+            }
+            isStretchable={form.watch("isStretchable")}
+            onStretchChange={(isStretchable) => form.setValue("isStretchable", isStretchable)}
+            supportsFitRanges={supportsFitRanges}
+            sizeStandardError={form.formState.errors.sizeStandardId?.message}
+            sizesError={form.formState.errors.sizes?.message}
           />
-          {form.formState.errors.categories && (
-            <p className="mt-1.5 text-xs text-destructive">
-              {form.formState.errors.categories.message}
-            </p>
-          )}
+
+          <ThriftListingFields
+            isThrift={form.watch("isThrift") ?? false}
+            onIsThriftChange={(next) => form.setValue("isThrift", next, { shouldValidate: true })}
+            conditionRating={form.watch("thriftConditionRating")}
+            onConditionRatingChange={(next) =>
+              form.setValue("thriftConditionRating", next, { shouldValidate: true })
+            }
+            conditionNotes={form.watch("thriftConditionNotes") ?? ""}
+            onConditionNotesChange={(next) =>
+              form.setValue("thriftConditionNotes", next, { shouldValidate: true })
+            }
+            conditionError={form.formState.errors.thriftConditionRating?.message}
+          />
+
+          <div>
+            <label
+              htmlFor={categoriesSelectId}
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Categories
+            </label>
+            <MultiSelect
+              id={categoriesSelectId}
+              options={
+                categories.data?.map((category) => ({
+                  value: category.slug,
+                  label: category.name,
+                })) ?? []
+              }
+              value={form.watch("categories") ?? []}
+              onChange={(next) => form.setValue("categories", next, { shouldValidate: true })}
+              placeholder="Add a category"
+            />
+            {form.formState.errors.categories && (
+              <p role="alert" className="mt-1.5 text-xs text-destructive">
+                {form.formState.errors.categories.message}
+              </p>
+            )}
+          </div>
         </div>
       </MediaFormShell>
     </Modal>

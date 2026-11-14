@@ -8,6 +8,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useLayoutEffect,
   useReducer,
 } from "react";
 
@@ -16,6 +17,7 @@ import {
   setAccessToken,
   setSuspendedHandler,
   setUnauthorizedHandler,
+  waitForSession,
 } from "@/shared/lib/apiClient";
 
 import { authApi } from "../api/authApi";
@@ -67,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (state.status === AuthStatus.UNAUTHENTICATED) rememberViewerIsStaff(false);
   }, [state.status, state.user?.role]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setUnauthorizedHandler(() => {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
       void clearAllOfflineData();
@@ -86,10 +88,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (document.cookie.includes(`${HAS_SESSION_COOKIE_NAME}=1`)) {
       dispatch({ type: AuthActionType.AUTH_LOADING });
 
+      const sessionRequest = authApi.session().then((session) => {
+        setAccessToken(session.accessToken);
+        return session;
+      });
+      waitForSession(sessionRequest);
+
       (async () => {
         try {
-          const { accessToken, user } = await authApi.session();
-          setAccessToken(accessToken);
+          const { accessToken, user } = await sessionRequest;
           if (cancelled) return;
           dispatch({ type: AuthActionType.AUTH_SUCCESS, payload: { user, accessToken } });
         } catch {

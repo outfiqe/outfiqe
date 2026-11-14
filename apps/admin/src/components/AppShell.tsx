@@ -32,7 +32,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         {inCrmArea && (
           <div
             data-tour-anchor={CRM_SEARCH_TOUR_ANCHOR}
-            className="ml-auto flex items-center gap-3 sm:ml-0 sm:flex-1 sm:justify-center"
+            className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-3 sm:ml-0 sm:justify-center"
           >
             <span className="hidden font-display text-lg font-bold tracking-tight sm:inline">
               <span className="text-primary">C</span>
