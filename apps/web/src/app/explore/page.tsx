@@ -11,6 +11,7 @@ import { EXPLORE_TAB } from "@/features/explore/constants/explore.constants";
 import { buildExploreFeedQueryKey } from "@/features/explore/feed/api/exploreFeedQueryKey";
 import { getExploreFeedFirstPageServer } from "@/features/explore/feed/api/serverExploreFeed";
 import { hasDismissedForYouHintOnServer } from "@/features/explore/feed/api/serverForYouHint";
+import { readInitialExploreGridColumnCount } from "@/features/explore/feed/api/serverGridColumnCount";
 import { toFeedLayout } from "@/features/explore/utils/readFeedLayout";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { MAIN_KEEPS_FOOTER_BELOW_FOLD_CLASS_NAME } from "@/shared/lib/pageMain";
@@ -44,9 +45,10 @@ type PrefetchedExploreFeedProps = {
 
 const PrefetchedExploreFeed = async ({ feedTab, loadingState }: PrefetchedExploreFeedProps) => {
   const queryClient = getQueryClient();
-  const [mayBeSignedIn, isForYouHintDismissedByCookie] = await Promise.all([
+  const [mayBeSignedIn, isForYouHintDismissedByCookie, initialGridColumnCount] = await Promise.all([
     hasServerSessionCookie(),
     hasDismissedForYouHintOnServer(),
+    readInitialExploreGridColumnCount(),
   ]);
   if (!mayBeSignedIn) {
     await queryClient
@@ -61,7 +63,10 @@ const PrefetchedExploreFeed = async ({ feedTab, loadingState }: PrefetchedExplor
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={loadingState}>
-        <ExploreFeed isForYouHintDismissedByCookie={isForYouHintDismissedByCookie} />
+        <ExploreFeed
+          isForYouHintDismissedByCookie={isForYouHintDismissedByCookie}
+          initialGridColumnCount={initialGridColumnCount}
+        />
       </Suspense>
     </HydrationBoundary>
   );

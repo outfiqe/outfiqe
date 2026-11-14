@@ -62,9 +62,13 @@ const Sidebar = dynamic(() => import("../../components/Sidebar").then((m) => m.S
 
 type ExploreFeedProps = {
   isForYouHintDismissedByCookie?: boolean;
+  initialGridColumnCount?: number;
 };
 
-export const ExploreFeed = ({ isForYouHintDismissedByCookie = false }: ExploreFeedProps) => {
+export const ExploreFeed = ({
+  isForYouHintDismissedByCookie = false,
+  initialGridColumnCount = EXPLORE_GRID_BREAKPOINT_COLUMNS.default,
+}: ExploreFeedProps) => {
   const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
   const { isStaff } = useAuth();
   const isLastViewerStaff = useStaffViewerHint();
@@ -77,6 +81,9 @@ export const ExploreFeed = ({ isForYouHintDismissedByCookie = false }: ExploreFe
     ? isForYouHintDismissed()
     : isForYouHintDismissedByCookie;
   const isForYouHintVisible = !hasJustDismissedForYouHint && !hasDismissedForYouHintBefore;
+  const gridBreakpointColumns = isHydrated
+    ? EXPLORE_GRID_BREAKPOINT_COLUMNS
+    : { default: initialGridColumnCount };
 
   useEffect(() => {
     carryOverLegacyForYouHintDismissal();
@@ -257,7 +264,7 @@ export const ExploreFeed = ({ isForYouHintDismissedByCookie = false }: ExploreFe
           ) : layout === FEED_LAYOUT.GRID ? (
             <>
               <Masonry
-                breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                breakpointCols={gridBreakpointColumns}
                 className="-ml-4 flex w-auto"
                 columnClassName="pl-4"
               >
@@ -278,7 +285,7 @@ export const ExploreFeed = ({ isForYouHintDismissedByCookie = false }: ExploreFe
                     Recent & popular
                   </p>
                   <Masonry
-                    breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                    breakpointCols={gridBreakpointColumns}
                     className="-ml-4 flex w-auto"
                     columnClassName="pl-4"
                   >
