@@ -123,6 +123,8 @@ export default defineConfig({
         "src/features/brand-dashboard/products/components/ProductActionsMenu.tsx",
         "src/features/brand-dashboard/products/components/EditProductForm.tsx",
         "src/features/brand-dashboard/products/components/ThriftListingFields.tsx",
+        "src/features/brand-dashboard/products/components/ProductModal.tsx",
+        "src/features/brand-dashboard/products/utils/revealFirstFormError.ts",
         "src/features/brand-dashboard/tag-reviews/components/TagReviewsSection.tsx",
         "src/features/brand-dashboard/tag-reviews/components/TagReviewCard.tsx",
         "src/features/brand-dashboard/tag-reviews/components/RejectTagModal.tsx",

@@ -60,7 +60,11 @@ export const ThriftListingFields = ({
           />
         </div>
 
-        {conditionError && <p className="text-xs text-destructive">{conditionError}</p>}
+        {conditionError && (
+          <p role="alert" className="text-xs text-destructive">
+            {conditionError}
+          </p>
+        )}
       </div>
     )}
   </div>

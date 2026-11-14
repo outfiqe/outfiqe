@@ -87,6 +87,8 @@ Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empt
 
 ## Non-obvious rationale
 
+**Add a product checks the form before it uploads photos, then scrolls to the first problem.** The form sits in a short scroll area beside the photo pane (its height follows the photo shape), so an error such as "Add at least one size" was often below the fold and Submit looked like it did nothing; photos were also uploaded again on every failed attempt. `ProductModal` now runs `form.trigger()` first, and on failure `utils/revealFirstFormError.ts` scrolls the first `role="alert"` message (or `aria-invalid` field) into the middle of the form and focuses the field when it is one. Form error messages carry `role="alert"` so screen readers announce them too.
+
 **Outfiqe delivery stays out of sight until the `order_logistics` switch is on for the brand.**
 Every part of the Orders page that belongs to Outfiqe delivery checks
 `useFeatureFlag("order_logistics")` first, and so does the "Pickup locations" sidebar item
