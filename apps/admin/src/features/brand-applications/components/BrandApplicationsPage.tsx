@@ -125,7 +125,7 @@ export const BrandApplicationsPage = () => {
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
-        {!isLoading && applications.length === 0 && (
+        {!isLoading && !error && applications.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

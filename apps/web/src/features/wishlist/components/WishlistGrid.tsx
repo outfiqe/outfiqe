@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { LoadErrorNotice } from "@/shared/components/LoadErrorNotice";
 
 import { useInfiniteWishlist } from "../hooks/useInfiniteWishlist";
 
@@ -17,6 +18,16 @@ export const WishlistGrid = () => {
 
   if (wishlist.isLoading) {
     return <ProductGridSkeleton className="gap-x-4 gap-y-8 pb-16" />;
+  }
+
+  if (products.length === 0 && wishlist.isError) {
+    return (
+      <LoadErrorNotice
+        className="py-10"
+        message="We couldn't load your stash. Check your connection and try again."
+        onRetry={() => void wishlist.refetch()}
+      />
+    );
   }
 
   if (products.length === 0) {

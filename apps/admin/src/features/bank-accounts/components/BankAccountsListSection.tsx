@@ -124,7 +124,7 @@ export const BankAccountsListSection = () => {
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load bank accounts.</p>}
-        {!isLoading && accounts.length === 0 && (
+        {!isLoading && !error && accounts.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 

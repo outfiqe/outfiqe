@@ -11,7 +11,10 @@ can't go back automatically.
 
 - `components/OrdersListBody.tsx` — the `/orders` page body: auth gate (plus a `<NotAShopperNotice>`
   bounce for `BRAND_OWNER`/`ADMIN` — buyer order history is `CUSTOMER`-only, matching the
-  `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s.
+  `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s. When the
+  first page fails it shows `LoadErrorNotice` ("We couldn't load your orders" + Try again), never
+  the empty state, so a buyer is not told they have no orders; a later page failing keeps the
+  orders already shown.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
   payment state and composes `OrderTrackingTimeline` (an order with `trackingStage`, delivered

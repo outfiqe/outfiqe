@@ -28,4 +28,6 @@ A product's own page, `/product/[id]`: photos, price, size and quantity, Add to 
 
 **The page grid has an explicit `grid-cols-1` and the action row wraps.** Without a column template on phones, the single grid column grows to fit its widest row; the buy row (Add to bag, Buy now, Stash, Share) needs about 357px, so the page was 378px wide on a 360px phone. The buy buttons and the icon buttons are separate groups, so on narrow screens the icons drop to their own line instead of pushing the page wider.
 
+**No size is chosen for the shopper unless only one is in stock.** Pre-selecting the first in-stock size (usually the smallest) let a shopper tap Buy now without ever choosing, and get XS. Add to bag and Buy now stay enabled so the buttons never look broken; tapping one without a size shows "Select a size to continue." (announced as an alert), outlines the sizes and moves focus to the first one in stock.
+
 **The server fetch sends the viewer's access token.** The product carries a per-viewer `isSaved`, so the first render has to be fetched as that viewer, or the heart would show the wrong state until the browser refetched.

@@ -2,6 +2,8 @@ import { ANALYTICS_EVENTS } from "@outfiqe/utils";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { saveBuyNowPayload } from "@/features/checkout";
+
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 import { ProductDetail } from "./ProductDetail";
 
@@ -187,7 +189,7 @@ describe("ProductDetail out-of-stock handling", () => {
     expect(screen.getByText("Small mark on the left cuff.")).toBeInTheDocument();
   });
 
-  it("auto-selects the first available size and enables the CTAs", () => {
+  it("auto-selects the size when only one is in stock and enables the CTAs", () => {
     render(
       <ProductDetail
         product={buildProduct([
@@ -203,6 +205,57 @@ describe("ProductDetail out-of-stock handling", () => {
     expect(screen.getByRole("button", { name: "Increase quantity" })).toBeEnabled();
 
     cta(/add to bag/i).click();
+    expect(addToCart).toHaveBeenCalledWith(
+      expect.objectContaining({ productId: "product-1", sizeId: "m", qty: 1 }),
+      expect.anything(),
+    );
+  });
+});
+
+describe("ProductDetail size choice", () => {
+  const severalSizes = [
+    { id: "xs", label: "XS", inStock: false },
+    { id: "s", label: "S", inStock: true },
+    { id: "m", label: "M", inStock: true },
+  ];
+
+  beforeEach(() => {
+    addToCart.mockClear();
+    vi.mocked(saveBuyNowPayload).mockClear();
+  });
+
+  it("selects no size when several are in stock and shows no prompt before a tap", () => {
+    render(<ProductDetail product={buildProduct(severalSizes)} />);
+
+    expect(screen.getByRole("button", { name: "S" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "M" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
+    expect(cta(/add to bag/i)).toBeEnabled();
+    expect(cta(/buy now/i)).toBeEnabled();
+  });
+
+  it.each([
+    ["Add to bag", /add to bag/i],
+    ["Buy now", /buy now/i],
+  ])("asks for a size when %s is tapped without one", (_label, ctaName) => {
+    render(<ProductDetail product={buildProduct(severalSizes)} />);
+
+    fireEvent.click(cta(ctaName));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Select a size to continue.");
+    expect(screen.getByRole("button", { name: "S" })).toHaveFocus();
+    expect(addToCart).not.toHaveBeenCalled();
+    expect(saveBuyNowPayload).not.toHaveBeenCalled();
+  });
+
+  it("adds the size the shopper picked and clears the prompt", () => {
+    render(<ProductDetail product={buildProduct(severalSizes)} />);
+
+    fireEvent.click(cta(/add to bag/i));
+    fireEvent.click(screen.getByRole("button", { name: "M" }));
+    fireEvent.click(cta(/add to bag/i));
+
+    expect(screen.queryByText("Select a size to continue.")).not.toBeInTheDocument();
     expect(addToCart).toHaveBeenCalledWith(
       expect.objectContaining({ productId: "product-1", sizeId: "m", qty: 1 }),
       expect.anything(),
