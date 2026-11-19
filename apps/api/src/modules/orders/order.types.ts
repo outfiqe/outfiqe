@@ -127,6 +127,7 @@ export type OrderView = {
   paymentStatus: PaymentStatus;
   fulfilmentStatus: FulfilmentStatus;
   fulfilmentSummary: OrderFulfilmentSummary;
+  canCancel: boolean;
   subtotal: number;
   deliveryFee: number;
   codFee: number;

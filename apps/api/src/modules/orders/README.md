@@ -293,6 +293,13 @@ route (defaults to `"Cancelled by buyer"`, filled in by the controller) — requ
 admin-authored on the admin route, same schema-per-route split `cancelOrderSchema`/
 `cancelMyOrderSchema` already follows for other admin-vs-buyer field differences in this module.
 
+The `PLACED`/`PACKED` window lives in one place — `CANCELLABLE_FULFILMENT_STATUSES` in
+`order.constants.ts` — used both by `cancellation.service.ts` (the guard and `markCancelled`) and
+by `toOrderView`, which exposes it to the shopper app as an order-level `canCancel` boolean
+(`isOrderCancellable`). The web keys its "Cancel order" button off that field instead of
+re-deriving the rule from `fulfilmentStatus`, so the server stays the single source of truth for
+whether an order can still be called off.
+
 Brands don't cancel directly — a brand can only **request** cancellation of its own fulfilment
 group (`POST /orders/brand/fulfilment-groups/:groupId/request-cancellation`), which flags the group
 for an admin. The actual cancel + refund stays this `orderService.cancel` transaction, run by an

@@ -17,5 +17,10 @@ export const FULFILMENT_ADVANCE_FROM: Partial<Record<FulfilmentStatus, Fulfilmen
   [FulfilmentStatus.DELIVERED]: [FulfilmentStatus.SHIPPED],
 };
 
+export const CANCELLABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
+  FulfilmentStatus.PLACED,
+  FulfilmentStatus.PACKED,
+];
+
 export const NOTHING_ALREADY_PAID = 0;
 export const ORDER_AUDIT_TARGET_TYPE = "Order";

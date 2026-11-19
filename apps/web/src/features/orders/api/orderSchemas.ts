@@ -123,6 +123,7 @@ export const orderSchema = z.object({
   paymentStatus: paymentStatusSchema,
   fulfilmentStatus: fulfilmentStatusSchema,
   fulfilmentSummary: orderFulfilmentSummarySchema.default("UNFULFILLED"),
+  canCancel: z.boolean().default(false),
   subtotal: z.number(),
   deliveryFee: z.number(),
   codFee: z.number(),
@@ -147,6 +148,7 @@ export const orderSummarySchema = orderSchema
     address: true,
     city: true,
     landmark: true,
+    canCancel: true,
   })
   .extend({
     itemCount: z.number(),

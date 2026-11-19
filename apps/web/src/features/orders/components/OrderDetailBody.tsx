@@ -24,6 +24,7 @@ import {
 } from "../utils/cancellationWording.utils";
 import { formatOrderReference } from "../utils/orderReference.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
+import { CancelOrderButton } from "./CancelOrderButton";
 import { OrderPriceBreakdown } from "./OrderPriceBreakdown";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
@@ -89,6 +90,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     paymentMethod,
     paymentStatus,
     fulfilmentStatus,
+    canCancel,
     address,
     city,
     items,
@@ -217,6 +219,12 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           <Button variant="outline" onClick={() => setIsCancelItemsOpen(true)}>
             Cancel items
           </Button>
+        </div>
+      )}
+
+      {canCancel && !awaitingPayment && (
+        <div className="mt-4 flex justify-center">
+          <CancelOrderButton orderId={id} isMoneyUntaken={isMoneyUntaken} />
         </div>
       )}
 
