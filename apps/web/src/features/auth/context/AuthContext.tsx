@@ -1,6 +1,7 @@
 "use client";
 
 import { isStaffUserRole } from "@outfiqe/utils";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -57,6 +58,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setAccessToken(state.accessToken);
@@ -120,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await authApi.logout();
     } finally {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
+      queryClient.clear();
       await clearAllOfflineData();
     }
   };

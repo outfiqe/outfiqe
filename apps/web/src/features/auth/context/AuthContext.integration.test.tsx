@@ -1,15 +1,18 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
-import { render, renderHook, waitFor } from "@testing-library/react";
+import { createTestQueryClient } from "@test/integration/queryClientWrapper";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ADDRESSES_QUERY_KEY } from "@/features/addresses/hooks/useAddresses";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import { AuthStatus } from "../types";
-import { useAuth } from "./AuthContext";
-import { createAuthQueryClientWrapper } from "./authTestWrapper";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { createAuthQueryClientWrapper, dispatchAuthSuccess } from "./authTestWrapper";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -160,5 +163,36 @@ describe("AuthProvider session bootstrap", () => {
 
     await waitFor(() => expect(result.current.state.status).toBe(AuthStatus.UNAUTHENTICATED));
     expect(checkSession).not.toHaveBeenCalled();
+  });
+});
+
+describe("AuthProvider logout", () => {
+  const LOGOUT_URL = "/api/auth/logout";
+  const previousAccountAddresses = [{ id: "addr-1", fullName: "Nirajan Bhattarai" }];
+
+  it("clears the in-memory query cache so a newly signed-in account can't read the previous one's data", async () => {
+    mswServer.use(
+      http.post(LOGOUT_URL, () =>
+        HttpResponse.json({ success: true, message: "Signed out.", data: null }),
+      ),
+    );
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(ADDRESSES_QUERY_KEY, previousAccountAddresses);
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryClientProvider>
+      ),
+    });
+    dispatchAuthSuccess(result.current.dispatch);
+    expect(queryClient.getQueryData(ADDRESSES_QUERY_KEY)).toEqual(previousAccountAddresses);
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(queryClient.getQueryData(ADDRESSES_QUERY_KEY)).toBeUndefined();
   });
 });
