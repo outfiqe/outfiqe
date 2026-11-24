@@ -168,7 +168,7 @@ describe("AuthProvider session bootstrap", () => {
 
 describe("AuthProvider logout", () => {
   const LOGOUT_URL = "/api/auth/logout";
-  const previousAccountAddresses = [{ id: "addr-1", fullName: "Nirajan Bhattarai" }];
+  const previousAccountAddresses = [{ id: "addr-1", fullName: "Previous Account Owner" }];
 
   it("clears the in-memory query cache so a newly signed-in account can't read the previous one's data", async () => {
     mswServer.use(
