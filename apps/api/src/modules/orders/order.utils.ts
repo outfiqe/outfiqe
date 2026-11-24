@@ -6,6 +6,7 @@ import {
   type ShipmentStatus,
 } from "#generated/prisma/enums.js";
 
+import { CANCELLABLE_FULFILMENT_STATUSES } from "./order.constants.js";
 import type {
   AdminFulfilmentGroupView,
   OrderAdminSummaryView,
@@ -40,6 +41,9 @@ const isClosedStatus = (status: FulfilmentStatus): boolean =>
 
 const isShippedOrLater = (status: FulfilmentStatus): boolean =>
   FULFILMENT_PROGRESS[status] >= FULFILMENT_PROGRESS[FulfilmentStatus.SHIPPED];
+
+export const isOrderCancellable = (status: FulfilmentStatus): boolean =>
+  CANCELLABLE_FULFILMENT_STATUSES.includes(status);
 
 const resolveFulfilmentSummary = (
   activeGroupStatuses: readonly FulfilmentStatus[],
@@ -270,6 +274,7 @@ export const toOrderView = (
     paymentStatus,
     fulfilmentStatus,
     fulfilmentSummary: order.fulfilmentSummary,
+    canCancel: isOrderCancellable(fulfilmentStatus),
     subtotal,
     deliveryFee,
     codFee,

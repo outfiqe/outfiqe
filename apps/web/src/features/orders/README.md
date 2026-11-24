@@ -3,9 +3,9 @@
 ## Purpose
 
 The buyer's view of their own orders — the list at `/orders` and the single-order page at
-`/orders/[id]`, including resuming or cancelling an unpaid wallet order, cancelling single items
-while the brand still has them, seeing each refund, and telling us where to send a refund that
-can't go back automatically.
+`/orders/[id]`, including resuming or cancelling an unpaid wallet order, cancelling a whole order
+that hasn't shipped yet (COD included), cancelling single items while the brand still has them,
+seeing each refund, and telling us where to send a refund that can't go back automatically.
 
 ## Structure
 
@@ -41,6 +41,11 @@ can't go back automatically.
   `SHIPPED`/`FULFILLED`/`CANCELLED`) is the coarse order-level status behind the scenes.
 - `components/PendingPaymentPanel.tsx` — shown on the detail page for an unpaid wallet order:
   Resume payment (re-initiate + redirect to the gateway) and Cancel order (with a confirm modal).
+- `components/CancelOrderButton.tsx` — the whole-order "Cancel order" control with its confirm
+  modal, shown on the detail page for any order the API marks `order.canCancel` (still PLACED or
+  PACKED) that is not the unpaid-wallet case `PendingPaymentPanel` already covers. The confirm copy
+  switches on `isMoneyUntaken`: a COD order says the buyer hasn't been charged, a paid order
+  promises a refund. Both route through `useCancelOrder` → `POST /orders/:id/cancel`.
 - `components/CancelItemsModal.tsx` — "Cancel items": a units picker per cancellable line
   (`item.canCancel`, worked out by the API) plus an optional reason. Sends
   `POST /orders/:id/line-cancellations` with an `Idempotency-Key`.
@@ -77,9 +82,11 @@ can't go back automatically.
 
 ## Funnel
 
-**User-facing**: open `/orders`, tap an order. A paid or COD order shows its delivery progress. A
-wallet order whose payment never completed shows "Payment not completed" with Resume payment /
-Cancel order instead of a delivery tracker.
+**User-facing**: open `/orders`, tap an order. A paid or COD order shows its delivery progress, and
+while it hasn't shipped yet (PLACED or PACKED) a "Cancel order" button lets the buyer call the
+whole order off — a COD buyer is told they haven't been charged, a buyer who already paid is
+promised a refund. A wallet order whose payment never completed shows "Payment not completed" with
+Resume payment / Cancel order instead of a delivery tracker.
 
 **Hub-delivered orders**: the page shows where the order is ("Collecting from the brands", "Out
 for delivery" and so on), when it should arrive, each parcel with a link to the delivery
@@ -94,9 +101,12 @@ asking for it, then a reminder every 3 days until they add it. Staff pay it by h
 is told when it's sent.
 
 **Technical**: `OrderDetailBody` → `useOrder` → `GET /orders/:id`. Resume payment →
-`useInitiatePayment` → `redirectToPaymentGateway` (see `../payments/README.md`). Cancel →
-`useCancelOrder` → `POST /orders/:id/cancel`, then the `["orders"]` query cache is invalidated so
-the page and list re-read. Refunds: `CancelItemsModal` → `useCancelOrderItems` →
+`useInitiatePayment` → `redirectToPaymentGateway` (see `../payments/README.md`). Whole-order cancel
+comes from either `PendingPaymentPanel` (unpaid wallet order) or `CancelOrderButton`
+(`order.canCancel`, any other PLACED/PACKED order) → `useCancelOrder` → `POST /orders/:id/cancel`,
+then the `["orders"]` query cache is invalidated so the page and list re-read. The server owns the
+"can this still be cancelled" rule (PLACED/PACKED only) and exposes it as `order.canCancel`; the UI
+never re-derives it from `fulfilmentStatus`. Refunds: `CancelItemsModal` → `useCancelOrderItems` →
 `POST /orders/:id/line-cancellations`; `OrderRefundsSection` → `useOrderRefunds` →
 `GET /orders/:id/refunds`; `RefundDetailsCard` → `useRefundDestination` / `useSaveRefundDestination`
 → `GET`/`PUT /orders/:id/refund-destination` (only fetched once the order has a refund).

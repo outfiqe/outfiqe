@@ -21,6 +21,7 @@ import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { orderFulfilmentGroupRepository } from "../fulfilment-groups/fulfilment-group.repository.js";
+import { CANCELLABLE_FULFILMENT_STATUSES } from "../order.constants.js";
 import { orderErrors } from "../order.errors.js";
 import { orderRepository } from "../order.repository.js";
 import type { CancelOrderActor } from "../order.types.js";
@@ -33,11 +34,6 @@ import { type AppliedRefund, orderRefundEngine } from "../refunds/refund.engine.
 import { REFUND_SETTLEMENT } from "../refunds/refund.payment.js";
 import { listUnrefundedStockLines } from "../refunds/refund.pricing.js";
 import { orderRefundRepository } from "../refunds/refund.repository.js";
-
-const CANCELLABLE_FULFILMENT_STATUSES: FulfilmentStatus[] = [
-  FulfilmentStatus.PLACED,
-  FulfilmentStatus.PACKED,
-];
 
 const NO_REFUND = null;
 const NO_REMAINING_UNITS = 0;

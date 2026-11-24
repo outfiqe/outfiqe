@@ -330,6 +330,7 @@ export default defineConfig({
         "src/features/orders/hooks/useReportNotReceived.ts",
         "src/features/orders/components/PendingPaymentPanel.tsx",
         "src/features/orders/hooks/useCancelOrder.ts",
+        "src/features/orders/components/CancelOrderButton.tsx",
         "src/features/orders/components/CancelItemsModal.tsx",
         "src/features/orders/components/OrderRefundsSection.tsx",
         "src/features/orders/components/RefundDetailsCard.tsx",
