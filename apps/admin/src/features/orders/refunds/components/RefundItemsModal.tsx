@@ -106,9 +106,9 @@ export const RefundItemsModal = ({ orderId, items, onClose }: RefundItemsModalPr
             return (
               <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
                 <div id={productNameId} className="text-foreground">
-                  {item.productName} � {item.sizeLabel}
+                  {item.productName} · {item.sizeLabel}
                   <span className="block text-xs text-muted-foreground">
-                    {item.brandName} � {formatRupees(item.unitPrice)} each
+                    {item.brandName} · {formatRupees(item.unitPrice)} each
                   </span>
                 </div>
                 <div className="w-36 shrink-0">

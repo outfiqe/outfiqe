@@ -189,7 +189,7 @@ Express would otherwise match `/admin` against `/:orderId` and treat "admin" as 
 `GET /orders/admin` takes an optional `search` next to `status`/`cursor`, built by
 `order-admin-search.utils.ts` (`buildAdminOrderSearchFilter`): a full uuid is an exact id match; a
 4-8 hex short reference (`#28A55BF3`, with or without the `#`, any case) becomes a
-`id >= '28a55bf3-0000-�' AND id <= '28a55bf3-ffff-�'` range so the primary-key index serves it
+`id >= '28a55bf3-0000-0000-0000-000000000000' AND id <= '28a55bf3-ffff-ffff-ffff-ffffffffffff'` range so the primary-key index serves it
 (`id::text LIKE` would scan); an email matches the unique `users.email` exactly (as typed or
 lower-cased); a Nepal phone (separators and `+977` stripped) matches the unique `users.phone`. Order
 delivery phones (`orders.phone`) are not indexed, so they are deliberately not searched; anything
