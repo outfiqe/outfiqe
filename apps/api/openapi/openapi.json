@@ -88016,6 +88016,16 @@
             }
           },
           {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,

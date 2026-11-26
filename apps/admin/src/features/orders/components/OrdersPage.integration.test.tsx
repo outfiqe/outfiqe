@@ -108,4 +108,45 @@ describe("OrdersPage", () => {
 
     await waitFor(() => expect(router.state.location.search).toEqual({}));
   });
+
+  it("searches by what was typed once typing pauses, alongside the status filter", async () => {
+    const requestedSearches: (string | null)[] = [];
+    mswServer.use(
+      http.get(ORDERS_URL, ({ request }) => {
+        const { searchParams } = new URL(request.url);
+        requestedSearches.push(`${searchParams.get("status")}|${searchParams.get("search")}`);
+        return HttpResponse.json({
+          success: true,
+          data: { orders: [buildOrder()], nextCursor: null },
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(<OrdersPage />, { path: "/orders", initialEntry: "/orders?status=PLACED" });
+
+    await user.type(await screen.findByRole("searchbox", { name: "Search orders" }), " #28a55bf3 ");
+
+    await waitFor(() => expect(requestedSearches).toContain("PLACED|#28a55bf3"));
+    expect(requestedSearches.filter((entry) => entry?.includes("#28a55bf3"))).toHaveLength(1);
+  });
+
+  it("names the search in the empty state when nothing matches", async () => {
+    mswServer.use(
+      http.get(ORDERS_URL, ({ request }) =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            orders: new URL(request.url).searchParams.has("search") ? [] : [buildOrder()],
+            nextCursor: null,
+          },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithRouter(<OrdersPage />, { path: "/orders" });
+
+    await user.type(await screen.findByRole("searchbox", { name: "Search orders" }), "#00000000");
+
+    expect(await screen.findByText('No orders match "#00000000".')).toBeInTheDocument();
+  });
 });

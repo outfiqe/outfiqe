@@ -13,16 +13,18 @@ couldn't go back automatically, and review items a brand says it can't supply.
   Delivered / Cancelled / Returned) bound to the URL via `@/lib/useSearchFilter` as `?status=`
   (the default "All" is omitted); `_authenticated.orders.index.tsx` declares the matching
   `validateSearch`. Each row links to `/orders/$orderId`. Cursor-paginated "Load more" via
-  `useInfiniteOrders`.
+  `useInfiniteOrders`. A debounced "Search orders" box (kept in component state, not the URL) sends
+  `?search=` alongside the status filter: staff paste the `#28A55BF3` reference a shopper quotes, a
+  full order id, or the buyer's email or phone. The empty state names the search.
 - `components/OrderDetailPage.tsx` — one order (`/orders/$orderId`): buyer + address, line items, payment
   transaction history, the forward-only fulfilment-status control, a cancel-with-reason modal
   (placed or packed orders), a "Mark as returned" modal (shipped or delivered orders), a "Refund
   items" button (any order with units not yet refunded), each line's refunded count, and the
   order's refunds (`refunds/components/OrderRefundsCard.tsx`).
 - `hooks/useInfiniteOrders.ts` — `useInfiniteCursorPage` over `ordersApi.list`, keyed by
-  `["admin-orders", status]` so each status filter caches independently.
+  `["admin-orders", status, search]` so each status/search pair caches independently.
 - `hooks/useOrder.ts` — the single-order `useQuery`.
-- `api/ordersApi.ts` — `ordersApi`: `list(status?, cursor?)`, `get(id)`, `advanceFulfilment(id, status)`,
+- `api/ordersApi.ts` — `ordersApi`: `list({ status?, search?, cursor? })`, `get(id)`, `advanceFulfilment(id, status)`,
   `cancel(id, reason)`, `markReturned(id, reason)`, each parsing the response through a Zod schema.
 - `api/ordersSchemas.ts` — Zod mirrors: `adminOrderSchema` (full), `adminOrderSummarySchema` (list row) and
   `orderReturnOutcomeSchema` (what a return voided and whether anything was already paid out).

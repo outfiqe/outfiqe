@@ -76,6 +76,7 @@ export default defineConfig({
         "src/modules/orders/refunds/**/*.ts",
         "src/modules/payments/payment.sold-out-backfill.ts",
         "src/modules/orders/order-tracking.utils.ts",
+        "src/modules/orders/order-admin-search.utils.ts",
         "src/modules/orders/unavailable-items/**/*.ts",
         "src/modules/orders/cancellation-requests/**/*.ts",
         "src/modules/auth/invites/rider-invite.service.ts",

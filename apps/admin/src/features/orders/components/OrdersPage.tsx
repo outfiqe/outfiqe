@@ -1,5 +1,7 @@
-import { Badge, Button, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
+import { useDebouncedValue } from "@outfiqe/hooks";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { SkeletonBadge } from "@/components/SkeletonControls";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -23,6 +25,7 @@ const TABS: OrdersStatusTab[] = [
 
 const ORDERS_STATUS_FILTER = oneOfFilter<OrdersStatusTab>(TABS, ALL_STATUSES);
 
+const SEARCH_DEBOUNCE_MS = 300;
 const ORDER_ROW_SKELETON_COUNT = 6;
 const ORDER_ROW_CLASS =
   "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4";
@@ -42,6 +45,8 @@ const OrderRowSkeleton = () => (
 
 export const OrdersPage = () => {
   const [tab, setTab] = useSearchFilter("status", ORDERS_STATUS_FILTER);
+  const [searchText, setSearchText] = useState("");
+  const orderSearch = useDebouncedValue(searchText, SEARCH_DEBOUNCE_MS).trim();
 
   const {
     data: ordersQuery,
@@ -50,14 +55,23 @@ export const OrdersPage = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteOrders(tab === ALL_STATUSES ? undefined : tab);
+  } = useInfiniteOrders(tab === ALL_STATUSES ? undefined : tab, orderSearch || undefined);
   const orders = ordersQuery?.pages.flatMap((page) => page.orders) ?? [];
 
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Orders</h1>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <Input
+        type="search"
+        aria-label="Search orders"
+        className="mt-5 max-w-sm"
+        placeholder="Order number, order ID, buyer email or phone"
+        value={searchText}
+        onChange={(event) => setSearchText(event.target.value)}
+      />
+
+      <div className="mt-4 flex flex-wrap gap-2">
         {TABS.map((status) => (
           <button
             key={status}
@@ -81,7 +95,9 @@ export const OrdersPage = () => {
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load orders.</p>}
         {!isLoading && !error && orders.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nothing here right now.</p>
+          <p className="text-sm text-muted-foreground">
+            {orderSearch ? `No orders match "${orderSearch}".` : "Nothing here right now."}
+          </p>
         )}
 
         {orders.map((order) => {

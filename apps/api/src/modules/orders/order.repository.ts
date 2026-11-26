@@ -11,6 +11,7 @@ import type { DbClient } from "#types/db.types.js";
 
 import { orderFulfilmentGroupRepository } from "./fulfilment-groups/fulfilment-group.repository.js";
 import type { CreateOrderInput } from "./order.types.js";
+import { buildAdminOrderSearchFilter } from "./order-admin-search.utils.js";
 import { orderRefundRepository } from "./refunds/refund.repository.js";
 import { orderRefundDestinationRepository } from "./refunds/refund-destination.repository.js";
 import { orderUnavailableItemRepository } from "./unavailable-items/unavailable-item.repository.js";
@@ -87,9 +88,17 @@ export const orderRepository = {
     });
   },
 
-  async listAllAdmin(params: { status?: FulfilmentStatus; cursor?: string; limit: number }) {
+  async listAllAdmin(params: {
+    status?: FulfilmentStatus;
+    search?: string;
+    cursor?: string;
+    limit: number;
+  }) {
     return prisma.order.findMany({
-      where: params.status ? { fulfilmentStatus: params.status } : undefined,
+      where: {
+        ...(params.status ? { fulfilmentStatus: params.status } : {}),
+        ...(params.search ? buildAdminOrderSearchFilter(params.search) : {}),
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),

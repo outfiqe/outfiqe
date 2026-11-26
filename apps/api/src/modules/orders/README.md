@@ -186,6 +186,16 @@ their earnings in the wallet.
 buyer-facing `/:orderId` route (same "static paths first" ordering `creator-looks` already needed —
 Express would otherwise match `/admin` against `/:orderId` and treat "admin" as an order id).
 
+`GET /orders/admin` takes an optional `search` next to `status`/`cursor`, built by
+`order-admin-search.utils.ts` (`buildAdminOrderSearchFilter`): a full uuid is an exact id match; a
+4-8 hex short reference (`#28A55BF3`, with or without the `#`, any case) becomes a
+`id >= '28a55bf3-0000-�' AND id <= '28a55bf3-ffff-�'` range so the primary-key index serves it
+(`id::text LIKE` would scan); an email matches the unique `users.email` exactly (as typed or
+lower-cased); a Nepal phone (separators and `+977` stripped) matches the unique `users.phone`. Order
+delivery phones (`orders.phone`) are not indexed, so they are deliberately not searched; anything
+else matches nothing rather than falling back to a scan. Search composes with `status` and the
+cursor.
+
 **Fulfilment only moves forward, one step at a time**: `PLACED→PACKED→SHIPPED→DELIVERED`, each
 transition an atomic conditional `updateMany` guarded by the specific status it must be leaving
 (no skipping straight to `DELIVERED`, no re-doing a step). Moving to `DELIVERED` stamps
