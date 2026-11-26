@@ -1,3 +1,5 @@
+import { formatOrderReference } from "@outfiqe/utils";
+
 import { ORDER_REFUND_OUTCOME, type OrderRefundOutcome } from "#constants/commerce.constants.js";
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
@@ -80,7 +82,11 @@ const subscribeToOrderStatusChanged = (): void => {
         sourceEventId: eventId,
         entityType: NotificationEntityType.ORDER,
         entityId: orderId,
-        metadata: { status, ...(trackingStage ? { trackingStage } : {}) },
+        metadata: {
+          status,
+          orderReference: formatOrderReference(orderId),
+          ...(trackingStage ? { trackingStage } : {}),
+        },
       });
 
       if (status !== FulfilmentStatus.DELIVERED) return;
@@ -105,14 +111,24 @@ const subscribeToOrderRefundUpdated = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ORDER_REFUND_UPDATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ orderId, userId, refundId, amount, outcome, method }, { eventId }) => {
+    handler: async (
+      { orderId, userId, refundId, amount, outcome, method, emptiesOrder, productName },
+      { eventId },
+    ) => {
       await notificationService.notifyIndividual({
         recipientId: userId,
         type: REFUND_NOTIFICATION_TYPES[outcome],
         sourceEventId: eventId,
         entityType: NotificationEntityType.ORDER,
         entityId: orderId,
-        metadata: { refundId, amount, method },
+        metadata: {
+          refundId,
+          amount,
+          method,
+          orderReference: formatOrderReference(orderId),
+          emptiesOrder,
+          ...(productName ? { productName } : {}),
+        },
       });
     },
   });

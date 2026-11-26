@@ -319,7 +319,6 @@ export default defineConfig({
         "src/features/orders/components/OrderDetailBody.tsx",
         "src/features/orders/components/OrderPriceBreakdown.tsx",
         "src/features/orders/components/OrderRow.tsx",
-        "src/features/orders/utils/orderReference.utils.ts",
         "src/features/orders/components/OrderTrackingTimeline.tsx",
         "src/features/orders/components/TrackingStageSummary.tsx",
         "src/features/orders/components/TrackingEventList.tsx",

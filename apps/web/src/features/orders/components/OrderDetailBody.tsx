@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { formatOrderReference } from "@outfiqe/utils";
 import { Ban, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -23,7 +24,6 @@ import {
   hasNothingLeftToPay,
   NOTHING_TO_PAY_LABEL,
 } from "../utils/cancellationWording.utils";
-import { formatOrderReference } from "../utils/orderReference.utils";
 import {
   buildCancelledMoneyLines,
   buildOrderCancellationNotice,

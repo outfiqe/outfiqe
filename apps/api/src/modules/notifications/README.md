@@ -207,6 +207,14 @@ a `Notification` against at review time. The existing `brandApprovedTemplate`/
 notification type any authenticated customer can receive regardless of `isCreator`/`role`. The
 bell therefore mounts for every authenticated user on `apps/web`, not just creators/businesses.
 
+**Order notifications name their order.** `ORDER_STATUS_CHANGED` and the refund notifications store
+`orderReference` (the `#28A55BF3` shoppers see, from `formatOrderReference` in `@outfiqe/utils`) in
+their metadata, and a refund also stores `emptiesOrder` and, when it covers a single product,
+`productName`. `emptiesOrder` is worked out when the refund is announced
+(`refund.payment.ts`): every item of the order is fully refunded. It lets a cash-on-delivery
+shopper whose whole order was cancelled read "nothing to pay" instead of "you'll pay less on
+delivery". Notifications saved before these fields existed still render, with "your order" wording.
+
 **`REVIEW_REQUESTED` piggybacks on the existing `ORDER_STATUS_CHANGED` handler instead of a new
 domain event.** `product-reviews` doesn't own a consumer file of its own — the order module
 already publishes `ORDER_STATUS_CHANGED` with the new `DELIVERED` status on every delivery, so this

@@ -143,6 +143,7 @@ export default defineConfig({
         "src/shared/utils/admin-url.utils.ts",
         "src/shared/middlewares/error-handler.ts",
         "src/modules/notifications/notification.utils.ts",
+        "src/modules/notifications/event-consumers/commerce.events.ts",
         "src/modules/notifications/notification.targets.ts",
         "src/modules/notifications/notification.retention.ts",
         "src/modules/nepal-banks/**/*.ts",

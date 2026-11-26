@@ -1,4 +1,4 @@
-import { formatDate } from "@outfiqe/utils";
+import { formatDate, formatOrderReference } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
@@ -8,7 +8,6 @@ import { cn } from "@/shared/lib/cn";
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
 import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
-import { formatOrderReference } from "../utils/orderReference.utils";
 import { describeOrderRowRefund } from "../utils/orderRefundNotice.utils";
 import { StatusBadge } from "./StatusBadge";
 

@@ -35,6 +35,34 @@ const soldOutMessage = (notification: Notification): string => {
   return `${soldOutSubject} in ${outfitName(notification)} sold out. Swap to lock`;
 };
 
+const YOUR_ORDER_PREFIX = "Your order";
+
+const nameOrderInMessage = (message: string, orderReference: string | undefined): string => {
+  if (!orderReference) return message;
+  return message.startsWith(YOUR_ORDER_PREFIX)
+    ? `Order ${orderReference}${message.slice(YOUR_ORDER_PREFIX.length)}`
+    : `${message} (order ${orderReference})`;
+};
+
+const refundSubject = (notification: Notification): string => {
+  const { orderReference, productName } = notification.metadata;
+  if (productName) {
+    return orderReference ? `${productName} (order ${orderReference})` : productName;
+  }
+  return orderReference ? `order ${orderReference}` : "your order";
+};
+
+const refundIssuedMessage = (notification: Notification): string => {
+  const { amount, method, emptiesOrder, orderReference } = notification.metadata;
+  if (method !== OrderRefundMethod.CASH_NOT_COLLECTED) {
+    return `We've refunded Rs. ${amount ?? ""} on ${refundSubject(notification)}`;
+  }
+  if (emptiesOrder) {
+    return `${orderReference ? `Order ${orderReference}` : "Your order"} was cancelled � nothing to pay`;
+  }
+  return `You'll pay Rs. ${amount ?? ""} less on delivery of ${refundSubject(notification)}`;
+};
+
 export const resolveNotificationMessage = (notification: Notification): string => {
   const { type, metadata } = notification;
 
@@ -58,9 +86,12 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.NEW_ORDER:
       return "You received a new order";
     case NotificationType.ORDER_STATUS_CHANGED:
-      return metadata.trackingStage
-        ? ORDER_TRACKING_STAGE_MESSAGES[metadata.trackingStage]
-        : `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
+      return nameOrderInMessage(
+        metadata.trackingStage
+          ? ORDER_TRACKING_STAGE_MESSAGES[metadata.trackingStage]
+          : `Your order was ${(metadata.status ?? "updated").toLowerCase()}`,
+        metadata.orderReference,
+      );
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return `${metadata.brandName ?? "A brand"} submitted an application`;
     case NotificationType.PRODUCT_REVIEWED:
@@ -164,11 +195,9 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.OUTFIT_OFFER_REFUNDED:
       return `Your ${offerAmount(notification)} offer on ${outfitName(notification)} is being refunded`;
     case NotificationType.ORDER_REFUND_ISSUED:
-      return metadata.method === OrderRefundMethod.CASH_NOT_COLLECTED
-        ? `You'll pay Rs. ${metadata.amount ?? ""} less on delivery`
-        : `We've refunded Rs. ${metadata.amount ?? ""} on your order`;
+      return refundIssuedMessage(notification);
     case NotificationType.ORDER_REFUND_DETAILS_NEEDED:
-      return `Tell us where to send your Rs. ${metadata.amount ?? ""} refund`;
+      return `Tell us where to send your Rs. ${metadata.amount ?? ""} refund for ${refundSubject(notification)}`;
     case NotificationType.LOGISTICS_STAFF_ALERT:
       return metadata.logisticsAlertType
         ? LOGISTICS_ALERT_LABELS[metadata.logisticsAlertType]
