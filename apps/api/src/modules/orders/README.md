@@ -37,6 +37,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `line-cancellation.*` — a customer cancelling single items.
   - `refund.outstanding.ts` — `calculateCashToCollect({ orderId, fulfilmentGroupIds, includesOrderFees })`: what an unpaid cash-on-delivery order still owes for some of its brands' items (each line's unrefunded share), plus the delivery and COD fees when asked. Logistics uses it for the cash a parcel collects.
   - `refund-destination.*` — the customer's refund details (Khalti, eSewa or bank) and staff reveal of a bank account number.
+  - `refund-summary.utils.ts` — `summariseOrderRefunds`, the compact refund summary on the shopper order views (unit-tested).
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
   - `refund.utils.ts`, `refund.constants.ts`, `refund.types.ts`, `refund.schemas.ts`, `refund.repository.ts`.
 - `unavailable-items/` — a brand reporting items it can't supply, and staff approving (refunds the customer) or rejecting the report.
@@ -478,6 +479,12 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
      transaction with the amount and sets the order to `PARTIALLY_REFUNDED` or `REFUNDED`.
    - Anything else, or a failed Khalti call → `NEEDS_MANUAL`, `Order.needsManualRefund`, an ops
      email, and a customer request for refund details if we don't have them.
+
+## The shopper order views carry a refund summary
+
+`GET /orders/:id` and the paginated `GET /orders` each include `refundSummary`: `cancelledUnitCount`, the distinct refund `causes`, `amountOffCashPayment` (cash-on-delivery refunds, "taken off what you pay"), `amountRefunded` (money already back), `amountComingBack` (online refunds still pending or being paid by staff) and `amountAwaitingDetails` (manual refunds with no saved refund destination yet).
+
+It is computed in `summariseOrderRefunds` from the order's refund rows (cause, status, method, total, line quantities) and whether a refund destination exists. Both reads load those rows and the destination id in the same query as the order (`withRefundSummary` in `order.repository.ts`), so the orders page can show "Action needed: add refund details" per order with no extra request and no per-order lookup. The per-order refund rows are bounded by the order's item count.
 
 ## Refund rules and why
 

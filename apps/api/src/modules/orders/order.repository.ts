@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
   FulfilmentMode,
   FulfilmentStatus,
@@ -15,6 +16,20 @@ import { orderRefundDestinationRepository } from "./refunds/refund-destination.r
 import { orderUnavailableItemRepository } from "./unavailable-items/unavailable-item.repository.js";
 
 const ANY_HUB_GROUP = 1;
+
+const withRefundSummary = {
+  refunds: {
+    orderBy: { createdAt: "asc" },
+    select: {
+      cause: true,
+      status: true,
+      method: true,
+      totalAmount: true,
+      lines: { select: { qty: true } },
+    },
+  },
+  refundDestination: { select: { id: true } },
+} satisfies Prisma.OrderInclude;
 
 const withOrderItemDetails = {
   product: { select: { name: true, imageUrl: true, brand: { select: { name: true } } } },
@@ -48,6 +63,7 @@ export const orderRepository = {
     return prisma.order.findFirst({
       where: { id: orderId, userId },
       include: {
+        ...withRefundSummary,
         items: { include: withOrderItemDetails },
         transactions: { orderBy: { createdAt: "asc" } },
         fulfilmentGroups: {
@@ -64,7 +80,10 @@ export const orderRepository = {
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: { items: { include: withOrderItemDetails, take: 1, orderBy: { createdAt: "asc" } } },
+      include: {
+        ...withRefundSummary,
+        items: { include: withOrderItemDetails, take: 1, orderBy: { createdAt: "asc" } },
+      },
     });
   },
 

@@ -24,6 +24,10 @@ import {
   PAYMENT_STATUSES_WITH_MONEY_TAKEN,
   PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
 } from "./refunds/refund.constants.js";
+import {
+  type OrderRefundSummaryRow,
+  summariseOrderRefunds,
+} from "./refunds/refund-summary.utils.js";
 
 const NO_UNITS_LEFT = 0;
 
@@ -143,6 +147,8 @@ type OrderRow = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   refundedAmount: number;
+  refunds?: OrderRefundSummaryRow[];
+  refundDestination?: { id: string } | null;
   promisedDeliveryFrom?: Date | null;
   promisedDeliveryBy?: Date | null;
   items: OrderItemRow[];
@@ -245,6 +251,8 @@ export const toOrderView = (order: OrderRow): OrderView => {
     brandDiscountTotal,
     platformDiscountTotal,
     refundedAmount,
+    refunds,
+    refundDestination,
     items,
     fulfilmentGroups,
     transactions,
@@ -271,6 +279,7 @@ export const toOrderView = (order: OrderRow): OrderView => {
     brandDiscountTotal,
     platformDiscountTotal,
     refundedAmount,
+    refundSummary: summariseOrderRefunds(refunds ?? [], Boolean(refundDestination)),
     trackingStage: toOrderTrackingStage(fulfilmentGroups),
     promisedDelivery: toOrderDeliveryPromise(order),
     items: items.map((item) => toOrderItemView(item, cancellableGroupIds)),
