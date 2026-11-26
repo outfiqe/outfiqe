@@ -182,11 +182,24 @@ const ensureConsumerGroup = async <E extends DomainEvent>({
   }
 };
 
+const retryConsumerGroupUntilReady = async <E extends DomainEvent>(
+  context: ConsumerContext<E>,
+): Promise<void> => {
+  let consecutiveFailureCount = 0;
+
+  while (!context.isStopped()) {
+    if (await ensureConsumerGroup(context)) return;
+    if (context.isStopped()) return;
+    await waitMs(computeBackoffDelayMs(consecutiveFailureCount));
+    consecutiveFailureCount += 1;
+  }
+};
+
 const runConsumerLoop = async <E extends DomainEvent>(
   context: ConsumerContext<E>,
 ): Promise<void> => {
   const { event, streamClient, isStopped } = context;
-  if (!(await ensureConsumerGroup(context))) return;
+  await retryConsumerGroupUntilReady(context);
 
   let consecutiveErrorCount = 0;
 

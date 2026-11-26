@@ -45,6 +45,7 @@ export default defineConfig({
         "src/config/delivery-partner.config.ts",
         "src/processes/consumers.ts",
         "src/shared/utils/readiness.utils.ts",
+        "src/shared/events/event-bus.consumer.ts",
         "src/testing/integration/worker-pool.ts",
         "src/testing/integration/unique-values.ts",
         "src/shared/utils/route-docs.utils.ts",
