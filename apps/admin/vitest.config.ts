@@ -61,6 +61,7 @@ export default defineConfig({
         "src/features/support/components/SupportInboxPage.tsx",
         "src/features/orders/components/OrdersPage.tsx",
         "src/features/orders/refunds/**/*.{ts,tsx}",
+        "src/features/orders/cancellation-requests/**/*.{ts,tsx}",
         "src/features/orders/unavailable-items/**/*.{ts,tsx}",
         "src/lib/brandsApi.ts",
         "src/lib/usersApi.ts",

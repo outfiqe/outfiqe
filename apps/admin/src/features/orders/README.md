@@ -55,6 +55,18 @@ couldn't go back automatically, and review items a brand says it can't supply.
   `api/unavailableItemsApi.ts`, `api/unavailableItemsSchemas.ts`,
   `constants/unavailableItemLabels.ts`.
 
+### `cancellation-requests/` topic
+
+- `components/BrandCancellationRequests.tsx` — the "Shipments brands want to cancel" section at the top of the
+  `/orders/unavailable-items` page: each pending request a brand filed with "Request cancellation" on its own
+  shipment, showing the order number, brand, the units still to refund, the amount, the brand's reason
+  and an "Open order" link. "Approve and refund" asks for confirmation, then refunds the customer for the
+  whole remaining shipment and cancels it; "Decline" asks for a note the brand is emailed and lets the brand
+  carry on. Both buttons are hidden without `platform:orders:manage`. Has its own loading, error and empty states.
+- `hooks/useInfiniteCancellationRequests.ts`, `useDecideCancellationRequest.ts`,
+  `api/cancellationRequestsApi.ts` (`/orders/admin/cancellation-requests`), `api/cancellationRequestsSchemas.ts`,
+  `constants/cancellationRequestLabels.ts`.
+
 Both queue pages sit under Orders in the sidebar (`adminSidebarNavItems.ts`) and use the orders
 permission, so no new nav key or section permission is needed. Their paths are kept out of the
 order-detail skeleton patterns in `components/page-skeletons`.
