@@ -89,3 +89,5 @@ check at checkout let through numbers nobody could dial.
 never be left with addresses but no default — the next checkout would have nothing pre-selected.
 Deleting the last address just leaves the book empty, which the checkout form already handles
 (it falls back to the blank form).
+
+**The city must be one a delivery zone lists.** Creating an address, and updating one that sends a city, runs `deliveryZoneService.assertCityIsDeliverable` and answers `422` with a `city` field issue when no zone lists it, so a typo never reaches a shipping record. See the delivery-zones README.

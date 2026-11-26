@@ -9,6 +9,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creator-link.repository.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import { checkCashOnDeliveryEligibility } from "#modules/logistics/refusals/refusal.eligibility.js";
 import { assertGatewayAvailable } from "#modules/payments/payment.availability.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -56,6 +57,7 @@ const checkoutOnce = async (
   const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow, couponCode } =
     body;
 
+  await deliveryZoneService.assertCityIsDeliverable(city);
   if (paymentMethod === PaymentMethod.COD) await assertCashOnDeliveryAllowed(userId, phone);
   await assertGatewayAvailable(paymentMethod, userId);
 

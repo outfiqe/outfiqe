@@ -102,6 +102,7 @@ const seedCommerceConfig = async (adminId: string) => {
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 5000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
     },
   });
 };

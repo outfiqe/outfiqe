@@ -44,6 +44,7 @@ export const createDefaultDeliveryZone = () =>
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 100_000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
     },
   });
 

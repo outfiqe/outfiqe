@@ -3,6 +3,7 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 
 import { addressRepository } from "./address.repository.js";
 import type { CreateAddressBody, UpdateAddressBody } from "./address.schemas.js";
@@ -42,6 +43,7 @@ export const addressService = {
   },
 
   async create(userId: string, body: CreateAddressBody): Promise<PublicSavedAddress> {
+    await deliveryZoneService.assertCityIsDeliverable(body.city);
     const created = await runDefaultInvariantTransaction(async (tx) => {
       const existingCount = await addressRepository.countForUser(userId, tx);
       if (existingCount >= MAX_SAVED_ADDRESSES_PER_USER) {
@@ -74,6 +76,7 @@ export const addressService = {
   },
 
   async update(userId: string, id: string, body: UpdateAddressBody): Promise<PublicSavedAddress> {
+    if (body.city !== undefined) await deliveryZoneService.assertCityIsDeliverable(body.city);
     const updated = await runDefaultInvariantTransaction(async (tx) => {
       const owned = await addressRepository.findOwned(userId, id, tx);
       if (!owned) throw notFound();

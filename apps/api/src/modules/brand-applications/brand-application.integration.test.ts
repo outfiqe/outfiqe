@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { BrandApplicationStatus, MakesOwnPieces } from "#generated/prisma/enums.js";
 import { createAdminSession } from "#test/integration/auth-helpers.js";
+import { createDeliveryZoneListing } from "#test/integration/order-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 import { uniquePhone } from "#test/integration/unique-values.js";
 
@@ -33,6 +34,28 @@ describe("POST /api/brand-applications", () => {
       brandName: body.brandName,
       status: BrandApplicationStatus.PENDING,
     });
+  });
+
+  it("accepts a city a zone lists", async () => {
+    await createDeliveryZoneListing(["Kathmandu"]);
+
+    const response = await request(testApp)
+      .post("/api/brand-applications")
+      .send(validApplicationBody({ city: "Kathmandu" }));
+
+    expect(response.status).toBe(201);
+  });
+
+  it("rejects a city no zone lists, naming the city field", async () => {
+    const body = validApplicationBody({ city: "sfasd" });
+
+    const response = await request(testApp).post("/api/brand-applications").send(body);
+
+    expect(response.status).toBe(422);
+    expect(response.body.details).toEqual([
+      expect.objectContaining({ path: ["city"], message: "We don't deliver to this area yet" }),
+    ]);
+    expect(await prisma.brandApplication.count({ where: { email: body.email } })).toBe(0);
   });
 
   it("rejects an invalid phone number", async () => {

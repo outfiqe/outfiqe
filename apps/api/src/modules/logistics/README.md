@@ -65,6 +65,8 @@ The flag covers the delivery flow only. Shoppers cancelling items and brands rep
   - which active hub collects from a pickup city (a city in a delivery zone listed in a hub's
     `HubPickupZone`s);
   - the brands' default pickup locations.
+- `pickup-locations/` only accepts a pickup city that a delivery zone lists
+  (`deliveryZoneService.assertCityIsDeliverable`, `422` on the `city` field), on create and update.
 - `hubs/` — admin-managed hubs.
   - Endpoints: `GET /`, `POST /`, `PUT /:hubId`, `PUT /:hubId/pickup-zones`.
   - Guarded by `platformGuards.logisticsRead` / `logisticsManage`.

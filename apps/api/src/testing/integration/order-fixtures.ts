@@ -27,6 +27,20 @@ export const createDefaultDeliveryZone = () =>
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 5000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
+    },
+  });
+
+export const createDeliveryZoneListing = (cities: string[]) =>
+  prisma.deliveryZone.create({
+    data: {
+      name: `Listed Zone ${randomUUID().slice(0, 6)}`,
+      standardDeliveryFee: 100,
+      freeDeliveryThreshold: 5000,
+      codHandlingFee: 0,
+      cities: {
+        create: cities.map((city) => ({ city, cityNormalized: city.trim().toLowerCase() })),
+      },
     },
   });
 

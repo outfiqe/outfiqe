@@ -5,6 +5,7 @@ import { normalizeCityName } from "#lib/city.utils.js";
 import { toE164PhoneNumber } from "#lib/phone.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 
 import { logisticsErrors } from "../logistics.errors.js";
 import { logisticsPickupCoverage } from "../logistics.pickup-coverage.js";
@@ -96,6 +97,7 @@ export const logisticsPickupLocationService = {
     body: PickupLocationBody,
   ): Promise<PickupLocationView> {
     const brandId = await requireBrandId(userId);
+    await deliveryZoneService.assertCityIsDeliverable(body.city, body.countryCode);
     const activeLocationCount =
       await logisticsPickupLocationRepository.countActiveForBrand(brandId);
     if (activeLocationCount >= MAX_PICKUP_LOCATIONS_PER_BRAND) {
@@ -116,6 +118,7 @@ export const logisticsPickupLocationService = {
   ): Promise<PickupLocationView> {
     const brandId = await requireBrandId(userId);
     await requireOwnedLocation(brandId, locationId);
+    await deliveryZoneService.assertCityIsDeliverable(body.city, body.countryCode);
     const location = await logisticsPickupLocationRepository.updateLocation(
       locationId,
       toLocationWriteFields(body),

@@ -245,6 +245,7 @@ export const cartService = {
   },
 
   async setCity(userId: string, city: string): Promise<CartView> {
+    await deliveryZoneService.assertCityIsDeliverable(city);
     const { id: cartId, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
     await cartRepository.updateCity(cartId, city);
     return buildCartView(cartId, city, appliedCouponCode, userId);

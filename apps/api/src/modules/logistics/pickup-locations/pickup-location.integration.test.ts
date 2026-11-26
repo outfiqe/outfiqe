@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { redis } from "#redis/redis.client.js";
-import { createCoveredPickupArea } from "#test/integration/logistics-fixtures.js";
+import { createHub } from "#test/integration/logistics-fixtures.js";
+import { createDeliveryZoneListing } from "#test/integration/order-fixtures.js";
 import { createBrandOwnerSession } from "#test/integration/product-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
@@ -25,8 +26,13 @@ const addLocation = (authHeader: string, overrides: Record<string, unknown> = {}
     .set("Authorization", authHeader)
     .send(locationBody(overrides));
 
+const LISTED_CITY = "Lalitpur";
+
+let listedZoneId: string;
+
 beforeEach(async () => {
   await redis.flushdb();
+  ({ id: listedZoneId } = await createDeliveryZoneListing([LISTED_CITY]));
 });
 
 describe("brand pickup locations", () => {
@@ -46,11 +52,35 @@ describe("brand pickup locations", () => {
 
   it("says the location is covered once a hub collects from its city", async () => {
     const { authHeader } = await createBrandOwnerSession();
-    await createCoveredPickupArea(["Lalitpur"]);
+    const hub = await createHub();
+    await prisma.hubPickupZone.create({ data: { hubId: hub.id, deliveryZoneId: listedZoneId } });
 
     const response = await addLocation(authHeader, { city: " lalitpur " });
 
     expect(response.body.data.isCoveredByOutfiqePickup).toBe(true);
+  });
+
+  it("refuses a pickup city no delivery zone lists, naming the city field", async () => {
+    const { authHeader } = await createBrandOwnerSession();
+
+    const response = await addLocation(authHeader, { city: "sfasd" });
+
+    expect(response.status).toBe(422);
+    expect(response.body.details).toEqual([
+      expect.objectContaining({ path: ["city"], message: "We don't deliver to this area yet" }),
+    ]);
+  });
+
+  it("refuses moving a location to a city no delivery zone lists", async () => {
+    const { authHeader } = await createBrandOwnerSession();
+    const created = await addLocation(authHeader);
+
+    const response = await request(testApp)
+      .put(`${PICKUP_LOCATIONS_PATH}/${created.body.data.id}`)
+      .set("Authorization", authHeader)
+      .send(locationBody({ city: "sfasd" }));
+
+    expect(response.status).toBe(422);
   });
 
   it("keeps the first location as the default when another is added", async () => {

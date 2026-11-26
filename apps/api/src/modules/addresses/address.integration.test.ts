@@ -8,6 +8,7 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
+import { createDeliveryZoneListing } from "#test/integration/order-fixtures.js";
 import { testApp } from "#test/integration/test-app.js";
 
 import { addressRepository } from "./address.repository.js";
@@ -17,6 +18,7 @@ const VALIDATION_ERROR_STATUS = HTTP_STATUS.UNPROCESSABLE_ENTITY;
 
 beforeEach(async () => {
   await redis.flushdb();
+  await createDeliveryZoneListing(["Kathmandu", "Lalitpur", "Pokhara"]);
 });
 
 afterEach(() => {
@@ -274,6 +276,48 @@ describe("PATCH /api/addresses/:id", () => {
       .send({ city: "Pokhara" });
 
     expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+  });
+});
+
+describe("saved address delivery city", () => {
+  it("rejects creating an address in a city no zone lists", async () => {
+    const owner = await createUser();
+
+    const response = await postAddress(owner.id, { city: "sfasd" });
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    expect(response.body.details).toEqual([
+      expect.objectContaining({ path: ["city"], message: "We don't deliver to this area yet" }),
+    ]);
+    expect(await prisma.savedAddress.count({ where: { userId: owner.id } })).toBe(0);
+  });
+
+  it("rejects moving an address to a city no zone lists", async () => {
+    const owner = await createUser();
+    const created = await postAddress(owner.id);
+
+    const response = await request(testApp)
+      .patch(`/api/addresses/${created.body.data.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .send({ city: "sfasd" });
+
+    expect(response.status).toBe(VALIDATION_ERROR_STATUS);
+    const stored = await prisma.savedAddress.findUniqueOrThrow({
+      where: { id: created.body.data.id },
+    });
+    expect(stored.city).toBe("Kathmandu");
+  });
+
+  it("still lets an address change other fields without re-checking its city", async () => {
+    const owner = await createUser();
+    const created = await postAddress(owner.id);
+
+    const response = await request(testApp)
+      .patch(`/api/addresses/${created.body.data.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .send({ label: "Parents" });
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
   });
 });
 
