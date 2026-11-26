@@ -13,6 +13,7 @@ export const CAUSES_RETURNING_ORDER_FEES: ReadonlySet<OrderRefundCause> = new Se
   OrderRefundCause.RETURNED,
   OrderRefundCause.STAFF_ADJUSTMENT,
   OrderRefundCause.PARTNER_FAILED,
+  OrderRefundCause.SOLD_OUT_AT_PAYMENT,
 ]);
 
 export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new Set([
@@ -22,6 +23,7 @@ export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new
   OrderRefundCause.CUSTOMER_REFUSED,
   OrderRefundCause.STAFF_ADJUSTMENT,
   OrderRefundCause.PARTNER_FAILED,
+  OrderRefundCause.SOLD_OUT_AT_PAYMENT,
 ]);
 
 export const PAYMENT_STATUSES_WITH_MONEY_TAKEN: ReadonlySet<PaymentStatus> = new Set([

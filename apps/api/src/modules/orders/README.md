@@ -441,6 +441,10 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
 - When the money can't go back automatically, the customer gets an email and a notification
   asking where to send it, fills in Khalti, eSewa or bank details on their order page, and staff
   pay it from the manual refund queue and enter the transfer reference.
+- An online payment that verifies after the last unit sold out is refunded in full (every unit plus
+  the delivery fee) with cause `SOLD_OUT_AT_PAYMENT`, from `payments/payment.service.ts`. It is not
+  staff-selectable. `payments/payment.sold-out-backfill.ts` (script `db:backfill:sold-out-payment-refunds`)
+  gives the same refund to older orders that were cancelled without one.
 
 **Technical:** a flow opens a transaction and calls `orderRefundEngine.claimAndApplyInTransaction`
 (claim → ledger), then calls `finishAfterCommit` (pickup cancellation announcements → payment).

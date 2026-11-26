@@ -4468,6 +4468,7 @@ enum OrderRefundCause {
   CUSTOMER_REFUSED
   STAFF_ADJUSTMENT
   PARTNER_FAILED
+  SOLD_OUT_AT_PAYMENT
 }
 
 enum OrderRefundStatus {

@@ -78,29 +78,6 @@ export const paymentSettledTemplate = (
   }),
 });
 
-type ManualRefundNeededInput = {
-  orderId: string;
-  total: number;
-};
-
-export const manualRefundNeededTemplate = (
-  input: ManualRefundNeededInput,
-): { subject: string; html: string } => ({
-  subject: `Action needed: refund order ${input.orderId}`,
-  html: renderEmailLayout({
-    preheader: `Order ${input.orderId} needs a manual refund.`,
-    bodyHtml: `
-      ${emailStatusPill("Action needed", "destructive")}
-      ${emailHeading("Manual refund needed")}
-      ${emailText("This order was paid but the item sold out before we could confirm it. Refund it by hand through the gateway dashboard.")}
-      ${emailMetaTable([
-        { label: "Order ID", value: input.orderId },
-        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
-      ])}
-    `,
-  }),
-});
-
 type OrderCancelledInput = {
   orderId: string;
   total: number;

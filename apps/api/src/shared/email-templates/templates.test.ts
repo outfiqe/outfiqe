@@ -26,7 +26,6 @@ import {
   crmSubscriptionRenewalDueTemplate,
 } from "./crm.templates.js";
 import {
-  manualRefundNeededTemplate,
   newOrderNotificationTemplate,
   orderCancelledTemplate,
   orderConfirmationTemplate,
@@ -151,10 +150,7 @@ describe("order and payment templates", () => {
     expect(paymentSettledTemplate({ orderId: "ORD-3", total: 1200 }).html).toContain("Rs. 1,200");
   });
 
-  it("manualRefundNeededTemplate and refundFailedTemplate flag the amount to refund", () => {
-    expect(manualRefundNeededTemplate({ orderId: "ORD-4", total: 3000 }).html).toContain(
-      "Rs. 3,000",
-    );
+  it("refundFailedTemplate flags the amount to refund", () => {
     expect(refundFailedTemplate({ orderId: "ORD-5", total: 3000 }).html).toContain("Rs. 3,000");
   });
 
