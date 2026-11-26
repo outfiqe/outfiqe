@@ -17,6 +17,8 @@ export default defineConfig({
         "src/outfit-slots/index.ts",
         "src/size-fit/index.ts",
         "src/logistics-codes/index.ts",
+        "src/phone/index.ts",
+        "src/order-reference/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

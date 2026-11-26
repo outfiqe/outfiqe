@@ -126,6 +126,8 @@ export type NotificationMetadata = {
   refundId?: string;
   amount?: number;
   method?: string | null;
+  orderReference?: string;
+  emptiesOrder?: boolean;
   actor?: RecentActor;
   recentActors?: RecentActor[];
   lookImageUrl?: string;
