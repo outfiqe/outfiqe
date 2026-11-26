@@ -18,7 +18,6 @@ import type {
   BrandFulfilmentGroupSummaryView,
 } from "../order.types.js";
 import { deriveOrderFulfilment } from "../order.utils.js";
-import { orderItemChangeAccess } from "../refunds/item-change-access.js";
 import { orderFulfilmentGroupRepository } from "./fulfilment-group.repository.js";
 import {
   toBrandFulfilmentGroupDetailView,
@@ -63,9 +62,7 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!group) throw orderErrors.notFound();
-    return toBrandFulfilmentGroupDetailView(group, {
-      allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
-    });
+    return toBrandFulfilmentGroupDetailView(group);
   },
 
   async advanceBrandFulfilmentGroup(
@@ -119,9 +116,7 @@ export const orderFulfilmentGroupService = {
       brandId,
     );
     if (!updatedGroup) throw orderErrors.notFound();
-    return toBrandFulfilmentGroupDetailView(updatedGroup, {
-      allowsItemReports: await orderItemChangeAccess.isBrandAllowingItemChanges(brandId),
-    });
+    return toBrandFulfilmentGroupDetailView(updatedGroup);
   },
 
   async requestBrandFulfilmentGroupCancellation(

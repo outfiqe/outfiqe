@@ -211,21 +211,13 @@ const toOrderItemView = (
   };
 };
 
-const NO_BRANDS_ALLOWING_ITEM_CHANGES: ReadonlySet<string> = new Set();
-
-const listCancellableGroupIds = (
-  order: OrderRow,
-  brandIdsAllowingItemChanges: ReadonlySet<string>,
-): ReadonlySet<string> => {
+const listCancellableGroupIds = (order: OrderRow): ReadonlySet<string> => {
   const hasSettledPayment =
     PAYMENT_STATUSES_WITH_MONEY_TAKEN.has(order.paymentStatus) ||
     PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(order.paymentStatus);
   if (!hasSettledPayment) return new Set();
   return new Set(
-    (order.fulfilmentGroups ?? [])
-      .filter((group) => brandIdsAllowingItemChanges.has(group.brandId))
-      .filter(isGroupStillWithBrand)
-      .map((group) => group.id),
+    (order.fulfilmentGroups ?? []).filter(isGroupStillWithBrand).map((group) => group.id),
   );
 };
 
@@ -234,10 +226,7 @@ const toPaymentTransactionView = (row: PaymentTransactionRow): PaymentTransactio
   return { id, provider, type, status, transactionRef, createdAt: createdAt.toISOString() };
 };
 
-export const toOrderView = (
-  order: OrderRow,
-  brandIdsAllowingItemChanges: ReadonlySet<string> = NO_BRANDS_ALLOWING_ITEM_CHANGES,
-): OrderView => {
+export const toOrderView = (order: OrderRow): OrderView => {
   const {
     id,
     createdAt,
@@ -260,7 +249,7 @@ export const toOrderView = (
     fulfilmentGroups,
     transactions,
   } = order;
-  const cancellableGroupIds = listCancellableGroupIds(order, brandIdsAllowingItemChanges);
+  const cancellableGroupIds = listCancellableGroupIds(order);
 
   return {
     id,

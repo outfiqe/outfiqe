@@ -159,7 +159,6 @@ const isDeliveredByOutfiqe = ({ fulfilmentMode }: { fulfilmentMode: FulfilmentMo
 
 export const toBrandFulfilmentGroupDetailView = (
   row: BrandFulfilmentGroupDetailRow,
-  { allowsItemReports }: { allowsItemReports: boolean },
 ): BrandFulfilmentGroupDetailView => ({
   id: row.id,
   orderId: row.orderId,
@@ -177,7 +176,7 @@ export const toBrandFulfilmentGroupDetailView = (
   deliveredAt: row.deliveredAt?.toISOString() ?? null,
   cancellationRequestedAt: row.cancellationRequestedAt?.toISOString() ?? null,
   cancellationReason: row.cancellationReason,
-  canReportUnavailable: allowsItemReports && isGroupStillWithBrand(row),
+  canReportUnavailable: isGroupStillWithBrand(row),
   items: row.items.map(toBrandFulfilmentGroupItemView),
   shipTo: isDeliveredByOutfiqe(row)
     ? null

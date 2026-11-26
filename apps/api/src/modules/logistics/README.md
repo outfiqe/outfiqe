@@ -10,6 +10,8 @@ takes the parcel to the customer. Every step is a recorded tracking event. The f
 The whole flow sits behind the `order_logistics` feature flag. Orders keep today's brand-shipped
 flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
+The flag covers the delivery flow only. Shoppers cancelling items and brands reporting items they can't supply (`orders/refunds`, `orders/unavailable-items`) work for every brand, flag or not.
+
 ## Structure
 
 - `logistics.errors.ts` — `logisticsErrors`, the errors this module raises from more than one place.

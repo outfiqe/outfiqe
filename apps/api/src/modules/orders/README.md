@@ -38,7 +38,6 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `refund.outstanding.ts` — `calculateCashToCollect({ orderId, fulfilmentGroupIds, includesOrderFees })`: what an unpaid cash-on-delivery order still owes for some of its brands' items (each line's unrefunded share), plus the delivery and COD fees when asked. Logistics uses it for the cash a parcel collects.
   - `refund-destination.*` — the customer's refund details (Khalti, eSewa or bank) and staff reveal of a bank account number.
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
-  - `item-change-access.ts` — `orderItemChangeAccess`: which brands are on the `order_logistics` feature flag, and so allow customer item cancellation and "can't supply" reports.
   - `refund.utils.ts`, `refund.constants.ts`, `refund.types.ts`, `refund.schemas.ts`, `refund.repository.ts`.
 - `unavailable-items/` — a brand reporting items it can't supply, and staff approving (refunds the customer) or rejecting the report.
 - `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`; the detail view carries each line's `refundedQty` and `canReportUnavailable`, which uses the same "still with the brand" rule as customer line cancellations), and the integration tests.
@@ -477,12 +476,12 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
 
 ## Refund rules and why
 
-- **What the feature flag covers.** Customer item cancellation and brand "can't supply" reports
-  are new things a customer or brand can do, so they are offered only for brands on the
-  `order_logistics` flag (`canCancel` on the order view, `canReportUnavailable` on the brand's
-  shipment view, and a `409` from the endpoints otherwise). The engine itself, staff "refund
-  items" and the manual refund queue are not behind the flag: whole-order cancel and return
-  already run through them, and eSewa refunds need the queue whatever the flag says.
+- **Item cancellation and "can't supply" reports do not depend on the `order_logistics` flag.**
+  Every shopper can cancel items and every brand can report items it can't supply, whether or
+  not the brand is on Outfiqe delivery. What decides it is whether the shipment is still with
+  the brand (`isGroupStillWithBrand`): `canCancel` on the order view, `canReportUnavailable` on
+  the brand's shipment view, and a `409` from the endpoints once it has left. The engine, staff
+  "refund items" and the manual refund queue run the same way for everyone.
 - **Claim first, pay after commit.** The units and money are reserved in the database before any
   gateway call. A crash between the two leaves a `PENDING` refund, which the 5-minute sweep moves
   to the manual queue with a note to check the gateway before paying. It is never retried

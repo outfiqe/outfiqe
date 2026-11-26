@@ -283,7 +283,7 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
       unitPrice: 1000,
       listUnitPrice: 1000,
     });
-    expect(detail.canReportUnavailable).toBe(false);
+    expect(detail.canReportUnavailable).toBe(true);
     expect(detail.shipTo).toMatchObject({
       fullName: "Buyer Person",
       phone: "9812345678",
