@@ -81,6 +81,10 @@ move to shared" rule the field shapes were extracted to
 array/dedup validation; the shared `city` field is an equivalent
 `z.string().trim().min(1).max(120)`, kept in sync by hand (both are trivial length bounds).
 
+The shared `phone` field accepts only what `phoneSchema` accepts (ten digits starting with 98) after
+spaces and dashes are removed, and stores the digits only. Riders call this number, so a looser
+check at checkout let through numbers nobody could dial.
+
 **Deleting the default promotes the most-recently-updated remaining address.** A user should
 never be left with addresses but no default — the next checkout would have nothing pre-selected.
 Deleting the last address just leaves the book empty, which the checkout form already handles

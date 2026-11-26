@@ -246,6 +246,19 @@ describe("CheckoutForm", () => {
     expect(screen.getByLabelText(/^phone$/i)).toHaveValue("9812345678");
   });
 
+  it("flags a phone number riders couldn't call and doesn't place the order", async () => {
+    renderCheckoutForm();
+    await fillRequiredFields();
+    const phoneField = screen.getByLabelText(/^phone$/i);
+    await userEvent.clear(phoneField);
+    await userEvent.type(phoneField, "982000000");
+
+    fireEvent.submit(screen.getByRole("button", { name: /place order/i }).closest("form")!);
+
+    expect(await screen.findByText("Enter a valid mobile number")).toBeInTheDocument();
+    expect(checkoutMutateAsync).not.toHaveBeenCalled();
+  });
+
   it("refuses to submit an order while offline, without ever calling checkout", async () => {
     isOnline = false;
     renderCheckoutForm();

@@ -662,9 +662,7 @@
                     "maxLength": 120
                   },
                   "phone": {
-                    "type": "string",
-                    "minLength": 6,
-                    "maxLength": 20
+                    "type": "string"
                   },
                   "address": {
                     "type": "string",
@@ -937,9 +935,7 @@
                     "maxLength": 120
                   },
                   "phone": {
-                    "type": "string",
-                    "minLength": 6,
-                    "maxLength": 20
+                    "type": "string"
                   },
                   "address": {
                     "type": "string",
@@ -87295,9 +87291,6 @@
                         "suggestedKind": {
                           "type": "string"
                         },
-                        "suggestedWalletId": {
-                          "type": "string"
-                        },
                         "suggestedAccountName": {
                           "type": "string"
                         },
@@ -87315,7 +87308,6 @@
                     "amountAwaitingDetails": 1200,
                     "canEdit": true,
                     "suggestedKind": "ESEWA",
-                    "suggestedWalletId": "9800000000",
                     "suggestedAccountName": "Refund Buyer",
                     "destination": null
                   }
@@ -87542,9 +87534,6 @@
                         "suggestedKind": {
                           "type": "string"
                         },
-                        "suggestedWalletId": {
-                          "type": "string"
-                        },
                         "suggestedAccountName": {
                           "type": "string"
                         },
@@ -87586,7 +87575,6 @@
                     "amountAwaitingDetails": 1200,
                     "canEdit": true,
                     "suggestedKind": "ESEWA",
-                    "suggestedWalletId": "9800000000",
                     "suggestedAccountName": "Refund Buyer",
                     "destination": {
                       "kind": "BANK",
@@ -93390,9 +93378,7 @@
                     "maxLength": 120
                   },
                   "phone": {
-                    "type": "string",
-                    "minLength": 6,
-                    "maxLength": 20
+                    "type": "string"
                   },
                   "address": {
                     "type": "string",

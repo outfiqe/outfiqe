@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { nepalPhoneField } from "@/shared/lib/nepalPhoneField";
+
 export const ADDRESS_LABEL_MAX = 50;
 
 export const savedAddressSchema = z.object({
@@ -21,7 +23,7 @@ export const savedAddressListSchema = z.array(savedAddressSchema);
 export const addressFormSchema = z.object({
   label: z.string().trim().max(ADDRESS_LABEL_MAX),
   fullName: z.string().trim().min(1, "Enter the recipient's full name").max(120),
-  phone: z.string().trim().min(6, "Enter a valid phone number").max(20),
+  phone: nepalPhoneField(),
   address: z.string().trim().min(1, "Enter the delivery address").max(300),
   city: z.string().trim().min(1, "Select a city").max(120),
   landmark: z.string().trim().max(200),
