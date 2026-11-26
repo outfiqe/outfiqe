@@ -145,7 +145,7 @@ describe("OrderDetailPage", () => {
     expect(screen.getByText(/Linen Shirt · M × 2 \(1 refunded\)/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Refund items" }));
     const refundDialog = await screen.findByRole("dialog");
-    const quantity = within(refundDialog).getByLabelText(/Linen Shirt · M/);
+    const quantity = within(refundDialog).getByRole("combobox", { name: /Linen Shirt/ });
     expect(quantity.querySelectorAll("option")).toHaveLength(2);
     await user.selectOptions(quantity, "1");
     await user.type(

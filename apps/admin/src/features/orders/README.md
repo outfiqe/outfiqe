@@ -32,7 +32,11 @@ couldn't go back automatically, and review items a brand says it can't supply.
 
 ### `refunds/` topic
 
-- `components/RefundItemsModal.tsx` — choose units per line (up to `qty - refundedQty`), a cause
+- `components/RefundItemsModal.tsx` — each line has a labelled "Units to refund" picker ("Don't
+  refund", "1 of N", ...) with its goods amount (`unitPrice` x units) beside it and an "Items to
+  refund" running total. The total is goods only: the server prices the refund (discount shares, and
+  delivery/COD fees only when the refund empties the order and the cause returns fees), so the modal
+  says so rather than copying that logic. Also a cause
   (staff adjustment, brand couldn't supply, failed hub inspection, customer refused delivery), a
   note, and whether to put the units back on sale. Sent with an `Idempotency-Key` that
   `hooks/useRefundOrderItems.ts` keeps until a success, so a double click or retry refunds once.
@@ -42,7 +46,9 @@ couldn't go back automatically, and review items a brand says it can't supply.
   ("Refunds to pay"): every refund waiting for a manual transfer, with the customer's payout
   details. A bank account shows its last 4 digits until "Show full account number" (that call is
   audit-logged on the API). "Mark as paid" asks for the transfer reference and is disabled until
-  the customer has added their details; it is hidden from staff without `platform:orders:manage`.
+  the customer has added their details (a hint under the button says why); it is hidden from staff
+  without `platform:orders:manage`. The card heading names the order (`#4C9B4DF8`) and "Open order" is
+  an outline button just left of "Mark as paid", visible to every viewer.
 - `hooks/useOrderRefunds.ts`, `useInfiniteRefundQueue.ts`, `useMarkRefundPaid.ts`,
   `api/refundsApi.ts`, `api/refundsSchemas.ts`, `constants/refundLabels.ts`,
   `constants/refundQueryKeys.ts`.
