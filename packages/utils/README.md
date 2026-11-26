@@ -15,7 +15,7 @@ to any one app.
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `time/` — `MS_PER_MINUTE`, `MS_PER_DAY`, `SECONDS_PER_HOUR` and the other time units, for apps that do not use `date-fns`. Also `formatDate`, `formatDateTime` and `formatShortDate`, the one way to show a date in any app. Each shows a dash for a missing or broken date. `toDateInputValue`, `toDayStartIso`, `toDayEndIso` and `isPastDateInputValue` turn date box values into real moments: an "ends on" date uses `toDayEndIso` so it lasts the whole day in the person's own time, not until midnight UTC.
 - `order-reference/` — `formatOrderReference`, the short `#28A55BF3` reference shoppers see for an order; used by the web order pages and by the API when it writes order notifications.
-- `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms and API schemas use, and `stripPhoneSeparators`, which drops the spaces and dashes people type inside a number before it is checked.
+- `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms and API schemas use, and `stripPhoneSeparators`, which drops the spaces and dashes people type inside a number before it is checked, and `normalizeNepalPhone`, which also drops a leading `+977`/`977` country code so `+977 98XXXXXXXX` is stored and validated as the ten-digit number.
 - `logistics-codes/` — `CROCKFORD_BASE32_ALPHABET`, `PICKUP_CODE_LENGTH`,
   `normalizeTypedCode` and `isCrockfordCode`, plus the parcel code helpers (`PARCEL_CODE_PREFIX`,
   `normalizeParcelCode`, `formatParcelCode`), and the courier parcel-number pattern check

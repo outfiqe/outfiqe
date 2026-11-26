@@ -20,7 +20,16 @@ describe("shippingAddressSchema phone", () => {
     );
   });
 
-  it("rejects a nine digit number and country-code forms riders cannot dial", () => {
+  it("accepts a +977 or 977 country prefix and stores the ten digit number", () => {
+    expect(shippingAddressSchema.parse({ ...validAddress, phone: "+977 9820000000" }).phone).toBe(
+      "9820000000",
+    );
+    expect(shippingAddressSchema.parse({ ...validAddress, phone: "9779820000000" }).phone).toBe(
+      "9820000000",
+    );
+  });
+
+  it("rejects a nine digit number and malformed country-code forms riders cannot dial", () => {
     expect(
       shippingAddressSchema.safeParse({ ...validAddress, phone: "+977982000000" }).success,
     ).toBe(false);
