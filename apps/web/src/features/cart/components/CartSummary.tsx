@@ -3,6 +3,9 @@
 import { Button } from "@outfiqe/design-system";
 import Link from "next/link";
 
+import { summarizeDeliveryFees, useDeliveryZones } from "@/features/delivery-zones";
+import { formatRupees } from "@/shared/lib/formatRupees";
+
 import type { Cart } from "../api/cartSchemas";
 import { CouponForm } from "./CouponForm";
 
@@ -13,6 +16,11 @@ type CartSummaryProps = {
 export const CartSummary = ({ cart }: CartSummaryProps) => {
   const { items, subtotal, deliveryFee, platformDiscountTotal, total, city, appliedCoupon } = cart;
   const hasUnavailableItems = items.some((cartItem) => cartItem.soldOut);
+  const { data: deliveryZones } = useDeliveryZones();
+  const hasDeliveryCity = city !== null;
+  const lowestDeliveryFee = summarizeDeliveryFees(deliveryZones ?? [])?.lowestFee;
+  const totalLabel = hasDeliveryCity ? "Total" : "Total before delivery";
+  const totalAmount = hasDeliveryCity ? total : total - deliveryFee;
 
   return (
     <div className="rounded-2xl border border-border p-5">
@@ -35,12 +43,25 @@ export const CartSummary = ({ cart }: CartSummaryProps) => {
         </div>
       )}
       <div className="flex justify-between py-2 text-sm text-muted-foreground">
-        <span>{city ? `Delivery to ${city}` : "Delivery"}</span>
-        <span>{deliveryFee === 0 ? "Free" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
+        <span>{hasDeliveryCity ? `Delivery to ${city}` : "Delivery"}</span>
+        {hasDeliveryCity ? (
+          <span>{deliveryFee === 0 ? "Free" : formatRupees(deliveryFee)}</span>
+        ) : (
+          <span>
+            {lowestDeliveryFee === undefined
+              ? "Added once you choose a city"
+              : `From ${formatRupees(lowestDeliveryFee)}`}
+          </span>
+        )}
       </div>
+      {!hasDeliveryCity && (
+        <p className="pb-2 text-xs text-muted-foreground">
+          Add your city above to see the exact delivery fee.
+        </p>
+      )}
       <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-extrabold text-foreground">
-        <span>Total</span>
-        <span>Rs. {total.toLocaleString()}</span>
+        <span>{totalLabel}</span>
+        <span>{formatRupees(totalAmount)}</span>
       </div>
 
       {hasUnavailableItems ? (

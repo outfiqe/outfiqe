@@ -8,8 +8,8 @@ The shopper's bag: the `/cart` page, and the hooks other features use to add to 
 
 - `components/CartBody.tsx` — the `/cart` page body. It shows a sign-in prompt to a signed-out visitor, `NotAShopperNotice` to a brand owner or staff member, a skeleton while loading, `LoadErrorNotice` ("We couldn't load your bag" + Try again) when the bag request fails, an empty state when the bag is empty or everything in it has sold out, and otherwise the items beside the city field and summary. A failed load is never shown as an empty bag.
 - `components/CartItemRow.tsx` — one item: image, name, size, quantity controls and remove. A sold-out item stays in the list, faded, without quantity controls.
-- `components/CartCityField.tsx` — "Delivering to": a `CityAutocomplete` that saves the bag's city and previews that city's delivery fee and free-delivery threshold (`resolveZonePreview` from `delivery-zones`).
-- `components/CartSummary.tsx` — subtotal, discounts, delivery fee and total, the coupon form, and the Checkout link.
+- `components/CartCityField.tsx` — "Delivering to": a `CityAutocomplete` that saves the bag's city and previews that city's delivery fee and free-delivery threshold (`resolveZonePreview` from `delivery-zones`). A bag with no city is filled once from the shopper's default saved address (`useAddresses`), only when that address's city is one a zone lists.
+- `components/CartSummary.tsx` — subtotal, discounts, delivery fee and total, the coupon form, and the Checkout link. While the bag has no city it shows delivery as "From Rs. X" (the cheapest zone's standard fee, `summarizeDeliveryFees`) with a hint to add the city, and the total reads "Total before delivery".
 - `components/CouponForm.tsx` — apply or remove a coupon code.
 - `api/cartApi.ts`, `api/cartSchemas.ts` — the `/cart` client (`get`, add, update quantity, remove, set city, apply coupon, remove coupon) and the `Cart` shape.
 - `hooks/useCart.ts` — the `["cart"]` query, only enabled for a shopper.
@@ -26,5 +26,7 @@ The shopper's bag: the `/cart` page, and the hooks other features use to add to 
 ## Non-obvious rationale
 
 **The cart is only fetched for a shopper.** Brand owners and staff can't buy, so `useCart` is disabled for them and `CartBody` shows `NotAShopperNotice` instead of an empty bag that would suggest they can.
+
+**With no city, delivery is a range, not a fee.** The API prices a city-less bag with the default zone's rates, but a shopper in the valley pays less at checkout, so showing that fee as fact (and adding it to the total) was wrong. The summary quotes the lowest standard fee across zones as "From Rs. X" and leaves delivery out of the total (the API's delivery fee is subtracted from its total) until a city is chosen.
 
 **The delivery fee shown next to the city is a preview.** `resolveZonePreview` matches the city against the cached delivery zones (falling back to the default zone); the API works the real fee out again when the order is placed (`apps/api/src/modules/orders/checkout/checkout.pricing.ts`).

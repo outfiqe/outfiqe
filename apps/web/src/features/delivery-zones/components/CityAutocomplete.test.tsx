@@ -71,19 +71,27 @@ describe("CityAutocomplete", () => {
     expect(onCityChange).toHaveBeenCalledWith("Kathmandu");
   });
 
-  it("offers the typed city when no listed city matches, so checkout is never a dead end", () => {
+  it("never offers to use text that matches no listed city", () => {
     const onCityChange = vi.fn();
     render(<CityFieldHarness onCityChange={onCityChange} />);
 
-    typeCity("  Dhulikhel ");
-    expect(screen.getByText("Not in the list")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("option", { name: "Use “Dhulikhel”" }));
+    typeCity("sfasd");
 
-    expect(onCityChange).toHaveBeenCalledWith("Dhulikhel");
-    expect(screen.getByLabelText("City")).toHaveValue("Dhulikhel");
+    expect(screen.queryByText("Not in the list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(onCityChange).not.toHaveBeenCalled();
   });
 
-  it("selects the typed city with the keyboard", () => {
+  it("says Outfiqe doesn't deliver there yet when nothing listed matches", () => {
+    render(<CityFieldHarness onCityChange={vi.fn()} />);
+
+    typeCity("Dhulikhel");
+
+    expect(screen.getByText("We don't deliver to this area yet")).toBeInTheDocument();
+    expect(screen.queryByText("Keep typing your city")).not.toBeInTheDocument();
+  });
+
+  it("does not choose unmatched text when the visitor presses Enter", () => {
     const onCityChange = vi.fn();
     render(<CityFieldHarness onCityChange={onCityChange} />);
 
@@ -91,33 +99,16 @@ describe("CityAutocomplete", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" });
     fireEvent.keyDown(input, { key: "Enter" });
 
-    expect(onCityChange).toHaveBeenCalledWith("Dhulikhel");
+    expect(onCityChange).not.toHaveBeenCalled();
   });
 
-  it("does not offer the typed city when it is already listed, whatever the letter case", () => {
+  it("shows no delivery message while a listed city matches, whatever the letter case", () => {
     render(<CityFieldHarness onCityChange={vi.fn()} />);
 
     typeCity("lalitpur");
 
     expect(screen.getByRole("option", { name: "Lalitpur" })).toBeInTheDocument();
-    expect(screen.queryByText("Not in the list")).not.toBeInTheDocument();
-  });
-
-  it("offers the typed city alongside partial matches", () => {
-    render(<CityFieldHarness onCityChange={vi.fn()} />);
-
-    typeCity("Kath");
-
-    expect(screen.getByRole("option", { name: "Use “Kath”" })).toBeInTheDocument();
-  });
-
-  it("asks for more letters instead of offering a one-letter city", () => {
-    render(<CityFieldHarness onCityChange={vi.fn()} />);
-
-    typeCity("Z");
-
-    expect(screen.getByText("Keep typing your city")).toBeInTheDocument();
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.queryByText("We don't deliver to this area yet")).not.toBeInTheDocument();
   });
 
   it("puts the last chosen city back when the visitor leaves without choosing", () => {

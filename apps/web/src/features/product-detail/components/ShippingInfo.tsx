@@ -3,10 +3,8 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { RotateCcw, Truck } from "lucide-react";
 
-import { useDeliveryZones } from "@/features/delivery-zones";
+import { summarizeDeliveryFees, useDeliveryZones } from "@/features/delivery-zones";
 import { formatRupees } from "@/shared/lib/formatRupees";
-
-import { summarizeDeliveryFees } from "../utils/summarizeDeliveryFees";
 
 const DAMAGED_OR_WRONG_ITEM_NOTE = "Damaged or wrong item? Tell us within 7 days";
 

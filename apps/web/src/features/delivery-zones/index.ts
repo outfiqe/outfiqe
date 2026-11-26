@@ -3,4 +3,5 @@ export { CityAutocomplete } from "./components/CityAutocomplete";
 export { useDeliveryEstimate } from "./hooks/useDeliveryEstimate";
 export { useDeliveryZones } from "./hooks/useDeliveryZones";
 export { formatDeliveryWindow } from "./utils/formatDeliveryWindow";
-export { normalizeCityName, resolveZonePreview } from "./utils/resolveZonePreview";
+export { isListedCity, normalizeCityName, resolveZonePreview } from "./utils/resolveZonePreview";
+export { type DeliveryFeeSummary, summarizeDeliveryFees } from "./utils/summarizeDeliveryFees";
