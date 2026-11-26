@@ -275,6 +275,7 @@ export const orderFulfilmentGroupRepository = {
       select: {
         status: true,
         fulfilmentMode: true,
+        brand: { select: { name: true } },
         order: { select: { id: true, userId: true, fulfilmentStatus: true } },
       },
     });

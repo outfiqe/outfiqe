@@ -178,3 +178,61 @@ export const withdrawRequestReceivedInternalTemplate = (
     `,
   }),
 });
+
+type BrandCancellationRequestedInput = {
+  orderId: string;
+  brandName: string;
+  reason: string;
+  reviewUrl: string;
+};
+
+export const brandCancellationRequestedInternalTemplate = (
+  input: BrandCancellationRequestedInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed: ${input.brandName} asked to cancel order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `${input.brandName} wants to cancel its part of order ${input.orderId}.`,
+    bodyHtml: `
+      ${emailStatusPill("Action needed", "destructive")}
+      ${emailHeading("A brand asked to cancel a shipment")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Brand", value: input.brandName },
+        { label: "Reason", value: input.reason },
+      ])}
+      ${emailButtonHtml("Review the request", input.reviewUrl)}
+    `,
+  }),
+});
+
+type BrandCancellationDecidedInput = {
+  orderId: string;
+  isApproved: boolean;
+  staffNote: string | null;
+};
+
+export const brandCancellationDecidedTemplate = (
+  input: BrandCancellationDecidedInput,
+): { subject: string; html: string } => ({
+  subject: input.isApproved
+    ? `Cancellation approved for order ${input.orderId}`
+    : `Cancellation declined for order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: input.isApproved
+      ? `We cancelled your part of order ${input.orderId} and refunded the shopper.`
+      : `Please keep fulfilling your part of order ${input.orderId}.`,
+    bodyHtml: `
+      ${emailEyebrow("Cancellation request")}
+      ${emailHeading(input.isApproved ? "Cancellation approved" : "Cancellation declined")}
+      ${emailText(
+        input.isApproved
+          ? "We cancelled your part of this order and refunded the shopper. There is nothing more to do."
+          : "Please keep fulfilling this order as normal.",
+      )}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        ...(input.staffNote ? [{ label: "Note from Outfiqe", value: input.staffNote }] : []),
+      ])}
+    `,
+  }),
+});

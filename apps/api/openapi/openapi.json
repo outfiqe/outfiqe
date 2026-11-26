@@ -280,6 +280,10 @@
       "description": "Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-delivery order, then carries it through fulfilment, cancellation and returns — for the shopper, the admin team, and each brand shipping its own part of the order."
     },
     {
+      "name": "Orders cancellation requests",
+      "description": "Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-delivery order, then carries it through fulfilment, cancellation and returns — for the shopper, the admin team, and each brand shipping its own part of the order."
+    },
+    {
       "name": "Orders refunds",
       "description": "Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-delivery order, then carries it through fulfilment, cancellation and returns — for the shopper, the admin team, and each brand shipping its own part of the order."
     },
@@ -89662,6 +89666,455 @@
                           "message": "Invalid input: expected string, received undefined"
                         }
                       ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/admin/cancellation-requests": {
+      "get": {
+        "operationId": "get-api-orders-admin-cancellation-requests",
+        "summary": "List for staff",
+        "description": "**Who can call it:** Signed in. Send `Authorization: Bearer <access token>`.\n- Platform staff only.\n- Platform permission: any one of `platform:orders:read`, `platform:orders:manage`.\n\nDefined in `apps/api/src/modules/orders/cancellation-requests/cancellation-request.routes.ts`.",
+        "tags": [
+          "Orders cancellation requests"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "description": "No integration test records this response yet, so only the envelope is shown."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHORIZED": {
+                    "summary": "Authentication required.",
+                    "value": {
+                      "success": false,
+                      "message": "Authentication required.",
+                      "code": "UNAUTHORIZED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "You do not have permission to do this.",
+                    "value": {
+                      "success": false,
+                      "message": "You do not have permission to do this.",
+                      "code": "FORBIDDEN"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_ERROR": {
+                    "summary": "Invalid request",
+                    "value": {
+                      "success": false,
+                      "message": "Invalid request",
+                      "code": "VALIDATION_ERROR",
+                      "details": [
+                        {
+                          "code": "invalid_type",
+                          "expected": "string",
+                          "path": [
+                            "name"
+                          ],
+                          "message": "Invalid input: expected string, received undefined"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/admin/cancellation-requests/{groupId}/approve": {
+      "post": {
+        "operationId": "post-api-orders-admin-cancellation-requests-groupId-approve",
+        "summary": "Approve",
+        "description": "**Who can call it:** Signed in. Send `Authorization: Bearer <access token>`.\n- Platform staff only.\n- Platform permission: `platform:orders:manage`.\n- Rate limit: 20 requests per 1 minute.\n\nDefined in `apps/api/src/modules/orders/cancellation-requests/cancellation-request.routes.ts`.",
+        "tags": [
+          "Orders cancellation requests"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "description": "No integration test records this response yet, so only the envelope is shown."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHORIZED": {
+                    "summary": "Authentication required.",
+                    "value": {
+                      "success": false,
+                      "message": "Authentication required.",
+                      "code": "UNAUTHORIZED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "You do not have permission to do this.",
+                    "value": {
+                      "success": false,
+                      "message": "You do not have permission to do this.",
+                      "code": "FORBIDDEN"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_ERROR": {
+                    "summary": "Invalid request",
+                    "value": {
+                      "success": false,
+                      "message": "Invalid request",
+                      "code": "VALIDATION_ERROR",
+                      "details": [
+                        {
+                          "code": "invalid_type",
+                          "expected": "string",
+                          "path": [
+                            "name"
+                          ],
+                          "message": "Invalid input: expected string, received undefined"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "Too many requests. Please try again later.",
+                    "value": {
+                      "success": false,
+                      "message": "Too many requests. Please try again later.",
+                      "code": "RATE_LIMITED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/admin/cancellation-requests/{groupId}/reject": {
+      "post": {
+        "operationId": "post-api-orders-admin-cancellation-requests-groupId-reject",
+        "summary": "Reject",
+        "description": "**Who can call it:** Signed in. Send `Authorization: Bearer <access token>`.\n- Platform staff only.\n- Platform permission: `platform:orders:manage`.\n- Rate limit: 20 requests per 1 minute.\n\nDefined in `apps/api/src/modules/orders/cancellation-requests/cancellation-request.routes.ts`.",
+        "tags": [
+          "Orders cancellation requests"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "note"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "description": "No integration test records this response yet, so only the envelope is shown."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHORIZED": {
+                    "summary": "Authentication required.",
+                    "value": {
+                      "success": false,
+                      "message": "Authentication required.",
+                      "code": "UNAUTHORIZED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "You do not have permission to do this.",
+                    "value": {
+                      "success": false,
+                      "message": "You do not have permission to do this.",
+                      "code": "FORBIDDEN"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_ERROR": {
+                    "summary": "Invalid request",
+                    "value": {
+                      "success": false,
+                      "message": "Invalid request",
+                      "code": "VALIDATION_ERROR",
+                      "details": [
+                        {
+                          "code": "invalid_type",
+                          "expected": "string",
+                          "path": [
+                            "name"
+                          ],
+                          "message": "Invalid input: expected string, received undefined"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "Too many requests. Please try again later.",
+                    "value": {
+                      "success": false,
+                      "message": "Too many requests. Please try again later.",
+                      "code": "RATE_LIMITED"
                     }
                   }
                 }

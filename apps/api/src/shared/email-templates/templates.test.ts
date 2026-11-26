@@ -26,6 +26,8 @@ import {
   crmSubscriptionRenewalDueTemplate,
 } from "./crm.templates.js";
 import {
+  brandCancellationDecidedTemplate,
+  brandCancellationRequestedInternalTemplate,
   newOrderNotificationTemplate,
   orderCancelledTemplate,
   orderConfirmationTemplate,
@@ -152,6 +154,37 @@ describe("order and payment templates", () => {
 
   it("refundFailedTemplate flags the amount to refund", () => {
     expect(refundFailedTemplate({ orderId: "ORD-5", total: 3000 }).html).toContain("Rs. 3,000");
+  });
+
+  it("brandCancellationRequestedInternalTemplate names the order, brand and escaped reason", () => {
+    const { subject, html } = brandCancellationRequestedInternalTemplate({
+      orderId: "ORD-8",
+      brandName: "Maison",
+      reason: "<b>No stock</b>",
+      reviewUrl: "https://admin.test/orders/unavailable-items",
+    });
+    expect(subject).toContain("ORD-8");
+    expect(html).toContain("Maison");
+    expect(html).toContain("&lt;b&gt;No stock&lt;/b&gt;");
+    expect(html).toContain("https://admin.test/orders/unavailable-items");
+  });
+
+  it("brandCancellationDecidedTemplate shows the staff note only when one is given", () => {
+    const declined = brandCancellationDecidedTemplate({
+      orderId: "ORD-9",
+      isApproved: false,
+      staffNote: "Stock found at the hub",
+    });
+    expect(declined.subject).toContain("declined");
+    expect(declined.html).toContain("Stock found at the hub");
+
+    const approved = brandCancellationDecidedTemplate({
+      orderId: "ORD-9",
+      isApproved: true,
+      staffNote: null,
+    });
+    expect(approved.subject).toContain("approved");
+    expect(approved.html).not.toContain("Note from Outfiqe");
   });
 
   it("orderCancelledTemplate omits the refund row when nothing was refunded", () => {

@@ -1,10 +1,12 @@
+import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
+import { brandCancellationRequestedInternalTemplate } from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FulfilmentMode } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
+import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { FULFILMENT_ADVANCE_FROM } from "../order.constants.js";
@@ -145,9 +147,17 @@ export const orderFulfilmentGroupService = {
       );
     }
 
-    logger.info(
-      `Brand ${brandId} requested cancellation of fulfilment group ${groupId} ` +
-        `on order ${existing.order.id}: ${reason}`,
-    );
+    const { subject, html } = brandCancellationRequestedInternalTemplate({
+      orderId: existing.order.id,
+      brandName: existing.brand.name,
+      reason,
+      reviewUrl: `${env.ADMIN_URL}/orders/unavailable-items`,
+    });
+    void sendEmail({
+      to: env.OPS_NOTIFICATION_EMAIL,
+      subject,
+      body: `${existing.brand.name} asked to cancel its shipment on order ${existing.order.id}: ${reason}`,
+      html,
+    });
   },
 };

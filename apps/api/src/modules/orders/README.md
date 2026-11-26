@@ -40,6 +40,7 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
   - `refund.utils.ts`, `refund.constants.ts`, `refund.types.ts`, `refund.schemas.ts`, `refund.repository.ts`.
 - `unavailable-items/` — a brand reporting items it can't supply, and staff approving (refunds the customer) or rejecting the report.
+- `cancellation-requests/` — a brand asking to cancel its whole shipment (`POST /orders/brand/fulfilment-groups/:groupId/request-cancellation`, which stamps `cancellationRequestedAt`/`cancellationReason` and emails `OPS_NOTIFICATION_EMAIL`), and staff reviewing it: `GET /orders/admin/cancellation-requests` (cursor page, oldest first), `POST .../:groupId/approve`, `POST .../:groupId/reject` (needs a note). Files follow the usual `cancellation-request.*` layout.
 - `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`; the detail view carries each line's `refundedQty` and `canReportUnavailable`, which uses the same "still with the brand" rule as customer line cancellations), and the integration tests.
 
 Shared integration-test setup lives in `src/testing/integration/order-fixtures.ts`.
@@ -510,3 +511,13 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
   marking the order shipped at the same moment can't slip a cancellation through. A cancellation
   that would leave a coupon order below the coupon's minimum spend is refused; cancelling
   everything is still allowed.
+
+## Brand cancellation requests
+
+A brand that ships its own orders can ask to cancel its whole shipment. The request only flags the group; nothing is refunded until staff decide, and the shipment can't be advanced while the flag is set. Staff see the pending requests next to the unavailable-item reports in the admin "Can't supply" page.
+
+- **Approve** runs in one transaction: the flag is cleared with a guarded update (`cancellationRequestedAt` still set, group not closed), then every remaining unit of the group is refunded through the refund engine (`BRAND_UNAVAILABLE`, `restockUnits: false`, the brand's reason in the refund reason), and a brand incident (`UNAVAILABLE_ITEM`, keyed `cancellation-request:<groupId>`) is recorded. The refund ledger then cancels the emptied group and rolls the order up. The brand is emailed and a platform audit entry is written after commit.
+- **Reject** clears the flag so the brand can keep fulfilling, audits it with the staff note, and emails the brand the note.
+- The guarded flag-clear is the concurrency control: two staff pressing the same button, or approve racing reject, produce one winner and a `409 CANCELLATION_REQUEST_ALREADY_RESOLVED` for the other. An unknown shipment is a `404`.
+- Approval is refused with `409 SHIPMENT_ALREADY_ON_ITS_WAY` once the shipment has left the brand (the same `isGroupStillWithBrand` rule as customer line cancellations); staff should decline it or handle the parcel as a return.
+- Approval is not stored as a status: the flag is cleared and the refund, incident and audit rows are the record, so the queue only ever lists requests that still need a decision.
