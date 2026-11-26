@@ -1,6 +1,7 @@
 import { formatRupees } from "@/shared/lib/formatRupees";
 
 import type { OrderItem } from "../api/orderSchemas";
+import type { CancelledMoneyLines } from "../utils/orderRefundNotice.utils";
 
 const NO_AMOUNT = 0;
 const NOTHING_REFUNDED = 0;
@@ -13,6 +14,7 @@ type OrderPriceBreakdownProps = {
   codFee: number;
   total: number;
   isMoneyUntaken: boolean;
+  cancelledMoney: CancelledMoneyLines | null;
 };
 
 const BreakdownRow = ({ label, amount }: { label: string; amount: string }) => (
@@ -30,6 +32,7 @@ export const OrderPriceBreakdown = ({
   codFee,
   total,
   isMoneyUntaken,
+  cancelledMoney,
 }: OrderPriceBreakdownProps) => (
   <div className="mt-2 border-t border-border pt-3">
     <ul aria-label="Items in this order" className="space-y-1.5 text-sm">
@@ -63,6 +66,18 @@ export const OrderPriceBreakdown = ({
         <dt>Total</dt>
         <dd>{formatRupees(total)}</dd>
       </div>
+      {cancelledMoney && (
+        <>
+          <BreakdownRow
+            label="Cancelled"
+            amount={`− ${formatRupees(cancelledMoney.cancelledAmount)}`}
+          />
+          <div className="flex justify-between gap-3 py-0.5 font-semibold text-foreground">
+            <dt>{cancelledMoney.payLabel}</dt>
+            <dd>{formatRupees(cancelledMoney.payAmount)}</dd>
+          </div>
+        </>
+      )}
     </dl>
   </div>
 );

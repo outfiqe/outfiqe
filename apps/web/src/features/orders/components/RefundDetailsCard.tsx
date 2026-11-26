@@ -8,6 +8,10 @@ import { useNepalBanks } from "@/features/nepal-banks";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { MyRefundDestination, SaveRefundDestinationBody } from "../api/refundSchemas";
+import {
+  REFUND_DETAILS_HEADING_ID,
+  REFUND_DETAILS_SECTION_ID,
+} from "../constants/refundDetailsSection";
 import { REFUND_DESTINATION_KIND_LABELS } from "../constants/refundLabels";
 import { useSaveRefundDestination } from "../hooks/useSaveRefundDestination";
 import { isRefundDestinationKind } from "../utils/refundDestination.utils";
@@ -60,11 +64,13 @@ export const RefundDetailsCard = ({ orderId, refundDestination }: RefundDetailsC
 
   return (
     <section
-      aria-labelledby="refund-details-heading"
+      id={REFUND_DETAILS_SECTION_ID}
+      aria-labelledby={REFUND_DETAILS_HEADING_ID}
       className="mt-4 rounded-2xl border border-border p-5"
     >
       <h2
-        id="refund-details-heading"
+        id={REFUND_DETAILS_HEADING_ID}
+        tabIndex={-1}
         className="font-display text-base font-extrabold text-foreground"
       >
         {canEdit

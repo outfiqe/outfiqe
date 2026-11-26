@@ -15,7 +15,7 @@ seeing each refund, and telling us where to send a refund that can't go back aut
   first page fails it shows `LoadErrorNotice` ("We couldn't load your orders" + Try again), never
   the empty state, so a buyer is not told they have no orders; a later page failing keeps the
   orders already shown.
-- `components/OrderRow.tsx` — one summary row in that list.
+- `components/OrderRow.tsx` — one summary row in that list. When items were cancelled it adds a line from `describeOrderRowRefund` ("2 items cancelled · Rs. X refund on its way", "... · Action needed: add refund details" highlighted, "... · Rs. X off what you pay on delivery"), read from the summary's `refundSummary`.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
   payment state and composes `OrderTrackingTimeline` (an order with `trackingStage`, delivered
   through the Outfiqe hub, plus `ShipmentTrackers` for any brand-shipped groups in it), otherwise
@@ -34,6 +34,9 @@ seeing each refund, and telling us where to send a refund that can't go back aut
   messages in `@/i18n/messages`.
 - `components/OrderTracker.tsx` — the PLACED→PACKED→SHIPPED→DELIVERED stepper (or a "cancelled"
   line).
+- `components/OrderCancellationNotice.tsx` — the status block at the top of the order page for a cancelled or partly cancelled order: what happened, why (`CANCELLATION_REASON_SENTENCES`, one per refund cause), and what happens to the money. Built by `buildOrderCancellationNotice` (`utils/orderRefundNotice.utils.ts`). An expired unpaid online order gets no block and keeps `OrderTracker`'s "This order was cancelled.".
+- `components/RefundDetailsActionBanner.tsx` — "Tell us where to send your Rs. X refund" with an "Add refund details" button that scrolls to and focuses the `RefundDetailsCard` heading (`jumpToRefundDetails`). Shown while the refund destination says `canEdit` and nothing is saved.
+- `components/ShipmentTrackingLine.tsx` — "carrier · tracking number" for a brand-shipped parcel. Used by `ShipmentTrackers` and by the single-shipment order page (the plain `OrderTracker` branch), so a one-brand order also shows its tracking.
 - `components/ShipmentTrackers.tsx` — when the order has more than one shipment (`order.shipments`,
   one per brand fulfilment group), renders a per-brand block: the brand name, that shipment's own
   `OrderTracker`, and its carrier + tracking number. A single-shipment order keeps the plain
@@ -130,3 +133,16 @@ it, settles the order, and returns `ALREADY_SETTLED`. `useInitiatePayment` inval
 on that error, so `OrderDetailBody` refetches and the panel is replaced by the normal placed-order
 view; `PendingPaymentPanel` shows a positive "already went through — refreshing" note and disables
 its buttons in the meantime rather than a red error.
+
+## Cancellation and refund status comes from the order's `refundSummary`
+
+`GET /orders/:id` and `GET /orders` both carry `refundSummary` (cancelled units, causes, and the
+amounts off cash payment, refunded, coming back and awaiting the shopper's details). We read it
+instead of calling the refunds endpoint first because the orders list needs the same facts per
+row, and the order page would otherwise wait on a second request before it could say why an order
+was cancelled. The detailed `OrderRefundsSection` and the refund-destination query still load
+below it, and the destination query is enabled whenever the order has any refund so the "add
+refund details" banner and form can appear for every refund, not only after money moved.
+
+Under the total, `buildCancelledMoneyLines` adds "Cancelled" and "You pay" / "You paid" so "Nothing
+to pay" no longer sits beside an unexplained total. A fully cancelled order hides "Delivering to".

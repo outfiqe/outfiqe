@@ -35,6 +35,7 @@ describe("OrderPriceBreakdown", () => {
         codFee={50}
         total={8600}
         isMoneyUntaken={false}
+        cancelledMoney={null}
       />,
     );
 
@@ -59,6 +60,7 @@ describe("OrderPriceBreakdown", () => {
         codFee={0}
         total={3100}
         isMoneyUntaken={false}
+        cancelledMoney={null}
       />,
     );
 
@@ -78,6 +80,7 @@ describe("OrderPriceBreakdown", () => {
         codFee={0}
         total={5500}
         isMoneyUntaken
+        cancelledMoney={null}
       />,
     );
     expect(screen.getByText(/1 cancelled/)).toBeInTheDocument();
@@ -91,8 +94,28 @@ describe("OrderPriceBreakdown", () => {
         codFee={0}
         total={5500}
         isMoneyUntaken={false}
+        cancelledMoney={null}
       />,
     );
     expect(screen.getByText(/1 refunded/)).toBeInTheDocument();
+  });
+
+  it("shows what was cancelled and what the shopper now pays under the total", () => {
+    render(
+      <OrderPriceBreakdown
+        items={twoItems}
+        subtotal={8550}
+        couponDiscount={0}
+        deliveryFee={0}
+        codFee={50}
+        total={8600}
+        isMoneyUntaken
+        cancelledMoney={{ cancelledAmount: 8600, payLabel: "You pay", payAmount: 0 }}
+      />,
+    );
+
+    expect(screen.getByText("− Rs. 8,600")).toBeInTheDocument();
+    expect(screen.getByText("You pay")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 0")).toBeInTheDocument();
   });
 });
