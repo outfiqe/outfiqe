@@ -19,6 +19,7 @@ export default defineConfig({
         "src/logistics-codes/index.ts",
         "src/phone/index.ts",
         "src/order-reference/index.ts",
+        "src/order-notification-copy/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

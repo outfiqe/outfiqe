@@ -1,9 +1,11 @@
 import {
+  describeOrderStatusChange,
+  describeRefundDetailsNeeded,
+  describeRefundIssued,
   isExternalNotificationPath,
   isLogisticsAlertType,
   isOrderTrackingStage,
   LOGISTICS_ALERT_LABELS,
-  ORDER_TRACKING_STAGE_MESSAGES,
 } from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
@@ -55,6 +57,20 @@ const thresholdPercentFrom = (payload: NotificationBroadcastPayload): string =>
     ? String(payload.metadata.thresholdPercent)
     : "its";
 
+const textFrom = (metadataValue: unknown): string | undefined =>
+  typeof metadataValue === "string" && metadataValue ? metadataValue : undefined;
+
+const refundAmountFrom = (payload: NotificationBroadcastPayload): number | string | undefined => {
+  const { amount } = payload.metadata;
+  return typeof amount === "number" || typeof amount === "string" ? amount : undefined;
+};
+
+const refundCopyInputFrom = (payload: NotificationBroadcastPayload) => ({
+  amount: refundAmountFrom(payload),
+  orderReference: textFrom(payload.metadata.orderReference),
+  productName: textFrom(payload.metadata.productName),
+});
+
 const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.LOOK_LIKED]: {
     title: "New cheriq",
@@ -94,10 +110,14 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   },
   [NotificationType.ORDER_STATUS_CHANGED]: {
     title: "Order update",
-    body: (payload) =>
-      isOrderTrackingStage(payload.metadata.trackingStage)
-        ? ORDER_TRACKING_STAGE_MESSAGES[payload.metadata.trackingStage]
-        : "There's an update on one of your orders",
+    body: ({ metadata }) =>
+      describeOrderStatusChange({
+        trackingStage: isOrderTrackingStage(metadata.trackingStage)
+          ? metadata.trackingStage
+          : undefined,
+        status: textFrom(metadata.status),
+        orderReference: textFrom(metadata.orderReference),
+      }),
   },
   [NotificationType.BRAND_APPLICATION_SUBMITTED]: {
     title: "New brand application",
@@ -272,14 +292,15 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.ORDER_REFUND_ISSUED]: {
     title: "Refund on its way",
     body: (payload) =>
-      payload.metadata.method === OrderRefundMethod.CASH_NOT_COLLECTED
-        ? `Rs. ${String(payload.metadata.amount ?? "")} less to pay on delivery`
-        : `We've refunded Rs. ${String(payload.metadata.amount ?? "")} on your order`,
+      describeRefundIssued({
+        ...refundCopyInputFrom(payload),
+        isTakenOffCashToCollect: payload.metadata.method === OrderRefundMethod.CASH_NOT_COLLECTED,
+        emptiesOrder: payload.metadata.emptiesOrder === true,
+      }),
   },
   [NotificationType.ORDER_REFUND_DETAILS_NEEDED]: {
     title: "Where should we send your refund?",
-    body: (payload) =>
-      `Add your Khalti, eSewa or bank details for your Rs. ${String(payload.metadata.amount ?? "")} refund`,
+    body: (payload) => describeRefundDetailsNeeded(refundCopyInputFrom(payload)),
   },
   [NotificationType.LOGISTICS_STAFF_ALERT]: {
     title: "Delivery alert",

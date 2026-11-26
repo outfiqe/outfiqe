@@ -342,7 +342,7 @@ describe("resolveNotificationMessage for order notifications naming the order", 
           },
         }),
       ),
-    ).toBe("Order #28A55BF3 was cancelled � nothing to pay");
+    ).toBe("Order #28A55BF3 was cancelled — nothing to pay");
   });
 
   it("still tells a cash on delivery shopper how much less they pay when items remain", () => {
