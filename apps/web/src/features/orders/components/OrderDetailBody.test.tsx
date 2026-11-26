@@ -489,7 +489,6 @@ const refundDestinationAwaitingDetails: MyRefundDestination = {
   amountAwaitingDetails: 1200,
   canEdit: true,
   suggestedKind: "ESEWA",
-  suggestedWalletId: "9800000000",
   suggestedAccountName: "Test Buyer",
   destination: null,
 };

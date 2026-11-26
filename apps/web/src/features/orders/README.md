@@ -59,7 +59,7 @@ seeing each refund, and telling us where to send a refund that can't go back aut
   reads "Delivery and handling fees" since `feeAmount` can be delivery, COD handling or both.
 - `components/RefundDetailsCard.tsx` — "Where should we send your refund?": Khalti ID, eSewa ID or
   a bank account (banks from `@/features/nepal-banks`), account holder name and a required "This
-  account is mine" box. Prefilled from the order (`suggestedKind`/`suggestedWalletId`). Editable
+  account is mine" box. The wallet ID starts empty (the wallet to refund is not necessarily the delivery phone); the kind and holder name are prefilled (`suggestedKind`/`suggestedAccountName`). Fields are validated in the browser by `refundDestinationFormSchema` and a 422 from the API is mapped onto its field by `extractFieldIssueMessages`. Editable
   until staff mark the refund paid; after that it shows the saved details read-only, a bank
   account as its last 4 digits only.
 - `components/StatusBadge.tsx` / `components/TransactionLedger.tsx` — payment/fulfilment badge and

@@ -46,7 +46,6 @@ export const myRefundDestinationSchema = z.object({
   amountAwaitingDetails: z.number(),
   canEdit: z.boolean(),
   suggestedKind: z.enum(RefundDestinationKind).nullable(),
-  suggestedWalletId: z.string(),
   suggestedAccountName: z.string(),
   destination: refundDestinationSchema.nullable(),
 });

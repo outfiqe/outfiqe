@@ -9218,7 +9218,6 @@
           "amountAwaitingDetails": 1200,
           "canEdit": true,
           "suggestedKind": "ESEWA",
-          "suggestedWalletId": "9800000000",
           "suggestedAccountName": "Refund Buyer",
           "destination": null
         }
@@ -31679,7 +31678,6 @@
           "amountAwaitingDetails": 1200,
           "canEdit": true,
           "suggestedKind": "ESEWA",
-          "suggestedWalletId": "9800000000",
           "suggestedAccountName": "Refund Buyer",
           "destination": {
             "kind": "BANK",
