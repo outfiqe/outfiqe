@@ -115,6 +115,8 @@ const ShipmentActions = ({
   onOpenShippedModal,
   onOpenCancelModal,
 }: ShipmentActionsProps) => {
+  if (shipment.status === "CANCELLED" || shipment.status === "DELIVERED") return null;
+
   if (shipment.cancellationRequestedAt) {
     return (
       <FormBanner>
@@ -124,7 +126,6 @@ const ShipmentActions = ({
       </FormBanner>
     );
   }
-  if (shipment.status === "CANCELLED" || shipment.status === "DELIVERED") return null;
 
   const nextStatus = nextShipmentStatus(shipment.status);
 

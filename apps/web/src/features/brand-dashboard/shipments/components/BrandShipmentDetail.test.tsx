@@ -163,6 +163,34 @@ describe("BrandShipmentDetail", () => {
     expect(screen.queryByRole("button", { name: /Mark/ })).not.toBeInTheDocument();
   });
 
+  it.each(["CANCELLED", "DELIVERED"] as const)(
+    "never shows the reviewing banner on a %s shipment that still carries a request",
+    (status) => {
+      mockShipment({
+        data: buildShipment({
+          status,
+          cancellationRequestedAt: "2026-09-02T00:00:00.000Z",
+          cancellationReason: "Sold out in store",
+        }),
+      });
+      render(<BrandShipmentDetail groupId="grp-1" />);
+
+      expect(screen.queryByText(/Cancellation requested/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Mark|Request cancellation/ }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it("brings the fulfilment actions back once the request has been declined", () => {
+    mockShipment({ data: buildShipment({ status: "PACKED", cancellationRequestedAt: null }) });
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.queryByText(/Cancellation requested/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mark shipped/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Request cancellation" })).toBeInTheDocument();
+  });
+
   it("hands an Outfiqe-delivered order to the pickup panel and hides the customer", () => {
     mockShipment({
       data: buildShipment({
