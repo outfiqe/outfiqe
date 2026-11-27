@@ -3,11 +3,7 @@ import type {
   OrderFulfilmentSummary,
   PickupStatus,
 } from "#generated/prisma/enums.js";
-import {
-  type BrandPayoutStatus,
-  FulfilmentMode,
-  type PaymentStatus,
-} from "#generated/prisma/enums.js";
+import { BrandPayoutStatus, FulfilmentMode, type PaymentStatus } from "#generated/prisma/enums.js";
 
 import type {
   BrandFulfilmentGroupDetailView,
@@ -16,6 +12,8 @@ import type {
   BrandFulfilmentGroupSummaryView,
 } from "../order.types.js";
 import { isGroupStillWithBrand } from "../refunds/line-cancellation.utils.js";
+
+const NO_PAYOUT = 0;
 
 type BrandFulfilmentGroupSummaryRow = {
   id: string;
@@ -144,13 +142,14 @@ const toBrandFulfilmentGroupPayoutView = (
       netAmount: payout.netAmount,
       status: payout.status,
     }));
+  const owedLines = lines.filter(({ status }) => status !== BrandPayoutStatus.VOIDED);
 
   return {
     lines,
-    grossAmount: lines.reduce((sum, line) => sum + line.grossAmount, 0),
-    platformFee: lines.reduce((sum, line) => sum + line.platformFee, 0),
-    gatewayFee: lines.reduce((sum, line) => sum + line.gatewayFee, 0),
-    netAmount: lines.reduce((sum, line) => sum + line.netAmount, 0),
+    grossAmount: owedLines.reduce((sum, line) => sum + line.grossAmount, NO_PAYOUT),
+    platformFee: owedLines.reduce((sum, line) => sum + line.platformFee, NO_PAYOUT),
+    gatewayFee: owedLines.reduce((sum, line) => sum + line.gatewayFee, NO_PAYOUT),
+    netAmount: owedLines.reduce((sum, line) => sum + line.netAmount, NO_PAYOUT),
   };
 };
 
