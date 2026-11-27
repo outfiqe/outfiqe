@@ -61,8 +61,8 @@ responses and errors, then tries it against a local or production API with their
    JSON, so formatting and line endings don't matter), so CI fails when anything slipped past the
    hook.
 5. The internal docs repo copies `openapi.json` into its API tab (see that repo's README).
-6. After an API change reaches `dev`, `.github/workflows/refresh-api-examples.yml` records
-   examples in four parallel jobs with `API_DOCS_TASK=record`, then runs
+6. When someone starts it from the Actions tab, `.github/workflows/refresh-api-examples.yml`
+   records examples in four parallel jobs with `API_DOCS_TASK=record`, then runs
    `openapi.docs-task.ts merge` (merge `recordings/` into `examples.json`, write the spec) and opens
    a PR with the result. See `.github/workflows/README.md`.
 
@@ -91,9 +91,12 @@ responses and errors, then tries it against a local or production API with their
   more hex characters that contains a digit with `#`, for comparing only. The saved example keeps
   its real-looking values. That comparison picks the same example on every run, whatever order the
   tests ran in, and `keepUnchangedExamples` keeps the saved example when the new one differs only
-  in those values. A changed message, field or status still comes through.
+  in those values. A changed message, field or status still comes through. This does not catch
+  every difference: parallel tests share data, so some endpoints still return a different record
+  from run to run (another name, version or flag). That is why the refresh workflow only runs when
+  started by hand, after a response really changed.
 - **`openapi.json` and `examples.json` are generated. Never edit them by hand.** They are also in
   `.prettierignore`, so the commit formatter never rewrites them. Run `docs:openapi`
-  after changing routes. Examples are refreshed by the `refresh-api-examples.yml` PR after the
-  change reaches `dev`, so `docs:record` is only needed to check examples locally. It runs the
-  whole integration suite on one machine, which is slow. `recordings/` is git-ignored.
+  after changing routes. Refresh examples by starting **Refresh API examples** in the Actions tab,
+  which opens a PR, so `docs:record` is only needed to check examples locally. It runs the whole
+  integration suite on one machine, which is slow. `recordings/` is git-ignored.

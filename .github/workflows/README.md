@@ -7,16 +7,16 @@ is the release branch and the only thing that deploys to production.
 
 ## Structure
 
-| File                       | Trigger                                                                                            | What it owns                                                                                                                                                                                                                                                                                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`                   | `pull_request` (any base)                                                                          | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A first `changes` job skips all of them for a docs-only PR. A final `CI` job fans in on the required subset and is the status check the `outfiqe` ruleset requires. |
-| `commit-messages.yml`      | `pull_request` (any base)                                                                          | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                                                                      |
-| `coverage.yml`             | `pull_request` -> `main`, excluding docs-only diffs                                                | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                                                                     |
-| `validate-branch.yml`      | `pull_request` (any base)                                                                          | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                                                                         |
-| `deploy.yml`               | `push` -> `main` touching backend paths, `workflow_dispatch`                                       | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                                                               |
-| `keepalive.yml`            | `schedule`, `workflow_dispatch`                                                                    | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                                                                     |
-| `publish-api-docs.yml`     | `push` -> `main` touching `apps/api/openapi/openapi.json`, `workflow_dispatch`                     | Tells `outfiqe/internal-docs` to rebuild and deploy ops.outfiqe.com, so the API tab always matches production. Needs the `DOCS_SYNC_TOKEN` secret (see below); without it the job only warns.                                                                                                                     |
-| `refresh-api-examples.yml` | `push` -> `dev` touching `apps/api/**` (not `apps/api/openapi/**` or READMEs), `workflow_dispatch` | Records fresh example responses from the API integration tests and opens or updates one PR, `chore/refresh-api-examples`, with the new `examples.json` and `openapi.json`. Needs the `API_EXAMPLES_PR_TOKENS` secret (see below).                                                                                 |
+| File                       | Trigger                                                                        | What it owns                                                                                                                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`                   | `pull_request` (any base)                                                      | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A first `changes` job skips all of them for a docs-only PR. A final `CI` job fans in on the required subset and is the status check the `outfiqe` ruleset requires. |
+| `commit-messages.yml`      | `pull_request` (any base)                                                      | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                                                                      |
+| `coverage.yml`             | `pull_request` -> `main`, excluding docs-only diffs                            | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                                                                     |
+| `validate-branch.yml`      | `pull_request` (any base)                                                      | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                                                                         |
+| `deploy.yml`               | `push` -> `main` touching backend paths, `workflow_dispatch`                   | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                                                               |
+| `keepalive.yml`            | `schedule`, `workflow_dispatch`                                                | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                                                                     |
+| `publish-api-docs.yml`     | `push` -> `main` touching `apps/api/openapi/openapi.json`, `workflow_dispatch` | Tells `outfiqe/internal-docs` to rebuild and deploy ops.outfiqe.com, so the API tab always matches production. Needs the `DOCS_SYNC_TOKEN` secret (see below); without it the job only warns.                                                                                                                     |
+| `refresh-api-examples.yml` | `workflow_dispatch` only (run it from the Actions tab)                         | Records fresh example responses from the API integration tests and opens or updates one PR, `chore/refresh-api-examples`, with the new `examples.json` and `openapi.json`. Needs the `API_EXAMPLES_PR_TOKENS` secret (see below).                                                                                 |
 
 "Docs-only diffs" means every changed file matches `**/*.md`, `docs/**`, `LICENSE`, `.gitignore`,
 or `.gitattributes`. A PR that touches one of those _and_ a code file runs the full `ci.yml` gate.
@@ -29,9 +29,9 @@ Feature work:
 2. `ci.yml`, `commit-messages.yml`, and `validate-branch.yml` run against the PR. For a
    docs-only diff `ci.yml` skips the build and tests and passes `CI` in seconds. `coverage.yml` does not (it is `main`-only).
 3. Merge to `dev`. The PR already proved the merge result, so no checks run on the push to `dev`.
-   The one exception is `refresh-api-examples.yml`: when the merge changed the API, it records new
-   example responses and opens a `chore(api): refresh api examples` PR. Check its diff and merge
-   it like any other PR.
+4. When an API change should show new example responses on the API tab, start
+   **Refresh API examples** from the Actions tab on `dev`. It opens a
+   `chore(api): refresh api examples` PR; check its diff and merge it like any other PR.
 
 Stacked work (a large feature split into PRs that each target the branch below):
 
@@ -99,10 +99,18 @@ fine-grained token, `DOCS_SYNC_TOKEN`, stored as a secret in both repos. It's sc
 with the same scopes and update the secret in both repos. It triggers on `main` only, so the
 reference always describes what's running in production.
 
-**API examples are refreshed by a PR, not by hand.** The example responses on the API tab come from
+**API examples are refreshed by a PR, on demand.** The example responses on the API tab come from
 `apps/api/openapi/examples.json`, which only a full run of the API integration tests can rebuild
-(see `apps/api/src/testing/openapi/README.md`). That is too slow to run on a laptop for every API
-change, so `refresh-api-examples.yml` does it after the change reaches `dev`:
+(see `apps/api/src/testing/openapi/README.md`). That is too slow to run on a laptop, so
+`refresh-api-examples.yml` does it in CI when someone starts it from the Actions tab.
+
+It is manual on purpose. It first ran after every API merge to `dev`, but the integration tests
+run in parallel and share data, so two runs with no API change still picked different sample
+records (names, versions, flags, generated codes) and opened a few hundred lines of churn each
+time. Running it when an endpoint's response really changed keeps every refresh PR worth
+reviewing.
+
+How a run works:
 
 - Four `record` jobs run the integration tests split the same way as `ci.yml`, with
   `API_DOCS_TASK=record`, and each uploads its `recordings/*.jsonl`. A failing test only means
@@ -111,8 +119,7 @@ change, so `refresh-api-examples.yml` does it after the change reaches `dev`:
   collide), runs `openapi.docs-task.ts merge`, and stops if a full JWT or a bcrypt/argon2 hash
   appears in the diff. Redaction should already have removed them; this is a second check.
 - It commits to the `chore/refresh-api-examples` branch and opens or updates the PR into `dev`.
-  The rules block direct pushes to `dev`, so it has to be a PR. Merging that PR doesn't start the
-  workflow again, because it only changes `apps/api/openapi/**`.
+  The rules block direct pushes to `dev`, so it has to be a PR.
 - A PR opened with the default `GITHUB_TOKEN` never starts other workflows, so the required checks
   would never report and the PR could never merge. The workflow therefore uses
   `API_EXAMPLES_PR_TOKENS`, a fine-grained token for the `outfiqe` org with access to only

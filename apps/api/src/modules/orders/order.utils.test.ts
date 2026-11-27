@@ -2,9 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import { FulfilmentStatus, OrderFulfilmentSummary } from "#generated/prisma/enums.js";
 
-import { deriveOrderFulfilment } from "./order.utils.js";
+import { deriveOrderFulfilment, isOrderCancellable } from "./order.utils.js";
 
 const { PLACED, PACKED, SHIPPED, DELIVERED, CANCELLED, RETURNED } = FulfilmentStatus;
+
+describe("isOrderCancellable", () => {
+  it.each([PLACED, PACKED])("lets a buyer cancel an order still %s", (status) => {
+    expect(isOrderCancellable(status)).toBe(true);
+  });
+
+  it.each([SHIPPED, DELIVERED, CANCELLED, RETURNED])(
+    "blocks cancelling an order once it is %s",
+    (status) => {
+      expect(isOrderCancellable(status)).toBe(false);
+    },
+  );
+});
 
 describe("deriveOrderFulfilment", () => {
   it("treats an order with no groups as placed and unfulfilled", () => {

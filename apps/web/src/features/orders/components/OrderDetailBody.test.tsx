@@ -56,6 +56,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   paymentStatus: "DUE",
   fulfilmentStatus: "PLACED",
   fulfilmentSummary: "UNFULFILLED",
+  canCancel: false,
   subtotal: 2500,
   deliveryFee: 260,
   codFee: 0,
@@ -407,5 +408,62 @@ describe("OrderDetailBody", () => {
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/something went wrong/i)).toBeInTheDocument();
+  });
+
+  it("lets a buyer cancel a placed cash-on-delivery order and notes they haven't been charged", async () => {
+    const user = userEvent.setup();
+    orderResult.data = buildOrder({ paymentMethod: "COD", paymentStatus: "DUE", canCancel: true });
+
+    renderOrderDetail();
+    await user.click(screen.getByRole("button", { name: /cancel order/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/haven't been charged/i)).toBeInTheDocument();
+    expect(cancelOrder).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: /yes, cancel/i }));
+
+    expect(cancelOrder).toHaveBeenCalledWith("ORDER-1", undefined);
+  });
+
+  it("promises a refund when cancelling an already-paid order", async () => {
+    const user = userEvent.setup();
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "PAID",
+      canCancel: true,
+    });
+
+    renderOrderDetail();
+    await user.click(screen.getByRole("button", { name: /cancel order/i }));
+
+    expect(
+      within(screen.getByRole("dialog")).getByText(/refunds what you paid/i),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the whole-order cancel once the order has shipped", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "PAID",
+      fulfilmentStatus: "SHIPPED",
+      canCancel: false,
+    });
+
+    renderOrderDetail();
+
+    expect(screen.queryByRole("button", { name: /cancel order/i })).not.toBeInTheDocument();
+  });
+
+  it("offers a single cancel control on an unpaid wallet order it could also whole-order cancel", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "INITIATED",
+      canCancel: true,
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getAllByRole("button", { name: /cancel order/i })).toHaveLength(1);
   });
 });
