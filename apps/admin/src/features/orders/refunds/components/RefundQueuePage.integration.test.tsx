@@ -94,7 +94,11 @@ describe("RefundQueuePage", () => {
     if (!bankCard || !waitingCard) throw new Error("Refund cards did not render");
 
     expect(within(waitingCard).getByText(/Waiting for the customer/)).toBeInTheDocument();
-    expect(within(waitingCard).getByRole("button", { name: "Mark as paid" })).toBeDisabled();
+    const disabledMarkPaid = within(waitingCard).getByRole("button", { name: "Mark as paid" });
+    expect(disabledMarkPaid).toBeDisabled();
+    expect(disabledMarkPaid).toHaveAccessibleDescription(
+      "Available once the customer adds where to send it.",
+    );
 
     expect(within(bankCard).getByText("Nabil Bank · ending 8901")).toBeInTheDocument();
     await user.click(within(bankCard).getByRole("button", { name: "Show full account number" }));
@@ -106,6 +110,32 @@ describe("RefundQueuePage", () => {
     await user.click(within(dialog).getByRole("button", { name: "Mark as paid" }));
 
     await waitFor(() => expect(markPaidBody).toEqual({ transferReference: "NBL-77821" }));
+  });
+
+  it("names the order in the card and offers Open order as a button beside Mark as paid", async () => {
+    mswServer.use(http.get(QUEUE_URL, () => okJson({ items: [bankRefund], nextCursor: null })));
+    renderQueue();
+
+    const card = (await screen.findByText("Rs. 1,500 to Asha Rai")).closest("article");
+    if (!card) throw new Error("Refund card did not render");
+
+    expect(within(card).getByRole("heading", { name: /Order #ORDER-1/ })).toBeInTheDocument();
+    const openOrder = within(card).getByRole("link", { name: "Open order" });
+    expect(openOrder).toHaveAttribute("href", "/orders/order-1");
+    const markPaid = within(card).getByRole("button", { name: "Mark as paid" });
+    expect(markPaid).toBeEnabled();
+    expect(
+      openOrder.compareDocumentPosition(markPaid) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(within(card).queryByText(/Available once the customer/)).not.toBeInTheDocument();
+  });
+
+  it("keeps Open order for staff who can only view orders", async () => {
+    grantOnlyPlatformPermissions("platform:orders:read");
+    mswServer.use(http.get(QUEUE_URL, () => okJson({ items: [bankRefund], nextCursor: null })));
+    renderQueue();
+
+    expect(await screen.findByRole("link", { name: "Open order" })).toBeInTheDocument();
   });
 
   it("hides the pay action from staff who can only view orders", async () => {

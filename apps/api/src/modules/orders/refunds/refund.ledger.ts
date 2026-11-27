@@ -25,13 +25,18 @@ import {
 } from "./refund.constants.js";
 import { proportionalShare } from "./refund.pricing.js";
 import { type OrderForRefund, orderRefundRepository } from "./refund.repository.js";
-import { couponBudgetReleaseTarget, resizeBrandPayout } from "./refund.utils.js";
+import {
+  couponBudgetReleaseTarget,
+  isRefundCoveredByOutfiqe,
+  resizeBrandPayout,
+} from "./refund.utils.js";
 
 type TransactionClient = Prisma.TransactionClient;
 type OrderItemForRefund = OrderForRefund["items"][number];
 
 const NOTHING_KEPT = 0;
 const NO_PLATFORM_FEE = 0;
+const ONE_REFUND_LINE = 1;
 const PICKUP_CANCELLED_DEDUPE_PREFIX = "refund-cancelled";
 
 export type RefundLedgerOutcome = {
@@ -39,6 +44,7 @@ export type RefundLedgerOutcome = {
   withdrawnPayoutCount: number;
   voidedCommissionCount: number;
   paidCommissionCount: number;
+  outfiqeCoveredLineCount: number;
   cancelledPickupOutcomes: RecordTrackingEventOutcome[];
 };
 
@@ -239,6 +245,7 @@ export const applyRefundToLedgerInTransaction = async (
     withdrawnPayoutCount: 0,
     voidedCommissionCount: 0,
     paidCommissionCount: 0,
+    outfiqeCoveredLineCount: 0,
     cancelledPickupOutcomes: [],
   };
 
@@ -246,12 +253,21 @@ export const applyRefundToLedgerInTransaction = async (
     const item = itemsById.get(line.orderItemId);
     if (!item) continue;
     const keptQtyAfter = item.qty - item.refundedQty - line.qty;
-    const payoutOutcome = await settleItemPayout(tx, item, keptQtyAfter, voidReason);
     const commissionOutcome = await settleItemCommissions(tx, item, keptQtyAfter, voidReason);
-    outcome.voidedPayoutCount += payoutOutcome.voidedPayoutCount;
-    outcome.withdrawnPayoutCount += payoutOutcome.withdrawnPayoutCount;
     outcome.voidedCommissionCount += commissionOutcome.voidedCommissionCount;
     outcome.paidCommissionCount += commissionOutcome.paidCommissionCount;
+    const isCoveredByOutfiqe = isRefundCoveredByOutfiqe({
+      cause: claim.cause,
+      restockUnits,
+      fulfilment: item.fulfilmentGroup,
+    });
+    if (isCoveredByOutfiqe) {
+      outcome.outfiqeCoveredLineCount += ONE_REFUND_LINE;
+      continue;
+    }
+    const payoutOutcome = await settleItemPayout(tx, item, keptQtyAfter, voidReason);
+    outcome.voidedPayoutCount += payoutOutcome.voidedPayoutCount;
+    outcome.withdrawnPayoutCount += payoutOutcome.withdrawnPayoutCount;
   }
 
   await releaseCouponBudget(tx, claim);

@@ -2,7 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrandShipmentDetail as BrandShipmentDetailData } from "../api/brandFulfilmentSchemas";
+import type {
+  BrandShipmentDetail as BrandShipmentDetailData,
+  BrandShipmentItem,
+} from "../api/brandFulfilmentSchemas";
 import { useAdvanceShipment } from "../hooks/useAdvanceShipment";
 import { useBrandShipment } from "../hooks/useBrandShipment";
 import { BrandShipmentDetail } from "./BrandShipmentDetail";
@@ -55,6 +58,20 @@ const buildIdleAdvanceMutation = (): ReturnType<typeof useAdvanceShipment> => ({
   reset: vi.fn(),
 });
 
+const linenShirt: BrandShipmentItem = {
+  id: "item-1",
+  productId: "p-1",
+  productName: "Linen Shirt",
+  imageUrl: null,
+  sizeLabel: "M",
+  qty: 2,
+  refundedQty: 0,
+  unitPrice: 800,
+  listUnitPrice: 1000,
+  brandDiscountAmount: 200,
+  platformDiscountAmount: 0,
+};
+
 const buildShipment = (
   overrides: Partial<BrandShipmentDetailData> = {},
 ): BrandShipmentDetailData => ({
@@ -75,21 +92,7 @@ const buildShipment = (
   cancellationRequestedAt: null,
   cancellationReason: null,
   canReportUnavailable: false,
-  items: [
-    {
-      id: "item-1",
-      productId: "p-1",
-      productName: "Linen Shirt",
-      imageUrl: null,
-      sizeLabel: "M",
-      qty: 2,
-      refundedQty: 0,
-      unitPrice: 800,
-      listUnitPrice: 1000,
-      brandDiscountAmount: 200,
-      platformDiscountAmount: 0,
-    },
-  ],
+  items: [linenShirt],
   shipTo: {
     fullName: "Buyer Person",
     phone: "9812345678",
@@ -131,6 +134,49 @@ describe("BrandShipmentDetail", () => {
     expect(screen.getByRole("button", { name: "Mark packed" })).toBeInTheDocument();
   });
 
+  it("tells the brand how many units to send when the shopper cancelled some", () => {
+    mockShipment({ data: buildShipment({ items: [{ ...linenShirt, refundedQty: 1 }] }) });
+
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.getByText("M · Send 1 of 2 · 1 cancelled")).toBeInTheDocument();
+  });
+
+  it("tells the brand not to send an item whose every unit was cancelled", () => {
+    mockShipment({ data: buildShipment({ items: [{ ...linenShirt, refundedQty: 2 }] }) });
+
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.getByText("M · Qty 2 · Cancelled, don't send it")).toBeInTheDocument();
+  });
+
+  it("explains that refunded items are left out of the payout", () => {
+    mockShipment({
+      data: buildShipment({
+        payout: {
+          lines: [
+            {
+              orderItemId: "item-1",
+              grossAmount: 1600,
+              platformFee: 160,
+              gatewayFee: 0,
+              netAmount: 1440,
+              status: "VOIDED",
+            },
+          ],
+          grossAmount: 0,
+          platformFee: 0,
+          gatewayFee: 0,
+          netAmount: 0,
+        },
+      }),
+    });
+
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.getByText(/Cancelled and refunded items aren.t paid out/)).toBeInTheDocument();
+  });
+
   it("calls the advance mutation when Mark packed is pressed", () => {
     render(<BrandShipmentDetail groupId="grp-1" />);
 
@@ -161,6 +207,34 @@ describe("BrandShipmentDetail", () => {
 
     expect(screen.getByText(/Cancellation requested — Sold out in store/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Mark/ })).not.toBeInTheDocument();
+  });
+
+  it.each(["CANCELLED", "DELIVERED"] as const)(
+    "never shows the reviewing banner on a %s shipment that still carries a request",
+    (status) => {
+      mockShipment({
+        data: buildShipment({
+          status,
+          cancellationRequestedAt: "2026-09-02T00:00:00.000Z",
+          cancellationReason: "Sold out in store",
+        }),
+      });
+      render(<BrandShipmentDetail groupId="grp-1" />);
+
+      expect(screen.queryByText(/Cancellation requested/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Mark|Request cancellation/ }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it("brings the fulfilment actions back once the request has been declined", () => {
+    mockShipment({ data: buildShipment({ status: "PACKED", cancellationRequestedAt: null }) });
+    render(<BrandShipmentDetail groupId="grp-1" />);
+
+    expect(screen.queryByText(/Cancellation requested/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mark shipped/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Request cancellation" })).toBeInTheDocument();
   });
 
   it("hands an Outfiqe-delivered order to the pickup panel and hides the customer", () => {

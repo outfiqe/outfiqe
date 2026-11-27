@@ -1,6 +1,22 @@
 import type { Prisma } from "#generated/prisma/client.js";
+import {
+  type FulfilmentMode,
+  type FulfilmentStatus,
+  type OrderRefundCause,
+  PaymentMethod,
+  type PaymentStatus,
+  type PickupStatus,
+} from "#generated/prisma/enums.js";
 import { toStoredJson } from "#lib/stored-json.utils.js";
 
+import {
+  CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY,
+  FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE,
+  FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND,
+  FULFILMENT_STATUSES_ON_THE_WAY,
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
+  PICKUP_STATUSES_HANDED_OVER_BY_BRAND,
+} from "./refund.constants.js";
 import { proportionalShare } from "./refund.pricing.js";
 import type { OrderRefundRecord, RefundQueueRecord } from "./refund.repository.js";
 import type { OrderRefundView, RefundQueueItemView } from "./refund.types.js";
@@ -84,6 +100,54 @@ export const resizeBrandPayout = ({
       : proportionalShare(currentGatewayFee, keptQtyAfter, keptQtyBefore);
   return { grossAmount, platformFee, gatewayFee, netAmount: grossAmount - platformFee };
 };
+
+export type RefundedItemFulfilment = {
+  fulfilmentMode: FulfilmentMode;
+  status: FulfilmentStatus;
+  pickupStatus: PickupStatus | null;
+};
+
+const hasBrandHandedOverGoods = ({ status, pickupStatus }: RefundedItemFulfilment): boolean =>
+  FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND.has(status) ||
+  (pickupStatus !== null && PICKUP_STATUSES_HANDED_OVER_BY_BRAND.has(pickupStatus));
+
+export const isRefundCoveredByOutfiqe = ({
+  cause,
+  restockUnits,
+  fulfilment,
+}: {
+  cause: OrderRefundCause;
+  restockUnits: boolean;
+  fulfilment: RefundedItemFulfilment | null;
+}): boolean => {
+  const coveredFulfilmentModes = FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE[cause];
+  return (
+    coveredFulfilmentModes !== undefined &&
+    !restockUnits &&
+    fulfilment !== null &&
+    coveredFulfilmentModes.has(fulfilment.fulfilmentMode) &&
+    hasBrandHandedOverGoods(fulfilment)
+  );
+};
+
+const isParcelOnTheWay = ({ status }: RefundedItemFulfilment): boolean =>
+  FULFILMENT_STATUSES_ON_THE_WAY.has(status);
+
+export const isRefundBlockedWhileCashParcelOnTheWay = ({
+  cause,
+  paymentMethod,
+  paymentStatus,
+  refundedItemFulfilments,
+}: {
+  cause: OrderRefundCause;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  refundedItemFulfilments: readonly (RefundedItemFulfilment | null)[];
+}): boolean =>
+  paymentMethod === PaymentMethod.COD &&
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(paymentStatus) &&
+  !CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY.has(cause) &&
+  refundedItemFulfilments.some((fulfilment) => fulfilment !== null && isParcelOnTheWay(fulfilment));
 
 export const couponBudgetReleaseTarget = ({
   platformFundedAmount,

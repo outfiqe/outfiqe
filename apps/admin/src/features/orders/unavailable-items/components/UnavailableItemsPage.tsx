@@ -8,6 +8,7 @@ import { usePlatformPermissions } from "@/features/auth/hooks/usePlatformPermiss
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
+import { BrandCancellationRequests } from "../../cancellation-requests/components/BrandCancellationRequests";
 import {
   UNAVAILABLE_ITEM_STATUSES,
   type UnavailableItemRequest,
@@ -73,7 +74,10 @@ export const UnavailableItemsPage = () => {
         Approving refunds the customer for those units. Rejecting tells the brand to send them.
       </p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <BrandCancellationRequests />
+
+      <h2 className="mt-8 font-display text-lg font-bold text-foreground">Unavailable items</h2>
+      <div className="mt-3 flex flex-wrap gap-2">
         {UNAVAILABLE_ITEM_STATUSES.map((tabStatus) => (
           <button
             key={tabStatus}

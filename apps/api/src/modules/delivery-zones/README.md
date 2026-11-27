@@ -9,7 +9,7 @@ Delivery pricing and delivery-time estimates by city. Each zone belongs to one c
   cash-on-delivery handling fee;
 - optionally, the shortest and longest delivery time in working days.
 
-Each country has one default zone, used for any city that isn't listed.
+Each country has one default zone. A city must be listed under a zone to be deliverable; the default zone's own cities count like any other zone's.
 
 ## Structure
 
@@ -27,6 +27,7 @@ Each country has one default zone, used for any city that isn't listed.
 - `delivery-zone.service.ts` — `deliveryZoneService`:
   - the public list and city search;
   - `findZoneForCity`;
+  - `assertCityIsDeliverable` (used by checkout, `../cart` city, `../addresses`, `../brand-applications` and the brand pickup locations in `../logistics`);
   - `resolveFeeValuesForCity` (used by `../cart` and `../orders` checkout);
   - `estimateDeliveryWindow` (used by checkout and the estimate endpoint);
   - create/update/set-default/delete, and the change history.
@@ -61,7 +62,12 @@ Prisma.
   - The first zone created in a country becomes its default automatically.
   - The default can't be deleted (`409 DEFAULT_ZONE_UNDELETABLE`); another zone has to be made the
     default first.
-  - A city with no zone, or no city at all, gets the default zone's fees and delivery days.
+  - A city with no zone, or no city at all, still resolves to the default zone's fees and delivery days in `resolveFeeValuesForCity` and `estimateDeliveryWindow`. That is defensive code for the bag before a city is chosen and for stale data; it is not a way to be deliverable.
+- **Only listed cities are accepted on writes.**
+  - `assertCityIsDeliverable(city, countryCode)` looks the normalised name up in `delivery_zone_cities` by its unique `(countryCode, cityNormalized)` index and throws a `422 VALIDATION_ERROR` whose `details` is a `city` field issue ("We don't deliver to this area yet"), the same shape the request validator produces, so forms show it under the city field.
+  - It runs on checkout, `PATCH /cart/city`, saved address create and update (update only when the city is sent), brand application submit (when a city is given) and brand pickup location create and update.
+  - Admin-created data (hubs, partners, zone cities) is not checked, and orders already placed keep the city they were placed with.
+  - **Rollout:** before deploying, ops must list every deliverable city under a zone, including outside-valley cities under the Default zone (it currently has none). Otherwise shoppers there can't check out or save an address.
 - **A city belongs to at most one zone in its country, enforced by the database.**
   - City names are normalised before they're stored and looked up, and a unique constraint on
     `(countryCode, cityNormalized)` backs them.

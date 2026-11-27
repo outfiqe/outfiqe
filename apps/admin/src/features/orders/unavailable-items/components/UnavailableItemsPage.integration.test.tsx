@@ -10,6 +10,8 @@ import { UnavailableItemsPage } from "./UnavailableItemsPage";
 
 const LIST_URL = "http://localhost:3000/api/orders/admin/unavailable-items";
 
+const CANCELLATION_REQUESTS_URL = "http://localhost:3000/api/orders/admin/cancellation-requests";
+
 const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
 const pendingRequest = {
@@ -30,14 +32,16 @@ const pendingRequest = {
   decidedAt: null,
 };
 
-const renderPage = () =>
-  renderWithRouter(
+const renderPage = () => {
+  mswServer.use(http.get(CANCELLATION_REQUESTS_URL, () => okJson({ items: [], nextCursor: null })));
+  return renderWithRouter(
     <>
       <UnavailableItemsPage />
       <Toaster />
     </>,
     { path: "/orders/unavailable-items" },
   );
+};
 
 describe("UnavailableItemsPage", () => {
   it("shows an empty state for a tab with no reports", async () => {

@@ -17,10 +17,17 @@ const orderPageSchema = z.object({
 });
 export type OrderPage = z.infer<typeof orderPageSchema>;
 
+type ListOrdersParams = {
+  status?: FulfilmentStatusValue;
+  search?: string;
+  cursor?: string;
+};
+
 export const ordersApi = {
-  async list(status?: FulfilmentStatusValue, cursor?: string): Promise<OrderPage> {
+  async list({ status, search, cursor }: ListOrdersParams): Promise<OrderPage> {
     const params = new URLSearchParams();
     if (status) params.set("status", status);
+    if (search) params.set("search", search);
     if (cursor) params.set("cursor", cursor);
 
     const query = params.toString();

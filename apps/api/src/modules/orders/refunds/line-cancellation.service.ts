@@ -4,7 +4,6 @@ import { OrderRefundCause } from "#generated/prisma/enums.js";
 import { withIdempotency } from "#lib/idempotency.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
-import { orderItemChangeAccess } from "./item-change-access.js";
 import {
   findLineCancellationProblem,
   LINE_CANCELLATION_PROBLEM,
@@ -12,7 +11,7 @@ import {
 } from "./line-cancellation.utils.js";
 import { orderNotFoundError } from "./refund.claim.js";
 import { orderRefundEngine } from "./refund.engine.js";
-import { type OrderForRefund, orderRefundRepository } from "./refund.repository.js";
+import { orderRefundRepository } from "./refund.repository.js";
 import type { CancelMyOrderLinesBody } from "./refund.schemas.js";
 import type { OrderRefundView } from "./refund.types.js";
 import { toOrderRefundView } from "./refund.utils.js";
@@ -35,28 +34,6 @@ const LINE_CANCELLATION_ERRORS: Record<LineCancellationProblem, () => AppError> 
     ),
 };
 
-const itemCancellationNotAvailableError = () =>
-  new AppError(
-    "ITEM_CANCELLATION_NOT_AVAILABLE",
-    "Single items can't be cancelled on this order. You can still cancel the whole order.",
-    HTTP_STATUS.CONFLICT,
-  );
-
-const assertBrandsAllowItemCancellation = async (
-  order: OrderForRefund,
-  lines: CancelMyOrderLinesBody["lines"],
-): Promise<void> => {
-  const requestedItemIds = new Set(lines.map(({ orderItemId }) => orderItemId));
-  const requestedBrandIds = order.items
-    .filter(({ id }) => requestedItemIds.has(id))
-    .flatMap(({ fulfilmentGroup }) => (fulfilmentGroup ? [fulfilmentGroup.brandId] : []));
-  const allowedBrandIds =
-    await orderItemChangeAccess.listBrandIdsAllowingItemChanges(requestedBrandIds);
-  if (!requestedBrandIds.every((brandId) => allowedBrandIds.has(brandId))) {
-    throw itemCancellationNotAvailableError();
-  }
-};
-
 const cancelLinesOnce = async (
   userId: string,
   orderId: string,
@@ -64,7 +41,6 @@ const cancelLinesOnce = async (
 ): Promise<OrderRefundView> => {
   const order = await orderRefundRepository.findOrderForRefund(prisma, orderId);
   if (!order || order.userId !== userId) throw orderNotFoundError();
-  await assertBrandsAllowItemCancellation(order, lines);
 
   const appliedRefund = await prisma.$transaction((tx) =>
     orderRefundEngine.claimAndApplyInTransaction(

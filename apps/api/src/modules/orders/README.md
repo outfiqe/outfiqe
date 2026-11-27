@@ -37,11 +37,12 @@ Turns a shopper's cart (or a single Buy Now item) into a paid or cash-on-deliver
   - `line-cancellation.*` — a customer cancelling single items.
   - `refund.outstanding.ts` — `calculateCashToCollect({ orderId, fulfilmentGroupIds, includesOrderFees })`: what an unpaid cash-on-delivery order still owes for some of its brands' items (each line's unrefunded share), plus the delivery and COD fees when asked. Logistics uses it for the cash a parcel collects.
   - `refund-destination.*` — the customer's refund details (Khalti, eSewa or bank) and staff reveal of a bank account number.
+  - `refund-summary.utils.ts` — `summariseOrderRefunds`, the compact refund summary on the shopper order views (unit-tested).
   - `refund.jobs.ts` — the stale-pending sweep and the 3-day details reminder.
-  - `item-change-access.ts` — `orderItemChangeAccess`: which brands are on the `order_logistics` feature flag, and so allow customer item cancellation and "can't supply" reports.
   - `refund.utils.ts`, `refund.constants.ts`, `refund.types.ts`, `refund.schemas.ts`, `refund.repository.ts`.
 - `unavailable-items/` — a brand reporting items it can't supply, and staff approving (refunds the customer) or rejecting the report.
-- `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`; the detail view carries each line's `refundedQty` and `canReportUnavailable`, which uses the same "still with the brand" rule as customer line cancellations), and the integration tests.
+- `cancellation-requests/` — a brand asking to cancel its whole shipment (`POST /orders/brand/fulfilment-groups/:groupId/request-cancellation`, which stamps `cancellationRequestedAt`/`cancellationReason` and emails `OPS_NOTIFICATION_EMAIL`), and staff reviewing it: `GET /orders/admin/cancellation-requests` (cursor page, oldest first), `POST .../:groupId/approve`, `POST .../:groupId/reject` (needs a note). Files follow the usual `cancellation-request.*` layout.
+- `fulfilment-groups/` — one shipment per brand: `fulfilment-group.service.ts` (the brand endpoints), `fulfilment-group.repository.ts` (`orderFulfilmentGroupRepository`, every `OrderFulfilmentGroup` read and write, including `setOrderFulfilmentRollup`), `fulfilment-group.utils.ts` (the brand-facing views, also used by `../brand-overview`; the detail view carries each line's `refundedQty` and `canReportUnavailable`, and its payout totals count only payouts that aren't `VOIDED` while still listing every line with its status, which uses the same "still with the brand" rule as customer line cancellations), and the integration tests.
 
 Shared integration-test setup lives in `src/testing/integration/order-fixtures.ts`.
 
@@ -184,6 +185,16 @@ their earnings in the wallet.
 `POST /orders/admin/:orderId/cancel` — all `requireAuth`+`ADMIN`, registered **before** the
 buyer-facing `/:orderId` route (same "static paths first" ordering `creator-looks` already needed —
 Express would otherwise match `/admin` against `/:orderId` and treat "admin" as an order id).
+
+`GET /orders/admin` takes an optional `search` next to `status`/`cursor`, built by
+`order-admin-search.utils.ts` (`buildAdminOrderSearchFilter`): a full uuid is an exact id match; a
+4-8 hex short reference (`#28A55BF3`, with or without the `#`, any case) becomes a
+`id >= '28a55bf3-0000-0000-0000-000000000000' AND id <= '28a55bf3-ffff-ffff-ffff-ffffffffffff'` range so the primary-key index serves it
+(`id::text LIKE` would scan); an email matches the unique `users.email` exactly (as typed or
+lower-cased); a Nepal phone (separators and `+977` stripped) matches the unique `users.phone`. Order
+delivery phones (`orders.phone`) are not indexed, so they are deliberately not searched; anything
+else matches nothing rather than falling back to a scan. Search composes with `status` and the
+cursor.
 
 **Fulfilment only moves forward, one step at a time**: `PLACED→PACKED→SHIPPED→DELIVERED`, each
 transition an atomic conditional `updateMany` guarded by the specific status it must be leaving
@@ -442,6 +453,10 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
 - When the money can't go back automatically, the customer gets an email and a notification
   asking where to send it, fills in Khalti, eSewa or bank details on their order page, and staff
   pay it from the manual refund queue and enter the transfer reference.
+- An online payment that verifies after the last unit sold out is refunded in full (every unit plus
+  the delivery fee) with cause `SOLD_OUT_AT_PAYMENT`, from `payments/payment.service.ts`. It is not
+  staff-selectable. `payments/payment.sold-out-backfill.ts` (script `db:backfill:sold-out-payment-refunds`)
+  gives the same refund to older orders that were cancelled without one.
 
 **Technical:** a flow opens a transaction and calls `orderRefundEngine.claimAndApplyInTransaction`
 (claim → ledger), then calls `finishAfterCommit` (pickup cancellation announcements → payment).
@@ -459,15 +474,41 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
      the full-line fee (rebuilt from the payout's stored `commissionRuleId`) × kept ÷ bought, worked
      out from the full line every time so repeated refunds don't drift. A fully refunded line voids
      the payout. A withdrawn payout is flagged `needsManualClawback`.
-   - Creator commission: unchanged while at least one unit is kept, voided when every unit is
-     refunded.
-   - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the
-     refunded coupon share is released, tracked in `CouponRedemption.releasedAmount`. When the order
-     empties, the redemption is released too.
-   - Stock: put back only when the caller asks (customer cancellation, staff choice), with source
-     `ORDER_REFUND` and the refund id.
-   - A brand group with every unit refunded is cancelled if it hasn't left the brand: brand-shipped
-     groups directly, hub pickups through a `CANCELLED` tracking event so the rider isn't sent.
+   - Who pays: the refund comes out of the brand's payout unless Outfiqe covers it
+     (`isRefundCoveredByOutfiqe`). Outfiqe covers a goodwill refund (`STAFF_ADJUSTMENT`) on any
+     shipment, and a delivery partner failure (`PARTNER_FAILED`) only on Outfiqe delivery
+     (`OUTFIQE_LOGISTICS`), because a brand shipping itself chose its own courier. Either way the
+     brand must have handed the goods over (shipped or delivered, or collected by a rider) and the
+     units mustn't be restocked. Then the payout is left
+     untouched and the audit entry counts the line as `outfiqeCoveredLineCount`. Everything else
+     (brand couldn't supply, failed hub check, customer cancel or refusal, return, sold out at
+     payment, or a goodwill refund while the goods are still with the brand) stays with the brand,
+     because the brand either caused it or kept the goods.
+
+- **Staff can't fully refund a cash parcel that is on its way.** On a cash-on-delivery order with
+  nothing collected yet, a staff refund (`refund.service.ts`, through `checkBeforeClaim`, so it runs
+  on the order read inside the refund transaction) is refused with `409
+REFUND_WHILE_CASH_PARCEL_ON_THE_WAY` when any refunded line's shipment is `SHIPPED` (the brand
+  marked it shipped, or the hub handed the parcel to the delivery partner, which rolls the group up
+  to `SHIPPED`). A parcel still being collected, checked or packed at the hub can be refunded,
+  since the hub just reprints the label with the new cash amount. The exception is when the cause is
+  `PARTNER_FAILED` (`isRefundBlockedWhileCashParcelOnTheWay`). Otherwise a goodwill refund there
+  would hand the shopper the parcel for free while Outfiqe paid the brand. A refusal comes back
+  through Mark as returned or the hub's return check-in instead, and anything else waits until
+  delivery. Only the admin refund window applies it (`refundOrderItemsFromRefundWindow`, the
+  `POST /orders/admin/:orderId/refunds` controller). The hub's inspection failures and return
+  check-ins reuse `refundOrderItems` without it, because those parcels are at the hub or already
+  coming back, not with the shopper. System refunds don't go through it either.
+  - Creator commission: unchanged while at least one unit is kept, voided when every unit is
+    refunded.
+  - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the
+    refunded coupon share is released, tracked in `CouponRedemption.releasedAmount`. When the order
+    empties, the redemption is released too.
+  - Stock: put back only when the caller asks (customer cancellation, staff choice), with source
+    `ORDER_REFUND` and the refund id.
+  - A brand group with every unit refunded is cancelled if it hasn't left the brand: brand-shipped
+    groups directly, hub pickups through a `CANCELLED` tracking event so the rider isn't sent.
+
 4. Pay (`refund.payment.ts`, after commit):
    - COD not yet collected → `CASH_NOT_COLLECTED`, settled at once: the rider collects less.
    - Khalti → partial refund through the API (amount in paisa). Success records a `REFUND` payment
@@ -475,14 +516,20 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
    - Anything else, or a failed Khalti call → `NEEDS_MANUAL`, `Order.needsManualRefund`, an ops
      email, and a customer request for refund details if we don't have them.
 
+## The shopper order views carry a refund summary
+
+`GET /orders/:id` and the paginated `GET /orders` each include `refundSummary`: `cancelledUnitCount`, the distinct refund `causes`, `amountOffCashPayment` (cash-on-delivery refunds, "taken off what you pay"), `amountRefunded` (money already back), `amountComingBack` (online refunds still pending or being paid by staff) and `amountAwaitingDetails` (manual refunds with no saved refund destination yet).
+
+It is computed in `summariseOrderRefunds` from the order's refund rows (cause, status, method, total, line quantities) and whether a refund destination exists. Both reads load those rows and the destination id in the same query as the order (`withRefundSummary` in `order.repository.ts`), so the orders page can show "Action needed: add refund details" per order with no extra request and no per-order lookup. The per-order refund rows are bounded by the order's item count.
+
 ## Refund rules and why
 
-- **What the feature flag covers.** Customer item cancellation and brand "can't supply" reports
-  are new things a customer or brand can do, so they are offered only for brands on the
-  `order_logistics` flag (`canCancel` on the order view, `canReportUnavailable` on the brand's
-  shipment view, and a `409` from the endpoints otherwise). The engine itself, staff "refund
-  items" and the manual refund queue are not behind the flag: whole-order cancel and return
-  already run through them, and eSewa refunds need the queue whatever the flag says.
+- **Item cancellation and "can't supply" reports do not depend on the `order_logistics` flag.**
+  Every shopper can cancel items and every brand can report items it can't supply, whether or
+  not the brand is on Outfiqe delivery. What decides it is whether the shipment is still with
+  the brand (`isGroupStillWithBrand`): `canCancel` on the order view, `canReportUnavailable` on
+  the brand's shipment view, and a `409` from the endpoints once it has left. The engine, staff
+  "refund items" and the manual refund queue run the same way for everyone.
 - **Claim first, pay after commit.** The units and money are reserved in the database before any
   gateway call. A crash between the two leaves a `PENDING` refund, which the 5-minute sweep moves
   to the manual queue with a note to check the gateway before paying. It is never retried
@@ -507,3 +554,13 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
   marking the order shipped at the same moment can't slip a cancellation through. A cancellation
   that would leave a coupon order below the coupon's minimum spend is refused; cancelling
   everything is still allowed.
+
+## Brand cancellation requests
+
+A brand that ships its own orders can ask to cancel its whole shipment. The request only flags the group; nothing is refunded until staff decide, and the shipment can't be advanced while the flag is set. Staff see the pending requests next to the unavailable-item reports in the admin "Can't supply" page.
+
+- **Approve** runs in one transaction: the flag is cleared with a guarded update (`cancellationRequestedAt` still set, group not closed), then every remaining unit of the group is refunded through the refund engine (`BRAND_UNAVAILABLE`, `restockUnits: false`, the brand's reason in the refund reason), and a brand incident (`UNAVAILABLE_ITEM`, keyed `cancellation-request:<groupId>`) is recorded. The refund ledger then cancels the emptied group and rolls the order up. The brand is emailed and a platform audit entry is written after commit.
+- **Reject** clears the flag so the brand can keep fulfilling, audits it with the staff note, and emails the brand the note.
+- The guarded flag-clear is the concurrency control: two staff pressing the same button, or approve racing reject, produce one winner and a `409 CANCELLATION_REQUEST_ALREADY_RESOLVED` for the other. An unknown shipment is a `404`.
+- Approval is refused with `409 SHIPMENT_ALREADY_ON_ITS_WAY` once the shipment has left the brand (the same `isGroupStillWithBrand` rule as customer line cancellations); staff should decline it or handle the parcel as a return.
+- Approval is not stored as a status: the flag is cleared and the refund, incident and audit rows are the record, so the queue only ever lists requests that still need a decision.

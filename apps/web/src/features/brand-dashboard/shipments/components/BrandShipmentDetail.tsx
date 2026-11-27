@@ -7,10 +7,15 @@ import { useState } from "react";
 
 import { BackLink } from "@/components/BackLink";
 import { AppImage } from "@/shared/components/AppImage";
+import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { HubPickupPanel } from "../../pickups/components/HubPickupPanel";
-import type { BrandShipmentDetail as BrandShipmentDetailData } from "../api/brandFulfilmentSchemas";
+import {
+  brandPayoutStatusSchema,
+  type BrandShipmentDetail as BrandShipmentDetailData,
+  type BrandShipmentItem,
+} from "../api/brandFulfilmentSchemas";
 import { useAdvanceShipment } from "../hooks/useAdvanceShipment";
 import { useBrandShipment } from "../hooks/useBrandShipment";
 import {
@@ -22,12 +27,17 @@ import {
   nextShipmentStatus,
   ORDER_SUMMARY_LABEL,
   PAYMENT_STATUS_LABEL,
+  unitsStillToSend,
 } from "../utils/shipmentStatus";
 import { MarkShipmentShippedModal } from "./MarkShipmentShippedModal";
 import { RequestShipmentCancellationModal } from "./RequestShipmentCancellationModal";
 import { UnavailableItemsPanel } from "./UnavailableItemsPanel";
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
+
+const NONE_CANCELLED = 0;
+const NO_UNITS_LEFT = 0;
+const VOIDED_PAYOUT_STATUS = brandPayoutStatusSchema.enum.VOIDED;
 
 const NEXT_ACTION_LABEL = {
   PACKED: "Mark packed",
@@ -62,14 +72,26 @@ const ShipToCard = ({ shipTo }: { shipTo: ShipTo }) => (
   </section>
 );
 
+const describeUnitsToSend = (lineItem: BrandShipmentItem): string => {
+  const { sizeLabel, qty, refundedQty } = lineItem;
+  const unitsToSend = unitsStillToSend(lineItem);
+  if (refundedQty === NONE_CANCELLED) return `${sizeLabel} · Qty ${qty}`;
+  if (unitsToSend === NO_UNITS_LEFT) return `${sizeLabel} · Qty ${qty} · Cancelled, don't send it`;
+  return `${sizeLabel} · Send ${unitsToSend} of ${qty} · ${refundedQty} cancelled`;
+};
+
 const ItemsCard = ({ items }: { items: BrandShipmentDetailData["items"] }) => (
   <section className="rounded-2xl border border-border p-4">
     <h2 className="text-sm font-semibold text-foreground">Items in this shipment</h2>
     <ul className="mt-3 space-y-3">
       {items.map((lineItem) => {
         const isDiscounted = lineItem.unitPrice < lineItem.listUnitPrice;
+        const isFullyCancelled = unitsStillToSend(lineItem) === NO_UNITS_LEFT;
         return (
-          <li key={lineItem.id} className="flex items-center gap-3">
+          <li
+            key={lineItem.id}
+            className={cn("flex items-center gap-3", isFullyCancelled && "opacity-60")}
+          >
             <div className="relative flex aspect-3/4 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
               {lineItem.imageUrl ? (
                 <AppImage src={lineItem.imageUrl} alt="" fill sizes="48px" />
@@ -79,9 +101,7 @@ const ItemsCard = ({ items }: { items: BrandShipmentDetailData["items"] }) => (
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">{lineItem.productName}</p>
-              <p className="text-xs text-muted-foreground">
-                {lineItem.sizeLabel} · Qty {lineItem.qty}
-              </p>
+              <p className="text-xs text-muted-foreground">{describeUnitsToSend(lineItem)}</p>
             </div>
             <div className="shrink-0 text-right text-sm">
               <p className="font-medium text-foreground">{formatRupees(lineItem.unitPrice)}</p>
@@ -115,6 +135,8 @@ const ShipmentActions = ({
   onOpenShippedModal,
   onOpenCancelModal,
 }: ShipmentActionsProps) => {
+  if (shipment.status === "CANCELLED" || shipment.status === "DELIVERED") return null;
+
   if (shipment.cancellationRequestedAt) {
     return (
       <FormBanner>
@@ -124,7 +146,6 @@ const ShipmentActions = ({
       </FormBanner>
     );
   }
-  if (shipment.status === "CANCELLED" || shipment.status === "DELIVERED") return null;
 
   const nextStatus = nextShipmentStatus(shipment.status);
 
@@ -173,6 +194,12 @@ const PayoutCard = ({ payout }: { payout: BrandShipmentDetailData["payout"] }) =
         <dd className="text-foreground">{formatRupees(payout.netAmount)}</dd>
       </div>
     </dl>
+    {payout.lines.some(({ status }) => status === VOIDED_PAYOUT_STATUS) && (
+      <p className="mt-3 text-xs text-muted-foreground">
+        Cancelled and refunded items aren&apos;t paid out, so they&apos;re left out of these
+        amounts.
+      </p>
+    )}
   </section>
 );
 

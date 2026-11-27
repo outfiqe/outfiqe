@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Order } from "../api/orderSchemas";
+import { NO_REFUND_SUMMARY, type Order, type OrderRefundSummary } from "../api/orderSchemas";
+import type { MyRefundDestination } from "../api/refundSchemas";
 import { OrderDetailBody } from "./OrderDetailBody";
 
 const mocks = vi.hoisted(() => ({
@@ -18,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   authState: { isAuthenticated: true, isAuthResolved: true },
   redirectToPaymentGateway: vi.fn(),
   cancelOrder: vi.fn().mockResolvedValue(undefined),
+  getRefundDestination: vi.fn(),
+  listRefunds: vi.fn(),
 }));
 
 const { authState, redirectToPaymentGateway, cancelOrder, orderResult } = mocks;
@@ -41,7 +44,15 @@ vi.mock("@/features/payments", () => ({
 }));
 
 vi.mock("../api/ordersApi", () => ({
-  ordersApi: { cancel: (orderId: string, reason?: string) => mocks.cancelOrder(orderId, reason) },
+  ordersApi: {
+    cancel: (orderId: string, reason?: string) => mocks.cancelOrder(orderId, reason),
+    getRefundDestination: (orderId: string) => mocks.getRefundDestination(orderId),
+    listRefunds: (orderId: string) => mocks.listRefunds(orderId),
+  },
+}));
+
+vi.mock("@/features/nepal-banks", () => ({
+  useNepalBanks: () => ({ data: [] }),
 }));
 
 const buildOrder = (overrides: Partial<Order> = {}): Order => ({
@@ -63,6 +74,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   platformDiscountTotal: 0,
   total: 2760,
   refundedAmount: 0,
+  refundSummary: NO_REFUND_SUMMARY,
   trackingStage: null,
   promisedDelivery: null,
   items: [
@@ -465,5 +477,193 @@ describe("OrderDetailBody", () => {
     renderOrderDetail();
 
     expect(screen.getAllByRole("button", { name: /cancel order/i })).toHaveLength(1);
+  });
+});
+
+const buildRefundSummary = (overrides: Partial<OrderRefundSummary>): OrderRefundSummary => ({
+  ...NO_REFUND_SUMMARY,
+  ...overrides,
+});
+
+const refundDestinationAwaitingDetails: MyRefundDestination = {
+  amountAwaitingDetails: 1200,
+  canEdit: true,
+  suggestedKind: "ESEWA",
+  suggestedAccountName: "Test Buyer",
+  destination: null,
+};
+
+describe("OrderDetailBody cancellation and refund status", () => {
+  beforeEach(() => {
+    mocks.listRefunds.mockResolvedValue([]);
+    mocks.getRefundDestination.mockResolvedValue({
+      ...refundDestinationAwaitingDetails,
+      amountAwaitingDetails: 0,
+      canEdit: false,
+    });
+  });
+
+  afterEach(() => {
+    mocks.getRefundDestination.mockReset();
+    mocks.listRefunds.mockReset();
+  });
+
+  it("explains a fully cancelled cash-on-delivery order at the top and drops the address", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "CANCELLED",
+      total: 4210,
+      refundedAmount: 4210,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["BRAND_UNAVAILABLE"],
+        amountOffCashPayment: 4210,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getAllByText("This order was cancelled.")).toHaveLength(1);
+    expect(screen.getByText("The brand couldn't supply it.")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 4,210 is off what you pay on delivery.")).toBeInTheDocument();
+    expect(screen.getByText("− Rs. 4,210")).toBeInTheDocument();
+    expect(screen.getByText("You pay")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 0")).toBeInTheDocument();
+    expect(screen.queryByText("Delivering to")).not.toBeInTheDocument();
+  });
+
+  it("asks for refund details on a paid order that sold out, and jumps to the form", async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    mocks.getRefundDestination.mockResolvedValue(refundDestinationAwaitingDetails);
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "PAID",
+      fulfilmentStatus: "CANCELLED",
+      refundedAmount: 1200,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["SOLD_OUT_AT_PAYMENT"],
+        amountComingBack: 1200,
+        amountAwaitingDetails: 1200,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(
+      screen.getByText("It sold out just before your payment went through."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Rs. 1,200 is coming back to you. Add your refund details so we can send it.",
+      ),
+    ).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Add refund details" }));
+
+    const formHeading = screen.getByRole("heading", {
+      name: "Where should we send your Rs. 1,200 refund?",
+    });
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(formHeading).toHaveFocus();
+  });
+
+  it("shows a refunded order as refunded with no action banner", async () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "REFUNDED",
+      fulfilmentStatus: "CANCELLED",
+      refundedAmount: 1200,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["CUSTOMER_CANCELLED"],
+        amountRefunded: 1200,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("Rs. 1,200 was refunded.")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getRefundDestination).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Add refund details" })).not.toBeInTheDocument();
+  });
+
+  it("names the cancelled items on a partly cancelled order and keeps the tracker", () => {
+    orderResult.data = buildOrder({
+      refundedAmount: 800,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 2,
+        causes: ["CUSTOMER_CANCELLED"],
+        amountOffCashPayment: 800,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("2 items cancelled.")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 800 is off what you pay on delivery.")).toBeInTheDocument();
+    expect(screen.getByText("Order placed")).toBeInTheDocument();
+    expect(screen.getByText("Delivering to")).toBeInTheDocument();
+  });
+
+  it("asks the rider for only what is left after some items were cancelled", () => {
+    orderResult.data = buildOrder({
+      total: 3770,
+      refundedAmount: 1900,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["CUSTOMER_CANCELLED"],
+        amountOffCashPayment: 1900,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(
+      screen.getByText("Keep Rs. 1,870 ready for the rider — you pay when it arrives."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Keep Rs\. 3,770/)).not.toBeInTheDocument();
+  });
+
+  it("stops asking for cash when every item on a cash order still on its way was refunded", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "SHIPPED",
+      total: 2220,
+      refundedAmount: 2220,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["STAFF_ADJUSTMENT"],
+        amountOffCashPayment: 2220,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("DUE")).not.toBeInTheDocument();
+  });
+
+  it("shows the carrier and tracking number of a single brand-shipped parcel", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "SHIPPED",
+      shipments: [
+        {
+          id: "ship-1",
+          brandName: "Aurora Label",
+          status: "SHIPPED",
+          fulfilmentMode: "BRAND_SHIPS",
+          carrier: "Pathao",
+          trackingNumber: "PA-123",
+          shippedAt: "2026-09-03T00:00:00.000Z",
+          deliveredAt: null,
+        },
+      ],
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("On the way")).toBeInTheDocument();
+    expect(screen.getByText("Pathao · PA-123")).toBeInTheDocument();
   });
 });

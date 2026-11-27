@@ -5,6 +5,7 @@ import type {
   PaymentTransactionStatus as PaymentTransactionStatusType,
   PaymentTransactionType as PaymentTransactionTypeType,
 } from "@outfiqe/types";
+import { OrderRefundCause } from "@outfiqe/types";
 import { OrderTrackingStage } from "@outfiqe/utils";
 import { z } from "zod";
 
@@ -111,6 +112,25 @@ export const paymentTransactionSchema = z.object({
 });
 export type PaymentTransaction = z.infer<typeof paymentTransactionSchema>;
 
+export const orderRefundSummarySchema = z.object({
+  cancelledUnitCount: z.number(),
+  causes: z.array(z.enum(OrderRefundCause)),
+  amountOffCashPayment: z.number(),
+  amountRefunded: z.number(),
+  amountComingBack: z.number(),
+  amountAwaitingDetails: z.number(),
+});
+export type OrderRefundSummary = z.infer<typeof orderRefundSummarySchema>;
+
+export const NO_REFUND_SUMMARY: OrderRefundSummary = {
+  cancelledUnitCount: 0,
+  causes: [],
+  amountOffCashPayment: 0,
+  amountRefunded: 0,
+  amountComingBack: 0,
+  amountAwaitingDetails: 0,
+};
+
 export const orderSchema = z.object({
   id: z.string(),
   createdAt: z.string(),
@@ -130,6 +150,7 @@ export const orderSchema = z.object({
   platformDiscountTotal: z.number().default(0),
   total: z.number(),
   refundedAmount: z.number().default(0),
+  refundSummary: orderRefundSummarySchema.default(NO_REFUND_SUMMARY),
   trackingStage: orderTrackingStageSummarySchema.nullable().default(null),
   promisedDelivery: z.object({ from: z.string(), by: z.string() }).nullable().default(null),
   items: z.array(orderItemSchema),

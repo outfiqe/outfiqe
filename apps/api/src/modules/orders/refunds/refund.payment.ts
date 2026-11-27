@@ -25,6 +25,7 @@ const REFUND_NOT_SETTLED = false;
 const REFUND_SETTLED = true;
 
 const NO_OPEN_MANUAL_REFUNDS = 0;
+const SINGLE_PRODUCT = 1;
 
 export const REFUND_SETTLEMENT = {
   PAID_BY_GATEWAY: "PAID_BY_GATEWAY",
@@ -72,6 +73,15 @@ export const askCustomerForRefundDetails = ({
   });
 };
 
+const hasNothingLeftToDeliver = (items: RefundToSettle["order"]["items"]): boolean =>
+  items.every(({ qty, refundedQty }) => refundedQty >= qty);
+
+const findSingleRefundedProductName = (lines: RefundToSettle["lines"]): string | undefined => {
+  const productNames = new Set(lines.map(({ orderItem }) => orderItem.product.name));
+  const [onlyProductName] = productNames;
+  return productNames.size === SINGLE_PRODUCT ? onlyProductName : undefined;
+};
+
 const announceRefundUpdate = async (
   refund: RefundToSettle,
   outcome: OrderRefundOutcome,
@@ -84,6 +94,8 @@ const announceRefundUpdate = async (
     amount: refund.totalAmount,
     outcome,
     method,
+    emptiesOrder: hasNothingLeftToDeliver(refund.order.items),
+    productName: findSingleRefundedProductName(refund.lines),
   });
 };
 

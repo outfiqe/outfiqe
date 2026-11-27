@@ -14,6 +14,7 @@ import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { deliveryZoneService } from "#modules/delivery-zones/delivery-zone.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { brandApplicationErrors } from "./brand-application.errors.js";
@@ -60,6 +61,7 @@ const emailBrandInvite = async (
 
 export const brandApplicationService = {
   async submit(input: CreateBrandApplicationInput): Promise<BrandApplicationRecord> {
+    if (input.city) await deliveryZoneService.assertCityIsDeliverable(input.city);
     const application = await brandApplicationRepository.create(input);
 
     const { subject, html } = brandApplicationReceivedInternalTemplate({

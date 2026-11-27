@@ -1,13 +1,40 @@
 "use client";
 
-import { Button, Checkbox, FormBanner, Input, Label, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { extractFieldIssueMessages } from "@outfiqe/client";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+} from "@outfiqe/design-system";
 import { RefundDestinationKind } from "@outfiqe/types";
-import { type FormEvent, useId, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { useNepalBanks } from "@/features/nepal-banks";
+import type { ApiClientError } from "@/shared/lib/apiClient";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
-import type { MyRefundDestination, SaveRefundDestinationBody } from "../api/refundSchemas";
+import {
+  isRefundFormFieldName,
+  NO_BANK_CHOSEN,
+  refundDetailsFormSchema,
+  type RefundDetailsFormValues,
+  toSaveRefundDestinationBody,
+} from "../api/refundDetailsFormSchema";
+import type { MyRefundDestination } from "../api/refundSchemas";
+import {
+  REFUND_DETAILS_HEADING_ID,
+  REFUND_DETAILS_SECTION_ID,
+} from "../constants/refundDetailsSection";
 import { REFUND_DESTINATION_KIND_LABELS } from "../constants/refundLabels";
 import { useSaveRefundDestination } from "../hooks/useSaveRefundDestination";
 import { isRefundDestinationKind } from "../utils/refundDestination.utils";
@@ -17,7 +44,8 @@ type RefundDetailsCardProps = {
   refundDestination: MyRefundDestination;
 };
 
-const NO_BANK_CHOSEN = "";
+const NO_WALLET_ID = "";
+const NO_ACCOUNT_NUMBER = "";
 
 const describeSavedDestination = ({
   kind,
@@ -34,37 +62,47 @@ export const RefundDetailsCard = ({ orderId, refundDestination }: RefundDetailsC
   const saveDestination = useSaveRefundDestination(orderId);
   const { data: banks } = useNepalBanks();
   const [isEditing, setIsEditing] = useState(destination === null);
-  const [kind, setKind] = useState<RefundDestinationKind>(
-    destination?.kind ?? refundDestination.suggestedKind ?? RefundDestinationKind.KHALTI,
-  );
-  const [walletId, setWalletId] = useState(
-    destination?.walletId ?? refundDestination.suggestedWalletId,
-  );
-  const [bankId, setBankId] = useState(destination?.bankId ?? NO_BANK_CHOSEN);
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState(
-    destination?.accountName ?? refundDestination.suggestedAccountName,
-  );
-  const [confirmsOwnership, setConfirmsOwnership] = useState(false);
-  const fieldIdPrefix = useId();
+  const form = useForm<RefundDetailsFormValues>({
+    resolver: zodResolver(refundDetailsFormSchema),
+    defaultValues: {
+      kind: destination?.kind ?? refundDestination.suggestedKind ?? RefundDestinationKind.KHALTI,
+      walletId: destination?.walletId ?? NO_WALLET_ID,
+      bankId: destination?.bankId ?? NO_BANK_CHOSEN,
+      accountNumber: NO_ACCOUNT_NUMBER,
+      accountName: destination?.accountName ?? refundDestination.suggestedAccountName,
+      confirmsOwnership: false,
+    },
+  });
+  const kind = form.watch("kind");
+  const confirmsOwnership = form.watch("confirmsOwnership");
   const isBank = kind === RefundDestinationKind.BANK;
 
-  const submitRefundDetails = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!confirmsOwnership) return;
-    const body: SaveRefundDestinationBody = isBank
-      ? { kind, bankId, accountNumber, accountName, confirmsOwnership }
-      : { kind, walletId, accountName, confirmsOwnership };
-    saveDestination.mutate(body, { onSuccess: () => setIsEditing(false) });
+  const showSaveFailure = (error: ApiClientError) => {
+    const messagesByField = extractFieldIssueMessages(error.details);
+    const fieldNames = Object.keys(messagesByField).filter(isRefundFormFieldName);
+    for (const fieldName of fieldNames) {
+      form.setError(fieldName, { message: messagesByField[fieldName] });
+    }
+    if (fieldNames.length === 0) form.setError("root", { message: getErrorMessage(error) });
   };
+
+  const submitRefundDetails = form.handleSubmit((values) => {
+    form.clearErrors("root");
+    saveDestination.mutate(toSaveRefundDestinationBody(values), {
+      onSuccess: () => setIsEditing(false),
+      onError: showSaveFailure,
+    });
+  });
 
   return (
     <section
-      aria-labelledby="refund-details-heading"
+      id={REFUND_DETAILS_SECTION_ID}
+      aria-labelledby={REFUND_DETAILS_HEADING_ID}
       className="mt-4 rounded-2xl border border-border p-5"
     >
       <h2
-        id="refund-details-heading"
+        id={REFUND_DETAILS_HEADING_ID}
+        tabIndex={-1}
         className="font-display text-base font-extrabold text-foreground"
       >
         {canEdit
@@ -84,94 +122,120 @@ export const RefundDetailsCard = ({ orderId, refundDestination }: RefundDetailsC
       )}
 
       {isEditing && canEdit && (
-        <form onSubmit={submitRefundDetails} className="mt-3 space-y-3">
-          {saveDestination.isError && (
-            <FormBanner>{getErrorMessage(saveDestination.error)}</FormBanner>
-          )}
-          <div>
-            <Label htmlFor={`${fieldIdPrefix}-kind`}>Send it to</Label>
-            <Select
-              id={`${fieldIdPrefix}-kind`}
-              value={kind}
-              onChange={(event) => {
-                if (isRefundDestinationKind(event.target.value)) setKind(event.target.value);
-              }}
-            >
-              {Object.values(RefundDestinationKind).map((destinationKind) => (
-                <option key={destinationKind} value={destinationKind}>
-                  {REFUND_DESTINATION_KIND_LABELS[destinationKind]}
-                </option>
-              ))}
-            </Select>
-          </div>
+        <Form {...form}>
+          <form onSubmit={submitRefundDetails} noValidate className="mt-3 space-y-3">
+            {form.formState.errors.root && (
+              <FormBanner>{form.formState.errors.root.message}</FormBanner>
+            )}
+            <FormField
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Send it to</FormLabel>
+                  <FormControl>
+                    <Select
+                      {...field}
+                      onChange={(event) => {
+                        if (isRefundDestinationKind(event.target.value)) {
+                          field.onChange(event.target.value);
+                        }
+                      }}
+                    >
+                      {Object.values(RefundDestinationKind).map((destinationKind) => (
+                        <option key={destinationKind} value={destinationKind}>
+                          {REFUND_DESTINATION_KIND_LABELS[destinationKind]}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-          {isBank ? (
-            <>
-              <div>
-                <Label htmlFor={`${fieldIdPrefix}-bank`}>Bank</Label>
-                <Select
-                  id={`${fieldIdPrefix}-bank`}
-                  value={bankId}
-                  onChange={(event) => setBankId(event.target.value)}
-                  required
-                >
-                  <option value={NO_BANK_CHOSEN}>Choose your bank</option>
-                  {banks?.map((bank) => (
-                    <option key={bank.id} value={bank.id}>
-                      {bank.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor={`${fieldIdPrefix}-account`}>Account number</Label>
-                <Input
-                  id={`${fieldIdPrefix}-account`}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={accountNumber}
-                  onChange={(event) => setAccountNumber(event.target.value)}
-                  required
+            {isBank ? (
+              <>
+                <FormField
+                  control={form.control}
+                  name="bankId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bank</FormLabel>
+                      <FormControl>
+                        <Select {...field}>
+                          <option value={NO_BANK_CHOSEN}>Choose your bank</option>
+                          {banks?.map((bank) => (
+                            <option key={bank.id} value={bank.id}>
+                              {bank.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </>
-          ) : (
-            <div>
-              <Label htmlFor={`${fieldIdPrefix}-wallet`}>
-                {REFUND_DESTINATION_KIND_LABELS[kind]} ID (mobile number)
-              </Label>
-              <Input
-                id={`${fieldIdPrefix}-wallet`}
-                inputMode="tel"
-                value={walletId}
-                onChange={(event) => setWalletId(event.target.value)}
-                required
+                <FormField
+                  control={form.control}
+                  name="accountNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account number</FormLabel>
+                      <FormControl>
+                        <Input inputMode="numeric" autoComplete="off" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            ) : (
+              <FormField
+                control={form.control}
+                name="walletId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{REFUND_DESTINATION_KIND_LABELS[kind]} ID (mobile number)</FormLabel>
+                    <FormControl>
+                      <Input inputMode="tel" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          )}
+            )}
 
-          <div>
-            <Label htmlFor={`${fieldIdPrefix}-name`}>Account holder name</Label>
-            <Input
-              id={`${fieldIdPrefix}-name`}
-              value={accountName}
-              onChange={(event) => setAccountName(event.target.value)}
-              required
+            <FormField
+              control={form.control}
+              name="accountName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account holder name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-            <Checkbox
-              checked={confirmsOwnership}
-              onChange={(event) => setConfirmsOwnership(event.target.checked)}
-            />
-            This account is mine
-          </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+              <Checkbox
+                checked={confirmsOwnership}
+                onChange={(event) => form.setValue("confirmsOwnership", event.target.checked)}
+              />
+              This account is mine
+            </label>
 
-          <Button type="submit" disabled={!confirmsOwnership} isLoading={saveDestination.isPending}>
-            Send refund details
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              disabled={!confirmsOwnership}
+              isLoading={saveDestination.isPending}
+            >
+              Send refund details
+            </Button>
+          </form>
+        </Form>
       )}
     </section>
   );

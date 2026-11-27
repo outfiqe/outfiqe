@@ -206,8 +206,10 @@ export const orderRefundRepository = {
             total: true,
             user: { select: { email: true } },
             refundDestination: { select: { id: true } },
+            items: { select: { qty: true, refundedQty: true } },
           },
         },
+        lines: { select: { orderItem: { select: { product: { select: { name: true } } } } } },
       },
     });
   },

@@ -15,7 +15,6 @@ import { platformAudit } from "#modules/platform-audit/platform-audit.service.js
 
 import { ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
 import { orderErrors } from "../order.errors.js";
-import { orderItemChangeAccess } from "../refunds/item-change-access.js";
 import { isGroupStillWithBrand } from "../refunds/line-cancellation.utils.js";
 import { orderRefundEngine } from "../refunds/refund.engine.js";
 import { orderUnavailableItemRepository } from "./unavailable-item.repository.js";
@@ -69,13 +68,6 @@ export const orderUnavailableItemService = {
   ): Promise<UnavailableItemRequestView[]> {
     const brandId = await requireBrandId(userId);
     const group = await requireBrandGroup(groupId, brandId);
-    if (!(await orderItemChangeAccess.isBrandAllowingItemChanges(brandId))) {
-      throw new AppError(
-        "UNAVAILABLE_REPORTS_NOT_AVAILABLE",
-        "Reporting single items isn't available for your brand yet. Use Request cancellation instead.",
-        HTTP_STATUS.CONFLICT,
-      );
-    }
     if (!isGroupStillWithBrand(group)) {
       throw new AppError(
         "ITEM_ALREADY_ON_ITS_WAY",

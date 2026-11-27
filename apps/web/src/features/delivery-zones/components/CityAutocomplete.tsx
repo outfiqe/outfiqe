@@ -13,11 +13,9 @@ import { forwardRef, useState } from "react";
 
 import { useCitySearch } from "../hooks/useCitySearch";
 import { groupCitiesByZone } from "../utils/groupCitiesByZone";
-import { normalizeCityName } from "../utils/resolveZonePreview";
 
 const CITY_SEARCH_DEBOUNCE_MS = 300;
-const MIN_TYPED_CITY_LENGTH = 2;
-const TYPED_CITY_OPTION_PREFIX = "typed-city:";
+const SKELETON_ROW_COUNT = 4;
 
 type CityAutocompleteProps = Omit<
   React.ComponentPropsWithoutRef<typeof AutocompleteInput>,
@@ -39,17 +37,17 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
 
     const debouncedQuery = useDebouncedValue(query, CITY_SEARCH_DEBOUNCE_MS);
     const isSearching = debouncedQuery.trim().length > 0;
-    const { data: results, isLoading } = useCitySearch(debouncedQuery, isSearching);
+    const {
+      data: results,
+      isLoading: isFetchingCities,
+      isError: hasSearchFailed,
+    } = useCitySearch(debouncedQuery, isSearching);
     const cities = results ?? [];
 
     const zoneGroups = groupCitiesByZone(cities);
 
-    const typedCity = debouncedQuery.trim();
-    const hasExactMatch = cities.some(
-      (match) => normalizeCityName(match.city) === normalizeCityName(typedCity),
-    );
-    const canUseTypedCity =
-      isSearching && !isLoading && !hasExactMatch && typedCity.length >= MIN_TYPED_CITY_LENGTH;
+    const isWaitingForResults = isFetchingCities || query.trim() !== debouncedQuery.trim();
+    const hasNoDeliverableMatch = !isWaitingForResults && !hasSearchFailed && cities.length === 0;
 
     const selectCity = (city: string) => {
       setQuery(city);
@@ -72,8 +70,8 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
 
         {isSearching && (
           <AutocompleteContent className="mt-2">
-            {isLoading &&
-              Array.from({ length: 4 }).map((_, index) => (
+            {isWaitingForResults &&
+              Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
                 <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
               ))}
 
@@ -91,23 +89,16 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
               </AutocompleteGroup>
             ))}
 
-            {!isLoading && cities.length === 0 && !canUseTypedCity && (
-              <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                Keep typing your city
+            {hasSearchFailed && !isWaitingForResults && (
+              <p role="alert" className="px-2 py-4 text-center text-xs text-muted-foreground">
+                We couldn&apos;t load cities right now. Please try again
               </p>
             )}
 
-            {canUseTypedCity && (
-              <AutocompleteGroup label="Not in the list">
-                <AutocompleteItem
-                  value={`${TYPED_CITY_OPTION_PREFIX}${typedCity}`}
-                  onSelect={() => selectCity(typedCity)}
-                >
-                  <span className="truncate text-[13px] text-foreground">
-                    Use &ldquo;{typedCity}&rdquo;
-                  </span>
-                </AutocompleteItem>
-              </AutocompleteGroup>
+            {hasNoDeliverableMatch && (
+              <p role="status" className="px-2 py-4 text-center text-xs text-muted-foreground">
+                We don&apos;t deliver to this area yet
+              </p>
             )}
           </AutocompleteContent>
         )}

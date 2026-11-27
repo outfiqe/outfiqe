@@ -65,3 +65,5 @@ actually passes.
   `soldOut: true`, so the existing sold-out treatment applies: it is left out of the subtotal, the
   item count and coupon eligibility, and the shopper sees the same state as any unavailable item.
   `orders` checkout uses the same predicate to refuse the purchase.
+
+**The city must be one a delivery zone lists.** `PATCH /cart/city` runs `deliveryZoneService.assertCityIsDeliverable` and answers `422` with a `city` field issue when no zone lists it, so a typo never reaches a shipping record. See the delivery-zones README.

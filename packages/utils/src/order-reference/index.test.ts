@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatOrderReference } from "./orderReference.utils";
+import { formatOrderReference } from "./index";
 
 describe("formatOrderReference", () => {
   it("shortens a UUID to a prefixed, upper-case reference", () => {

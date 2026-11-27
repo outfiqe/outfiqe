@@ -172,6 +172,8 @@ export type DomainEventPayloads = {
     amount: number;
     outcome: OrderRefundOutcome;
     method: OrderRefundMethod | null;
+    emptiesOrder: boolean;
+    productName?: string;
   };
   [DomainEvents.PRODUCT_REVIEWED]: {
     productId: string;

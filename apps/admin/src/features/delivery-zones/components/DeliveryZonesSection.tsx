@@ -244,8 +244,9 @@ export const DeliveryZonesSection = () => {
     <div>
       <h2 className="font-display text-lg font-bold text-foreground">Delivery zones</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Delivery and cash-on-delivery fees, matched by city. An order from a city that doesn&apos;t
-        match any zone uses the default zone&apos;s rates.
+        Delivery and cash-on-delivery fees, matched by city. Shoppers can only choose a city listed
+        in a zone, so every city Outfiqe delivers to must be listed here, including the cities
+        covered by the default zone.
       </p>
 
       {canManageZones && (

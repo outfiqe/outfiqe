@@ -1,8 +1,8 @@
 import { Badge, Button, toast } from "@outfiqe/design-system";
 import { RefundDestinationKind } from "@outfiqe/types";
-import { formatDate } from "@outfiqe/utils";
+import { formatDate, formatOrderReference } from "@outfiqe/utils";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -78,26 +78,25 @@ export const RefundQueueCard = ({ refund, canManage, onMarkPaid }: RefundQueueCa
     createdAt,
     destination,
   } = refund;
+  const markPaidHintId = useId();
 
   return (
     <article className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-base font-bold text-foreground">
-            Rs. {totalAmount.toLocaleString()} to {customerName}
+            <span className="block text-xs font-medium text-muted-foreground">
+              Order {formatOrderReference(orderId)}
+            </span>
+            <span>
+              Rs. {totalAmount.toLocaleString()} to {customerName}
+            </span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {customerPhone} · paid by {paymentMethod} · {REFUND_CAUSE_LABELS[cause]} ·{" "}
             {formatDate(createdAt)}
           </p>
           <p className="text-sm text-muted-foreground">{reason}</p>
-          <Link
-            to="/orders/$orderId"
-            params={{ orderId }}
-            className="mt-1 inline-block text-sm font-medium text-foreground underline"
-          >
-            Open order
-          </Link>
         </div>
         <Badge tone={destination ? "neutral" : "negative"} showDot={false}>
           {destination ? "Ready to pay" : "Waiting for details"}
@@ -106,11 +105,30 @@ export const RefundQueueCard = ({ refund, canManage, onMarkPaid }: RefundQueueCa
 
       <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-3">
         <RefundDestinationDetails refund={refund} />
-        {canManage && (
-          <Button size="sm" onClick={() => onMarkPaid(refund)} disabled={!destination}>
-            Mark as paid
-          </Button>
-        )}
+        <div className="ml-auto flex flex-col items-end gap-1.5">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/orders/$orderId" params={{ orderId }}>
+                Open order
+              </Link>
+            </Button>
+            {canManage && (
+              <Button
+                size="sm"
+                onClick={() => onMarkPaid(refund)}
+                disabled={!destination}
+                aria-describedby={destination ? undefined : markPaidHintId}
+              >
+                Mark as paid
+              </Button>
+            )}
+          </div>
+          {canManage && !destination && (
+            <p id={markPaidHintId} className="text-xs text-muted-foreground">
+              Available once the customer adds where to send it.
+            </p>
+          )}
+        </div>
       </div>
     </article>
   );

@@ -54,6 +54,8 @@ export const PLATFORM_AUDIT_ACTION = {
   COMMISSION_TIER_DELETED: "commission-tier.deleted",
   ORDER_RETURNED_TO_ORIGIN: "order.returned-to-origin",
   ORDER_ITEMS_REFUNDED: "order.items-refunded",
+  BRAND_CANCELLATION_APPROVED: "order.brand-cancellation-approved",
+  BRAND_CANCELLATION_REJECTED: "order.brand-cancellation-rejected",
   ORDER_MANUAL_REFUND_PAID: "order.manual-refund-paid",
   ORDER_REFUND_ACCOUNT_REVEALED: "order.refund-account-revealed",
   OUTFIT_OFFER_RELEASED_BY_ADMIN: "outfit-offer.released-by-admin",

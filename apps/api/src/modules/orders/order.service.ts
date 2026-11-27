@@ -26,7 +26,6 @@ import {
   toOrderSummaryView,
   toOrderView,
 } from "./order.utils.js";
-import { orderItemChangeAccess } from "./refunds/item-change-access.js";
 import { orderLineCancellationService } from "./refunds/line-cancellation.service.js";
 import { orderOutstandingAmountService } from "./refunds/refund.outstanding.js";
 import { orderRefundService } from "./refunds/refund.service.js";
@@ -38,10 +37,7 @@ export const orderService = {
   async getOrder(userId: string, orderId: string): Promise<OrderView> {
     const order = await orderRepository.findByIdForUser(userId, orderId);
     if (!order) throw orderErrors.notFound();
-    const brandIdsAllowingItemChanges = await orderItemChangeAccess.listBrandIdsAllowingItemChanges(
-      order.fulfilmentGroups.map(({ brandId }) => brandId),
-    );
-    return toOrderView(order, brandIdsAllowingItemChanges);
+    return toOrderView(order);
   },
 
   async listOrders(

@@ -52,6 +52,18 @@ export const deliveryZoneRepository = {
     return match?.zone ?? null;
   },
 
+  async isCityListed(
+    countryCode: string,
+    cityNormalized: string,
+    client: DbClient = prisma,
+  ): Promise<boolean> {
+    const listedCity = await client.deliveryZoneCity.findUnique({
+      where: { countryCode_cityNormalized: { countryCode, cityNormalized } },
+      select: { id: true },
+    });
+    return listedCity !== null;
+  },
+
   async findDefault(
     countryCode: string,
     client: DbClient = prisma,

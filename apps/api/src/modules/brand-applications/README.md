@@ -62,3 +62,5 @@ half-provisioned.
 - The brand invite token is generated as an opaque token and only its hash is stored
   (`generateOpaqueToken`/`hashToken` from `#lib/opaque-token.utils.js`), the same pattern used for
   other invite/reset flows in this codebase — the raw token only ever exists in the outbound email.
+
+**The city must be one a delivery zone lists.** Submitting an application that includes a city runs `deliveryZoneService.assertCityIsDeliverable` and answers `422` with a `city` field issue when no zone lists it, so a typo never reaches a shipping record. See the delivery-zones README.

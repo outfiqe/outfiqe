@@ -288,6 +288,7 @@ describe("product analytics consumers", () => {
       refundId: "refund-1",
       amount: 900,
       method: null,
+      emptiesOrder: false,
     };
 
     await refundHandler(

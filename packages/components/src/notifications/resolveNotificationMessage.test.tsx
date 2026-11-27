@@ -269,6 +269,118 @@ describe("resolveNotificationMessage for order updates", () => {
   });
 });
 
+describe("resolveNotificationMessage for order notifications naming the order", () => {
+  it("names the order in a status update, and still reads well without a reference", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_STATUS_CHANGED",
+          metadata: { status: "SHIPPED", orderReference: "#A5E730AF" },
+        }),
+      ),
+    ).toBe("Order #A5E730AF was shipped");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_STATUS_CHANGED",
+          metadata: {
+            status: "SHIPPED",
+            trackingStage: "PACKED",
+            orderReference: "#A5E730AF",
+          },
+        }),
+      ),
+    ).toBe("Order #A5E730AF is packed");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_STATUS_CHANGED",
+          metadata: {
+            status: "SHIPPED",
+            trackingStage: "COLLECTING_ITEMS",
+            orderReference: "#A5E730AF",
+          },
+        }),
+      ),
+    ).toBe("We're collecting your items from the brand (order #A5E730AF)");
+  });
+
+  it("names the order a refund-details request is about", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_DETAILS_NEEDED",
+          metadata: { amount: 850, orderReference: "#4C9B4DF8" },
+        }),
+      ),
+    ).toBe("Tell us where to send your Rs. 850 refund for order #4C9B4DF8");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_DETAILS_NEEDED",
+          metadata: { amount: 850, orderReference: "#4C9B4DF8", productName: "Linen Shirt" },
+        }),
+      ),
+    ).toBe("Tell us where to send your Rs. 850 refund for Linen Shirt (order #4C9B4DF8)");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "ORDER_REFUND_DETAILS_NEEDED", metadata: { amount: 850 } }),
+      ),
+    ).toBe("Tell us where to send your Rs. 850 refund for your order");
+  });
+
+  it("says nothing is left to pay when a cash on delivery refund empties the order", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_ISSUED",
+          metadata: {
+            amount: 4210,
+            method: "CASH_NOT_COLLECTED",
+            emptiesOrder: true,
+            orderReference: "#28A55BF3",
+          },
+        }),
+      ),
+    ).toBe("Order #28A55BF3 was cancelled — nothing to pay");
+  });
+
+  it("still tells a cash on delivery shopper how much less they pay when items remain", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_ISSUED",
+          metadata: {
+            amount: 600,
+            method: "CASH_NOT_COLLECTED",
+            emptiesOrder: false,
+            orderReference: "#28A55BF3",
+          },
+        }),
+      ),
+    ).toBe("You'll pay Rs. 600 less on delivery of order #28A55BF3");
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_ISSUED",
+          metadata: { amount: 600, method: "CASH_NOT_COLLECTED" },
+        }),
+      ),
+    ).toBe("You'll pay Rs. 600 less on delivery of your order");
+  });
+
+  it("names the order for a refund paid back", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "ORDER_REFUND_ISSUED",
+          metadata: { amount: 850, method: "GATEWAY", orderReference: "#4C9B4DF8" },
+        }),
+      ),
+    ).toBe("We've refunded Rs. 850 on order #4C9B4DF8");
+  });
+});
+
 describe("resolveNotificationMessage for delivery alerts", () => {
   it("names the alert for staff, with a fallback", () => {
     expect(

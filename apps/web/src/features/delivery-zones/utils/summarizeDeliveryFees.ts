@@ -1,4 +1,4 @@
-import type { DeliveryZone } from "@/features/delivery-zones";
+import type { DeliveryZone } from "../api/deliveryZoneSchemas";
 
 const NO_THRESHOLD = 0;
 

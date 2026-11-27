@@ -7,6 +7,7 @@ import {
   NotificationEntityType,
   NotificationSurface,
   NotificationType,
+  OrderRefundMethod,
 } from "#generated/prisma/enums.js";
 import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
@@ -103,7 +104,83 @@ describe("toPushMessage", () => {
     );
 
     expect(stagedMessage.body).toBe("Your order is out for delivery");
-    expect(generalMessage.body).toBe("There's an update on one of your orders");
+    expect(generalMessage.body).toBe("Your order was shipped");
+  });
+
+  it("names the order in a status update, with and without a tracking stage", () => {
+    const stagedMessage = toPushMessage(
+      aNotification({
+        type: NotificationType.ORDER_STATUS_CHANGED,
+        metadata: { trackingStage: "OUT_FOR_DELIVERY", orderReference: "#A5E730AF" },
+      }),
+    );
+    const statusOnlyMessage = toPushMessage(
+      aNotification({
+        type: NotificationType.ORDER_STATUS_CHANGED,
+        metadata: { status: "SHIPPED", orderReference: "#A5E730AF" },
+      }),
+    );
+    const bareMessage = toPushMessage(
+      aNotification({ type: NotificationType.ORDER_STATUS_CHANGED, metadata: {} }),
+    );
+
+    expect(stagedMessage.body).toBe("Order #A5E730AF is out for delivery");
+    expect(statusOnlyMessage.body).toBe("Order #A5E730AF was shipped");
+    expect(bareMessage.body).toBe("Your order was updated");
+  });
+
+  describe("order refunds", () => {
+    const refundIssued = (metadata: NotificationBroadcastPayload["metadata"]) =>
+      toPushMessage(aNotification({ type: NotificationType.ORDER_REFUND_ISSUED, metadata }));
+
+    it("tells a cash-on-delivery shopper which order owes less", () => {
+      expect(
+        refundIssued({
+          method: OrderRefundMethod.CASH_NOT_COLLECTED,
+          amount: 850,
+          orderReference: "#28A55BF3",
+          productName: "Linen Shirt",
+        }).body,
+      ).toBe("You'll pay Rs. 850 less on delivery of Linen Shirt (order #28A55BF3)");
+    });
+
+    it("says a fully cancelled cash-on-delivery order has nothing to pay", () => {
+      expect(
+        refundIssued({
+          method: OrderRefundMethod.CASH_NOT_COLLECTED,
+          amount: 850,
+          orderReference: "#28A55BF3",
+          emptiesOrder: true,
+        }).body,
+      ).toBe("Order #28A55BF3 was cancelled — nothing to pay");
+    });
+
+    it("names the order a gateway refund came from", () => {
+      expect(
+        refundIssued({
+          method: OrderRefundMethod.GATEWAY,
+          amount: 850,
+          orderReference: "#28A55BF3",
+        }).body,
+      ).toBe("We've refunded Rs. 850 on order #28A55BF3");
+    });
+
+    it("falls back to your order for events without the order reference", () => {
+      expect(refundIssued({ method: OrderRefundMethod.CASH_NOT_COLLECTED, amount: 850 }).body).toBe(
+        "You'll pay Rs. 850 less on delivery of your order",
+      );
+    });
+
+    it("asks where to send the refund, naming the order", () => {
+      const message = toPushMessage(
+        aNotification({
+          type: NotificationType.ORDER_REFUND_DETAILS_NEEDED,
+          metadata: { amount: 850, orderReference: "#28A55BF3" },
+        }),
+      );
+
+      expect(message.body).toBe("Tell us where to send your Rs. 850 refund for order #28A55BF3");
+    });
   });
 
   it("falls back to the orders list when an order update has no entity id", () => {

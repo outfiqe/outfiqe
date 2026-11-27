@@ -1,15 +1,14 @@
 import { env } from "#config/env.config.js";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
-import {
-  manualRefundNeededTemplate,
-  paymentSettledTemplate,
-} from "#email-templates/order.templates.js";
+import { paymentSettledTemplate } from "#email-templates/order.templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import {
   FulfilmentStatus,
   InventoryMovementKind,
   InventoryMovementSource,
+  OrderRefundCause,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
@@ -17,11 +16,12 @@ import {
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { type AppliedRefund, orderRefundEngine } from "#modules/orders/refunds/refund.engine.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { assertGatewayAvailable } from "./payment.availability.js";
-import { SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
+import { SOLD_OUT_AT_PAYMENT_REASON, SUPERSEDED_BY_RETRY_MARKER } from "./payment.constants.js";
 import { paymentErrors } from "./payment.errors.js";
 import { paymentRepository } from "./payment.repository.js";
 import type {
@@ -36,9 +36,14 @@ import { extractKhaltiTransactionId, khaltiProvider } from "./providers/khalti.p
 
 const SETTLEMENT_OUTCOME = {
   SETTLED_ELSEWHERE: "settled_elsewhere",
-  NEEDS_MANUAL_REFUND: "needs_manual_refund",
+  SOLD_OUT: "sold_out",
   PLACED: "placed",
 } as const;
+
+type SettlementResult =
+  | { outcome: typeof SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE }
+  | { outcome: typeof SETTLEMENT_OUTCOME.PLACED }
+  | { outcome: typeof SETTLEMENT_OUTCOME.SOLD_OUT; appliedRefund: AppliedRefund };
 
 const providers: Partial<Record<PaymentMethod, PaymentProvider>> = {
   [PaymentMethod.ESEWA]: esewaProvider,
@@ -57,16 +62,6 @@ const requireProvider = (method: PaymentMethod): PaymentProvider => {
   return provider;
 };
 
-const alertOpsForManualRefund = (orderId: string, total: number): void => {
-  const { subject, html } = manualRefundNeededTemplate({ orderId, total });
-  void sendEmail({
-    to: env.OPS_NOTIFICATION_EMAIL,
-    subject,
-    body: `Order ${orderId} needs a manual refund.`,
-    html,
-  });
-};
-
 const notifyBuyerPaymentSettled = async (orderId: string, total: number): Promise<void> => {
   const order = await prisma.order.findUnique({ where: { id: orderId }, select: { userId: true } });
   if (!order) return;
@@ -83,14 +78,34 @@ const notifyBuyerPaymentSettled = async (orderId: string, total: number): Promis
   });
 };
 
+type PaymentOrder = NonNullable<Awaited<ReturnType<typeof paymentRepository.findOrderForPayment>>>;
+
+const refundSoldOutOrderInTransaction = async (
+  tx: Prisma.TransactionClient,
+  order: PaymentOrder,
+): Promise<AppliedRefund> => {
+  await paymentRepository.markOrderPaidButUnfulfillable(tx, order.id);
+  return orderRefundEngine.claimAndApplyInTransaction(
+    tx,
+    {
+      orderId: order.id,
+      lineRequests: order.items.map(({ id, qty }) => ({ orderItemId: id, qty })),
+      cause: OrderRefundCause.SOLD_OUT_AT_PAYMENT,
+      reason: SOLD_OUT_AT_PAYMENT_REASON,
+      requestedById: null,
+    },
+    { restockUnits: false, actorUserId: null },
+  );
+};
+
 const settleVerified = async (
-  order: NonNullable<Awaited<ReturnType<typeof paymentRepository.findOrderForPayment>>>,
+  order: PaymentOrder,
   transactionId: string,
   rawResponse: unknown,
 ): Promise<void> => {
-  const settlementOutcome = await prisma.$transaction(async (tx) => {
+  const settlement = await prisma.$transaction(async (tx): Promise<SettlementResult> => {
     const settled = await paymentRepository.settleTransaction(tx, transactionId, rawResponse);
-    if (!settled) return SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE;
+    if (!settled) return { outcome: SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE };
 
     const insufficientSizeIds = await productService.decrementStockForItems(
       tx,
@@ -103,28 +118,28 @@ const settleVerified = async (
     );
 
     if (insufficientSizeIds.length > 0) {
-      await paymentRepository.markOrderNeedsManualRefund(tx, order.id);
-      return SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND;
+      const appliedRefund = await refundSoldOutOrderInTransaction(tx, order);
+      return { outcome: SETTLEMENT_OUTCOME.SOLD_OUT, appliedRefund };
     }
 
     await paymentRepository.markOrderPlaced(tx, order.id);
-    return SETTLEMENT_OUTCOME.PLACED;
+    return { outcome: SETTLEMENT_OUTCOME.PLACED };
   });
 
-  if (settlementOutcome === SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE) return;
+  if (settlement.outcome === SETTLEMENT_OUTCOME.SETTLED_ELSEWHERE) return;
 
-  if (settlementOutcome === SETTLEMENT_OUTCOME.NEEDS_MANUAL_REFUND) {
-    alertOpsForManualRefund(order.id, order.total);
-  } else {
-    await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, {
-      orderId: order.id,
-      userId: order.userId,
-    });
+  if (settlement.outcome === SETTLEMENT_OUTCOME.SOLD_OUT) {
+    await orderRefundEngine.finishAfterCommit(settlement.appliedRefund);
+    return;
   }
+
+  await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, {
+    orderId: order.id,
+    userId: order.userId,
+  });
   await notifyBuyerPaymentSettled(order.id, order.total);
 };
 
-type PaymentOrder = NonNullable<Awaited<ReturnType<typeof paymentRepository.findOrderForPayment>>>;
 type VerifiableAttempt = Awaited<
   ReturnType<typeof paymentRepository.findVerifiableTransactions>
 >[number];

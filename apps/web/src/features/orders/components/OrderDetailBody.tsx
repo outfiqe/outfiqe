@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { formatOrderReference } from "@outfiqe/utils";
 import { Ban, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -12,6 +13,7 @@ import { cn } from "@/shared/lib/cn";
 import {
   BRAND_SHIPS_MODE,
   FulfilmentStatus,
+  NO_REFUND_SUMMARY,
   PaymentMethod,
   PaymentStatus,
 } from "../api/orderSchemas";
@@ -22,21 +24,30 @@ import {
   hasNothingLeftToPay,
   NOTHING_TO_PAY_LABEL,
 } from "../utils/cancellationWording.utils";
-import { formatOrderReference } from "../utils/orderReference.utils";
+import {
+  buildCancelledMoneyLines,
+  buildOrderCancellationNotice,
+} from "../utils/orderRefundNotice.utils";
 import { CancelItemsModal } from "./CancelItemsModal";
 import { CancelOrderButton } from "./CancelOrderButton";
+import { OrderCancellationNotice } from "./OrderCancellationNotice";
 import { OrderPriceBreakdown } from "./OrderPriceBreakdown";
 import { OrderRefundsSection } from "./OrderRefundsSection";
 import { OrderTracker } from "./OrderTracker";
 import { OrderTrackingTimeline } from "./OrderTrackingTimeline";
 import { PendingPaymentPanel } from "./PendingPaymentPanel";
+import { RefundDetailsActionBanner } from "./RefundDetailsActionBanner";
 import { RefundDetailsCard } from "./RefundDetailsCard";
 import { ShipmentTrackers } from "./ShipmentTrackers";
+import { ShipmentTrackingLine } from "./ShipmentTrackingLine";
 import { StatusBadge } from "./StatusBadge";
 import { TransactionLedger } from "./TransactionLedger";
 
 const NOTHING_REFUNDED = 0;
 const NO_SHIPMENTS = 0;
+const NO_CANCELLED_UNITS = 0;
+const SINGLE_SHIPMENT = 1;
+const NOTHING_LEFT_TO_PAY = 0;
 
 type OrderDetailBodyProps = {
   orderId: string;
@@ -45,7 +56,10 @@ type OrderDetailBodyProps = {
 export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
   const { isAuthenticated, isAuthResolved } = useAuth();
   const orderQuery = useOrder(orderId);
-  const hasRefunds = (orderQuery.data?.refundedAmount ?? NOTHING_REFUNDED) > NOTHING_REFUNDED;
+  const refundSummary = orderQuery.data?.refundSummary ?? NO_REFUND_SUMMARY;
+  const hasRefunds =
+    (orderQuery.data?.refundedAmount ?? NOTHING_REFUNDED) > NOTHING_REFUNDED ||
+    refundSummary.cancelledUnitCount > NO_CANCELLED_UNITS;
   const refundDestinationQuery = useRefundDestination(orderId, hasRefunds);
   const [isCancelItemsOpen, setIsCancelItemsOpen] = useState(false);
 
@@ -104,18 +118,42 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     ({ fulfilmentMode }) => fulfilmentMode === BRAND_SHIPS_MODE,
   );
   const cancellableItems = items.filter((orderItem) => orderItem.canCancel);
+  const [onlyShipment] = shipments;
+  const brandShippedSingleShipment =
+    shipments.length === SINGLE_SHIPMENT && onlyShipment?.fulfilmentMode === BRAND_SHIPS_MODE
+      ? onlyShipment
+      : null;
   const refundDestination = refundDestinationQuery.data;
   const showsRefundDetails =
     refundDestination !== undefined &&
     (refundDestination.canEdit || refundDestination.destination !== null);
+  const needsRefundDetails =
+    refundDestination !== undefined &&
+    refundDestination.canEdit &&
+    refundDestination.destination === null;
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const isMoneyUntaken = hasNoMoneyTaken(paymentStatus);
-  const hasNothingToPay = hasNothingLeftToPay(fulfilmentStatus, paymentStatus);
+  const cancelledMoney = buildCancelledMoneyLines({
+    total,
+    fulfilmentStatus,
+    paymentStatus,
+    refundSummary,
+  });
+  const amountLeftToPay = cancelledMoney?.payAmount ?? total;
+  const hasNothingToPay =
+    hasNothingLeftToPay(fulfilmentStatus, paymentStatus) ||
+    (isMoneyUntaken && amountLeftToPay === NOTHING_LEFT_TO_PAY);
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
     paymentStatus === PaymentStatus.INITIATED;
+  const cancellationNotice = buildOrderCancellationNotice({
+    fulfilmentStatus,
+    paymentMethod,
+    refundSummary,
+  });
+  const showsTracker = !awaitingPayment && !(orderCancelled && cancellationNotice !== null);
 
   return (
     <div className="mx-auto max-w-lg py-10">
@@ -151,11 +189,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
             {awaitingPayment
               ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
               : isMoneyUntaken
-                ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
+                ? `Keep Rs. ${amountLeftToPay.toLocaleString()} ready for the rider — you pay when it arrives.`
                 : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
           </p>
         )}
       </div>
+
+      {cancellationNotice && <OrderCancellationNotice notice={cancellationNotice} />}
+      {needsRefundDetails && (
+        <RefundDetailsActionBanner
+          amountAwaitingDetails={refundDestination.amountAwaitingDetails}
+        />
+      )}
 
       {awaitingPayment && (
         <div className="mt-6">
@@ -164,7 +209,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
       )}
 
       <div className="mt-6 rounded-2xl border border-border p-5">
-        {!awaitingPayment &&
+        {showsTracker &&
           (trackingStage ? (
             <div className="space-y-5">
               <OrderTrackingTimeline
@@ -179,13 +224,18 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           ) : hasMultipleShipments ? (
             <ShipmentTrackers shipments={shipments} />
           ) : (
-            <OrderTracker fulfilmentStatus={fulfilmentStatus} />
+            <>
+              <OrderTracker fulfilmentStatus={fulfilmentStatus} />
+              {brandShippedSingleShipment && (
+                <ShipmentTrackingLine shipment={brandShippedSingleShipment} />
+              )}
+            </>
           ))}
 
         <div
           className={cn(
             "flex justify-between text-sm text-muted-foreground",
-            !awaitingPayment && "mt-5 border-t border-border pt-4",
+            showsTracker && "mt-5 border-t border-border pt-4",
           )}
         >
           <span>Payment</span>
@@ -195,12 +245,14 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
             <StatusBadge status={paymentStatus} />
           )}
         </div>
-        <div className="flex justify-between py-1.5 text-sm text-muted-foreground">
-          <span>Delivering to</span>
-          <span className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "text-right")}>
-            {address}, {city}
-          </span>
-        </div>
+        {!orderCancelled && (
+          <div className="flex justify-between py-1.5 text-sm text-muted-foreground">
+            <span>Delivering to</span>
+            <span className={cn(PRIVATE_ANALYTICS_CLASS_NAME, "text-right")}>
+              {address}, {city}
+            </span>
+          </div>
+        )}
         <OrderPriceBreakdown
           items={items}
           subtotal={subtotal}
@@ -209,6 +261,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
           codFee={codFee}
           total={total}
           isMoneyUntaken={isMoneyUntaken}
+          cancelledMoney={cancelledMoney}
         />
 
         {!isMoneyUntaken && <TransactionLedger transactions={transactions} />}

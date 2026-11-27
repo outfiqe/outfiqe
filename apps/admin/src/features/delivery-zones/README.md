@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Lets the team set delivery pricing by city: each zone lists its cities, a standard delivery fee, a free-delivery threshold and a cash-on-delivery fee, and one zone is the default for any city not listed.
+Lets the team set delivery pricing by city: each zone lists its cities, a standard delivery fee, a free-delivery threshold and a cash-on-delivery fee. The cities listed across all zones are the only places shoppers, saved addresses, brand applications and brand pickup locations can use, so the default zone needs its own cities listed too.
 
 ## Structure
 

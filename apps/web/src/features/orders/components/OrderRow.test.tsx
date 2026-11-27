@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { OrderSummary } from "../api/orderSchemas";
+import { NO_REFUND_SUMMARY, type OrderSummary } from "../api/orderSchemas";
 import { OrderRow } from "./OrderRow";
 
 const buildOrderSummary = (overrides: Partial<OrderSummary> = {}): OrderSummary => ({
@@ -18,6 +18,7 @@ const buildOrderSummary = (overrides: Partial<OrderSummary> = {}): OrderSummary 
   platformDiscountTotal: 0,
   total: 2600,
   refundedAmount: 0,
+  refundSummary: NO_REFUND_SUMMARY,
   promisedDelivery: null,
   itemCount: 1,
   firstItemImageUrl: null,
@@ -64,6 +65,74 @@ describe("OrderRow", () => {
     );
 
     expect(screen.getByText("PAID")).toBeInTheDocument();
+  });
+
+  it("shows no refund line when nothing was cancelled", () => {
+    render(<OrderRow order={buildOrderSummary()} />);
+
+    expect(screen.queryByText(/cancelled/)).not.toBeInTheDocument();
+  });
+
+  it("highlights an order whose refund is waiting for the shopper's details", () => {
+    render(
+      <OrderRow
+        order={buildOrderSummary({
+          paymentMethod: "ESEWA",
+          paymentStatus: "PAID",
+          fulfilmentStatus: "CANCELLED",
+          refundSummary: {
+            ...NO_REFUND_SUMMARY,
+            cancelledUnitCount: 2,
+            causes: ["SOLD_OUT_AT_PAYMENT"],
+            amountComingBack: 4210,
+            amountAwaitingDetails: 4210,
+          },
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByText("2 items cancelled · Action needed: add refund details"),
+    ).toBeInTheDocument();
+  });
+
+  it("says a cancelled item is off what a cash-on-delivery shopper pays", () => {
+    render(
+      <OrderRow
+        order={buildOrderSummary({
+          refundSummary: {
+            ...NO_REFUND_SUMMARY,
+            cancelledUnitCount: 1,
+            causes: ["CUSTOMER_CANCELLED"],
+            amountOffCashPayment: 800,
+          },
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByText("1 item cancelled · Rs. 800 off what you pay on delivery"),
+    ).toBeInTheDocument();
+  });
+
+  it("says when a refund is on its way and when it has been paid", () => {
+    const { rerender } = render(
+      <OrderRow
+        order={buildOrderSummary({
+          refundSummary: { ...NO_REFUND_SUMMARY, cancelledUnitCount: 1, amountComingBack: 900 },
+        })}
+      />,
+    );
+    expect(screen.getByText("1 item cancelled · Rs. 900 refund on its way")).toBeInTheDocument();
+
+    rerender(
+      <OrderRow
+        order={buildOrderSummary({
+          refundSummary: { ...NO_REFUND_SUMMARY, cancelledUnitCount: 1, amountRefunded: 900 },
+        })}
+      />,
+    );
+    expect(screen.getByText("1 item cancelled · Rs. 900 refunded")).toBeInTheDocument();
   });
 
   it("shows a thumbnail and a multi-item summary when there is more than one item", () => {

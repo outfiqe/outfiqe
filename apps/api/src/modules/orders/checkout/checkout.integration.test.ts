@@ -51,6 +51,74 @@ describe("POST /api/orders/checkout — buyer role gate", () => {
     expect(response.status).toBe(201);
   });
 
+  it("rejects a delivery phone riders could not call, naming the phone field", async () => {
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({ ...checkoutBody(product.id, size.id), phone: "+977982000000" });
+
+    expect(response.status).toBe(422);
+    expect(response.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ["phone"] })]),
+    );
+  });
+
+  it("rejects a delivery city no zone lists, naming the city field", async () => {
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({ ...checkoutBody(product.id, size.id), city: "sfasd" });
+
+    expect(response.status).toBe(422);
+    expect(response.body.details).toEqual([
+      expect.objectContaining({
+        path: ["city"],
+        message: "We don't deliver to this area yet",
+      }),
+    ]);
+    expect(await prisma.order.count()).toBe(0);
+  });
+
+  it("accepts a listed delivery city typed in another case with spaces", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({ ...checkoutBody(product.id, size.id), city: "  KATHMANDU " });
+
+    expect(response.status).toBe(201);
+  });
+
+  it("stores a delivery phone typed with separators as plain digits", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({ ...checkoutBody(product.id, size.id), phone: "98 2000-0000" });
+
+    expect(response.status).toBe(201);
+    const order = await prisma.order.findFirstOrThrow({ where: { userId: buyer.id } });
+    expect(order.phone).toBe("9820000000");
+  });
+
   it("rejects a BRAND_OWNER with 403", async () => {
     await createDefaultDeliveryZone();
     const { product, size } = await createPurchasableProduct(1000);

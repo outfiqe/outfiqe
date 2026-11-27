@@ -13,6 +13,7 @@ export const REFUND_CAUSE_LABELS: Record<OrderRefundCause, string> = {
   [OrderRefundCause.CUSTOMER_REFUSED]: "Customer refused delivery",
   [OrderRefundCause.STAFF_ADJUSTMENT]: "Staff adjustment",
   [OrderRefundCause.PARTNER_FAILED]: "Partner lost or damaged it",
+  [OrderRefundCause.SOLD_OUT_AT_PAYMENT]: "Sold out at payment",
 };
 
 export const REFUND_STATUS_LABELS: Record<OrderRefundStatus, string> = {

@@ -4,6 +4,7 @@ import type {
   FulfilmentMode,
   FulfilmentStatus,
   OrderFulfilmentSummary,
+  OrderRefundCause,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
@@ -115,6 +116,15 @@ export type OrderShipmentView = {
 
 export type OrderDeliveryPromise = { from: string; by: string };
 
+export type OrderRefundSummaryView = {
+  cancelledUnitCount: number;
+  causes: OrderRefundCause[];
+  amountOffCashPayment: number;
+  amountRefunded: number;
+  amountComingBack: number;
+  amountAwaitingDetails: number;
+};
+
 export type OrderView = {
   id: string;
   createdAt: string;
@@ -135,6 +145,7 @@ export type OrderView = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   refundedAmount: number;
+  refundSummary: OrderRefundSummaryView;
   trackingStage: OrderTrackingStageSummary | null;
   promisedDelivery: OrderDeliveryPromise | null;
   items: OrderItemView[];

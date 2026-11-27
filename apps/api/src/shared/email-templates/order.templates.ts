@@ -78,29 +78,6 @@ export const paymentSettledTemplate = (
   }),
 });
 
-type ManualRefundNeededInput = {
-  orderId: string;
-  total: number;
-};
-
-export const manualRefundNeededTemplate = (
-  input: ManualRefundNeededInput,
-): { subject: string; html: string } => ({
-  subject: `Action needed: refund order ${input.orderId}`,
-  html: renderEmailLayout({
-    preheader: `Order ${input.orderId} needs a manual refund.`,
-    bodyHtml: `
-      ${emailStatusPill("Action needed", "destructive")}
-      ${emailHeading("Manual refund needed")}
-      ${emailText("This order was paid but the item sold out before we could confirm it. Refund it by hand through the gateway dashboard.")}
-      ${emailMetaTable([
-        { label: "Order ID", value: input.orderId },
-        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
-      ])}
-    `,
-  }),
-});
-
 type OrderCancelledInput = {
   orderId: string;
   total: number;
@@ -198,6 +175,64 @@ export const withdrawRequestReceivedInternalTemplate = (
         { label: "Amount", value: `Rs. ${input.amount.toLocaleString()}` },
       ])}
       ${emailButtonHtml("Review in admin panel", input.reviewUrl)}
+    `,
+  }),
+});
+
+type BrandCancellationRequestedInput = {
+  orderId: string;
+  brandName: string;
+  reason: string;
+  reviewUrl: string;
+};
+
+export const brandCancellationRequestedInternalTemplate = (
+  input: BrandCancellationRequestedInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed: ${input.brandName} asked to cancel order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `${input.brandName} wants to cancel its part of order ${input.orderId}.`,
+    bodyHtml: `
+      ${emailStatusPill("Action needed", "destructive")}
+      ${emailHeading("A brand asked to cancel a shipment")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Brand", value: input.brandName },
+        { label: "Reason", value: input.reason },
+      ])}
+      ${emailButtonHtml("Review the request", input.reviewUrl)}
+    `,
+  }),
+});
+
+type BrandCancellationDecidedInput = {
+  orderId: string;
+  isApproved: boolean;
+  staffNote: string | null;
+};
+
+export const brandCancellationDecidedTemplate = (
+  input: BrandCancellationDecidedInput,
+): { subject: string; html: string } => ({
+  subject: input.isApproved
+    ? `Cancellation approved for order ${input.orderId}`
+    : `Cancellation declined for order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: input.isApproved
+      ? `We cancelled your part of order ${input.orderId} and refunded the shopper.`
+      : `Please keep fulfilling your part of order ${input.orderId}.`,
+    bodyHtml: `
+      ${emailEyebrow("Cancellation request")}
+      ${emailHeading(input.isApproved ? "Cancellation approved" : "Cancellation declined")}
+      ${emailText(
+        input.isApproved
+          ? "We cancelled your part of this order and refunded the shopper. There is nothing more to do."
+          : "Please keep fulfilling this order as normal.",
+      )}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        ...(input.staffNote ? [{ label: "Note from Outfiqe", value: input.staffNote }] : []),
+      ])}
     `,
   }),
 });

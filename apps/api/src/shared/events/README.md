@@ -23,3 +23,5 @@ Domain events (likes, follows, new looks, signups and more) travel between modul
 **A stream entry can have null fields.** The stream is trimmed with `MAXLEN`, so an entry can be removed while it is still pending for a group. There is nothing left to retry or dead-letter, so `processEntry` logs it and acknowledges it to clear the pending list.
 
 **Stopping a consumer disconnects its Redis client.** `readNewEntries` can block inside `XREADGROUP` for up to `CONSUMER_BLOCK_MS`. Disconnecting rejects that call straight away, so shutdown does not wait for it.
+
+**Consumer group setup retries until it succeeds.** If Redis is unreachable when the api boots, creating the group fails with something other than "already exists". The consumer keeps retrying with `computeBackoffDelayMs` until the group is ready or the consumer is stopped, then starts reading. Giving up would leave the process reporting healthy while no event is ever delivered.

@@ -13,16 +13,18 @@ couldn't go back automatically, and review items a brand says it can't supply.
   Delivered / Cancelled / Returned) bound to the URL via `@/lib/useSearchFilter` as `?status=`
   (the default "All" is omitted); `_authenticated.orders.index.tsx` declares the matching
   `validateSearch`. Each row links to `/orders/$orderId`. Cursor-paginated "Load more" via
-  `useInfiniteOrders`.
+  `useInfiniteOrders`. A debounced "Search orders" box (kept in component state, not the URL) sends
+  `?search=` alongside the status filter: staff paste the `#28A55BF3` reference a shopper quotes, a
+  full order id, or the buyer's email or phone. The empty state names the search.
 - `components/OrderDetailPage.tsx` — one order (`/orders/$orderId`): buyer + address, line items, payment
   transaction history, the forward-only fulfilment-status control, a cancel-with-reason modal
   (placed or packed orders), a "Mark as returned" modal (shipped or delivered orders), a "Refund
   items" button (any order with units not yet refunded), each line's refunded count, and the
   order's refunds (`refunds/components/OrderRefundsCard.tsx`).
 - `hooks/useInfiniteOrders.ts` — `useInfiniteCursorPage` over `ordersApi.list`, keyed by
-  `["admin-orders", status]` so each status filter caches independently.
+  `["admin-orders", status, search]` so each status/search pair caches independently.
 - `hooks/useOrder.ts` — the single-order `useQuery`.
-- `api/ordersApi.ts` — `ordersApi`: `list(status?, cursor?)`, `get(id)`, `advanceFulfilment(id, status)`,
+- `api/ordersApi.ts` — `ordersApi`: `list({ status?, search?, cursor? })`, `get(id)`, `advanceFulfilment(id, status)`,
   `cancel(id, reason)`, `markReturned(id, reason)`, each parsing the response through a Zod schema.
 - `api/ordersSchemas.ts` — Zod mirrors: `adminOrderSchema` (full), `adminOrderSummarySchema` (list row) and
   `orderReturnOutcomeSchema` (what a return voided and whether anything was already paid out).
@@ -30,7 +32,11 @@ couldn't go back automatically, and review items a brand says it can't supply.
 
 ### `refunds/` topic
 
-- `components/RefundItemsModal.tsx` — choose units per line (up to `qty - refundedQty`), a cause
+- `components/RefundItemsModal.tsx` — while a cash-on-delivery order is shipped and unpaid (`isCashParcelOnTheWay`, from `OrderDetailPage`) it explains that only "Partner lost or damaged it" can be refunded now and keeps Refund disabled for other reasons; the API enforces the same rule per shipment, and its error shows in the modal's banner for a multi-brand order whose overall status isn't shipped yet. Each line has a labelled "Units to refund" picker ("Don't
+  refund", "1 of N", ...) with its goods amount (`unitPrice` x units) beside it and an "Items to
+  refund" running total. The total is goods only: the server prices the refund (discount shares, and
+  delivery/COD fees only when the refund empties the order and the cause returns fees), so the modal
+  says so rather than copying that logic. Also a cause
   (staff adjustment, brand couldn't supply, failed hub inspection, customer refused delivery), a
   note, and whether to put the units back on sale. Sent with an `Idempotency-Key` that
   `hooks/useRefundOrderItems.ts` keeps until a success, so a double click or retry refunds once.
@@ -40,7 +46,9 @@ couldn't go back automatically, and review items a brand says it can't supply.
   ("Refunds to pay"): every refund waiting for a manual transfer, with the customer's payout
   details. A bank account shows its last 4 digits until "Show full account number" (that call is
   audit-logged on the API). "Mark as paid" asks for the transfer reference and is disabled until
-  the customer has added their details; it is hidden from staff without `platform:orders:manage`.
+  the customer has added their details (a hint under the button says why); it is hidden from staff
+  without `platform:orders:manage`. The card heading names the order (`#4C9B4DF8`) and "Open order" is
+  an outline button just left of "Mark as paid", visible to every viewer.
 - `hooks/useOrderRefunds.ts`, `useInfiniteRefundQueue.ts`, `useMarkRefundPaid.ts`,
   `api/refundsApi.ts`, `api/refundsSchemas.ts`, `constants/refundLabels.ts`,
   `constants/refundQueryKeys.ts`.
@@ -54,6 +62,18 @@ couldn't go back automatically, and review items a brand says it can't supply.
 - `hooks/useInfiniteUnavailableItems.ts`, `useDecideUnavailableItem.ts`,
   `api/unavailableItemsApi.ts`, `api/unavailableItemsSchemas.ts`,
   `constants/unavailableItemLabels.ts`.
+
+### `cancellation-requests/` topic
+
+- `components/BrandCancellationRequests.tsx` — the "Shipments brands want to cancel" section at the top of the
+  `/orders/unavailable-items` page: each pending request a brand filed with "Request cancellation" on its own
+  shipment, showing the order number, brand, the units still to refund, the amount, the brand's reason
+  and an "Open order" link. "Approve and refund" asks for confirmation, then refunds the customer for the
+  whole remaining shipment and cancels it; "Decline" asks for a note the brand is emailed and lets the brand
+  carry on. Both buttons are hidden without `platform:orders:manage`. Has its own loading, error and empty states.
+- `hooks/useInfiniteCancellationRequests.ts`, `useDecideCancellationRequest.ts`,
+  `api/cancellationRequestsApi.ts` (`/orders/admin/cancellation-requests`), `api/cancellationRequestsSchemas.ts`,
+  `constants/cancellationRequestLabels.ts`.
 
 Both queue pages sit under Orders in the sidebar (`adminSidebarNavItems.ts`) and use the orders
 permission, so no new nav key or section permission is needed. Their paths are kept out of the

@@ -53,7 +53,6 @@ const awaitingDetails: MyRefundDestination = {
   amountAwaitingDetails: 1200,
   canEdit: true,
   suggestedKind: "ESEWA",
-  suggestedWalletId: "9800000000",
   suggestedAccountName: "Asha Shrestha",
   destination: null,
 };
@@ -133,7 +132,7 @@ describe("CancelItemsModal", () => {
 });
 
 describe("RefundDetailsCard", () => {
-  it("prefills the suggested wallet and sends the details once ownership is confirmed", async () => {
+  it("starts the wallet ID empty and sends the details once ownership is confirmed", async () => {
     let sentBody: unknown;
     mswServer.use(
       http.put(`/api/orders/${ORDER_ID}/refund-destination`, async ({ request }) => {
@@ -160,7 +159,9 @@ describe("RefundDetailsCard", () => {
     expect(
       screen.getByRole("heading", { name: "Where should we send your Rs. 1,200 refund?" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("eSewa ID (mobile number)")).toHaveValue("9800000000");
+    const walletField = screen.getByLabelText("eSewa ID (mobile number)");
+    expect(walletField).toHaveValue("");
+    await user.type(walletField, "9800000000");
     const submit = screen.getByRole("button", { name: "Send refund details" });
     expect(submit).toBeDisabled();
 
@@ -175,6 +176,54 @@ describe("RefundDetailsCard", () => {
         confirmsOwnership: true,
       }),
     );
+  });
+
+  it("shows the wallet ID error under its field without calling the API", async () => {
+    let wasSent = false;
+    mswServer.use(
+      http.put(`/api/orders/${ORDER_ID}/refund-destination`, () => {
+        wasSent = true;
+        return okJson(awaitingDetails);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<RefundDetailsCard orderId={ORDER_ID} refundDestination={awaitingDetails} />, {
+      wrapper: createQueryClientWrapper(),
+    });
+
+    await user.type(screen.getByLabelText("eSewa ID (mobile number)"), "982000000");
+    await user.click(screen.getByLabelText("This account is mine"));
+    await user.click(screen.getByRole("button", { name: "Send refund details" }));
+
+    expect(await screen.findByText("Enter a valid mobile number")).toBeInTheDocument();
+    expect(wasSent).toBe(false);
+  });
+
+  it("maps a server field error onto its field instead of a generic banner", async () => {
+    mswServer.use(
+      http.put(`/api/orders/${ORDER_ID}/refund-destination`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "Invalid request",
+            error: "VALIDATION_ERROR",
+            details: [{ path: ["accountName"], message: "Enter the account holder's name." }],
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<RefundDetailsCard orderId={ORDER_ID} refundDestination={awaitingDetails} />, {
+      wrapper: createQueryClientWrapper(),
+    });
+
+    await user.type(screen.getByLabelText("eSewa ID (mobile number)"), "9800000000");
+    await user.click(screen.getByLabelText("This account is mine"));
+    await user.click(screen.getByRole("button", { name: "Send refund details" }));
+
+    expect(await screen.findByText("Enter the account holder's name.")).toBeInTheDocument();
+    expect(screen.queryByText("Please check your input and try again.")).not.toBeInTheDocument();
   });
 
   it("asks for a bank and account number when paying to a bank", async () => {

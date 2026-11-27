@@ -49,6 +49,7 @@ beforeEach(async () => {
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 50_000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Lalitpur", cityNormalized: "lalitpur" }] },
     },
   });
 });

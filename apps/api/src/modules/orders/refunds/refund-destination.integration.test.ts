@@ -82,7 +82,6 @@ describe("customer refund details", () => {
       amountAwaitingDetails: 1200,
       canEdit: true,
       suggestedKind: RefundDestinationKind.ESEWA,
-      suggestedWalletId: "9800000000",
       destination: null,
     });
 
@@ -199,6 +198,9 @@ describe("customer refund details", () => {
 
     expect(unconfirmed.status).toBe(422);
     expect(badWallet.status).toBe(422);
+    expect(badWallet.body.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ["walletId"] })]),
+    );
     expect(notMine.status).toBe(404);
   });
 });

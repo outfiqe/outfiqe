@@ -16,10 +16,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSessionWithPlatformPermissions } from "#test/integration/auth-helpers.js";
-import {
-  enableOrderLogisticsForBrands,
-  requireFixtureId,
-} from "#test/integration/logistics-fixtures.js";
+import { requireFixtureId } from "#test/integration/logistics-fixtures.js";
 import { authHeaderFor } from "#test/integration/order-fixtures.js";
 import {
   createOwnerSessionForBrand,
@@ -31,12 +28,6 @@ const sendEmailMock = vi.hoisted(() => vi.fn());
 vi.mock("#lib/email.utils.js", () => ({ sendEmail: sendEmailMock }));
 
 const COUPON_MINIMUM = 1500;
-
-const createOrderWithItemChangesOn = async (input: Parameters<typeof createRefundableOrder>[0]) => {
-  const refundableOrder = await createRefundableOrder(input);
-  await enableOrderLogisticsForBrands(refundableOrder.items.map(({ group }) => group.brandId));
-  return refundableOrder;
-};
 
 const cancelLines = (authHeader: string, orderId: string, lines: unknown[]) =>
   request(testApp)
@@ -52,7 +43,7 @@ beforeEach(async () => {
 
 describe("customer item cancellation", () => {
   it("cancels one item, puts it back in stock and lowers what the rider collects", async () => {
-    const { order, items, buyer } = await createOrderWithItemChangesOn({
+    const { order, items, buyer } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [
@@ -83,7 +74,7 @@ describe("customer item cancellation", () => {
   });
 
   it("refuses an item that has already shipped", async () => {
-    const { order, items, buyer } = await createOrderWithItemChangesOn({
+    const { order, items, buyer } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [
@@ -105,7 +96,7 @@ describe("customer item cancellation", () => {
   });
 
   it("won't drop a coupon order below the coupon's minimum spend", async () => {
-    const { order, items, buyer, coupon } = await createOrderWithItemChangesOn({
+    const { order, items, buyer, coupon } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [
@@ -128,12 +119,12 @@ describe("customer item cancellation", () => {
   });
 
   it("hides someone else's order", async () => {
-    const { order, items } = await createOrderWithItemChangesOn({
+    const { order, items } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 700, qty: 1 }],
     });
-    const stranger = await createOrderWithItemChangesOn({
+    const stranger = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 100, qty: 1 }],
@@ -149,57 +140,44 @@ describe("customer item cancellation", () => {
   });
 });
 
-describe("item changes before a brand is on Outfiqe delivery", () => {
-  it("doesn't offer or allow cancelling single items", async () => {
+describe("item changes for a brand that is not on Outfiqe delivery", () => {
+  it("offers a placed order's items for cancelling and refunds the cancelled item", async () => {
     const { order, items, buyer } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 700, qty: 2 }],
     });
-    await enableOrderLogisticsForBrands([]);
     const authHeader = authHeaderFor(buyer.id, UserRole.CUSTOMER);
 
     const orderView = await request(testApp)
       .get(`/api/orders/${order.id}`)
       .set("Authorization", authHeader);
-    expect(orderView.body.data.items[0]).toMatchObject({ canCancel: false });
+    expect(orderView.body.data.items[0]).toMatchObject({ canCancel: true, refundedQty: 0 });
 
     const response = await cancelLines(authHeader, order.id, [
       { orderItemId: requireFixtureId(items[0]?.item.id), qty: 1 },
     ]);
-    expect(response.status).toBe(409);
-    expect(response.body.code).toBe("ITEM_CANCELLATION_NOT_AVAILABLE");
-    expect(await prisma.orderRefund.count({ where: { orderId: order.id } })).toBe(0);
-  });
-
-  it("offers cancelling single items once the brand is switched on", async () => {
-    const { order, buyer } = await createOrderWithItemChangesOn({
-      paymentMethod: PaymentMethod.COD,
-      paymentStatus: PaymentStatus.DUE,
-      lines: [{ unitPrice: 700, qty: 2 }],
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      cause: OrderRefundCause.CUSTOMER_CANCELLED,
+      status: OrderRefundStatus.SUCCEEDED,
+      totalAmount: 700,
     });
-
-    const orderView = await request(testApp)
-      .get(`/api/orders/${order.id}`)
-      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
-
-    expect(orderView.body.data.items[0]).toMatchObject({ canCancel: true, refundedQty: 0 });
   });
 
-  it("doesn't let the brand report missing items", async () => {
+  it("lets the brand see and file a report for an item it can't supply", async () => {
     const { items } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 900, qty: 1 }],
     });
-    await enableOrderLogisticsForBrands([]);
     const group = requireFixtureId(items[0]?.group.id);
     const owner = await createOwnerSessionForBrand(requireFixtureId(items[0]?.group.brandId));
 
     const detail = await request(testApp)
       .get(`/api/orders/brand/fulfilment-groups/${group}`)
       .set("Authorization", owner.authHeader);
-    expect(detail.body.data.canReportUnavailable).toBe(false);
+    expect(detail.body.data.canReportUnavailable).toBe(true);
 
     const reported = await request(testApp)
       .post(`/api/orders/brand/fulfilment-groups/${group}/unavailable-items`)
@@ -208,8 +186,7 @@ describe("item changes before a brand is on Outfiqe delivery", () => {
         reason: "Out of stock",
         lines: [{ orderItemId: requireFixtureId(items[0]?.item.id), qty: 1 }],
       });
-    expect(reported.status).toBe(409);
-    expect(reported.body.code).toBe("UNAVAILABLE_REPORTS_NOT_AVAILABLE");
+    expect(reported.status).toBe(201);
   });
 });
 
@@ -219,7 +196,7 @@ describe("brand unavailable items", () => {
       "platform:orders:manage",
       "platform:orders:read",
     );
-    const { order, items } = await createOrderWithItemChangesOn({
+    const { order, items } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 900, qty: 2 }],
@@ -264,7 +241,7 @@ describe("brand unavailable items", () => {
 
   it("allows only one open report per item, and lets staff reject it", async () => {
     const staff = await createAdminSessionWithPlatformPermissions("platform:orders:manage");
-    const { items } = await createOrderWithItemChangesOn({
+    const { items } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 900, qty: 2 }],
@@ -298,12 +275,12 @@ describe("brand unavailable items", () => {
   });
 
   it("hides another brand's order", async () => {
-    const { items } = await createOrderWithItemChangesOn({
+    const { items } = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 900, qty: 1 }],
     });
-    const otherBrand = await createOrderWithItemChangesOn({
+    const otherBrand = await createRefundableOrder({
       paymentMethod: PaymentMethod.COD,
       paymentStatus: PaymentStatus.DUE,
       lines: [{ unitPrice: 100, qty: 1 }],

@@ -96,6 +96,17 @@ export const deliveryZoneService = {
 
   findZoneForCity,
 
+  async assertCityIsDeliverable(
+    city: string,
+    countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,
+  ): Promise<void> {
+    const isListed = await deliveryZoneRepository.isCityListed(
+      countryCode,
+      normalizeCityName(city),
+    );
+    if (!isListed) throw deliveryZoneErrors.cityNotDeliverable();
+  },
+
   async resolveZoneIdForCity(
     city: string | null,
     countryCode: string = PLATFORM_DEFAULT_COUNTRY_CODE,

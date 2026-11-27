@@ -1,4 +1,5 @@
 import {
+  FulfilmentMode,
   FulfilmentStatus,
   OrderRefundCause,
   PaymentMethod,
@@ -13,6 +14,7 @@ export const CAUSES_RETURNING_ORDER_FEES: ReadonlySet<OrderRefundCause> = new Se
   OrderRefundCause.RETURNED,
   OrderRefundCause.STAFF_ADJUSTMENT,
   OrderRefundCause.PARTNER_FAILED,
+  OrderRefundCause.SOLD_OUT_AT_PAYMENT,
 ]);
 
 export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new Set([
@@ -22,6 +24,28 @@ export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new
   OrderRefundCause.CUSTOMER_REFUSED,
   OrderRefundCause.STAFF_ADJUSTMENT,
   OrderRefundCause.PARTNER_FAILED,
+  OrderRefundCause.SOLD_OUT_AT_PAYMENT,
+]);
+
+export const FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE: Partial<
+  Record<OrderRefundCause, ReadonlySet<FulfilmentMode>>
+> = {
+  [OrderRefundCause.STAFF_ADJUSTMENT]: new Set([
+    FulfilmentMode.BRAND_SHIPS,
+    FulfilmentMode.OUTFIQE_LOGISTICS,
+  ]),
+  [OrderRefundCause.PARTNER_FAILED]: new Set([FulfilmentMode.OUTFIQE_LOGISTICS]),
+};
+
+export const FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND: ReadonlySet<FulfilmentStatus> = new Set([
+  FulfilmentStatus.SHIPPED,
+  FulfilmentStatus.DELIVERED,
+]);
+
+export const PICKUP_STATUSES_HANDED_OVER_BY_BRAND: ReadonlySet<PickupStatus> = new Set([
+  PickupStatus.PICKED_UP,
+  PickupStatus.AT_HUB,
+  PickupStatus.IN_PARCEL,
 ]);
 
 export const PAYMENT_STATUSES_WITH_MONEY_TAKEN: ReadonlySet<PaymentStatus> = new Set([
@@ -45,6 +69,14 @@ export const FULFILMENT_STATUSES_STILL_WITH_BRAND: ReadonlySet<FulfilmentStatus>
 export const PICKUP_STATUSES_STILL_WITH_BRAND: ReadonlySet<PickupStatus> = new Set([
   PickupStatus.AWAITING_BRAND,
   PickupStatus.READY_FOR_PICKUP,
+]);
+
+export const FULFILMENT_STATUSES_ON_THE_WAY: ReadonlySet<FulfilmentStatus> = new Set([
+  FulfilmentStatus.SHIPPED,
+]);
+
+export const CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY: ReadonlySet<OrderRefundCause> = new Set([
+  OrderRefundCause.PARTNER_FAILED,
 ]);
 
 export const MAX_REFUND_REASON_LENGTH = 500;

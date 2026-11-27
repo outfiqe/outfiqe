@@ -9,6 +9,7 @@ import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
+import { orderCancellationRequestRoutes } from "./cancellation-requests/cancellation-request.routes.js";
 import { orderController } from "./order.controller.js";
 import {
   advanceBrandFulfilmentGroupSchema,
@@ -78,6 +79,7 @@ export const orderRoutes = Router();
 
 orderRoutes.use(orderRefundRoutes);
 orderRoutes.use(orderUnavailableItemRoutes);
+orderRoutes.use(orderCancellationRequestRoutes);
 
 /*
   Static/prefixed paths first — Express would otherwise never reach them once the

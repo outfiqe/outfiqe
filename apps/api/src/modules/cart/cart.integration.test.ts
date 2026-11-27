@@ -51,6 +51,7 @@ const createDefaultDeliveryZone = () =>
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 5000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
     },
   });
 
@@ -122,6 +123,38 @@ describe("cart is for shoppers only", () => {
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN))
       .send({ productId: product.id, sizeId: size.id, qty: 1 });
     expect(response.status).toBe(403);
+  });
+});
+
+describe("PATCH /api/cart/city", () => {
+  const setCartCity = (userId: string, city: string) =>
+    request(testApp)
+      .patch("/api/cart/city")
+      .set("Authorization", authHeaderFor(userId))
+      .send({ city });
+
+  it("saves a city a zone lists", async () => {
+    await createDefaultDeliveryZone();
+    const buyer = await createBuyer();
+
+    const response = await setCartCity(buyer.id, " kathmandu ");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.city).toBe("kathmandu");
+  });
+
+  it("rejects a city no zone lists and keeps the cart city unchanged", async () => {
+    await createDefaultDeliveryZone();
+    const buyer = await createBuyer();
+
+    const response = await setCartCity(buyer.id, "sfasd");
+
+    expect(response.status).toBe(422);
+    expect(response.body.details).toEqual([
+      expect.objectContaining({ path: ["city"], message: "We don't deliver to this area yet" }),
+    ]);
+    const cart = await prisma.cart.findFirst({ where: { userId: buyer.id } });
+    expect(cart?.city ?? null).toBeNull();
   });
 });
 

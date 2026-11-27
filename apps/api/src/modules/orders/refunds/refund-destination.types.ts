@@ -14,7 +14,6 @@ export type MyRefundDestinationView = {
   amountAwaitingDetails: number;
   canEdit: boolean;
   suggestedKind: RefundDestinationKind | null;
-  suggestedWalletId: string;
   suggestedAccountName: string;
   destination: RefundDestinationView | null;
 };

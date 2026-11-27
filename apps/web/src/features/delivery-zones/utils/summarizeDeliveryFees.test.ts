@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { DeliveryZone } from "@/features/delivery-zones";
-
+import type { DeliveryZone } from "../api/deliveryZoneSchemas";
 import { summarizeDeliveryFees } from "./summarizeDeliveryFees";
 
 const buildZone = (overrides: Partial<DeliveryZone>): DeliveryZone => ({

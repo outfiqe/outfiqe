@@ -10,6 +10,8 @@ takes the parcel to the customer. Every step is a recorded tracking event. The f
 The whole flow sits behind the `order_logistics` feature flag. Orders keep today's brand-shipped
 flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
 
+The flag covers the delivery flow only. Shoppers cancelling items and brands reporting items they can't supply (`orders/refunds`, `orders/unavailable-items`) work for every brand, flag or not.
+
 ## Structure
 
 - `logistics.errors.ts` — `logisticsErrors`, the errors this module raises from more than one place.
@@ -63,6 +65,8 @@ flow (`FulfilmentMode.BRAND_SHIPS`) until the flag is on for their brand.
   - which active hub collects from a pickup city (a city in a delivery zone listed in a hub's
     `HubPickupZone`s);
   - the brands' default pickup locations.
+- `pickup-locations/` only accepts a pickup city that a delivery zone lists
+  (`deliveryZoneService.assertCityIsDeliverable`, `422` on the `city` field), on create and update.
 - `hubs/` — admin-managed hubs.
   - Endpoints: `GET /`, `POST /`, `PUT /:hubId`, `PUT /:hubId/pickup-zones`.
   - Guarded by `platformGuards.logisticsRead` / `logisticsManage`.

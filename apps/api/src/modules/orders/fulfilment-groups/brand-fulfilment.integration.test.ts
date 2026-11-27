@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { HTTP_STATUS } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
+  BrandPayoutStatus,
   BrandRole,
   FulfilmentStatus,
   OrderFulfilmentSummary,
@@ -102,6 +103,7 @@ const seedCommerceConfig = async (adminId: string) => {
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 5000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
     },
   });
 };
@@ -283,7 +285,7 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
       unitPrice: 1000,
       listUnitPrice: 1000,
     });
-    expect(detail.canReportUnavailable).toBe(false);
+    expect(detail.canReportUnavailable).toBe(true);
     expect(detail.shipTo).toMatchObject({
       fullName: "Buyer Person",
       phone: "9812345678",
@@ -293,6 +295,28 @@ describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
     });
     expect(detail.payout).toMatchObject({ grossAmount: 2000, platformFee: 200, netAmount: 1800 });
     expect(detail.orderFulfilmentSummary).toBe(OrderFulfilmentSummary.UNFULFILLED);
+  });
+
+  it("leaves voided payouts out of the shipment's payout totals", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await seedCommerceConfig(adminId);
+    const { brand, owner } = await createBrandWithOwner();
+    const { product, size } = await createProduct(brand.id, 1000);
+    const buyer = await createUser(UserRole.CUSTOMER);
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+    const group = await groupFor(orderId, brand.id);
+    await prisma.brandPayout.updateMany({
+      where: { orderItem: { orderId } },
+      data: { status: BrandPayoutStatus.VOIDED },
+    });
+
+    const response = await getGroup(owner.id, group.id);
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    const { payout } = response.body.data;
+    expect(payout.lines).toHaveLength(1);
+    expect(payout.lines[0]).toMatchObject({ status: BrandPayoutStatus.VOIDED });
+    expect(payout).toMatchObject({ grossAmount: 0, platformFee: 0, gatewayFee: 0, netAmount: 0 });
   });
 
   it("404s for another brand's group and for an unknown id", async () => {

@@ -115,3 +115,6 @@ export const describeShipmentStatus = ({
     ? { label: pickupLabel, tone: pickupTone }
     : { label: SHIPMENT_STATUS_LABEL[status], tone: SHIPMENT_STATUS_TONE[status] };
 };
+
+export const unitsStillToSend = ({ qty, refundedQty }: { qty: number; refundedQty: number }) =>
+  qty - refundedQty;

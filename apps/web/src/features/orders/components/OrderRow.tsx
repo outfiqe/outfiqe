@@ -1,13 +1,14 @@
-import { formatDate } from "@outfiqe/utils";
+import { formatDate, formatOrderReference } from "@outfiqe/utils";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
 import { AppImage } from "@/shared/components/AppImage";
+import { cn } from "@/shared/lib/cn";
 
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
 import { hasNothingLeftToPay, NOTHING_TO_PAY_LABEL } from "../utils/cancellationWording.utils";
-import { formatOrderReference } from "../utils/orderReference.utils";
+import { describeOrderRowRefund } from "../utils/orderRefundNotice.utils";
 import { StatusBadge } from "./StatusBadge";
 
 const ORDER_THUMBNAIL_SIZE = "56px";
@@ -27,7 +28,9 @@ export const OrderRow = ({ order }: OrderRowProps) => {
     itemCount,
     firstItemImageUrl,
     firstItemProductName,
+    refundSummary,
   } = order;
+  const refundStatus = describeOrderRowRefund(refundSummary);
 
   return (
     <Link
@@ -59,6 +62,18 @@ export const OrderRow = ({ order }: OrderRowProps) => {
         <p className="mt-1 text-xs text-muted-foreground">
           {formatDate(createdAt)} · {paymentMethod} · Rs. {total.toLocaleString()}
         </p>
+        {refundStatus && (
+          <p
+            className={cn(
+              "mt-1.5 text-xs",
+              refundStatus.isActionNeeded
+                ? "inline-block rounded-full bg-amber-100 px-2.5 py-0.5 font-bold text-amber-800"
+                : "text-muted-foreground",
+            )}
+          >
+            {refundStatus.text}
+          </p>
+        )}
       </div>
 
       <div className="flex shrink-0 gap-1.5">

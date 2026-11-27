@@ -77,6 +77,7 @@ const placeCodOrder = async (adminId: string) => {
       standardDeliveryFee: 100,
       freeDeliveryThreshold: 50_000,
       codHandlingFee: 0,
+      cities: { create: [{ city: "Kathmandu", cityNormalized: "kathmandu" }] },
     },
   });
   const brand = await prisma.brand.create({

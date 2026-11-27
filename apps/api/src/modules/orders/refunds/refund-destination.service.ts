@@ -59,7 +59,6 @@ const describeMyRefundDestination = async (
     amountAwaitingDetails,
     canEdit: amountAwaitingDetails > NOTHING_OWED,
     suggestedKind: suggestDestinationKind(order.paymentMethod),
-    suggestedWalletId: order.phone,
     suggestedAccountName: order.fullName,
     destination: order.refundDestination ? toRefundDestinationView(order.refundDestination) : null,
   };

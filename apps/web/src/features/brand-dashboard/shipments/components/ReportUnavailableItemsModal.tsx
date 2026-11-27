@@ -11,6 +11,7 @@ import {
   UNAVAILABLE_REASON_MIN_LENGTH,
 } from "../constants/unavailableItemLabels";
 import { useReportUnavailableItems } from "../hooks/useReportUnavailableItems";
+import { unitsStillToSend } from "../utils/shipmentStatus";
 
 const NOTHING_CHOSEN = 0;
 const NONE_OPTION_COUNT = 1;
@@ -21,8 +22,6 @@ type ReportUnavailableItemsModalProps = {
   onClose: () => void;
 };
 
-const unitsStillOrdered = (item: BrandShipmentItem) => item.qty - item.refundedQty;
-
 export const ReportUnavailableItemsModal = ({
   groupId,
   items,
@@ -32,7 +31,7 @@ export const ReportUnavailableItemsModal = ({
   const [chosenUnitsByItemId, setChosenUnitsByItemId] = useState<Record<string, number>>({});
   const [reason, setReason] = useState("");
   const reasonInputId = useId();
-  const reportableItems = items.filter((item) => unitsStillOrdered(item) > NOTHING_CHOSEN);
+  const reportableItems = items.filter((item) => unitsStillToSend(item) > NOTHING_CHOSEN);
   const lines = Object.entries(chosenUnitsByItemId)
     .filter(([, qty]) => qty > NOTHING_CHOSEN)
     .map(([orderItemId, qty]) => ({ orderItemId, qty }));
@@ -95,7 +94,7 @@ export const ReportUnavailableItemsModal = ({
                   }))
                 }
               >
-                {Array.from({ length: unitsStillOrdered(item) + NONE_OPTION_COUNT }, (_, units) => (
+                {Array.from({ length: unitsStillToSend(item) + NONE_OPTION_COUNT }, (_, units) => (
                   <option key={units} value={units}>
                     {units === NOTHING_CHOSEN ? "Can supply" : `${units} missing`}
                   </option>

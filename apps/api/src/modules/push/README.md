@@ -24,7 +24,7 @@ those browsers whenever the user gets a notification.
   per-user mute checks, then the fan-out to that user's devices.
 - `push.sender.ts` — the `web-push` call. Configures VAPID once, returns whether the send worked
   and whether the subscription is gone for good.
-- `push.messages.ts` — turns a notification into a `{ title, body, url, tag }` the browser shows.
+- `push.messages.ts` — turns a notification into a `{ title, body, url, tag }` the browser shows. Order status and refund bodies come from `@outfiqe/utils` (`order-notification-copy`), the same wording the in-app notification list uses, narrowing the loosely typed event metadata and falling back for older events without `orderReference`.
 - `push.quiet-hours.ts` — whether a moment falls inside the Nepal night-time window.
 
 ## Funnel

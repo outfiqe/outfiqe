@@ -32,7 +32,7 @@ const ORDER_TO_VERIFY_SELECT = {
   deliveryFee: true,
   total: true,
   paymentMethod: true,
-  items: { select: { sizeId: true, qty: true } },
+  items: { select: { id: true, sizeId: true, qty: true } },
 } satisfies Prisma.OrderSelect;
 
 const AWAITING_OUTCOME_FILTER = {
@@ -52,7 +52,7 @@ export const paymentRepository = {
         subtotal: true,
         deliveryFee: true,
         total: true,
-        items: { select: { sizeId: true, qty: true } },
+        items: { select: { id: true, sizeId: true, qty: true } },
       },
     });
   },
@@ -148,14 +148,10 @@ export const paymentRepository = {
     });
   },
 
-  async markOrderNeedsManualRefund(client: DbClient, orderId: string): Promise<void> {
+  async markOrderPaidButUnfulfillable(client: DbClient, orderId: string): Promise<void> {
     await client.order.update({
       where: { id: orderId },
-      data: {
-        paymentStatus: PaymentStatus.PAID,
-        fulfilmentStatus: FulfilmentStatus.CANCELLED,
-        needsManualRefund: true,
-      },
+      data: { paymentStatus: PaymentStatus.PAID, fulfilmentStatus: FulfilmentStatus.CANCELLED },
     });
   },
 
