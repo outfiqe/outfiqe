@@ -1,6 +1,12 @@
 import type { Prisma } from "#generated/prisma/client.js";
+import type { FulfilmentStatus, OrderRefundCause, PickupStatus } from "#generated/prisma/enums.js";
 import { toStoredJson } from "#lib/stored-json.utils.js";
 
+import {
+  CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER,
+  FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND,
+  PICKUP_STATUSES_HANDED_OVER_BY_BRAND,
+} from "./refund.constants.js";
 import { proportionalShare } from "./refund.pricing.js";
 import type { OrderRefundRecord, RefundQueueRecord } from "./refund.repository.js";
 import type { OrderRefundView, RefundQueueItemView } from "./refund.types.js";
@@ -84,6 +90,29 @@ export const resizeBrandPayout = ({
       : proportionalShare(currentGatewayFee, keptQtyAfter, keptQtyBefore);
   return { grossAmount, platformFee, gatewayFee, netAmount: grossAmount - platformFee };
 };
+
+export type RefundedItemFulfilment = {
+  status: FulfilmentStatus;
+  pickupStatus: PickupStatus | null;
+};
+
+const hasBrandHandedOverGoods = ({ status, pickupStatus }: RefundedItemFulfilment): boolean =>
+  FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND.has(status) ||
+  (pickupStatus !== null && PICKUP_STATUSES_HANDED_OVER_BY_BRAND.has(pickupStatus));
+
+export const isRefundCoveredByOutfiqe = ({
+  cause,
+  restockUnits,
+  fulfilment,
+}: {
+  cause: OrderRefundCause;
+  restockUnits: boolean;
+  fulfilment: RefundedItemFulfilment | null;
+}): boolean =>
+  CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER.has(cause) &&
+  !restockUnits &&
+  fulfilment !== null &&
+  hasBrandHandedOverGoods(fulfilment);
 
 export const couponBudgetReleaseTarget = ({
   platformFundedAmount,

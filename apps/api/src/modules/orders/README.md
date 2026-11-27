@@ -474,6 +474,14 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
      the full-line fee (rebuilt from the payout's stored `commissionRuleId`) × kept ÷ bought, worked
      out from the full line every time so repeated refunds don't drift. A fully refunded line voids
      the payout. A withdrawn payout is flagged `needsManualClawback`.
+   - Who pays: the refund comes out of the brand's payout unless Outfiqe covers it
+     (`isRefundCoveredByOutfiqe`). Outfiqe covers a goodwill refund (`STAFF_ADJUSTMENT`) or a
+     delivery partner failure (`PARTNER_FAILED`) once the brand has handed the goods over (shipped
+     or delivered, or collected by a rider) and the units aren't restocked. Then the payout is left
+     untouched and the audit entry counts the line as `outfiqeCoveredLineCount`. Everything else
+     (brand couldn't supply, failed hub check, customer cancel or refusal, return, sold out at
+     payment, or a goodwill refund while the goods are still with the brand) stays with the brand,
+     because the brand either caused it or kept the goods.
    - Creator commission: unchanged while at least one unit is kept, voided when every unit is
      refunded.
    - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the

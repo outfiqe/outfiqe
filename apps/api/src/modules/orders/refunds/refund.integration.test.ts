@@ -143,6 +143,58 @@ describe("staff partial refunds", () => {
     expect(group.status).toBe(FulfilmentStatus.CANCELLED);
   });
 
+  it("keeps the brand's payout when staff give a goodwill refund after the brand shipped", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 1000, qty: 2 }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { status: FulfilmentStatus.SHIPPED },
+    });
+    const payoutBefore = await prisma.brandPayout.findUniqueOrThrow({ where: { orderItemId } });
+
+    const response = await staffRefund(authHeader, order.id, {
+      lines: [{ orderItemId, qty: 2 }],
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ goodsAmount: 2000 });
+    const payoutAfter = await prisma.brandPayout.findUniqueOrThrow({ where: { orderItemId } });
+    expect(payoutAfter).toMatchObject({
+      status: BrandPayoutStatus.PENDING,
+      grossAmount: payoutBefore.grossAmount,
+      netAmount: payoutBefore.netAmount,
+    });
+  });
+
+  it("still takes the refund from the brand's payout when the brand couldn't supply after shipping", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 1000, qty: 2 }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { status: FulfilmentStatus.SHIPPED },
+    });
+
+    await staffRefund(authHeader, order.id, {
+      cause: OrderRefundCause.BRAND_UNAVAILABLE,
+      lines: [{ orderItemId, qty: 1 }],
+    });
+
+    const payout = await prisma.brandPayout.findUniqueOrThrow({ where: { orderItemId } });
+    expect(payout).toMatchObject({ status: BrandPayoutStatus.PENDING, grossAmount: 1000 });
+  });
+
   it("only lowers what the rider collects on a cash-on-delivery order", async () => {
     const { authHeader } =
       await createAdminSessionWithPlatformPermissions("platform:orders:manage");

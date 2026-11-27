@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { couponBudgetReleaseTarget, resizeBrandPayout } from "./refund.utils.js";
+import { FulfilmentStatus, OrderRefundCause, PickupStatus } from "#generated/prisma/enums.js";
+
+import {
+  couponBudgetReleaseTarget,
+  isRefundCoveredByOutfiqe,
+  resizeBrandPayout,
+} from "./refund.utils.js";
 
 describe("resizeBrandPayout", () => {
   it("shrinks the gross, Outfiqe's fee and the brand's share by the units kept", () => {
@@ -74,5 +80,66 @@ describe("couponBudgetReleaseTarget", () => {
         refundedCouponDiscount: 0,
       }),
     ).toBe(0);
+  });
+});
+
+describe("isRefundCoveredByOutfiqe", () => {
+  const shippedByBrand = { status: FulfilmentStatus.SHIPPED, pickupStatus: null };
+  const stillPacking = { status: FulfilmentStatus.PACKED, pickupStatus: null };
+  const collectedByRider = { status: FulfilmentStatus.PLACED, pickupStatus: PickupStatus.AT_HUB };
+  const waitingForRider = {
+    status: FulfilmentStatus.PLACED,
+    pickupStatus: PickupStatus.READY_FOR_PICKUP,
+  };
+
+  it.each([
+    { cause: OrderRefundCause.STAFF_ADJUSTMENT, fulfilment: shippedByBrand },
+    { cause: OrderRefundCause.PARTNER_FAILED, fulfilment: shippedByBrand },
+    { cause: OrderRefundCause.STAFF_ADJUSTMENT, fulfilment: collectedByRider },
+  ])("covers a $cause refund once the brand has handed the goods over", ({ cause, fulfilment }) => {
+    expect(isRefundCoveredByOutfiqe({ cause, restockUnits: false, fulfilment })).toBe(true);
+  });
+
+  it.each([
+    OrderRefundCause.BRAND_UNAVAILABLE,
+    OrderRefundCause.HUB_INSPECTION_FAILED,
+    OrderRefundCause.CUSTOMER_CANCELLED,
+    OrderRefundCause.CUSTOMER_REFUSED,
+    OrderRefundCause.RETURNED,
+    OrderRefundCause.SOLD_OUT_AT_PAYMENT,
+  ])("leaves a %s refund to the brand's payout", (cause) => {
+    expect(
+      isRefundCoveredByOutfiqe({ cause, restockUnits: false, fulfilment: shippedByBrand }),
+    ).toBe(false);
+  });
+
+  it.each([stillPacking, waitingForRider])(
+    "leaves a goodwill refund to the brand while the goods are still with the brand",
+    (fulfilment) => {
+      expect(
+        isRefundCoveredByOutfiqe({
+          cause: OrderRefundCause.STAFF_ADJUSTMENT,
+          restockUnits: false,
+          fulfilment,
+        }),
+      ).toBe(false);
+    },
+  );
+
+  it("leaves it to the brand when the units go back into its stock or there is no shipment", () => {
+    expect(
+      isRefundCoveredByOutfiqe({
+        cause: OrderRefundCause.STAFF_ADJUSTMENT,
+        restockUnits: true,
+        fulfilment: shippedByBrand,
+      }),
+    ).toBe(false);
+    expect(
+      isRefundCoveredByOutfiqe({
+        cause: OrderRefundCause.STAFF_ADJUSTMENT,
+        restockUnits: false,
+        fulfilment: null,
+      }),
+    ).toBe(false);
   });
 });

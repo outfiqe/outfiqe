@@ -60,6 +60,7 @@ const refundItemsOnce = async (
       totalAmount: claim.pricing.totalAmount,
       paidCommissionCount: ledger.paidCommissionCount,
       withdrawnPayoutCount: ledger.withdrawnPayoutCount,
+      outfiqeCoveredLineCount: ledger.outfiqeCoveredLineCount,
     },
   });
   return requireRefundView(claim.refundId);

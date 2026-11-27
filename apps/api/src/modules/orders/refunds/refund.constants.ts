@@ -26,6 +26,22 @@ export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new
   OrderRefundCause.SOLD_OUT_AT_PAYMENT,
 ]);
 
+export const CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER: ReadonlySet<OrderRefundCause> = new Set([
+  OrderRefundCause.STAFF_ADJUSTMENT,
+  OrderRefundCause.PARTNER_FAILED,
+]);
+
+export const FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND: ReadonlySet<FulfilmentStatus> = new Set([
+  FulfilmentStatus.SHIPPED,
+  FulfilmentStatus.DELIVERED,
+]);
+
+export const PICKUP_STATUSES_HANDED_OVER_BY_BRAND: ReadonlySet<PickupStatus> = new Set([
+  PickupStatus.PICKED_UP,
+  PickupStatus.AT_HUB,
+  PickupStatus.IN_PARCEL,
+]);
+
 export const PAYMENT_STATUSES_WITH_MONEY_TAKEN: ReadonlySet<PaymentStatus> = new Set([
   PaymentStatus.PAID,
   PaymentStatus.PARTIALLY_REFUNDED,
