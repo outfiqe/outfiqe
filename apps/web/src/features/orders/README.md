@@ -79,7 +79,9 @@ seeing each refund, and telling us where to send a refund that can't go back aut
 - `hooks/useOrderRefunds.ts` / `useCancelOrderItems.ts` / `useRefundDestination.ts` /
   `useSaveRefundDestination.ts` — the refund reads and writes. `useCancelOrderItems` keeps one
   idempotency key per attempt and only makes a new one after a success, so a retried click can't
-  cancel twice.
+  cancel twice. `useSaveRefundDestination` refreshes everything under `["orders"]`, not only the
+  refund details, so the order header ("refund is on its way") and the orders-list row stop asking
+  for details as soon as they're saved.
 - `constants/refundLabels.ts` / `refundQueryKeys.ts`, `utils/refundDestination.utils.ts` — labels,
   query keys and the destination-kind type guard.
 
