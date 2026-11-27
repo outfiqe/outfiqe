@@ -32,7 +32,7 @@ couldn't go back automatically, and review items a brand says it can't supply.
 
 ### `refunds/` topic
 
-- `components/RefundItemsModal.tsx` — each line has a labelled "Units to refund" picker ("Don't
+- `components/RefundItemsModal.tsx` — while a cash-on-delivery order is shipped and unpaid (`isCashParcelOnTheWay`, from `OrderDetailPage`) it explains that only "Partner lost or damaged it" can be refunded now and keeps Refund disabled for other reasons; the API enforces the same rule per shipment, and its error shows in the modal's banner for a multi-brand order whose overall status isn't shipped yet. Each line has a labelled "Units to refund" picker ("Don't
   refund", "1 of N", ...) with its goods amount (`unitPrice` x units) beside it and an "Items to
   refund" running total. The total is goods only: the server prices the refund (discount shares, and
   delivery/COD fees only when the refund empties the order and the cause returns fees), so the modal

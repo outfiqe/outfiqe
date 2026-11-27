@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
+import { HTTP_STATUS, IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
@@ -265,6 +265,57 @@ describe("staff partial refunds", () => {
     expect(khaltiRefund).not.toHaveBeenCalled();
     const refreshedOrder = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(refreshedOrder).toMatchObject({ refundedAmount: 600, paymentStatus: PaymentStatus.DUE });
+  });
+
+  it("refuses a goodwill refund while a cash-on-delivery parcel is on its way, and changes nothing", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [{ unitPrice: 1000, qty: 1 }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { status: FulfilmentStatus.SHIPPED },
+    });
+
+    const response = await staffRefund(authHeader, order.id, {
+      cause: OrderRefundCause.STAFF_ADJUSTMENT,
+      lines: [{ orderItemId, qty: 1 }],
+    });
+
+    expect(response.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(response.body.code).toBe("REFUND_WHILE_CASH_PARCEL_ON_THE_WAY");
+    const refreshedOrder = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(refreshedOrder.refundedAmount).toBe(0);
+    expect(await prisma.orderRefund.count({ where: { orderId: order.id } })).toBe(0);
+  });
+
+  it("still refunds a cash-on-delivery parcel on its way when the delivery partner lost it", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.DUE,
+      lines: [{ unitPrice: 1000, qty: 1 }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { status: FulfilmentStatus.SHIPPED },
+    });
+
+    const response = await staffRefund(authHeader, order.id, {
+      cause: OrderRefundCause.PARTNER_FAILED,
+      lines: [{ orderItemId, qty: 1 }],
+    });
+
+    expect(response.body.data).toMatchObject({
+      status: OrderRefundStatus.SUCCEEDED,
+      method: OrderRefundMethod.CASH_NOT_COLLECTED,
+    });
   });
 
   it("sends an eSewa refund to the manual queue until staff pay it", async () => {

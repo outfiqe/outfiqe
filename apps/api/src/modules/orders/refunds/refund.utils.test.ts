@@ -4,11 +4,14 @@ import {
   FulfilmentMode,
   FulfilmentStatus,
   OrderRefundCause,
+  PaymentMethod,
+  PaymentStatus,
   PickupStatus,
 } from "#generated/prisma/enums.js";
 
 import {
   couponBudgetReleaseTarget,
+  isRefundBlockedWhileCashParcelOnTheWay,
   isRefundCoveredByOutfiqe,
   resizeBrandPayout,
 } from "./refund.utils.js";
@@ -167,6 +170,77 @@ describe("isRefundCoveredByOutfiqe", () => {
         cause: OrderRefundCause.STAFF_ADJUSTMENT,
         restockUnits: false,
         fulfilment: null,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("isRefundBlockedWhileCashParcelOnTheWay", () => {
+  const shippedByBrand = {
+    fulfilmentMode: FulfilmentMode.BRAND_SHIPS,
+    status: FulfilmentStatus.SHIPPED,
+    pickupStatus: null,
+  };
+  const deliveredByBrand = { ...shippedByBrand, status: FulfilmentStatus.DELIVERED };
+  const stillPacking = { ...shippedByBrand, status: FulfilmentStatus.PACKED };
+  const inOutfiqeParcel = {
+    fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS,
+    status: FulfilmentStatus.PLACED,
+    pickupStatus: PickupStatus.IN_PARCEL,
+  };
+  const unpaidCashOrder = { paymentMethod: PaymentMethod.COD, paymentStatus: PaymentStatus.DUE };
+
+  it("blocks a goodwill refund on a cash parcel the brand has shipped", () => {
+    expect(
+      isRefundBlockedWhileCashParcelOnTheWay({
+        ...unpaidCashOrder,
+        cause: OrderRefundCause.STAFF_ADJUSTMENT,
+        refundedItemFulfilments: [shippedByBrand],
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks it on a cash parcel inside an Outfiqe delivery too", () => {
+    expect(
+      isRefundBlockedWhileCashParcelOnTheWay({
+        ...unpaidCashOrder,
+        cause: OrderRefundCause.CUSTOMER_REFUSED,
+        refundedItemFulfilments: [inOutfiqeParcel],
+      }),
+    ).toBe(true);
+  });
+
+  it("still lets staff refund a parcel the delivery partner lost or damaged", () => {
+    expect(
+      isRefundBlockedWhileCashParcelOnTheWay({
+        ...unpaidCashOrder,
+        cause: OrderRefundCause.PARTNER_FAILED,
+        refundedItemFulfilments: [shippedByBrand],
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["the brand still has the goods", stillPacking],
+    ["the parcel was delivered", deliveredByBrand],
+    ["the item has no shipment", null],
+  ])("allows any refund when %s", (_situation, fulfilment) => {
+    expect(
+      isRefundBlockedWhileCashParcelOnTheWay({
+        ...unpaidCashOrder,
+        cause: OrderRefundCause.STAFF_ADJUSTMENT,
+        refundedItemFulfilments: [fulfilment],
+      }),
+    ).toBe(false);
+  });
+
+  it("leaves orders paid online alone", () => {
+    expect(
+      isRefundBlockedWhileCashParcelOnTheWay({
+        paymentMethod: PaymentMethod.ESEWA,
+        paymentStatus: PaymentStatus.PAID,
+        cause: OrderRefundCause.STAFF_ADJUSTMENT,
+        refundedItemFulfilments: [shippedByBrand],
       }),
     ).toBe(false);
   });

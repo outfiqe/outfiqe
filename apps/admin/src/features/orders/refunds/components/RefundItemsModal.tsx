@@ -8,6 +8,7 @@ import {
   Textarea,
   toast,
 } from "@outfiqe/design-system";
+import { OrderRefundCause } from "@outfiqe/types";
 import { useId, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -33,6 +34,7 @@ const [DEFAULT_STAFF_REFUND_CAUSE] = STAFF_REFUND_CAUSES;
 type RefundItemsModalProps = {
   orderId: string;
   items: OrderItem[];
+  isCashParcelOnTheWay: boolean;
   onClose: () => void;
 };
 
@@ -40,7 +42,12 @@ const unitsNotYetRefunded = (item: OrderItem) => item.qty - item.refundedQty;
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
-export const RefundItemsModal = ({ orderId, items, onClose }: RefundItemsModalProps) => {
+export const RefundItemsModal = ({
+  orderId,
+  items,
+  isCashParcelOnTheWay,
+  onClose,
+}: RefundItemsModalProps) => {
   const refundItems = useRefundOrderItems(orderId);
   const [chosenUnitsByItemId, setChosenUnitsByItemId] = useState<Record<string, number>>({});
   const [cause, setCause] = useState<StaffRefundCause>(DEFAULT_STAFF_REFUND_CAUSE);
@@ -58,8 +65,11 @@ export const RefundItemsModal = ({ orderId, items, onClose }: RefundItemsModalPr
     NOTHING_CHOSEN,
   );
   const trimmedReason = reason.trim();
+  const isBlockedWhileOnTheWay = isCashParcelOnTheWay && cause !== OrderRefundCause.PARTNER_FAILED;
   const canSubmit =
-    lines.length > NOTHING_CHOSEN && trimmedReason.length >= REFUND_REASON_MIN_LENGTH;
+    lines.length > NOTHING_CHOSEN &&
+    trimmedReason.length >= REFUND_REASON_MIN_LENGTH &&
+    !isBlockedWhileOnTheWay;
 
   const submitRefund = () => {
     refundItems.mutate(
@@ -91,6 +101,14 @@ export const RefundItemsModal = ({ orderId, items, onClose }: RefundItemsModalPr
       }
     >
       {refundItems.isError && <FormBanner>{getErrorMessage(refundItems.error)}</FormBanner>}
+      {isBlockedWhileOnTheWay && (
+        <FormBanner tone="neutral" className="mb-4">
+          This cash-on-delivery parcel is on its way, so the shopper hasn&apos;t paid yet. Refund it
+          now only if the delivery partner lost or damaged it (choose that reason below). If the
+          shopper refuses it, mark the order returned once it&apos;s back. Anything else can wait
+          until it&apos;s delivered.
+        </FormBanner>
+      )}
       {refundableItems.length === NOTHING_CHOSEN ? (
         <p className="text-sm text-muted-foreground">
           Every item on this order is already refunded.

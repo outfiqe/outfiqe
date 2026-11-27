@@ -1,15 +1,20 @@
 import type { Prisma } from "#generated/prisma/client.js";
-import type {
-  FulfilmentMode,
+import {
+  type FulfilmentMode,
   FulfilmentStatus,
-  OrderRefundCause,
-  PickupStatus,
+  type OrderRefundCause,
+  PaymentMethod,
+  type PaymentStatus,
+  type PickupStatus,
 } from "#generated/prisma/enums.js";
 import { toStoredJson } from "#lib/stored-json.utils.js";
 
 import {
+  CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY,
   FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE,
   FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND,
+  FULFILMENT_STATUSES_ON_THE_WAY,
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET,
   PICKUP_STATUSES_HANDED_OVER_BY_BRAND,
 } from "./refund.constants.js";
 import { proportionalShare } from "./refund.pricing.js";
@@ -124,6 +129,27 @@ export const isRefundCoveredByOutfiqe = ({
     hasBrandHandedOverGoods(fulfilment)
   );
 };
+
+const isParcelOnTheWay = ({ status, pickupStatus }: RefundedItemFulfilment): boolean =>
+  status !== FulfilmentStatus.DELIVERED &&
+  (FULFILMENT_STATUSES_ON_THE_WAY.has(status) ||
+    (pickupStatus !== null && PICKUP_STATUSES_HANDED_OVER_BY_BRAND.has(pickupStatus)));
+
+export const isRefundBlockedWhileCashParcelOnTheWay = ({
+  cause,
+  paymentMethod,
+  paymentStatus,
+  refundedItemFulfilments,
+}: {
+  cause: OrderRefundCause;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  refundedItemFulfilments: readonly (RefundedItemFulfilment | null)[];
+}): boolean =>
+  paymentMethod === PaymentMethod.COD &&
+  PAYMENT_STATUSES_WITH_NOTHING_TAKEN_YET.has(paymentStatus) &&
+  !CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY.has(cause) &&
+  refundedItemFulfilments.some((fulfilment) => fulfilment !== null && isParcelOnTheWay(fulfilment));
 
 export const couponBudgetReleaseTarget = ({
   platformFundedAmount,

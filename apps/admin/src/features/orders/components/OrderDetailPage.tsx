@@ -11,7 +11,11 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { ordersApi } from "../api/ordersApi";
-import type { FulfilmentStatusValue } from "../api/ordersSchemas";
+import type {
+  FulfilmentStatusValue,
+  PaymentMethodValue,
+  PaymentStatusValue,
+} from "../api/ordersSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { OrderRefundsCard } from "../refunds/components/OrderRefundsCard";
 import { RefundItemsModal } from "../refunds/components/RefundItemsModal";
@@ -26,6 +30,9 @@ const NEXT_FULFILMENT_STATUS: Partial<Record<FulfilmentStatusValue, FulfilmentSt
 
 const CANCELLABLE_STATUSES: FulfilmentStatusValue[] = ["PLACED", "PACKED"];
 const RETURNABLE_STATUSES: FulfilmentStatusValue[] = ["SHIPPED", "DELIVERED"];
+const CASH_ON_DELIVERY: PaymentMethodValue = "COD";
+const CASH_NOT_YET_COLLECTED: PaymentStatusValue = "DUE";
+const ON_THE_WAY_STATUS: FulfilmentStatusValue = "SHIPPED";
 
 const NOTHING_REFUNDED = 0;
 
@@ -267,7 +274,16 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
         onCancel={() => setIsReturnModalOpen(false)}
       />
       {isRefundModalOpen && (
-        <RefundItemsModal orderId={id} items={items} onClose={() => setIsRefundModalOpen(false)} />
+        <RefundItemsModal
+          orderId={id}
+          items={items}
+          isCashParcelOnTheWay={
+            paymentMethod === CASH_ON_DELIVERY &&
+            paymentStatus === CASH_NOT_YET_COLLECTED &&
+            fulfilmentStatus === ON_THE_WAY_STATUS
+          }
+          onClose={() => setIsRefundModalOpen(false)}
+        />
       )}
     </div>
   );

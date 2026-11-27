@@ -71,6 +71,14 @@ export const PICKUP_STATUSES_STILL_WITH_BRAND: ReadonlySet<PickupStatus> = new S
   PickupStatus.READY_FOR_PICKUP,
 ]);
 
+export const FULFILMENT_STATUSES_ON_THE_WAY: ReadonlySet<FulfilmentStatus> = new Set([
+  FulfilmentStatus.SHIPPED,
+]);
+
+export const CAUSES_ALLOWED_WHILE_CASH_PARCEL_ON_THE_WAY: ReadonlySet<OrderRefundCause> = new Set([
+  OrderRefundCause.PARTNER_FAILED,
+]);
+
 export const MAX_REFUND_REASON_LENGTH = 500;
 export const MIN_REFUND_REASON_LENGTH = 3;
 export const MAX_REFUND_LINES = 100;

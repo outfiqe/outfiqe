@@ -20,10 +20,16 @@ const buildItem = (overrides: Partial<OrderItem>): OrderItem => ({
   ...overrides,
 });
 
-const renderModal = (items: OrderItem[]) =>
-  renderWithRouter(<RefundItemsModal orderId="order-1" items={items} onClose={vi.fn()} />, {
-    path: "/orders/order-1",
-  });
+const renderModal = (items: OrderItem[], { isCashParcelOnTheWay = false } = {}) =>
+  renderWithRouter(
+    <RefundItemsModal
+      orderId="order-1"
+      items={items}
+      isCashParcelOnTheWay={isCashParcelOnTheWay}
+      onClose={vi.fn()}
+    />,
+    { path: "/orders/order-1" },
+  );
 
 describe("RefundItemsModal", () => {
   it("labels each line's unit picker and words the options in plain language", async () => {
@@ -90,5 +96,26 @@ describe("RefundItemsModal", () => {
       await screen.findByText("Every item on this order is already refunded."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Items to refund/)).not.toBeInTheDocument();
+  });
+
+  it("explains why a cash parcel on its way can only be refunded for a partner failure", async () => {
+    const user = userEvent.setup();
+    renderModal([buildItem({ qty: 1 })], { isCashParcelOnTheWay: true });
+
+    const dialog = await screen.findByRole("dialog");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: /Linen Shirt/ }), "1");
+    await user.type(within(dialog).getByLabelText("Note for the order history"), "Late delivery");
+
+    expect(
+      within(dialog).getByText(/This cash-on-delivery parcel is on its way/),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Refund" })).toBeDisabled();
+
+    await user.selectOptions(within(dialog).getByLabelText("Why"), "PARTNER_FAILED");
+
+    expect(
+      within(dialog).queryByText(/This cash-on-delivery parcel is on its way/),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Refund" })).toBeEnabled();
   });
 });

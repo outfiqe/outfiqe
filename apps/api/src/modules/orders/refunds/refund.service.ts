@@ -10,14 +10,18 @@ import { ORDER_AUDIT_TARGET_TYPE } from "../order.constants.js";
 import { orderNotFoundError } from "./refund.claim.js";
 import { orderRefundEngine } from "./refund.engine.js";
 import { markManualRefundPaid } from "./refund.payment.js";
-import { orderRefundRepository } from "./refund.repository.js";
+import { type OrderForRefund, orderRefundRepository } from "./refund.repository.js";
 import type {
   ListRefundQueueQuery,
   MarkManualRefundPaidBody,
   StaffRefundItemsBody,
 } from "./refund.schemas.js";
-import type { OrderRefundView, RefundQueueItemView } from "./refund.types.js";
-import { toOrderRefundView, toRefundQueueItemView } from "./refund.utils.js";
+import type { OrderRefundView, RefundPricing, RefundQueueItemView } from "./refund.types.js";
+import {
+  isRefundBlockedWhileCashParcelOnTheWay,
+  toOrderRefundView,
+  toRefundQueueItemView,
+} from "./refund.utils.js";
 
 const STAFF_REFUND_IDEMPOTENCY_ENDPOINT = "orders:staff-refund-items";
 
@@ -30,6 +34,34 @@ const requireRefundView = async (refundId: string): Promise<OrderRefundView> => 
   return toOrderRefundView(refund);
 };
 
+const cashParcelOnTheWayError = () =>
+  new AppError(
+    "REFUND_WHILE_CASH_PARCEL_ON_THE_WAY",
+    "This cash-on-delivery parcel is on its way to the shopper. Refund it now only if the delivery partner lost or damaged it. If the shopper refuses it, mark it returned once it's back. Anything else can wait until it's delivered.",
+    HTTP_STATUS.CONFLICT,
+  );
+
+const assertStaffRefundAllowedWhileCashParcelOnTheWay = (
+  cause: StaffRefundItemsBody["cause"],
+  { paymentMethod, paymentStatus, items }: OrderForRefund,
+  { lines }: RefundPricing,
+) => {
+  const refundedItemIds = new Set(lines.map(({ orderItemId }) => orderItemId));
+  const refundedItemFulfilments = items
+    .filter(({ id }) => refundedItemIds.has(id))
+    .map(({ fulfilmentGroup }) => fulfilmentGroup);
+  if (
+    isRefundBlockedWhileCashParcelOnTheWay({
+      cause,
+      paymentMethod,
+      paymentStatus,
+      refundedItemFulfilments,
+    })
+  ) {
+    throw cashParcelOnTheWayError();
+  }
+};
+
 const refundItemsOnce = async (
   staffUserId: string,
   orderId: string,
@@ -38,7 +70,15 @@ const refundItemsOnce = async (
   const appliedRefund = await prisma.$transaction((tx) =>
     orderRefundEngine.claimAndApplyInTransaction(
       tx,
-      { orderId, lineRequests: lines, cause, reason, requestedById: staffUserId },
+      {
+        orderId,
+        lineRequests: lines,
+        cause,
+        reason,
+        requestedById: staffUserId,
+        checkBeforeClaim: (order, pricing) =>
+          assertStaffRefundAllowedWhileCashParcelOnTheWay(cause, order, pricing),
+      },
       { restockUnits: restock, actorUserId: staffUserId },
     ),
   );

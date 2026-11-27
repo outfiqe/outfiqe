@@ -484,15 +484,26 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
      (brand couldn't supply, failed hub check, customer cancel or refusal, return, sold out at
      payment, or a goodwill refund while the goods are still with the brand) stays with the brand,
      because the brand either caused it or kept the goods.
-   - Creator commission: unchanged while at least one unit is kept, voided when every unit is
-     refunded.
-   - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the
-     refunded coupon share is released, tracked in `CouponRedemption.releasedAmount`. When the order
-     empties, the redemption is released too.
-   - Stock: put back only when the caller asks (customer cancellation, staff choice), with source
-     `ORDER_REFUND` and the refund id.
-   - A brand group with every unit refunded is cancelled if it hasn't left the brand: brand-shipped
-     groups directly, hub pickups through a `CANCELLED` tracking event so the rider isn't sent.
+
+- **Staff can't fully refund a cash parcel that is on its way.** On a cash-on-delivery order with
+  nothing collected yet, a staff refund (`refund.service.ts`, through `checkBeforeClaim`, so it runs
+  on the order read inside the refund transaction) is refused with `409
+REFUND_WHILE_CASH_PARCEL_ON_THE_WAY` when any refunded line's shipment is on its way (brand
+  marked it shipped, or a rider collected it and it isn't delivered yet), unless the cause is
+  `PARTNER_FAILED` (`isRefundBlockedWhileCashParcelOnTheWay`). Otherwise a goodwill refund there
+  would hand the shopper the parcel for free while Outfiqe paid the brand. A refusal comes back
+  through Mark as returned or the hub's return check-in instead, and anything else waits until
+  delivery. System refunds (returns, hub outcomes, lost parcels) don't go through this check.
+  - Creator commission: unchanged while at least one unit is kept, voided when every unit is
+    refunded.
+  - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the
+    refunded coupon share is released, tracked in `CouponRedemption.releasedAmount`. When the order
+    empties, the redemption is released too.
+  - Stock: put back only when the caller asks (customer cancellation, staff choice), with source
+    `ORDER_REFUND` and the refund id.
+  - A brand group with every unit refunded is cancelled if it hasn't left the brand: brand-shipped
+    groups directly, hub pickups through a `CANCELLED` tracking event so the rider isn't sent.
+
 4. Pay (`refund.payment.ts`, after commit):
    - COD not yet collected → `CASH_NOT_COLLECTED`, settled at once: the rider collects less.
    - Khalti → partial refund through the API (amount in paisa). Success records a `REFUND` payment
