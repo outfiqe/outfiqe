@@ -66,6 +66,7 @@ const refundItemsOnce = async (
   staffUserId: string,
   orderId: string,
   { lines, cause, reason, restock }: StaffRefundItemsBody,
+  { isRequestedFromRefundWindow }: { isRequestedFromRefundWindow: boolean },
 ): Promise<OrderRefundView> => {
   const appliedRefund = await prisma.$transaction((tx) =>
     orderRefundEngine.claimAndApplyInTransaction(
@@ -76,8 +77,10 @@ const refundItemsOnce = async (
         cause,
         reason,
         requestedById: staffUserId,
-        checkBeforeClaim: (order, pricing) =>
-          assertStaffRefundAllowedWhileCashParcelOnTheWay(cause, order, pricing),
+        checkBeforeClaim: isRequestedFromRefundWindow
+          ? (order, pricing) =>
+              assertStaffRefundAllowedWhileCashParcelOnTheWay(cause, order, pricing)
+          : undefined,
       },
       { restockUnits: restock, actorUserId: staffUserId },
     ),
@@ -106,20 +109,42 @@ const refundItemsOnce = async (
   return requireRefundView(claim.refundId);
 };
 
+const refundItemsIdempotently = (
+  staffUserId: string,
+  orderId: string,
+  body: StaffRefundItemsBody,
+  idempotencyKey: string,
+  refundSource: { isRequestedFromRefundWindow: boolean },
+): Promise<OrderRefundView> =>
+  withIdempotency(
+    staffUserId,
+    STAFF_REFUND_IDEMPOTENCY_ENDPOINT,
+    idempotencyKey,
+    () => refundItemsOnce(staffUserId, orderId, body, refundSource),
+    { orderId, ...body },
+  );
+
 export const orderRefundService = {
+  refundOrderItemsFromRefundWindow(
+    staffUserId: string,
+    orderId: string,
+    body: StaffRefundItemsBody,
+    idempotencyKey: string,
+  ): Promise<OrderRefundView> {
+    return refundItemsIdempotently(staffUserId, orderId, body, idempotencyKey, {
+      isRequestedFromRefundWindow: true,
+    });
+  },
+
   refundOrderItems(
     staffUserId: string,
     orderId: string,
     body: StaffRefundItemsBody,
     idempotencyKey: string,
   ): Promise<OrderRefundView> {
-    return withIdempotency(
-      staffUserId,
-      STAFF_REFUND_IDEMPOTENCY_ENDPOINT,
-      idempotencyKey,
-      () => refundItemsOnce(staffUserId, orderId, body),
-      { orderId, ...body },
-    );
+    return refundItemsIdempotently(staffUserId, orderId, body, idempotencyKey, {
+      isRequestedFromRefundWindow: false,
+    });
   },
 
   async refundOrderItemsBySystem(

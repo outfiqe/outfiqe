@@ -183,11 +183,12 @@ describe("isRefundBlockedWhileCashParcelOnTheWay", () => {
   };
   const deliveredByBrand = { ...shippedByBrand, status: FulfilmentStatus.DELIVERED };
   const stillPacking = { ...shippedByBrand, status: FulfilmentStatus.PACKED };
-  const inOutfiqeParcel = {
+  const handedToOutfiqePartner = {
     fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS,
-    status: FulfilmentStatus.PLACED,
+    status: FulfilmentStatus.SHIPPED,
     pickupStatus: PickupStatus.IN_PARCEL,
   };
+  const packedAtOutfiqeHub = { ...handedToOutfiqePartner, status: FulfilmentStatus.PACKED };
   const unpaidCashOrder = { paymentMethod: PaymentMethod.COD, paymentStatus: PaymentStatus.DUE };
 
   it("blocks a goodwill refund on a cash parcel the brand has shipped", () => {
@@ -200,12 +201,12 @@ describe("isRefundBlockedWhileCashParcelOnTheWay", () => {
     ).toBe(true);
   });
 
-  it("blocks it on a cash parcel inside an Outfiqe delivery too", () => {
+  it("blocks it once the hub has handed the cash parcel to the delivery partner", () => {
     expect(
       isRefundBlockedWhileCashParcelOnTheWay({
         ...unpaidCashOrder,
         cause: OrderRefundCause.CUSTOMER_REFUSED,
-        refundedItemFulfilments: [inOutfiqeParcel],
+        refundedItemFulfilments: [handedToOutfiqePartner],
       }),
     ).toBe(true);
   });
@@ -222,6 +223,7 @@ describe("isRefundBlockedWhileCashParcelOnTheWay", () => {
 
   it.each([
     ["the brand still has the goods", stillPacking],
+    ["the parcel is still at the Outfiqe hub", packedAtOutfiqeHub],
     ["the parcel was delivered", deliveredByBrand],
     ["the item has no shipment", null],
   ])("allows any refund when %s", (_situation, fulfilment) => {

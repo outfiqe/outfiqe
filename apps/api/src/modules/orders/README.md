@@ -488,12 +488,17 @@ with one `OrderRefundLine` per item. Refunds are recorded, never edited away.
 - **Staff can't fully refund a cash parcel that is on its way.** On a cash-on-delivery order with
   nothing collected yet, a staff refund (`refund.service.ts`, through `checkBeforeClaim`, so it runs
   on the order read inside the refund transaction) is refused with `409
-REFUND_WHILE_CASH_PARCEL_ON_THE_WAY` when any refunded line's shipment is on its way (brand
-  marked it shipped, or a rider collected it and it isn't delivered yet), unless the cause is
+REFUND_WHILE_CASH_PARCEL_ON_THE_WAY` when any refunded line's shipment is `SHIPPED` (the brand
+  marked it shipped, or the hub handed the parcel to the delivery partner, which rolls the group up
+  to `SHIPPED`). A parcel still being collected, checked or packed at the hub can be refunded,
+  since the hub just reprints the label with the new cash amount. The exception is when the cause is
   `PARTNER_FAILED` (`isRefundBlockedWhileCashParcelOnTheWay`). Otherwise a goodwill refund there
   would hand the shopper the parcel for free while Outfiqe paid the brand. A refusal comes back
   through Mark as returned or the hub's return check-in instead, and anything else waits until
-  delivery. System refunds (returns, hub outcomes, lost parcels) don't go through this check.
+  delivery. Only the admin refund window applies it (`refundOrderItemsFromRefundWindow`, the
+  `POST /orders/admin/:orderId/refunds` controller). The hub's inspection failures and return
+  check-ins reuse `refundOrderItems` without it, because those parcels are at the hub or already
+  coming back, not with the shopper. System refunds don't go through it either.
   - Creator commission: unchanged while at least one unit is kept, voided when every unit is
     refunded.
   - Coupon budget: when Outfiqe or the brand caused the refund, the platform-funded part of the

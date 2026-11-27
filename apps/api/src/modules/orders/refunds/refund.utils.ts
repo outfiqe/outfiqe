@@ -1,7 +1,7 @@
 import type { Prisma } from "#generated/prisma/client.js";
 import {
   type FulfilmentMode,
-  FulfilmentStatus,
+  type FulfilmentStatus,
   type OrderRefundCause,
   PaymentMethod,
   type PaymentStatus,
@@ -130,10 +130,8 @@ export const isRefundCoveredByOutfiqe = ({
   );
 };
 
-const isParcelOnTheWay = ({ status, pickupStatus }: RefundedItemFulfilment): boolean =>
-  status !== FulfilmentStatus.DELIVERED &&
-  (FULFILMENT_STATUSES_ON_THE_WAY.has(status) ||
-    (pickupStatus !== null && PICKUP_STATUSES_HANDED_OVER_BY_BRAND.has(pickupStatus)));
+const isParcelOnTheWay = ({ status }: RefundedItemFulfilment): boolean =>
+  FULFILMENT_STATUSES_ON_THE_WAY.has(status);
 
 export const isRefundBlockedWhileCashParcelOnTheWay = ({
   cause,

@@ -21,7 +21,7 @@ export const orderRefundController = {
   async refundItems(req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { orderId } = validated.params<OrderIdParam>(res);
-    const refund = await orderRefundService.refundOrderItems(
+    const refund = await orderRefundService.refundOrderItemsFromRefundWindow(
       userId,
       orderId,
       validated.body<StaffRefundItemsBody>(res),
