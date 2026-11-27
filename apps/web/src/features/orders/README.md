@@ -146,3 +146,6 @@ refund details" banner and form can appear for every refund, not only after mone
 
 Under the total, `buildCancelledMoneyLines` adds "Cancelled" and "You pay" / "You paid" so "Nothing
 to pay" no longer sits beside an unexplained total. A fully cancelled order hides "Delivering to".
+The "Keep Rs. X ready for the rider" line under the heading uses that same "You pay" amount, not the
+order total, so a cash order asks only for what is left after cancellations. When nothing is left
+(every item on a parcel still on its way was refunded) the line goes and Payment reads "Nothing to pay".

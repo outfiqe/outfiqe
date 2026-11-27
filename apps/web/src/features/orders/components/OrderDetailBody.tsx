@@ -47,6 +47,7 @@ const NOTHING_REFUNDED = 0;
 const NO_SHIPMENTS = 0;
 const NO_CANCELLED_UNITS = 0;
 const SINGLE_SHIPMENT = 1;
+const NOTHING_LEFT_TO_PAY = 0;
 
 type OrderDetailBodyProps = {
   orderId: string;
@@ -133,7 +134,16 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const isMoneyUntaken = hasNoMoneyTaken(paymentStatus);
-  const hasNothingToPay = hasNothingLeftToPay(fulfilmentStatus, paymentStatus);
+  const cancelledMoney = buildCancelledMoneyLines({
+    total,
+    fulfilmentStatus,
+    paymentStatus,
+    refundSummary,
+  });
+  const amountLeftToPay = cancelledMoney?.payAmount ?? total;
+  const hasNothingToPay =
+    hasNothingLeftToPay(fulfilmentStatus, paymentStatus) ||
+    (isMoneyUntaken && amountLeftToPay === NOTHING_LEFT_TO_PAY);
   const awaitingPayment =
     !orderCancelled &&
     paymentMethod !== PaymentMethod.COD &&
@@ -141,12 +151,6 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
   const cancellationNotice = buildOrderCancellationNotice({
     fulfilmentStatus,
     paymentMethod,
-    refundSummary,
-  });
-  const cancelledMoney = buildCancelledMoneyLines({
-    total,
-    fulfilmentStatus,
-    paymentStatus,
     refundSummary,
   });
   const showsTracker = !awaitingPayment && !(orderCancelled && cancellationNotice !== null);
@@ -185,7 +189,7 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
             {awaitingPayment
               ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
               : isMoneyUntaken
-                ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
+                ? `Keep Rs. ${amountLeftToPay.toLocaleString()} ready for the rider — you pay when it arrives.`
                 : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
           </p>
         )}

@@ -606,6 +606,44 @@ describe("OrderDetailBody cancellation and refund status", () => {
     expect(screen.getByText("Delivering to")).toBeInTheDocument();
   });
 
+  it("asks the rider for only what is left after some items were cancelled", () => {
+    orderResult.data = buildOrder({
+      total: 3770,
+      refundedAmount: 1900,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["CUSTOMER_CANCELLED"],
+        amountOffCashPayment: 1900,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(
+      screen.getByText("Keep Rs. 1,870 ready for the rider — you pay when it arrives."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Keep Rs\. 3,770/)).not.toBeInTheDocument();
+  });
+
+  it("stops asking for cash when every item on a cash order still on its way was refunded", () => {
+    orderResult.data = buildOrder({
+      fulfilmentStatus: "SHIPPED",
+      total: 2220,
+      refundedAmount: 2220,
+      refundSummary: buildRefundSummary({
+        cancelledUnitCount: 1,
+        causes: ["STAFF_ADJUSTMENT"],
+        amountOffCashPayment: 2220,
+      }),
+    });
+
+    renderOrderDetail();
+
+    expect(screen.queryByText(/ready for the rider/)).not.toBeInTheDocument();
+    expect(screen.getByText("Nothing to pay")).toBeInTheDocument();
+    expect(screen.queryByText("DUE")).not.toBeInTheDocument();
+  });
+
   it("shows the carrier and tracking number of a single brand-shipped parcel", () => {
     orderResult.data = buildOrder({
       fulfilmentStatus: "SHIPPED",
