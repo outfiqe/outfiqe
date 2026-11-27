@@ -1,9 +1,14 @@
 import type { Prisma } from "#generated/prisma/client.js";
-import type { FulfilmentStatus, OrderRefundCause, PickupStatus } from "#generated/prisma/enums.js";
+import type {
+  FulfilmentMode,
+  FulfilmentStatus,
+  OrderRefundCause,
+  PickupStatus,
+} from "#generated/prisma/enums.js";
 import { toStoredJson } from "#lib/stored-json.utils.js";
 
 import {
-  CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER,
+  FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE,
   FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND,
   PICKUP_STATUSES_HANDED_OVER_BY_BRAND,
 } from "./refund.constants.js";
@@ -92,6 +97,7 @@ export const resizeBrandPayout = ({
 };
 
 export type RefundedItemFulfilment = {
+  fulfilmentMode: FulfilmentMode;
   status: FulfilmentStatus;
   pickupStatus: PickupStatus | null;
 };
@@ -108,11 +114,16 @@ export const isRefundCoveredByOutfiqe = ({
   cause: OrderRefundCause;
   restockUnits: boolean;
   fulfilment: RefundedItemFulfilment | null;
-}): boolean =>
-  CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER.has(cause) &&
-  !restockUnits &&
-  fulfilment !== null &&
-  hasBrandHandedOverGoods(fulfilment);
+}): boolean => {
+  const coveredFulfilmentModes = FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE[cause];
+  return (
+    coveredFulfilmentModes !== undefined &&
+    !restockUnits &&
+    fulfilment !== null &&
+    coveredFulfilmentModes.has(fulfilment.fulfilmentMode) &&
+    hasBrandHandedOverGoods(fulfilment)
+  );
+};
 
 export const couponBudgetReleaseTarget = ({
   platformFundedAmount,

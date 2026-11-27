@@ -172,6 +172,52 @@ describe("staff partial refunds", () => {
     });
   });
 
+  it("takes a delivery failure from the brand's payout when the brand shipped with its own courier", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 1000, qty: 2 }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { status: FulfilmentStatus.SHIPPED },
+    });
+
+    await staffRefund(authHeader, order.id, {
+      cause: OrderRefundCause.PARTNER_FAILED,
+      lines: [{ orderItemId, qty: 1 }],
+    });
+
+    const payout = await prisma.brandPayout.findUniqueOrThrow({ where: { orderItemId } });
+    expect(payout).toMatchObject({ status: BrandPayoutStatus.PENDING, grossAmount: 1000 });
+  });
+
+  it("keeps the brand's payout when the delivery partner fails an Outfiqe-delivered parcel", async () => {
+    const { authHeader } =
+      await createAdminSessionWithPlatformPermissions("platform:orders:manage");
+    const { order, items } = await createRefundableOrder({
+      paymentMethod: PaymentMethod.KHALTI,
+      paymentStatus: PaymentStatus.PAID,
+      lines: [{ unitPrice: 1000, qty: 2, fulfilmentMode: FulfilmentMode.OUTFIQE_LOGISTICS }],
+    });
+    const orderItemId = requireFixtureId(items[0]?.item.id);
+    await prisma.orderFulfilmentGroup.update({
+      where: { id: requireFixtureId(items[0]?.group.id) },
+      data: { pickupStatus: PickupStatus.IN_PARCEL },
+    });
+
+    await staffRefund(authHeader, order.id, {
+      cause: OrderRefundCause.PARTNER_FAILED,
+      lines: [{ orderItemId, qty: 1 }],
+    });
+
+    const payout = await prisma.brandPayout.findUniqueOrThrow({ where: { orderItemId } });
+    expect(payout).toMatchObject({ status: BrandPayoutStatus.PENDING, grossAmount: 2000 });
+  });
+
   it("still takes the refund from the brand's payout when the brand couldn't supply after shipping", async () => {
     const { authHeader } =
       await createAdminSessionWithPlatformPermissions("platform:orders:manage");

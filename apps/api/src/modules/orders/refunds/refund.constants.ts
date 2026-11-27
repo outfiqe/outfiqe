@@ -1,4 +1,5 @@
 import {
+  FulfilmentMode,
   FulfilmentStatus,
   OrderRefundCause,
   PaymentMethod,
@@ -26,10 +27,15 @@ export const CAUSES_RELEASING_COUPON_BUDGET: ReadonlySet<OrderRefundCause> = new
   OrderRefundCause.SOLD_OUT_AT_PAYMENT,
 ]);
 
-export const CAUSES_COVERED_BY_OUTFIQE_ONCE_HANDED_OVER: ReadonlySet<OrderRefundCause> = new Set([
-  OrderRefundCause.STAFF_ADJUSTMENT,
-  OrderRefundCause.PARTNER_FAILED,
-]);
+export const FULFILMENT_MODES_COVERED_BY_OUTFIQE_BY_CAUSE: Partial<
+  Record<OrderRefundCause, ReadonlySet<FulfilmentMode>>
+> = {
+  [OrderRefundCause.STAFF_ADJUSTMENT]: new Set([
+    FulfilmentMode.BRAND_SHIPS,
+    FulfilmentMode.OUTFIQE_LOGISTICS,
+  ]),
+  [OrderRefundCause.PARTNER_FAILED]: new Set([FulfilmentMode.OUTFIQE_LOGISTICS]),
+};
 
 export const FULFILMENT_STATUSES_HANDED_OVER_BY_BRAND: ReadonlySet<FulfilmentStatus> = new Set([
   FulfilmentStatus.SHIPPED,
